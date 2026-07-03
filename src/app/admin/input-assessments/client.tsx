@@ -5557,9 +5557,10 @@ return {
                                           const parsed = JSON.parse(sc.scores);
                                           const vArr = Array.isArray(parsed) ? parsed : [parsed];
                                           if (subCode.includes("tly")) {
-                                            vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
-                                          } else if (subCode.includes("nltd")) {
-                                            vStr = (vArr[4] || "0") + "%";
+                                              vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
+                                            } else if (subCode.includes("nltd")) {
+                                              const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
+                                              vStr = pctVal !== undefined && pctVal !== null && pctVal !== "" ? pctVal + "%" : "—";
                                           } else if (subCode.includes("tci") || subCode.includes("cpt")) {
                                             vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " Đạt" : "—";
                                           } else {
@@ -5735,9 +5736,15 @@ return {
                                     val = passedCount + "/" + vArr.length + " Đạt";
                                     badgeStyle = passedCount >= vArr.length * 0.7 ? "bg-emerald-50 text-emerald-700 border-emerald-200/50" : "bg-amber-50 text-amber-700 border-amber-200/50";
                                   } else if (sCode.includes("nltd")) {
-                                    const pct = parseFloat(vArr[4] || "0");
-                                    val = pct + "%";
-                                    badgeStyle = pct >= 80 ? "bg-indigo-50 text-indigo-700 border-indigo-200/50" : pct >= 50 ? "bg-blue-50 text-blue-700 border-blue-200/50" : "bg-rose-50 text-rose-700 border-rose-200/50";
+                                    const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
+                                    if (pctVal !== undefined && pctVal !== null && pctVal !== "") {
+                                      val = pctVal + "%";
+                                      const pct = parseFloat(pctVal || "0");
+                                      badgeStyle = pct >= 80 ? "bg-indigo-50 text-indigo-700 border-indigo-200/50" : pct >= 50 ? "bg-blue-50 text-blue-700 border-blue-200/50" : "bg-rose-50 text-rose-700 border-rose-200/50";
+                                    } else {
+                                      val = "—";
+                                      badgeStyle = "bg-slate-100 text-slate-600 border-slate-200";
+                                    }
                                   } else {
                                     const firstVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
                                     val = firstVal !== undefined ? firstVal.toString() : "—";
@@ -5893,7 +5900,7 @@ return {
                                 const subNameNormalized = subName.normalize("NFC");
                                 const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
                                 const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
-                                const isThinkingSkills = subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd");
+                                const isThinkingSkills = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && isGrade1;
 
                                 const isEnglish = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
                                 const isToan = subName.includes("toán") || subCode.includes("math") || subCode.includes("mth");
@@ -6183,7 +6190,7 @@ return {
                                           <div className="text-right">
                                             <span className="text-2xl font-black text-indigo-750">{scoreVals[4] || "0"}%</span>
                                             <div className="w-28 bg-slate-100 rounded-full h-2 mt-1 border border-slate-200/50 overflow-hidden shadow-inner shrink-0">
-                                              <div className="h-2 text-xs font-semibold" style={{ width: `${scoreVals[4] || 0}%` }}></div>
+                                              <div className="h-2 bg-indigo-600 text-xs font-semibold" style={{ width: `${scoreVals[4] || 0}%` }}></div>
                                             </div>
                                           </div>
                                         </div>
@@ -6202,11 +6209,14 @@ return {
                                           {Array.from({length: (subject.scoreColumns ?? 1)}).map((_, colIdx) => {
                                             let colName = "Điểm " + (colIdx + 1);
                                             if (parsedCols.scores && parsedCols.scores[colIdx]) colName = parsedCols.scores[colIdx];
+                                            else if (subCode.includes("nltd")) colName = "Kết quả";
                                             const isTotal = colName.toLowerCase().includes("tổng");
                                             const val = scoreVals[colIdx];
                                             
                                             let displayVal = val !== undefined && val !== "" && val !== null ? val : "—";
-                                            if (!isGrade1) {
+                                            if (subCode.includes("nltd")) {
+                                              displayVal = val !== undefined && val !== "" && val !== null ? `${val}%` : "—%";
+                                            } else if (!isGrade1) {
                                               const sNameLower = subName.toLowerCase().normalize("NFC");
                                               if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
                                                 if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {

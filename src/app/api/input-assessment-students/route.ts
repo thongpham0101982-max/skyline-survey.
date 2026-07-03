@@ -229,7 +229,10 @@ export async function POST(req) {
                val = `${lvl} (${scNum} đ)`;
             }
             else if (sCode.includes("tci") || sCode.includes("cpt")) val = vArr.filter(x => x === "3").length + " Đ";
-            else if (sCode.includes("nltd")) val = vArr[4] ? vArr[4] + "%" : "—";
+            else if (sCode.includes("nltd")) {
+              const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
+              val = pctVal !== undefined && pctVal !== null && pctVal !== "" ? pctVal + "%" : "—";
+            }
             else val = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
           }
         } catch { val = sc.scores || "—"; }
