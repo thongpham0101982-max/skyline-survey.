@@ -58,7 +58,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
       {/* Filters bar */}
       <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
-          <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
             placeholder="Tìm theo Email, Họ tên, Bảng dữ liệu, Hoạt động..." 

@@ -722,7 +722,7 @@ export function AdminTongHopClient({
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tìm kiếm giáo viên</label>
               <div className="relative group/search">
-                <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400 group-focus-within/search:text-[#00A99D] transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within/search:text-[#00A99D] transition-colors" />
                 <input 
                   type="text" 
                   placeholder="Tìm tên hoặc mã giáo viên..."
@@ -731,7 +731,7 @@ export function AdminTongHopClient({
                   className="w-full text-xs font-semibold pl-9 pr-8 text-slate-850 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-[#00A99D]/10 focus:border-[#00A99D] transition-all outline-none text-xs font-semibold"
                 />
                 {searchTeacherQuery && (
-                  <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }} className="absolute right-3 top-3.5 text-slate-450 hover:text-slate-700">
+                  <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-450 hover:text-slate-700">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -1081,7 +1081,7 @@ export function AdminTongHopClient({
                     {/* Slot Search & Filter controls */}
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 p-3 shrink-0 text-xs font-semibold">
                       <div className="md:col-span-6 relative">
-                        <Search className="absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                         <input
                           type="text"
                           placeholder="Tìm kiếm chủ đề, lớp học..."

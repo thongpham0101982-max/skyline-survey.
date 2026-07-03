@@ -1166,7 +1166,7 @@ export function ResultsClient({
                       placeholder="Nhập Mã học sinh hoặc Tên học sinh..."
                       className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 shadow-sm bg-slate-50/20"
                     />
-                    <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-slate-400" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   </div>
 
                   {/* Live Search dropdown results */}
