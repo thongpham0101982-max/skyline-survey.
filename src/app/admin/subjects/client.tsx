@@ -10,18 +10,18 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const [selectedYearId, setSelectedYearId] = useState(defaultYearId || (safeYears[0]?.id || ""));
   const [filterLevel, setFilterLevel] = useState("ALL_LEVELS"); // Filter Level
   const [filterProgram, setFilterProgram] = useState("ALL_PROGRAMS"); // Filter System
-  const [formData, setFormData] = useState({ code: "", name: "", levels: [] as string[], desc: "", quotaPrimary: 0, quotaMiddle: 0, quotaHigh: 0, studyPrograms: [] as string[] });
+  const [formData, setFormData] = useState({ code: "", name: "", levels: [] as string[], desc: "", quotaPrimary: 0, quotaMiddle: 0, quotaHigh: 0, quotaG1:0, quotaG2:0, quotaG3:0, quotaG4:0, quotaG5:0, quotaG6:0, quotaG7:0, quotaG8:0, quotaG9:0, quotaG10:0, quotaG11:0, quotaG12:0, studyPrograms: [] as string[] });
   const [loading, setLoading] = useState(false);
 
   const getQuota = (s: any) => {
-    return s.quotas?.find((q: any) => q.academicYearId === selectedYearId) || { quotaPrimary: 0, quotaMiddle: 0, quotaHigh: 0 };
+    return s.quotas?.find((q: any) => q.academicYearId === selectedYearId) || { quotaPrimary: 0, quotaMiddle: 0, quotaHigh: 0, quotaG1:0, quotaG2:0, quotaG3:0, quotaG4:0, quotaG5:0, quotaG6:0, quotaG7:0, quotaG8:0, quotaG9:0, quotaG10:0, quotaG11:0, quotaG12:0 };
   }
 
   const startEdit = (s?: any) => {
     if (s) {
       setEditingId(s.id);
       const q = getQuota(s);
-      setFormData({ code: s.subjectCode, name: s.subjectName, levels: s.level && s.level !== "ALL" ? s.level.split(', ') : [], desc: s.description || "", quotaPrimary: q.quotaPrimary||0, quotaMiddle: q.quotaMiddle||0, quotaHigh: q.quotaHigh||0, studyPrograms: s.studyPrograms ? s.studyPrograms.split(', ') : [] });
+      setFormData({ code: s.subjectCode, name: s.subjectName, levels: s.level && s.level !== "ALL" ? s.level.split(', ') : [], desc: s.description || "", quotaPrimary: q.quotaPrimary||0, quotaMiddle: q.quotaMiddle||0, quotaHigh: q.quotaHigh||0, quotaG1: q.quotaG1||0, quotaG2: q.quotaG2||0, quotaG3: q.quotaG3||0, quotaG4: q.quotaG4||0, quotaG5: q.quotaG5||0, quotaG6: q.quotaG6||0, quotaG7: q.quotaG7||0, quotaG8: q.quotaG8||0, quotaG9: q.quotaG9||0, quotaG10: q.quotaG10||0, quotaG11: q.quotaG11||0, quotaG12: q.quotaG12||0, studyPrograms: s.studyPrograms ? s.studyPrograms.split(', ') : [] });
     } else {
       setEditingId("new");
       setFormData({ code: "", name: "", levels: filterLevel !== "ALL_LEVELS" ? [filterLevel] : [], desc: "", quota: 0, studyPrograms: [] });
@@ -36,7 +36,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const handleSave = async () => {
     setLoading(true);
     let res;
-    const quotaData = { academicYearId: selectedYearId, quotaPrimary: parseInt(formData.quotaPrimary as any)||0, quotaMiddle: parseInt(formData.quotaMiddle as any)||0, quotaHigh: parseInt(formData.quotaHigh as any)||0 };
+    const quotaData = { academicYearId: selectedYearId, quotaPrimary: parseInt(formData.quotaPrimary as any)||0, quotaMiddle: parseInt(formData.quotaMiddle as any)||0, quotaHigh: parseInt(formData.quotaHigh as any)||0, quotaG1: parseInt(formData.quotaG1 as any)||0, quotaG2: parseInt(formData.quotaG2 as any)||0, quotaG3: parseInt(formData.quotaG3 as any)||0, quotaG4: parseInt(formData.quotaG4 as any)||0, quotaG5: parseInt(formData.quotaG5 as any)||0, quotaG6: parseInt(formData.quotaG6 as any)||0, quotaG7: parseInt(formData.quotaG7 as any)||0, quotaG8: parseInt(formData.quotaG8 as any)||0, quotaG9: parseInt(formData.quotaG9 as any)||0, quotaG10: parseInt(formData.quotaG10 as any)||0, quotaG11: parseInt(formData.quotaG11 as any)||0, quotaG12: parseInt(formData.quotaG12 as any)||0 };
     
     if (editingId === "new") {
       res = await createSubject(formData.code, formData.name, formData.levels.length > 0 ? formData.levels.join(', ') : "ALL", formData.desc, quotaData, formData.studyPrograms.join(', '));
@@ -142,7 +142,9 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <thead className="text-xs font-semibold">
               <tr>
                 <th colSpan={4} className="px-6 py-3 font-bold text-slate-600 text-sm border-r border-slate-200 text-center">Thông tin Môn Học</th>
-                <th colSpan={3} className="font-bold text-slate-600 text-sm text-center text-indigo-700 text-xs font-semibold">Số tiết (Theo Bậc) / tuần</th>
+                <th colSpan={5} className="font-bold text-slate-600 text-sm text-center text-blue-700 text-xs font-semibold border-r border-slate-200">Tiểu học</th>
+   <th colSpan={4} className="font-bold text-slate-600 text-sm text-center text-emerald-700 text-xs font-semibold border-r border-slate-200">THCS</th>
+   <th colSpan={3} className="font-bold text-slate-600 text-sm text-center text-amber-700 text-xs font-semibold border-r border-slate-200">THPT</th>
                 <th rowSpan={2} className="p-2 p-2 font-bold text-slate-600 text-sm text-right border border-slate-200">Thao tác</th>
               </tr>
               <tr className="hover:bg-slate-50/50 text-xs font-semibold">
@@ -150,9 +152,18 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Tên môn</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Hệ học</th>
                 <th className="px-4 py-2 font-semibold text-slate-600 text-xs border-r border-slate-200">Ghi chúú</th>
-                <th className="font-semibold text-blue-800 text-xs text-center text-xs font-semibold">Tiểu học</th>
-                <th className="font-semibold text-emerald-800 text-xs text-center text-xs font-semibold">THCS</th>
-                <th className="font-semibold text-amber-800 text-xs text-center text-xs font-semibold">THPT</th>
+                <th className="font-semibold text-blue-800 text-[11px] text-center px-1">K1</th>
+   <th className="font-semibold text-blue-800 text-[11px] text-center px-1">K2</th>
+   <th className="font-semibold text-blue-800 text-[11px] text-center px-1">K3</th>
+   <th className="font-semibold text-blue-800 text-[11px] text-center px-1">K4</th>
+   <th className="font-semibold text-blue-800 text-[11px] text-center px-1 border-r border-slate-200">K5</th>
+   <th className="font-semibold text-emerald-800 text-[11px] text-center px-1">K6</th>
+   <th className="font-semibold text-emerald-800 text-[11px] text-center px-1">K7</th>
+   <th className="font-semibold text-emerald-800 text-[11px] text-center px-1">K8</th>
+   <th className="font-semibold text-emerald-800 text-[11px] text-center px-1 border-r border-slate-200">K9</th>
+   <th className="font-semibold text-amber-800 text-[11px] text-center px-1">K10</th>
+   <th className="font-semibold text-amber-800 text-[11px] text-center px-1">K11</th>
+   <th className="font-semibold text-amber-800 text-[11px] text-center px-1 border-r border-slate-200">K12</th>
               </tr>
             </thead>
             <tbody>
@@ -177,26 +188,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     </div>
                   </td>
                   <td className="px-4 py-3 border-r border-slate-200"><input value={formData.desc} onChange={e=>setFormData({...formData, desc: e.target.value})} className="w-40 p-1.5 rounded border text-sm outline-none" placeholder="Ghi chúú..."/></td>
-                  <td className="px-4 py-3 border-r border-slate-200">
-                    <div className="flex flex-col gap-1 text-xs">
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={formData.levels.includes("PRIMARY")} onChange={(e) => {
-                          setFormData({...formData, levels: e.target.checked ? [...formData.levels, "PRIMARY"] : formData.levels.filter(l => l !== "PRIMARY")});
-                        }} /> Tiểu học
-                      </label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={formData.levels.includes("MIDDLE")} onChange={(e) => {
-                          setFormData({...formData, levels: e.target.checked ? [...formData.levels, "MIDDLE"] : formData.levels.filter(l => l !== "MIDDLE")});
-                        }} /> THCS
-                      </label>
-                      <label className="flex items-center gap-1 cursor-pointer">
-                        <input type="checkbox" checked={formData.levels.includes("HIGH")} onChange={(e) => {
-                          setFormData({...formData, levels: e.target.checked ? [...formData.levels, "HIGH"] : formData.levels.filter(l => l !== "HIGH")});
-                        }} /> THPT
-                      </label>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center border-r border-slate-200 bg-white"><input type="number" min={0} value={formData.quota} onChange={e=>setFormData({...formData, quota: parseInt(e.target.value)||0})} className="w-16 p-1 rounded border text-center text-sm font-bold text-indigo-700 outline-none" /></td>
+                  <td colSpan={12} className="px-4 py-3 text-center border-r border-slate-200 text-slate-500 italic text-xs">Vui lòng lưu để nhập cấu hình số tiết</td>
                   <td className="p-2 p-2 text-right border border-slate-200">
                     <button onClick={handleSave} disabled={loading} className="p-2 text-green-600 hover:bg-green-100 rounded-lg mr-2"><CheckCircle2 className="w-5 h-5"/></button>
                     <button onClick={cancelEdit} className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg"><X className="w-5 h-5"/></button>
@@ -246,9 +238,18 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-slate-500 text-sm border-r border-slate-200 max-w-[150px] truncate">{s.description || '-'}</td>
-                    <td className="text-center font-bold text-blue-700 text-sm text-xs font-semibold">{q.quotaPrimary > 0 ? q.quotaPrimary + ' tiết' : '-'}</td>
-                    <td className="text-center font-bold text-emerald-700 text-sm text-xs font-semibold">{q.quotaMiddle > 0 ? q.quotaMiddle + ' tiết' : '-'}</td>
-                    <td className="text-center font-bold text-amber-700 text-sm text-xs font-semibold">{q.quotaHigh > 0 ? q.quotaHigh + ' tiết' : '-'}</td>
+                    <td className="text-center font-bold text-blue-700 text-[11px] font-semibold">{q.quotaG1 > 0 ? q.quotaG1 : '-'}</td>
+   <td className="text-center font-bold text-blue-700 text-[11px] font-semibold">{q.quotaG2 > 0 ? q.quotaG2 : '-'}</td>
+   <td className="text-center font-bold text-blue-700 text-[11px] font-semibold">{q.quotaG3 > 0 ? q.quotaG3 : '-'}</td>
+   <td className="text-center font-bold text-blue-700 text-[11px] font-semibold">{q.quotaG4 > 0 ? q.quotaG4 : '-'}</td>
+   <td className="text-center font-bold text-blue-700 text-[11px] font-semibold border-r border-slate-200">{q.quotaG5 > 0 ? q.quotaG5 : '-'}</td>
+   <td className="text-center font-bold text-emerald-700 text-[11px] font-semibold">{q.quotaG6 > 0 ? q.quotaG6 : '-'}</td>
+   <td className="text-center font-bold text-emerald-700 text-[11px] font-semibold">{q.quotaG7 > 0 ? q.quotaG7 : '-'}</td>
+   <td className="text-center font-bold text-emerald-700 text-[11px] font-semibold">{q.quotaG8 > 0 ? q.quotaG8 : '-'}</td>
+   <td className="text-center font-bold text-emerald-700 text-[11px] font-semibold border-r border-slate-200">{q.quotaG9 > 0 ? q.quotaG9 : '-'}</td>
+   <td className="text-center font-bold text-amber-700 text-[11px] font-semibold">{q.quotaG10 > 0 ? q.quotaG10 : '-'}</td>
+   <td className="text-center font-bold text-amber-700 text-[11px] font-semibold">{q.quotaG11 > 0 ? q.quotaG11 : '-'}</td>
+   <td className="text-center font-bold text-amber-700 text-[11px] font-semibold border-r border-slate-200">{q.quotaG12 > 0 ? q.quotaG12 : '-'}</td>
                     <td className="p-2 p-2 text-right border border-slate-200">
                       <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-[#00A99D] rounded-lg"><Edit2 className="w-4 h-4"/></button>
                       <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 rounded-lg"><Trash2 className="w-4 h-4"/></button>
@@ -257,29 +258,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                 )
               })}
             </tbody>
-            <tfoot className="text-xs font-semibold">
-              <tr>
-                <td colSpan={4} className="px-6 py-4 font-bold text-slate-700 text-sm text-right border-r border-slate-200">
-                  Tổng số tiết {filterProgram !== "ALL_PROGRAMS" ? `theo ${filterProgram}` : "trên hệ thống"}:
-                </td>
-                <td className="px-2 py-3 text-center border-r border-slate-200">
-                  <span className={`px-2 py-1 rounded block text-xs font-bold shadow-sm ${totalPrimary > 40 ? 'bg-red-500 text-white' : 'bg-blue-600 text-white'}`}>
-                    {totalPrimary} / 40
-                  </span>
-                </td>
-                <td className="px-2 py-3 text-center border-r border-slate-200">
-                  <span className={`px-2 py-1 rounded block text-xs font-bold shadow-sm ${totalMiddle > 40 ? 'bg-red-500 text-white' : 'bg-emerald-600 text-white'}`}>
-                    {totalMiddle} / 40
-                  </span>
-                </td>
-                <td className="px-2 py-3 text-center border-r border-slate-200">
-                  <span className={`px-2 py-1 rounded block text-xs font-bold shadow-sm ${totalHigh > 40 ? 'bg-red-500 text-white' : 'bg-amber-600 text-white'}`}>
-                    {totalHigh} / 40
-                  </span>
-                </td>
-                <td className="p-2 border border-slate-200"></td>
-              </tr>
-            </tfoot>
+            
           </table>
         </div>
       </div>
