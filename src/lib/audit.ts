@@ -10,17 +10,28 @@ export async function logActivity(
   newValues?: any,
   ipAddress?: string
 ) {
+  let resolvedIp = ipAddress;
+  if (!resolvedIp) {
+    try {
+      const { headers } = require('next/headers');
+      const reqHeaders = await headers();
+      resolvedIp = reqHeaders.get('x-forwarded-for')?.split(',')[0] || reqHeaders.get('x-real-ip') || '127.0.0.1';
+    } catch (e) {
+      resolvedIp = '127.0.0.1';
+    }
+  }
+
   try {
     await prisma.auditLog.create({
       data: {
         userId: userId || "SYSTEM",
         userEmail: userEmail || "SYSTEM",
         action,
-        targetTable,
-        targetId,
+        targetTable: targetTable || "System",
+        targetId: targetId || "SYSTEM",
         oldValues: oldValues ? (typeof oldValues === "string" ? oldValues : JSON.stringify(oldValues)) : null,
         newValues: newValues ? (typeof newValues === "string" ? newValues : JSON.stringify(newValues)) : null,
-        ipAddress: ipAddress || "N/A"
+        ipAddress: resolvedIp
       }
     });
   } catch (error) {

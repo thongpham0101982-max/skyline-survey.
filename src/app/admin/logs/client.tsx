@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Search, Filter, RefreshCw, Clock, User, Eye, X, Shield } from "lucide-react"
+import { Search, Filter, RefreshCw, Clock, User, Eye, X, Shield, Globe } from "lucide-react"
 
 export function LogsClient({ initialLogs, total, page, limit, search, selectedAction, selectedRole, actions, roles }: any) {
   const router = useRouter()
@@ -61,7 +61,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
           <input 
             type="text" 
-            placeholder="Tìm theo Email, Bảng dữ liệu, Hoạt động..." 
+            placeholder="Tìm theo Email, Họ tên, Bảng dữ liệu, Hoạt động..." 
             value={searchVal}
             onChange={e => setSearchVal(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleFilter()}
@@ -116,11 +116,11 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
               <th className="px-6 py-4 font-black">Thời gian</th>
               <th className="px-6 py-4 font-black">Tài khoản</th>
+              <th className="px-6 py-4 font-black">Họ và tên</th>
               <th className="px-6 py-4 font-black">Nhóm quyền</th>
-              <th className="px-6 py-4 font-black">Hoạt động</th>
-              <th className="px-6 py-4 font-black">Bảng dữ liệu</th>
-              <th className="px-6 py-4 font-black">Mã đối tượng</th>
-              <th className="px-6 py-4 font-black">Chi tiết thông tin</th>
+              <th className="px-6 py-4 font-black">Thao tác</th>
+              <th className="px-6 py-4 font-black">Thông tin chi tiết</th>
+              <th className="px-6 py-4 font-black">Địa chỉ IP</th>
               <th className="px-6 py-4 text-center font-black">Dữ liệu gốc</th>
             </tr>
           </thead>
@@ -143,10 +143,13 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                       {log.userEmail}
                     </span>
                   </td>
+                  <td className="px-6 py-3.5 text-slate-755 font-bold">
+                    {log.userFullName}
+                  </td>
                   <td className="px-6 py-3.5 text-slate-700 whitespace-nowrap">
                     <span className="flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5 text-slate-400" />
-                      <span className="font-semibold text-slate-600">{log.roleName}</span>
+                      <span className="font-semibold text-slate-650">{log.roleName}</span>
                     </span>
                   </td>
                   <td className="px-6 py-3.5 whitespace-nowrap">
@@ -159,16 +162,18 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                       {log.action}
                     </span>
                   </td>
-                  <td className="px-6 py-3.5 text-slate-650 font-mono text-[11px]">{log.targetTable || "—"}</td>
-                  <td className="px-6 py-3.5 text-slate-400 font-mono text-[11px] max-w-[150px] truncate" title={log.targetId}>
-                    {log.targetId || "—"}
-                  </td>
                   <td className="px-6 py-3.5 text-slate-600 font-medium">
                     {log.newValues && !log.newValues.startsWith("{") && !log.newValues.startsWith("[") ? (
                       <span className={isFailed ? "text-rose-600 font-bold" : ""}>{log.newValues}</span>
                     ) : (
-                      <span className="text-slate-400 font-mono text-[11px]">IP: {log.ipAddress || "N/A"}</span>
+                      <span className="text-slate-400 font-mono text-[11px]">{log.targetTable || "System"}: {log.targetId || "SYSTEM"}</span>
                     )}
+                  </td>
+                  <td className="px-6 py-3.5 text-slate-550 font-mono text-[11px]">
+                    <span className="flex items-center gap-1">
+                      <Globe className="w-3.5 h-3.5 text-slate-400" />
+                      {log.ipAddress || "127.0.0.1"}
+                    </span>
                   </td>
                   <td className="px-6 py-3.5 text-center whitespace-nowrap">
                     {(log.oldValues || (log.newValues && (log.newValues.startsWith("{") || log.newValues.startsWith("[")))) ? (

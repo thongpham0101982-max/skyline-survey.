@@ -56,27 +56,34 @@ export default async function LogsPage({ searchParams }: { searchParams: any }) 
     prisma.auditLog.count({ where })
   ])
 
-  // Fetch users for the current page logs to match roles
+  // Fetch users for the current page logs to match roles and full names
   const logUserIds = Array.from(new Set(logs.map(l => l.userId).filter(id => id && id !== "N/A" && id !== "SYSTEM")))
   const users = await prisma.user.findMany({
     where: { id: { in: logUserIds } },
-    select: { id: true, role: true }
+    select: { id: true, role: true, fullName: true }
   })
   const userRoleMap = new Map(users.map(u => [u.id, u.role]))
+  const userFullNameMap = new Map(users.map(u => [u.id, u.fullName]))
 
   const mappedLogs = logs.map(log => {
     let roleCode = userRoleMap.get(log.userId) || null
+    let fullName = userFullNameMap.get(log.userId) || null
     
     // Fallback detection from email/actions
     if (!roleCode && log.userEmail) {
-      if (log.userEmail.includes("teacher")) roleCode = "TEACHER"
-      else if (log.userEmail === "admin@skyline.edu") roleCode = "ADMIN"
+      if (log.userEmail.includes("teacher")) {
+        roleCode = "TEACHER";
+      } else if (log.userEmail === "admin@skyline.edu") {
+        roleCode = "ADMIN";
+        fullName = "System Admin";
+      }
     }
 
     return {
       ...log,
       roleCode,
-      roleName: roleCode ? (roleMap.get(roleCode) || roleCode) : "Hệ thống / Khách"
+      roleName: roleCode ? (roleMap.get(roleCode) || roleCode) : "Hệ thống / Khách",
+      userFullName: fullName || "—"
     }
   })
 
