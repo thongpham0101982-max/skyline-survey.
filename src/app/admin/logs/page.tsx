@@ -10,7 +10,7 @@ export default async function LogsPage({ searchParams }: { searchParams: any }) 
   
   const params = await searchParams;
   const page = parseInt(params.page) || 1
-  const limit = 50
+  const limit = 10 // Show 10 rows per page as requested
   const search = params.search || ""
   const action = params.action || ""
   const roleFilter = params.role || ""
@@ -36,14 +36,19 @@ export default async function LogsPage({ searchParams }: { searchParams: any }) 
   })
   const roleMap = new Map(roles.map(r => [r.code, r.name]))
 
-  // If filtering by role, we find matching userIds first
+  // If filtering by role, we find matching userIds and userEmails to catch all logs for all accounts of that group
   if (roleFilter) {
     const usersWithRole = await prisma.user.findMany({
       where: { role: roleFilter },
-      select: { id: true }
+      select: { id: true, email: true }
     })
     const userIds = usersWithRole.map(u => u.id)
-    where.userId = { in: userIds }
+    const userEmails = usersWithRole.map(u => u.email).filter(Boolean)
+    
+    where.OR = [
+      { userId: { in: userIds } },
+      { userEmail: { in: userEmails } }
+    ]
   }
 
   const [logs, total] = await Promise.all([
