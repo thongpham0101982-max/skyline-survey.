@@ -6952,7 +6952,9 @@ return {
                                   const subNameNormalized = subName.normalize("NFC");
                                   const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
                                   const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
-                                  const isThinkingSkills = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && isGrade1;
+                                  // Only use ThinkingSkillsForm UI when data has 5 criteria (Logic, Liên tưởng, Phản biện, Giải quyết VĐ, % hoàn thành)
+                                  const _nltdScoreArr = (() => { try { if (sc.scores) { const _p = JSON.parse(sc.scores); return Array.isArray(_p) ? _p : [_p]; } } catch {} return []; })();
+                                  const isThinkingSkills = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && isGrade1 && _nltdScoreArr.length >= 5;
 
                                   const isEnglish = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
                                   const isToan = subName.includes("toán") || subCode.includes("math") || subCode.includes("mth");
