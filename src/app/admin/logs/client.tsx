@@ -1,15 +1,16 @@
 "use client"
 import { useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { Search, Filter, RefreshCw, Clock, User, Eye, X } from "lucide-react"
+import { Search, Filter, RefreshCw, Clock, User, Eye, X, Shield } from "lucide-react"
 
-export function LogsClient({ initialLogs, total, page, limit, search, selectedAction, actions }: any) {
+export function LogsClient({ initialLogs, total, page, limit, search, selectedAction, selectedRole, actions, roles }: any) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
   const [searchVal, setSearchVal] = useState(search)
   const [actionVal, setActionVal] = useState(selectedAction)
+  const [roleVal, setRoleVal] = useState(selectedRole || "")
   const [detailsLog, setDetailsLog] = useState<any>(null)
 
   const handleFilter = () => {
@@ -19,6 +20,9 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
     
     if (actionVal) params.set("action", actionVal)
     else params.delete("action")
+
+    if (roleVal) params.set("role", roleVal)
+    else params.delete("role")
 
     params.set("page", "1")
     router.push(`${pathname}?${params.toString()}`)
@@ -33,6 +37,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
   const handleReset = () => {
     setSearchVal("")
     setActionVal("")
+    setRoleVal("")
     router.push(pathname)
   }
 
@@ -51,7 +56,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
   return (
     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
       {/* Filters bar */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col lg:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
           <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
           <input 
@@ -63,7 +68,19 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none text-sm font-semibold transition-all bg-white"
           />
         </div>
-        <div className="w-full sm:w-56">
+        <div className="w-full lg:w-48">
+          <select 
+            value={roleVal} 
+            onChange={e => setRoleVal(e.target.value)}
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-bold cursor-pointer"
+          >
+            <option value="">-- Nhóm quyền --</option>
+            {roles.map((r: any) => (
+              <option key={r.code} value={r.code}>{r.name}</option>
+            ))}
+          </select>
+        </div>
+        <div className="w-full lg:w-48">
           <select 
             value={actionVal} 
             onChange={e => setActionVal(e.target.value)}
@@ -78,7 +95,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
         <div className="flex gap-2">
           <button 
             onClick={handleFilter}
-            className="px-5 py-2.5 bg-[#00A99D] hover:bg-[#009186] text-white font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+            className="px-5 py-2.5 bg-[#00A99D] hover:bg-[#009186] text-white font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer whitespace-nowrap"
           >
             <Filter className="w-4 h-4" /> Lọc
           </button>
@@ -99,6 +116,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
             <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-bold">
               <th className="px-6 py-4 font-black">Thời gian</th>
               <th className="px-6 py-4 font-black">Tài khoản</th>
+              <th className="px-6 py-4 font-black">Nhóm quyền</th>
               <th className="px-6 py-4 font-black">Hoạt động</th>
               <th className="px-6 py-4 font-black">Bảng dữ liệu</th>
               <th className="px-6 py-4 font-black">Mã đối tượng</th>
@@ -123,6 +141,12 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                     <span className="flex items-center gap-1.5">
                       <User className="w-3.5 h-3.5 text-slate-400" />
                       {log.userEmail}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3.5 text-slate-700 whitespace-nowrap">
+                    <span className="flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-slate-400" />
+                      <span className="font-semibold text-slate-600">{log.roleName}</span>
                     </span>
                   </td>
                   <td className="px-6 py-3.5 whitespace-nowrap">
@@ -162,7 +186,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
             })}
             {initialLogs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-10 text-center text-slate-400 font-medium">
+                <td colSpan={8} className="px-6 py-10 text-center text-slate-400 font-medium">
                   Không tìm thấy hoạt động nào được ghi nhận.
                 </td>
               </tr>
