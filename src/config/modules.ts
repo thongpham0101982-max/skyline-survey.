@@ -35,7 +35,6 @@ export const APP_CATEGORIES = [
       { code: "USERS", name: "Tài khoản Nhân sự", icon: Users, href: "/admin/users", requiresAdmin: true },
       { code: "CAMPUSES", name: "Quản lý Cơ sở", icon: Building2, href: "/admin/campuses", requiresAdmin: true },
       { code: "PARENTS", name: "Tài khoản PHHS", icon: UserPlus, href: "/admin/parents" },
-      { code: "SCHOOL_SYNC", name: "Đồng bộ API Trường", icon: RefreshCcw, href: "/admin/school-sync" },
       { code: "CHATBOT_CONFIGS", name: "Cấu hình Chatbot", icon: MessageSquare, href: "/admin/chatbot-configs", requiresAdmin: true },
     ]
   },
