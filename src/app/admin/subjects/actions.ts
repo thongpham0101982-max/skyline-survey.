@@ -16,12 +16,6 @@ export async function createSubject(code: string, name: string, level: string, d
           quotaPrimary: quota.quotaPrimary || 0, quotaMiddle: quota.quotaMiddle || 0, quotaHigh: quota.quotaHigh || 0,
           quotaG1: quota.quotaG1 || 0, quotaG2: quota.quotaG2 || 0, quotaG3: quota.quotaG3 || 0, quotaG4: quota.quotaG4 || 0, quotaG5: quota.quotaG5 || 0,
           quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: quota.quotaG8 || 0, quotaG9: quota.quotaG9 || 0,
-          quotaG10: quota.quotaG10 || 0, quotaG11: quota.quotaG11 || 0, quotaG12: quota.quotaG12 || 0,
-          quotaG1: quota.quotaG1 || 0, quotaG2: quota.quotaG2 || 0, quotaG3: quota.quotaG3 || 0, quotaG4: quota.quotaG4 || 0, quotaG5: quota.quotaG5 || 0,
-          quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: quota.quotaG8 || 0, quotaG9: quota.quotaG9 || 0,
-          quotaG10: quota.quotaG10 || 0, quotaG11: quota.quotaG11 || 0, quotaG12: quota.quotaG12 || 0,
-          quotaG1: quota.quotaG1 || 0, quotaG2: quota.quotaG2 || 0, quotaG3: quota.quotaG3 || 0, quotaG4: quota.quotaG4 || 0, quotaG5: quota.quotaG5 || 0,
-          quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: quota.quotaG8 || 0, quotaG9: quota.quotaG9 || 0,
           quotaG10: quota.quotaG10 || 0, quotaG11: quota.quotaG11 || 0, quotaG12: quota.quotaG12 || 0
         }
       })
@@ -46,14 +40,14 @@ export async function updateSubject(id: string, code: string, name: string, leve
       if (existingQuota) {
         await prisma.subjectQuota.update({
           where: { id: existingQuota.id },
-          data: { quotaPrimary: quota.quotaPrimary || 0, quotaMiddle: quota.quotaMiddle || 0, quotaHigh: quota.quotaHigh || 0 }
+          data: { quotaPrimary: quota.quotaPrimary || 0, quotaMiddle: quota.quotaMiddle || 0, quotaHigh: quota.quotaHigh || 0, quotaG1: quota.quotaG1 || 0, quotaG2: quota.quotaG2 || 0, quotaG3: quota.quotaG3 || 0, quotaG4: quota.quotaG4 || 0, quotaG5: quota.quotaG5 || 0, quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: quota.quotaG8 || 0, quotaG9: quota.quotaG9 || 0, quotaG10: quota.quotaG10 || 0, quotaG11: quota.quotaG11 || 0, quotaG12: quota.quotaG12 || 0 }
         })
       } else {
         await prisma.subjectQuota.create({
           data: {
             subjectId: id,
             academicYearId: quota.academicYearId,
-            quotaPrimary: quota.quotaPrimary || 0, quotaMiddle: quota.quotaMiddle || 0, quotaHigh: quota.quotaHigh || 0
+            quotaPrimary: quota.quotaPrimary || 0, quotaMiddle: quota.quotaMiddle || 0, quotaHigh: quota.quotaHigh || 0, quotaG1: quota.quotaG1 || 0, quotaG2: quota.quotaG2 || 0, quotaG3: quota.quotaG3 || 0, quotaG4: quota.quotaG4 || 0, quotaG5: quota.quotaG5 || 0, quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: quota.quotaG8 || 0, quotaG9: quota.quotaG9 || 0, quotaG10: quota.quotaG10 || 0, quotaG11: quota.quotaG11 || 0, quotaG12: quota.quotaG12 || 0
           }
         })
       }
