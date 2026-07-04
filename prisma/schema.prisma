@@ -413,6 +413,7 @@ model SubjectQuota {
   id             String       @id @default(cuid())
   subjectId      String
   academicYearId String
+  studyProgram   String       @default("DEFAULT")
   quota          Int          @default(0)
   quotaPrimary   Int          @default(0)
   quotaMiddle    Int          @default(0)
@@ -432,7 +433,7 @@ model SubjectQuota {
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
-  @@unique([subjectId, academicYearId])
+  @@unique([subjectId, academicYearId, studyProgram])
 }
 
 model Role {
