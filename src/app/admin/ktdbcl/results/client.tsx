@@ -80,7 +80,102 @@ export function ResultsClient({
   const [gridRows, setGridRows] = useState<any[]>([])
   const [hasChanges, setHasChanges] = useState(false)
   const [savingGrid, setSavingGrid] = useState(false)
+  
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1)
+  const rowsPerPage = 10
 
+  const handleDownloadSampleExcel = () => {
+    const wb = XLSX.utils.book_new()
+    const header = [
+      "Mã HS", "Họ Tên", "Hình thức (CA_NHAN/DONG_DOI)", 
+      "Loại giải (GIAI_THUONG/HUY_CHUONG/CHUNG_NHAN/KHAC)", 
+      "Mức giải (NHAT/NHI/BA/KHUYEN_KHICH/VANG/BAC/DONG)", 
+      "Tên giải thưởng", "Mã GV Bồi dưỡng (Tùy chọn)"
+    ]
+    const data = [header]
+    
+    const uniqueStudents = Array.from(new Set(gridRows.map(r => r.studentId)))
+      .map(id => gridRows.find(r => r.studentId === id))
+      .filter(Boolean)
+
+    if (uniqueStudents.length > 0) {
+      uniqueStudents.slice(0, 5).forEach(s => {
+        data.push([
+          s.studentCode, s.studentName, "CA_NHAN", "GIAI_THUONG", "NHAT", "Giải Nhất", ""
+        ])
+      })
+    } else {
+      data.push(["0501030347", "Nguyễn Văn A", "CA_NHAN", "GIAI_THUONG", "NHAT", "Giải Nhất", ""])
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    XLSX.utils.book_append_sheet(wb, ws, "Mau_Nhap_Thanh_Tich")
+    XLSX.writeFile(wb, "Mau_Nhap_Thanh_Tich.xlsx")
+  }
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      const bstr = evt.target?.result
+      const wb = XLSX.read(bstr, { type: "binary" })
+      const wsname = wb.SheetNames[0]
+      const ws = wb.Sheets[wsname]
+      const data = XLSX.utils.sheet_to_json(ws)
+      
+      let importedCount = 0;
+      setGridRows(prev => {
+        const newRows = [...prev]
+        data.forEach((row: any) => {
+          const studentCode = row["Mã HS"] || row["Mã học sinh"] || row["studentCode"]
+          if (!studentCode) return
+          
+          const studentIdx = newRows.findIndex(r => r.studentCode === studentCode)
+          if (studentIdx === -1) return
+          
+          const student = newRows[studentIdx]
+          
+          const type = row["Hình thức (CA_NHAN/DONG_DOI)"] || row["Hình thức"] || "CA_NHAN"
+          const category = row["Loại giải (GIAI_THUONG/HUY_CHUONG/CHUNG_NHAN/KHAC)"] || row["Loại giải"] || ""
+          const level = row["Mức giải (NHAT/NHI/BA/KHUYEN_KHICH/VANG/BAC/DONG)"] || row["Mức giải"] || ""
+          const name = row["Tên giải thưởng"] || row["Tên thành tích"] || getAutoName(category, level)
+          
+          if (!category) return;
+          importedCount++;
+
+          const emptyRowIdx = newRows.findIndex(r => r.studentCode === studentCode && !r.category)
+          if (emptyRowIdx !== -1) {
+            newRows[emptyRowIdx] = { ...newRows[emptyRowIdx], type, category, level, name }
+          } else {
+            let lastIdx = studentIdx;
+            for(let i=studentIdx+1; i<newRows.length; i++) {
+              if(newRows[i].studentCode === studentCode) lastIdx = i; else break;
+            }
+            newRows.splice(lastIdx + 1, 0, {
+              gridRowId: `temp-${student.studentId}-${Date.now()}-${Math.random()}`,
+              studentId: student.studentId,
+              studentCode: student.studentCode,
+              studentName: student.studentName,
+              gender: student.gender,
+              className: student.className,
+              campusName: student.campusName,
+              achievementId: null,
+              name, type, category, level, teacherId: "", teacherName: ""
+            })
+          }
+        })
+        return newRows
+      })
+      setHasChanges(true)
+      alert(`Đã import ${importedCount} thành tích thành công!`)
+      if (e.target) e.target.value = ''
+    }
+    reader.readAsBinaryString(file)
+  }
+  
   // --- Sub-Tab 2: Reports State ---
   const [reportFilter, setReportFilter] = useState({
     campusId: "",
@@ -523,15 +618,33 @@ export function ResultsClient({
           </div>
 
           {/* Bottom Card: Excel Grid Table */}
-          {selectedExamId && (
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
-              <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4">
-                <h3 className="font-bold text-slate-800 text-sm">
-                  Bảng Thành Tích Kỳ Thi: {currentExam?.name}
-                </h3>
-                <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
-                  Tổng số học sinh đăng ký dự thi: <strong className="text-slate-700">{new Set(gridRows.map(r => r.studentId)).size}</strong> em. Nhập thông tin trực tiếp vào ô tương ứng.
-                </p>
+          {selectedExamId && (() => {
+            const uniqueStudentIds = Array.from(new Set(gridRows.map(r => r.studentId)))
+            const totalPages = Math.ceil(uniqueStudentIds.length / rowsPerPage) || 1
+            const pagedStudentIds = uniqueStudentIds.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+            const pagedGridRows = gridRows.filter(r => pagedStudentIds.includes(r.studentId))
+            
+            return (
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-6 animate-fade-in">
+              <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-[#00A99D]" />
+                    Bảng Thành Tích Kỳ Thi: <span className="text-indigo-700">{currentExam?.name}</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-1">
+                    Tổng số học sinh dự thi: <strong className="text-slate-700">{uniqueStudentIds.length}</strong> em. 
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button onClick={handleDownloadSampleExcel} className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all hover:scale-105">
+                    <Download className="w-4 h-4" /> Tải File Mẫu
+                  </button>
+                  <label className="flex items-center gap-1.5 px-4 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-sm hover:shadow hover:-translate-y-0.5">
+                    <FileSpreadsheet className="w-4 h-4" /> Nhập từ Excel
+                    <input type="file" accept=".xlsx, .xls" className="hidden" onChange={handleImportExcel} />
+                  </label>
+                </div>
               </div>
 
               {/* Table Grid Wrapper with custom scrollbar */}
@@ -564,7 +677,7 @@ export function ResultsClient({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                      {gridRows.map((row, idx) => {
+                      {pagedGridRows.map((row, idx) => {
                         const hasAward = row.category !== "" && row.level !== ""
 
                         return (
@@ -591,7 +704,7 @@ export function ResultsClient({
                               <select
                                 value={row.type}
                                 onChange={e => handleCellChange(row.gridRowId, "type", e.target.value)}
-                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
+                                className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all"
                               >
                                 <option value="CA_NHAN">Cá nhân</option>
                                 <option value="DONG_DOI">Đồng đội</option>
@@ -603,7 +716,7 @@ export function ResultsClient({
                               <select
                                 value={row.category}
                                 onChange={e => handleCellChange(row.gridRowId, "category", e.target.value)}
-                                className="w-full border border-slate-200 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
+                                className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all"
                               >
                                 <option value="">-- Không giải --</option>
                                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -707,8 +820,37 @@ export function ResultsClient({
                   </table>
                 </div>
               )}
+
+              {/* Pagination Footer */}
+              {uniqueStudentIds.length > 0 && (
+                <div className="bg-slate-50/80 border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <p className="text-xs font-bold text-slate-500">
+                    Hiển thị <strong className="text-indigo-700">{(currentPage - 1) * rowsPerPage + 1}</strong> đến <strong className="text-indigo-700">{Math.min(currentPage * rowsPerPage, uniqueStudentIds.length)}</strong> trong tổng số <strong className="text-slate-800">{uniqueStudentIds.length}</strong> học sinh
+                  </p>
+                  <div className="flex items-center gap-2 bg-white rounded-xl shadow-sm border border-slate-200 p-1">
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+                    >
+                      Trước
+                    </button>
+                    <div className="px-3 py-1 text-xs font-extrabold text-indigo-700 bg-indigo-50 rounded-lg">
+                      {currentPage} / {totalPages}
+                    </div>
+                    <button 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-40 disabled:hover:bg-transparent transition-all"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+            )
+          })()}
         </div>
       )}
 
