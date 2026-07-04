@@ -714,6 +714,36 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             </table>
           </div>
         )}
+
+        {/* Pagination Footer */}
+        {filteredStudents.length > 0 && (
+          <div className="bg-slate-50/80 border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto rounded-b-2xl">
+            <p className="text-xs font-bold text-slate-500">
+              Hiển thị <strong className="text-indigo-700">{(currentPage - 1) * rowsPerPage + 1}</strong> đến <strong className="text-indigo-700">{Math.min(currentPage * rowsPerPage, filteredStudents.length)}</strong> trong tổng số <strong className="text-slate-800">{filteredStudents.length}</strong> học sinh
+            </p>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                .map((p, idx, arr) => (
+                  <div key={p} className="flex items-center">
+                    {idx > 0 && arr[idx - 1] !== p - 1 && (
+                      <span className="px-1.5 text-slate-400 font-bold">...</span>
+                    )}
+                    <button
+                      onClick={() => setCurrentPage(p)}
+                      className={`w-7 h-7 mx-0.5 flex items-center justify-center rounded-md text-xs font-bold transition-all ${
+                        currentPage === p
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
