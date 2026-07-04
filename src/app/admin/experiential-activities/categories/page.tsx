@@ -1,4 +1,5 @@
 "use client";
+import { ExperientialTabs } from '@/components/ExperientialTabs';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -59,6 +60,7 @@ export default function CategoriesPage() {
 
   return (
     <div className="p-6">
+      <ExperientialTabs activeTab="categories" />
       <h1 className="text-2xl font-bold mb-6">Quản lý Danh mục nhỏ (Categories)</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

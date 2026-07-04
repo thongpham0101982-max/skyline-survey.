@@ -1,4 +1,5 @@
 "use client";
+import { ExperientialTabs } from '@/components/ExperientialTabs';
 import React, { useState, useEffect } from 'react';
 
 export default function ConfigPage() {
@@ -11,8 +12,7 @@ export default function ConfigPage() {
       const res = await fetch('/api/activities/categories');
       const data = await res.json();
       if (data.success) {
-        setCategories(data.data.filter((c: any) => c.type 
-=== 'GROUP'));
+        setCategories(data.data.filter((c: any) => c.type === 'GROUP'));
       }
     } catch (err) {
       console.error(err);
@@ -44,7 +44,8 @@ export default function ConfigPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Cầu hình: Nhóm Hoạt động</h1>
+      <ExperientialTabs activeTab="config" />
+      <h1 className="text-2xl font-bold mb-6">Cấu hình: Nhóm Hoạt động</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-4 shadow rounded-lg h-fit">
@@ -69,7 +70,7 @@ export default function ConfigPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Thứ tự hiển thỉ</label>
+              <label className="block text-sm font-medium mb-1">Thứ tự hiển thị</label>
               <input 
                 type="number"
                 className="w-full border rounded p-2"
@@ -78,7 +79,7 @@ export default function ConfigPage() {
               />
             </div>
             <button type="submit" className="w-full bg-blue-600 text-white rounded p-2 hover:bg-blue-700">
-              Lău�nhóm hoạt động
+              Lưu nhóm hoạt động
             </button>
           </form>
         </div>

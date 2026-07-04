@@ -1,4 +1,5 @@
 "use client";
+import { ExperientialTabs } from '@/components/ExperientialTabs';
 import React, { useState, useEffect } from 'react';
 
 export default function CatalogPage() {
@@ -58,6 +59,7 @@ export default function CatalogPage() {
 
   return (
     <div className="p-6">
+      <ExperientialTabs activeTab="catalog" />
       <h1 className="text-2xl font-bold mb-6">Quản lý Danh mục hoạt động mẫu</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
