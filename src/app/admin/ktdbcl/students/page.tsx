@@ -16,6 +16,7 @@ export default async function StudentsPage() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      code: true,
       name: true,
       grade: true,
       academicYearId: true,
@@ -31,7 +32,8 @@ export default async function StudentsPage() {
     orderBy: { campusName: "asc" },
     select: {
       id: true,
-      campusName: true
+      campusName: true,
+      level: true
     }
   })
 

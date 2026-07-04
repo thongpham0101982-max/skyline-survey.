@@ -113,7 +113,7 @@ export default function StudentsClient({ exams, campuses, classes, academicYears
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       result = result.filter(
-        s => s.studentName.toLowerCase().includes(term) || s.studentCode.toLowerCase().includes(term)
+        s => (s.studentName || '').toLowerCase().includes(term) || (s.studentCode || '').toLowerCase().includes(term)
       )
     }
     return result
@@ -132,7 +132,7 @@ export default function StudentsClient({ exams, campuses, classes, academicYears
     if (modalSearchTerm) {
       const term = modalSearchTerm.toLowerCase()
       result = result.filter(
-        s => s.studentName.toLowerCase().includes(term) || s.studentCode.toLowerCase().includes(term)
+        s => (s.studentName || '').toLowerCase().includes(term) || (s.studentCode || '').toLowerCase().includes(term)
       )
     }
     return result
