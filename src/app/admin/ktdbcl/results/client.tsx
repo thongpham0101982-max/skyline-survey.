@@ -7,7 +7,7 @@ import {
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { 
-  saveExamResultsGridAction,
+  saveExamResultsGridAction, upsertExamResultsAction,
   getStudentsWithResultsAction,
   getAchievementsReportAction,
   getStudentProfileWithAchievementsAction,
@@ -79,6 +79,7 @@ export function ResultsClient({
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [gridRows, setGridRows] = useState<any[]>([])
   const [hasChanges, setHasChanges] = useState(false)
+  const [changedStudentIds, setChangedStudentIds] = useState<Set<string>>(new Set())
   const [savingGrid, setSavingGrid] = useState(false)
   
   // Pagination State
@@ -389,7 +390,15 @@ export function ResultsClient({
     if (!selectedExamId) return
     setSavingGrid(true)
 
-    const invalidRow = gridRows.find(r => r.category !== "" && r.level !== "" && r.name.trim() === "")
+    const changedRowsToSave = gridRows.filter(r => changedStudentIds.has(r.studentId))
+    
+    if (changedRowsToSave.length === 0) {
+      alert("Chưa có thay đổi nào để lưu!")
+      setSavingGrid(false)
+      return
+    }
+
+    const invalidRow = changedRowsToSave.find(r => r.category !== "" && r.level !== "" && r.name.trim() === "")
     if (invalidRow) {
       alert(`Vui lòng nhập Tên thành tích cho học sinh ${invalidRow.studentName}!`)
       setSavingGrid(false)
@@ -397,7 +406,7 @@ export function ResultsClient({
     }
 
     try {
-      const rowsPayload = gridRows.map(r => ({
+      const rowsPayload = changedRowsToSave.map(r => ({
         studentId: r.studentId,
         name: r.name,
         type: r.type,
@@ -407,9 +416,10 @@ export function ResultsClient({
         teacherName: r.teacherId ? (teachers.find(t => t.id === r.teacherId)?.teacherName || null) : (r.teacherName || null)
       }))
 
-      await saveExamResultsGridAction(selectedExamId, yearId, rowsPayload)
+      await upsertExamResultsAction(selectedExamId, yearId, rowsPayload)
       setHasChanges(false)
-      alert("Đã lưu toàn bộ thành tích thành công!")
+      setChangedStudentIds(new Set())
+      alert("Đã cập nhật dữ liệu thành tích an toàn thành công!")
       loadExamStudents()
     } catch (e) {
       alert("Lỗi khi lưu thành tích!")
