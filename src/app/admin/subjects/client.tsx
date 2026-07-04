@@ -30,6 +30,18 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
     };
   }
 
+  const renderBreakdown = (q: any, grades: number[], colorClass: string) => {
+    const breakdown = grades.filter(g => q["quotaG" + g] > 0).map(g => "K" + g + ":" + q["quotaG" + g]);
+    if (breakdown.length === 0) return null;
+    return <div className={"text-[10px] font-medium mt-1 opacity-80 " + colorClass}>{breakdown.join(' · ')}</div>;
+  }
+
+  const renderBreakdown = (q: any, grades: number[], colorClass: string) => {
+    const breakdown = grades.filter(g => q[`quotaG${g}`] > 0).map(g => `K${g}:${q[`quotaG${g}`]}`);
+    if (breakdown.length === 0) return null;
+    return <div className={`text-[10px] font-medium mt-1 opacity-80 ${colorClass}`}>{breakdown.join(' · ')}</div>;
+  }
+
   const startEdit = (s?: any) => {
     if (s) {
       const q = getQuota(s);
@@ -124,7 +136,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <div className="flex items-center gap-2 flex-wrap">
               {safeYears.map((y: any) => (
                 <button key={y.id} onClick={() => setSelectedYearId(y.id)}
-                  className={\`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all \${selectedYearId === y.id ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}\`}>
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${selectedYearId === y.id ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                   {y.name}{y.status === "ACTIVE" && <span className="ml-1 opacity-75 text-[10px]">Active</span>}
                 </button>
               ))}
@@ -141,7 +153,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <div className="flex items-center gap-2 flex-wrap">
               {["ALL_PROGRAMS", "Hệ S", "Hệ Song Bằng"].map((prog) => (
                 <button key={prog} onClick={() => setFilterProgram(prog)}
-                  className={\`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all \${filterProgram === prog ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}\`}>
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterProgram === prog ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                   {prog === "ALL_PROGRAMS" ? "Tất cả Hệ" : prog}
                 </button>
               ))}
@@ -158,7 +170,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <div className="flex items-center gap-2 flex-wrap">
               {["ALL_LEVELS", "PRIMARY", "MIDDLE", "HIGH"].map((lvl) => (
                 <button key={lvl} onClick={() => setFilterLevel(lvl)}
-                  className={\`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all \${filterLevel === lvl ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}\`}>
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterLevel === lvl ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
                   {lvl === "ALL_LEVELS" ? "Tất cả các bậc" : levelLabels[lvl]}
                 </button>
               ))}
@@ -183,7 +195,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
             <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
               <tr>
                 <th className="px-6 py-4 border-r border-b border-slate-200" colSpan={4}>Thông tin Môn Học</th>
-                <th className="px-6 py-4 text-center border-r border-b border-slate-200" colSpan={3}>Số tiết (Theo Bậc) / tuần</th>
+                <th className="px-6 py-4 text-center border-r border-b border-slate-200" colSpan={3}>Số tiết (Theo Khối) / tuần</th>
                 <th className="px-6 py-4 text-right border-b border-slate-200" rowSpan={2}>Thao tác</th>
               </tr>
               <tr className="bg-white">
@@ -213,13 +225,13 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                     <td className="px-6 py-4 text-slate-500 text-sm border-r border-slate-100 max-w-[200px] truncate">{s.description || '-'}</td>
                     
                     <td className="px-6 py-4 text-center border-r border-slate-100 bg-blue-50/10">
-                      <span className="font-bold text-blue-700 text-sm">{q.quotaPrimary > 0 ? \`\${q.quotaPrimary} tiết\` : '-'}</span>
+                      <span className="font-bold text-blue-700 text-sm">{q.quotaPrimary > 0 ? `${q.quotaPrimary} tiết` : '-'}</span>
                     </td>
                     <td className="px-6 py-4 text-center border-r border-slate-100 bg-emerald-50/10">
-                      <span className="font-bold text-emerald-700 text-sm">{q.quotaMiddle > 0 ? \`\${q.quotaMiddle} tiết\` : '-'}</span>
+                      <span className="font-bold text-emerald-700 text-sm">{q.quotaMiddle > 0 ? `${q.quotaMiddle} tiết` : '-'}</span>
                     </td>
                     <td className="px-6 py-4 text-center border-r border-slate-100 bg-amber-50/10">
-                      <span className="font-bold text-amber-700 text-sm">{q.quotaHigh > 0 ? \`\${q.quotaHigh} tiết\` : '-'}</span>
+                      <span className="font-bold text-amber-700 text-sm">{q.quotaHigh > 0 ? `${q.quotaHigh} tiết` : '-'}</span>
                     </td>
 
                     <td className="px-6 py-4 text-right space-x-1">
@@ -341,8 +353,8 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       {[1,2,3,4,5].map(g => (
                         <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-blue-100 shadow-sm hover:border-blue-300 transition-colors">
                           <span className="text-xs font-semibold text-blue-700">Khối {g}</span>
-                          <input type="number" min={0} value={(formData as any)[\`quotaG\${g}\`]} 
-                            onChange={e => updateQuota(\`quotaG\${g}\`, parseInt(e.target.value)||0)}
+                          <input type="number" min={0} value={(formData as any)[`quotaG${g}`]} 
+                            onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
                             className="w-12 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none p-1" />
                         </div>
                       ))}
@@ -359,8 +371,8 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       {[6,7,8,9].map(g => (
                         <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-emerald-100 shadow-sm hover:border-emerald-300 transition-colors">
                           <span className="text-xs font-semibold text-emerald-700">Khối {g}</span>
-                          <input type="number" min={0} value={(formData as any)[\`quotaG\${g}\`]} 
-                            onChange={e => updateQuota(\`quotaG\${g}\`, parseInt(e.target.value)||0)}
+                          <input type="number" min={0} value={(formData as any)[`quotaG${g}`]} 
+                            onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
                             className="w-12 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none p-1" />
                         </div>
                       ))}
@@ -377,8 +389,8 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       {[10,11,12].map(g => (
                         <div key={g} className="flex items-center justify-between bg-white px-3 py-2.5 rounded-lg border border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
                           <span className="text-xs font-semibold text-amber-700">Khối {g}</span>
-                          <input type="number" min={0} value={(formData as any)[\`quotaG\${g}\`]} 
-                            onChange={e => updateQuota(\`quotaG\${g}\`, parseInt(e.target.value)||0)}
+                          <input type="number" min={0} value={(formData as any)[`quotaG${g}`]} 
+                            onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
                             className="w-14 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none p-1.5" />
                         </div>
                       ))}
