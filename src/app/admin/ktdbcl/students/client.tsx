@@ -56,9 +56,15 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
   // Selection states
   const [selectedExam, setSelectedExam] = useState("")
-  const [selectedCampus, setSelectedCampus] = useState(campuses[0]?.id || "")
-  const [selectedGrade, setSelectedGrade] = useState("10")
+  const [selectedCampus, setSelectedCampus] = useState("")
+  const [selectedGrade, setSelectedGrade] = useState("")
   const [selectedClass, setSelectedClass] = useState("")
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const rowsPerPage = 10
+  
+
 
   // Data states
   const [students, setStudents] = useState<any[]>([])
@@ -67,6 +73,10 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [showAllRegistered, setShowAllRegistered] = useState(false)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedExam, selectedCampus, selectedGrade, selectedClass, searchTerm, showAllRegistered])
 
   // Active exam and allowed grades definitions
   const activeExamObj = exams.find((e) => e.id === selectedExam)
@@ -91,12 +101,13 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const allowedGrades = getAllowedGrades()
 
   // Ensure selectedGrade is set when switching showAllRegistered to false
-  useEffect(() => {
-    if (!showAllRegistered && !selectedGrade) {
-      const grades = getAllowedGrades()
-      setSelectedGrade(grades[0] || "10")
-    }
-  }, [showAllRegistered, selectedGrade, activeExamObj])
+  // Removed automatic grade setting to allow "-- Chọn khối --" to persist
+  // useEffect(() => {
+  //   if (!showAllRegistered && !selectedGrade) {
+  //     const grades = getAllowedGrades()
+  //     setSelectedGrade(grades[0] || "10")
+  //   }
+  // }, [showAllRegistered, selectedGrade, activeExamObj])
 
 
   // Filter classes based on Campus, Grade and Academic Year
@@ -303,6 +314,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   const currentFilteredCount = filteredStudents.length
   const currentRegisteredCount = filteredStudents.filter((s) => s.isRegistered).length
 
+  const totalPages = Math.ceil(filteredStudents.length / rowsPerPage) || 1
+  const pagedStudents = filteredStudents.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
+
   return (
     <div className="space-y-6 text-xs font-semibold">
       {/* Sub-tabs */}
@@ -366,10 +380,11 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedExam}
               onChange={(e) => setSelectedExam(e.target.value)}
               disabled={filteredExams.length === 0}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400 text-xs"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
+              <option value="">-- Chọn kỳ thi --</option>
               {filteredExams.length === 0 ? (
-                <option value="">-- Không có kỳ thi --</option>
+                <option value="" disabled>-- Không có kỳ thi --</option>
               ) : (
                 filteredExams.map((e) => (
                   <option key={e.id} value={e.id}>
@@ -389,9 +404,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 setSelectedCampus(e.target.value)
                 setSelectedClass("")
               }}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white text-xs"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
             >
-              {showAllRegistered && <option value="">-- Tất cả cơ sở --</option>}
+              <option value="">-- Chọn cơ sở --</option>
               {campuses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.campusName}
@@ -409,9 +424,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 setSelectedGrade(e.target.value)
                 setSelectedClass("")
               }}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white text-xs"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm"
             >
-              {showAllRegistered && <option value="">-- Tất cả khối --</option>}
+              <option value="">-- Chọn khối --</option>
               {allowedGrades.map((g) => (
                 <option key={g} value={g}>
                   Khối {g}
@@ -427,21 +442,17 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               disabled={!showAllRegistered && filteredClasses.length === 0}
-              className="w-full border border-slate-200 rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#00A99D] focus:ring-1 focus:ring-[#00A99D] transition-all bg-white disabled:bg-slate-50 disabled:text-slate-400 text-xs"
+              className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all cursor-pointer shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
+              <option value="">-- Chọn lớp --</option>
               {showAllRegistered ? (
-                <>
-                  <option value="">-- Tất cả lớp --</option>
-                  {classes
-                    .filter((c) => (!selectedCampus || c.campusId === selectedCampus) && (!selectedGrade || c.grade === selectedGrade) && c.academicYearId === yearId)
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.className} ({c.campus?.campusCode || "N/A"}) - {c._count?.students || 0} HS
-                      </option>
-                    ))}
-                </>
-              ) : filteredClasses.length === 0 ? (
-                <option value="">-- Không có lớp --</option>
+                classes
+                  .filter((c) => (!selectedCampus || c.campusId === selectedCampus) && (!selectedGrade || c.grade === selectedGrade) && c.academicYearId === yearId)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.className} ({c.campus?.campusCode || "N/A"}) - {c._count?.students || 0} HS
+                    </option>
+                  ))
               ) : (
                 filteredClasses.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -638,7 +649,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700">
-                {filteredStudents.map((student) => {
+                {pagedStudents.map((student) => {
                   const isChecked = selectedIds.includes(student.id)
                   return (
                     <tr
