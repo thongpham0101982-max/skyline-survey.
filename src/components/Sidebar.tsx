@@ -72,7 +72,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
-    if (!isSuperAdmin && module) {
+    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES') return true;
       let hasParent = permissionModules?.includes(module) || false
       if (module === "KTDBCL_EXAMS") {
         hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
@@ -170,61 +170,81 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
             return (
               <div 
                 key={cat.id} 
-                className="pt-2 group/cat border-b border-white/10 pb-2 transition-all duration-300"
+                className="pt-4 border-t border-white/10 mt-2 group/cat transition-all duration-300"
               >
                 {/* Category Header */}
                 <div 
                   onClick={() => toggleCategory(cat.id)}
-                  className="px-3 py-2.5 cursor-pointer select-none flex items-center justify-between text-white/60 hover:text-white/90 transition-colors group"
+                  className="px-3 py-2 cursor-pointer select-none flex items-center justify-between text-white/60 hover:text-white/90 transition-colors group"
                 >
                   {!isCollapsed ? (
                     <div className="flex items-center gap-3">
-                      <cat.icon className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
-                      <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] group-hover:text-white/90 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.12em] group-hover:text-teal-400 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
                         {cat.name}
                       </span>
                     </div>
                   ) : (
                     <div className="w-full flex justify-center">
-                      <cat.icon className="w-4 h-4 text-white/50" />
+                      <span className="w-full text-center text-[#00A99D] block text-[10px] font-bold">{cat.name.charAt(0)}</span>
                     </div>
                   )}
                   {!isCollapsed && (
                     <ChevronDown 
-                      className={`w-3.5 h-3.5 text-white/50 group-hover/cat:text-white/70 transition-transform duration-300 ${
-                        hasActiveChild ? 'rotate-180 text-[#1E8B87]' : 'group-hover/cat:rotate-180'
+                      className={`w-3.5 h-3.5 text-[#00A99D]/50 group-hover:text-[#00A99D] transition-transform duration-300 ${
+                        hasActiveChild ? 'rotate-180 text-[#00A99D]' : ''
                       }`} 
                     />
                   )}
                 </div>
 
-                {/* Sub-items Container (Expanded on click, hover or if it has an Active Child) */}
+                {/* Sub-items Container */}
                 <div 
-                  className={`overflow-hidden transition-all duration-350 ease-in-out space-y-0.5 pl-1.5 ${
+                  className={`overflow-hidden transition-all duration-350 ease-in-out space-y-1 ${
                     (expandedCategories[cat.id] ?? hasActiveChild)
-                      ? "max-h-[500px] opacity-100 visible" 
-                      : "max-h-0 opacity-0 invisible group-hover/cat:max-h-[500px] group-hover/cat:opacity-100 group-hover/cat:visible"
+                      ? "max-h-[800px] opacity-100 visible mt-1" 
+                      : "max-h-0 opacity-0 invisible"
                   }`}
                 >
-                  {visibleModules.map((m: any) => {
+                  {visibleModules.map((m: any, index: number) => {
                     const isActive = pathname === m.href || (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/"))))
+                    
+                    // Assign colors dynamically based on index to match Teacher styling aesthetics
+                    const colorVariants = [
+                      { activeBg: "bg-amber-500/20", activeBorder: "border-amber-500/40", activeShadow: "shadow-[0_0_8px_rgba(245,158,11,0.25)]", activeText: "text-amber-400", hoverBorder: "group-hover:border-amber-500/30", hoverText: "group-hover:text-amber-400" },
+                      { activeBg: "bg-indigo-500/20", activeBorder: "border-indigo-500/40", activeShadow: "shadow-[0_0_8px_rgba(99,102,241,0.25)]", activeText: "text-indigo-400", hoverBorder: "group-hover:border-indigo-500/30", hoverText: "group-hover:text-indigo-400" },
+                      { activeBg: "bg-teal-500/20", activeBorder: "border-teal-500/40", activeShadow: "shadow-[0_0_8px_rgba(20,184,166,0.25)]", activeText: "text-teal-400", hoverBorder: "group-hover:border-teal-500/30", hoverText: "group-hover:text-teal-400" },
+                      { activeBg: "bg-sky-500/20", activeBorder: "border-sky-500/40", activeShadow: "shadow-[0_0_8px_rgba(14,165,233,0.25)]", activeText: "text-sky-400", hoverBorder: "group-hover:border-sky-500/30", hoverText: "group-hover:text-sky-400" },
+                      { activeBg: "bg-fuchsia-500/20", activeBorder: "border-fuchsia-500/40", activeShadow: "shadow-[0_0_8px_rgba(217,70,239,0.25)]", activeText: "text-fuchsia-400", hoverBorder: "group-hover:border-fuchsia-500/30", hoverText: "group-hover:text-fuchsia-400" },
+                      { activeBg: "bg-emerald-500/20", activeBorder: "border-emerald-500/40", activeShadow: "shadow-[0_0_8px_rgba(16,185,129,0.25)]", activeText: "text-emerald-400", hoverBorder: "group-hover:border-emerald-500/30", hoverText: "group-hover:text-emerald-400" },
+                      { activeBg: "bg-rose-500/20", activeBorder: "border-rose-500/40", activeShadow: "shadow-[0_0_8px_rgba(244,63,94,0.25)]", activeText: "text-rose-400", hoverBorder: "group-hover:border-rose-500/30", hoverText: "group-hover:text-rose-400" },
+                    ];
+                    const v = colorVariants[index % colorVariants.length];
+
                     return (
                       <Link 
                         key={m.code} 
                         href={m.href}
                         onClick={() => setIsOpen(false)}
-                        className={`group/item flex items-center ${isCollapsed ? 'justify-center px-1' : 'justify-between px-3'} py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                        className={`group relative flex items-center justify-between ${isCollapsed ? 'px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
                           isActive 
-                            ? "bg-white/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)] font-semibold" 
-                            : "text-white/70 hover:text-white hover:bg-white/10"
+                            ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                            : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
-                          <m.icon className={`w-4 h-4 ${isActive ? "text-[#1E8B87]" : "text-white/60 group-item-hover:text-[#1E8B87] transition-colors"}`} />
-                          {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{m.name}</span>}
+                        <div className="flex items-center">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                            isActive
+                              ? `${v.activeBg} border ${v.activeBorder} ${v.activeShadow}`
+                              : `bg-white/5 border border-white/10 ${v.hoverBorder}`
+                          }`}>
+                            <m.icon className={`w-4 h-4 transition-all ${
+                              isActive ? v.activeText : `text-slate-400 ${v.hoverText} group-hover:scale-110`
+                            }`} />
+                          </div>
+                          {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">{index + 1}. {m.name}</span>}
                         </div>
-                        {m.code === "TASKS" && taskCount > 0 && (
-                          <span className="text-[9px] font-black text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 text-xs font-semibold">
+                        {m.code === "TASKS" && taskCount > 0 && !isCollapsed && (
+                          <span className="text-[9px] font-black text-white min-w-[18px] text-center shadow-lg shadow-red-500/40 bg-red-500 rounded-full px-1.5 py-0.5">
                             {taskCount}
                           </span>
                         )}
@@ -494,26 +514,26 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   {!isCollapsed && <span>3. Hướng nghiệp</span>}
                 </Link>
 
-                {/* 4. Dự án & Trải nghiệm */}
+                {/* 4. Hoạt động trải nghiệm */}
                 <Link 
-                  href="/teacher/du-an-trai-nghiem" 
+                  href="/teacher/experiential-activities/create" 
                   onClick={() => setIsOpen(false)} 
                   className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                    pathname.includes('/teacher/du-an-trai-nghiem')
+                    pathname.includes('/teacher/experiential-activities/create')
                       ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
                       : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
                   }`}
                 >
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                    pathname.includes('/teacher/du-an-trai-nghiem')
+                    pathname.includes('/teacher/experiential-activities/create')
                       ? "bg-emerald-500/20 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]"
                       : "bg-white/5 border border-white/10 group-hover:border-emerald-500/30"
                   }`}>
                     <BookOpen className={`w-4 h-4 transition-all ${
-                      pathname.includes('/teacher/du-an-trai-nghiem') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                      pathname.includes('/teacher/experiential-activities/create') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>4. Dự án & Trải nghiệm</span>}
+                  {!isCollapsed && <span>4. Hoạt động trải nghiệm</span>}
                 </Link>
 
                 {/* 5. Cam kết học tập */}

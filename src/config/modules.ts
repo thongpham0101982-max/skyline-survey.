@@ -73,6 +73,7 @@ export const APP_CATEGORIES = [
       { code: "MANAGE_CLASSES", name: "Quản lý Lớp học", icon: Layers, href: "/admin/classes" },
       { code: "ASSIGNMENTS", name: "Phân công giảng dạy", icon: Layout, href: "/admin/teaching-assignments" },
       { code: "STUDENT_TRANSFERS", name: "Quản lý HS lưu chuyển", icon: ArrowRightLeft, href: "/admin/student-transfers" },
+      { code: "EXPERIENTIAL_ACTIVITIES", name: "Hoạt động trải nghiệm", icon: Award, href: "/admin/experiential-activities/catalog", subModules: [ { code: "EXP_ACT_CATEGORIES", name: "Danh mục", href: "/admin/experiential-activities/categories" }, { code: "EXP_ACT_CATALOG", name: "Hoạt động mẫu", href: "/admin/experiential-activities/catalog" } ] },
     ]
   },
   {
