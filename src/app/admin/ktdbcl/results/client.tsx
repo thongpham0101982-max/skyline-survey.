@@ -86,6 +86,7 @@ export function ResultsClient({
   const [bulkLevel, setBulkLevel] = useState("")
 
   const [savingGrid, setSavingGrid] = useState(false)
+  const [gridClassFilter, setGridClassFilter] = useState("")
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1)
@@ -689,10 +690,13 @@ export function ResultsClient({
 
           {/* Bottom Card: Excel Grid Table */}
           {selectedExamId && (() => {
-            const uniqueStudentIds = Array.from(new Set(gridRows.map(r => r.studentId)))
+            
+            const gridClasses = Array.from(new Set(gridRows.map(r => r.className).filter(Boolean))).sort()
+            const filteredGridRows = gridClassFilter ? gridRows.filter(r => r.className === gridClassFilter) : gridRows
+            const uniqueStudentIds = Array.from(new Set(filteredGridRows.map(r => r.studentId)))
             const totalPages = Math.ceil(uniqueStudentIds.length / rowsPerPage) || 1
             const pagedStudentIds = uniqueStudentIds.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage)
-            const pagedGridRows = gridRows.filter(r => pagedStudentIds.includes(r.studentId))
+            const pagedGridRows = filteredGridRows.filter(r => pagedStudentIds.includes(r.studentId))
             
             return (
             <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-6 animate-fade-in">
@@ -702,9 +706,19 @@ export function ResultsClient({
                     <Sparkles className="w-5 h-5 text-[#00A99D]" />
                     Bảng Thành Tích Kỳ Thi: <span className="text-indigo-700">{currentExam?.name}</span>
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium mt-1">
-                    Tổng số học sinh dự thi: <strong className="text-slate-700">{uniqueStudentIds.length}</strong> em. 
-                  </p>
+                                    <div className="flex items-center gap-4 mt-1">
+                    <p className="text-xs text-slate-500 font-medium">
+                      Tổng số: <strong className="text-slate-700">{uniqueStudentIds.length}</strong> em. 
+                    </p>
+                    <select 
+                      value={gridClassFilter} 
+                      onChange={e => { setGridClassFilter(e.target.value); setCurrentPage(1); }} 
+                      className="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
+                    >
+                      <option value="">-- Tất cả các lớp --</option>
+                      {gridClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={handleDownloadSampleExcel} className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all hover:scale-105">
