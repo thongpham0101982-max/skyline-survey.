@@ -17,7 +17,7 @@ interface StudentClientProps {
   academicYears: any[]
 }
 
-export default function StudentsClient({ exams, campuses, academicYears }: StudentClientProps) {
+export default function StudentsClient({ exams, campuses, classes, academicYears }: StudentClientProps) {
   const [yearId, setYearId] = useState("")
   const [filteredExams, setFilteredExams] = useState<any[]>([])
   
@@ -219,10 +219,8 @@ export default function StudentsClient({ exams, campuses, academicYears }: Stude
   }, [modalCampus, campuses])
 
   const filteredClasses = useMemo(() => {
-    const campus = campuses.find((c) => c.id === modalCampus)
-    if (!campus) return []
-    return campus.classes.filter((cls: any) => cls.grade === modalGrade)
-  }, [modalCampus, modalGrade, campuses])
+    return classes.filter((cls: any) => cls.campusId === modalCampus && cls.grade === modalGrade)
+  }, [modalCampus, modalGrade, classes])
 
   // Reset lớp khi đổi khối
   useEffect(() => {
