@@ -11,7 +11,8 @@ export default function ConfigPage() {
       const res = await fetch('/api/activities/categories');
       const data = await res.json();
       if (data.success) {
-        setCategories(data.data.filter((c: any) => c.type === 'GROUP'));
+        setCategories(data.data.filter((c: any) => c.type 
+=== 'GROUP'));
       }
     } catch (err) {
       console.error(err);
@@ -43,14 +44,14 @@ export default function ConfigPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">C?u h?nh: Nh�m Ho?t �?ng</h1>
+      <h1 className="text-2xl font-bold mb-6">Cầu hình: Nhóm Hoạt động</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-4 shadow rounded-lg h-fit">
-          <h2 className="text-lg font-semibold mb-4">Th�m Nh�m Ho?t �?ng m?i</h2>
+          <h2 className="text-lg font-semibold mb-4">Thêm Nhóm Hoạt động mới</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">M? H�</label>
+              <label className="block text-sm font-medium mb-1">Mã HĐ</label>
               <input 
                 required
                 className="w-full border rounded p-2"
@@ -59,7 +60,7 @@ export default function ConfigPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">T�n nh�m Ho?t �?ng</label>
+              <label className="block text-sm font-medium mb-1">Tên nhóm Hoạt động</label>
               <input 
                 required
                 className="w-full border rounded p-2"
@@ -68,7 +69,7 @@ export default function ConfigPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Th? t? hi?n th?</label>
+              <label className="block text-sm font-medium mb-1">Thứ tự hiển thỉ</label>
               <input 
                 type="number"
                 className="w-full border rounded p-2"
@@ -77,24 +78,24 @@ export default function ConfigPage() {
               />
             </div>
             <button type="submit" className="w-full bg-blue-600 text-white rounded p-2 hover:bg-blue-700">
-              L�u nh�m ho?t �?ng
+              Lău�nhóm hoạt động
             </button>
           </form>
         </div>
 
         <div className="md:col-span-2 bg-white p-4 shadow rounded-lg">
-          <h2 className="text-lg font-semibold mb-4">Danh s�ch Nh�m Ho?t �?ng</h2>
+          <h2 className="text-lg font-semibold mb-4">Danh sách Nhóm Hoạt động</h2>
           {loading ? (
-            <p>�ang t?i...</p>
+            <p>Đang tải...</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full border-collapse">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="border p-2 text-left">M? H�</th>
-                    <th className="border p-2 text-left">T�n nh�m Ho?t �?ng</th>
-                    <th className="border p-2 text-left">Th? t?</th>
-                    <th className="border p-2 text-left">Tr?ng th�i</th>
+                    <th className="border p-2 text-left">Mã HĐ</th>
+                    <th className="border p-2 text-left">Tên nhóm Hoạt động</th>
+                    <th className="border p-2 text-left">Thứ tự</th>
+                    <th className="border p-2 text-left">Trạng thái</th>
                   </tr>
                 </thead>
                 <tbody>
