@@ -26,13 +26,6 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const [activeTab, setActiveTab] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  const renderBreakdown = (q: any, grades: number[], colorClass: string) => {
-    if (!q) return null;
-    const breakdown = grades.filter(g => q[`quotaG${g}`] > 0).map(g => `K${g}:${q[`quotaG${g}`]}`);
-    if (breakdown.length === 0) return null;
-    return <div className={`text-[10px] font-medium mt-1 opacity-80 ${colorClass}`}>{breakdown.join(' · ')}</div>;
-  }
-
   const startEdit = (s?: any) => {
     if (s) {
       const progs = s.studyPrograms ? s.studyPrograms.split(', ') : ["DEFAULT"];
@@ -140,9 +133,104 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
       });
   });
 
-  const totalPrimary = explodedRows.reduce((acc: number, row: any) => acc + (row.quota.quotaPrimary || 0), 0);
-  const totalMiddle = explodedRows.reduce((acc: number, row: any) => acc + (row.quota.quotaMiddle || 0), 0);
-  const totalHigh = explodedRows.reduce((acc: number, row: any) => acc + (row.quota.quotaHigh || 0), 0);
+  const primaryRows = explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("PRIMARY")));
+  const middleRows = explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("MIDDLE")));
+  const highRows = explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("HIGH")));
+
+  const renderTable = (title: string, color: string, rows: any[], grades: number[], totalField: string) => {
+    if (rows.length === 0) return null;
+    
+    const colorClass = color === 'blue' ? 'text-blue-700 bg-blue-50 border-blue-200' : 
+                       color === 'emerald' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 
+                       'text-amber-700 bg-amber-50 border-amber-200';
+                       
+    const totalAll = rows.reduce((acc, r) => acc + (r.quota[totalField] || 0), 0);
+
+    return (
+      <div className={`bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden mb-8`}>
+        <div className={`p-4 border-b flex justify-between items-center ${colorClass}`}>
+          <div>
+            <h3 className="font-bold">{title} ({rows.length} môn)</h3>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto custom-scrollbar">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <tr className="bg-white">
+                <th className="px-6 py-3 border-r border-b border-slate-200 font-medium w-[100px]">Mã môn</th>
+                <th className="px-6 py-3 border-r border-b border-slate-200 font-medium min-w-[150px]">Tên môn</th>
+                <th className="px-6 py-3 border-r border-b border-slate-200 font-medium">Hệ học</th>
+                {grades.map(g => (
+                  <th key={g} className="px-3 py-3 text-center border-r border-b border-slate-200 font-medium">Khối {g}</th>
+                ))}
+                <th className="px-4 py-3 text-center border-r border-b border-slate-200 font-medium">Tổng</th>
+                <th className="px-4 py-3 text-right border-b border-slate-200">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {rows.map((row:any, idx: number) => {
+                const { subject: s, program: p, quota: q } = row;
+                const isFirstOfSubject = rows.findIndex(r => r.subject.id === s.id) === idx;
+                
+                return (
+                  <tr key={`${s.id}-${p}`} className="hover:bg-slate-50 transition-colors group">
+                    <td className="px-6 py-4 font-bold text-slate-700 text-sm border-r border-slate-100">
+                      {isFirstOfSubject ? s.subjectCode : <span className="text-slate-300">↳</span>}
+                    </td>
+                    <td className="px-6 py-4 font-bold text-indigo-700 text-sm border-r border-slate-100">
+                      {isFirstOfSubject ? s.subjectName : ''}
+                    </td>
+                    <td className="px-6 py-4 text-slate-700 text-sm font-semibold border-r border-slate-100">
+                      <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md">{p === "DEFAULT" ? "Chưa phân hệ" : p}</span>
+                    </td>
+                    
+                    {grades.map(g => (
+                      <td key={g} className="px-3 py-4 text-center border-r border-slate-100">
+                        <span className={`text-sm font-semibold ${q[`quotaG${g}`] > 0 ? 'text-slate-700' : 'text-slate-300'}`}>
+                          {q[`quotaG${g}`] || '-'}
+                        </span>
+                      </td>
+                    ))}
+
+                    <td className={`px-4 py-4 text-center border-r border-slate-100 font-bold ${q[totalField] > 0 ? colorClass.split(' ')[0] : 'text-slate-300'}`}>
+                      {q[totalField] || '-'}
+                    </td>
+
+                    <td className="px-4 py-4 text-right space-x-1">
+                      {isFirstOfSubject && (
+                        <>
+                          <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" title="Sửa">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" title="Xóa">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot className="bg-slate-50 border-t border-slate-200">
+              <tr>
+                <td colSpan={3 + grades.length} className="px-6 py-4 text-right font-bold text-slate-700 text-sm">
+                  Tổng số tiết {title.toLowerCase()} trên hệ thống:
+                </td>
+                <td className="px-4 py-4 text-center border-r border-slate-200">
+                  <div className={`${color === 'blue' ? 'bg-blue-600' : color === 'emerald' ? 'bg-[#00A99D]' : 'bg-amber-600'} text-white font-bold px-3 py-1.5 rounded-lg text-sm inline-block shadow-sm`}>
+                    {totalAll} / 40
+                  </div>
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -194,118 +282,25 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         </div>
       </div>
 
-      <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200/80 animate-in fade-in slide-in-from-bottom-4 duration-500 border-2 border-indigo-100 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex justify-between items-center bg-white">
-          <div>
-            <h3 className="font-bold text-slate-700">Danh mục môn học ({explodedRows.length} dòng)</h3>
-            <p className="text-sm text-[#00A99D] font-medium mt-1">Chi tiết cấu hình số tiết theo từng Hệ học</p>
-          </div>
-          <button onClick={() => startEdit()} className="px-4 py-2 bg-[#00A99D] text-white rounded-lg text-sm font-semibold flex items-center hover:bg-[#009085] shadow-sm transition-colors">
-            <Plus className="w-4 h-4 mr-2" /> Thêm Môn học
-          </button>
+      <div className="flex justify-between items-center mb-4 mt-6">
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Cấu hình số tiết theo Bậc học</h2>
+          <p className="text-sm text-slate-500 mt-1">Quản lý môn học được phân tách chi tiết theo từng Bậc và Khối lớp</p>
         </div>
-
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left whitespace-nowrap">
-            <thead className="bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="px-6 py-4 border-r border-b border-slate-200" colSpan={4}>Thông tin Môn Học</th>
-                <th className="px-6 py-4 text-center border-r border-b border-slate-200" colSpan={3}>Số tiết (Theo Khối) / tuần</th>
-                <th className="px-6 py-4 text-right border-b border-slate-200" rowSpan={2}>Thao tác</th>
-              </tr>
-              <tr className="bg-white">
-                <th className="px-6 py-3 border-r border-b border-slate-200 font-medium">Mã môn</th>
-                <th className="px-6 py-3 border-r border-b border-slate-200 font-medium">Tên môn</th>
-                <th className="px-6 py-3 border-r border-b border-slate-200 font-medium">Hệ học</th>
-                <th className="px-6 py-3 border-r border-b border-slate-200 font-medium">Ghi chú</th>
-                <th className="px-6 py-3 text-center border-r border-b border-slate-200 text-blue-600 bg-blue-50/30">Tiểu học</th>
-                <th className="px-6 py-3 text-center border-r border-b border-slate-200 text-emerald-600 bg-emerald-50/30">THCS</th>
-                <th className="px-6 py-3 text-center border-r border-b border-slate-200 text-amber-600 bg-amber-50/30">THPT</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {explodedRows.map((row:any, idx: number) => {
-                const { subject: s, program: p, quota: q } = row;
-                // Only show edit/delete on the first row of a subject to avoid clutter, or on all rows
-                const isFirstOfSubject = explodedRows.findIndex(r => r.subject.id === s.id) === idx;
-                
-                return (
-                  <tr key={`${s.id}-${p}`} className="hover:bg-slate-50 transition-colors group">
-                    <td className="px-6 py-4 font-bold text-slate-700 text-sm border-r border-slate-100">
-                      {isFirstOfSubject ? s.subjectCode : <span className="text-slate-300">↳</span>}
-                    </td>
-                    <td className="px-6 py-4 font-bold text-indigo-700 text-sm border-r border-slate-100">
-                      {isFirstOfSubject ? s.subjectName : ''}
-                    </td>
-                    <td className="px-6 py-4 text-slate-700 text-sm font-semibold border-r border-slate-100">
-                      <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md">{p === "DEFAULT" ? "Chưa phân hệ" : p}</span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 text-sm border-r border-slate-100 max-w-[200px] truncate">
-                      {isFirstOfSubject ? (s.description || '-') : ''}
-                    </td>
-                    
-                    <td className="px-6 py-4 text-center border-r border-slate-100 bg-blue-50/10">
-                      <div className="font-bold text-blue-700 text-sm">{q.quotaPrimary > 0 ? `${q.quotaPrimary} tiết` : '-'}</div>
-                      {renderBreakdown(q, [1,2,3,4,5], 'text-blue-500')}
-                    </td>
-                    <td className="px-6 py-4 text-center border-r border-slate-100 bg-emerald-50/10">
-                      <div className="font-bold text-emerald-700 text-sm">{q.quotaMiddle > 0 ? `${q.quotaMiddle} tiết` : '-'}</div>
-                      {renderBreakdown(q, [6,7,8,9], 'text-emerald-500')}
-                    </td>
-                    <td className="px-6 py-4 text-center border-r border-slate-100 bg-amber-50/10">
-                      <div className="font-bold text-amber-700 text-sm">{q.quotaHigh > 0 ? `${q.quotaHigh} tiết` : '-'}</div>
-                      {renderBreakdown(q, [10,11,12], 'text-amber-500')}
-                    </td>
-
-                    <td className="px-6 py-4 text-right space-x-1">
-                      {isFirstOfSubject && (
-                        <>
-                          <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" title="Sửa">
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDelete(s.id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100" title="Xóa">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-              {explodedRows.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400 bg-slate-50/50">
-                    Chưa có môn học nào phù hợp với bộ lọc hiện tại.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-            <tfoot className="bg-slate-50 border-t border-slate-200">
-              <tr>
-                <td colSpan={4} className="px-6 py-4 text-right font-bold text-slate-700 text-sm">
-                  Tổng số tiết trên hệ thống:
-                </td>
-                <td className="px-6 py-4 text-center border-r border-slate-200">
-                  <div className="bg-blue-600 text-white font-bold px-3 py-1.5 rounded-lg text-sm inline-block shadow-sm min-w-[80px]">
-                    {totalPrimary} / 40
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-center border-r border-slate-200">
-                  <div className="bg-[#00A99D] text-white font-bold px-3 py-1.5 rounded-lg text-sm inline-block shadow-sm min-w-[80px]">
-                    {totalMiddle} / 40
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-center border-r border-slate-200">
-                  <div className="bg-amber-600 text-white font-bold px-3 py-1.5 rounded-lg text-sm inline-block shadow-sm min-w-[80px]">
-                    {totalHigh} / 40
-                  </div>
-                </td>
-                <td></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+        <button onClick={() => startEdit()} className="px-5 py-2.5 bg-[#00A99D] text-white rounded-xl text-sm font-semibold flex items-center hover:bg-[#009085] shadow-sm transition-colors">
+          <Plus className="w-4 h-4 mr-2" /> Thêm Môn học
+        </button>
       </div>
+
+      {filterLevel === "ALL_LEVELS" || filterLevel === "PRIMARY" ? renderTable("Bậc Tiểu học", "blue", primaryRows, [1,2,3,4,5], "quotaPrimary") : null}
+      {filterLevel === "ALL_LEVELS" || filterLevel === "MIDDLE" ? renderTable("Bậc Trung học cơ sở", "emerald", middleRows, [6,7,8,9], "quotaMiddle") : null}
+      {filterLevel === "ALL_LEVELS" || filterLevel === "HIGH" ? renderTable("Bậc Trung học phổ thông", "amber", highRows, [10,11,12], "quotaHigh") : null}
+
+      {explodedRows.length === 0 && (
+        <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-12 text-center">
+          <p className="text-slate-500 font-medium">Chưa có môn học nào phù hợp với bộ lọc hiện tại.</p>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
@@ -358,10 +353,42 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-semibold text-slate-700">Ghi chú</label>
-                  <input value={formData.desc} onChange={e=>setFormData({...formData, desc: e.target.value})} 
-                    className="w-full p-2.5 rounded-xl border border-slate-200 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 outline-none transition-all text-sm" 
-                    placeholder="Ghi chú thêm..." />
+                  <label className="text-sm font-semibold text-slate-700">Bậc học áp dụng</label>
+                  <div className="flex gap-4 p-2.5 bg-slate-50 rounded-xl border border-slate-100 h-[46px] items-center">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 text-[#00A99D] rounded border-slate-300" 
+                        checked={formData.levels.includes("PRIMARY") || formData.levels.includes("ALL")} 
+                        onChange={(e) => {
+                          const lvls = new Set(formData.levels.filter(l => l !== "ALL"));
+                          if (e.target.checked) lvls.add("PRIMARY");
+                          else lvls.delete("PRIMARY");
+                          setFormData({...formData, levels: Array.from(lvls)});
+                        }} /> 
+                      <span className="text-sm font-medium text-slate-700">Tiểu học</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 text-[#00A99D] rounded border-slate-300" 
+                        checked={formData.levels.includes("MIDDLE") || formData.levels.includes("ALL")} 
+                        onChange={(e) => {
+                          const lvls = new Set(formData.levels.filter(l => l !== "ALL"));
+                          if (e.target.checked) lvls.add("MIDDLE");
+                          else lvls.delete("MIDDLE");
+                          setFormData({...formData, levels: Array.from(lvls)});
+                        }} /> 
+                      <span className="text-sm font-medium text-slate-700">THCS</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" className="w-4 h-4 text-[#00A99D] rounded border-slate-300" 
+                        checked={formData.levels.includes("HIGH") || formData.levels.includes("ALL")} 
+                        onChange={(e) => {
+                          const lvls = new Set(formData.levels.filter(l => l !== "ALL"));
+                          if (e.target.checked) lvls.add("HIGH");
+                          else lvls.delete("HIGH");
+                          setFormData({...formData, levels: Array.from(lvls)});
+                        }} /> 
+                      <span className="text-sm font-medium text-slate-700">THPT</span>
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -387,58 +414,64 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                   {activeTab && (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-300 pt-2">
                       {/* Tiểu học */}
-                      <div className="bg-blue-50/50 rounded-2xl border border-blue-100 p-5 space-y-4">
-                        <div className="flex justify-between items-center pb-3 border-b border-blue-200">
-                          <span className="font-bold text-blue-800">Tiểu học</span>
-                          <span className="text-xs font-bold text-white bg-blue-500 px-2.5 py-1 rounded-md shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaPrimary || 0}</span>
+                      {(formData.levels.includes("PRIMARY") || formData.levels.includes("ALL") || formData.levels.length === 0) && (
+                        <div className="bg-blue-50/50 rounded-2xl border border-blue-100 p-5 space-y-4">
+                          <div className="flex justify-between items-center pb-3 border-b border-blue-200">
+                            <span className="font-bold text-blue-800">Tiểu học</span>
+                            <span className="text-xs font-bold text-white bg-blue-500 px-2.5 py-1 rounded-md shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaPrimary || 0}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {[1,2,3,4,5].map(g => (
+                              <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-blue-100 shadow-sm hover:border-blue-300 transition-colors">
+                                <span className="text-xs font-semibold text-blue-700">Khối {g}</span>
+                                <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || 0} 
+                                  onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
+                                  className="w-12 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none p-1" />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          {[1,2,3,4,5].map(g => (
-                            <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-blue-100 shadow-sm hover:border-blue-300 transition-colors">
-                              <span className="text-xs font-semibold text-blue-700">Khối {g}</span>
-                              <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || 0} 
-                                onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
-                                className="w-12 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none p-1" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      )}
 
                       {/* THCS */}
-                      <div className="bg-emerald-50/50 rounded-2xl border border-emerald-100 p-5 space-y-4">
-                        <div className="flex justify-between items-center pb-3 border-b border-emerald-200">
-                          <span className="font-bold text-emerald-800">THCS</span>
-                          <span className="text-xs font-bold text-white bg-emerald-500 px-2.5 py-1 rounded-md shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaMiddle || 0}</span>
+                      {(formData.levels.includes("MIDDLE") || formData.levels.includes("ALL") || formData.levels.length === 0) && (
+                        <div className="bg-emerald-50/50 rounded-2xl border border-emerald-100 p-5 space-y-4">
+                          <div className="flex justify-between items-center pb-3 border-b border-emerald-200">
+                            <span className="font-bold text-emerald-800">THCS</span>
+                            <span className="text-xs font-bold text-white bg-emerald-500 px-2.5 py-1 rounded-md shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaMiddle || 0}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            {[6,7,8,9].map(g => (
+                              <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-emerald-100 shadow-sm hover:border-emerald-300 transition-colors">
+                                <span className="text-xs font-semibold text-emerald-700">Khối {g}</span>
+                                <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || 0} 
+                                  onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
+                                  className="w-12 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none p-1" />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                          {[6,7,8,9].map(g => (
-                            <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-emerald-100 shadow-sm hover:border-emerald-300 transition-colors">
-                              <span className="text-xs font-semibold text-emerald-700">Khối {g}</span>
-                              <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || 0} 
-                                onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
-                                className="w-12 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none p-1" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      )}
 
                       {/* THPT */}
-                      <div className="bg-amber-50/50 rounded-2xl border border-amber-100 p-5 space-y-4">
-                        <div className="flex justify-between items-center pb-3 border-b border-amber-200">
-                          <span className="font-bold text-amber-800">THPT</span>
-                          <span className="text-xs font-bold text-white bg-amber-500 px-2.5 py-1 rounded-md shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaHigh || 0}</span>
+                      {(formData.levels.includes("HIGH") || formData.levels.includes("ALL") || formData.levels.length === 0) && (
+                        <div className="bg-amber-50/50 rounded-2xl border border-amber-100 p-5 space-y-4">
+                          <div className="flex justify-between items-center pb-3 border-b border-amber-200">
+                            <span className="font-bold text-amber-800">THPT</span>
+                            <span className="text-xs font-bold text-white bg-amber-500 px-2.5 py-1 rounded-md shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaHigh || 0}</span>
+                          </div>
+                          <div className="grid grid-cols-1 gap-3">
+                            {[10,11,12].map(g => (
+                              <div key={g} className="flex items-center justify-between bg-white px-3 py-2.5 rounded-lg border border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
+                                <span className="text-xs font-semibold text-amber-700">Khối {g}</span>
+                                <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || 0} 
+                                  onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
+                                  className="w-14 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none p-1.5" />
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="grid grid-cols-1 gap-3">
-                          {[10,11,12].map(g => (
-                            <div key={g} className="flex items-center justify-between bg-white px-3 py-2.5 rounded-lg border border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
-                              <span className="text-xs font-semibold text-amber-700">Khối {g}</span>
-                              <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || 0} 
-                                onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
-                                className="w-14 text-center text-sm font-bold bg-slate-50 border border-slate-200 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none p-1.5" />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      )}
                     </div>
                   )}
                 </div>
