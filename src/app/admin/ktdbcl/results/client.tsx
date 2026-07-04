@@ -80,6 +80,11 @@ export function ResultsClient({
   const [gridRows, setGridRows] = useState<any[]>([])
   const [hasChanges, setHasChanges] = useState(false)
   const [changedStudentIds, setChangedStudentIds] = useState<Set<string>>(new Set())
+  const [checkedRowIds, setCheckedRowIds] = useState<Set<string>>(new Set())
+  const [bulkType, setBulkType] = useState("CA_NHAN")
+  const [bulkCategory, setBulkCategory] = useState("")
+  const [bulkLevel, setBulkLevel] = useState("")
+
   const [savingGrid, setSavingGrid] = useState(false)
   
   // Pagination State
@@ -368,6 +373,42 @@ export function ResultsClient({
       newRows.splice(lastIndex + 1, 0, newRow)
       return newRows
     })
+  }
+
+  
+  const handleBulkApply = () => {
+    if (checkedRowIds.size === 0) return;
+    
+    setHasChanges(true);
+    setGridRows(prev => prev.map(row => {
+      if (!checkedRowIds.has(row.gridRowId)) return row;
+
+      const updatedRow = { ...row, type: bulkType, category: bulkCategory };
+      
+      if (bulkCategory === "") {
+        updatedRow.level = "";
+        updatedRow.name = "";
+      } else {
+        updatedRow.level = bulkLevel;
+        if (bulkLevel === "") {
+           updatedRow.name = "";
+        } else if (row.name === "" || row.name === getAutoName(row.category, row.level) || row.name === getAutoName(bulkCategory, bulkLevel)) {
+           updatedRow.name = getAutoName(bulkCategory, bulkLevel);
+        }
+      }
+      
+      setChangedStudentIds(c => {
+        const next = new Set(c);
+        next.add(row.studentId);
+        return next;
+      });
+      
+      return updatedRow;
+    }));
+    
+    // Clear selection after apply
+    setCheckedRowIds(new Set());
+    alert(`Đã áp dụng hàng loạt cho ${checkedRowIds.size} học sinh!`);
   }
 
   const handleRemoveRow = (gridRowId: string, studentId: string) => {
@@ -688,10 +729,84 @@ export function ResultsClient({
                   <p className="text-xs max-w-xs mx-auto">Vui lòng đi qua tab "Đăng ký Dự thi" để xếp học sinh vào danh sách dự thi cho kỳ thi này.</p>
                 </div>
               ) : (
-                <div className="w-full overflow-x-auto custom-scrollbar">
+                <>
+                  {checkedRowIds.size > 0 && (
+                    <div className="bg-indigo-50/80 border border-indigo-100 rounded-xl p-3 mb-4 mx-1 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                      <span className="text-xs font-bold text-indigo-800 flex items-center gap-2">
+                        <Check className="w-4 h-4" /> Đã chọn {checkedRowIds.size} dòng
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <select
+                          value={bulkType}
+                          onChange={e => setBulkType(e.target.value)}
+                          className="border border-white/50 rounded-lg px-2 py-1.5 text-xs outline-none bg-white focus:border-indigo-500 font-semibold text-slate-700"
+                        >
+                          <option value="CA_NHAN">Cá nhân</option>
+                          <option value="DONG_DOI">Đồng đội</option>
+                        </select>
+                        <select
+                          value={bulkCategory}
+                          onChange={e => {
+                            setBulkCategory(e.target.value)
+                            setBulkLevel("")
+                          }}
+                          className="border border-white/50 rounded-lg px-2 py-1.5 text-xs outline-none bg-white focus:border-indigo-500 font-semibold text-slate-700"
+                        >
+                          <option value="">-- Loại giải --</option>
+                          {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
+                            <option key={k} value={k}>{v}</option>
+                          ))}
+                        </select>
+                        <select
+                          value={bulkLevel}
+                          onChange={e => setBulkLevel(e.target.value)}
+                          disabled={bulkCategory === ""}
+                          className="border border-white/50 rounded-lg px-2 py-1.5 text-xs outline-none bg-white focus:border-indigo-500 font-semibold text-slate-700 disabled:opacity-50"
+                        >
+                          <option value="">-- Mức giải --</option>
+                          {(() => {
+                            const catObj = achievementCategories.find((c) => c.code === bulkCategory)
+                            const filtered = catObj ? achievementLevels.filter((l) => l.categoryId === catObj.id) : []
+                            return filtered.map((lvl) => (
+                              <option key={lvl.code} value={lvl.code}>{lvl.name}</option>
+                            ))
+                          })()}
+                        </select>
+                        <button 
+                          onClick={handleBulkApply}
+                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm ml-2"
+                        >
+                          Áp dụng hàng loạt
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="w-full overflow-x-auto custom-scrollbar">
                   <table className="w-full text-left border-collapse min-w-[1200px]">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <th className="py-3 px-4 w-12 text-center">
+                          <input 
+                            type="checkbox" 
+                            className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600"
+                            checked={pagedGridRows.length > 0 && pagedGridRows.every(r => checkedRowIds.has(r.gridRowId))}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCheckedRowIds(prev => {
+                                  const next = new Set(prev)
+                                  pagedGridRows.forEach(r => next.add(r.gridRowId))
+                                  return next
+                                })
+                              } else {
+                                setCheckedRowIds(prev => {
+                                  const next = new Set(prev)
+                                  pagedGridRows.forEach(r => next.delete(r.gridRowId))
+                                  return next
+                                })
+                              }
+                            }}
+                          />
+                        </th>
                         <th className="py-3 px-4 w-12 text-center">STT</th>
                         <th className="py-3 px-4 w-32 min-w-[110px]">Mã HS</th>
                         <th className="py-3 px-4 w-56 min-w-[180px]">Họ & Tên</th>
@@ -725,6 +840,22 @@ export function ResultsClient({
 
                         return (
                           <tr key={row.gridRowId} className={`transition-all ${rowBg}`}>
+                            {/* Checkbox */}
+                            <td className="py-2.5 px-4 text-center">
+                              <input 
+                                type="checkbox" 
+                                className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
+                                checked={checkedRowIds.has(row.gridRowId)}
+                                onChange={(e) => {
+                                  setCheckedRowIds(prev => {
+                                    const next = new Set(prev)
+                                    if (e.target.checked) next.add(row.gridRowId)
+                                    else next.delete(row.gridRowId)
+                                    return next
+                                  })
+                                }}
+                              />
+                            </td>
                             {/* STT */}
                             <td className="py-2.5 px-4 text-center text-slate-400 font-mono">{idx + 1}</td>
                             
@@ -860,6 +991,7 @@ export function ResultsClient({
                     </tbody>
                   </table>
                 </div>
+                </>
               )}
 
               {/* Pagination Footer */}
