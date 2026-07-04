@@ -16,8 +16,8 @@ export default async function StudentsPage() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
-      code: true,
       name: true,
+      grade: true,
       academicYearId: true,
       _count: {
         select: { students: true }
