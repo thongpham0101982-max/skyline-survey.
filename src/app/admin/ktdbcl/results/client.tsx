@@ -679,11 +679,24 @@ export function ResultsClient({
                     <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
                       {pagedGridRows.map((row, idx) => {
                         const hasAward = row.category !== "" && row.level !== ""
+                        const isGold = row.level === "VANG" || row.level === "NHAT"
+                        const isSilver = row.level === "BAC" || row.level === "NHI"
+                        const isBronze = row.level === "DONG" || row.level === "BA"
+
+                        let rowBg = "hover:bg-slate-50/50"
+                        if (isGold) rowBg = "bg-amber-100/50 hover:bg-amber-100"
+                        else if (isSilver) rowBg = "bg-slate-200/60 hover:bg-slate-200"
+                        else if (isBronze) rowBg = "bg-orange-100/50 hover:bg-orange-100"
+                        else if (hasAward) rowBg = "bg-indigo-50/50 hover:bg-indigo-50"
+
+                        let levelColor = ""
+                        if (isGold) levelColor = "text-amber-700 font-extrabold bg-amber-50 border-amber-300 shadow-sm"
+                        else if (isSilver) levelColor = "text-slate-700 font-extrabold bg-slate-100 border-slate-300 shadow-sm"
+                        else if (isBronze) levelColor = "text-orange-700 font-extrabold bg-orange-50 border-orange-300 shadow-sm"
+                        else if (hasAward) levelColor = "text-indigo-700 font-bold bg-indigo-50 border-indigo-200"
 
                         return (
-                          <tr key={row.gridRowId} className={`hover:bg-slate-50/50 transition-all ${
-                            hasAward ? 'bg-amber-50/20' : ''
-                          }`}>
+                          <tr key={row.gridRowId} className={`transition-all ${rowBg}`}>
                             {/* STT */}
                             <td className="py-2.5 px-4 text-center text-slate-400 font-mono">{idx + 1}</td>
                             
@@ -731,7 +744,7 @@ export function ResultsClient({
                                 value={row.level}
                                 onChange={e => handleCellChange(row.gridRowId, "level", e.target.value)}
                                 disabled={row.category === ""}
-                                className="w-full border border-slate-200 disabled:opacity-50 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
+                                className={`w-full border rounded-lg px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-50 disabled:bg-slate-50/50 ${levelColor || 'border-slate-200 bg-slate-50 font-semibold text-slate-700'}`}
                               >
                                 <option value="">-- Không --</option>
                                 {(() => {
