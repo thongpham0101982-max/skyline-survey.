@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
-export async function PUT(request: Request, { params }: { params: { id: string } }) {
+export async function PUT(request: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
-    const { id } = params;
+    const params = await context.params;
+    const id = params.id;
     const body = await request.json();
     const { type, code, name, sortOrder, status } = body;
     
@@ -29,11 +30,10 @@ export async function PUT(request: Request, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> | { id: string } }) {
   try {
-    const { id } = params;
-    
-    // Check if category is used by any activities (we will skip the check for now or you can implement it later)
+    const params = await context.params;
+    const id = params.id;
     
     await prisma.activityCategory.delete({
       where: { id }
