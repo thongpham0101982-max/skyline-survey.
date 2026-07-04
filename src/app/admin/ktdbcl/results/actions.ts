@@ -369,6 +369,7 @@ export async function upsertExamResultsAction(
   examId: string,
   academicYearId: string,
   changedRows: {
+    achievementId?: string | null
     studentId: string
     name: string
     type: string
@@ -385,64 +386,68 @@ export async function upsertExamResultsAction(
   if (!examId || !academicYearId || !changedRows || changedRows.length === 0) return
 
   await prisma.$transaction(async (tx) => {
-    // We will separate rows into "Empty" (to delete), "Individual" (to upsert), and "Team" (to group)
     const emptyRows = changedRows.filter(r => r.category === "" || r.level === "" || r.name.trim() === "");
     const validRows = changedRows.filter(r => r.category !== "" && r.level !== "" && r.name.trim() !== "");
     const individualRows = validRows.filter(r => r.type === "CA_NHAN");
     const teamRows = validRows.filter(r => r.type === "DONG_DOI");
 
-    // Helper to clear existing achievement link for a student
-    const detachStudent = async (studentId: string) => {
-      const existing = await tx.studentAchievement.findFirst({
-        where: { studentId, achievement: { examId } }
-      });
-      if (existing) {
-        await tx.studentAchievement.delete({ where: { id: existing.id } });
-        const remaining = await tx.studentAchievement.count({ where: { achievementId: existing.achievementId } });
-        if (remaining === 0) {
-          await tx.achievement.delete({ where: { id: existing.achievementId } });
-        }
-      }
-      return existing;
-    };
-
     // 1. Process Empty Rows (Delete)
     for (const row of emptyRows) {
-      await detachStudent(row.studentId);
+      if (row.achievementId) {
+        const existingLink = await tx.studentAchievement.findFirst({
+          where: { studentId: row.studentId, achievementId: row.achievementId }
+        });
+        if (existingLink) {
+          await tx.studentAchievement.delete({ where: { id: existingLink.id } });
+          const remaining = await tx.studentAchievement.count({ where: { achievementId: row.achievementId } });
+          if (remaining === 0) {
+            await tx.achievement.delete({ where: { id: row.achievementId } });
+          }
+        }
+      }
     }
 
     // 2. Process Individual Rows (Upsert)
     for (const row of individualRows) {
-      const existing = await tx.studentAchievement.findFirst({
-        where: { studentId: row.studentId, achievement: { examId } },
-        include: { achievement: true }
-      });
-
-      if (existing && existing.achievement.type === "CA_NHAN") {
-        // Update in place to preserve ID
-        await tx.achievement.update({
-          where: { id: existing.achievementId },
-          data: {
-            name: row.name.trim(),
-            category: row.category,
-            level: row.level,
-            teacherId: row.teacherId || null,
-            teacherName: row.teacherName || null,
+      if (row.achievementId) {
+        const existingAch = await tx.achievement.findUnique({ where: { id: row.achievementId } });
+        if (existingAch) {
+          if (existingAch.type === "CA_NHAN") {
+            await tx.achievement.update({
+              where: { id: row.achievementId },
+              data: {
+                name: row.name.trim(),
+                category: row.category,
+                level: row.level,
+                teacherId: row.teacherId,
+                teacherName: row.teacherName,
+              }
+            });
+          } else {
+             // Was team, now individual. Create new individual achievement and unlink from team.
+             const existingLink = await tx.studentAchievement.findFirst({
+               where: { studentId: row.studentId, achievementId: row.achievementId }
+             });
+             if (existingLink) {
+               await tx.studentAchievement.delete({ where: { id: existingLink.id } });
+               const remaining = await tx.studentAchievement.count({ where: { achievementId: row.achievementId } });
+               if (remaining === 0) await tx.achievement.delete({ where: { id: row.achievementId } });
+             }
+             
+             await tx.achievement.create({
+              data: {
+                name: row.name.trim(), type: "CA_NHAN", category: row.category, level: row.level,
+                academicYearId, teacherId: row.teacherId, teacherName: row.teacherName, examId,
+                students: { create: { studentId: row.studentId } }
+              }
+            });
           }
-        });
+        }
       } else {
-        // If it didn't exist or was a team achievement before, detach and create new
-        if (existing) await detachStudent(row.studentId);
         await tx.achievement.create({
           data: {
-            name: row.name.trim(),
-            type: "CA_NHAN",
-            category: row.category,
-            level: row.level,
-            academicYearId,
-            teacherId: row.teacherId || null,
-            teacherName: row.teacherName || null,
-            examId,
+            name: row.name.trim(), type: "CA_NHAN", category: row.category, level: row.level,
+            academicYearId, teacherId: row.teacherId, teacherName: row.teacherName, examId,
             students: { create: { studentId: row.studentId } }
           }
         });
@@ -460,58 +465,55 @@ export async function upsertExamResultsAction(
     for (const [key, groupedRows] of Object.entries(teamGroups)) {
       const first = groupedRows[0];
       
-      // For team, we find if there's an existing team achievement with this exact signature
       const existingTeamAch = await tx.achievement.findFirst({
         where: {
-          examId,
-          type: "DONG_DOI",
-          name: first.name.trim(),
-          category: first.category,
-          level: first.level,
+          examId, type: "DONG_DOI", name: first.name.trim(), category: first.category, level: first.level,
           teacherId: first.teacherId || null
         }
       });
 
       if (existingTeamAch) {
-        // If the team achievement already exists, just attach these students to it
         for (const row of groupedRows) {
-          // Ensure they are detached from any old achievements first
-          const existingLink = await tx.studentAchievement.findFirst({
-            where: { studentId: row.studentId, achievement: { examId } }
-          });
-          if (existingLink) {
-            if (existingLink.achievementId === existingTeamAch.id) {
-              continue; // Already correctly linked
-            }
-            await detachStudent(row.studentId);
+          if (row.achievementId && row.achievementId !== existingTeamAch.id) {
+             const existingLink = await tx.studentAchievement.findFirst({
+               where: { studentId: row.studentId, achievementId: row.achievementId }
+             });
+             if (existingLink) {
+               await tx.studentAchievement.delete({ where: { id: existingLink.id } });
+               const remaining = await tx.studentAchievement.count({ where: { achievementId: row.achievementId } });
+               if (remaining === 0) await tx.achievement.delete({ where: { id: row.achievementId } });
+             }
           }
           
-          await tx.studentAchievement.create({
-            data: {
-              studentId: row.studentId,
-              achievementId: existingTeamAch.id
-            }
+          const alreadyLinked = await tx.studentAchievement.findFirst({
+            where: { studentId: row.studentId, achievementId: existingTeamAch.id }
           });
+          
+          if (!alreadyLinked) {
+            await tx.studentAchievement.create({
+              data: { studentId: row.studentId, achievementId: existingTeamAch.id }
+            });
+          }
         }
       } else {
-        // Detach all students first
-        for (const row of groupedRows) {
-          await detachStudent(row.studentId);
-        }
         // Create new team achievement
+        for (const row of groupedRows) {
+          if (row.achievementId) {
+             const existingLink = await tx.studentAchievement.findFirst({
+               where: { studentId: row.studentId, achievementId: row.achievementId }
+             });
+             if (existingLink) {
+               await tx.studentAchievement.delete({ where: { id: existingLink.id } });
+               const remaining = await tx.studentAchievement.count({ where: { achievementId: row.achievementId } });
+               if (remaining === 0) await tx.achievement.delete({ where: { id: row.achievementId } });
+             }
+          }
+        }
         await tx.achievement.create({
           data: {
-            name: first.name.trim(),
-            type: "DONG_DOI",
-            category: first.category,
-            level: first.level,
-            academicYearId,
-            teacherId: first.teacherId || null,
-            teacherName: first.teacherName || null,
-            examId,
-            students: {
-              create: groupedRows.map(r => ({ studentId: r.studentId }))
-            }
+            name: first.name.trim(), type: "DONG_DOI", category: first.category, level: first.level,
+            academicYearId, teacherId: first.teacherId, teacherName: first.teacherName, examId,
+            students: { create: groupedRows.map(r => ({ studentId: r.studentId })) }
           }
         });
       }

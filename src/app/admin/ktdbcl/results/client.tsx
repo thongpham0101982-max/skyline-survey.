@@ -466,13 +466,14 @@ export function ResultsClient({
 
     try {
       const rowsPayload = changedRowsToSave.map(r => ({
+        achievementId: r.achievementId,
         studentId: r.studentId,
         name: r.name,
         type: r.type,
         category: r.category,
         level: r.level,
-        teacherId: r.teacherId || null,
-        teacherName: r.teacherId ? (teachers.find(t => t.id === r.teacherId)?.teacherName || null) : (r.teacherName || null)
+        teacherId: r.teacherId === "KHAC" ? null : (r.teacherId || null),
+        teacherName: r.teacherId === "KHAC" ? (r.teacherName || null) : (r.teacherId ? (teachers.find(t => t.id === r.teacherId)?.teacherName || null) : (r.teacherName || null))
       }))
 
       await upsertExamResultsAction(selectedExamId, yearId, rowsPayload)
