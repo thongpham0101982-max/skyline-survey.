@@ -31,12 +31,6 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   }
 
   const renderBreakdown = (q: any, grades: number[], colorClass: string) => {
-    const breakdown = grades.filter(g => q["quotaG" + g] > 0).map(g => "K" + g + ":" + q["quotaG" + g]);
-    if (breakdown.length === 0) return null;
-    return <div className={"text-[10px] font-medium mt-1 opacity-80 " + colorClass}>{breakdown.join(' · ')}</div>;
-  }
-
-  const renderBreakdown = (q: any, grades: number[], colorClass: string) => {
     const breakdown = grades.filter(g => q[`quotaG${g}`] > 0).map(g => `K${g}:${q[`quotaG${g}`]}`);
     if (breakdown.length === 0) return null;
     return <div className={`text-[10px] font-medium mt-1 opacity-80 ${colorClass}`}>{breakdown.join(' · ')}</div>;
