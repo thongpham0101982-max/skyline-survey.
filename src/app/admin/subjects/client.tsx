@@ -119,57 +119,51 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white rounded-[1.5rem] p-5 shadow-sm border border-slate-200/80 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Filters */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-indigo-500" />
-              <span className="text-sm font-bold text-slate-700">Năm học:</span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {safeYears.map((y: any) => (
-                <button key={y.id} onClick={() => setSelectedYearId(y.id)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${selectedYearId === y.id ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
-                  {y.name}{y.status === "ACTIVE" && <span className="ml-1 opacity-75 text-[10px]">Active</span>}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="flex-1">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-indigo-500" /> Năm học
+          </label>
+          <select 
+            value={selectedYearId} 
+            onChange={e => setSelectedYearId(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] block p-2.5 outline-none transition-all cursor-pointer hover:bg-slate-100"
+          >
+            {safeYears.map((y: any) => (
+              <option key={y.id} value={y.id}>{y.name} {y.status === "ACTIVE" ? "(Active)" : ""}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-indigo-500" />
-              <span className="text-sm font-bold text-slate-700">Lọc theo Hệ học:</span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {["ALL_PROGRAMS", "Hệ S", "Hệ Song Bằng"].map((prog) => (
-                <button key={prog} onClick={() => setFilterProgram(prog)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterProgram === prog ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
-                  {prog === "ALL_PROGRAMS" ? "Tất cả Hệ" : prog}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="flex-1">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <Filter className="w-4 h-4 text-emerald-500" /> Lọc theo Hệ học
+          </label>
+          <select 
+            value={filterProgram} 
+            onChange={e => setFilterProgram(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] block p-2.5 outline-none transition-all cursor-pointer hover:bg-slate-100"
+          >
+            {["ALL_PROGRAMS", "Hệ S", "Hệ Song Bằng"].map((prog) => (
+              <option key={prog} value={prog}>{prog === "ALL_PROGRAMS" ? "Tất cả Hệ" : prog}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-indigo-500" />
-              <span className="text-sm font-bold text-slate-700">Lọc theo Bậc học:</span>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              {["ALL_LEVELS", "PRIMARY", "MIDDLE", "HIGH"].map((lvl) => (
-                <button key={lvl} onClick={() => setFilterLevel(lvl)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${filterLevel === lvl ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"}`}>
-                  {lvl === "ALL_LEVELS" ? "Tất cả các bậc" : levelLabels[lvl]}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="flex-1">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+            <Filter className="w-4 h-4 text-amber-500" /> Lọc theo Bậc học
+          </label>
+          <select 
+            value={filterLevel} 
+            onChange={e => setFilterLevel(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] block p-2.5 outline-none transition-all cursor-pointer hover:bg-slate-100"
+          >
+            {["ALL_LEVELS", "PRIMARY", "MIDDLE", "HIGH"].map((lvl) => (
+              <option key={lvl} value={lvl}>{lvl === "ALL_LEVELS" ? "Tất cả các bậc" : levelLabels[lvl]}</option>
+            ))}
+          </select>
         </div>
       </div>
 
