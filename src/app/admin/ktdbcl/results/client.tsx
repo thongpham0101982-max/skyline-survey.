@@ -296,6 +296,14 @@ export function ResultsClient({
 
   // Cell change handler
   const handleCellChange = (gridRowId: string, field: string, value: any) => {
+    const targetRow = gridRows.find(r => r.gridRowId === gridRowId)
+    if (targetRow) {
+      setChangedStudentIds(prev => {
+        const next = new Set(prev)
+        next.add(targetRow.studentId)
+        return next
+      })
+    }
     setHasChanges(true)
     setGridRows(prev => prev.map(row => {
       if (row.gridRowId !== gridRowId) return row
@@ -321,6 +329,11 @@ export function ResultsClient({
   }
 
   const handleAddRow = (studentId: string, index: number) => {
+    setChangedStudentIds(prev => {
+      const next = new Set(prev)
+      next.add(studentId)
+      return next
+    })
     setHasChanges(true)
     setGridRows(prev => {
       const newRows = [...prev]
@@ -358,6 +371,11 @@ export function ResultsClient({
   }
 
   const handleRemoveRow = (gridRowId: string, studentId: string) => {
+    setChangedStudentIds(prev => {
+      const next = new Set(prev)
+      next.add(studentId)
+      return next
+    })
     setHasChanges(true)
     setGridRows(prev => {
       const studentRowsCount = prev.filter(r => r.studentId === studentId).length
