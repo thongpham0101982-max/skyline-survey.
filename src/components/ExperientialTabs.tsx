@@ -10,7 +10,7 @@ export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
   const tabs = [
     { id: 'catalog', label: 'Hoạt động mẫu', href: '/admin/experiential-activities/catalog', icon: Award },
     { id: 'categories', label: 'Danh mục', href: '/admin/experiential-activities/categories', icon: Layers },
-    { id: 'config', label: 'Cấu hình', href: '/admin/experiential-activities/config', icon: Settings }
+    
   ]
 
   return (
