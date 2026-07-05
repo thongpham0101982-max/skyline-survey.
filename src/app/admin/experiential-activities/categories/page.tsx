@@ -19,7 +19,8 @@ export default function CategoriesPage() {
     { value: 'ORGANIZER', label: 'Đơn vị tổ chức' },
     { value: 'LOCATION', label: 'Địa điểm' },
     { value: 'ABSENCE_REASON', label: 'Lý do không tham gia' },
-    { value: 'EVIDENCE_TYPE', label: 'Loại minh chứng' }
+    { value: 'EVIDENCE_TYPE', label: 'Loại minh chứng' },
+    { value: 'EVALUATION', label: 'Đánh giá, nhận xét' }
   ];
 
   const [activeType, setActiveType] = useState('GROUP');
