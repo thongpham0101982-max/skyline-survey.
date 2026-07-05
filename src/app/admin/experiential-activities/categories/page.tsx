@@ -1,7 +1,7 @@
 "use client";
 import { ExperientialTabs } from '@/components/ExperientialTabs';
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2, Plus, Save, X, Search, CheckCircle2, ChevronRight } from 'lucide-react';
+import { Edit2, Trash2, Plus, Save, X, Search, CheckCircle2, ChevronRight, Settings } from 'lucide-react';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -113,7 +113,7 @@ export default function CategoriesPage() {
     setShowForm(false);
   };
 
-  const activeTypeLabel = categoryTypes.find(t => t.value === activeType)?.label || activeType;
+  const activeTypeLabel = activeType === 'SYSTEM_CATEGORY_TYPE' ? 'Nhóm phân loại' : (categoryTypes.find(t => t.value === activeType)?.label || activeType);
   
   const filteredCategories = categories.filter((c: any) => 
     c.type === activeType &&
@@ -159,6 +159,21 @@ export default function CategoriesPage() {
                   </button>
                 )
               })}
+            
+              <div className="my-2 border-t border-slate-100 hidden lg:block"></div>
+              <button
+                onClick={() => { setActiveType('SYSTEM_CATEGORY_TYPE'); resetForm(); }}
+                className={"flex items-center justify-between px-4 py-3 rounded-xl transition-all whitespace-nowrap " + (
+                  activeType === 'SYSTEM_CATEGORY_TYPE' 
+                    ? 'bg-slate-800 text-white shadow-md shadow-slate-800/20' 
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 border border-slate-200 lg:border-none'
+                )}
+              >
+                <span className={"text-sm font-semibold flex items-center gap-2 " + (activeType === 'SYSTEM_CATEGORY_TYPE' ? 'text-white' : 'text-slate-700')}>
+                  <Settings className="w-4 h-4" /> Quản lý nhóm phân loại
+                </span>
+                {activeType === 'SYSTEM_CATEGORY_TYPE' && <ChevronRight className="w-4 h-4 text-white/80 hidden lg:block" />}
+              </button>
             </div>
           </div>
 
