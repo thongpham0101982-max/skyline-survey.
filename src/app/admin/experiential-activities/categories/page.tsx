@@ -7,21 +7,8 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  const categoryTypes = [
-    { value: 'GROUP', label: 'Nhóm hoạt động' },
-    { value: 'TYPE', label: 'Loại hoạt động' },
-    { value: 'THEME', label: 'Chủ đề hoạt động' },
-    { value: 'LEVEL', label: 'Cấp hoạt động' },
-    { value: 'FORMAT', label: 'Hình thức hoạt động' },
-    { value: 'ROLE', label: 'Vai trò tham gia' },
-    { value: 'EVAL_LEVEL', label: 'Mức đánh giá' },
-    { value: 'ACHIEVEMENT', label: 'Thành tích' },
-    { value: 'ORGANIZER', label: 'Đơn vị tổ chức' },
-    { value: 'LOCATION', label: 'Địa điểm' },
-    { value: 'ABSENCE_REASON', label: 'Lý do không tham gia' },
-    { value: 'EVIDENCE_TYPE', label: 'Loại minh chứng' },
-    { value: 'EVALUATION', label: 'Đánh giá, nhận xét' }
-  ];
+  const systemTypes = categories.filter((c: any) => c.type === 'SYSTEM_CATEGORY_TYPE').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+  const categoryTypes = systemTypes.map((c: any) => ({ value: c.code, label: c.name }));
 
   const [activeType, setActiveType] = useState('GROUP');
   const [showForm, setShowForm] = useState(false);
@@ -113,7 +100,7 @@ export default function CategoriesPage() {
     setShowForm(false);
   };
 
-  const activeTypeLabel = activeType === 'SYSTEM_CATEGORY_TYPE' ? 'Nhóm phân loại' : (categoryTypes.find(t => t.value === activeType)?.label || activeType);
+  const activeTypeLabel = activeType === 'SYSTEM_CATEGORY_TYPE' ? 'Nhóm phân loại' : (categoryTypes.find((t: any) => t.value === activeType)?.label || activeType);
   
   const filteredCategories = categories.filter((c: any) => 
     c.type === activeType &&
@@ -159,8 +146,9 @@ export default function CategoriesPage() {
                   </button>
                 )
               })}
-            
+              
               <div className="my-2 border-t border-slate-100 hidden lg:block"></div>
+              
               <button
                 onClick={() => { setActiveType('SYSTEM_CATEGORY_TYPE'); resetForm(); }}
                 className={"flex items-center justify-between px-4 py-3 rounded-xl transition-all whitespace-nowrap " + (
