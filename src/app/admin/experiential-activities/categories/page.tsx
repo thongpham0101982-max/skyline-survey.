@@ -77,9 +77,9 @@ export default function CategoriesPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(Bạn có chắc muốn xóa danh mục "\"?)) {
+    if (confirm(`Bạn có chắc muốn xóa danh mục "${name}"?`)) {
       try {
-        const res = await fetch(/api/activities/categories/\, {
+        const res = await fetch(`/api/activities/categories/${id}`, {
           method: 'DELETE',
         });
         if (res.ok) {
@@ -95,7 +95,7 @@ export default function CategoriesPage() {
     e.preventDefault();
     try {
       const url = editingId 
-        ? /api/activities/categories/\
+        ? `/api/activities/categories/${editingId}`
         : '/api/activities/categories';
         
       const res = await fetch(url, {
