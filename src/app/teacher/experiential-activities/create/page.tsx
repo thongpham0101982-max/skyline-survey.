@@ -42,6 +42,7 @@ export default function CreateActivityWizard() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedStudentsData, setSelectedStudentsData] = useState<any[]>([]);
 
+
   useEffect(() => {
     fetch('/api/academic-years')
       .then(res => res.json())
