@@ -69,6 +69,46 @@ export default function CreateActivityWizard() {
     allParticipate: true 
   });
   const [exceptions, setExceptions] = useState({ outstanding: [], absent: [], achievements: [] });
+  const [studentResults, setStudentResults] = useState<Record<string, Record<string, any>>>({});
+  const [isAddingResult, setIsAddingResult] = useState(false);
+  const [selectedResultStudent, setSelectedResultStudent] = useState<any>(null);
+  const [currentStudentResult, setCurrentStudentResult] = useState<Record<string, any>>({});
+  const [studentResultSearch, setStudentResultSearch] = useState('');
+  const [resultSearchResults, setResultSearchResults] = useState<any[]>([]);
+  const [isSearchingResult, setIsSearchingResult] = useState(false);
+
+  useEffect(() => {
+    if (studentResultSearch.length < 2 || !info.academicYear) {
+      setResultSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setIsSearchingResult(true);
+      fetch(`/api/students/search?academicYearId=${info.academicYear}&q=${encodeURIComponent(studentResultSearch)}`)
+        .then(res => res.json())
+        .then(data => setResultSearchResults(data || []))
+        .catch(console.error)
+        .finally(() => setIsSearchingResult(false));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [studentResultSearch, info.academicYear]);
+
+  const saveStudentResult = () => {
+    if (selectedResultStudent) {
+      setStudentResults({
+        ...studentResults,
+        [selectedResultStudent.id]: {
+          student: selectedResultStudent,
+          result: currentStudentResult
+        }
+      });
+      setIsAddingResult(false);
+      setSelectedResultStudent(null);
+      setCurrentStudentResult({});
+      setStudentResultSearch('');
+    }
+  };
+
   const [evidence, setEvidence] = useState<Record<string, any>>({ 
     photos: '', pdfs: '', oneDrive: '', gDrive: '', youtube: '', desc: '' 
   });
@@ -203,7 +243,7 @@ export default function CreateActivityWizard() {
   }, []);
 
   const handleSubmit = async (isDraft: boolean) => {
-    const payload = { info, target, defaults, exceptions, evidence, isDraft };
+    const payload = { info, target, defaults, studentResults, exceptions, evidence, isDraft };
     console.log('Submitting data: ', payload);
     alert('Đã lưu dữ liệu thành công! (Mock Submit)');
     router.push('/teacher');
@@ -646,25 +686,135 @@ export default function CreateActivityWizard() {
                   <p className="text-sm text-slate-500 font-medium">Ghi nhận học sinh có kết quả khác biệt so với mặc định</p>
                 </div>
                 
-                <div className="bg-slate-50/80 p-8 rounded-2xl border border-slate-200 border-dashed flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center">
-                    <Users className="w-8 h-8 text-slate-400" />
+                {!isAddingResult ? (
+                  <>
+                    {Object.keys(studentResults).length === 0 ? (
+                      <div className="bg-slate-50/80 p-8 rounded-2xl border border-slate-200 border-dashed flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center">
+                          <Users className="w-8 h-8 text-slate-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-bold text-slate-700">Chưa có kết quả cá nhân nào</h3>
+                          <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                            Bạn có thể chọn từng học sinh để thay đổi đánh giá cá nhân.
+                          </p>
+                        </div>
+                        <div className="flex gap-3 mt-2">
+                          <button onClick={() => setIsAddingResult(true)} className="px-4 py-2 bg-white ring-1 ring-slate-200 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100 transition-all shadow-sm">
+                            + Thêm kết quả
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="flex justify-end">
+                          <button onClick={() => setIsAddingResult(true)} className="px-4 py-2 bg-white ring-1 ring-slate-200 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100 transition-all shadow-sm">
+                            + Thêm kết quả
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3">
+                          {Object.values(studentResults).map((item: any) => (
+                            <div key={item.student.id} className="p-4 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
+                              <div>
+                                <div className="font-bold text-slate-700">{item.student.name} <span className="text-xs text-slate-400 font-normal">({item.student.code})</span></div>
+                                <div className="text-xs text-slate-500 mt-1 flex gap-2">
+                                  {systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code)).map((sys: any) => {
+                                    const val = item.result[sys.code];
+                                    if (!val) return null;
+                                    const options = getOptionsForType(sys.code);
+                                    const optName = options.find((o: any) => o.code === val)?.name || val;
+                                    return <span key={sys.code} className="bg-slate-100 px-2 py-0.5 rounded text-slate-600">{sys.name}: {optName}</span>;
+                                  })}
+                                </div>
+                              </div>
+                              <button onClick={() => {
+                                const newResults = {...studentResults};
+                                delete newResults[item.student.id];
+                                setStudentResults(newResults);
+                              }} className="p-2 text-slate-400 hover:text-rose-500 bg-slate-50 rounded-lg">
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-6">
+                    <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                      <h3 className="font-bold text-slate-800">Thêm kết quả cá nhân</h3>
+                      <button onClick={() => { setIsAddingResult(false); setSelectedResultStudent(null); }} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5"/></button>
+                    </div>
+                    
+                    {!selectedResultStudent ? (
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
+                          <input 
+                            type="text"
+                            placeholder="Gõ tên hoặc mã học sinh..."
+                            className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 pl-11"
+                            value={studentResultSearch}
+                            onChange={e => setStudentResultSearch(e.target.value)}
+                          />
+                        </div>
+                        {resultSearchResults.length > 0 && (
+                          <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden max-h-[250px] overflow-y-auto">
+                            {resultSearchResults.map((student: any) => (
+                              <div key={student.id} onClick={() => { setSelectedResultStudent(student); setCurrentStudentResult(defaults); }} className="p-3 border-b border-slate-100 hover:bg-slate-100 cursor-pointer flex justify-between items-center last:border-0">
+                                <div>
+                                  <div className="font-bold text-slate-700">{student.name}</div>
+                                  <div className="text-xs text-slate-500">{student.code}</div>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-slate-400" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="flex items-center gap-3 p-3 bg-[#00A99D]/10 text-[#00A99D] rounded-xl">
+                          <CheckCircle2 className="w-5 h-5" />
+                          <div>
+                            <div className="font-bold">{selectedResultStudent.name}</div>
+                            <div className="text-xs opacity-80">{selectedResultStudent.code}</div>
+                          </div>
+                          <button onClick={() => setSelectedResultStudent(null)} className="ml-auto text-xs underline">Đổi HS</button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {systemTypes
+                            .filter((sys: any) => STEP3_TYPES.includes(sys.code))
+                            .map((sys: any) => {
+                              const options = getOptionsForType(sys.code);
+                              return (
+                                <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
+                                  <label className="text-sm font-bold text-slate-700">{sys.name}</label>
+                                  <select 
+                                    className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                                    value={currentStudentResult[sys.code] || ''} 
+                                    onChange={e => setCurrentStudentResult({...currentStudentResult, [sys.code]: e.target.value})}
+                                  >
+                                    <option value="">-- Chọn {sys.name.toLowerCase()} --</option>
+                                    {options.map((opt: any) => (
+                                      <option key={opt.id} value={opt.code}>{opt.name}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              );
+                            })}
+                        </div>
+                        
+                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                          <button onClick={() => { setIsAddingResult(false); setSelectedResultStudent(null); }} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-white ring-1 ring-slate-200 rounded-xl hover:bg-slate-50 transition-all">Hủy</button>
+                          <button onClick={saveStudentResult} className="px-5 py-2.5 text-sm font-bold text-white bg-[#00A99D] rounded-xl hover:bg-[#009085] transition-all flex items-center gap-2">Lưu kết quả</button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700">Chưa có kết quả cá nhân nào</h3>
-                    <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                      Bạn có thể chọn từng học sinh để thay đổi đánh giá, hoặc upload file Excel danh sách.
-                    </p>
-                  </div>
-                  <div className="flex gap-3 mt-2">
-                    <button className="px-4 py-2 bg-white ring-1 ring-slate-200 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100 transition-all shadow-sm">
-                      + Thêm tay
-                    </button>
-                    <button className="px-4 py-2 bg-[#00A99D]/10 text-[#00A99D] font-bold text-xs rounded-lg hover:bg-[#00A99D]/20 transition-all flex items-center gap-1">
-                      <UploadCloud className="w-4 h-4" /> Import Excel
-                    </button>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
