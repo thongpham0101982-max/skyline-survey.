@@ -22,7 +22,7 @@ export default function CreateActivityWizard() {
   
   // Dynamic form states
   const [info, setInfo] = useState<Record<string, any>>({ 
-    catalogId: '', date: '', semester: '1' 
+    name: '', academicYear: '2025-2026', date: '', semester: '1' 
   });
   const [target, setTarget] = useState({ type: 'class', value: '' });
   const [defaults, setDefaults] = useState<Record<string, any>>({ 
@@ -32,6 +32,18 @@ export default function CreateActivityWizard() {
   const [evidence, setEvidence] = useState<Record<string, any>>({ 
     photos: '', pdfs: '', oneDrive: '', gDrive: '', youtube: '', desc: '' 
   });
+
+  const [generatedCode, setGeneratedCode] = useState('');
+
+  useEffect(() => {
+    if (info.academicYear) {
+      const yearParts = info.academicYear.split('-');
+      if (yearParts.length === 2) {
+        const endYear = yearParts[1].slice(-2);
+        setGeneratedCode(${endYear}TN01);
+      }
+    }
+  }, [info.academicYear]);
 
   useEffect(() => {
     Promise.all([
@@ -184,15 +196,37 @@ export default function CreateActivityWizard() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-sm font-bold text-slate-700">Tên hoạt động (từ Danh mục) <span className="text-rose-500">*</span></label>
-                    <select 
+                    <label className="text-sm font-bold text-slate-700">Tên hoạt động <span className="text-rose-500">*</span></label>
+                    <input 
+                      type="text"
+                      placeholder="Nhập tên hoạt động..."
                       className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.catalogId} 
-                      onChange={e => setInfo({...info, catalogId: e.target.value})}
+                      value={info.name} 
+                      onChange={e => setInfo({...info, name: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-700">Năm học <span className="text-rose-500">*</span></label>
+                    <select 
+                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                      value={info.academicYear} 
+                      onChange={e => setInfo({...info, academicYear: e.target.value})}
                     >
-                      <option value="">-- Chọn hoạt động có sẵn --</option>
-                      {catalogs.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      <option value="2024-2025">Năm học 2024-2025</option>
+                      <option value="2025-2026">Năm học 2025-2026</option>
+                      <option value="2026-2027">Năm học 2026-2027</option>
                     </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-bold text-slate-700">Mã hoạt động (Tự sinh)</label>
+                    <input 
+                      type="text" 
+                      readOnly
+                      className="w-full bg-slate-100 border-0 ring-1 ring-slate-200 text-[#00A99D] text-sm font-black rounded-xl block p-3.5 opacity-80 cursor-not-allowed"
+                      value={generatedCode} 
+                    />
                   </div>
                   
                   <div className="space-y-1.5">
