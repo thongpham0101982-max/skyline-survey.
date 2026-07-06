@@ -1,18 +1,26 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, Calendar, MapPin, Users, ChevronRight, Activity } from 'lucide-react';
 
 export default function ExperientialActivitiesList() {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock data for display
-  const activities = [
-    { id: 'act-001', name: 'Tham quan bảo tàng Chăm', date: '2023-11-15', location: 'Bảo tàng Chăm Đà Nẵng', status: 'DRAFT', participants: 45 },
-    { id: 'act-002', name: 'Trải nghiệm làm gốm Thanh Hà', date: '2023-10-20', location: 'Làng gốm Thanh Hà', status: 'APPROVED', participants: 120 },
-    { id: 'act-003', name: 'Ngoại khoá kỹ năng sinh tồn', date: '2024-01-05', location: 'Khu du lịch sinh thái Tiên Sa', status: 'SUBMITTED', participants: 300 },
-  ];
+  useEffect(() => {
+    fetch('/api/experiential-activities')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setActivities(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 font-sans">
@@ -52,6 +60,17 @@ export default function ExperientialActivitiesList() {
         </div>
 
         {/* List */}
+        {loading ? (
+          <div className="flex justify-center p-12"><div className="animate-spin w-8 h-8 border-4 border-[#00A99D] border-t-transparent rounded-full"></div></div>
+        ) : activities.length === 0 ? (
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/60 shadow-sm">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl mx-auto flex items-center justify-center mb-4">
+              <Activity className="w-8 h-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800">Chưa có hoạt động nào</h3>
+            <p className="text-slate-500 mt-2">Bạn chưa tạo hoạt động trải nghiệm nào.</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activities.filter(a => a.name.toLowerCase().includes(search.toLowerCase())).map((act) => (
             <div 
@@ -81,12 +100,13 @@ export default function ExperientialActivitiesList() {
                 </div>
                 <div className="flex items-center gap-2 pt-2 mt-2 border-t border-slate-200/60">
                   <Users className="w-4 h-4 text-[#00A99D]/70" />
-                  <span>{act.participants} học sinh</span>
+                  <span>{act.participants || 0} học sinh</span>
                 </div>
               </div>
             </div>
           ))}
         </div>
+        )}
       </div>
     </div>
   );

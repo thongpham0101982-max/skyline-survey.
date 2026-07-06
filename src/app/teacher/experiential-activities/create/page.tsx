@@ -263,7 +263,7 @@ export default function CreateActivityWizard() {
   };
 
   const renderDynamicField = (sys: any, stateValue: string, onChange: (val: string) => void) => {
-    const options = getOptionsForType(sys.code);
+    const options = getOptionsForType(sys.code) as any[];
     return (
       <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
         <label className="text-sm font-bold text-slate-700">{sys.name}</label>
@@ -454,13 +454,13 @@ export default function CreateActivityWizard() {
                           <button
                             key={lvl.id}
                             onClick={() => {
-                              const isSelected = lvl.originalLevels.some(l => target.levels.includes(l));
+                              const isSelected = lvl.originalLevels.some((l: any) => target.levels.includes(l));
                               const newLevels = isSelected
-                                ? target.levels.filter(l => !lvl.originalLevels.includes(l))
+                                ? target.levels.filter((l: any) => !lvl.originalLevels.includes(l))
                                 : [...target.levels, ...lvl.originalLevels];
                               setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
                             }}
-                            className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (lvl.originalLevels.some(l => target.levels.includes(l)) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                            className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (lvl.originalLevels.some((l: any) => target.levels.includes(l)) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                           >
                             {lvl.name}
                           </button>
@@ -480,7 +480,7 @@ export default function CreateActivityWizard() {
                               key={grade}
                               onClick={() => {
                                 const newGrades = target.grades.includes(grade)
-                                  ? target.grades.filter(g => g !== grade)
+                                  ? target.grades.filter((g: any) => g !== grade)
                                   : [...target.grades, grade];
                                 setTarget({ ...target, grades: newGrades, classes: [] });
                               }}
@@ -518,7 +518,7 @@ export default function CreateActivityWizard() {
                               key={cls.id}
                               onClick={() => {
                                 const newClasses = target.classes.includes(cls.id)
-                                  ? target.classes.filter(c => c !== cls.id)
+                                  ? target.classes.filter((c: any) => c !== cls.id)
                                   : [...target.classes, cls.id];
                                 setTarget({ ...target, classes: newClasses });
                               }}
@@ -721,7 +721,7 @@ export default function CreateActivityWizard() {
                                   {systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code)).map((sys: any) => {
                                     const val = item.result[sys.code];
                                     if (!val) return null;
-                                    const options = getOptionsForType(sys.code);
+                                    const options = getOptionsForType(sys.code) as any[];
                                     const optName = options.find((o: any) => o.code === val)?.name || val;
                                     return <span key={sys.code} className="bg-slate-100 px-2 py-0.5 rounded text-slate-600">{sys.name}: {optName}</span>;
                                   })}
@@ -788,7 +788,7 @@ export default function CreateActivityWizard() {
                           {systemTypes
                             .filter((sys: any) => STEP3_TYPES.includes(sys.code))
                             .map((sys: any) => {
-                              const options = getOptionsForType(sys.code);
+                              const options = getOptionsForType(sys.code) as any[];
                               return (
                                 <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
                                   <label className="text-sm font-bold text-slate-700">{sys.name}</label>
@@ -818,6 +818,7 @@ export default function CreateActivityWizard() {
               </div>
             )}
 
+          </div>
             {/* FOOTER ACTIONS */}
           <div className="p-6 bg-slate-50/50 border-t border-slate-200/60 flex justify-between items-center rounded-b-3xl">
             <button 
@@ -833,9 +834,10 @@ export default function CreateActivityWizard() {
                 <>
                   <button 
     onClick={() => handleSubmit(false)} 
-    className="px-8 py-2.5 text-sm font-bold text-white bg-[#00A99D] hover:bg-[#009085] hover:scale-105 active:scale-95 shadow-sm shadow-[#00A99D]/20 rounded-xl transition-all flex items-center gap-2"
+    disabled={isSubmitting}
+    className="px-8 py-2.5 text-sm font-bold text-white bg-[#00A99D] hover:bg-[#009085] hover:scale-105 active:scale-95 shadow-sm shadow-[#00A99D]/20 rounded-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
   >
-    <Save className="w-4 h-4" /> Kết quả và lưu
+    <Save className="w-4 h-4" /> {isSubmitting ? 'Đang lưu...' : 'Kết quả và lưu'}
   </button>
                 </>
               ) : (
