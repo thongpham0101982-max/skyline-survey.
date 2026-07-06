@@ -305,7 +305,7 @@ export default function CreateActivityWizard() {
                               : [...target.levels, lvl.id];
                             setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
                           }}
-                          className={px-4 py-2 rounded-xl border text-sm font-bold transition-all }
+                          className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (target.levels.includes(lvl.id) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                         >
                           {lvl.name}
                         </button>
@@ -327,7 +327,7 @@ export default function CreateActivityWizard() {
                                 : [...target.grades, grade];
                               setTarget({ ...target, grades: newGrades, classes: [] });
                             }}
-                            className={px-4 py-2 rounded-xl border text-sm font-bold transition-all }
+                            className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (target.levels.includes(lvl.id) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                           >
                             Khối {grade}
                           </button>
@@ -361,7 +361,7 @@ export default function CreateActivityWizard() {
                                 : [...target.classes, cls];
                               setTarget({ ...target, classes: newClasses });
                             }}
-                            className={px-3 py-1.5 rounded-lg border text-sm font-bold transition-all }
+                            className={"px-3 py-1.5 rounded-lg border text-sm font-bold transition-all " + (target.classes.includes(cls) ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                           >
                             {cls}
                           </button>
