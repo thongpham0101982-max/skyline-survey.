@@ -12,6 +12,24 @@ const STEP3_TYPES = ['ROLE', 'EVAL_LEVEL', 'ACHIEVEMENT'];
 const STEP5_TYPES = ['EVIDENCE_TYPE'];
 const IGNORED_TYPES = ['SYSTEM_CATEGORY_TYPE', 'GROUP', 'TYPE', 'THEME', 'ABSENCE_REASON'];
 
+const MOCK_LEVELS = [
+  { id: 'TieuHoc', name: 'Bậc Tiểu học' },
+  { id: 'THCS', name: 'Bậc THCS' },
+  { id: 'THPT', name: 'Bậc THPT' }
+];
+
+const MOCK_GRADES: Record<string, string[]> = {
+  'TieuHoc': ['1', '2', '3', '4', '5'],
+  'THCS': ['6', '7', '8', '9'],
+  'THPT': ['10', '11', '12']
+};
+
+const MOCK_CLASSES: Record<string, string[]> = {
+  '1': ['1A1', '1A2', '1A3'], '2': ['2A1', '2A2'], '3': ['3A1'], '4': ['4A1'], '5': ['5A1'],
+  '6': ['6A1', '6A2'], '7': ['7A1'], '8': ['8A1'], '9': ['9A1'],
+  '10': ['10A1', '10A2', '10A3'], '11': ['11A1', '11A2'], '12': ['12A1']
+};
+
 export default function CreateActivityWizard() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -24,7 +42,12 @@ export default function CreateActivityWizard() {
   const [info, setInfo] = useState<Record<string, any>>({ 
     name: '', academicYear: '2025-2026', date: '', semester: '1' 
   });
-  const [target, setTarget] = useState({ type: 'class', value: '' });
+  const [target, setTarget] = useState({
+    levels: [] as string[],
+    grades: [] as string[],
+    classes: [] as string[],
+    isSpecificStudents: false
+  });
   const [defaults, setDefaults] = useState<Record<string, any>>({ 
     allParticipate: true 
   });
@@ -269,45 +292,105 @@ export default function CreateActivityWizard() {
                 </div>
                 
                 <div className="space-y-6 max-w-2xl">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700">Phạm vi áp dụng</label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                      {[
-                        { id: 'class', label: 'Một lớp' },
-                        { id: 'multi-class', label: 'Nhiều lớp' },
-                        { id: 'grade', label: 'Cả khối' },
-                        { id: 'school', label: 'Toàn trường' },
-                        { id: 'specific', label: 'Danh sách HS cụ thể' },
-                      ].map(opt => (
-                        <div 
-                          key={opt.id}
-                          onClick={() => setTarget({...target, type: opt.id})}
-                          className={"cursor-pointer px-4 py-3 rounded-xl border text-center text-sm font-bold transition-all " + (
-                            target.type === opt.id 
-                              ? 'bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm' 
-                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300'
-                          )}
+                  {/* Bậc học */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">1. Chọn Bậc học</label>
+                    <div className="flex flex-wrap gap-2">
+                      {MOCK_LEVELS.map(lvl => (
+                        <button
+                          key={lvl.id}
+                          onClick={() => {
+                            const newLevels = target.levels.includes(lvl.id)
+                              ? target.levels.filter(l => l !== lvl.id)
+                              : [...target.levels, lvl.id];
+                            setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
+                          }}
+                          className={px-4 py-2 rounded-xl border text-sm font-bold transition-all }
                         >
-                          {opt.label}
-                        </div>
+                          {lvl.name}
+                        </button>
                       ))}
                     </div>
                   </div>
-                  
-                  <div className="space-y-1.5 pt-4">
-                    <label className="text-sm font-bold text-slate-700">Chi tiết (chọn Lớp/Khối tương ứng)</label>
-                    <input 
-                      type="text" 
-                      placeholder={target.type === 'class' ? 'Ví dụ: 10A1' : 'Ví dụ: Khối 10'}
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={target.value} 
-                      onChange={e => setTarget({...target, value: e.target.value})} 
-                    />
-                  </div>
+
+                  {/* Khối */}
+                  {target.levels.length > 0 && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                      <label className="text-sm font-bold text-slate-700">2. Chọn Khối</label>
+                      <div className="flex flex-wrap gap-2">
+                        {target.levels.flatMap(lvl => MOCK_GRADES[lvl] || []).map(grade => (
+                          <button
+                            key={grade}
+                            onClick={() => {
+                              const newGrades = target.grades.includes(grade)
+                                ? target.grades.filter(g => g !== grade)
+                                : [...target.grades, grade];
+                              setTarget({ ...target, grades: newGrades, classes: [] });
+                            }}
+                            className={px-4 py-2 rounded-xl border text-sm font-bold transition-all }
+                          >
+                            Khối {grade}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lớp */}
+                  {target.grades.length > 0 && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                      <label className="text-sm font-bold text-slate-700 flex justify-between">
+                        <span>3. Chọn Lớp</span>
+                        <button 
+                          className="text-[#00A99D] text-xs font-semibold hover:underline"
+                          onClick={() => {
+                            const allClasses = target.grades.flatMap(g => MOCK_CLASSES[g] || []);
+                            setTarget({ ...target, classes: allClasses });
+                          }}
+                        >
+                          Chọn tất cả lớp thuộc Khối đã chọn
+                        </button>
+                      </label>
+                      <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                        {target.grades.flatMap(g => MOCK_CLASSES[g] || []).map(cls => (
+                          <button
+                            key={cls}
+                            onClick={() => {
+                              const newClasses = target.classes.includes(cls)
+                                ? target.classes.filter(c => c !== cls)
+                                : [...target.classes, cls];
+                              setTarget({ ...target, classes: newClasses });
+                            }}
+                            className={px-3 py-1.5 rounded-lg border text-sm font-bold transition-all }
+                          >
+                            {cls}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* HS Cụ thể toggle */}
+                  {target.classes.length > 0 && (
+                    <div className="pt-4 animate-in fade-in slide-in-from-top-2">
+                      <label className="flex items-center gap-3 cursor-pointer p-4 bg-amber-50/50 rounded-xl border border-amber-200/50">
+                        <input 
+                          type="checkbox" 
+                          className="w-5 h-5 rounded border-amber-300 text-amber-500 focus:ring-amber-500"
+                          checked={target.isSpecificStudents} 
+                          onChange={e => setTarget({...target, isSpecificStudents: e.target.checked})} 
+                        />
+                        <div>
+                          <span className="text-sm font-bold text-amber-900 block">Áp dụng cho danh sách Học sinh cụ thể</span>
+                          <span className="text-xs text-amber-700/80 font-medium">Chỉ chọn một số học sinh trong các lớp trên (sẽ upload danh sách ở bước sau).</span>
+                        </div>
+                      </label>
+                    </div>
+                  )}
+
                 </div>
               </div>
             )}
-
             {/* Step 3: Defaults */}
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
