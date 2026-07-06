@@ -40,7 +40,7 @@ export default function CreateActivityWizard() {
       const yearParts = info.academicYear.split('-');
       if (yearParts.length === 2) {
         const endYear = yearParts[1].slice(-2);
-        setGeneratedCode(${endYear}TN01);
+        setGeneratedCode(endYear + 'TN01');
       }
     }
   }, [info.academicYear]);
