@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       orderBy: { studentName: 'asc' }
     });
 
-    return NextResponse.json(students);
+    return NextResponse.json(students.map(s => ({...s, name: s.studentName, code: s.studentCode})));
   } catch (error) {
     console.error("Error searching students:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
