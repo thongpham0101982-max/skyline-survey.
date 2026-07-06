@@ -12,39 +12,69 @@ const STEP3_TYPES = ['ROLE', 'EVAL_LEVEL', 'ACHIEVEMENT'];
 const STEP5_TYPES = ['EVIDENCE_TYPE'];
 const IGNORED_TYPES = ['SYSTEM_CATEGORY_TYPE', 'GROUP', 'TYPE', 'THEME', 'ABSENCE_REASON'];
 
-const MOCK_LEVELS = [
-  { id: 'TieuHoc', name: 'Bậc Tiểu học' },
-  { id: 'THCS', name: 'Bậc THCS' },
-  { id: 'THPT', name: 'Bậc THPT' }
-];
-
-const MOCK_GRADES: Record<string, string[]> = {
-  'TieuHoc': ['1', '2', '3', '4', '5'],
-  'THCS': ['6', '7', '8', '9'],
-  'THPT': ['10', '11', '12']
-};
-
-const MOCK_CLASSES: Record<string, string[]> = {
-  '1': ['1A1', '1A2', '1A3'], '2': ['2A1', '2A2'], '3': ['3A1'], '4': ['4A1'], '5': ['5A1'],
-  '6': ['6A1', '6A2'], '7': ['7A1'], '8': ['8A1'], '9': ['9A1'],
-  '10': ['10A1', '10A2', '10A3'], '11': ['11A1', '11A2'], '12': ['12A1']
-};
 
 
-const MOCK_STUDENTS = [
-  { id: 'HS001', code: '20230001', name: 'Nguyễn Văn A', class: '10A1' },
-  { id: 'HS002', code: '20230002', name: 'Trần Thị B', class: '10A2' },
-  { id: 'HS003', code: '20230003', name: 'Lê Hoàng C', class: '11A1' },
-  { id: 'HS004', code: '20230004', name: 'Phạm Minh D', class: '11A2' },
-  { id: 'HS005', code: '20230005', name: 'Vũ Hải E', class: '12A1' },
-  { id: 'HS006', code: '20230006', name: 'Đặng Ngọc F', class: '6A1' },
-  { id: 'HS007', code: '20230007', name: 'Bùi Tuấn G', class: '7A1' },
-  { id: 'HS008', code: '20230008', name: 'Hồ Thanh H', class: '8A1' },
-  { id: 'HS009', code: '20230009', name: 'Ngô Quốc I', class: '9A1' },
-  { id: 'HS010', code: '20230010', name: 'Đỗ Thảo K', class: '1A1' }
-];
+
+
+
+
+
+
 
 export default function CreateActivityWizard() {
+  const [academicYears, setAcademicYears] = useState<any[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedStudentsData, setSelectedStudentsData] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch('/api/academic-years')
+      .then(res => res.json())
+      .then(data => {
+        setAcademicYears(data || []);
+        if (data && data.length > 0) {
+          setInfo(prev => ({ ...prev, academicYear: data[0].id }));
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    if (info.academicYear) {
+      fetch(`/api/classes?academicYearId=${info.academicYear}`)
+        .then(res => res.json())
+        .then(data => setAllClasses(data || []))
+        .catch(console.error);
+    }
+  }, [info.academicYear]);
+
+  useEffect(() => {
+    if (!studentSearch || studentSearch.length < 2 || !info.academicYear) {
+      setSearchResults([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setIsSearching(true);
+      fetch(`/api/students/search?academicYearId=${info.academicYear}&q=${encodeURIComponent(studentSearch)}`)
+        .then(res => res.json())
+        .then(data => setSearchResults(data || []))
+        .catch(console.error)
+        .finally(() => setIsSearching(false));
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [studentSearch, info.academicYear]);
+
+  const availableLevels = Array.from(new Set(allClasses.map(c => c.level))).map(level => {
+    if (level === 'Tieu hoc') return { id: level, name: 'Bậc Tiểu học' };
+    if (level === 'THCS') return { id: level, name: 'Bậc THCS' };
+    if (level === 'THPT') return { id: level, name: 'Bậc THPT' };
+    return { id: level, name: level };
+  });
+
+  const availableGrades = Array.from(new Set(allClasses.filter(c => target.levels.includes(c.level)).map(c => c.grade))).sort((a,b) => parseInt(a) - parseInt(b));
+  const availableClasses = allClasses.filter(c => target.grades.includes(c.grade)).sort((a,b) => a.className.localeCompare(b.className));
+
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [catalogs, setCatalogs] = useState([]);
@@ -329,7 +359,7 @@ export default function CreateActivityWizard() {
                     <div className="space-y-2">
                       <label className="text-sm font-bold text-slate-700">1. Chọn Bậc học</label>
                       <div className="flex flex-wrap gap-2">
-                        {MOCK_LEVELS.map(lvl => (
+                        {availableLevels.map(lvl => (
                           <button
                             key={lvl.id}
                             onClick={() => {
@@ -353,7 +383,7 @@ export default function CreateActivityWizard() {
                         <div className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100">Vui lòng chọn Bậc học để xem danh sách Khối.</div>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {target.levels.flatMap(lvl => MOCK_GRADES[lvl] || []).map(grade => (
+                          {availableGrades.map(grade => (
                             <button
                               key={grade}
                               onClick={() => {
@@ -379,7 +409,7 @@ export default function CreateActivityWizard() {
                           <button 
                             className="text-[#00A99D] text-xs font-semibold hover:underline"
                             onClick={() => {
-                              const allClasses = target.grades.flatMap(g => MOCK_CLASSES[g] || []);
+                              const allClasses = availableClasses.map(c => c.id);
                               setTarget({ ...target, classes: allClasses });
                             }}
                           >
@@ -391,19 +421,17 @@ export default function CreateActivityWizard() {
                         <div className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100">Vui lòng chọn Khối để xem danh sách Lớp.</div>
                       ) : (
                         <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                          {target.grades.flatMap(g => MOCK_CLASSES[g] || []).map(cls => (
+                          {availableClasses.map(cls => (
                             <button
-                              key={cls}
+                              key={cls.id}
                               onClick={() => {
-                                const newClasses = target.classes.includes(cls)
-                                  ? target.classes.filter(c => c !== cls)
-                                  : [...target.classes, cls];
+                                const newClasses = target.classes.includes(cls.id)
+                                  ? target.classes.filter(c => c !== cls.id)
+                                  : [...target.classes, cls.id];
                                 setTarget({ ...target, classes: newClasses });
                               }}
-                              className={"px-3 py-1.5 rounded-lg border text-sm font-bold transition-all " + (target.classes.includes(cls) ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
-                            >
-                              {cls}
-                            </button>
+                              className={"px-3 py-1.5 rounded-lg border text-sm font-bold transition-all " + (target.classes.includes(cls.id) ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                            >{cls.className}</button>
                           ))}
                         </div>
                       )}
@@ -434,16 +462,16 @@ export default function CreateActivityWizard() {
                         </div>
                         
                         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
-                          {MOCK_STUDENTS.filter(s => s.name.toLowerCase().includes(studentSearch.toLowerCase()) || s.code.includes(studentSearch)).map(student => (
+                          {searchResults.map(student => (
                             <div key={student.id} className="flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 transition-colors last:border-0">
                               <div>
                                 <div className="text-sm font-bold text-slate-800">{student.name}</div>
-                                <div className="text-xs font-medium text-slate-500">{student.code} • {student.class}</div>
+                                <div className="text-xs font-medium text-slate-500">{student.code} • {student.class?.className}</div>
                               </div>
                               <button
                                 onClick={() => {
                                   if (!target.specificStudents.includes(student.id)) {
-                                    setTarget({...target, specificStudents: [...target.specificStudents, student.id]});
+                                    setTarget({...target, specificStudents: [...target.specificStudents, student.id]}); if (!selectedStudentsData.find(s => s.id === student.id)) setSelectedStudentsData([...selectedStudentsData, student]);
                                   }
                                 }}
                                 disabled={target.specificStudents.includes(student.id)}
@@ -461,7 +489,7 @@ export default function CreateActivityWizard() {
                         <label className="text-sm font-bold text-slate-700 flex justify-between items-center">
                           <span>Danh sách đã chọn ({target.specificStudents.length})</span>
                           {target.specificStudents.length > 0 && (
-                            <button onClick={() => setTarget({...target, specificStudents: []})} className="text-xs text-rose-500 hover:underline">Xóa tất cả</button>
+                            <button onClick={() => { setTarget({...target, specificStudents: []}); setSelectedStudentsData([]); }} className="text-xs text-rose-500 hover:underline">Xóa tất cả</button>
                           )}
                         </label>
                         <div className="bg-slate-50 border border-slate-200 rounded-xl p-2 min-h-[300px] flex flex-col gap-2">
@@ -469,7 +497,7 @@ export default function CreateActivityWizard() {
                             <div className="flex-1 flex items-center justify-center text-sm font-medium text-slate-400 italic">Chưa có học sinh nào</div>
                           ) : (
                             target.specificStudents.map(id => {
-                              const s = MOCK_STUDENTS.find(x => x.id === id);
+                              const s = selectedStudentsData.find(x => x.id === id);
                               if (!s) return null;
                               return (
                                 <div key={s.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
@@ -477,7 +505,7 @@ export default function CreateActivityWizard() {
                                     <div className="text-sm font-bold text-slate-700">{s.name}</div>
                                     <div className="text-xs font-medium text-slate-500">{s.class}</div>
                                   </div>
-                                  <button onClick={() => setTarget({...target, specificStudents: target.specificStudents.filter(x => x !== s.id)})} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors">
+                                  <button onClick={() => { setTarget({...target, specificStudents: target.specificStudents.filter(x => x !== s.id)}); setSelectedStudentsData(selectedStudentsData.filter(x => x.id !== s.id)); }} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors">
                                     <X className="w-4 h-4" />
                                   </button>
                                 </div>
