@@ -1,6 +1,7 @@
 ﻿"use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getDefaultAcademicYearClient } from '@/lib/academicYear';
 import { 
   Info, Users, Settings, UserMinus, CheckSquare, 
   ChevronRight, ChevronLeft, Save, Send, UploadCloud, 
@@ -34,7 +35,8 @@ export default function CreateActivityWizard() {
       .then(data => {
         setAcademicYears(data || []);
         if (data && data.length > 0) {
-          setInfo(prev => ({ ...prev, academicYear: data[0].id }));
+          const defaultYear = getDefaultAcademicYearClient(data);
+          setInfo(prev => ({ ...prev, academicYear: defaultYear ? defaultYear.id : data[0].id }));
         }
       })
       .catch(console.error);
@@ -96,12 +98,29 @@ export default function CreateActivityWizard() {
 
   const [generatedCode, setGeneratedCode] = useState('');
 
-  const availableLevels = Array.from(new Set(allClasses.map(c => c.level))).map(level => {
-    if (level === 'Tieu hoc' || level === 'Tiểu học') return { id: level, name: 'Bậc Tiểu học' };
-    if (level === 'THCS') return { id: level, name: 'Bậc THCS' };
-    if (level === 'THPT') return { id: level, name: 'Bậc THPT' };
-    return { id: level, name: level };
+  const uniqueLevels = Array.from(new Set(allClasses.map(c => c.level)));
+  const mappedLevelsMap = new Map();
+  uniqueLevels.forEach(level => {
+    let name = level || 'Chưa phân loại';
+    let id = level || 'none';
+    if (level === 'Tieu hoc' || level === 'Tiểu học') {
+      name = 'Bậc Tiểu học';
+      id = 'Tieu-hoc-group';
+    } else if (level === 'THCS') {
+      name = 'Bậc THCS';
+    } else if (level === 'THPT') {
+      name = 'Bậc THPT';
+    } else if (level && level.toLowerCase().includes('mầm non')) {
+      name = 'Mầm non';
+      id = 'Mam-non-group';
+    }
+    if (!mappedLevelsMap.has(id)) {
+      mappedLevelsMap.set(id, { id, name, originalLevels: [level] });
+    } else {
+      mappedLevelsMap.get(id).originalLevels.push(level);
+    }
   });
+  const availableLevels = Array.from(mappedLevelsMap.values());
 
   const availableGrades = Array.from(new Set(allClasses.filter(c => target.levels.includes(c.level)).map(c => c.grade))).sort((a,b) => parseInt(a) - parseInt(b));
   const availableClasses = allClasses.filter(c => target.grades.includes(c.grade)).sort((a,b) => a.className.localeCompare(b.className));
@@ -366,12 +385,13 @@ export default function CreateActivityWizard() {
                           <button
                             key={lvl.id}
                             onClick={() => {
-                              const newLevels = target.levels.includes(lvl.id)
-                                ? target.levels.filter(l => l !== lvl.id)
-                                : [...target.levels, lvl.id];
+                              const isSelected = lvl.originalLevels.some(l => target.levels.includes(l));
+                              const newLevels = isSelected
+                                ? target.levels.filter(l => !lvl.originalLevels.includes(l))
+                                : [...target.levels, ...lvl.originalLevels];
                               setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
                             }}
-                            className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (target.levels.includes(lvl.id) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                            className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (lvl.originalLevels.some(l => target.levels.includes(l)) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                           >
                             {lvl.name}
                           </button>
