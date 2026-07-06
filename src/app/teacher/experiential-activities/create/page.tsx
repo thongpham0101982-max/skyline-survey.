@@ -65,15 +65,7 @@ export default function CreateActivityWizard() {
     return () => clearTimeout(timer);
   }, [studentSearch, info.academicYear]);
 
-  const availableLevels = Array.from(new Set(allClasses.map(c => c.level))).map(level => {
-    if (level === 'Tieu hoc') return { id: level, name: 'Bậc Tiểu học' };
-    if (level === 'THCS') return { id: level, name: 'Bậc THCS' };
-    if (level === 'THPT') return { id: level, name: 'Bậc THPT' };
-    return { id: level, name: level };
-  });
-
-  const availableGrades = Array.from(new Set(allClasses.filter(c => target.levels.includes(c.level)).map(c => c.grade))).sort((a,b) => parseInt(a) - parseInt(b));
-  const availableClasses = allClasses.filter(c => target.grades.includes(c.grade)).sort((a,b) => a.className.localeCompare(b.className));
+  
 
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -103,6 +95,16 @@ export default function CreateActivityWizard() {
   });
 
   const [generatedCode, setGeneratedCode] = useState('');
+
+  const availableLevels = Array.from(new Set(allClasses.map(c => c.level))).map(level => {
+    if (level === 'Tieu hoc') return { id: level, name: 'Bậc Tiểu học' };
+    if (level === 'THCS') return { id: level, name: 'Bậc THCS' };
+    if (level === 'THPT') return { id: level, name: 'Bậc THPT' };
+    return { id: level, name: level };
+  });
+
+  const availableGrades = Array.from(new Set(allClasses.filter(c => target.levels.includes(c.level)).map(c => c.grade))).sort((a,b) => parseInt(a) - parseInt(b));
+  const availableClasses = allClasses.filter(c => target.grades.includes(c.grade)).sort((a,b) => a.className.localeCompare(b.className));
 
   useEffect(() => {
     if (info.academicYear) {

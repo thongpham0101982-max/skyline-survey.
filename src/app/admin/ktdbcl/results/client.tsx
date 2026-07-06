@@ -412,6 +412,28 @@ export function ResultsClient({
     alert(`Đã áp dụng hàng loạt cho ${checkedRowIds.size} học sinh!`);
   }
 
+  const handleDeleteAll = () => {
+    if (!confirm("Bạn có chắc chắn muốn xóa TẤT CẢ dữ liệu thành tích đang hiển thị trên lưới không? (Cần bấm Lưu để áp dụng)")) return;
+    
+    setHasChanges(true);
+    setGridRows(prev => {
+      return prev.map(r => {
+        setChangedStudentIds(c => {
+          const next = new Set(c);
+          next.add(r.studentId);
+          return next;
+        });
+        
+        return {
+          ...r,
+          name: "",
+          category: "",
+          level: ""
+        };
+      });
+    });
+  }
+
   const handleRemoveRow = (gridRowId: string, studentId: string) => {
     setChangedStudentIds(prev => {
       const next = new Set(prev)
@@ -721,6 +743,9 @@ export function ResultsClient({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button onClick={handleDeleteAll} className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all hover:scale-105 border border-red-200">
+                    <Trash2 className="w-4 h-4" /> Xóa tất cả
+                  </button>
                   <button onClick={handleDownloadSampleExcel} className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all hover:scale-105">
                     <Download className="w-4 h-4" /> Tải File Mẫu
                   </button>
