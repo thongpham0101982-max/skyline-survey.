@@ -213,9 +213,8 @@ export default function CreateActivityWizard() {
     { id: 1, title: 'Thông tin chung', icon: Info, desc: 'Kế hoạch & phân loại' },
     { id: 2, title: 'Đối tượng', icon: Users, desc: 'Phạm vi tham gia' },
     { id: 3, title: 'Thiết lập', icon: Settings, desc: 'Đánh giá mặc định' },
-    { id: 4, title: 'Ngoại lệ', icon: UserMinus, desc: 'Vắng mặt, nổi bật' },
-    { id: 5, title: 'Minh chứng', icon: CheckSquare, desc: 'Tài liệu & gửi duyệt' },
-  ];
+    { id: 4, title: 'Kết quả', icon: CheckSquare, desc: 'Kết quả cá nhân' },
+    ];
 
   const getOptionsForType = (typeCode: string) => {
     return categories
@@ -643,8 +642,8 @@ export default function CreateActivityWizard() {
             {step === 4 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="border-b border-slate-100 pb-4 mb-6">
-                  <h2 className="text-lg font-black text-slate-800">4. Học sinh ngoại lệ</h2>
-                  <p className="text-sm text-slate-500 font-medium">Ghi nhận học sinh vắng mặt hoặc có thành tích đặc biệt</p>
+                  <h2 className="text-lg font-black text-slate-800">4. Kết quả cá nhân</h2>
+                  <p className="text-sm text-slate-500 font-medium">Ghi nhận học sinh có kết quả khác biệt so với mặc định</p>
                 </div>
                 
                 <div className="bg-slate-50/80 p-8 rounded-2xl border border-slate-200 border-dashed flex flex-col items-center justify-center text-center space-y-4">
@@ -652,9 +651,9 @@ export default function CreateActivityWizard() {
                     <Users className="w-8 h-8 text-slate-400" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-700">Chưa có học sinh ngoại lệ nào</h3>
+                    <h3 className="text-sm font-bold text-slate-700">Chưa có kết quả cá nhân nào</h3>
                     <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                      Bạn có thể chọn từng học sinh để thay đổi đánh giá, hoặc upload file Excel danh sách ngoại lệ.
+                      Bạn có thể chọn từng học sinh để thay đổi đánh giá, hoặc upload file Excel danh sách.
                     </p>
                   </div>
                   <div className="flex gap-3 mt-2">
@@ -669,67 +668,7 @@ export default function CreateActivityWizard() {
               </div>
             )}
 
-            {/* Step 5: Evidence */}
-            {step === 5 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="border-b border-slate-100 pb-4 mb-6">
-                  <h2 className="text-lg font-black text-slate-800">5. Minh chứng & Hoàn tất</h2>
-                  <p className="text-sm text-slate-500 font-medium">Tải lên hoặc đính kèm link minh chứng cho hoạt động</p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {systemTypes
-                    .filter((sys: any) => STEP5_TYPES.includes(sys.code))
-                    .map((sys: any) => renderDynamicField(sys, evidence[sys.code], (val) => setEvidence({...evidence, [sys.code]: val})))}
-                    
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-sm font-bold text-slate-700">Tải tệp lên (Ảnh/PDF)</label>
-                    <div className="flex items-center justify-center w-full">
-                      <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all group">
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                          <UploadCloud className="w-8 h-8 text-slate-400 mb-3 group-hover:text-[#00A99D] transition-colors" />
-                          <p className="mb-1 text-sm text-slate-500 font-medium"><span className="font-bold text-[#00A99D]">Nhấn để tải lên</span> hoặc kéo thả</p>
-                          <p className="text-xs text-slate-400">PNG, JPG, PDF (MAX. 10MB)</p>
-                        </div>
-                        <input type="file" className="hidden" multiple />
-                      </label>
-                    </div> 
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-blue-500"/> Link OneDrive</label>
-                    <input 
-                      type="url" 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      placeholder="https://1drv.ms/..."
-                      value={evidence.oneDrive} onChange={e => setEvidence({...evidence, oneDrive: e.target.value})} 
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2"><LinkIcon className="w-4 h-4 text-rose-500"/> Link YouTube</label>
-                    <input 
-                      type="url" 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      placeholder="https://youtube.com/..."
-                      value={evidence.youtube} onChange={e => setEvidence({...evidence, youtube: e.target.value})} 
-                    />
-                  </div>
-
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-sm font-bold text-slate-700">Mô tả thêm về minh chứng</label>
-                    <textarea 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all min-h-[100px]"
-                      placeholder="Ghi chú chi tiết về các tệp đính kèm..."
-                      value={evidence.desc} onChange={e => setEvidence({...evidence, desc: e.target.value})}
-                    ></textarea>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* FOOTER ACTIONS */}
+            {/* FOOTER ACTIONS */}
           <div className="p-6 bg-slate-50/50 border-t border-slate-200/60 flex justify-between items-center rounded-b-3xl">
             <button 
               onClick={() => setStep(step - 1)} 
@@ -740,20 +679,14 @@ export default function CreateActivityWizard() {
             </button>
             
             <div className="flex gap-3">
-              {step === 5 ? (
+              {step === steps.length ? (
                 <>
                   <button 
-                    onClick={() => handleSubmit(true)} 
-                    className="px-6 py-2.5 text-sm font-bold text-slate-600 bg-white ring-1 ring-slate-200 hover:bg-slate-50 hover:text-slate-900 rounded-xl transition-all flex items-center gap-2"
-                  >
-                    <Save className="w-4 h-4" /> Lưu nháp
-                  </button>
-                  <button 
-                    onClick={() => handleSubmit(false)} 
-                    className="px-8 py-2.5 text-sm font-bold text-white bg-[#00A99D] hover:bg-[#009085] hover:scale-105 active:scale-95 shadow-sm shadow-[#00A99D]/20 rounded-xl transition-all flex items-center gap-2"
-                  >
-                    <Send className="w-4 h-4" /> Gửi duyệt
-                  </button>
+    onClick={() => handleSubmit(false)} 
+    className="px-8 py-2.5 text-sm font-bold text-white bg-[#00A99D] hover:bg-[#009085] hover:scale-105 active:scale-95 shadow-sm shadow-[#00A99D]/20 rounded-xl transition-all flex items-center gap-2"
+  >
+    <Save className="w-4 h-4" /> Kết quả và lưu
+  </button>
                 </>
               ) : (
                 <button 
