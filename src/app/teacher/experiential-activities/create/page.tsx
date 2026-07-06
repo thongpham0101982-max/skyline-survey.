@@ -56,6 +56,9 @@ export default function CreateActivityWizard() {
   });
   const [targetMode, setTargetMode] = useState<'class' | 'student'>('class');
   const [studentSearch, setStudentSearch] = useState('');
+  const [studentFilterLevel, setStudentFilterLevel] = useState('');
+  const [studentFilterClass, setStudentFilterClass] = useState('');
+  const [classStudents, setClassStudents] = useState<any[]>([]);
   const [target, setTarget] = useState({
     levels: [] as string[],
     grades: [] as string[],
@@ -113,6 +116,17 @@ export default function CreateActivityWizard() {
   
 
 
+
+  useEffect(() => {
+    if (studentFilterClass && info.academicYear) {
+      fetch(`/api/students/search?academicYearId=${info.academicYear}&classId=${studentFilterClass}`)
+        .then(res => res.json())
+        .then(data => setClassStudents(data || []))
+        .catch(console.error);
+    } else {
+      setClassStudents([]);
+    }
+  }, [studentFilterClass, info.academicYear]);
 
   const uniqueLevels = Array.from(new Set(allClasses.map(c => c.level)));
   const mappedLevelsMap = new Map();
@@ -488,6 +502,39 @@ export default function CreateActivityWizard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       {/* Cột trái: Tìm kiếm */}
                       <div className="space-y-3">
+
+                        {/* Chọn Khối / Lớp */}
+                        <div className="flex gap-2 mb-2">
+                          <select 
+                            className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
+                            value={studentFilterLevel}
+                            onChange={e => {
+                              setStudentFilterLevel(e.target.value);
+                              setStudentFilterClass('');
+                            }}
+                          >
+                            <option value="">-- Chọn Khối --</option>
+                            {availableLevels.map((lvl: any) => (
+                              <option key={lvl.id} value={lvl.id}>{lvl.name}</option>
+                            ))}
+                          </select>
+                          <select 
+                            className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
+                            value={studentFilterClass}
+                            onChange={e => setStudentFilterClass(e.target.value)}
+                            disabled={!studentFilterLevel}
+                          >
+                            <option value="">-- Chọn Lớp --</option>
+                            {allClasses
+                              .filter(c => {
+                                const levelDef = availableLevels.find((l: any) => l.id === studentFilterLevel);
+                                return levelDef && levelDef.originalLevels.includes(c.level);
+                              })
+                              .map(c => (
+                                <option key={c.id} value={c.id}>{c.className}</option>
+                              ))}
+                          </select>
+                        </div>
                         <label className="text-sm font-bold text-slate-700">Tìm và thêm học sinh</label>
                         <div className="relative">
                           <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
@@ -501,7 +548,7 @@ export default function CreateActivityWizard() {
                         </div>
                         
                         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
-                          {searchResults.map(student => (
+                          {(studentFilterClass ? classStudents : searchResults).map(student => (
                             <div key={student.id} className="flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 transition-colors last:border-0">
                               <div>
                                 <div className="text-sm font-bold text-slate-800">{student.name}</div>

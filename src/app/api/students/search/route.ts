@@ -6,6 +6,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get('academicYearId');
     const q = searchParams.get('q');
+    const classId = searchParams.get('classId');
 
     if (!academicYearId) {
       return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 });
@@ -15,6 +16,10 @@ export async function GET(req: Request) {
       academicYearId,
       status: 'ACTIVE'
     };
+
+    if (classId) {
+      where.classId = classId;
+    }
 
     if (q) {
       where.OR = [
@@ -28,7 +33,7 @@ export async function GET(req: Request) {
       include: {
         class: true
       },
-      take: 20,
+      take: classId ? 1000 : 20,
       orderBy: { studentName: 'asc' }
     });
 
