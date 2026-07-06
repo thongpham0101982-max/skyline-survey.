@@ -52,7 +52,7 @@ export default function CreateActivityWizard() {
         const newEvidence = { ...evidence };
 
         sysTypes.forEach((sys: any) => {
-          if (IGNORED_TYPES.includes(sys.code) || sys.name.toLowerCase() === 'mức độ tham gia' || sys.name.toLowerCase() === 'kết quả') return;
+          if (IGNORED_TYPES.includes(sys.code) || sys.name.toLowerCase().includes('mức độ') || sys.name.toLowerCase().includes('kết quả')) return;
           if (STEP3_TYPES.includes(sys.code)) {
             newDefaults[sys.code] = '';
           } else if (STEP5_TYPES.includes(sys.code)) {
