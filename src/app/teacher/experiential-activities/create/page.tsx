@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
@@ -97,7 +97,7 @@ export default function CreateActivityWizard() {
   const [generatedCode, setGeneratedCode] = useState('');
 
   const availableLevels = Array.from(new Set(allClasses.map(c => c.level))).map(level => {
-    if (level === 'Tieu hoc') return { id: level, name: 'Bậc Tiểu học' };
+    if (level === 'Tieu hoc' || level === 'Tiểu học') return { id: level, name: 'Bậc Tiểu học' };
     if (level === 'THCS') return { id: level, name: 'Bậc THCS' };
     if (level === 'THPT') return { id: level, name: 'Bậc THPT' };
     return { id: level, name: level };
@@ -284,9 +284,10 @@ export default function CreateActivityWizard() {
                       value={info.academicYear} 
                       onChange={e => setInfo({...info, academicYear: e.target.value})}
                     >
-                      <option value="2024-2025">Năm học 2024-2025</option>
-                      <option value="2025-2026">Năm học 2025-2026</option>
-                      <option value="2026-2027">Năm học 2026-2027</option>
+                      {academicYears.length === 0 && <option value="">Đang tải...</option>}
+                      {academicYears.map(year => (
+                        <option key={year.id} value={year.id}>{year.name}</option>
+                      ))}
                     </select>
                   </div>
 
