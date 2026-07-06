@@ -42,7 +42,7 @@ export default function CreateActivityWizard() {
       if (catesRes.success) {
         setCategories(catesRes.data);
         const sysTypes = catesRes.data
-          .filter((c: any) => c.type === 'SYSTEM_CATEGORY_TYPE' && c.status === 'ACTIVE')
+          .filter((c: any) => c.type === 'SYSTEM_CATEGORY_TYPE' && c.status === 'ACTIVE' && !c.name.toLowerCase().includes('mức độ') && !c.name.toLowerCase().includes('kết quả'))
           .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
         setSystemTypes(sysTypes);
         
