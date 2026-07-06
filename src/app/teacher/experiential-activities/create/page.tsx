@@ -43,6 +43,35 @@ export default function CreateActivityWizard() {
   const [selectedStudentsData, setSelectedStudentsData] = useState<any[]>([]);
 
 
+  const router = useRouter();
+  const [step, setStep] = useState(1);
+  const [catalogs, setCatalogs] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [systemTypes, setSystemTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Dynamic form states
+  const [info, setInfo] = useState<Record<string, any>>({ 
+    name: '', academicYear: '2025-2026', date: '', semester: '1' 
+  });
+  const [targetMode, setTargetMode] = useState<'class' | 'student'>('class');
+  const [studentSearch, setStudentSearch] = useState('');
+  const [target, setTarget] = useState({
+    levels: [] as string[],
+    grades: [] as string[],
+    classes: [] as string[],
+    specificStudents: [] as string[]
+  });
+  const [defaults, setDefaults] = useState<Record<string, any>>({ 
+    allParticipate: true 
+  });
+  const [exceptions, setExceptions] = useState({ outstanding: [], absent: [], achievements: [] });
+  const [evidence, setEvidence] = useState<Record<string, any>>({ 
+    photos: '', pdfs: '', oneDrive: '', gDrive: '', youtube: '', desc: '' 
+  });
+
+  const [generatedCode, setGeneratedCode] = useState('');
+
   useEffect(() => {
     fetch('/api/academic-years')
       .then(res => res.json())
@@ -83,34 +112,7 @@ export default function CreateActivityWizard() {
 
   
 
-  const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [catalogs, setCatalogs] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [systemTypes, setSystemTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Dynamic form states
-  const [info, setInfo] = useState<Record<string, any>>({ 
-    name: '', academicYear: '2025-2026', date: '', semester: '1' 
-  });
-  const [targetMode, setTargetMode] = useState<'class' | 'student'>('class');
-  const [studentSearch, setStudentSearch] = useState('');
-  const [target, setTarget] = useState({
-    levels: [] as string[],
-    grades: [] as string[],
-    classes: [] as string[],
-    specificStudents: [] as string[]
-  });
-  const [defaults, setDefaults] = useState<Record<string, any>>({ 
-    allParticipate: true 
-  });
-  const [exceptions, setExceptions] = useState({ outstanding: [], absent: [], achievements: [] });
-  const [evidence, setEvidence] = useState<Record<string, any>>({ 
-    photos: '', pdfs: '', oneDrive: '', gDrive: '', youtube: '', desc: '' 
-  });
 
-  const [generatedCode, setGeneratedCode] = useState('');
 
   const uniqueLevels = Array.from(new Set(allClasses.map(c => c.level)));
   const mappedLevelsMap = new Map();
