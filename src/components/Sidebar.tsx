@@ -516,7 +516,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
                 {/* 4. Hoạt động trải nghiệm */}
                 <Link 
-                  href="/teacher/experiential-activities/create" 
+                  href="/teacher/experiential-activities" 
                   onClick={() => setIsOpen(false)} 
                   className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
                     pathname.includes('/teacher/experiential-activities/create')
