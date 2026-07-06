@@ -1,7 +1,7 @@
 ﻿"use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getDefaultAcademicYearClient } from '@/lib/academicYear';
+
 import { 
   Info, Users, Settings, UserMinus, CheckSquare, 
   ChevronRight, ChevronLeft, Save, Send, UploadCloud, 
@@ -21,6 +21,19 @@ const IGNORED_TYPES = ['SYSTEM_CATEGORY_TYPE', 'GROUP', 'TYPE', 'THEME', 'ABSENC
 
 
 
+
+
+function getDefaultAcademicYearClient(years: any[]) {
+  if (!years || years.length === 0) return null;
+  if (typeof window !== "undefined") {
+    const stored = localStorage.getItem("selectedAcademicYear");
+    if (stored) {
+      const year = years.find(y => y.id === stored);
+      if (year) return year;
+    }
+  }
+  return years.find(y => y.status === 'ACTIVE' && !y.isOff) || years.find(y => !y.isOff) || years[0];
+}
 
 export default function CreateActivityWizard() {
   const [academicYears, setAcademicYears] = useState<any[]>([]);
