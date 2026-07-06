@@ -14,15 +14,6 @@ export default function ExperientialActivitiesList() {
     { id: 'act-003', name: 'Ngoại khoá kỹ năng sinh tồn', date: '2024-01-05', location: 'Khu du lịch sinh thái Tiên Sa', status: 'SUBMITTED', participants: 300 },
   ];
 
-  const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'DRAFT': return <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold">Nháp</span>;
-      case 'SUBMITTED': return <span className="px-2 py-1 bg-amber-100 text-amber-600 rounded-md text-xs font-bold">Chờ duyệt</span>;
-      case 'APPROVED': return <span className="px-2 py-1 bg-emerald-100 text-emerald-600 rounded-md text-xs font-bold">Đã duyệt</span>;
-      default: return null;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 font-sans">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -58,16 +49,6 @@ export default function ExperientialActivitiesList() {
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <select className="px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#00A99D] transition-all">
-            <option value="">Tất cả trạng thái</option>
-            <option value="DRAFT">Nháp</option>
-            <option value="SUBMITTED">Chờ duyệt</option>
-            <option value="APPROVED">Đã duyệt</option>
-          </select>
-          <select className="px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#00A99D] transition-all">
-            <option value="">Học kỳ 1</option>
-            <option value="2">Học kỳ 2</option>
-          </select>
         </div>
 
         {/* List */}
@@ -79,7 +60,7 @@ export default function ExperientialActivitiesList() {
               onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
             >
               <div className="flex justify-between items-start mb-4">
-                {getStatusBadge(act.status)}
+                <div></div>
                 <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-[#00A99D]/10 transition-colors">
                   <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#00A99D]" />
                 </div>
