@@ -589,7 +589,7 @@ export default function CreateActivityWizard() {
                                 <div key={s.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                                   <div>
                                     <div className="text-sm font-bold text-slate-700">{s.name}</div>
-                                    <div className="text-xs font-medium text-slate-500">{s.class}</div>
+                                    <div className="text-xs font-medium text-slate-500">{s.code} • {s.class?.className || (typeof s.class === "string" ? s.class : "")}</div>
                                   </div>
                                   <button onClick={() => { setTarget({...target, specificStudents: target.specificStudents.filter(x => x !== s.id)}); setSelectedStudentsData(selectedStudentsData.filter(x => x.id !== s.id)); }} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors">
                                     <X className="w-4 h-4" />
