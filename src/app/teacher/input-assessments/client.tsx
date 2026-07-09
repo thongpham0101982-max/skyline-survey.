@@ -380,7 +380,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         }
     };
 
-    if (loading && assignments.length === 0) return <div className="p-8 text-center text-slate-500">Đang tải...</div>;
+    // Early return moved below hook definitions to prevent React Rules of Hooks violation
 
     const currentAssignment = availableAssignments.find(a => a.id === selectedAssignmentId) || assignments.find(a => a.id === selectedAssignmentId);
     
@@ -467,6 +467,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const start = (safeCurrentPage - 1) * 10;
     return currentTabStudents.slice(start, start + 10);
   }, [currentTabStudents, safeCurrentPage]);
+
+  if (loading && assignments.length === 0) {
+    return <div className="p-8 text-center text-slate-500">Đang tải...</div>;
+  }
 
     return (
         <div className="p-3 md:p-6 max-w-[1400px] mx-auto space-y-4 md:space-y-6">
