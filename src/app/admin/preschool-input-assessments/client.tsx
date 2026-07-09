@@ -155,7 +155,7 @@ const getStandardGrade = (grade: string) => {
   return g;
 };
 
-export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, mode = "config" }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; mode?: "config" | "input"; }) {
+export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, mode = "config", forcedTab }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; mode?: "config" | "input"; forcedTab?: string; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
@@ -183,6 +183,12 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
     return `GIÁM ĐỐC CƠ SỞ (${campusName})`;
   };
+
+  useEffect(() => {
+    if (forcedTab) {
+      setTab(forcedTab);
+    }
+  }, [forcedTab]);
 
   const [tab, setTab] = useState(() => {
     if (mode === "input") return "periods";
@@ -2856,6 +2862,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       )}
 
       {/* Tabs */}
+      {mode !== "input" && (
       <div className="bg-white border-2 border-[#00A99D] shadow-none rounded-none p-1">
         <div className="flex flex-wrap gap-0.5">
           {[
@@ -2881,6 +2888,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           ))}
         </div>
       </div>
+      )}
 
       {/* Tab: Periods */}
       {tab === "periods" && (

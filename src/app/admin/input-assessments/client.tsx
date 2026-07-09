@@ -52,6 +52,7 @@ interface Props {
   currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null;
   rolePermissions?: { module: string, canRead: boolean, canCreate: boolean, canUpdate: boolean, canDelete: boolean }[];
   mode?: "config" | "input";
+  forcedTab?: string;
 }
 
 // ========= CONSTANTS =========
@@ -313,7 +314,7 @@ const renderTemplate = (template, student) => {
 
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config" }: Props) {
+export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config", forcedTab }: Props) {
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
     categories: "INPUT_ASSESSMENTS_CATEGORIES",
@@ -335,9 +336,18 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       requiredModule = "STUDENT_INFO_K12";
     }
     let perm = rolePermissions?.find(p => p.module === requiredModule);
-    if (!perm && mode === "input") {
-      perm = rolePermissions?.find(p => p.module === "STUDENT_INFO");
+    if ((!perm || !perm.canRead) && mode === "input") {
+      const fallback = rolePermissions?.find(p => p.module === "STUDENT_INFO");
+      if (fallback && fallback.canRead) {
+        perm = fallback;
+      }
     }
+
+    const isTVTS = userRole === "TVAN" || userRole === "TVTS";
+    if (isTVTS && mode === "input" && (tabId === "periods" || tabId === "students")) {
+      return { canRead: true, canCreate: true, canUpdate: true, canDelete: false };
+    }
+
     if (perm) {
       return {
         canRead: !!perm.canRead,
@@ -361,6 +371,12 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     
     return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
   };
+
+  useEffect(() => {
+    if (forcedTab) {
+      setTab(forcedTab);
+    }
+  }, [forcedTab]);
 
   const [tab, setTab] = useState(() => {
     const userRole = (currentUser?.role || "").toUpperCase();
@@ -3378,6 +3394,7 @@ return {
       )}
 
       {/* TAB NAV - icon + label, wraps to fit, no overflow */}
+      {mode !== "input" && (
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
         <div className="flex flex-wrap gap-0.5">
           {[
@@ -3417,6 +3434,7 @@ return {
           })}
         </div>
       </div>
+      )}
 
       {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
       {tab==="assignments" && (

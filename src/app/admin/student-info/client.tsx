@@ -9,6 +9,8 @@ import {
   Eye, 
   Users2, 
   Baby, 
+  Clock,
+  Users,
   GraduationCap, 
   Filter, 
   CheckCircle2, 
@@ -439,7 +441,7 @@ export function StudentInfoClient({
       </div>
     );
   };
-  const [subTab, setSubTab] = useState<"input" | "info" | "result">("input");
+  const [subTab, setSubTab] = useState<"periods" | "students" | "info" | "result">("students");
 
   useEffect(() => {
     setSelectedIds([]);
@@ -1384,19 +1386,34 @@ export function StudentInfoClient({
       </div>
 
       {/* Sub-tab Selector */}
-      <div className="flex bg-slate-100/80 p-1 rounded-xl w-fit gap-1 border border-slate-300/50">
+      <div className="flex flex-wrap bg-slate-100/80 p-1 rounded-xl w-fit gap-1 border border-slate-300/50">
         <button
           onClick={() => {
-            setSubTab("input");
+            setSubTab("periods");
             setCurrentPage(1);
           }}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
-            subTab === "input"
+            subTab === "periods"
               ? "bg-[#00A99D] text-white shadow-sm"
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
           }`}
         >
-          Nhập TT Học sinh
+          <Clock className="w-4 h-4" />
+          Tạo đợt khảo sát
+        </button>
+        <button
+          onClick={() => {
+            setSubTab("students");
+            setCurrentPage(1);
+          }}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+            subTab === "students"
+              ? "bg-[#00A99D] text-white shadow-sm"
+              : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Danh sách khảo sát
         </button>
         <button
           onClick={() => {
@@ -1409,6 +1426,7 @@ export function StudentInfoClient({
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
           }`}
         >
+          <RefreshCw className="w-4 h-4" />
           TT Khảo sát lại
         </button>
         <button
@@ -1422,6 +1440,7 @@ export function StudentInfoClient({
               : "text-slate-650 hover:bg-slate-200/60 hover:text-slate-800"
           }`}
         >
+          <CheckCircle2 className="w-4 h-4" />
           Kết quả và nhập học
         </button>
       </div>
@@ -1471,7 +1490,7 @@ export function StudentInfoClient({
       </div>
       )}
 
-      {subTab === "input" ? (
+      {(subTab === "periods" || subTab === "students") ? (
         <div className="transition-all duration-300">
           {activeTab === "general" ? (
             <InputAssessmentsClient
@@ -1489,6 +1508,7 @@ export function StudentInfoClient({
               currentUser={currentUser}
               rolePermissions={rolePermissions}
               mode="input"
+              forcedTab={subTab}
             />
           ) : (
             <PreschoolInputAssessmentsClient
@@ -1500,6 +1520,7 @@ export function StudentInfoClient({
               departments={departments}
               currentUser={currentUser}
               mode="input"
+              forcedTab={subTab === "students" ? "children" : "periods"}
             />
           )}
         </div>
