@@ -20,7 +20,8 @@ import {
   UserCheck,
   CheckCircle2,
   MessageSquare,
-  Award
+  Award,
+  Globe
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -36,6 +37,7 @@ export const APP_CATEGORIES = [
       { code: "CAMPUSES", name: "Quản lý Cơ sở", icon: Building2, href: "/admin/campuses", requiresAdmin: true },
       { code: "PARENTS", name: "Tài khoản PHHS", icon: UserPlus, href: "/admin/parents" },
       { code: "CHATBOT_CONFIGS", name: "Cấu hình Chatbot", icon: MessageSquare, href: "/admin/chatbot-configs", requiresAdmin: true },
+      { code: "STUDENT_PORTAL_CONFIG", name: "Cổng ảnh học sinh", icon: Globe, href: "/admin/student-portal", requiresAdmin: true },
     ]
   },
   {
@@ -173,4 +175,3 @@ export const ALL_APP_MODULES = APP_CATEGORIES.flatMap(c => {
     return [m];
   });
 }).filter((m: any) => !!m.code);
-

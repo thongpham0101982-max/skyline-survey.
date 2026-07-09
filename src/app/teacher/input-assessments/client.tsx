@@ -558,39 +558,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
             </div>
 
-            {/* Thống kê số học sinh khảo sát theo khối trong năm */}
-            {stats && stats.total > 0 && (
-                <div className="bg-white border border-slate-200/80 rounded-[2rem] p-6 shadow-sm flex flex-col gap-5 transition-all duration-300 hover:shadow-md animate-in fade-in">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-2xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center">
-                                <Users className="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h3 className="font-bold text-slate-800 text-sm">Thống kê Học sinh Khảo sát trong năm</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Tổng số học sinh khảo sát toàn trường</p>
-                            </div>
-                        </div>
-                        <div className="bg-gradient-to-r from-[#00A99D] to-[#009085] text-white font-black px-4 py-2 rounded-xl text-xs shadow-md shadow-[#00A99D]/10">
-                            {stats.total} Học sinh
-                        </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 pt-4 border-t border-slate-100">
-                        {Object.entries(stats.grades)
-                            .sort((a, b) => a[0].localeCompare(b[0], undefined, { numeric: true }))
-                            .map(([grade, count]) => (
-                                <div key={grade} className="group relative overflow-hidden bg-slate-50/60 border border-slate-200/60 rounded-xl p-3 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-[#00A99D]/30 hover:bg-[#00A99D]/5">
-                                    <div className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-[#00A99D]/10 text-[#00A99D] text-[8px] font-black flex items-center justify-center">
-                                        {grade}
-                                    </div>
-                                    <span className="text-[10px] font-bold text-slate-400 block mb-0.5 mt-1">Khối lớp</span>
-                                    <span className="text-xs font-black text-slate-800 group-hover:text-[#00A99D] transition-colors">{count} HS</span>
-                                </div>
-                            ))}
-                    </div>
-                </div>
-            )}
+
 
             {/* Premium Charts Panel */}
             {stats && stats.total > 0 && (
