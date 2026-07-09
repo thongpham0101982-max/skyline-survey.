@@ -100,7 +100,16 @@ export const APP_CATEGORIES = [
         ]
       },
       { code: "INPUT_ASSESSMENT_REPORTS", name: "Xuất báo cáo", icon: FileSpreadsheet, href: "/admin/input-assessments/reports" },
-      { code: "STUDENT_INFO", name: "Nhập TT HS, KQKS", icon: Users2, href: "/admin/student-info" },
+      {
+        code: "STUDENT_INFO",
+        name: "Nhập TT HS, KQKS",
+        icon: Users2,
+        href: "/admin/student-info",
+        subModules: [
+          { code: "STUDENT_INFO_K12", name: "Phổ thông K-12" },
+          { code: "STUDENT_INFO_MAM_NON", name: "Mầm non" }
+        ]
+      },
       {
         code: "PHAN_CONG_KHAO_SAT",
         name: "Phân công khảo sát",

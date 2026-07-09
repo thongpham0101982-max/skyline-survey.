@@ -146,6 +146,8 @@ export function RolesClient({ initialRoles }: any) {
         CAU_HINH_KHAO_SAT: { r: true },
         INPUT_ASSESSMENT_REPORTS: { r: true },
         STUDENT_INFO: { r: true, c: true, u: true },
+        STUDENT_INFO_K12: { r: true, c: true, u: true },
+        STUDENT_INFO_MAM_NON: { r: true, c: true, u: true },
         PHAN_CONG_KHAO_SAT: { r: true },
         XET_DUYET_KET_QUA: { r: true },
         TASKS: { r: true, c: true, u: true }
