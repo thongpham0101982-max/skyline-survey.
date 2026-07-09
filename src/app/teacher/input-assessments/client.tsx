@@ -67,17 +67,10 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             .then(data => {
                 if(Array.isArray(data)) {
                     setAssignments(data);
-                    if (data.length > 0) {
-                        const firstPeriod = data[0].periodId;
-                        setSelectedPeriodId(firstPeriod);
-                        
-                        const firstAssign = data.find((a: any) => a.periodId === firstPeriod);
-                        if (firstAssign) setSelectedAssignmentId(firstAssign.id);
-                    } else {
-                        setSelectedPeriodId("");
-                        setSelectedAssignmentId("");
-                        setStudents([]);
-                    }
+                    setSelectedPeriodId("");
+                    setSelectedBatchId("");
+                    setSelectedAssignmentId("");
+                    setStudents([]);
                 } else {
                     console.error('API Error:', data);
                     setAssignments([]);
@@ -183,21 +176,43 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         return Array.from(gradeMap.values());
     }, [selectedAssignmentId, assignments, selectedPeriodId, selectedBatchId, availableAssignments]);
 
+    const uniqueGrades = useMemo(() => {
+        const grades = new Set();
+        availableGradeOptions.forEach(opt => {
+            if (opt.grade) grades.add(opt.grade);
+        });
+        return Array.from(grades).sort((a, b) => {
+            const numA = parseInt(a);
+            const numB = parseInt(b);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return String(a).localeCompare(String(b));
+        });
+    }, [availableGradeOptions]);
+
+    const uniqueSystems = useMemo(() => {
+        const systems = new Set();
+        availableGradeOptions.forEach(opt => {
+            if (opt.educationSystem) systems.add(opt.educationSystem);
+        });
+        return Array.from(systems).sort();
+    }, [availableGradeOptions]);
 
     useEffect(() => {
-        setSelectedBatchId("all");
+        setSelectedBatchId("");
         setSelectedGrade("all");
         setSelectedSystemCode("all");
     }, [selectedPeriodId]);
 
     // Handle cascading select
     useEffect(() => {
-        if (!selectedPeriodId) return;
-        if (!availableAssignments.find(a => a.id === selectedAssignmentId)) {
-            if (availableAssignments.length > 0) setSelectedAssignmentId(availableAssignments[0].id);
-            else setSelectedAssignmentId("");
+        if (!selectedPeriodId) {
+            setSelectedAssignmentId("");
+            return;
         }
-    }, [selectedPeriodId, availableAssignments]);
+        if (selectedAssignmentId && !availableAssignments.find(a => a.id === selectedAssignmentId)) {
+            setSelectedAssignmentId("");
+        }
+    }, [selectedPeriodId, availableAssignments, selectedAssignmentId]);
 
     // Reset/auto-select grade khi doi mon hoac dot
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -459,13 +474,19 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     <div className="relative">
                         <select 
                             value={selectedPeriodId} 
-                            onChange={e => setSelectedPeriodId(e.target.value)}
+                            onChange={e => {
+                                setSelectedPeriodId(e.target.value);
+                                setSelectedBatchId("");
+                                setSelectedAssignmentId("");
+                                setSelectedGrade("all");
+                                setSelectedSystemCode("all");
+                            }}
                             className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                         >
+                            <option value="">-- Chọn Kỳ khảo sát --</option>
                             {periods.map(p => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
-                            {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -473,7 +494,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     </div>
                 </div>
 
-                {batches.length > 0 && (
+                {selectedPeriodId && batches.length > 0 && (
                     <div className="group">
                         <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-slate-500 flex items-center gap-2 ml-1">
                             <Layers className="w-3.5 h-3.5 text-[#00A99D]"/> Đợt khảo sát
@@ -481,9 +502,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div className="relative">
                             <select 
                                 value={selectedBatchId} 
-                                onChange={e => setSelectedBatchId(e.target.value)}
+                                onChange={e => {
+                                    setSelectedBatchId(e.target.value);
+                                    setSelectedAssignmentId("");
+                                }}
                                 className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                             >
+                                <option value="">-- Chọn Đợt khảo sát --</option>
                                 <option value="all">Tất cả các đợt</option>
                                 {batches.map(b => (
                                     <option key={b.id} value={b.id}>{b.name}</option>
@@ -506,12 +531,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             onChange={e => setSelectedAssignmentId(e.target.value)}
                             className="w-full bg-white border border-slate-200 rounded-lg pl-5 pr-10 py-1 text-xs outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                         >
+                            <option value="">-- Chọn Môn khảo sát --</option>
                             {availableAssignments.map(a => (
                                 <option key={a.id} value={a.id}>
                                     {a.subject?.name}
                                 </option>
                             ))}
-                            {availableAssignments.length === 0 && <option value="">Vui lòng chọn kỳ KS...</option>}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -523,35 +548,60 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             {/* Bo loc Khoi - chi hien khi giao vien duoc phan cong nhieu khoi khac nhau */}
             {availableGradeOptions.length > 0 && (
                 <div className="bg-gradient-to-r from-teal-50/30 via-slate-50/50 to-teal-50/10 border border-[#00A99D]/15 rounded-2xl p-5 shadow-xs">
-                    <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                        <div className="flex items-center gap-2.5 min-w-fit">
-                            <div className="w-8 h-8 rounded-xl bg-[#00A99D] text-white flex items-center justify-center shadow-md shadow-[#00A99D]/10">
+                    <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                        <div className="flex items-center gap-2.5 min-w-fit shrink-0">
+                            <div className="w-9 h-9 rounded-xl bg-[#00A99D] text-white flex items-center justify-center shadow-md shadow-[#00A99D]/15">
                                 <Layers className="w-4 h-4" />
                             </div>
-                            <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Hệ thống lọc theo lớp</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 flex-1">
-                            <button
-                                onClick={() => { setSelectedGrade("all"); setSelectedSystemCode("all"); }}
-                                className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${selectedGrade === "all" ? "bg-[#00A99D] text-white border-[#00A99D] shadow-md shadow-[#00A99D]/10" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D] hover:bg-[#00A99D]/5"}`}
-                            >
-                                Tất cả lớp học
-                            </button>
-                            {availableGradeOptions.map(opt => (
-                                <button
-                                    key={`${opt.grade}__${opt.educationSystem}`}
-                                    onClick={() => { setSelectedGrade(opt.grade); setSelectedSystemCode(opt.educationSystem || "all"); }}
-                                    className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${(selectedGrade === opt.grade && selectedSystemCode === (opt.educationSystem || "all")) ? "bg-[#00A99D] text-white border-[#00A99D] shadow-md shadow-[#00A99D]/10" : "bg-white text-slate-600 border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D] hover:bg-[#00A99D]/5"}`}
-                                >
-                                    {`Khối ${opt.grade}`}{opt.educationSystem ? ` - Hệ ${opt.educationSystem}` : ""}
-                                </button>
-                            ))}
-                        </div>
-                        {selectedGrade !== "all" && (
-                            <div className="text-xs text-[#00A99D] font-black bg-[#00A99D]/15 px-4 py-1.5 rounded-xl border border-[#00A99D]/20 whitespace-nowrap animate-pulse">
-                                Khối {selectedGrade}{selectedSystemCode !== "all" ? ` - Hệ ${selectedSystemCode}` : ""}
+                            <div>
+                                <span className="text-xs font-black text-slate-800 uppercase tracking-wider block">Bộ lọc theo lớp</span>
+                                <span className="text-[10px] text-slate-400 font-medium">Chọn Khối và Hệ đào tạo</span>
                             </div>
-                        )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                            {/* Dropdown Lọc theo Khối */}
+                            <div className="group">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Lọc theo Khối</label>
+                                <div className="relative">
+                                    <select
+                                        value={selectedGrade}
+                                        onChange={e => {
+                                            setSelectedGrade(e.target.value);
+                                        }}
+                                        className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-xs outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-bold text-slate-700 shadow-sm transition-all hover:border-slate-300 cursor-pointer"
+                                    >
+                                        <option value="all">Tất cả các Khối</option>
+                                        {uniqueGrades.map(g => (
+                                            <option key={g} value={g}>Khối {g}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Dropdown Lọc theo Hệ đào tạo */}
+                            <div className="group">
+                                <label className="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Lọc theo Hệ đào tạo</label>
+                                <div className="relative">
+                                    <select
+                                        value={selectedSystemCode}
+                                        onChange={e => setSelectedSystemCode(e.target.value)}
+                                        className="w-full bg-white border border-slate-200 rounded-xl pl-4 pr-10 py-2.5 text-xs outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-bold text-slate-700 shadow-sm transition-all hover:border-slate-300 cursor-pointer"
+                                    >
+                                        <option value="all">Tất cả các Hệ</option>
+                                        {uniqueSystems.map(sys => (
+                                            <option key={sys} value={sys}>Hệ {sys}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
