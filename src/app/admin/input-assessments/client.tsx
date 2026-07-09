@@ -68,11 +68,11 @@ const CATEGORY_TYPES = [
 ]
 const STATUS_OPTS = ["ACTIVE", "LOCKED", "DRAFT", "CLOSED"]
 const STATUS_MAP: Record<string,{label:string,cls:string}> = {
-  ACTIVE:   { label:"Đang mở",   cls:"bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" },
-  LOCKED:   { label:"Đã khóa",   cls:"bg-slate-200 text-slate-700 ring-1 ring-slate-300" },
-  DRAFT:    { label:"Bản nháp",  cls:"bg-amber-100 text-amber-700 ring-1 ring-amber-200" },
-  CLOSED:   { label:"Kết thúc", cls:"bg-red-100 text-red-700 ring-1 ring-red-200" },
-  INACTIVE: { label:"Tắt",      cls:"bg-slate-100 text-slate-500 ring-1 ring-slate-200" },
+  ACTIVE:   { label:"Đang mở",   cls:"bg-emerald-50 text-emerald-700 rounded-full" },
+  LOCKED:   { label:"Đã khóa",   cls:"bg-slate-100 text-slate-700 rounded-full" },
+  DRAFT:    { label:"Bản nháp",  cls:"bg-amber-50 text-amber-700 rounded-full" },
+  CLOSED:   { label:"Kết thúc", cls:"bg-red-50 text-red-750 rounded-full" },
+  INACTIVE: { label:"Tắt",      cls:"bg-slate-100 text-slate-500 rounded-full" },
 }
 
 function Badge({ s }: { s: string }) {
@@ -1554,7 +1554,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
           return '<tr style="border-bottom: 1px solid #000000;">' +
             '<td style="padding: 10px; border-right: 1px solid #000000; text-align: center; color: #000000;">' + (idx + 1) + '</td>' +
             '<td style="padding: 10px 15px; border-right: 1px solid #000000; font-weight: bold; color: #000000;">' + item.name + '</td>' +
-            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;" className="p-2 border border-slate-200">' + item.qty + '</td>' +
+            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;" className="px-4 py-3 border-b border-slate-100">' + item.qty + '</td>' +
           '</tr>';
         }).join("");
 
@@ -1577,7 +1577,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
                   '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
                     '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
                     '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="p-2 border border-slate-200">Số lượng</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="px-4 py-3 border-b border-slate-100">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
                 '<tbody>' +
@@ -3642,17 +3642,17 @@ return {
                     <table className="w-full text-left whitespace-nowrap border-collapse">
                       <thead className="text-xs font-semibold">
                         <tr>
-                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Giáo viên</th>
-                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Môn học</th>
-                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Khối</th>
-                          <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Hệ học</th>
+                          <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Giáo viên</th>
+                          <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Môn học</th>
+                          <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Khối</th>
+                          <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Hệ học</th>
                           <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
                         {groupedAssignments.map(a => (
                           <tr key={a.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
-                            <td className="p-2 border border-slate-200">
+                            <td className="px-4 py-3 border-b border-slate-100">
                               <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 flex items-center justify-center text-indigo-600 font-black text-xs text-xs font-semibold">
                                   {a.user?.fullName?.charAt(0)}
@@ -3670,14 +3670,14 @@ return {
                                   ))}
                                 </div>
                               </td>
-                            <td className="p-2 border border-slate-200">
+                            <td className="px-4 py-3 border-b border-slate-100">
                                 <div className="flex flex-wrap gap-1">
                                   {a.grades.map((g: string) => (
                                     <span key={g} className="text-xs font-black text-slate-600 bg-slate-100 px-2 py-1 rounded-md">{g}</span>
                                   ))}
                                 </div>
                               </td>
-                            <td className="p-2 border border-slate-200">
+                            <td className="px-4 py-3 border-b border-slate-100">
                                 <div className="flex flex-wrap gap-1">
                                   {a.educationSystems.map((sys: string) => (
                                     <span key={sys} className="text-amber-700 text-[10px] font-black uppercase text-xs font-semibold">{sys}</span>
@@ -3739,7 +3739,7 @@ return {
           {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Liên hệ quản trị viên để tạo kỳ khảo sát mới" /> : (
             <div className="space-y-3">
               {visiblePeriods.map(p => (
-                <div key={p.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden group/p hover:border-indigo-200 transition-all">
+                <div key={p.id} className="bg-white rounded-xl border border-slate-150 shadow-none overflow-hidden group/p hover:border-indigo-250 transition-all">
                   <div className="px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer" onClick={()=>setExpandedId(expandedId===p.id?null:p.id)}>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 flex items-center justify-center flex-shrink-0 group-hover/p:bg-indigo-600 group-hover/p:text-white transition-all text-xs font-semibold">
@@ -3771,17 +3771,17 @@ return {
                        {(!p.batches || p.batches.length === 0) ? (
                          <div className="text-center py-8 text-slate-400 font-bold text-xs uppercase tracking-wider bg-white rounded-2xl border-2 border-dashed border-slate-200">Chưa có Đợt khảo sát nào ghi nhận</div>
                        ) : (
-                         <div className="overflow-x-auto bg-white border border-slate-200 rounded-2xl shadow-sm">
+                         <div className="overflow-x-auto bg-white border border-slate-150 rounded-2xl shadow-none">
                            <table className="w-full text-left border-collapse">
                              <thead>
                                <tr className="text-xs font-semibold">
-                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-6 border border-slate-200">Mã Đợt</th>
-                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Nội dung khảo sát</th>
-                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Cơ sở</th>
-                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Thời gian</th>
-                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Trạng thái</th>
-                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Người phụ trách</th>
-                                 <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right pr-6 border border-slate-200">Thao tác</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest pl-6">Mã Đợt</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nội dung khảo sát</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Cơ sở</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Thời gian</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Trạng thái</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Người phụ trách</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right pr-6">Thao tác</th>
                                </tr>
                              </thead>
                              <tbody className="divide-y divide-slate-100">
@@ -3802,21 +3802,21 @@ return {
 
                                  return (
                                    <tr key={b.id} className="group hover:bg-slate-50/50 transition-colors text-xs font-semibold">
-                                     <td className="p-2 pl-6 border border-slate-200">
+                                     <td className="px-4 py-3 border-b border-slate-100 pl-6">
                                        <span className="inline-flex items-center justify-center w-8 h-8 font-black text-indigo-600 text-xs text-xs font-semibold">
                                          #{b.batchNumber}
                                        </span>
                                      </td>
-                                     <td className="p-2 border border-slate-200">
+                                     <td className="px-4 py-3 border-b border-slate-100">
                                        <p className="text-sm font-black text-slate-700">{baseName}</p>
                                        <p className="text-[10px] font-bold text-slate-400 truncate max-w-xs">{b.name}</p>
                                      </td>
-                                     <td className="p-2 border border-slate-200">
+                                     <td className="px-4 py-3 border-b border-slate-100">
                                        <span className="text-[11px] font-black text-slate-600 text-xs font-semibold">
                                          {campusName}
                                        </span>
                                      </td>
-                                     <td className="p-2 border border-slate-200">
+                                     <td className="px-4 py-3 border-b border-slate-100">
                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
                                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
                                          <span>{b.startDate?.slice(0, 10).split('-').reverse().join('/')}</span>
@@ -3824,7 +3824,7 @@ return {
                                          <span>{b.endDate?.slice(0, 10).split('-').reverse().join('/')}</span>
                                        </div>
                                      </td>
-                                     <td className="p-2 border border-slate-200">
+                                     <td className="px-4 py-3 border-b border-slate-100">
                                        <div className="flex items-center gap-2">
                                        <button
                                          onClick={async () => {
@@ -3853,7 +3853,7 @@ return {
                                        </span>
                                      </div>
                                      </td>
-                                                                           <td className="p-2 border border-slate-200">
+                                                                           <td className="px-4 py-3 border-b border-slate-100">
                                         <div className="flex items-center justify-between gap-2 group/assignee">
                                           <div className="flex items-center gap-2">
                                             <div className="w-6 h-6 flex items-center justify-center text-[10px] font-black text-emerald-600 text-xs font-semibold">
@@ -3897,7 +3897,7 @@ return {
                                           )}
                                         </div>
                                       </td>
-                                     <td className="p-2 text-right pr-6 border border-slate-200">
+                                     <td className="px-4 py-3 border-b border-slate-100 text-right pr-6">
                                        <div className="flex items-center justify-end gap-1">
                                          <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
                                            <Edit2 className="w-3.5 h-3.5" />
@@ -4263,8 +4263,8 @@ return {
                 <table className="w-full text-left whitespace-nowrap border-collapse">
                   <thead className="text-xs font-semibold">
                     <tr>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Mã Môn</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">Tên Môn</th>
+                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Mã Môn</th>
+                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tên Môn</th>
                       
                       <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột Điểm</th>
                       <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột NX</th>
@@ -4279,8 +4279,8 @@ return {
                       try { if (sub.columnNames) parsedCols = JSON.parse(sub.columnNames); } catch {}
                       return (
                         <tr key={sub.id} className="group hover:bg-slate-50/70 transition-colors text-xs font-semibold">
-                          <td className="p-2 border border-slate-200"><span className="font-mono text-xs font-black text-indigo-600 text-xs font-semibold">{sub.code}</span></td>
-                          <td className="p-2 border border-slate-200"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
+                          <td className="px-4 py-3 border-b border-slate-100"><span className="font-mono text-xs font-black text-indigo-600 text-xs font-semibold">{sub.code}</span></td>
+                          <td className="px-4 py-3 border-b border-slate-100"><span className="text-sm font-black text-slate-700">{sub.name}</span></td>
                           
                           <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-indigo-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.scoreColumns ?? 0}</span></td>
                           <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-emerald-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.commentColumns ?? 0}</span></td>

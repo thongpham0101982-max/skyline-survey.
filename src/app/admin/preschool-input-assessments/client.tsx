@@ -94,13 +94,13 @@ const getCampusDefaultManager = (campusCodeOrName: string) => {
 
 function Badge({ s }: { s: string }) {
   const map: Record<string, string> = { 
-    ACTIVE: "bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold uppercase tracking-wider", 
-    INACTIVE: "bg-slate-50 text-slate-600 border border-slate-300 font-bold uppercase tracking-wider", 
-    LOCKED: "bg-rose-50 text-rose-800 border border-rose-300 font-bold uppercase tracking-wider", 
-    CLOSED: "bg-slate-50 text-slate-600 border border-slate-300 font-bold uppercase tracking-wider" 
+    ACTIVE: "bg-emerald-50 text-emerald-800 font-bold uppercase tracking-wider", 
+    INACTIVE: "bg-slate-100 text-slate-600 font-bold uppercase tracking-wider", 
+    LOCKED: "bg-rose-50 text-rose-800 font-bold uppercase tracking-wider", 
+    CLOSED: "bg-slate-100 text-slate-600 font-bold uppercase tracking-wider" 
   };
   const label: Record<string, string> = { ACTIVE: "ĐANG MỞ", INACTIVE: "ĐÓNG", LOCKED: "ĐÃ KHÓA", CLOSED: "ĐÃ ĐÓNG" };
-  return <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-none border ${map[s] || "bg-slate-50 text-slate-600 border-slate-300"}`}>{label[s] || s}</span>;
+  return <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full ${map[s] || "bg-slate-100 text-slate-600"}`}>{label[s] || s}</span>;
 }
 
 function ConfirmDialog({ open, onClose, onConfirm, message }: any) {
@@ -2066,28 +2066,28 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             
             <table class="info-table" className="border border-slate-200 border-collapse">
               <tr>
-                <td class="label" className="p-2 border border-slate-200">Họ và tên học sinh</td>
-                <td class="val" className="p-2 border border-slate-200">${student.fullName}</td>
+                <td class="label" className="px-4 py-3 border-b border-slate-100">Họ và tên học sinh</td>
+                <td class="val" className="px-4 py-3 border-b border-slate-100">${student.fullName}</td>
               </tr>
               <tr>
-                <td class="label" className="p-2 border border-slate-200">Mã học sinh</td>
-                <td class="val" className="p-2 border border-slate-200">${student.studentCode}</td>
+                <td class="label" className="px-4 py-3 border-b border-slate-100">Mã học sinh</td>
+                <td class="val" className="px-4 py-3 border-b border-slate-100">${student.studentCode}</td>
               </tr>
               <tr>
-                <td class="label" className="p-2 border border-slate-200">Ngày sinh</td>
-                <td class="val" className="p-2 border border-slate-200">${dob}</td>
+                <td class="label" className="px-4 py-3 border-b border-slate-100">Ngày sinh</td>
+                <td class="val" className="px-4 py-3 border-b border-slate-100">${dob}</td>
               </tr>
               <tr>
-                <td class="label" className="p-2 border border-slate-200">Nhóm tuổi tuyển sinh</td>
-                <td class="val" className="p-2 border border-slate-200">${student.grade || "—"}</td>
+                <td class="label" className="px-4 py-3 border-b border-slate-100">Nhóm tuổi tuyển sinh</td>
+                <td class="val" className="px-4 py-3 border-b border-slate-100">${student.grade || "—"}</td>
               </tr>
               <tr>
-                <td class="label" className="p-2 border border-slate-200">Cơ sở đăng ký học</td>
-                <td class="val" className="p-2 border border-slate-200">${student.admissionCampus || "—"}</td>
+                <td class="label" className="px-4 py-3 border-b border-slate-100">Cơ sở đăng ký học</td>
+                <td class="val" className="px-4 py-3 border-b border-slate-100">${student.admissionCampus || "—"}</td>
               </tr>
               <tr>
-                <td class="label" className="p-2 border border-slate-200">Kết quả xét duyệt</td>
-                <td class="val" className="p-2 border border-slate-200"><span class="success-badge">${resultLabel}</span></td>
+                <td class="label" className="px-4 py-3 border-b border-slate-100">Kết quả xét duyệt</td>
+                <td class="val" className="px-4 py-3 border-b border-slate-100"><span class="success-badge">${resultLabel}</span></td>
               </tr>
             </table>
 
@@ -2165,19 +2165,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           
           tableRowsHtml += "<tr>";
           if (critIdx === 0) {
-            tableRowsHtml += `<td class="area-cell" rowspan="${area.criteria.length}" className="p-2 border border-slate-200">${area.name}</td>`;
+            tableRowsHtml += `<td class="area-cell" rowspan="${area.criteria.length}" className="px-4 py-3 border-b border-slate-100">${area.name}</td>`;
           }
-          tableRowsHtml += `<td class="crit-cell" className="p-2 border border-slate-200">${crit.name}</td>`;
-          tableRowsHtml += `<td class="check-cell" className="p-2 border border-slate-200">${check1}</td>`;
-          tableRowsHtml += `<td class="check-cell" className="p-2 border border-slate-200">${check2}</td>`;
-          tableRowsHtml += `<td class="check-cell" className="p-2 border border-slate-200">${check3}</td>`;
-          tableRowsHtml += `<td class="note-cell" className="p-2 border border-slate-200">${noteText}</td>`;
+          tableRowsHtml += `<td class="crit-cell" className="px-4 py-3 border-b border-slate-100">${crit.name}</td>`;
+          tableRowsHtml += `<td class="check-cell" className="px-4 py-3 border-b border-slate-100">${check1}</td>`;
+          tableRowsHtml += `<td class="check-cell" className="px-4 py-3 border-b border-slate-100">${check2}</td>`;
+          tableRowsHtml += `<td class="check-cell" className="px-4 py-3 border-b border-slate-100">${check3}</td>`;
+          tableRowsHtml += `<td class="note-cell" className="px-4 py-3 border-b border-slate-100">${noteText}</td>`;
           tableRowsHtml += "</tr>";
         });
       });
 
       if (!tableRowsHtml) {
-        tableRowsHtml = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;" className="p-2 border border-slate-200">Chưa có dữ liệu tiêu chí đánh giá cho nhóm tuổi này.</td></tr>`;
+        tableRowsHtml = `<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;" className="px-4 py-3 border-b border-slate-100">Chưa có dữ liệu tiêu chí đánh giá cho nhóm tuổi này.</td></tr>`;
       }
 
       const conclusionText = probResultVal === "DAT" ? "Đạt" : probResultVal === "CHUA_DAT" ? "Chưa đạt" : "";
@@ -2279,16 +2279,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <table class="assessment-table" className="border border-slate-200 border-collapse">
               <thead>
                 <tr>
-                  <th colspan="2" className="p-2 border border-slate-200">NỘI DUNG ĐÁNH GIÁ</th>
-                  <th colspan="3" className="p-2 border border-slate-200">KẾT QUẢ</th>
-                  <th rowspan="2" className="p-2 border border-slate-200">GHI CHÚ</th>
+                  <th colspan="2" className="px-4 py-3 border-b border-slate-100">NỘI DUNG ĐÁNH GIÁ</th>
+                  <th colspan="3" className="px-4 py-3 border-b border-slate-100">KẾT QUẢ</th>
+                  <th rowspan="2" className="px-4 py-3 border-b border-slate-100">GHI CHÚ</th>
                 </tr>
                 <tr>
-                  <th className="p-2 border border-slate-200">LĨNH VỰC</th>
-                  <th className="p-2 border border-slate-200">TIÊU CHÍ</th>
-                  <th className="p-2 border border-slate-200">Chưa<br/>thể hiện</th>
-                  <th className="p-2 border border-slate-200">Bắt đầu<br/>thể hiện</th>
-                  <th className="p-2 border border-slate-200">Thể hiện<br/>tốt</th>
+                  <th className="px-4 py-3 border-b border-slate-100">LĨNH VỰC</th>
+                  <th className="px-4 py-3 border-b border-slate-100">TIÊU CHÍ</th>
+                  <th className="px-4 py-3 border-b border-slate-100">Chưa<br/>thể hiện</th>
+                  <th className="px-4 py-3 border-b border-slate-100">Bắt đầu<br/>thể hiện</th>
+                  <th className="px-4 py-3 border-b border-slate-100">Thể hiện<br/>tốt</th>
                 </tr>
               </thead>
               <tbody>
@@ -2903,7 +2903,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {pLoading ? <Spin /> : periods.length === 0 ? <Empty text="Ch\u01b0a c\u00f3 K\u1ef3 kh\u1ea3o s\u00e1t n\u00e0o" sub="Li\u00ean h\u1ec7 qu\u1ea3n tr\u1ecb vi\u00ean \u0111\u1ec3 t\u1ea1o k\u1ef3 kh\u1ea3o s\u00e1t m\u1edbi" /> : (
             <div className="space-y-3">
               {periods.map(p => (
-                <div key={p.id} className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden hover:border-slate-300 transition-all">
+                <div key={p.id} className="bg-white rounded-xl border border-slate-150 shadow-none overflow-hidden hover:border-slate-200 transition-all">
                   <div className="px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer" onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}>
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 rounded-none bg-[#00A99D]/5 flex items-center justify-center flex-shrink-0"><Baby className="w-6 h-6 text-teal-400" /></div>
@@ -2931,7 +2931,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           <table className="w-full text-left border-collapse">
                             <thead className="bg-[#00A99D]/5/70 border-b border-slate-300">
                               <tr>
-                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>)}
+                                {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>)}
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-teal-50">
@@ -2941,11 +2941,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 const m = b.name.match(/Đợt \d+ - (.*?) \|/); if (m) baseName = m[1]; else { const m2 = b.name.match(/Đợt \d+ - (.*)/); if (m2) baseName = m2[1]; }
                                 return (
                                   <tr key={b.id} className="hover:bg-[#00A99D]/5/30 transition-colors">
-                                    <td className="p-2 border border-slate-200"><span className="inline-flex items-center justify-center w-8 h-8 rounded-none bg-[#00A99D]/5 font-black text-[#00A99D] text-xs">#{b.batchNumber}</span></td>
-                                    <td className="p-2 border border-slate-200"><span className="text-sm font-semibold text-slate-700">{baseName}</span></td>
-                                    <td className="p-2 border border-slate-200"><span className="text-xs text-slate-500">{campus?.campusName || "Tất cả"}</span></td>
-                                    <td className="p-2 border border-slate-200"><span className="text-xs text-slate-500">{b.startDate?.slice(0,10)} → {b.endDate?.slice(0,10)}</span></td>
-                                    <td className="p-2 border border-slate-200"><div className="flex items-center gap-2">
+                                    <td className="px-4 py-3 border-b border-slate-100"><span className="inline-flex items-center justify-center w-8 h-8 rounded-none bg-[#00A99D]/5 font-black text-[#00A99D] text-xs">#{b.batchNumber}</span></td>
+                                    <td className="px-4 py-3 border-b border-slate-100"><span className="text-sm font-semibold text-slate-700">{baseName}</span></td>
+                                    <td className="px-4 py-3 border-b border-slate-100"><span className="text-xs text-slate-500">{campus?.campusName || "Tất cả"}</span></td>
+                                    <td className="px-4 py-3 border-b border-slate-100"><span className="text-xs text-slate-500">{b.startDate?.slice(0,10)} → {b.endDate?.slice(0,10)}</span></td>
+                                    <td className="px-4 py-3 border-b border-slate-100"><div className="flex items-center gap-2">
                                        <button
                                          onClick={async () => {
                                            const newStatus = b.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
@@ -2972,7 +2972,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                          {b.status === "ACTIVE" ? "ON" : "OFF"}
                                        </span>
                                      </div></td>
-                                                                        <td className="p-2 border border-slate-200">
+                                                                        <td className="px-4 py-3 border-b border-slate-100">
                                       <div className="flex items-center justify-between gap-2 group/assignee">
                                         <div className="flex items-center gap-2">
                                           <div className="w-6 h-6 flex items-center justify-center text-[10px] font-black text-emerald-600 text-xs font-semibold">
@@ -3427,7 +3427,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <th className="p-2 w-12 border border-slate-200">
                           <input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={configs.length > 0 && cfgSelected.length === configs.length} onChange={e => setCfgSelected(e.target.checked ? configs.map(c => c.id) : [])} />
                         </th>
-                        {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>)}
+                        {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>)}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-teal-50">
@@ -3437,7 +3437,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             <input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={cfgSelected.includes(c.id)} onChange={e => setCfgSelected(e.target.checked ? [...cfgSelected, c.id] : cfgSelected.filter(id => id !== c.id))} />
                           </td>
                           <td className="p-2 text-slate-400 text-sm border border-slate-200">{i+1}</td>
-                          <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none border border-[#00A99D]/20 uppercase">{c.categoryType}</span></td>
+                          <td className="px-4 py-3 border-b border-slate-100"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none border border-[#00A99D]/20 uppercase">{c.categoryType}</span></td>
                           <td className="p-2 font-mono text-xs font-bold text-[#00A99D] border border-slate-200">{c.code}</td>
                           <td className="p-2 font-semibold text-slate-700 text-sm border border-slate-200">{c.name}</td>
                           <td className="p-2 text-right border border-slate-200"><div className="flex justify-end gap-1"><button onClick={() => openEditCfg(c)} className="p-2 text-slate-300 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa "${c.name}"?`, fn: () => doDeleteCfg(c.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
@@ -3676,7 +3676,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <thead className="bg-[#00A99D]/5 border-b border-slate-300">
                         <tr>
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "GV Phân công", "Trạng thái", "Thao tác"].map(h => (
-                            <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>
+                            <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -3719,7 +3719,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="p-2 border border-slate-200 font-mono text-xs text-slate-700">{s.studentCode}</td>
                                 <td className="p-2 font-bold text-slate-800 text-sm border border-slate-200">{s.fullName}</td>
                                 <td className="p-2 text-sm text-slate-500 border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-2 border border-slate-200">
+                                <td className="px-4 py-3 border-b border-slate-100">
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
@@ -3729,14 +3729,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     )}
                                   </div>
                                 </td>
-                                <td className="p-2 border border-slate-200">
+                                <td className="px-4 py-3 border-b border-slate-100">
                                   <div className="text-xs font-bold text-slate-700 max-w-[200px] whitespace-normal break-words">
                                     {s.assignedTeachers || "Chưa phân công"}
                                   </div>
                                 </td>
 
-                                <td className="p-2 border border-slate-200">{statusBadge()}</td>
-                                <td className="p-2 border border-slate-200">
+                                <td className="px-4 py-3 border-b border-slate-100">{statusBadge()}</td>
+                                <td className="px-4 py-3 border-b border-slate-100">
                                   <button
                                     onClick={() => openEvaluation(s)}
                                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-black text-violet-700 bg-[#00A99D]/5 hover:bg-[#00A99D] hover:text-white rounded-none border border-slate-300 transition-all shadow-none"
@@ -3826,7 +3826,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             if (col.id === "gdcsApproval") return showGdcsSection;
                             return true;
                           }).map(col => (
-                            <th key={col.id} className={`p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${col.width}`} className="p-2 border border-slate-200">
+                            <th key={col.id} className={`p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest ${col.width}`} className="px-4 py-3 border-b border-slate-100">
                               {col.label}
                             </th>
                           ))}
@@ -3887,7 +3887,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             const renderAreaCell = (areaCode: string, tdClass: string) => {
                               const areaScores = s.scores?.filter((sc: any) => sc.criteria?.area?.code === areaCode) || [];
                               if (areaScores.length === 0) {
-                                return <td className={`p-4 text-xs font-medium text-slate-300 align-top ${tdClass}`} className="p-2 border border-slate-200">—</td>;
+                                return <td className={`p-4 text-xs font-medium text-slate-300 align-top ${tdClass}`} className="px-4 py-3 border-b border-slate-100">—</td>;
                               }
                               
                               const datCount = areaScores.filter((sc: any) => sc.result === "DAT").length;
@@ -3926,7 +3926,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               }
 
                               return (
-                                <td className={`p-4 align-top ${tdClass}`} className="p-2 border border-slate-200">
+                                <td className={`p-4 align-top ${tdClass}`} className="px-4 py-3 border-b border-slate-100">
                                   <div className="flex flex-col gap-2 w-full">
                                     <div className="flex flex-col gap-1.5">
                                       <div className={`border rounded-none p-2.5 space-y-2.5 transition-all hover:scale-[1.01] hover:shadow-none ${cardClass}`}>
@@ -4253,7 +4253,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <thead className="bg-[#00A99D]/5 border-b border-slate-300">
                         <tr>
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Lớp học thử", "GV Học thử", "Kết quả học thử", "Thao tác"].map(h => (
-                            <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>
+                            <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -4278,10 +4278,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             return (
                               <tr key={s.id} className="hover:bg-[#00A99D]/5/30 transition-colors">
                                 <td className="p-2 text-slate-400 text-sm border border-slate-200">{idx + 1}</td>
-                                <td className="p-2 border border-slate-200"><span className="font-mono text-xs font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-1 rounded-none">{s.studentCode}</span></td>
+                                <td className="px-4 py-3 border-b border-slate-100"><span className="font-mono text-xs font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-1 rounded-none">{s.studentCode}</span></td>
                                 <td className="p-2 font-bold text-slate-800 text-sm border border-slate-200">{s.fullName}</td>
                                 <td className="p-2 text-sm text-slate-500 border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-2 border border-slate-200">
+                                <td className="px-4 py-3 border-b border-slate-100">
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
@@ -4293,7 +4293,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 </td>
                                 <td className="p-2 text-slate-600 text-sm border border-slate-200">{s.probationaryClass || "—"}</td>
                                 <td className="p-2 text-slate-600 text-sm border border-slate-200">{s.probationaryTeacher || "—"}</td>
-                                <td className="p-2 border border-slate-200">{resultBadge()}</td>
+                                <td className="px-4 py-3 border-b border-slate-100">{resultBadge()}</td>
                                 <td className="p-2 flex gap-1.5 border border-slate-200">
                                   <button
                                     onClick={() => openProbationary(s)}
@@ -4371,7 +4371,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <thead className="bg-[#00A99D]/5 border-b border-slate-300">
                         <tr>
                           {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Nhóm tuổi", "Cơ sở", "Kết quả duyệt", "Thao tác"].map(h => (
-                            <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>
+                            <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -4393,10 +4393,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             return (
                               <tr key={s.id} className="hover:bg-[#00A99D]/5/30 transition-colors">
                                 <td className="p-2 text-slate-400 text-sm border border-slate-200">{idx + 1}</td>
-                                <td className="p-2 border border-slate-200"><span className="font-mono text-xs font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-1 rounded-none">{s.studentCode}</span></td>
+                                <td className="px-4 py-3 border-b border-slate-100"><span className="font-mono text-xs font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-1 rounded-none">{s.studentCode}</span></td>
                                 <td className="p-2 font-bold text-slate-800 text-sm border border-slate-200">{s.fullName}</td>
                                 <td className="p-2 text-sm text-slate-500 border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="p-2 border border-slate-200">
+                                <td className="px-4 py-3 border-b border-slate-100">
                                   <div className="flex flex-col gap-0.5">
                                     <span className="text-xs font-bold text-slate-600">Lớp: {s.grade || "—"}</span>
                                     {s.resolvedAgeGroup && (
@@ -4407,8 +4407,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   </div>
                                 </td>
                                 <td className="p-2 text-slate-600 text-sm border border-slate-200">{s.admissionCampus || "—"}</td>
-                                <td className="p-2 border border-slate-200">{resultBadge()}</td>
-                                <td className="p-2 border border-slate-200">
+                                <td className="px-4 py-3 border-b border-slate-100">{resultBadge()}</td>
+                                <td className="px-4 py-3 border-b border-slate-100">
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsCommitment(false); setIsPrintModalOpen(true); }}
@@ -4627,7 +4627,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <thead className="bg-[#00A99D]/5/50 border-b border-slate-300">
                                   <tr>
                                     {["STT", "Mã", "Tên Tiêu Chí", "Nhóm tuổi", "Thao tác"].map(h => (
-                                      <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>
+                                      <th key={h} className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">{h}</th>
                                     ))}
                                   </tr>
                                 </thead>
@@ -4637,7 +4637,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       <td className="p-2 text-slate-400 text-xs border border-slate-200">{idx + 1}</td>
                                       <td className="p-2 font-mono text-xs font-bold text-[#00A99D] border border-slate-200">{crit.code}</td>
                                       <td className="p-2 text-sm font-semibold text-slate-700 max-w-[400px] break-words whitespace-normal border border-slate-200">{crit.name}</td>
-                                      <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none border border-[#00A99D]/20">{crit.ageGroup}</span></td>
+                                      <td className="px-4 py-3 border-b border-slate-100"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none border border-[#00A99D]/20">{crit.ageGroup}</span></td>
                                       <td className="p-2 text-right border border-slate-200">
                                         <div className="flex gap-1">
                                           <button
@@ -5648,11 +5648,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <thead>
                       <tr className="text-slate-500 font-bold uppercase text-[9px] tracking-wider text-xs font-semibold">
                         <th className="p-2 w-10 text-center border border-slate-200">Gửi</th>
-                        <th className="p-2 border border-slate-200">Mã học sinh</th>
-                        <th className="p-2 border border-slate-200">Họ và tên</th>
-                        <th className="p-2 border border-slate-200">Nhóm tuổi</th>
-                        <th className="p-2 border border-slate-200">Hệ khảo sát</th>
-                        <th className="p-2 border border-slate-200">Kết quả</th>
+                        <th className="px-4 py-3 border-b border-slate-100">Mã học sinh</th>
+                        <th className="px-4 py-3 border-b border-slate-100">Họ và tên</th>
+                        <th className="px-4 py-3 border-b border-slate-100">Nhóm tuổi</th>
+                        <th className="px-4 py-3 border-b border-slate-100">Hệ khảo sát</th>
+                        <th className="px-4 py-3 border-b border-slate-100">Kết quả</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -5684,9 +5684,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           </td>
                           <td className="p-2 font-mono border border-slate-200">{s.studentCode}</td>
                           <td className="p-2 font-bold text-slate-800 border border-slate-200">{s.fullName}</td>
-                          <td className="p-2 border border-slate-200">{s.grade}</td>
-                          <td className="p-2 border border-slate-200">{s.surveyFormType || "—"}</td>
-                          <td className="p-2 border border-slate-200">
+                          <td className="px-4 py-3 border-b border-slate-100">{s.grade}</td>
+                          <td className="px-4 py-3 border-b border-slate-100">{s.surveyFormType || "—"}</td>
+                          <td className="px-4 py-3 border-b border-slate-100">
                             <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 text-xs font-semibold">
                               {s.admissionResult || "Đạt"}
                             </span>
@@ -7603,7 +7603,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   {currentScore.result === "THE_HIEN_TOT" && "✓"}
                                 </button>
                               </td>
-                              <td className="p-2 border border-slate-200">
+                              <td className="px-4 py-3 border-b border-slate-100">
                                 <input
                                   type="text"
                                   value={currentScore.note || ""}
