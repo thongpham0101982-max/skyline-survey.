@@ -32,6 +32,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<Record<string, string>>({});
     const [stats, setStats] = useState<any>(null);
+    const [evaluationTab, setEvaluationTab] = useState<"pending" | "evaluated">("pending");
+    const [currentPage, setCurrentPage] = useState<number>(1);
 
 
     const [academicYear, setAcademicYear] = useState<string | null>(null);
@@ -203,6 +205,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         setSelectedSystemCode("all");
     }, [selectedPeriodId]);
 
+    // Reset tab and page when any filter changes
+    useEffect(() => {
+        setEvaluationTab("pending");
+        setCurrentPage(1);
+    }, [selectedAssignmentId, selectedBatchId, selectedGrade, selectedSystemCode]);
+
     // Handle cascading select
     useEffect(() => {
         if (!selectedPeriodId) {
@@ -351,7 +359,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 setStudents(prev => prev.map(s => s.id === st.id ? { 
                     ...s, 
                     scoreVals: customScores || s.scoreVals, 
-                    commentVals: customComments || s.commentVals 
+                    commentVals: customComments || s.commentVals,
+                    scores: s.scores?.length > 0 ? s.scores : [{ id: "temp", scores: JSON.stringify(customScores || s.scoreVals) }]
                 } : s));
 
                 setTimeout(() => setSaveStatus(prev => ({ ...prev, [st.id]: "" })), 2000);
@@ -418,6 +427,46 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
   const isPeriodLocked = currentAssignment?.period?.status !== "ACTIVE";
   const isBatchLocked = currentAssignment?.batch?.status === "LOCKED" || currentAssignment?.batch?.status === "CLOSED";
   const isLocked = (isPeriodLocked || isBatchLocked) && currentAssignment?.unlockRequestStatus !== "APPROVED";
+
+  // Helper to determine if a student is evaluated/saved
+  const isStudentSaved = (st: any) => {
+    const isCustomSubject = isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject;
+    if (isCustomSubject) {
+      if (isPreschoolSubject) {
+        return st.scoredCount > 0;
+      }
+      if (isThinkingSkillsSubject) {
+        return st.scoreVals?.length >= 1;
+      }
+      if (isChildDevSubject) {
+        return st.scoreVals?.length >= 1;
+      }
+      if (isPsychSubject) {
+        return st.scoreVals?.length >= 7;
+      }
+      return false;
+    }
+    return (st.scores && st.scores.length > 0) || saveStatus[st.id] === "saved";
+  };
+
+  const pendingStudents = useMemo(() => {
+    return students.filter(st => !isStudentSaved(st));
+  }, [students, isPsychSubject, isChildDevSubject, isThinkingSkillsSubject, isPreschoolSubject, saveStatus]);
+
+  const evaluatedStudents = useMemo(() => {
+    return students.filter(st => isStudentSaved(st));
+  }, [students, isPsychSubject, isChildDevSubject, isThinkingSkillsSubject, isPreschoolSubject, saveStatus]);
+
+  const currentTabStudents = useMemo(() => {
+    return evaluationTab === "pending" ? pendingStudents : evaluatedStudents;
+  }, [evaluationTab, pendingStudents, evaluatedStudents]);
+
+  const totalPages = Math.ceil(currentTabStudents.length / 10) || 1;
+  const safeCurrentPage = Math.max(1, Math.min(currentPage, totalPages));
+  const paginatedStudents = useMemo(() => {
+    const start = (safeCurrentPage - 1) * 10;
+    return currentTabStudents.slice(start, start + 10);
+  }, [currentTabStudents, safeCurrentPage]);
 
     return (
         <div className="p-3 md:p-6 max-w-[1400px] mx-auto space-y-4 md:space-y-6">
@@ -646,6 +695,34 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         </div>
                     </div>
 
+                    {/* Evaluation Tabs */}
+                    <div className="border-t border-slate-100 bg-slate-50/30 px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/50 shadow-inner">
+                            <button
+                                onClick={() => { setEvaluationTab("pending"); setCurrentPage(1); }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${evaluationTab === "pending" ? "bg-white text-[#00A99D] shadow-sm border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-slate-700 hover:bg-white/40"}`}
+                            >
+                                <span>Đang chờ đánh giá</span>
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${evaluationTab === "pending" ? "bg-[#00A99D] text-white" : "bg-slate-200 text-slate-600"}`}>
+                                    {pendingStudents.length}
+                                </span>
+                            </button>
+                            <button
+                                onClick={() => { setEvaluationTab("evaluated"); setCurrentPage(1); }}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all ${evaluationTab === "evaluated" ? "bg-white text-emerald-600 shadow-sm border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-emerald-600 hover:bg-white/40"}`}
+                            >
+                                <span>Xác nhận Đã đánh giá</span>
+                                <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${evaluationTab === "evaluated" ? "bg-emerald-500 text-white" : "bg-slate-200 text-slate-600"}`}>
+                                    {evaluatedStudents.length}
+                                </span>
+                            </button>
+                        </div>
+                        
+                        <div className="text-xs text-slate-400 font-bold">
+                            Tổng số: <span className="text-slate-700 font-black">{students.length}</span> học sinh
+                        </div>
+                    </div>
+
                     {isLocked ? (
                         <div className="p-8 flex flex-col items-center justify-center text-center gap-4 border-t border-slate-100 bg-slate-50/30">
                             <div className="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shadow-inner">
@@ -675,6 +752,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             )}
                         </div>
                     ) : (
+                      <>
                         <div className="overflow-x-auto p-4 custom-scrollbar" style={{maxWidth: "100%", width: "100%"}}>
                         <table className="w-full text-xs text-left border-collapse min-w-max">
                             <thead className="text-xs font-semibold">
@@ -702,9 +780,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     </tr>
 </thead>
                             <tbody className="divide-y divide-slate-100 border-b border-slate-100">
-                                {students.map((st, i) => (
-                                    <tr key={st.id} className="hover:bg-[#00A99D]/5 transition-colors border-b border-slate-100 last:border-none">
-                                        <td className="p-2 p-2 md:p-2 md:p-2 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-xs border border-slate-200">{i+1}</td>
+                                {paginatedStudents.map((st, idx) => {
+                                    const serialNumber = (safeCurrentPage - 1) * 10 + idx + 1;
+                                    return (
+                                        <tr key={st.id} className="hover:bg-[#00A99D]/5 transition-colors border-b border-slate-100 last:border-none">
+                                            <td className="p-2 p-2 md:p-2 md:p-2 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-xs border border-slate-200">{serialNumber}</td>
                                         <td className="p-2 p-2 bg-transparent text-center border border-slate-200">
                                               <span className="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
                                           </td>
@@ -969,13 +1049,18 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                             })()}
                                         </td>
                                     </tr>
-                                ))}
-                                {students.length === 0 && !loading && (
+                                    );
+                                })}
+                                {paginatedStudents.length === 0 && !loading && (
                                     <tr>
                                         <td colSpan={10} className="px-4 py-16 text-center text-slate-400 bg-slate-50/50">
                                             <div className="flex flex-col items-center justify-center gap-2">
                                                 <Users className="w-10 h-10 text-slate-300 animate-pulse" />
-                                                <span className="text-xs font-bold text-slate-500">Chưa có dữ liệu học sinh nào thỏa mãn Khối/Hệ môn học này trong kỳ Khảo sát.</span>
+                                                <span className="text-xs font-bold text-slate-500">
+                                                    {evaluationTab === "pending" 
+                                                        ? "Tất cả học sinh trong danh sách đã được đánh giá hoàn thành!" 
+                                                        : "Chưa có học sinh nào được đánh giá trong danh mục này."}
+                                                </span>
                                             </div>
                                         </td>
                                     </tr>
@@ -983,6 +1068,76 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Pagination Bar */}
+                    {totalPages > 1 && (
+                        <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="text-xs text-slate-500 font-semibold">
+                                Hiển thị <span className="font-bold text-slate-700">{(safeCurrentPage - 1) * 10 + 1}</span> - <span className="font-bold text-slate-700">{Math.min(safeCurrentPage * 10, currentTabStudents.length)}</span> trên tổng số <span className="font-bold text-slate-700">{currentTabStudents.length}</span> học sinh
+                            </div>
+                            
+                            <div className="flex items-center gap-1.5">
+                                <button
+                                    disabled={safeCurrentPage === 1}
+                                    onClick={() => setCurrentPage(1)}
+                                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    title="Trang đầu"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path></svg>
+                                </button>
+                                
+                                <button
+                                    disabled={safeCurrentPage === 1}
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    title="Trang trước"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                                </button>
+                                
+                                {(() => {
+                                    const pages = [];
+                                    const maxVisible = 5;
+                                    let start = Math.max(1, safeCurrentPage - Math.floor(maxVisible / 2));
+                                    let end = Math.min(totalPages, start + maxVisible - 1);
+                                    if (end - start + 1 < maxVisible) {
+                                        start = Math.max(1, end - maxVisible + 1);
+                                    }
+                                    for (let p = start; p <= end; p++) {
+                                        pages.push(p);
+                                    }
+                                    return pages.map(p => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setCurrentPage(p)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${p === safeCurrentPage ? "bg-[#00A99D] border-[#00A99D] text-white shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ));
+                                })()}
+                                
+                                <button
+                                    disabled={safeCurrentPage === totalPages}
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    title="Trang sau"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                </button>
+                                
+                                <button
+                                    disabled={safeCurrentPage === totalPages}
+                                    onClick={() => setCurrentPage(totalPages)}
+                                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-slate-50 hover:text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                    title="Trang cuối"
+                                >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                      </>
                     )}
                 </div>
             )}
