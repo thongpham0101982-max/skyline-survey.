@@ -242,10 +242,22 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 const enriched = data.map((st: any) => {
                     if (st.isPreschool) return st;
                     const sc = st.scores?.[0];
+                    let scoreVals = [];
+                    let commentVals = [];
+                    try {
+                        if (sc?.scores) scoreVals = JSON.parse(sc.scores);
+                    } catch (e) {
+                        console.error("Error parsing scoreVals:", e);
+                    }
+                    try {
+                        if (sc?.comments) commentVals = JSON.parse(sc.comments);
+                    } catch (e) {
+                        console.error("Error parsing commentVals:", e);
+                    }
                     return {
                         ...st,
-                        scoreVals: sc?.scores ? JSON.parse(sc.scores) : [],
-                        commentVals: sc?.comments ? JSON.parse(sc.comments) : []
+                        scoreVals,
+                        commentVals
                     };
                 });
                 setStudents(enriched);
