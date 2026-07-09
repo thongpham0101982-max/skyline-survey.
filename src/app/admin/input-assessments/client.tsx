@@ -330,8 +330,14 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
       return { canRead: true, canCreate: true, canUpdate: true, canDelete: true };
     }
     
-    const requiredModule = TAB_PERMISSION_MAP[tabId];
-    const perm = rolePermissions?.find(p => p.module === requiredModule);
+    let requiredModule = TAB_PERMISSION_MAP[tabId];
+    if (mode === "input" && (tabId === "periods" || tabId === "students")) {
+      requiredModule = "STUDENT_INFO_K12";
+    }
+    let perm = rolePermissions?.find(p => p.module === requiredModule);
+    if (!perm && mode === "input") {
+      perm = rolePermissions?.find(p => p.module === "STUDENT_INFO");
+    }
     if (perm) {
       return {
         canRead: !!perm.canRead,
