@@ -5,7 +5,9 @@ import { Edit2, Check, X, Trash2, Star, Calendar, Users, GraduationCap, BookOpen
 const EDU_SYSTEMS = [
   { code: "HNG", name: "Hội nhập Quốc tế" },
   { code: "SB", name: "Song bằng" },
-  { code: "HNS", name: "Hội nhập S" }
+  { code: "HNS", name: "Hội nhập S" },
+  { code: "MNS", name: "Mầm non S" },
+  { code: "MNG", name: "Mầm non Global" }
 ];
 
 export function AcademicYearsClient({ initialYears, updateAction, deleteAction, setActiveAction, toggleOffAction }) {
@@ -175,20 +177,58 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
 
                 {/* HE HOC SECTION */}
                 <div className="text-xs font-semibold">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-3 border-b border-slate-100 pb-3">
                     <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
                       <Layers className="w-4 h-4 text-indigo-500" /> Hệ học ({(y.educationSystems || []).length})
                     </h4>
-                    {availableSystems.length > 0 && (
-                      <div className="flex gap-2">
-                        {availableSystems.map(s => (
-                          <button key={s.code} onClick={() => addEduSystem(y.id, s.code, s.name)}
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-white border border-slate-200 text-[#1E8B87] rounded-lg hover:bg-[#1E8B87]/10 hover:border-indigo-300 transition-colors">
-                            <Plus className="w-3 h-3" /> {s.code}
-                          </button>
-                        ))}
+                    
+                    <div className="flex flex-wrap items-center gap-3">
+                      {availableSystems.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 items-center">
+                          <span className="text-slate-400 text-xs mr-1">Thêm nhanh:</span>
+                          {availableSystems.map(s => (
+                            <button key={s.code} onClick={() => addEduSystem(y.id, s.code, s.name)}
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-lg hover:bg-indigo-100 transition-colors">
+                              <Plus className="w-3 h-3" /> {s.code}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                        <span className="text-slate-500 font-bold text-xs pl-1">Khác:</span>
+                        <input 
+                          type="text" 
+                          placeholder="Mã hệ học (VD: ALEVEL)" 
+                          id={`custom-code-${y.id}`}
+                          className="border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs outline-none focus:border-indigo-500 w-32 font-bold text-slate-800 uppercase"
+                        />
+                        <input 
+                          type="text" 
+                          placeholder="Tên hệ học" 
+                          id={`custom-name-${y.id}`}
+                          className="border border-slate-200 bg-white rounded-lg px-2.5 py-1 text-xs outline-none focus:border-indigo-500 w-44 font-semibold text-slate-700"
+                        />
+                        <button 
+                          onClick={() => {
+                            const codeInput = document.getElementById(`custom-code-${y.id}`) as HTMLInputElement;
+                            const nameInput = document.getElementById(`custom-name-${y.id}`) as HTMLInputElement;
+                            const code = codeInput?.value?.trim()?.toUpperCase() || "";
+                            const name = nameInput?.value?.trim() || "";
+                            if (!code || !name) {
+                              alert("Vui lòng nhập đầy đủ Mã và Tên hệ học!");
+                              return;
+                            }
+                            addEduSystem(y.id, code, name);
+                            if (codeInput) codeInput.value = "";
+                            if (nameInput) nameInput.value = "";
+                          }}
+                          className="flex items-center gap-1 px-3 py-1 text-xs font-bold bg-[#1E8B87] text-white rounded-lg hover:bg-[#1E8B87]/90 transition-colors shadow-sm"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Thêm
+                        </button>
                       </div>
-                    )}
+                    </div>
                   </div>
                   {(y.educationSystems || []).length === 0 ? (
                     <p className="text-xs text-slate-400 italic">Chưa có Hệ học nào. Bấm nút phía trên để thêm.</p>

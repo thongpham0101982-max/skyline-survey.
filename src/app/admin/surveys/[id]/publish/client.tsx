@@ -14,6 +14,8 @@ const EDU_SYSTEM_COLORS: Record<string, { bg: string; text: string; border: stri
   HNG: { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-200", activeBg: "bg-indigo-600" },
   SB:  { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", activeBg: "bg-purple-600" },
   HNS: { bg: "bg-teal-50",   text: "text-teal-700",   border: "border-teal-200",   activeBg: "bg-teal-600" },
+  MNS: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", activeBg: "bg-rose-600" },
+  MNG: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", activeBg: "bg-emerald-600" },
 }
 
 function getEduColor(code: string) {

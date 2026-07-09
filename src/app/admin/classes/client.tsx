@@ -185,8 +185,20 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const [copyAssignResult, setCopyAssignResult] = useState<any>(null)
 
   const selectedYear = academicYears.find((y: any) => y.id === selectedYearId)
-  const baseEduSystems = selectedYear?.educationSystems || [];
-  const mnEduSystems = [{ id: 'mns', code: 'MNS', name: 'Mầm non S' }, { id: 'mng', code: 'MNG', name: 'Mầm non Global' }];
+  const allEduSystems = selectedYear?.educationSystems || [];
+  
+  // Filter systems for Preschool/Mầm non (starts with MN or name contains "mầm non")
+  const mnEduSystems = allEduSystems.filter((es: any) => 
+    (es.code || "").toUpperCase().startsWith("MN") || 
+    (es.name || "").toLowerCase().includes("mầm non")
+  );
+  
+  // Filter systems for K-12 (Phổ thông)
+  const baseEduSystems = allEduSystems.filter((es: any) => 
+    !(es.code || "").toUpperCase().startsWith("MN") && 
+    !(es.name || "").toLowerCase().includes("mầm non")
+  );
+  
   const eduSystems = activeTab === "mam-non" ? mnEduSystems : baseEduSystems;
 
   const getGradesList = (level: string, tab: string) => {
@@ -484,6 +496,8 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     if (code === "HNG") return "bg-purple-100 text-purple-700"
     if (code === "SB") return "bg-teal-100 text-teal-700"
     if (code === "HNS") return "bg-orange-100 text-orange-700"
+    if (code === "MNS") return "bg-rose-100 text-rose-700"
+    if (code === "MNG") return "bg-emerald-100 text-emerald-700"
     return "bg-slate-100 text-slate-600"
   }
 
