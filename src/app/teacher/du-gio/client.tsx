@@ -666,38 +666,57 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const openEvalModal = (registration: any, slot: any) => {
+    const isMN = slot.level === "Mầm non";
     if (registration.evaluation) {
-      setEvalCriteria([
-        registration.evaluation.criterion1 || 0,
-        registration.evaluation.criterion2 || 0,
-        registration.evaluation.criterion3 || 0,
-        registration.evaluation.criterion4 || 0,
-        registration.evaluation.criterion5 || 0
-      ])
-      setEvalK12Scores([
-        registration.evaluation.score1 || 0,
-        registration.evaluation.score2 || 0,
-        registration.evaluation.score3 || 0,
-        registration.evaluation.score4 || 0,
-        registration.evaluation.score5 || 0,
-        registration.evaluation.score6 || 0,
-        registration.evaluation.score7 || 0,
-        registration.evaluation.score8 || 0,
-        registration.evaluation.score9 || 0,
-        registration.evaluation.score10 || 0,
-        registration.evaluation.score11 || 0
-      ])
-      setEvalStrengths(registration.evaluation.strengths || "")
-      setEvalImprovements(registration.evaluation.improvements || "")
-      setEvalGeneral(registration.evaluation.generalComment || "")
-      setEvalOverall(registration.evaluation.overallRating || "")
+      let parsedScores = Array(18).fill(0);
+      let actualGeneralComment = registration.evaluation.generalComment || "";
+      
+      if (isMN) {
+        try {
+          const parsed = JSON.parse(registration.evaluation.generalComment);
+          if (parsed && Array.isArray(parsed.scores)) {
+            parsedScores = parsed.scores;
+            actualGeneralComment = parsed.text || "";
+          }
+        } catch (e) {
+          // fallback
+          parsedScores = [
+            registration.evaluation.criterion1 || 0,
+            registration.evaluation.criterion2 || 0,
+            registration.evaluation.criterion3 || 0,
+            registration.evaluation.criterion4 || 0,
+            registration.evaluation.criterion5 || 0,
+            ...Array(13).fill(0)
+          ];
+        }
+      } else {
+        setEvalK12Scores([
+          registration.evaluation.score1 || 0,
+          registration.evaluation.score2 || 0,
+          registration.evaluation.score3 || 0,
+          registration.evaluation.score4 || 0,
+          registration.evaluation.score5 || 0,
+          registration.evaluation.score6 || 0,
+          registration.evaluation.score7 || 0,
+          registration.evaluation.score8 || 0,
+          registration.evaluation.score9 || 0,
+          registration.evaluation.score10 || 0,
+          registration.evaluation.score11 || 0
+        ]);
+      }
+      
+      setEvalCriteria(isMN ? parsedScores : [0, 0, 0, 0, 0]);
+      setEvalStrengths(registration.evaluation.strengths || "");
+      setEvalImprovements(registration.evaluation.improvements || "");
+      setEvalGeneral(actualGeneralComment);
+      setEvalOverall(registration.evaluation.overallRating || "");
     } else {
-      setEvalCriteria([0, 0, 0, 0, 0])
-      setEvalK12Scores([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-      setEvalStrengths("")
-      setEvalImprovements("")
-      setEvalGeneral("")
-      setEvalOverall("")
+      setEvalCriteria(isMN ? Array(18).fill(0) : [0, 0, 0, 0, 0]);
+      setEvalK12Scores([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+      setEvalStrengths("");
+      setEvalImprovements("");
+      setEvalGeneral("");
+      setEvalOverall("");
     }
     setEvalModal({ registration, slot })
   }
@@ -763,12 +782,22 @@ export function ObservationClient(props: ObservationClientProps) {
       payload.score11 = evalK12Scores[10]
       payload.totalScore = sum
     } else {
-      if (evalCriteria.some(c => c === 0)) { showToast("Vui lòng đánh giá tất cả 5 tiêu chí!", "error"); return }
-      payload.criterion1 = evalCriteria[0]
-      payload.criterion2 = evalCriteria[1]
-      payload.criterion3 = evalCriteria[2]
-      payload.criterion4 = evalCriteria[3]
-      payload.criterion5 = evalCriteria[4]
+      if (evalCriteria.length < 18 || evalCriteria.some(c => c === undefined || c === null)) {
+        showToast("Vui lòng đánh giá đầy đủ 18 yêu cầu!", "error");
+        return;
+      }
+      const sum = evalCriteria.reduce((a, b) => a + b, 0);
+      payload.totalScore = sum;
+      payload.generalComment = JSON.stringify({
+        scores: evalCriteria,
+        text: evalGeneral
+      });
+      // DB compatibility values for first 5 criteria
+      payload.criterion1 = Math.round(evalCriteria[0]);
+      payload.criterion2 = Math.round(evalCriteria[1]);
+      payload.criterion3 = Math.round(evalCriteria[2]);
+      payload.criterion4 = Math.round(evalCriteria[3]);
+      payload.criterion5 = Math.round(evalCriteria[4]);
     }
 
     if (!evalOverall) { showToast("Vui lòng chọn xếp loại tổng thể!", "error"); return }
@@ -1954,24 +1983,15 @@ export function ObservationClient(props: ObservationClientProps) {
                               </button>
                             </div>
                           ) : (
-                            <>
-                              {isSchedulePastSlot ? (
-                                <button type="button" onClick={() => openEvalModal(myReg, slot)}
-                                  className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
-                                  Nhập đánh giá
-                                </button>
-                              ) : (
-                                <div className="flex flex-col gap-1.5 w-full">
-                                  <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
-                                    Đã xác nhận dự giờ
-                                  </span>
-                                  <button type="button" onClick={() => handleCancelRegistration(myReg?.id)}
-                                    className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
-                                    Hủy đăng ký
-                                  </button>
-                                </div>
-                              )}
-                            </>
+                            <div className="flex flex-col gap-1.5 w-full">
+                              <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
+                                Đã xác nhận dự giờ
+                              </span>
+                              <button type="button" onClick={() => openEvalModal(myReg, slot)}
+                                className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
+                                {myReg?.evaluation ? "Xem đánh giá" : "Nhập đánh giá"}
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -2654,24 +2674,65 @@ export function ObservationClient(props: ObservationClientProps) {
                   })}
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                    <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">1</span>
-                    Đánh giá theo tiêu chí (chọn mức độ phù hợp)
-                  </h4>
-                  {CRITERIA_LABELS.map((label, i) => (
-                    <div key={i} className="p-4 text-xs font-semibold">
-                      <p className="text-xs font-extrabold text-slate-700 mb-3">{i + 1}. {label}</p>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[4, 3, 2, 1].map((score, si) => (
-                          <button key={si} type="button" onClick={() => { if (!isReadOnly) { const c = [...evalCriteria]; c[i] = score; setEvalCriteria(c) } }} disabled={isReadOnly}
-                            className={`py-2 rounded-xl border-2 text-xs font-extrabold transition-all ${evalCriteria[i] === score ? score === 4 ? "bg-emerald-500 border-emerald-500 text-white" : score === 3 ? "bg-sky-500 border-sky-500 text-white" : score === 2 ? "bg-amber-400 border-amber-400 text-white" : "bg-rose-500 border-rose-500 text-white" : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"} disabled:opacity-75`}>
-                            {RATING_LABELS[si]}
-                          </button>
-                        ))}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 text-xs font-semibold">
+                    <span className="text-xs font-black text-amber-800 uppercase tracking-wide">Tổng điểm tự động tính:</span>
+                    <span className="text-base font-black text-amber-900 bg-white px-4 py-1.5 rounded-xl shadow-sm border border-amber-100">
+                      {evalCriteria.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00 điểm
+                    </span>
+                  </div>
+                  {MAMNON_SECTIONS.map((sec, sIdx) => {
+                    let reqStartIdx = 0;
+                    for (let i = 0; i < sIdx; i++) {
+                      reqStartIdx += MAMNON_SECTIONS[i].requirements.length;
+                    }
+
+                    return (
+                      <div key={sIdx} className="space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+                          <span className="w-5 h-5 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center text-[10px] font-black">{sIdx + 1}</span>
+                          {sec.name}
+                        </h4>
+                        <div className="space-y-3">
+                          {sec.requirements.map((req, rSubIdx) => {
+                            const globalIdx = reqStartIdx + rSubIdx;
+                            const options = [];
+                            for (let v = 0; v <= req.max; v += 0.25) {
+                              options.push(Math.round(v * 100) / 100);
+                            }
+
+                            return (
+                              <div key={req.id} className="p-4 flex flex-col md:flex-row md:items-start justify-between gap-4 text-xs font-semibold">
+                                <div className="space-y-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                    <span className="text-[10px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                  </div>
+                                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                  <span className="text-xs font-extrabold text-slate-500">Điểm:</span>
+                                  <select
+                                    value={evalCriteria[globalIdx]}
+                                    onChange={(e) => {
+                                      const nextCriteria = [...evalCriteria];
+                                      nextCriteria[globalIdx] = parseFloat(e.target.value);
+                                      setEvalCriteria(nextCriteria);
+                                      const nextRank = calculateMamNonRanking(nextCriteria);
+                                      setEvalOverall(nextRank);
+                                    }}
+                                    disabled={isReadOnly} className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none w-28 shadow-sm disabled:opacity-75 disabled:bg-slate-150"
+                                  >
+                                    {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                  </select>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -2723,16 +2784,20 @@ export function ObservationClient(props: ObservationClientProps) {
                       );
                     })()}
                   </div>
-                  {evalModal.slot.level !== "Mầm non" && (
+                  {evalModal.slot.level !== "Mầm non" ? (
                     <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
                       Tự động gợi ý: {calculateK12Ranking(evalK12Scores)}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">
+                      Tự động gợi ý: {calculateMamNonRanking(evalCriteria)}
                     </span>
                   )}
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {(evalModal.slot.level !== "Mầm non"
                     ? [["Giỏi","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Không xếp loại","bg-rose-500"]]
-                    : [["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Yếu","bg-rose-500"]]
+                    : [["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Đạt","bg-amber-400"],["Không đạt","bg-rose-500"]]
                   ).map(([r, color]) => (
                     <button key={r} type="button" onClick={() => { if (!isReadOnly) setEvalOverall(r); }} disabled={isReadOnly}
                       className={`py-2.5 rounded-xl border-2 text-xs font-extrabold transition-all ${evalOverall === r ? `${color} border-transparent text-white shadow-md` : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
