@@ -31,16 +31,30 @@ export async function getObservationData(academicYearId?: string) {
       return { success: false, error: "Teacher profile not found" }
     }
 
-    const academicYears = await prisma.academicYear.findMany({
+    const rawAcademicYears = await prisma.academicYear.findMany({
       orderBy: { startDate: "desc" },
       select: { id: true, name: true, status: true }
     })
 
     const selectedYear = academicYearId
-      ? academicYears.find(y => y.id === academicYearId)
-      : academicYears.find(y => y.status === "ACTIVE") || academicYears[0];
+      ? rawAcademicYears.find(y => y.id === academicYearId)
+      : rawAcademicYears.find(y => y.status === "ACTIVE") || rawAcademicYears[0];
 
     const activeYearId = selectedYear?.id || null;
+
+    // Deduplicate by name and filter by status === "ACTIVE"
+    const seenNames = new Set()
+    let academicYears = rawAcademicYears.filter(y => {
+      if (y.status !== "ACTIVE") return false
+      if (seenNames.has(y.name)) return false
+      seenNames.add(y.name)
+      return true
+    })
+
+    // If no active year is found, only show the selectedYear to avoid displaying multiple inactive years
+    if (academicYears.length === 0 && selectedYear) {
+      academicYears = [selectedYear]
+    }
 
     let activeYearTarget = null
     if (activeYearId && currentTeacher && !isAdmin) {

@@ -643,24 +643,42 @@ export function AdminTongHopClient({
             <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1.5">
               <ClipboardList className="w-4 h-4 text-slate-400"/> Tổng tiết dạy:
             </span>
-            <span className="text-amber-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
-              MẦM NON: {departmentSummary.taughtMamNon}
-            </span>
-            <span className="text-indigo-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
-              PHỔ THÔNG: {departmentSummary.taughtPhoThong}
-            </span>
+            {activeBlockTab === "Mầm non" && (
+              <span className="text-amber-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
+                MẦM NON: {departmentSummary.taughtMamNon}
+              </span>
+            )}
+            {activeBlockTab === "Phổ thông K-12" && (
+              <span className="text-indigo-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
+                PHỔ THÔNG: {departmentSummary.taughtPhoThong}
+              </span>
+            )}
+            {activeBlockTab === "Điều hành" && (
+              <span className="text-teal-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
+                ĐIỀU HÀNH: {departmentSummary.taughtPhoThong}
+              </span>
+            )}
           </div>
           <div className="h-6 w-px bg-slate-200 hidden sm:block" />
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[9px] flex items-center gap-1.5">
               <CheckCircle className="w-4 h-4 text-slate-400"/> Tổng tiết dự:
             </span>
-            <span className="text-amber-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
-              MẦM NON: {departmentSummary.observedMamNon}
-            </span>
-            <span className="text-violet-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
-              PHỔ THÔNG: {departmentSummary.observedPhoThong}
-            </span>
+            {activeBlockTab === "Mầm non" && (
+              <span className="text-amber-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
+                MẦM NON: {departmentSummary.observedMamNon}
+              </span>
+            )}
+            {activeBlockTab === "Phổ thông K-12" && (
+              <span className="text-violet-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
+                PHỔ THÔNG: {departmentSummary.observedPhoThong}
+              </span>
+            )}
+            {activeBlockTab === "Điều hành" && (
+              <span className="text-teal-700 font-black text-[10px] tracking-wide shadow-2xs text-xs font-semibold">
+                ĐIỀU HÀNH: {departmentSummary.observedPhoThong}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -670,7 +688,7 @@ export function AdminTongHopClient({
         <div className="lg:col-span-4 flex flex-col gap-4">
           {/* Tabs / Tags with gorgeous gradient hover effects */}
           <div className="bg-slate-100/80 border border-slate-200/60 rounded-2xl p-1.5 shadow-xs flex flex-wrap gap-1 shrink-0">
-            {["Phổ thông K-12", "Mầm non", "Điều hành"].map(tab => {
+            {[activeBlockTab].map(tab => {
               if (isTTCM && currentTeacher?.departmentId) {
                 const d = departments.find(dept => dept.id === currentTeacher.departmentId);
                 const ownBlock = d ? (d.blockCM === "Mầm Non" ? "Mầm non" : d.blockCM === "Phổ thông" ? "Phổ thông K-12" : "Điều hành") : "Phổ thông K-12";
