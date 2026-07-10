@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { logActivity } from "@/lib/audit"
+import { randomUUID } from "crypto"
 
 /**
  * Lấy dữ liệu cho màn hình kết chuyển nhân sự.
@@ -81,19 +82,19 @@ export async function transferTeachersToYearAction(teacherIds: string[], toYearI
     const toCreate = uniqueTeacherIds.filter(id => !existingSet.has(id))
 
     await prisma.$transaction(async (tx) => {
-      // 1. Tạo target records cho năm mới
+      // 1. Tạo target records cho năm mới bằng createMany với ID được sinh trước
       if (toCreate.length > 0) {
-        for (const teacherId of toCreate) {
-          await tx.teacherAcademicYearTarget.create({
-            data: {
-              teacherId,
-              academicYearId: toYearId,
-              requiredObserved: 0,
-              requiredTaught: 0,
-              confirmed: false,
-            }
-          })
-        }
+        await tx.teacherAcademicYearTarget.createMany({
+          data: toCreate.map(teacherId => ({
+            id: randomUUID(),
+            teacherId,
+            academicYearId: toYearId,
+            requiredObserved: 0,
+            requiredTaught: 0,
+            confirmed: false,
+          })),
+          skipDuplicates: true,
+        })
       }
 
       // 2. Kích hoạt lại GV nếu đang INACTIVE
