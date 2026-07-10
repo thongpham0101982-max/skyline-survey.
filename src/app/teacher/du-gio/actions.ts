@@ -1,3 +1,4 @@
+import { cookies } from "next/headers"
 ﻿"use server"
 
 import { prisma } from "@/lib/db"
@@ -344,18 +345,28 @@ export async function createObservationSlot(data: {
     const startOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth(), 1)
     const endOfMonth = new Date(slotDate.getFullYear(), slotDate.getMonth() + 1, 1)
 
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    })
+    const cookieStore = await cookies();
+    const cookieYearId = cookieStore.get("selectedAcademicYear")?.value;
+    let yearId = cookieYearId || null;
+    if (yearId) {
+      const yearExists = await prisma.academicYear.findUnique({ where: { id: yearId } });
+      if (!yearExists) yearId = null;
+    }
 
-    const matchingYear = activeYear ? await prisma.academicYear.findFirst({
-      where: {
-        startDate: { lte: slotDate },
-        endDate: { gte: slotDate }
-      }
-    }) : null
+    if (!yearId) {
+      const activeYear = await prisma.academicYear.findFirst({
+        where: { status: "ACTIVE" }
+      })
 
-    const yearId = matchingYear?.id || activeYear?.id || null
+      const matchingYear = activeYear ? await prisma.academicYear.findFirst({
+        where: {
+          startDate: { lte: slotDate },
+          endDate: { gte: slotDate }
+        }
+      }) : null
+
+      yearId = matchingYear?.id || activeYear?.id || null
+    }
 
     const newSlot = await prisma.$transaction(async (tx) => {
       const count = await tx.observationSlot.count({
@@ -741,18 +752,28 @@ export async function updateObservationSlot(slotId: string, data: {
 
     const slotDate = new Date(data.date)
 
-    const activeYear = await prisma.academicYear.findFirst({
-      where: { status: "ACTIVE" }
-    })
+    const cookieStore = await cookies();
+    const cookieYearId = cookieStore.get("selectedAcademicYear")?.value;
+    let yearId = cookieYearId || null;
+    if (yearId) {
+      const yearExists = await prisma.academicYear.findUnique({ where: { id: yearId } });
+      if (!yearExists) yearId = null;
+    }
 
-    const matchingYear = activeYear ? await prisma.academicYear.findFirst({
-      where: {
-        startDate: { lte: slotDate },
-        endDate: { gte: slotDate }
-      }
-    }) : null
+    if (!yearId) {
+      const activeYear = await prisma.academicYear.findFirst({
+        where: { status: "ACTIVE" }
+      })
 
-    const yearId = matchingYear?.id || activeYear?.id || null
+      const matchingYear = activeYear ? await prisma.academicYear.findFirst({
+        where: {
+          startDate: { lte: slotDate },
+          endDate: { gte: slotDate }
+        }
+      }) : null
+
+      yearId = matchingYear?.id || activeYear?.id || null
+    }
 
     const updatedSlot = await prisma.observationSlot.update({
       where: { id: slotId },
