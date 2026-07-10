@@ -436,15 +436,21 @@ export function ObservationClient(props: ObservationClientProps) {
     else if (newLevel === "THCS") dbLevel = "THCS"
     else if (newLevel === "THPT") dbLevel = "THPT"
     else dbLevel = "Mầm non"
-    const numGrade = newGrade.replace("Khoi ", "")
+
+    const cleanDbLevel = dbLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const numGrade = newGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+
     return classes.filter(c => {
       if (c.campusId !== newCampusId) return false;
-      if (c.level !== dbLevel) return false;
-      if (dbLevel === "Mầm non") {
+
+      const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (cLevelClean !== cleanDbLevel) return false;
+
+      if (cleanDbLevel === "mam non") {
         if (!newGrade) return true;
         return (c.grade || "") === newGrade;
       }
-      return c.grade === numGrade;
+      return (c.grade || "").trim() === numGrade;
     })
   }, [classes, newCampusId, newLevel, newGrade])
 
@@ -1205,7 +1211,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
                       className="w-full text-xs font-semibold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] outline-none bg-white disabled:opacity-55">
                       <option value="">Chọn lớp</option>
-                      {classes.filter(c => c.campusId === newCampusId && c.level === newLevel && c.grade === newGrade).map(c => (
+                      {filteredClassesForCreation.map(c => (
                         <option key={c.id} value={c.id}>{c.className}</option>
                       ))}
                     </select>
