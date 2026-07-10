@@ -1329,6 +1329,51 @@ export function ObservationClient(props: ObservationClientProps) {
             {(() => {
               const suggested = slots
                 .filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
+                .sort((a, b) => {
+                  const getScore = (slot) => {
+                    let score = 0;
+                    const isSlotMamNon = slot.level === "Mầm non" ||
+                      (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+                    
+                    if (isMamNonTeacher) {
+                      if (isSlotMamNon) {
+                        score += 1000;
+                        const slotDeptName = (slot.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+                        const myDeptName = (currentTeacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+                        const isSameDept = myDeptName !== "" && slotDeptName === myDeptName;
+                        const isSameCampus = slot.campusId === currentTeacher?.campusId;
+                        
+                        if (isSameCampus && isSameDept) {
+                          score += 500;
+                        } else if (isSameCampus) {
+                          score += 300;
+                        } else if (isSameDept) {
+                          score += 200;
+                        }
+                      } else {
+                        score -= 1000;
+                      }
+                    } else {
+                      if (!isSlotMamNon) {
+                        score += 1000;
+                        const isSameDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
+                        const isSameCampus = slot.campusId === currentTeacher?.campusId;
+                        
+                        if (isSameCampus && isSameDept) {
+                          score += 500;
+                        } else if (isSameCampus) {
+                          score += 300;
+                        } else if (isSameDept) {
+                          score += 200;
+                        }
+                      } else {
+                        score -= 1000;
+                      }
+                    }
+                    return score;
+                  };
+                  return getScore(b) - getScore(a);
+                })
                 .slice(0, 3);
               
               if (suggested.length === 0) {
