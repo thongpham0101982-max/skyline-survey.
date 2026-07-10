@@ -27,6 +27,36 @@ interface ResultsClientProps {
 
 
 
+const getSelectStyle = (val: string) => {
+  if (val === "VANG" || val === "NHAT") {
+    return "bg-amber-50/80 border-amber-300 text-amber-700 font-black shadow-2xs";
+  }
+  if (val === "BAC" || val === "NHI") {
+    return "bg-slate-100/80 border-slate-300 text-slate-700 font-black shadow-2xs";
+  }
+  if (val === "DONG" || val === "BA") {
+    return "bg-orange-50/80 border-orange-300 text-orange-700 font-black shadow-2xs";
+  }
+  if (val && val !== "") {
+    return "bg-indigo-50/80 border-indigo-200 text-indigo-700 font-black shadow-2xs";
+  }
+  return "bg-slate-50 border-slate-200 text-slate-600 font-bold";
+}
+
+const getCategorySelectStyle = (val: string) => {
+  if (val && val !== "") {
+    return "bg-teal-50/80 border-teal-200 text-[#009085] font-black shadow-2xs";
+  }
+  return "bg-slate-50 border-slate-200 text-slate-600 font-bold";
+}
+
+const getTypeSelectStyle = (val: string) => {
+  if (val === "DONG_DOI") {
+    return "bg-violet-50/80 border-violet-200 text-violet-700 font-black shadow-2xs";
+  }
+  return "bg-slate-50 border-slate-200 text-slate-600 font-bold";
+}
+
 export function ResultsClient({ 
   exams, 
   academicYears, 
@@ -771,15 +801,23 @@ export function ResultsClient({
               ) : (
                 <>
                   {checkedRowIds.size > 0 && (
-                    <div className="bg-indigo-50/80 border border-indigo-100 rounded-xl p-3 mb-4 mx-1 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-2">
-                      <span className="text-xs font-bold text-indigo-800 flex items-center gap-2">
-                        <Check className="w-4 h-4" /> Đã chọn {checkedRowIds.size} dòng
-                      </span>
+                    <div className="bg-slate-900/95 text-white border border-slate-800 rounded-2xl shadow-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 z-50 fixed bottom-6 left-1/2 -translate-x-1/2 max-w-4xl w-[90%] backdrop-blur-md transition-all duration-300 ease-out transform scale-100 animate-in fade-in slide-in-from-bottom-4">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-[#00A99D]/15 border border-[#00A99D]/20 text-[#00E5D5] px-3 py-1 rounded-lg text-xs font-black flex items-center gap-1.5">
+                          <Check className="w-4 h-4" /> Đã chọn {checkedRowIds.size} học sinh
+                        </span>
+                        <button
+                          onClick={() => setCheckedRowIds(new Set())}
+                          className="text-xs text-slate-400 hover:text-white transition-colors underline cursor-pointer"
+                        >
+                          Bỏ chọn tất cả
+                        </button>
+                      </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <select
                           value={bulkType}
                           onChange={e => setBulkType(e.target.value)}
-                          className="border border-white/50 rounded-lg px-2 py-1.5 text-xs outline-none bg-white focus:border-indigo-500 font-semibold text-slate-700"
+                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#00A99D] font-bold text-white transition-all cursor-pointer"
                         >
                           <option value="CA_NHAN">Cá nhân</option>
                           <option value="DONG_DOI">Đồng đội</option>
@@ -790,7 +828,7 @@ export function ResultsClient({
                             setBulkCategory(e.target.value)
                             setBulkLevel("")
                           }}
-                          className="border border-white/50 rounded-lg px-2 py-1.5 text-xs outline-none bg-white focus:border-indigo-500 font-semibold text-slate-700"
+                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#00A99D] font-bold text-white transition-all cursor-pointer"
                         >
                           <option value="">-- Loại giải --</option>
                           {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -801,7 +839,7 @@ export function ResultsClient({
                           value={bulkLevel}
                           onChange={e => setBulkLevel(e.target.value)}
                           disabled={bulkCategory === ""}
-                          className="border border-white/50 rounded-lg px-2 py-1.5 text-xs outline-none bg-white focus:border-indigo-500 font-semibold text-slate-700 disabled:opacity-50"
+                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#00A99D] font-bold text-white transition-all disabled:opacity-50 disabled:bg-slate-800/40 cursor-pointer"
                         >
                           <option value="">-- Mức giải --</option>
                           {(() => {
@@ -814,7 +852,7 @@ export function ResultsClient({
                         </select>
                         <button 
                           onClick={handleBulkApply}
-                          className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition-colors shadow-sm ml-2"
+                          className="px-5 py-1.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg text-xs font-black transition-all shadow-md shadow-[#00A99D]/20 cursor-pointer"
                         >
                           Áp dụng hàng loạt
                         </button>
@@ -866,11 +904,11 @@ export function ResultsClient({
                         const isSilver = row.level === "BAC" || row.level === "NHI"
                         const isBronze = row.level === "DONG" || row.level === "BA"
 
-                        let rowBg = "hover:bg-slate-50/50"
-                        if (isGold) rowBg = "bg-amber-100/50 hover:bg-amber-100"
-                        else if (isSilver) rowBg = "bg-slate-200/60 hover:bg-slate-200"
-                        else if (isBronze) rowBg = "bg-orange-100/50 hover:bg-orange-100"
-                        else if (hasAward) rowBg = "bg-indigo-50/50 hover:bg-indigo-50"
+                        let rowBg = "hover:bg-slate-50/80 bg-white"
+                        if (isGold) rowBg = "bg-amber-50/20 hover:bg-amber-50/40"
+                        else if (isSilver) rowBg = "bg-slate-50/60 hover:bg-slate-100/60"
+                        else if (isBronze) rowBg = "bg-orange-50/20 hover:bg-orange-50/40"
+                        else if (hasAward) rowBg = "bg-indigo-50/10 hover:bg-indigo-50/30"
 
                         let levelColor = ""
                         if (isGold) levelColor = "text-amber-700 font-extrabold bg-amber-50 border-amber-300 shadow-sm"
@@ -881,7 +919,10 @@ export function ResultsClient({
                         return (
                           <tr key={row.gridRowId} className={`transition-all ${rowBg}`}>
                             {/* Checkbox */}
-                            <td className="py-2.5 px-4 text-center">
+                            <td className="py-2.5 px-4 text-center relative">
+                              {changedStudentIds.has(row.studentId) && (
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 absolute left-1 top-1/2 -translate-y-1/2" title="Chưa lưu thay đổi" />
+                              )}
                               <input 
                                 type="checkbox" 
                                 className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer"
@@ -916,7 +957,7 @@ export function ResultsClient({
                               <select
                                 value={row.type}
                                 onChange={e => handleCellChange(row.gridRowId, "type", e.target.value)}
-                                className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all"
+                                className={`w-full border rounded-lg px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer ${getTypeSelectStyle(row.type)}`}
                               >
                                 <option value="CA_NHAN">Cá nhân</option>
                                 <option value="DONG_DOI">Đồng đội</option>
@@ -928,7 +969,7 @@ export function ResultsClient({
                               <select
                                 value={row.category}
                                 onChange={e => handleCellChange(row.gridRowId, "category", e.target.value)}
-                                className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs outline-none bg-slate-50 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-semibold text-slate-700 transition-all"
+                                className={`w-full border rounded-lg px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer ${getCategorySelectStyle(row.category)}`}
                               >
                                 <option value="">-- Không giải --</option>
                                 {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -943,7 +984,7 @@ export function ResultsClient({
                                 value={row.level}
                                 onChange={e => handleCellChange(row.gridRowId, "level", e.target.value)}
                                 disabled={row.category === ""}
-                                className={`w-full border rounded-lg px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all disabled:opacity-50 disabled:bg-slate-50/50 ${levelColor || 'border-slate-200 bg-slate-50 font-semibold text-slate-700'}`}
+                                className={`w-full border rounded-lg px-2 py-1.5 text-xs outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer disabled:opacity-50 disabled:bg-slate-50/30 ${getSelectStyle(row.level)}`}
                               >
                                 <option value="">-- Không --</option>
                                 {(() => {
