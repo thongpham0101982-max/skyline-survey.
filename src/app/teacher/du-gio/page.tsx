@@ -1,3 +1,4 @@
+import { cookies } from "next/headers"
 export const dynamic = "force-dynamic"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
@@ -13,7 +14,9 @@ export default async function ObservationPage(props: {
   }
 
   const searchParams = await props.searchParams
-  const academicYearId = searchParams.academicYearId || undefined
+  const cookieStore = await cookies()
+  const activeYearCookie = cookieStore.get("selectedAcademicYear")?.value
+  const academicYearId = searchParams.academicYearId || activeYearCookie || undefined
   const level = searchParams.level || "all"
   const grade = searchParams.grade || "all"
   const period = searchParams.period || "all"

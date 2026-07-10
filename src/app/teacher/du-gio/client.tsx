@@ -1119,20 +1119,6 @@ export function ObservationClient(props: ObservationClientProps) {
           <p className="text-slate-500 text-xs font-semibold mt-1">Giao diện điều khiển dự giờ và phân công chuyên môn chuẩn Sky-Line</p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
-          {academicYears && academicYears.length > 0 && (
-            <select
-              value={filterAcademicYearId || selectedYearId || ""}
-              onChange={(e) => handleAcademicYearChange(e.target.value)}
-              className="text-xs font-bold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-700 shadow-sm focus:ring-2 focus:ring-[#00A99D] outline-none"
-            >
-              {academicYears.map((yr: any) => (
-                <option key={yr.id} value={yr.id}>
-                  Năm học: {yr.name} {yr.status === "ACTIVE" ? "(Hiện tại)" : ""}
-                </option>
-              ))}
-            </select>
-          )}
-          
           <div className="flex items-center gap-2 border-l pl-4 border-slate-200">
             <div className="w-8 h-8 rounded-full bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center font-black text-sm uppercase">
               {currentTeacher?.teacherName?.charAt(0) || ""}
