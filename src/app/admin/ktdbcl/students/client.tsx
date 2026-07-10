@@ -319,42 +319,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
   return (
     <div className="space-y-6 text-xs font-semibold">
-      {/* Sub-tabs */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-1.5 flex gap-2 w-fit no-print animate-fade-in">
-        <button
-          type="button"
-          onClick={() => {
-            setShowAllRegistered(false);
-            setSearchTerm("");
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 ${
-            !showAllRegistered
-              ? "bg-[#00A99D] text-white shadow-md shadow-[#00A99D]/10"
-              : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-          }`}
-        >
-          <UserCheck className="w-4 h-4" />
-          <span>Đăng ký HS dự thi</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setShowAllRegistered(true);
-            setSearchTerm("");
-            setSelectedCampus("");
-            setSelectedGrade("");
-            setSelectedClass("");
-          }}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-200 ${
-            showAllRegistered
-              ? "bg-[#00A99D] text-white shadow-md shadow-[#00A99D]/10"
-              : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>DS học sinh dự thi</span>
-        </button>
-      </div>
+
 
       {/* Top Filter Card */}
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4 animate-fade-in">
