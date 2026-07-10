@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  BookMarked,
   Compass,
   BookOpen,
   Eye
@@ -143,34 +144,78 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
             </Link>
           )}
           {role === "ADMIN" && (isTTCM || isSuperAdmin) && (
-            <Link 
-              href="/admin/tong-hop-du-gio"
-              onClick={() => setIsOpen(false)}
-              className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
+            <div className="flex flex-col">
+              {/* Parent label */}
+              <div className={`flex items-center px-3 py-2.5 rounded-xl text-sm font-medium ${
                 pathname.startsWith("/admin/tong-hop-du-gio") 
-                  ? "bg-white/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)] font-semibold" 
-                  : "text-white/70 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <PieChart className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
-              {!isCollapsed && <span>Tổng hợp dự giờ</span>}
-            </Link>
+                  ? "bg-white/20 text-white border border-[#135E5B]/30" 
+                  : "text-white/70"
+              }`}>
+                <PieChart className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60"}`} />
+                {!isCollapsed && <span className="font-semibold">Tổng hợp dự giờ</span>}
+              </div>
+              {/* Sub-items */}
+              {!isCollapsed && (
+                <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                  <Link href="/admin/tong-hop-du-gio?block=k12" onClick={() => setIsOpen(false)}
+                    className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                      pathname.startsWith("/admin/tong-hop-du-gio") && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") !== "mammon" && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") !== "dieuhan"
+                        ? "bg-indigo-500/20 text-white border border-indigo-500/30"
+                        : "text-white/60 hover:text-white hover:bg-indigo-500/10"
+                    }`}>
+                    <span className="w-5 h-5 rounded-md bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-[9px] font-black text-indigo-300">K</span>
+                    Phổ thông K-12
+                  </Link>
+                  <Link href="/admin/tong-hop-du-gio?block=mammon" onClick={() => setIsOpen(false)}
+                    className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                      pathname.startsWith("/admin/tong-hop-du-gio") && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") === "mammon"
+                        ? "bg-amber-500/20 text-white border border-amber-500/30"
+                        : "text-white/60 hover:text-white hover:bg-amber-500/10"
+                    }`}>
+                    <span className="w-5 h-5 rounded-md bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-[9px] font-black text-amber-300">M</span>
+                    Mầm non
+                  </Link>
+                  <Link href="/admin/tong-hop-du-gio?block=dieuhan" onClick={() => setIsOpen(false)}
+                    className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                      pathname.startsWith("/admin/tong-hop-du-gio") && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") === "dieuhan"
+                        ? "bg-teal-500/20 text-white border border-teal-500/30"
+                        : "text-white/60 hover:text-white hover:bg-teal-500/10"
+                    }`}>
+                    <span className="w-5 h-5 rounded-md bg-teal-500/20 border border-teal-500/30 flex items-center justify-center text-[9px] font-black text-teal-300">Đ</span>
+                    Điều hành
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Dự giờ Giáo viên — visible for BGH Mầm non (BGH_MN) */}
           {role === "ADMIN" && (actualRole === "BGH_MN" || actualRole === "BGH MN") && (
-            <Link 
-              href="/admin/tong-hop-du-gio"
-              onClick={() => setIsOpen(false)}
-              className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
+            <div className="flex flex-col">
+              {/* Parent label */}
+              <div className={`flex items-center px-3 py-2.5 rounded-xl text-sm font-medium ${
                 pathname.startsWith("/admin/tong-hop-du-gio") 
-                  ? "bg-amber-500/20 text-white border border-amber-500/30 shadow-[0_0_15px_-3px_rgba(245,158,11,0.25)] font-semibold" 
-                  : "text-white/70 hover:text-white hover:bg-white/10"
-              }`}
-            >
-              <Eye className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-amber-400" : "text-white/60 group-hover:text-amber-400"}`} />
-              {!isCollapsed && <span>Dự giờ Giáo viên</span>}
-            </Link>
+                  ? "bg-amber-500/20 text-white border border-amber-500/30"
+                  : "text-white/70"
+              }`}>
+                <Eye className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-amber-400" : "text-white/60"}`} />
+                {!isCollapsed && <span className="font-semibold">Dự giờ Giáo viên</span>}
+              </div>
+              {/* Sub-item: only Mầm non for BGH_MN */}
+              {!isCollapsed && (
+                <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+                  <Link href="/admin/tong-hop-du-gio?block=mammon" onClick={() => setIsOpen(false)}
+                    className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
+                      pathname.startsWith("/admin/tong-hop-du-gio")
+                        ? "bg-amber-500/20 text-white border border-amber-500/30"
+                        : "text-white/60 hover:text-white hover:bg-amber-500/10"
+                    }`}>
+                    <span className="w-5 h-5 rounded-md bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-[9px] font-black text-amber-300">M</span>
+                    Mầm non
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
 
           {role === "ADMIN" && APP_CATEGORIES.map((cat) => {

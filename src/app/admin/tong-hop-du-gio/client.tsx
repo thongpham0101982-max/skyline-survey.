@@ -67,7 +67,13 @@ export function AdminTongHopClient({
     router.push(`${pathname}?${params.toString()}`)
   }
 
+  const blockParam = searchParams.get("block") || ""
   const [activeBlockTab, setActiveBlockTab] = useState(() => {
+    // Honour URL ?block= param for direct deep-link from sidebar
+    if (blockParam === "mammon") return "Mầm non";
+    if (blockParam === "dieuhan") return "Điều hành";
+    if (blockParam === "k12") return "Phổ thông K-12";
+    // Fall back to TTCM's own block
     if (isTTCM && currentTeacher?.departmentId) {
       const d = departments.find(dept => dept.id === currentTeacher.departmentId);
       if (d) {
