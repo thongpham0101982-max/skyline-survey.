@@ -745,7 +745,7 @@ export function PhanCongMamNonClient({
                   <Users className="w-4 h-4" />
                 </div>
                 <select value={aDeptId} onChange={e => setADeptId(e.target.value)} className={`${inp} pl-10`}>
-                  <option value="">Tất cả các Tổ Chuyên môn</option>
+                  <option value="">-- Chọn Tổ chuyên môn --</option>
                   {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
