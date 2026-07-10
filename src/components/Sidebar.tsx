@@ -17,7 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Compass,
-  BookOpen
+  BookOpen,
+  Eye
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
@@ -153,6 +154,22 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
             >
               <PieChart className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
               {!isCollapsed && <span>Tổng hợp dự giờ</span>}
+            </Link>
+          )}
+
+          {/* Dự giờ Giáo viên — visible for BGH Mầm non (BGH_MN) */}
+          {role === "ADMIN" && (actualRole === "BGH_MN" || actualRole === "BGH MN") && (
+            <Link 
+              href="/admin/tong-hop-du-gio"
+              onClick={() => setIsOpen(false)}
+              className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
+                pathname.startsWith("/admin/tong-hop-du-gio") 
+                  ? "bg-amber-500/20 text-white border border-amber-500/30 shadow-[0_0_15px_-3px_rgba(245,158,11,0.25)] font-semibold" 
+                  : "text-white/70 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <Eye className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-amber-400" : "text-white/60 group-hover:text-amber-400"}`} />
+              {!isCollapsed && <span>Dự giờ Giáo viên</span>}
             </Link>
           )}
 

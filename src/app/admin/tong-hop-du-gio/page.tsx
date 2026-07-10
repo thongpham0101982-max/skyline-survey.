@@ -22,8 +22,9 @@ export default async function AdminTongHopPage(props: {
   }).catch(() => null)
 
   const isTTCM = currentTeacher?.position === "TTCM"
+  const isBGHMN = roleCode === "BGH_MN" || roleCode === "BGH MN"
 
-  if (!isSuperAdmin && !isTTCM) {
+  if (!isSuperAdmin && !isTTCM && !isBGHMN) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
         Bạn không có quyền truy cập trang này.
