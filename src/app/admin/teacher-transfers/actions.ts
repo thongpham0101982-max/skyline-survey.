@@ -66,36 +66,39 @@ export async function transferTeachersToYearAction(teacherIds: string[], toYearI
 
     const session = await auth()
 
+    const uniqueTeacherIds = Array.from(new Set(teacherIds))
+
     // Lấy danh sách teachers đã có target trong năm đích
     const existingTargets = await prisma.teacherAcademicYearTarget.findMany({
       where: {
-        teacherId: { in: teacherIds },
+        teacherId: { in: uniqueTeacherIds },
         academicYearId: toYearId,
       },
       select: { teacherId: true }
     })
     const existingSet = new Set(existingTargets.map(t => t.teacherId))
 
-    const toCreate = teacherIds.filter(id => !existingSet.has(id))
+    const toCreate = uniqueTeacherIds.filter(id => !existingSet.has(id))
 
     await prisma.$transaction(async (tx) => {
       // 1. Tạo target records cho năm mới
       if (toCreate.length > 0) {
-        await tx.teacherAcademicYearTarget.createMany({
-          data: toCreate.map(teacherId => ({
-            teacherId,
-            academicYearId: toYearId,
-            requiredObserved: 0,
-            requiredTaught: 0,
-            confirmed: false,
-          })),
-          skipDuplicates: true,
-        })
+        for (const teacherId of toCreate) {
+          await tx.teacherAcademicYearTarget.create({
+            data: {
+              teacherId,
+              academicYearId: toYearId,
+              requiredObserved: 0,
+              requiredTaught: 0,
+              confirmed: false,
+            }
+          })
+        }
       }
 
       // 2. Kích hoạt lại GV nếu đang INACTIVE
       await tx.teacher.updateMany({
-        where: { id: { in: teacherIds }, status: "INACTIVE" },
+        where: { id: { in: uniqueTeacherIds }, status: "INACTIVE" },
         data: { status: "ACTIVE" }
       })
     })
