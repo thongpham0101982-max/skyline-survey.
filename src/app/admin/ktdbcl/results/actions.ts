@@ -392,19 +392,46 @@ export async function upsertExamResultsAction(
     const teamRows = validRows.filter(r => r.type === "DONG_DOI");
 
     // 1. Process Empty Rows (Delete)
-    for (const row of emptyRows) {
-      if (row.achievementId) {
-        const existingLink = await tx.studentAchievement.findFirst({
-          where: { studentId: row.studentId, achievementId: row.achievementId }
-        });
-        if (existingLink) {
-          await tx.studentAchievement.delete({ where: { id: existingLink.id } });
-          const remaining = await tx.studentAchievement.count({ where: { achievementId: row.achievementId } });
-          if (remaining === 0) {
-            await tx.achievement.delete({ where: { id: row.achievementId } });
-          }
+    const targetLinks = emptyRows
+      .filter(r => r.achievementId)
+      .map(r => ({
+        studentId: r.studentId,
+        achievementId: r.achievementId
+      }));
+
+    if (targetLinks.length > 0) {
+      const linksToDelete = await tx.studentAchievement.findMany({
+        where: {
+          OR: targetLinks
         }
+      });
+      if (linksToDelete.length > 0) {
+        await tx.studentAchievement.deleteMany({
+          where: {
+            id: { in: linksToDelete.map(l => l.id) }
+          }
+        });
       }
+    }
+
+    const achievementsWithNoStudents = await tx.achievement.findMany({
+      where: {
+        examId,
+        students: {
+          none: {}
+        }
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (achievementsWithNoStudents.length > 0) {
+      await tx.achievement.deleteMany({
+        where: {
+          id: { in: achievementsWithNoStudents.map(a => a.id) }
+        }
+      });
     }
 
     // 2. Process Individual Rows (Upsert)
