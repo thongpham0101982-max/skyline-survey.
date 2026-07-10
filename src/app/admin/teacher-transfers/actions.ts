@@ -92,8 +92,7 @@ export async function transferTeachersToYearAction(teacherIds: string[], toYearI
             requiredObserved: 0,
             requiredTaught: 0,
             confirmed: false,
-          })),
-          skipDuplicates: true,
+          }))
         })
       }
 
