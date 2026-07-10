@@ -132,14 +132,16 @@ export function ResultsClient({
     ]
     const data = [header]
     
-    const uniqueStudents = Array.from(new Set(gridRows.map(r => r.studentId)))
-      .map(id => gridRows.find(r => r.studentId === id))
-      .filter(Boolean)
-
-    if (uniqueStudents.length > 0) {
-      uniqueStudents.slice(0, 5).forEach(s => {
+    if (gridRows.length > 0) {
+      gridRows.forEach(r => {
         data.push([
-          s.studentCode, s.studentName, "CA_NHAN", "GIAI_THUONG", "NHAT", "Giải Nhất", ""
+          r.studentCode, 
+          r.studentName, 
+          r.type || "CA_NHAN", 
+          r.category || "", 
+          r.level || "", 
+          r.name || "", 
+          r.teacherId === "KHAC" ? (r.teacherName || "") : (r.teacherId || "")
         ])
       })
     } else {
@@ -166,14 +168,11 @@ export function ResultsClient({
       let importedCount = 0;
       setGridRows(prev => {
         const newRows = [...prev]
+        const processedCounts = {}
+
         data.forEach((row: any) => {
           const studentCode = row["Mã HS"] || row["Mã học sinh"] || row["studentCode"]
           if (!studentCode) return
-          
-          const studentIdx = newRows.findIndex(r => r.studentCode === studentCode)
-          if (studentIdx === -1) return
-          
-          const student = newRows[studentIdx]
           
           const type = row["Hình thức (CA_NHAN/DONG_DOI)"] || row["Hình thức"] || "CA_NHAN"
           const category = row["Loại giải (GIAI_THUONG/HUY_CHUONG/CHUNG_NHAN/KHAC)"] || row["Loại giải"] || ""
@@ -183,14 +182,33 @@ export function ResultsClient({
           if (!category) return;
           importedCount++;
 
-          const emptyRowIdx = newRows.findIndex(r => r.studentCode === studentCode && !r.category)
-          if (emptyRowIdx !== -1) {
-            newRows[emptyRowIdx] = { ...newRows[emptyRowIdx], type, category, level, name }
-          } else {
-            let lastIdx = studentIdx;
-            for(let i=studentIdx+1; i<newRows.length; i++) {
-              if(newRows[i].studentCode === studentCode) lastIdx = i; else break;
+          const studentRowIndexes = []
+          newRows.forEach((r, idx) => {
+            if (r.studentCode === studentCode) {
+              studentRowIndexes.push(idx)
             }
+          })
+
+          if (studentRowIndexes.length === 0) return
+
+          if (!processedCounts[studentCode]) {
+            processedCounts[studentCode] = 0
+          }
+          const instanceIdx = processedCounts[studentCode]
+          processedCounts[studentCode]++
+
+          if (instanceIdx < studentRowIndexes.length) {
+            const targetIdx = studentRowIndexes[instanceIdx]
+            newRows[targetIdx] = { 
+              ...newRows[targetIdx], 
+              type, 
+              category, 
+              level, 
+              name 
+            }
+          } else {
+            const lastIdx = studentRowIndexes[studentRowIndexes.length - 1]
+            const student = newRows[lastIdx]
             newRows.splice(lastIdx + 1, 0, {
               gridRowId: `temp-${student.studentId}-${Date.now()}-${Math.random()}`,
               studentId: student.studentId,

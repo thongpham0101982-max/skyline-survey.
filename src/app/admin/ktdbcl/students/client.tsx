@@ -1,5 +1,6 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
+import * as XLSX from "xlsx"
 import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search, Filter, Sparkles } from "lucide-react"
 import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction, getAllRegisteredStudentsAction } from "./actions"
 
@@ -246,6 +247,31 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   }
 
   // Registration Actions
+  const handleExportExcel = () => {
+    const wb = XLSX.utils.book_new()
+    const header = ["Mã HS", "Họ Tên", "Lớp", "Cơ sở", "Trạng thái đăng ký"]
+    const data = [header]
+
+    filteredStudents.forEach(s => {
+      data.push([
+        s.studentCode,
+        s.studentName,
+        s.className,
+        s.campusName,
+        s.isRegistered ? "Đã đăng ký" : "Chưa đăng ký"
+      ])
+    })
+
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    XLSX.utils.book_append_sheet(wb, ws, "Danh_Sach_Du_Thi")
+    
+    const fileName = showAllRegistered 
+      ? `Danh_Sach_Da_Dang_Ky_${activeExamObj?.name || 'Ky_Thi'}.xlsx`
+      : `Danh_Sach_Hoc_Sinh_Lop_${selectedClass}.xlsx`
+      
+    XLSX.writeFile(wb, fileName)
+  }
+
   const handleRegister = async () => {
     if (selectedIds.length === 0) return
     setUpdating(true)
@@ -551,9 +577,17 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
             )}
           </div>
 
-          {/* Quick Search */}
+          {/* Excel Export & Quick Search */}
           {(showAllRegistered || selectedClass) && students.length > 0 && (
-            <div className="relative w-full sm:max-w-xs">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/80 rounded-lg text-xs font-black transition-all cursor-pointer shrink-0"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" /> Xuất Excel
+              </button>
+              <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
@@ -562,6 +596,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-4 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-lg outline-none focus:border-[#00A99D] transition-all bg-white"
               />
+              </div>
             </div>
           )}
         </div>
