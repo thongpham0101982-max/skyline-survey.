@@ -941,7 +941,17 @@ export function ObservationClient(props: ObservationClientProps) {
         // Relax isPast to allow retroactive registration and viewing of recent slots
         if (isHost || isObserver) return false;
         if (activeDeptTab !== "all") {
-          const isMyDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
+          // Mam non: match by dept NAME across campuses; K-12: match by departmentId
+          const normDept = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+          const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
+          let isMyDept;
+          if (isMamNonTeacher) {
+            const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
+            const slotMN = slot.level === "Mamm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+            isMyDept = slotMN && myDeptName !== "" && slotDeptName === myDeptName;
+          } else {
+            isMyDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
+          }
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
           if (activeDeptTab === "other-dept") {
             if (isMyDept) return false;
@@ -964,7 +974,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (activeTab === "history") return isObserver
       return true
     })
-  }, [slots, activeTab, currentTeacher?.id, activeDeptTab])
+  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher])
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -1113,15 +1123,6 @@ export function ObservationClient(props: ObservationClientProps) {
                   <label className="text-[10px] font-extrabold text-amber-700 uppercase">Chủ đề *</label>
                   <input type="text" placeholder="Ví dụ: Thế giới động vật, Gia đình..." value={newChuDe} onChange={e => setNewChuDe(e.target.value)} required
                     className="w-full text-xs font-semibold p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none bg-amber-50/10" />
-                </div>
-                {/* To chuyen mon */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-extrabold text-amber-700 uppercase">Tổ chuyên môn</label>
-                  <select value={newTargetDeptId} onChange={e => setNewTargetDeptId(e.target.value)}
-                    className="w-full text-xs font-semibold p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-                    <option value="">-- Chọn tổ chuyên môn --</option>
-                    {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>)}
-                  </select>
                 </div>
                 {/* Hoat dong & De tai */}
                 <div className="grid grid-cols-2 gap-3">
@@ -1996,15 +1997,6 @@ export function ObservationClient(props: ObservationClientProps) {
                     <label className="text-xs font-extrabold text-amber-700">Chủ đề *</label>
                     <input type="text" placeholder="Ví dụ: Thế giới động vật, Gia đình..." value={newChuDe} onChange={e => setNewChuDe(e.target.value)} required
                       className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-amber-50/10" />
-                  </div>
-                  {/* To chuyen mon */}
-                  <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-amber-700">Tổ chuyên môn</label>
-                    <select value={newTargetDeptId} onChange={e => setNewTargetDeptId(e.target.value)}
-                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-white">
-                      <option value="">-- Chọn tổ chuyên môn --</option>
-                      {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>)}
-                    </select>
                   </div>
                   {/* Hoat dong */}
                   <div className="flex flex-col gap-1.5">
