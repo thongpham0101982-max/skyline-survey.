@@ -144,7 +144,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Create form states
   const [newSubjectId, setNewSubjectId] = useState("")
   const [newSubjectName, setNewSubjectName] = useState("")
-  const [newLevel, setNewLevel] = useState("")
+  const [newLevel, setNewLevel] = useState(isMamNonTeacher ? "Mầm non" : "")
   const [newGrade, setNewGrade] = useState("")
   const [newCampusId, setNewCampusId] = useState(currentTeacher?.campusId || "")
   const [newClassId, setNewClassId] = useState("")
@@ -354,9 +354,15 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [newDate])
 
+  useEffect(() => {
+    if (isMamNonTeacher) {
+      setNewLevel("Mầm non");
+    }
+  }, [isMamNonTeacher])
+
   const resetCreateForm = () => {
     setEditSlotId(null);
-    setNewSubjectId(""); setNewSubjectName(""); setNewLevel(""); setNewGrade(""); setNewClassId("");
+    setNewSubjectId(""); setNewSubjectName(""); setNewLevel(isMamNonTeacher ? "Mầm non" : ""); setNewGrade(""); setNewClassId("");
     setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1");
     setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId("");
     setNewLessonPlanName(""); setNewLessonPlanData("");
@@ -759,7 +765,7 @@ export function ObservationClient(props: ObservationClientProps) {
     if (res.success) {
       showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Tạo tiết dạy dự giờ mới thành công!", "success")
       setShowCreateModal(false)
-      setNewSubjectId(""); setNewSubjectName(""); setNewLevel(""); setNewGrade(""); setNewClassId("")
+      setNewSubjectId(""); setNewSubjectName(""); setNewLevel(isMamNonTeacher ? "Mầm non" : ""); setNewGrade(""); setNewClassId("")
       setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1")
       setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId("")
       setNewLessonPlanName(""); setNewLessonPlanData("")
