@@ -84,6 +84,14 @@ export function AdminTongHopClient({
     return "Phổ thông K-12";
   })
 
+  // Sync activeBlockTab whenever the ?block= URL param changes (e.g. sidebar navigation)
+  useEffect(() => {
+    if (blockParam === "mammon") { setActiveBlockTab("Mầm non"); return; }
+    if (blockParam === "dieuhan") { setActiveBlockTab("Điều hành"); return; }
+    if (blockParam === "k12") { setActiveBlockTab("Phổ thông K-12"); return; }
+    // If no block param, leave as-is (don't reset to K12 on every render)
+  }, [blockParam]);
+
   // 2. Only show departments that belong to the active blockCM, excluding "Hỗ trợ người học"
   const activeDepartments = useMemo(() => {
     return departments.filter(dept => {
@@ -109,6 +117,23 @@ export function AdminTongHopClient({
     : (activeDepartments.find(d => d.id === initialFilters.deptId)?.id || activeDepartments[0]?.id || "");
 
   const [selectedDeptId, setSelectedDeptId] = useState(initialDeptId)
+
+  // Reset dept + teacher selection when switching block tabs
+  useEffect(() => {
+    if (!isTTCM) {
+      const newDepts = departments.filter(dept => {
+        if (!dept.blockCM || dept.blockCM === "" || dept.blockCM === "Hỗ trợ người học") return false;
+        if (activeBlockTab === "Phổ thông K-12" && dept.blockCM !== "Phổ thông") return false;
+        if (activeBlockTab === "Mầm non" && dept.blockCM !== "Mầm Non") return false;
+        if (activeBlockTab === "Điều hành" && dept.blockCM !== "Điều hành") return false;
+        return true;
+      });
+      setSelectedDeptId(newDepts[0]?.id || "");
+      setSelectedTeacherId(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBlockTab]);
+
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
   const [activeDetailTab, setActiveDetailTab] = useState("to-cm")
   
