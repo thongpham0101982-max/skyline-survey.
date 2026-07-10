@@ -91,6 +91,55 @@ const K12_SECTIONS = [
     ]
   }
 ];
+const MAMNON_SECTIONS = [
+  {
+    name: "1. Chuẩn bị cho hoạt động (2 điểm)",
+    requirements: [
+      { id: 1, label: "Yêu cầu 1", max: 1.0, text: "Mục tiêu hoạt động phù hợp với độ tuổi và phù hợp với khả năng của trẻ." },
+      { id: 2, label: "Yêu cầu 2", max: 0.5, text: "Các phương tiện dạy học kích thích trẻ hoạt động." },
+      { id: 3, label: "Yêu cầu 3", max: 0.5, text: "GV tận dụng các sản phẩm do trẻ làm ra để trẻ được hoạt động." }
+    ]
+  },
+  {
+    name: "2. Nội dung hoạt động (3 điểm)",
+    requirements: [
+      { id: 4, label: "Yêu cầu 4", max: 0.5, text: "Khuyến khích trẻ tham gia hoạt động giáo dục bằng vận động thân thể và các giác quan dưới nhiều hình thức khác nhau." },
+      { id: 5, label: "Yêu cầu 5", max: 0.5, text: "Đảm bảo tính chính xác về mặt kiến thức, kỹ năng." },
+      { id: 6, label: "Yêu cầu 6", max: 0.5, text: "Kiến thức có hệ thống, gần gũi với cuộc sống thực của trẻ." },
+      { id: 7, label: "Yêu cầu 7", max: 0.5, text: "Thiết kế các hoạt động cho trẻ hợp lý, đảm bảo tính phát triển, phù hợp với đặc điểm nhận thức và khả năng tư duy của trẻ." },
+      { id: 8, label: "Yêu cầu 8", max: 0.5, text: "Nội dung tích hợp nhẹ nhàng, phù hợp." },
+      { id: 9, label: "Yêu cầu 9", max: 0.5, text: "GV hướng dẫn rõ ràng, ngắn gọn, chính xác. GV gợi ý, dẫn dắt trẻ tìm ra câu trả lời, luôn tạo cơ hội cho trẻ tham gia hoạt động." }
+    ]
+  },
+  {
+    name: "3. Phương pháp và hình thức tổ chức (3 điểm)",
+    requirements: [
+      { id: 10, label: "Yêu cầu 10", max: 1.0, text: "Tùy theo từng loại hình tổ chức hoạt động, GV kết hợp các phương pháp một cách linh hoạt và thành thạo. Phân bổ thời gian cho các hoạt động hợp lý." },
+      { id: 11, label: "Yêu cầu 11", max: 0.5, text: "Giáo viên tổ chức, điều khiển, hỗ trợ đúng lúc, không làm thay trẻ. Khuyến khích tương tác giữa trẻ với trẻ." },
+      { id: 12, label: "Yêu cầu 12", max: 0.5, text: "GV đưa ra những tình huống có vấn đề phù hợp, đúng lúc để tạo hứng thú và kích thích trẻ hoạt động." },
+      { id: 13, label: "Yêu cầu 13", max: 0.5, text: "Bao quát lớp tốt, lắng nghe trẻ, khen ngợi trẻ kịp thời. GV có thái độ nhẹ nhàng tình cảm, lôi cuốn trẻ." },
+      { id: 14, label: "Yêu cầu 14", max: 0.5, text: "Sử dụng các phương tiện tiện dạy học đạt hiệu quả. Có đa dạng các hình thức cho trẻ hoạt động." }
+    ]
+  },
+  {
+    name: "4. Kết quả trên trẻ (2 điểm)",
+    requirements: [
+      { id: 15, label: "Yêu cầu 15", max: 0.5, text: "Trẻ tích cực, hứng thú trên giờ học." },
+      { id: 16, label: "Yêu cầu 16", max: 0.5, text: "Trẻ có nhiều cơ hội để khám phá." },
+      { id: 17, label: "Yêu cầu 17", max: 0.5, text: "Mọi trẻ đều được GV hỗ trợ và được tham gia hoạt động." },
+      { id: 18, label: "Yêu cầu 18", max: 0.5, text: "Trẻ tự chuẩn bị đồ dùng để hoạt động, GV không làm thay cho trẻ." }
+    ]
+  }
+];
+
+const calculateMamNonRanking = (scores) => {
+  const sum = scores.reduce((a, b) => a + b, 0);
+  if (sum >= 9.0) return "Tốt";
+  if (sum >= 8.0) return "Khá";
+  if (sum >= 7.0) return "Đạt";
+  return "Không đạt";
+};
+
 
 const RATING_COLORS: Record<string, string> = {
   "Tốt": "bg-emerald-100 text-emerald-700 border-emerald-300",
@@ -934,7 +983,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (!r.evaluation) return false;
       const passed = isK12
         ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
-        : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá");
+        : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá" || r.evaluation.overallRating === "Đạt");
       return passed;
     });
     
@@ -2462,7 +2511,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
                     const passed = isK12
                       ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
-                      : (evalOverall === "Tốt" || evalOverall === "Khá");
+                      : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
                     return passed ? (
                       <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
                     ) : (
@@ -2666,7 +2715,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
                       const passed = isK12
                         ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
-                        : (evalOverall === "Tốt" || evalOverall === "Khá");
+                        : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
                       return passed ? (
                         <span className="text-emerald-700 text-[10px] font-black uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
                       ) : (
