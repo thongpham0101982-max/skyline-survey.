@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useMemo } from "react"
 import * as XLSX from "xlsx"
-import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search, Filter, Sparkles } from "lucide-react"
+import { Calendar, Layers, MapPin, UserCheck, Users, Check, X, Loader2, AlertCircle, Search, Filter, Sparkles, FileSpreadsheet } from "lucide-react"
 import { getStudentsByClassAction, registerStudentsAction, deregisterStudentsAction, getAllRegisteredStudentsAction } from "./actions"
 
 const LEVEL_LABELS: Record<string, string> = {
