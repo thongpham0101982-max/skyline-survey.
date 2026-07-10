@@ -373,7 +373,7 @@ export function AdminTongHopClient({
       if (!r.evaluation) return false;
       const passed = isK12
         ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
-        : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá");
+        : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá" || r.evaluation.overallRating === "Đạt");
       return passed;
     });
     
@@ -1240,7 +1240,7 @@ export function AdminTongHopClient({
                                     {evals.map((reg) => {
                                       const evalData = reg.evaluation;
                                       const passed = isPreschoolTeacher
-                                        ? (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá")
+                                        ? (evalData.overallRating === "Tốt" || evalData.overallRating === "Khá" || evalData.overallRating === "Đạt")
                                         : (evalData.totalScore !== null && evalData.totalScore !== undefined ? evalData.totalScore >= 14 : (evalData.overallRating === "Giỏi" || evalData.overallRating === "Khá"));
 
                                       return (
