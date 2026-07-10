@@ -79,6 +79,9 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
       if (module === "KTDBCL_EXAMS") {
         hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
       }
+      if (module === "TEACHER_TRANSFERS") {
+        hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
+      }
       if (hasParent) return true
       if (subModules && subModules.length > 0) {
         return subModules.some((sub) => permissionModules?.includes(sub.code))
