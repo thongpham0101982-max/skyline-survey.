@@ -353,9 +353,10 @@ export function PhanCongMamNonClient({
 
   // Memoized Filtered Teacher List
   const filteredTeachers = useMemo(() => {
+    if (!aDeptId) return [] // Mặc định trống khi chưa chọn Tổ chuyên môn
     return teachers
       .filter(t => t.user)
-      .filter(t => !aDeptId || t.departmentId === aDeptId)
+      .filter(t => t.departmentId === aDeptId)
       .filter(t => {
         if (!aSearchTeacher) return true
         const search = aSearchTeacher.toLowerCase()
@@ -784,7 +785,12 @@ export function PhanCongMamNonClient({
 
             {/* Scrollable Teacher List */}
             <div className="max-h-[380px] overflow-y-auto pr-1 space-y-2 border border-slate-100 p-1.5 rounded-xl bg-slate-50/30">
-              {filteredTeachers.length === 0 ? (
+              {!aDeptId ? (
+                <div className="text-center py-16 text-xs font-bold text-slate-450 flex flex-col items-center justify-center gap-2">
+                  <Users className="w-8 h-8 text-slate-300" />
+                  <span>Vui lòng chọn Tổ chuyên môn để hiển thị danh sách giáo viên</span>
+                </div>
+              ) : filteredTeachers.length === 0 ? (
                 <div className="text-center py-10 text-xs font-bold text-slate-400">Không tìm thấy giáo viên phù hợp</div>
               ) : (
                 filteredTeachers.map(t => {
