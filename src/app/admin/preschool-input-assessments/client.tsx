@@ -46,7 +46,7 @@ const isPreschoolCampusMatch = (effCampus: string | null | undefined, cCode: str
   return normEff.includes(normCode) || normEff.includes(normName) || normCode.includes(normEff) || normName.includes(normEff);
 };
 
-const inp = "w-full bg-white border border-slate-300 rounded-none pl-4 pr-4 py-3 outline-none focus:border-teal-400 focus:ring-4 focus:ring-teal-400/10 text-sm font-medium text-slate-700 transition-all shadow-none";
+const inp = "w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-4 pr-4 py-3 outline-none focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10 focus:bg-white text-sm font-medium text-slate-700 transition-all shadow-xs";
 
 function Toast({ msg, type }: { msg: string; type: string }) {
   return <div className={`fixed top-6 right-6 z-[9999] flex items-center gap-3 px-5 py-4 rounded-none shadow-2xl font-bold text-sm animate-in slide-in-from-right-4 fade-in duration-300 ${type === "err" ? "bg-rose-600 text-white" : "bg-emerald-600 text-white"}`}>{type === "err" ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}{msg}</div>;
@@ -3418,11 +3418,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
           </div>
           {cfgLoading ? <Spin /> : (
-            <div className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
               {configs.length === 0 ? <Empty text="Chưa có danh mục nào" /> : (
                 <div className="overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-[#00A99D]/5 border-b border-slate-300">
+                    <thead className="bg-slate-50/60 border-b border-slate-200/80">
                       <tr>
                         <th className="p-2 w-12 border border-slate-200">
                           <input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={configs.length > 0 && cfgSelected.length === configs.length} onChange={e => setCfgSelected(e.target.checked ? configs.map(c => c.id) : [])} />
@@ -3497,22 +3497,22 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
                   <thead className="bg-[#00A99D]/5 border-b border-slate-300">
                     <tr>
-                      <th className="p-2 w-12 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
-                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Vắng", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300 text-center">{h}</th>)}
+                      <th className="px-5 py-3.5 w-12 border-b border-slate-200/80"><input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
+                      {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Vắng", "Thao tác"].map(h => <th key={h} className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80 text-center">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {paginatedFiltChildren.map((child, i) => (
                       <tr key={child.id} className={`hover:bg-[#00A99D]/5/30 transition-colors ${cSelected.includes(child.id) ? "bg-[#00A99D]/5/50" : ""}`}>
-                        <td className="p-2 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={cSelected.includes(child.id)} onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))} /></td>
-                        <td className="p-2 text-slate-500 text-sm border border-slate-300">{(childrenCurrentPage - 1) * childrenPageSize + i + 1}</td>
-                        <td className="p-2 border border-slate-300 font-mono text-xs text-slate-700">{child.studentCode}</td>
-                        <td className="p-2 border border-slate-300 text-sm font-bold text-slate-800">{child.fullName}</td>
-                        <td className="p-2 text-sm text-slate-600 border border-slate-300">{child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                        <td className="p-2 border border-slate-300 text-sm">{child.gender === "M" || child.gender === "Nam" ? "Nam" : child.gender === "F" || child.gender === "Nữ" ? "Nữ" : child.gender || "—"}</td>
+                        <td className="px-5 py-4 border-b border-slate-100"><input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={cSelected.includes(child.id)} onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))} /></td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-slate-500 text-sm">{(childrenCurrentPage - 1) * childrenPageSize + i + 1}</td>
+                        <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{child.studentCode}</td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-sm font-bold text-slate-800">{child.fullName}</td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-sm text-slate-600">{child.dateOfBirth ? new Date(child.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-sm text-slate-650">{child.gender === "M" || child.gender === "Nam" ? "Nam" : child.gender === "F" || child.gender === "Nữ" ? "Nữ" : child.gender || "—"}</td>
                         <td className="p-2 border border-slate-300 text-sm text-slate-700">{child.grade || "—"}</td>
-                        <td className="p-2 text-xs font-semibold text-slate-600 border border-slate-300">{child.admissionCampus || "—"}</td>
-                        <td className="p-2 text-center border border-slate-300" onClick={(e) => e.stopPropagation()}>
+                        <td className="px-5 py-4 border-b border-slate-100 text-xs font-semibold text-slate-600">{child.admissionCampus || "—"}</td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
                           <input
                             type="checkbox"
                             className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"
@@ -3523,7 +3523,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             }}
                           />
                         </td>
-                        <td className="p-2 text-right border border-slate-300"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
+                        <td className="px-5 py-4 border-b border-slate-100 text-right"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
                     ))}
                   </tbody>

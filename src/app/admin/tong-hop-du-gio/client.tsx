@@ -377,6 +377,7 @@ export function AdminTongHopClient({
     return selTeacherSlots.filter(slot => {
       const matchQuery = !searchSlotQuery || 
         slot.topic.toLowerCase().includes(searchSlotQuery.toLowerCase()) ||
+        (slot.subjectName && slot.subjectName.toLowerCase().includes(searchSlotQuery.toLowerCase())) ||
         (slot.className && slot.className.toLowerCase().includes(searchSlotQuery.toLowerCase()));
       const matchLevel = filterLevel === "all" || slot.level === filterLevel;
       const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
@@ -1146,7 +1147,24 @@ export function AdminTongHopClient({
                                     <span className="text-[10px] font-bold text-slate-450">{slotDate.toLocaleDateString("vi-VN")}</span>
                                     {slot.className && <span className="text-[8px] font-bold text-teal-700 text-xs font-semibold">Lớp: {slot.className}</span>}
                                   </div>
-                                  <h4 className="font-black text-[15px] text-[#003B3A] mt-2 tracking-tight">{slot.topic}</h4>
+                                  {isMamNonBlock ? (() => {
+                                    const parts = (slot.subjectName || "").split(" | ");
+                                    const chuDe = parts[0] || "";
+                                    const hoatDong = parts[1] || "";
+                                    const deTai = slot.topic || "";
+                                    return (
+                                      <div className="mt-2 space-y-1">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                          <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                          <span className="text-[10px] font-bold text-amber-900 bg-amber-50/40 px-1.5 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
+                                          <span className="text-[10px] text-slate-500 font-semibold">Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span></span>
+                                        </div>
+                                        <h4 className="font-black text-[15px] text-[#78350F] tracking-tight leading-snug">Đề tài: {deTai}</h4>
+                                      </div>
+                                    );
+                                  })() : (
+                                    <h4 className="font-black text-[15px] text-[#003B3A] mt-2 tracking-tight">{slot.topic}</h4>
+                                  )}
                                 </div>
                                 <div className="shrink-0 text-right">
                                   {avgScore !== null ? (

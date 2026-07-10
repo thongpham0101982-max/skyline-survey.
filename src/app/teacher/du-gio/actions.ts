@@ -1,4 +1,4 @@
-"use server"
+﻿"use server"
 
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -18,7 +18,12 @@ export async function getObservationData(academicYearId?: string) {
       where: { userId: session.user.id },
       include: {
         departmentRel: true,
-        campus: true
+        campus: true,
+        user: {
+          select: {
+            role: true
+          }
+        }
       }
     })
 
@@ -136,6 +141,7 @@ export async function getObservationData(academicYearId?: string) {
 
     const classes = await prisma.class.findMany({
       where: { status: "ACTIVE" },
+      select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true },
       orderBy: { className: "asc" }
     })
 
@@ -856,3 +862,5 @@ export async function updateTeacherObservationTargets(
     return { success: false, error: e.message }
   }
 }
+
+

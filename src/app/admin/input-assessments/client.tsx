@@ -90,7 +90,7 @@ function Field({ label, required, children }: { label:string; required?:boolean;
     </div>
   )
 }
-const inp = "h-11 w-full pl-3.5 pr-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 focus:border-[#00B5E2] disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+const inp = "h-11 w-full pl-3.5 pr-3.5 bg-slate-50/50 border border-slate-200 text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00A99D]/10 focus:border-[#00A99D] focus:bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed shadow-xs"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
   open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg";
@@ -4011,34 +4011,34 @@ return {
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left whitespace-nowrap border-collapse">
-                    <thead className="bg-[#00A99D]/5 border-b border-slate-300 sticky top-0 z-10">
+                    <thead className="bg-slate-50/60 border-b border-slate-200/80 sticky top-0 z-10">
                        <tr>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Mã HS KS</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">Họ và Tên</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Khối</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Giới tính</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ngày sinh</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hệ Khảo sát</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Vắng</th>
-                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả Học tập</th>
-                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Kết quả Rèn luyện</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Hồ sơ / Bảng điểm</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Học kỳ / Năm TS</th>
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Đối tượng TS</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80">Mã HS KS</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80">Họ và Tên</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Khối</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Giới tính</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Ngày sinh</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Hệ Khảo sát</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Vắng</th>
+                           <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Kết quả Học tập</th>
+                           <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Kết quả Rèn luyện</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Hồ sơ / Bảng điểm</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Học kỳ / Năm TS</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Đối tượng TS</th>
                            {selPeriod?.name?.toLowerCase().includes("open day") && (
                              <>
-                               <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Đăng ký CS</th>
-                               <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ủy quyền xét duyệt</th>
+                               <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Đăng ký CS</th>
+                               <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Ủy quyền xét duyệt</th>
                              </>
                            )}
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Thao tác</th>
+                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Thao tác</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {paginatedFiltStu.map((s, idx) => (
                         <tr key={s.id} className={`group hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                           <td className="p-2 border border-slate-300 font-mono text-xs text-slate-700">{s.studentCode}</td>
-                           <td className="p-2 border border-slate-300">
+                           <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{s.studentCode}</td>
+                           <td className="px-5 py-4 border-b border-slate-100">
                              <div className="flex flex-col">
                                <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
                                <span className="text-[10px] font-semibold text-slate-400 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
@@ -4046,13 +4046,13 @@ return {
                            </td>
                            <td className="p-2 text-center text-xs font-bold text-slate-500 border border-slate-300">{s.grade}</td>
                            <td className="p-2 text-center text-xs font-bold text-slate-500 border border-slate-300">{s.gender || "-"}</td>
-                           <td className="p-2 text-center border border-slate-300"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
-                           <td className="p-2 text-center border border-slate-300">
+                           <td className="px-5 py-4 border-b border-slate-100 text-center"><span className="text-xs font-semibold text-slate-600">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span></td>
+                           <td className="px-5 py-4 border-b border-slate-100 text-center">
                              <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-indigo-600 text-xs font-semibold">
                                {s.surveyFormType || "-"}
                              </span>
                            </td>
-                           <td className="p-2 text-center border border-slate-300" onClick={(e) => e.stopPropagation()}>
+                           <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
                              <input
                                type="checkbox"
                                className="w-4 h-4 rounded text-rose-600 accent-rose-600 cursor-pointer"

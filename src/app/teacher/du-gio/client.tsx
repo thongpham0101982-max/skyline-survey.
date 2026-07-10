@@ -21,6 +21,7 @@ interface TeacherInfo {
   departmentId: string | null;
   campusId: string;
   departmentRel?: any;
+  user?: { role: string } | null;
   observerType?: string | null;
   observeeType?: string | null;
   requiredObserved?: number | null;
@@ -102,7 +103,10 @@ export function ObservationClient(props: ObservationClientProps) {
   const {
     initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
   } = props;
-  const isMamNonTeacher = (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+  const isMamNonTeacher = 
+    currentTeacher?.user?.role === "GV_MN" || 
+    currentTeacher?.user?.role === "BGH_MN" ||
+    (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -146,6 +150,9 @@ export function ObservationClient(props: ObservationClientProps) {
   const [newClassId, setNewClassId] = useState("")
   const [newClassNameText, setNewClassNameText] = useState("")
   const [newTopic, setNewTopic] = useState("")
+  const [newChuDe, setNewChuDe] = useState("")
+  const [newHoatDong, setNewHoatDong] = useState("")
+  const [newDeTai, setNewDeTai] = useState("")
   const [newDate, setNewDate] = useState("")
   const [newStartTime, setNewStartTime] = useState("Tiết 1")
   const [newEndTime, setNewEndTime] = useState("Tiết 1")
@@ -353,6 +360,7 @@ export function ObservationClient(props: ObservationClientProps) {
     setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1");
     setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId("");
     setNewLessonPlanName(""); setNewLessonPlanData("");
+    setNewChuDe(""); setNewHoatDong(""); setNewDeTai("");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -366,6 +374,16 @@ export function ObservationClient(props: ObservationClientProps) {
     setNewClassId(slot.classId || "other");
     setNewClassNameText(slot.className || "");
     setNewTopic(slot.topic || "");
+    if (slot.level === "Mầm non") {
+      const parts = (slot.subjectName || "").split(" | ");
+      setNewChuDe(parts[0] || "");
+      setNewHoatDong(parts[1] || "");
+      setNewDeTai(slot.topic || "");
+    } else {
+      setNewChuDe("");
+      setNewHoatDong("");
+      setNewDeTai("");
+    }
     setNewDate(new Date(slot.date).toISOString().split('T')[0]);
     setNewStartTime(slot.startTime || "Tiết 1");
     setNewEndTime(slot.endTime || "Tiết 1");
@@ -392,7 +410,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const getGradesForLevel = (level: string) => {
     switch (level) {
-      case "Mầm non": return ["18-24 tháng","24-36 tháng","Mầm (3-4 tuổi)","Chồi (4-5 tuổi)","Lá (5-6 tuổi)"]
+      case "Mầm non": return ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
       case "Tiểu học": return ["Khối 1","Khối 2","Khối 3","Khối 4","Khối 5"]
       case "THCS": return ["Khối 6","Khối 7","Khối 8","Khối 9"]
       case "THPT": return ["Khối 10","Khối 11","Khối 12"]
@@ -418,19 +436,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (c.level !== dbLevel) return false;
       if (dbLevel === "Mầm non") {
         if (!newGrade) return true;
-        // Map newGrade to class name or grade in DB
-        const lowerGrade = newGrade.toLowerCase();
-        const lowerClassGrade = (c.grade || "").toLowerCase();
-        const lowerClassName = (c.className || "").toLowerCase();
-        
-        if (lowerGrade.includes("18-24") || lowerGrade.includes("24-36")) {
-          return lowerClassGrade.includes("nhà trẻ") || lowerClassName.includes("nhà trẻ") || lowerClassGrade.includes("tháng");
-        }
-        if (lowerGrade.includes("mầm")) return lowerClassGrade.includes("mầm") || lowerClassName.includes("mầm");
-        if (lowerGrade.includes("chồi")) return lowerClassGrade.includes("chồi") || lowerClassName.includes("chồi");
-        if (lowerGrade.includes("lá")) return lowerClassGrade.includes("lá") || lowerClassName.includes("lá");
-        
-        return true; // fallback, show all
+        return (c.grade || "") === newGrade;
       }
       return c.grade === numGrade;
     })
@@ -703,14 +709,22 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newLevel || !newGrade || !newTopic || !newDate || !newStartTime || !newEndTime || !newCampusId) {
-      showToast("Vui lòng điền đầy đủ các thông tin bắt buộc (*)", "error"); return
+    const isMN = isMamNonTeacher || newLevel === "Mầm non";
+    if (isMN) {
+      if (!newGrade || !newChuDe.trim() || !newHoatDong.trim() || !newDeTai.trim() || !newDate || !newStartTime || !newEndTime || !newCampusId) {
+        showToast("Vui lòng điền đầy đủ các thông tin bắt buộc (*)", "error"); return
+      }
+    } else {
+      if (!newLevel || !newGrade || !newTopic || !newDate || !newStartTime || !newEndTime || !newCampusId) {
+        showToast("Vui lòng điền đầy đủ các thông tin bắt buộc (*)", "error"); return
+      }
+      if (!newSubjectId) { showToast("Vui lòng chọn môn học!", "error"); return }
+      if (newSubjectId === "other" && !newSubjectName.trim()) { showToast("Vui lòng nhập tên môn học khác!", "error"); return }
     }
-    if (!newSubjectId) { showToast("Vui lòng chọn môn học!", "error"); return }
-    if (newSubjectId === "other" && !newSubjectName.trim()) { showToast("Vui lòng nhập tên môn học khác!", "error"); return }
     setSubmitting(true)
     const selectedSub = subjects.find(s => s.id === newSubjectId)
-    const subName = selectedSub ? selectedSub.subjectName : newSubjectName || "Khác"
+    const subName = isMN ? `${newChuDe} | ${newHoatDong}` : (selectedSub ? selectedSub.subjectName : newSubjectName || "Khác")
+    const topicText = isMN ? newDeTai : newTopic
     const selectedCampus = campuses.find(c => c.id === newCampusId)
     const campusNameStr = selectedCampus ? selectedCampus.campusName : ""
     let classNameStr = newClassNameText
@@ -718,8 +732,8 @@ export function ObservationClient(props: ObservationClientProps) {
     let res;
     if (editSlotId) {
       res = await updateObservationSlot(editSlotId, {
-        subjectId: (newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
-        subjectName: subName, level: newLevel, grade: newGrade, topic: newTopic, date: newDate,
+        subjectId: (!isMN && newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
+        subjectName: subName, level: isMN ? "Mầm non" : newLevel, grade: newGrade, topic: topicText, date: newDate,
         startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
         room: classNameStr, description: newDescription, visibilityType: newVisibility,
         targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
@@ -730,8 +744,8 @@ export function ObservationClient(props: ObservationClientProps) {
       });
     } else {
       res = await createObservationSlot({
-        subjectId: (newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
-        subjectName: subName, level: newLevel, grade: newGrade, topic: newTopic, date: newDate,
+        subjectId: (!isMN && newSubjectId && newSubjectId !== "other") ? newSubjectId : undefined,
+        subjectName: subName, level: isMN ? "Mầm non" : newLevel, grade: newGrade, topic: topicText, date: newDate,
         startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
         room: classNameStr, description: newDescription, visibilityType: newVisibility,
         targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
@@ -749,6 +763,7 @@ export function ObservationClient(props: ObservationClientProps) {
       setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1")
       setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId("")
       setNewLessonPlanName(""); setNewLessonPlanData("")
+      setNewChuDe(""); setNewHoatDong(""); setNewDeTai("")
       if (fileInputRef.current) fileInputRef.current.value = ""
       refreshSlots()
     } else {
@@ -1246,11 +1261,35 @@ export function ObservationClient(props: ObservationClientProps) {
                     const isPastSlot = new Date(slot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                     return (
                       <div key={slot.id} className="p-3 bg-slate-50 hover:bg-[#E6F7F6]/50 rounded-xl border border-slate-150 flex items-center justify-between gap-3 text-xs font-semibold transition-all">
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-slate-800 truncate">{slot.topic}</p>
-                          <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                            {slot.teacher.teacherName} • {slot.className || "Lớp"} • {new Date(slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          {slot.level === "Mầm non" ? (() => {
+                            const parts = (slot.subjectName || "").split(" | ");
+                            const chuDe = parts[0] || "";
+                            const hoatDong = parts[1] || "";
+                            const deTai = slot.topic || "";
+                            return (
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                  <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
+                                </div>
+                                <p className="text-xs font-black text-amber-950 truncate leading-snug">Đề tài: {deTai}</p>
+                                <p className="text-[10px] text-slate-500 font-semibold">
+                                  HĐ: {hoatDong} • Lớp: {slot.className || "Lớp"}
+                                </p>
+                                <p className="text-[9px] text-slate-400 mt-0.5">
+                                  {slot.teacher.teacherName} • {new Date(slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                                </p>
+                              </div>
+                            );
+                          })() : (
+                            <>
+                              <p className="text-xs font-bold text-slate-800 truncate">{slot.topic}</p>
+                              <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                                {slot.teacher.teacherName} • {slot.className || "Lớp"} • {new Date(slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                              </p>
+                            </>
+                          )}
                         </div>
                         <button 
                           disabled={isPastSlot}
@@ -1410,10 +1449,31 @@ export function ObservationClient(props: ObservationClientProps) {
                           <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
                         </td>
                         <td className="p-4">
-                          <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">
-                            {slot.subjectName} • {slot.className || "Lớp"} ({slot.campusName || "Cơ sở"})
-                          </p>
+                          {slot.level === "Mầm non" ? (() => {
+                            const parts = (slot.subjectName || "").split(" | ");
+                            const chuDe = parts[0] || "";
+                            const hoatDong = parts[1] || "";
+                            const deTai = slot.topic || "";
+                            return (
+                              <div className="flex flex-col gap-1 text-xs">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-250">Mầm non</span>
+                                  <span className="text-[10px] font-bold text-amber-900 bg-amber-50/40 px-1.5 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
+                                </div>
+                                <p className="font-black text-amber-950 text-[13px] leading-snug">Đề tài: {deTai}</p>
+                                <p className="text-[10px] text-slate-500 font-semibold">
+                                  Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
+                                </p>
+                              </div>
+                            );
+                          })() : (
+                            <>
+                              <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                {slot.subjectName} • {slot.className || "Lớp"} ({slot.campusName || "Cơ sở"})
+                              </p>
+                            </>
+                          )}
                         </td>
                         <td className="p-4">
                           <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
@@ -1514,14 +1574,41 @@ export function ObservationClient(props: ObservationClientProps) {
                         </span>
                       </div>
                       
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                        <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
-                          Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                        </p>
-                        <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
-                          Gv dạy: {slot.teacher.teacherName}
-                        </p>
+                      <div className="min-w-0 flex-1">
+                        {slot.level === "Mầm non" ? (() => {
+                          const parts = (slot.subjectName || "").split(" | ");
+                          const chuDe = parts[0] || "";
+                          const hoatDong = parts[1] || "";
+                          const deTai = slot.topic || "";
+                          return (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
+                              </div>
+                              <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
+                              <p className="text-[10px] font-bold text-slate-500 truncate">
+                                Hoạt động: <span className="text-amber-800">{hoatDong}</span>
+                              </p>
+                              <p className="text-[9px] font-semibold text-slate-400 truncate mt-0.5">
+                                Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                              </p>
+                              <p className="text-[9px] font-semibold text-slate-400 truncate">
+                                Gv dạy: {slot.teacher.teacherName}
+                              </p>
+                            </div>
+                          );
+                        })() : (
+                          <>
+                            <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
+                            <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
+                              Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                            </p>
+                            <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                              Gv dạy: {slot.teacher.teacherName}
+                            </p>
+                          </>
+                        )}
                       </div>
 
                       {/* Host's Observers list block */}
@@ -1671,10 +1758,31 @@ export function ObservationClient(props: ObservationClientProps) {
                           <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {evalItem.registration?.teacher?.teacherCode || ""}</p>
                         </td>
                         <td className="p-4">
-                          <p className="font-extrabold text-[#003B3A]">{evalItem.evaluation?.topic || evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
-                          <p className="text-[10px] text-slate-500 mt-0.5">
-                            {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
-                          </p>
+                          {evalItem.slot.level === "Mầm non" ? (() => {
+                            const parts = (evalItem.slot.subjectName || "").split(" | ");
+                            const chuDe = parts[0] || "";
+                            const hoatDong = parts[1] || "";
+                            const deTai = evalItem.slot.topic || "";
+                            return (
+                              <div className="flex flex-col gap-0.5 text-xs">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                  <span className="text-[9px] font-bold text-amber-900 bg-amber-50/40 px-1 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
+                                </div>
+                                <p className="font-bold text-[#003B3A] text-xs">Đề tài: {deTai}</p>
+                                <p className="text-[10px] text-slate-500 font-semibold">
+                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span> • Lớp: {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
+                                </p>
+                              </div>
+                            );
+                          })() : (
+                            <>
+                              <p className="font-extrabold text-[#003B3A]">{evalItem.evaluation?.topic || evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
+                              </p>
+                            </>
+                          )}
                         </td>
                         <td className="p-4">
                           <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
@@ -1709,8 +1817,11 @@ export function ObservationClient(props: ObservationClientProps) {
       {showCreateModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-            <div className="px-6 py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
-              <div><h3 className="font-black text-lg">Thêm mới tiết dạy</h3><p className="text-white/60 text-xs mt-0.5">Tạo tiết dạy để giáo viên khác đăng ký dự giờ</p></div>
+            <div className={`px-6 py-5 text-white flex items-center justify-between shrink-0 ${isMamNonTeacher ? "bg-amber-950 border-b border-amber-900" : "bg-[#003B3A]"}`}>
+              <div>
+                <h3 className="font-black text-lg">{isMamNonTeacher ? (editSlotId ? "Cập nhật tiết dạy Mầm non" : "Thêm mới tiết dạy Mầm non") : (editSlotId ? "Cập nhật tiết dạy" : "Thêm mới tiết dạy")}</h3>
+                <p className="text-white/60 text-xs mt-0.5">{isMamNonTeacher ? "Biểu mẫu thiết lập tiết dạy Mầm non" : "Tạo tiết dạy để giáo viên khác đăng ký dự giờ"}</p>
+              </div>
               <button onClick={() => setShowCreateModal(false)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
             </div>
             <form onSubmit={handleCreateSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
@@ -1718,121 +1829,216 @@ export function ObservationClient(props: ObservationClientProps) {
                 <div className="flex items-center gap-2"><Info className="w-4 h-4 text-sky-600 shrink-0" /><span className="text-xs font-semibold">Bạn có thể tạo tối đa 2 tiết dạy mỗi tháng.</span></div>
                 <span className="text-xs font-bold bg-sky-200/50 px-2 py-0.5 rounded-md text-sky-900 shrink-0">Đã tạo trong {selectedMonthStr}: <span className="font-black">{monthlyLimitCount}/2</span> tiết</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Level */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Cấp học *</label>
-                  <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId("") }} required
-                    className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
-                    <option value="">Chọn cấp học</option>
-                    <option value="Mầm non">Mầm non</option>
-                    <option value="Tiểu học">Tiểu học</option>
-                    <option value="THCS">THCS</option>
-                    <option value="THPT">THPT</option>
-                  </select>
-                </div>
-                {/* Grade */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Khối lớp *</label>
-                  <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required disabled={!newLevel}
-                    className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50 text-xs font-semibold">
-                    <option value="">Chọn khối lớp</option>
-                    {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
-                {/* Subject */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Môn học *</label>
-                  <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
-                    className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
-                    <option value="">Chọn môn học</option>
-                    {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
-                    <option value="other">Môn học khác / Tổ nhóm chuyên đề</option>
-                  </select>
-                </div>
-                {newSubjectId === "other" && (
+              {isMamNonTeacher ? (
+                /* ===== MAM NON EDIT FORM ===== */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Chu de */}
+                  <div className="md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-amber-700">Chủ đề *</label>
+                    <input type="text" placeholder="Ví dụ: Thế giới động vật, Gia đình..." value={newChuDe} onChange={e => setNewChuDe(e.target.value)} required
+                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-amber-50/10" />
+                  </div>
+                  {/* Hoat dong */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Tên môn học khác *</label>
-                    <input type="text" placeholder="Nhập tên môn học..." value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
+                    <label className="text-xs font-extrabold text-amber-700">Hoạt động *</label>
+                    <input type="text" placeholder="Ví dụ: Âm nhạc, Tạo hình, KPKH..." value={newHoatDong} onChange={e => setNewHoatDong(e.target.value)} required
+                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-amber-50/10" />
                   </div>
-                )}
-                {/* Campus */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Cơ sở *</label>
-                  <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
-                    className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
-                    <option value="">Chọn cơ sở</option>
-                    {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                  </select>
-                </div>
-                {/* Class */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Lớp học *</label>
-                  <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newLevel || !newGrade}
-                    className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50 text-xs font-semibold">
-                    <option value="">Chọn lớp học</option>
-                    {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                    <option value="other">Lớp học khác (Nhập tay...)</option>
-                  </select>
-                </div>
-                {newClassId === "other" && (
-                  <div className="flex flex-col gap-1.5 md:col-span-2">
-                    <label className="text-xs font-extrabold text-slate-700">Nhập tên lớp học khác *</label>
-                    <input type="text" placeholder="Nhập tên lớp học (ví dụ: Lớp 2.1, Nhà trẻ A...)" value={newClassNameText} onChange={e => setNewClassNameText(e.target.value)} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
-                  </div>
-                )}
-                {/* Topic */}
-                <div className="md:col-span-2 flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Bài dạy / Chủ đề *</label>
-                  <input type="text" placeholder="Nhập tên bài dạy hoặc chủ đề sinh hoạt..." value={newTopic} onChange={e => setNewTopic(e.target.value)} required
-                    className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
-                </div>
-                {/* Date */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Ngày dạy *</label>
-                  <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
-                    className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
-                </div>
-                {/* PDF Upload */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
-                  <div className="flex items-center gap-2">
-                    <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file" />
-                    <label htmlFor="pdf-upload-file" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
-                      <FileText className="w-4 h-4 text-slate-500" />{newLessonPlanName ? "Thay đổi File PDF" : "Chọn File PDF..."}
-                    </label>
-                    {newLessonPlanName && (
-                      <button type="button" onClick={() => { setNewLessonPlanName(""); setNewLessonPlanData(""); if (fileInputRef.current) fileInputRef.current.value = "" }}
-                        className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
-                    )}
-                  </div>
-                  {newLessonPlanName && <span className="text-[10px] font-bold text-[#00A99D] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
-                </div>
-                {/* Period */}
-                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold">
+                  {/* De tai */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Tiết dạy: Tu *</label>
-                    <select value={newStartTime} onChange={e => handleStartTimeChange(e.target.value)}
-                      className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none">
-                      {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                    <label className="text-xs font-extrabold text-amber-700">Đề tài *</label>
+                    <input type="text" placeholder="Ví dụ: Bé yêu các con vật..." value={newDeTai} onChange={e => setNewDeTai(e.target.value)} required
+                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-amber-50/10" />
+                  </div>
+                  {/* Campus */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-amber-700">Cơ sở *</label>
+                    <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
+                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-white">
+                      <option value="">Chọn cơ sở</option>
+                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                     </select>
                   </div>
+                  {/* Grade */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Đến *</label>
-                    <select value={newEndTime} disabled={newIsDoublePeriod} onChange={e => setNewEndTime(e.target.value)}
-                      className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50">
-                      {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                    <label className="text-xs font-extrabold text-amber-700">Khối lớp *</label>
+                    <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required
+                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-white">
+                      <option value="">Chọn khối lớp</option>
+                      {getGradesForLevel("Mầm non").map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
-                  <div className="flex items-center gap-2 pb-2 h-[42px] pl-2">
-                    <input type="checkbox" id="isDoublePeriod" checked={newIsDoublePeriod} disabled={newStartTime === "Tiết 8"} onChange={e => handleDoublePeriodChange(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#00A99D] focus:ring-[#00A99D]" />
-                    <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-600 select-none cursor-pointer">Dạy 2 tiết liên tiếp</label>
+                  {/* Class */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-amber-700">Lớp học *</label>
+                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newGrade}
+                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-50 rounded-xl border border-amber-200 bg-white">
+                      <option value="">Chọn lớp học</option>
+                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                    </select>
+                  </div>
+                  {/* Date */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Ngày dạy *</label>
+                    <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
+                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-slate-200" />
+                  </div>
+                  {/* PDF Upload */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
+                    <div className="flex items-center gap-2">
+                      <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file-modal" />
+                      <label htmlFor="pdf-upload-file-modal" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
+                        <FileText className="w-4 h-4 text-slate-500" />{newLessonPlanName ? "Thay đổi File PDF" : "Chọn File PDF..."}
+                      </label>
+                      {newLessonPlanName && (
+                        <button type="button" onClick={() => { setNewLessonPlanName(""); setNewLessonPlanData(""); if (fileInputRef.current) fileInputRef.current.value = "" }}
+                          className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
+                      )}
+                    </div>
+                    {newLessonPlanName && <span className="text-[10px] font-bold text-amber-600 mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
+                  </div>
+                  {/* Period */}
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold bg-amber-50/20 border border-amber-100 rounded-2xl">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-extrabold text-slate-700">Tiết dạy: Từ *</label>
+                      <select value={newStartTime} onChange={e => { setNewStartTime(e.target.value); setNewEndTime(e.target.value); }}
+                        className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none">
+                        {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-extrabold text-slate-700">Đến *</label>
+                      <select value={newEndTime} disabled={true}
+                        className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-50">
+                        {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 pb-2 h-[42px] pl-2 text-slate-400">
+                      <input type="checkbox" id="isDoublePeriodModal" checked={false} disabled={true}
+                        className="w-4 h-4 rounded text-slate-300 focus:ring-slate-350" />
+                      <label htmlFor="isDoublePeriodModal" className="text-xs font-bold select-none cursor-pointer">Dạy 2 tiết liên tiếp (K12)</label>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                /* ===== K12 EDIT FORM ===== */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Level */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Cấp học *</label>
+                    <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId("") }} required
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
+                      <option value="">Chọn cấp học</option>
+                      <option value="Mầm non">Mầm non</option>
+                      <option value="Tiểu học">Tiểu học</option>
+                      <option value="THCS">THCS</option>
+                      <option value="THPT">THPT</option>
+                    </select>
+                  </div>
+                  {/* Grade */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Khối lớp *</label>
+                    <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required disabled={!newLevel}
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50 text-xs font-semibold">
+                      <option value="">Chọn khối lớp</option>
+                      {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
+                    </select>
+                  </div>
+                  {/* Subject */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Môn học *</label>
+                    <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
+                      <option value="">Chọn môn học</option>
+                      {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
+                      <option value="other">Môn học khác / Tổ nhóm chuyên đề</option>
+                    </select>
+                  </div>
+                  {newSubjectId === "other" && (
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-extrabold text-slate-700">Tên môn học khác *</label>
+                      <input type="text" placeholder="Nhập tên môn học..." value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} required
+                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
+                    </div>
+                  )}
+                  {/* Campus */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Cơ sở *</label>
+                    <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
+                      <option value="">Chọn cơ sở</option>
+                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                    </select>
+                  </div>
+                  {/* Class */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Lớp học *</label>
+                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newLevel || !newGrade}
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50 text-xs font-semibold">
+                      <option value="">Chọn lớp học</option>
+                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                      <option value="other">Lớp học khác (Nhập tay...)</option>
+                    </select>
+                  </div>
+                  {newClassId === "other" && (
+                    <div className="flex flex-col gap-1.5 md:col-span-2">
+                      <label className="text-xs font-extrabold text-slate-700">Nhập tên lớp học khác *</label>
+                      <input type="text" placeholder="Nhập tên lớp học (ví dụ: Lớp 2.1, Nhà trẻ A...)" value={newClassNameText} onChange={e => setNewClassNameText(e.target.value)} required
+                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
+                    </div>
+                  )}
+                  {/* Topic */}
+                  <div className="md:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Bài dạy / Chủ đề *</label>
+                    <input type="text" placeholder="Nhập tên bài dạy hoặc chủ đề sinh hoạt..." value={newTopic} onChange={e => setNewTopic(e.target.value)} required
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
+                  </div>
+                  {/* Date */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Ngày dạy *</label>
+                    <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
+                  </div>
+                  {/* PDF Upload */}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
+                    <div className="flex items-center gap-2">
+                      <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file-modal-k12" />
+                      <label htmlFor="pdf-upload-file-modal-k12" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
+                        <FileText className="w-4 h-4 text-slate-500" />{newLessonPlanName ? "Thay đổi File PDF" : "Chọn File PDF..."}
+                      </label>
+                      {newLessonPlanName && (
+                        <button type="button" onClick={() => { setNewLessonPlanName(""); setNewLessonPlanData(""); if (fileInputRef.current) fileInputRef.current.value = "" }}
+                          className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
+                      )}
+                    </div>
+                    {newLessonPlanName && <span className="text-[10px] font-bold text-[#00A99D] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
+                  </div>
+                  {/* Period */}
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-extrabold text-slate-700">Tiết dạy: Từ *</label>
+                      <select value={newStartTime} onChange={e => handleStartTimeChange(e.target.value)}
+                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none">
+                        {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-extrabold text-slate-700">Đến *</label>
+                      <select value={newEndTime} disabled={newIsDoublePeriod} onChange={e => setNewEndTime(e.target.value)}
+                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50">
+                        {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 pb-2 h-[42px] pl-2">
+                      <input type="checkbox" id="isDoublePeriod" checked={newIsDoublePeriod} disabled={newStartTime === "Tiết 8"} onChange={e => handleDoublePeriodChange(e.target.checked)}
+                        className="w-4 h-4 rounded text-[#00A99D] focus:ring-[#00A99D]" />
+                      <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-600 select-none cursor-pointer">Dạy 2 tiết liên tiếp</label>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Description */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
@@ -1870,7 +2076,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button type="button" onClick={() => { setShowCreateModal(false); resetCreateForm(); }} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Hủy</button>
                 <button type="submit" disabled={submitting || monthlyLimitCount >= 2}
-                  className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#008B85] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0">
+                  className={`px-6 py-2.5 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0 ${isMamNonTeacher ? "bg-amber-600 hover:bg-amber-700" : "bg-[#00A99D] hover:bg-[#008B85]"}`}>
                   {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật" : "Lưu tiết dạy")}
                 </button>
               </div>
@@ -1897,39 +2103,87 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
             
             <div className="p-6 space-y-4 text-xs font-semibold">
-              <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
-                <span className="text-[9px] font-black text-[#00A99D] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
-                <h4 className="text-sm font-black text-[#003B3A] mt-1 leading-snug">{registerDetailSlot.topic}</h4>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3.5">
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
-                  <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
-                  <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
-                </div>
-                
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Lớp học / Môn học</span>
-                  <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
-                  <span className="text-[9px] text-[#00A99D] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
-                </div>
-                
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Thời gian</span>
-                  <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
-                  <span className="text-[9px] text-slate-400 mt-0.5">
-                    {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                  </span>
-                </div>
-                
-                <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                  <span className="text-[9px] font-black text-slate-400 uppercase">Địa điểm</span>
-                  <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
-                  <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
-                </div>
-              </div>
-              
+              {registerDetailSlot.level === "Mầm non" ? (() => {
+                const parts = (registerDetailSlot.subjectName || "").split(" | ");
+                const chuDe = parts[0] || "";
+                const hoatDong = parts[1] || "";
+                const deTai = registerDetailSlot.topic || "";
+                return (
+                  <>
+                    <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/50 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 text-[8px] font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-250">Mầm non</span>
+                        <span className="text-[9px] font-black text-amber-700 uppercase tracking-wider">Chủ đề: {chuDe}</span>
+                      </div>
+                      <h4 className="text-sm font-black text-[#78350F] leading-snug">Đề tài: {deTai}</h4>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3.5">
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
+                        <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
+                        <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
+                      </div>
+                      
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Lớp học & Hoạt động</span>
+                        <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
+                        <span className="text-[9px] text-amber-700 font-bold mt-0.5">Hoạt động: {hoatDong}</span>
+                      </div>
+                      
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Thời gian</span>
+                        <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
+                        <span className="text-[9px] text-slate-400 mt-0.5">
+                          {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        </span>
+                      </div>
+                      
+                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Địa điểm</span>
+                        <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
+                        <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
+                      </div>
+                    </div>
+                  </>
+                );
+              })() : (
+                <>
+                  <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
+                    <span className="text-[9px] font-black text-[#00A99D] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
+                    <h4 className="text-sm font-black text-[#003B3A] mt-1 leading-snug">{registerDetailSlot.topic}</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3.5">
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
+                      <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
+                      <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
+                    </div>
+                    
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Lớp học / Môn học</span>
+                      <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
+                      <span className="text-[9px] text-[#00A99D] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
+                    </div>
+                    
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Thời gian</span>
+                      <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
+                      <span className="text-[9px] text-slate-400 mt-0.5">
+                        {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                      </span>
+                    </div>
+                    
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Địa điểm</span>
+                      <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
+                      <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+
               <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-150">
                 <span className="text-[10px] font-black text-slate-400 uppercase">Hình thức đăng ký</span>
                 <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${
@@ -1996,7 +2250,19 @@ export function ObservationClient(props: ObservationClientProps) {
                     );
                   })()}
                 </div>
-                <p className="text-white/70 text-xs mt-0.5">Bài dạy: {evalModal.slot.topic}</p>
+                {evalModal.slot.level === "Mầm non" ? (() => {
+                  const parts = (evalModal.slot.subjectName || "").split(" | ");
+                  const chuDe = parts[0] || "";
+                  const hoatDong = parts[1] || "";
+                  const deTai = evalModal.slot.topic || "";
+                  return (
+                    <p className="text-white/70 text-xs mt-0.5">
+                      Đề tài: <span className="font-extrabold text-white">{deTai}</span> • Chủ đề: <span className="font-extrabold text-white">{chuDe}</span> • Hoạt động: <span className="font-extrabold text-white">{hoatDong}</span>
+                    </p>
+                  );
+                })() : (
+                  <p className="text-white/70 text-xs mt-0.5">Bài dạy: {evalModal.slot.topic}</p>
+                )}
               </div>
               <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
             </div>
