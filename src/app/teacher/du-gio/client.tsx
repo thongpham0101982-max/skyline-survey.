@@ -439,8 +439,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
     const cleanDbLevel = dbLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     const numGrade = newGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+    const activeYearId = filterAcademicYearId || selectedYearId || "";
 
     return classes.filter(c => {
+      if (activeYearId && c.academicYearId !== activeYearId) return false;
       if (c.campusId !== newCampusId) return false;
 
       const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -452,7 +454,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       return (c.grade || "").trim() === numGrade;
     })
-  }, [classes, newCampusId, newLevel, newGrade])
+  }, [classes, newCampusId, newLevel, newGrade, filterAcademicYearId, selectedYearId])
 
   const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiết ${n+1}` } return p }
   const handleStartTimeChange = (val: string) => { setNewStartTime(val); setNewEndTime(newIsDoublePeriod ? getNextPeriod(val) : val) }
