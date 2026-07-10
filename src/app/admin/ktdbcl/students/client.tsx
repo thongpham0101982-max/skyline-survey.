@@ -249,7 +249,18 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
   // Registration Actions
   const handleExportExcel = () => {
     const wb = XLSX.utils.book_new()
-    const header = ["Mã HS", "Họ Tên", "Lớp", "Cơ sở", "Trạng thái đăng ký"]
+    const header = [
+      "Mã HS", 
+      "Họ Tên", 
+      "Lớp", 
+      "Cơ sở", 
+      "Trạng thái đăng ký",
+      "Hình thức (CA_NHAN/DONG_DOI)",
+      "Loại giải (GIAI_THUONG/HUY_CHUONG/CHUNG_NHAN/KHAC)",
+      "Mức giải (NHAT/NHI/BA/KHUYEN_KHICH/VANG/BAC/DONG)",
+      "Tên giải thưởng",
+      "Mã GV Bồi dưỡng (Tùy chọn)"
+    ]
     const data = [header]
 
     filteredStudents.forEach(s => {
@@ -258,7 +269,12 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
         s.studentName,
         s.className,
         s.campusName,
-        s.isRegistered ? "Đã đăng ký" : "Chưa đăng ký"
+        s.isRegistered ? "Đã đăng ký" : "Chưa đăng ký",
+        s.isRegistered ? "CA_NHAN" : "",
+        "",
+        "",
+        "",
+        ""
       ])
     })
 

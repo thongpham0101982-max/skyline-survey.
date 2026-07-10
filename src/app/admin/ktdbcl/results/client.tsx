@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react"
 import { 
   Award, Search, Calendar, MapPin, Users, Edit3, Check, X, 
   Trash2, Plus, FileSpreadsheet, Printer, Download, Eye, BookOpen, AlertCircle, UserCheck,
-  Trophy, Medal, Ribbon, Sparkles
+  Trophy, Medal, Ribbon, Sparkles, RefreshCw
 } from "lucide-react"
 import * as XLSX from "xlsx"
 import { 
@@ -166,13 +166,16 @@ export function ResultsClient({
       const data = XLSX.utils.sheet_to_json(ws)
       
       let importedCount = 0;
+      const cleanCode = (c: any) => String(c || "").trim().replace(/^0+/, "")
+
       setGridRows(prev => {
         const newRows = [...prev]
         const processedCounts = {}
 
         data.forEach((row: any) => {
-          const studentCode = row["Mã HS"] || row["Mã học sinh"] || row["studentCode"]
-          if (!studentCode) return
+          const rawStudentCode = row["Mã HS"] || row["Mã học sinh"] || row["studentCode"]
+          if (!rawStudentCode) return
+          const studentCode = String(rawStudentCode).trim()
           
           const type = row["Hình thức (CA_NHAN/DONG_DOI)"] || row["Hình thức"] || "CA_NHAN"
           const category = row["Loại giải (GIAI_THUONG/HUY_CHUONG/CHUNG_NHAN/KHAC)"] || row["Loại giải"] || ""
@@ -184,7 +187,7 @@ export function ResultsClient({
 
           const studentRowIndexes = []
           newRows.forEach((r, idx) => {
-            if (r.studentCode === studentCode) {
+            if (cleanCode(r.studentCode) === cleanCode(studentCode)) {
               studentRowIndexes.push(idx)
             }
           })
@@ -793,6 +796,16 @@ export function ResultsClient({
                 <div className="flex items-center gap-2">
                   <button onClick={handleDeleteAll} className="flex items-center gap-1.5 px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition-all hover:scale-105 border border-red-200">
                     <Trash2 className="w-4 h-4" /> Xóa tất cả
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (confirm("Hành động này sẽ tải lại danh sách học sinh từ Danh sách đăng ký dự thi và hủy tất cả các thay đổi chưa lưu. Bạn có chắc chắn không?")) {
+                        loadExamStudents()
+                      }
+                    }} 
+                    className="flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-xl text-xs font-bold transition-all hover:scale-105 border border-indigo-200 cursor-pointer"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Lấy dữ liệu từ DS dự thi
                   </button>
                   <button onClick={handleDownloadSampleExcel} className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-all hover:scale-105">
                     <Download className="w-4 h-4" /> Tải File Mẫu
