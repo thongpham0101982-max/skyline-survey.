@@ -456,6 +456,21 @@ export function ObservationClient(props: ObservationClientProps) {
     })
   }, [classes, newCampusId, newLevel, newGrade, filterAcademicYearId, selectedYearId])
 
+  // Derive unique Khoi hoc values for Mam non from actual class data
+  const mamNonGrades = useMemo(() => {
+    const activeYearId = filterAcademicYearId || selectedYearId || "";
+    const gradeSet = new Set<string>();
+    classes.forEach((cls: any) => {
+      if (activeYearId && cls.academicYearId !== activeYearId) return;
+      if (newCampusId && cls.campusId !== newCampusId) return;
+      const lvlClean = (cls.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      if (lvlClean !== "mam non") return;
+      if (cls.grade) gradeSet.add(cls.grade);
+    });
+    const ORDER = ["Nh\u00e0 tr\u1ebb 24-36 th\u00e1ng", "M\u1eabu gi\u00e1o b\u00e9", "M\u1eabu gi\u00e1o nh\u1ee1", "M\u1eabu gi\u00e1o l\u1edbn"];
+    return [...gradeSet].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
+  }, [classes, newCampusId, filterAcademicYearId, selectedYearId]);
+
   const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiết ${n+1}` } return p }
   const handleStartTimeChange = (val: string) => { setNewStartTime(val); setNewEndTime(newIsDoublePeriod ? getNextPeriod(val) : val) }
   const handleDoublePeriodChange = (checked: boolean) => { setNewIsDoublePeriod(checked); if (checked) setNewEndTime(getNextPeriod(newStartTime)); else setNewEndTime(newStartTime) }
@@ -1140,15 +1155,15 @@ export function ObservationClient(props: ObservationClientProps) {
                 {/* Khối lớp & Lớp học */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-extrabold text-amber-700 uppercase">Khối lớp *</label>
+                    <label className="text-[10px] font-extrabold text-amber-700 uppercase">Khối học *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required
                       className="w-full text-xs font-semibold p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none bg-white">
-                      <option value="">Chọn khối lớp</option>
-                      {getGradesForLevel("Mầm non").map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="">Chọn khối học</option>
+                       {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <label className="text-[10px] font-extrabold text-amber-700 uppercase">Lớp học *</label>
+                    <label className="text-[10px] font-extrabold text-amber-700 uppercase">Tên lớp *</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
                       className="w-full text-xs font-semibold p-2.5 rounded-xl border border-amber-200 focus:ring-2 focus:ring-amber-500 outline-none bg-white disabled:opacity-55">
                       <option value="">Chọn lớp</option>
@@ -2021,19 +2036,19 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                   {/* Grade */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-amber-700">Khối lớp *</label>
+                    <label className="text-xs font-extrabold text-amber-700">Khối học *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required
                       className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-amber-200 bg-white">
-                      <option value="">Chọn khối lớp</option>
-                      {getGradesForLevel("Mầm non").map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="">Chọn khối học</option>
+                       {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
                   {/* Class */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-amber-700">Lớp học *</label>
+                    <label className="text-xs font-extrabold text-amber-700">Tên lớp *</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newGrade}
                       className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-50 rounded-xl border border-amber-200 bg-white">
-                      <option value="">Chọn lớp học</option>
+                      <option value="">Chọn tên lớp</option>
                       {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                     </select>
                   </div>
