@@ -159,7 +159,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3">
                   <Link href="/admin/tong-hop-du-gio?block=k12" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      pathname.startsWith("/admin/tong-hop-du-gio") && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") !== "mammon" && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") !== "dieuhan"
+                      pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") !== "mammon" && searchParams?.get("block") !== "dieuhan"
                         ? "bg-indigo-500/20 text-white border border-indigo-500/30"
                         : "text-white/60 hover:text-white hover:bg-indigo-500/10"
                     }`}>
@@ -168,7 +168,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </Link>
                   <Link href="/admin/tong-hop-du-gio?block=mammon" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      pathname.startsWith("/admin/tong-hop-du-gio") && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") === "mammon"
+                      pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") === "mammon"
                         ? "bg-amber-500/20 text-white border border-amber-500/30"
                         : "text-white/60 hover:text-white hover:bg-amber-500/10"
                     }`}>
@@ -177,7 +177,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </Link>
                   <Link href="/admin/tong-hop-du-gio?block=dieuhan" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      pathname.startsWith("/admin/tong-hop-du-gio") && (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("block") : "") === "dieuhan"
+                      pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") === "dieuhan"
                         ? "bg-teal-500/20 text-white border border-teal-500/30"
                         : "text-white/60 hover:text-white hover:bg-teal-500/10"
                     }`}>
