@@ -8,8 +8,13 @@ export const metadata = {
   description: "Nhập điểm, xếp giải và thống kê kết quả thi"
 }
 
-export default async function ResultsPage() {
+export default async function ResultsPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await getAdminSession()
+  const params = await searchParams
+  const initialTab = (params?.tab === 'reports' || params?.tab === 'profiles') ? params.tab : 'input'
+
+  // Active tab for ExamTabs navigation
+  const activeNavTab = params?.tab === 'reports' ? 'reports' : params?.tab === 'profiles' ? 'profiles' : 'results'
 
   // Fetch exams including related information
   const exams = await prisma.exam.findMany({
@@ -79,8 +84,7 @@ export default async function ResultsPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <ExamTabs activeTab="results" />
-
+      <ExamTabs activeTab={activeNavTab as any} />
 
       <ResultsClient
         exams={exams}
@@ -90,6 +94,7 @@ export default async function ResultsPage() {
         classes={classes}
         achievementCategories={achievementCategories}
         achievementLevels={achievementLevels}
+        initialTab={initialTab as 'input' | 'reports' | 'profiles'}
       />
     </div>
   )

@@ -64,7 +64,8 @@ export function ResultsClient({
   campuses, 
   classes,
   achievementCategories,
-  achievementLevels
+  achievementLevels,
+  initialTab = 'input'
 }: ResultsClientProps) {
   const CATEGORY_LABELS = useMemo(() => {
     const labels: Record<string, string> = {}
@@ -102,7 +103,12 @@ export function ResultsClient({
     return () => window.removeEventListener("academicYearChanged", handleYearChange)
   }, [yearId])
 
-  const [subTab, setSubTab] = useState<'input' | 'reports' | 'profiles'>('input')
+  const [subTab, setSubTab] = useState<'input' | 'reports' | 'profiles'>(initialTab)
+
+  // Sync subTab with initialTab (from URL search param)
+  useEffect(() => {
+    setSubTab(initialTab)
+  }, [initialTab])
 
   // --- Sub-Tab 1: Excel Grid State ---
   const [selectedExamId, setSelectedExamId] = useState("")
@@ -657,42 +663,7 @@ export function ResultsClient({
 
   return (
     <div className="space-y-6">
-      {/* Sub tabs navigation */}
-      <div className="flex gap-2 border-b border-slate-200 no-print pb-px">
-        <button
-          onClick={() => setSubTab('input')}
-          className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
-            subTab === 'input' 
-              ? 'border-[#00A99D] text-[#00A99D]' 
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Edit3 className="w-4 h-4" />
-          Nhập Kết quả & Thành tích (UI Excel)
-        </button>
-        <button
-          onClick={() => setSubTab('reports')}
-          className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
-            subTab === 'reports' 
-              ? 'border-[#00A99D] text-[#00A99D]' 
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          Báo cáo thành tích
-        </button>
-        <button
-          onClick={() => setSubTab('profiles')}
-          className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
-            subTab === 'profiles' 
-              ? 'border-[#00A99D] text-[#00A99D]' 
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <BookOpen className="w-4 h-4" />
-          Hồ sơ thành tích Học sinh
-        </button>
-      </div>
+
 
       {/* --- SUB TAB 1: EXCEL INPUT --- */}
       {subTab === 'input' && (
@@ -1162,10 +1133,18 @@ export function ResultsClient({
         <div className="space-y-6">
           {/* Report Filters Card */}
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4 no-print animate-fade-in">
-            <h3 className="text-slate-800 font-bold text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
-              <Search className="w-4.5 h-4.5 text-[#00A99D]" />
-              Bộ lọc Báo cáo thành tích ({academicYears.find(y => y.id === yearId)?.name || 'Tất cả'})
-            </h3>
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-slate-800 font-bold text-sm flex items-center gap-2">
+                <div className="w-7 h-7 bg-[#00A99D]/10 rounded-lg flex items-center justify-center">
+                  <Search className="w-4 h-4 text-[#00A99D]" />
+                </div>
+                Bộ lọc Báo cáo thành tích
+              </h3>
+              <span className="text-[10px] font-black bg-[#00A99D]/10 text-[#00A99D] px-3 py-1.5 rounded-lg border border-[#00A99D]/20 flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                Năm học: {academicYears.find(y => y.id === yearId)?.name || 'Tất cả'}
+              </span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Cơ sở</label>
@@ -1246,27 +1225,57 @@ export function ResultsClient({
             </div>
           </div>
 
-          {/* Stats Summaries */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 no-print animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
-              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng thành tích</div>
-              <div className="text-2xl font-black text-slate-800 mt-1">{reportData.length}</div>
+          {/* Stats Summaries - Premium KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 no-print animate-fade-in">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-200 transition-colors">
+                  <Trophy className="w-4 h-4 text-slate-500" />
+                </div>
+              </div>
+              <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tổng thành tích</div>
+              <div className="text-3xl font-black text-slate-800 leading-none">{reportData.length}</div>
+              <div className="text-[10px] text-slate-400 mt-1 font-semibold">giải thưởng</div>
             </div>
-            <div className="bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4 shadow-xs">
-              <div className="text-[10px] font-bold text-amber-800/60 uppercase tracking-wider">Nhất / Huy chương Vàng</div>
-              <div className="text-2xl font-black text-amber-700 mt-1">{goldCount}</div>
+            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200/60 rounded-2xl p-4 shadow-sm hover:shadow-amber-200/50 hover:shadow-md transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center group-hover:bg-amber-200 transition-colors">
+                  <Award className="w-4 h-4 text-amber-600" />
+                </div>
+              </div>
+              <div className="text-[9px] font-black text-amber-700/70 uppercase tracking-widest mb-1">Nhất / Vàng</div>
+              <div className="text-3xl font-black text-amber-700 leading-none">{goldCount}</div>
+              <div className="text-[10px] text-amber-500 mt-1 font-semibold">giải thưởng</div>
             </div>
-            <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nhì / Huy chương Bạc</div>
-              <div className="text-2xl font-black text-slate-700 mt-1">{silverCount}</div>
+            <div className="bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-slate-200/60 hover:shadow-md transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 bg-slate-200 rounded-xl flex items-center justify-center group-hover:bg-slate-300 transition-colors">
+                  <Medal className="w-4 h-4 text-slate-600" />
+                </div>
+              </div>
+              <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Nhì / Bạc</div>
+              <div className="text-3xl font-black text-slate-700 leading-none">{silverCount}</div>
+              <div className="text-[10px] text-slate-400 mt-1 font-semibold">giải thưởng</div>
             </div>
-            <div className="bg-orange-50/40 border border-orange-200/40 rounded-2xl p-4 shadow-xs">
-              <div className="text-[10px] font-bold text-orange-800/60 uppercase tracking-wider">Ba / Huy chương Đồng</div>
-              <div className="text-2xl font-black text-orange-700 mt-1">{bronzeCount}</div>
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/50 rounded-2xl p-4 shadow-sm hover:shadow-orange-200/50 hover:shadow-md transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                  <Medal className="w-4 h-4 text-orange-600" />
+                </div>
+              </div>
+              <div className="text-[9px] font-black text-orange-700/70 uppercase tracking-widest mb-1">Ba / Đồng</div>
+              <div className="text-3xl font-black text-orange-700 leading-none">{bronzeCount}</div>
+              <div className="text-[10px] text-orange-400 mt-1 font-semibold">giải thưởng</div>
             </div>
-            <div className="bg-teal-50/30 border border-teal-200/30 rounded-2xl p-4 shadow-xs">
-              <div className="text-[10px] font-bold text-[#00A99D]/80 uppercase tracking-wider">Giải Khuyến khích</div>
-              <div className="text-2xl font-black text-[#009085] mt-1">{consolCount}</div>
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200/50 rounded-2xl p-4 shadow-sm hover:shadow-teal-200/50 hover:shadow-md transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-8 h-8 bg-teal-100 rounded-xl flex items-center justify-center group-hover:bg-teal-200 transition-colors">
+                  <Ribbon className="w-4 h-4 text-[#00A99D]" />
+                </div>
+              </div>
+              <div className="text-[9px] font-black text-[#00A99D]/70 uppercase tracking-widest mb-1">Khuyến khích</div>
+              <div className="text-3xl font-black text-[#009085] leading-none">{consolCount}</div>
+              <div className="text-[10px] text-teal-400 mt-1 font-semibold">giải thưởng</div>
             </div>
           </div>
 
@@ -1281,22 +1290,30 @@ export function ResultsClient({
               </p>
             </div>
 
-            <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex items-center justify-between no-print">
-              <span className="font-bold text-slate-700 text-sm">Danh sách đạt giải ({reportData.length})</span>
+            <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-6 py-4 flex items-center justify-between no-print">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-[#00A99D]/10 rounded-xl flex items-center justify-center">
+                  <FileSpreadsheet className="w-4.5 h-4.5 text-[#00A99D]" />
+                </div>
+                <div>
+                  <div className="font-black text-slate-800 text-sm">Danh sách đạt giải</div>
+                  <div className="text-[10px] text-slate-400 font-semibold">{reportData.length} kết quả</div>
+                </div>
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={handleExportExcel}
-                  className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow-md shadow-emerald-600/10 transition-all"
+                  className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-emerald-600/15 transition-all hover:-translate-y-0.5"
                 >
-                  <FileSpreadsheet className="w-4 h-4" />
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
                   Xuất Excel
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1 bg-[#003B3A] hover:bg-[#061e1d] text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow-md shadow-slate-800/10 transition-all"
+                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-md shadow-slate-800/15 transition-all hover:-translate-y-0.5"
                 >
-                  <Printer className="w-4 h-4" />
-                  In / Xuất PDF
+                  <Printer className="w-3.5 h-3.5" />
+                  In / PDF
                 </button>
               </div>
             </div>
@@ -1586,10 +1603,17 @@ export function ResultsClient({
           <div className="space-y-6 max-w-4xl mx-auto no-print animate-fade-in">
             {/* Lookup Card with 2 Options: Quick search vs Class browse */}
             <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
-              <h3 className="text-slate-800 font-bold text-sm flex items-center gap-1.5 border-b border-slate-100 pb-3">
-                <Search className="w-4.5 h-4.5 text-[#00A99D]" />
-                Tra cứu hồ sơ thành tích cá nhân Học sinh
-              </h3>
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#00A99D]/10 to-[#00A99D]/20 rounded-xl flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-[#00A99D]" />
+                  </div>
+                  <div>
+                    <h3 className="text-slate-800 font-black text-sm">Tra cứu hồ sơ thành tích Học sinh</h3>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Tìm kiếm nhanh hoặc duyệt theo lớp học</p>
+                  </div>
+                </div>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Option 1: Quick Search */}
@@ -1758,29 +1782,37 @@ export function ResultsClient({
             ) : selectedStudentProfile ? (
               <div className="space-y-6 animate-fade-in">
                 {/* Candidate bio card */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 bg-teal-50 rounded-2xl flex items-center justify-center text-[#00A99D] flex-shrink-0">
-                      <Users className="w-7 h-7" />
+                <div className="bg-gradient-to-r from-[#00A99D]/5 via-white to-white border border-[#00A99D]/20 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                  {/* Background decoration */}
+                  <div className="absolute top-0 right-0 w-40 h-40 bg-[#00A99D]/5 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="flex items-start gap-5 relative z-10">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#00A99D] to-[#007B73] rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-[#00A99D]/25">
+                      <Users className="w-8 h-8" />
                     </div>
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-black text-slate-800">{selectedStudentProfile.studentName}</h3>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-slate-400 text-xs font-semibold">
-                        <span className="font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold text-[10px]">
-                          Mã HS: {selectedStudentProfile.studentCode}
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-slate-800">{selectedStudentProfile.studentName}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-black text-[11px] border border-slate-200">
+                          {selectedStudentProfile.studentCode}
                         </span>
-                        <span>Giới tính: <strong>{selectedStudentProfile.gender}</strong></span>
+                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg font-bold text-[11px] border border-blue-100">
+                          {selectedStudentProfile.gender}
+                        </span>
                         {selectedStudentProfile.dateOfBirth && (
-                          <span>Sinh ngày: <strong>{new Date(selectedStudentProfile.dateOfBirth).toLocaleDateString("vi-VN")}</strong></span>
+                          <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-lg font-bold text-[11px] border border-purple-100">
+                            {new Date(selectedStudentProfile.dateOfBirth).toLocaleDateString("vi-VN")}
+                          </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-right self-start md:self-center bg-slate-50/60 p-4 rounded-xl border border-slate-100">
-                    <div className="text-xs font-bold text-slate-700">Lớp hiện tại: <strong className="text-[#00A99D] font-black">{selectedStudentProfile.className}</strong></div>
-                    <div className="text-[10px] text-slate-400 font-bold mt-0.5">{selectedStudentProfile.campusName}</div>
-                    <div className="text-[9px] text-slate-400 font-mono mt-0.5">Năm học: {selectedStudentProfile.academicYearName}</div>
+                  <div className="self-start md:self-center bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-right min-w-[160px] relative z-10">
+                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Thông tin lớp</div>
+                    <div className="text-xl font-black text-[#00A99D]">{selectedStudentProfile.className}</div>
+                    <div className="text-xs text-slate-500 font-bold mt-0.5">{selectedStudentProfile.campusName}</div>
+                    <div className="text-[10px] text-slate-400 font-mono mt-1 bg-slate-50 px-2 py-0.5 rounded">{selectedStudentProfile.academicYearName}</div>
                   </div>
                 </div>
 
@@ -1788,13 +1820,16 @@ export function ResultsClient({
                 <div className="space-y-4">
                   {/* View mode toggle bar */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
-                    <div className="flex items-center gap-2">
-                      <Award className="w-5 h-5 text-amber-500" />
-                      <h3 className="text-slate-800 font-black text-sm">
-                        Lịch sử Thành tích &amp; Giải thưởng
-                      </h3>
-                      <span className="text-[10px] font-bold bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-0.5 rounded-md border border-[#00A99D]/20">
-                        {selectedStudentProfile.achievements.length} giải
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center border border-amber-100">
+                        <Award className="w-4.5 h-4.5 text-amber-500" />
+                      </div>
+                      <div>
+                        <h3 className="text-slate-800 font-black text-sm">Lịch sử Thành tích &amp; Giải thưởng</h3>
+                        <p className="text-[10px] text-slate-400 font-semibold">Toàn bộ các giải thưởng đã đạt được</p>
+                      </div>
+                      <span className="text-[11px] font-black bg-[#00A99D] text-white px-3 py-1 rounded-lg shadow-sm ml-1">
+                        {selectedStudentProfile.achievements.length}
                       </span>
                     </div>
 
@@ -1828,10 +1863,27 @@ export function ResultsClient({
                 </div>
               </div>
             ) : (
-              <div className="bg-white border border-slate-200 rounded-2xl p-16 text-center text-slate-400 shadow-xs animate-fade-in">
-                <Award className="w-16 h-16 mx-auto opacity-10 mb-3" />
-                <h4 className="font-bold text-slate-700">Chưa chọn Học sinh để tra cứu</h4>
-                <p className="text-xs mt-1">Vui lòng sử dụng ô tìm nhanh hoặc bộ lọc lớp học ở trên để tra cứu lịch sử giải thưởng.</p>
+              <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl p-16 text-center text-slate-400 shadow-xs animate-fade-in">
+                <div className="w-20 h-20 bg-[#00A99D]/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="w-10 h-10 text-[#00A99D]/30" />
+                </div>
+                <h4 className="font-black text-slate-700 text-base">Chưa chọn Học sinh để tra cứu</h4>
+                <p className="text-xs mt-2 text-slate-400 max-w-xs mx-auto leading-relaxed">Sử dụng ô tìm kiếm nhanh bên trên hoặc duyệt danh sách học sinh theo lớp để xem lịch sử thành tích.</p>
+                <div className="flex items-center justify-center gap-4 mt-6">
+                  <div className="text-center">
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-1.5">
+                      <Search className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400">Tìm nhanh</div>
+                  </div>
+                  <div className="text-slate-200 font-bold">hoặc</div>
+                  <div className="text-center">
+                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-1.5">
+                      <Users className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <div className="text-[10px] font-bold text-slate-400">Chọn theo lớp</div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

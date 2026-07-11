@@ -1,9 +1,9 @@
 "use client"
 import Link from 'next/link'
-import { Layers, ClipboardList, UserCheck, Award, GitCommit, Trophy } from 'lucide-react'
+import { Layers, ClipboardList, UserCheck, Award, GitCommit, Trophy, FileSpreadsheet, BookOpen } from 'lucide-react'
 
 interface ExamTabsProps {
-  activeTab: 'categories' | 'rounds' | 'achievements' | 'exams' | 'students' | 'results'
+  activeTab: 'categories' | 'rounds' | 'achievements' | 'exams' | 'students' | 'results' | 'reports' | 'profiles'
 }
 
 export function ExamTabs({ activeTab }: ExamTabsProps) {
@@ -23,7 +23,9 @@ export function ExamTabs({ activeTab }: ExamTabsProps) {
     : [
         { id: 'exams', label: 'Danh sách Kỳ thi', href: '/admin/ktdbcl/exams', icon: ClipboardList },
         { id: 'students', label: 'Đăng ký Dự thi', href: '/admin/ktdbcl/students', icon: UserCheck },
-        { id: 'results', label: 'Nhập điểm & Kết quả', href: '/admin/ktdbcl/results', icon: Award }
+        { id: 'results', label: 'Nhập điểm & Kết quả', href: '/admin/ktdbcl/results', icon: Award },
+        { id: 'reports', label: 'Báo cáo thành tích', href: '/admin/ktdbcl/results?tab=reports', icon: FileSpreadsheet },
+        { id: 'profiles', label: 'Hồ sơ thành tích Học sinh', href: '/admin/ktdbcl/results?tab=profiles', icon: BookOpen }
       ]
 
   return (
