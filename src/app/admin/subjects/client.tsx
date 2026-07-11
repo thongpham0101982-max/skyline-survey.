@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import React, { useState } from "react"
 import { Plus, Edit2, Trash2, CheckCircle2, X, CalendarDays, Filter, BookOpen, Layers } from "lucide-react"
 import { createSubject, updateSubject, deleteSubject } from "./actions"
 
@@ -75,9 +75,9 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
     if (!activeTab) return;
     setFormData(prev => {
       const q = { ...prev.quotasByProgram[activeTab], [field]: val };
-      q.quotaPrimary = q.quotaG1 + q.quotaG2 + q.quotaG3 + q.quotaG4 + q.quotaG5;
-      q.quotaMiddle = q.quotaG6 + q.quotaG7 + q.quotaG8 + q.quotaG9;
-      q.quotaHigh = q.quotaG10 + q.quotaG11 + q.quotaG12;
+      q.quotaPrimary = Math.round((q.quotaG1 + q.quotaG2 + q.quotaG3 + q.quotaG4 + q.quotaG5) * 100) / 100;
+      q.quotaMiddle = Math.round((q.quotaG6 + q.quotaG7 + q.quotaG8 + q.quotaG9) * 100) / 100;
+      q.quotaHigh = Math.round((q.quotaG10 + q.quotaG11 + q.quotaG12) * 100) / 100;
       return { ...prev, quotasByProgram: { ...prev.quotasByProgram, [activeTab]: q } };
     });
   }
@@ -412,84 +412,101 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
               </div>
 
               {formData.studyPrograms.length > 0 && (
-                <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-indigo-500" /> Cấu hình số tiết theo Hệ
+                <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                  {/* Tab selector */}
+                  <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
+                    <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-indigo-500" /> Số tiết theo Hệ
                     </h3>
-                  </div>
-                  
-                  {/* Tabs */}
-                  <div className="flex flex-wrap gap-2">
-                    {formData.studyPrograms.map(prog => (
-                      <button key={prog}
-                        onClick={() => setActiveTab(prog)}
-                        className={`px-6 py-3 font-bold text-sm rounded-xl transition-all ${activeTab === prog ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 hover:text-slate-700'}`}>
-                        {prog}
-                      </button>
-                    ))}
-                  </div>
-
-                  {activeTab && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-300">
-                      {(formData.levels.includes("PRIMARY") || formData.levels.includes("ALL") || formData.levels.length === 0) && (
-                        <div className="bg-blue-50/50 rounded-2xl border border-blue-100 p-5 space-y-4 shadow-sm hover:shadow-md transition-all">
-                          <div className="flex justify-between items-center pb-3 border-b border-blue-200">
-                            <span className="font-extrabold text-blue-800">Tiểu học</span>
-                            <span className="text-xs font-bold text-white bg-blue-500 px-3 py-1.5 rounded-lg shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaPrimary || 0}</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            {[1,2,3,4,5].map(g => (
-                              <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-blue-100 shadow-sm hover:border-blue-300 transition-colors">
-                                <span className="text-xs font-bold text-blue-700">Khối {g}</span>
-                                <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || ''} 
-                                  onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
-                                  className="w-12 text-center text-sm font-bold bg-slate-50 rounded-lg border-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-blue-500 outline-none p-1.5 transition-all" />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {(formData.levels.includes("MIDDLE") || formData.levels.includes("ALL") || formData.levels.length === 0) && (
-                        <div className="bg-emerald-50/50 rounded-2xl border border-emerald-100 p-5 space-y-4 shadow-sm hover:shadow-md transition-all">
-                          <div className="flex justify-between items-center pb-3 border-b border-emerald-200">
-                            <span className="font-extrabold text-emerald-800">THCS</span>
-                            <span className="text-xs font-bold text-white bg-emerald-500 px-3 py-1.5 rounded-lg shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaMiddle || 0}</span>
-                          </div>
-                          <div className="grid grid-cols-2 gap-3">
-                            {[6,7,8,9].map(g => (
-                              <div key={g} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-emerald-100 shadow-sm hover:border-emerald-300 transition-colors">
-                                <span className="text-xs font-bold text-emerald-700">Khối {g}</span>
-                                <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || ''} 
-                                  onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
-                                  className="w-12 text-center text-sm font-bold bg-slate-50 rounded-lg border-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-emerald-500 outline-none p-1.5 transition-all" />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {(formData.levels.includes("HIGH") || formData.levels.includes("ALL") || formData.levels.length === 0) && (
-                        <div className="bg-amber-50/50 rounded-2xl border border-amber-100 p-5 space-y-4 shadow-sm hover:shadow-md transition-all">
-                          <div className="flex justify-between items-center pb-3 border-b border-amber-200">
-                            <span className="font-extrabold text-amber-800">THPT</span>
-                            <span className="text-xs font-bold text-white bg-amber-500 px-3 py-1.5 rounded-lg shadow-sm">Tổng: {formData.quotasByProgram[activeTab]?.quotaHigh || 0}</span>
-                          </div>
-                          <div className="grid grid-cols-1 gap-3">
-                            {[10,11,12].map(g => (
-                              <div key={g} className="flex items-center justify-between bg-white px-4 py-2.5 rounded-xl border border-amber-100 shadow-sm hover:border-amber-300 transition-colors">
-                                <span className="text-xs font-bold text-amber-700">Khối {g}</span>
-                                <input type="number" min={0} value={(formData.quotasByProgram[activeTab] as any)?.[(`quotaG${g}`)] || ''} 
-                                  onChange={e => updateQuota(`quotaG${g}`, parseInt(e.target.value)||0)}
-                                  className="w-16 text-center text-sm font-bold bg-slate-50 rounded-lg border-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-amber-500 outline-none p-1.5 transition-all" />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                    <div className="flex gap-2">
+                      {formData.studyPrograms.map(prog => (
+                        <button key={prog} onClick={() => setActiveTab(prog)} type="button"
+                          className={`px-4 py-1.5 font-bold text-xs rounded-lg transition-all ${activeTab === prog ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'}`}>
+                          {prog}
+                        </button>
+                      ))}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Grade input grid */}
+                  {activeTab && (() => {
+                    const q = (formData.quotasByProgram[activeTab] as any) || {};
+                    const showPrimary = formData.levels.includes('PRIMARY') || formData.levels.includes('ALL') || formData.levels.length === 0;
+                    const showMiddle = formData.levels.includes('MIDDLE') || formData.levels.includes('ALL') || formData.levels.length === 0;
+                    const showHigh = formData.levels.includes('HIGH') || formData.levels.includes('ALL') || formData.levels.length === 0;
+
+                    type BlockColor = {
+                      border: string; headerBg: string; title: string;
+                      badge: string; rowHover: string; inputBorder: string; inputFocus: string;
+                    };
+
+                    const GradeBlock = ({ label, grades, color }: { label: string; grades: number[]; color: BlockColor }) => {
+                      const total = Math.round(grades.reduce((s, g) => s + (q[`quotaG${g}`] || 0), 0) * 100) / 100;
+                      const fillAll = (val: number) => grades.forEach(g => updateQuota(`quotaG${g}`, val));
+                      return (
+                        <div className={`flex-1 min-w-[190px] rounded-2xl border-2 ${color.border} overflow-hidden`}>
+                          <div className={`px-4 py-3 ${color.headerBg} flex items-center justify-between`}>
+                            <span className={`font-extrabold text-base ${color.title}`}>{label}</span>
+                            <span className={`text-sm font-black px-3 py-1 rounded-lg ${color.badge}`}>
+                              Tổng: {total}
+                            </span>
+                          </div>
+                          <div className="px-3 py-3 bg-white space-y-1.5">
+                            {grades.map((g) => (
+                              <div key={g} className={`flex items-center gap-2 px-2 py-1.5 rounded-xl ${color.rowHover} transition-colors`}>
+                                <span className={`text-sm font-bold w-14 shrink-0 ${color.title}`}>Khối {g}</span>
+                                <input
+                                  type="number" min={0} step="any"
+                                  value={q[`quotaG${g}`] !== undefined && q[`quotaG${g}`] !== 0 ? q[`quotaG${g}`] : ''}
+                                  onChange={e => updateQuota(`quotaG${g}`, parseFloat(e.target.value) || 0)}
+                                  onFocus={e => e.target.select()}
+                                  placeholder="0"
+                                  className={`flex-1 text-center text-base font-black py-2.5 px-1 rounded-xl border-2 ${color.inputBorder} focus:${color.inputFocus} outline-none transition-all bg-slate-50/80 focus:bg-white hover:bg-white`}
+                                />
+                                <span className="text-xs text-slate-400 font-medium w-8 text-right shrink-0">tiết</span>
+                              </div>
+                            ))}
+                            <div className="pt-2 mt-1 border-t border-slate-100">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-slate-400 font-semibold shrink-0 w-14">Đặt tất:</span>
+                                <input
+                                  type="number" min={0} step="any" placeholder="nhập → Enter"
+                                  className={`flex-1 text-center text-xs font-bold py-1.5 px-2 rounded-lg border ${color.border} focus:${color.inputFocus} outline-none bg-slate-50 focus:bg-white transition-all`}
+                                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                                    if (e.key === 'Enter') {
+                                      const val = parseFloat((e.target as HTMLInputElement).value) || 0;
+                                      fillAll(val);
+                                      (e.target as HTMLInputElement).value = '';
+                                    }
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    };
+
+                    return (
+                      <div className="p-4 flex flex-wrap gap-4">
+                        {showPrimary && <GradeBlock label="Tiểu học" grades={[1,2,3,4,5]} color={{
+                          border: 'border-blue-200', headerBg: 'bg-blue-50', title: 'text-blue-800',
+                          badge: 'bg-blue-600 text-white', rowHover: 'hover:bg-blue-50/60',
+                          inputBorder: 'border-blue-200 hover:border-blue-400', inputFocus: 'border-blue-500'
+                        }} />}
+                        {showMiddle && <GradeBlock label="THCS" grades={[6,7,8,9]} color={{
+                          border: 'border-emerald-200', headerBg: 'bg-emerald-50', title: 'text-emerald-800',
+                          badge: 'bg-emerald-600 text-white', rowHover: 'hover:bg-emerald-50/60',
+                          inputBorder: 'border-emerald-200 hover:border-emerald-400', inputFocus: 'border-emerald-500'
+                        }} />}
+                        {showHigh && <GradeBlock label="THPT" grades={[10,11,12]} color={{
+                          border: 'border-amber-200', headerBg: 'bg-amber-50', title: 'text-amber-800',
+                          badge: 'bg-amber-600 text-white', rowHover: 'hover:bg-amber-50/60',
+                          inputBorder: 'border-amber-200 hover:border-amber-400', inputFocus: 'border-amber-500'
+                        }} />}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
               {formData.studyPrograms.length === 0 && (
