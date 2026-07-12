@@ -456,29 +456,32 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                             {grades.map((g) => (
                               <div key={g} className={`flex items-center gap-2 px-2 py-1.5 rounded-xl ${color.rowHover} transition-colors`}>
                                 <span className={`text-sm font-bold w-14 shrink-0 ${color.title}`}>Khối {g}</span>
-                                <input
-                                  type="number" min={0} step="any"
-                                  value={rawInputs[`${activeTab}-quotaG${g}`] !== undefined
-                                    ? rawInputs[`${activeTab}-quotaG${g}`]
-                                    : (q[`quotaG${g}`] ? String(q[`quotaG${g}`]) : '')}
-                                  onChange={e => {
-                                    const raw = e.target.value;
-                                    const key = `${activeTab}-quotaG${g}`;
-                                    setRawInputs(prev => ({ ...prev, [key]: raw }));
-                                    const parsed = parseFloat(raw);
-                                    if (!isNaN(parsed)) updateQuota(`quotaG${g}`, parsed);
-                                    else if (raw === '') updateQuota(`quotaG${g}`, 0);
-                                  }}
-                                  onFocus={e => e.target.select()}
-                                  onBlur={e => {
-                                    const key = `${activeTab}-quotaG${g}`;
-                                    const parsed = parseFloat(e.target.value);
-                                    updateQuota(`quotaG${g}`, isNaN(parsed) ? 0 : parsed);
-                                    setRawInputs(prev => { const n = {...prev}; delete n[key]; return n; });
-                                  }}
-                                  placeholder="0"
-                                  className={`flex-1 text-center text-base font-black py-2.5 px-1 rounded-xl border-2 ${color.inputBorder} focus:${color.inputFocus} outline-none transition-all bg-slate-50/80 focus:bg-white hover:bg-white`}
-                                />
+                                  <input
+                                    type="text"
+                                    inputMode="decimal"
+                                    value={rawInputs[`${activeTab}-quotaG${g}`] !== undefined
+                                      ? rawInputs[`${activeTab}-quotaG${g}`]
+                                      : (q[`quotaG${g}`] ? String(q[`quotaG${g}`]) : '')}
+                                    onChange={e => {
+                                      const raw = e.target.value;
+                                      // Only allow: digits, one dot or comma, optional leading minus
+                                      if (raw !== '' && !/^-?[0-9]*[.,]?[0-9]*$/.test(raw)) return;
+                                      const key = `${activeTab}-quotaG${g}`;
+                                      setRawInputs(prev => ({ ...prev, [key]: raw }));
+                                      const parsed = parseFloat(raw.replace(',', '.'));
+                                      if (!isNaN(parsed)) updateQuota(`quotaG${g}`, parsed);
+                                      else if (raw === '') updateQuota(`quotaG${g}`, 0);
+                                    }}
+                                    onFocus={e => e.target.select()}
+                                    onBlur={e => {
+                                      const key = `${activeTab}-quotaG${g}`;
+                                      const parsed = parseFloat(e.target.value.replace(',', '.'));
+                                      updateQuota(`quotaG${g}`, isNaN(parsed) ? 0 : parsed);
+                                      setRawInputs(prev => { const n = {...prev}; delete n[key]; return n; });
+                                    }}
+                                    placeholder="0"
+                                    className={`flex-1 text-center text-base font-black py-2.5 px-1 rounded-xl border-2 ${color.inputBorder} focus:${color.inputFocus} outline-none transition-all bg-slate-50/80 focus:bg-white hover:bg-white`}
+                                  />
                                 <span className="text-xs text-slate-400 font-medium w-8 text-right shrink-0">tiết</span>
                               </div>
                             ))}
@@ -486,11 +489,11 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-slate-400 font-semibold shrink-0 w-14">Đặt tất:</span>
                                 <input
-                                  type="number" min={0} step="any" placeholder="nhập → Enter"
+                                  type="text" inputMode="decimal" placeholder="nhập → Enter"
                                   className={`flex-1 text-center text-xs font-bold py-1.5 px-2 rounded-lg border ${color.border} focus:${color.inputFocus} outline-none bg-slate-50 focus:bg-white transition-all`}
                                   onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                                     if (e.key === 'Enter') {
-                                      const val = parseFloat((e.target as HTMLInputElement).value) || 0;
+                                      const val = parseFloat((e.target as HTMLInputElement).value.replace(',', '.')) || 0;
                                       fillAll(val);
                                       (e.target as HTMLInputElement).value = '';
                                     }
