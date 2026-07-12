@@ -445,17 +445,18 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       const total = Math.round(grades.reduce((s, g) => s + (q[`quotaG${g}`] || 0), 0) * 100) / 100;
                       const fillAll = (val: number) => grades.forEach(g => updateQuota(`quotaG${g}`, val));
                       return (
-                        <div className={`flex-1 min-w-[190px] rounded-2xl border-2 ${color.border} overflow-hidden`}>
+                        <div className={`flex-1 min-w-[220px] rounded-2xl border-2 ${color.border} overflow-hidden`}>
                           <div className={`px-4 py-3 ${color.headerBg} flex items-center justify-between`}>
                             <span className={`font-extrabold text-base ${color.title}`}>{label}</span>
                             <span className={`text-sm font-black px-3 py-1 rounded-lg ${color.badge}`}>
                               Tổng: {total}
                             </span>
                           </div>
-                          <div className="px-3 py-3 bg-white space-y-1.5">
+                          <div className="px-2 py-3 bg-white space-y-1.5">
                             {grades.map((g) => (
-                              <div key={g} className={`flex items-center gap-2 px-2 py-1.5 rounded-xl ${color.rowHover} transition-colors`}>
-                                <span className={`text-sm font-bold w-14 shrink-0 ${color.title}`}>Khối {g}</span>
+                              <div key={g} className={`flex items-center justify-between px-2.5 py-1 rounded-xl ${color.rowHover} transition-colors`}>
+                                <span className={`text-sm font-bold ${color.title}`}>Khối {g}</span>
+                                <div className="flex items-center gap-1.5">
                                   <input
                                     type="text"
                                     inputMode="decimal"
@@ -480,17 +481,20 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                                       setRawInputs(prev => { const n = {...prev}; delete n[key]; return n; });
                                     }}
                                     placeholder="0"
-                                    className={`flex-1 text-center text-base font-black py-2.5 px-1 rounded-xl border-2 ${color.inputBorder} focus:${color.inputFocus} outline-none transition-all bg-slate-50/80 focus:bg-white hover:bg-white`}
+                                    className={`w-20 text-center text-sm font-black py-1.5 px-1 rounded-lg border-2 ${color.inputBorder} focus:${color.inputFocus} outline-none transition-all bg-slate-50/80 focus:bg-white hover:bg-white`}
                                   />
-                                <span className="text-xs text-slate-400 font-medium w-8 text-right shrink-0">tiết</span>
+                                  <span className="text-xs text-slate-400 font-medium w-8 text-left shrink-0">tiết</span>
+                                </div>
                               </div>
                             ))}
-                            <div className="pt-2 mt-1 border-t border-slate-100">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-slate-400 font-semibold shrink-0 w-14">Đặt tất:</span>
+                            <div className="pt-2 mt-1 border-t border-slate-100 flex items-center justify-between px-2.5">
+                              <span className="text-xs text-slate-400 font-semibold shrink-0">Đặt tất:</span>
+                              <div className="flex items-center gap-1.5">
                                 <input
-                                  type="text" inputMode="decimal" placeholder="nhập → Enter"
-                                  className={`flex-1 text-center text-xs font-bold py-1.5 px-2 rounded-lg border ${color.border} focus:${color.inputFocus} outline-none bg-slate-50 focus:bg-white transition-all`}
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="nhập → ↵"
+                                  className={`w-20 text-center text-xs font-bold py-1 rounded-lg border ${color.border} focus:${color.inputFocus} outline-none bg-slate-50 focus:bg-white transition-all`}
                                   onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                                     if (e.key === 'Enter') {
                                       const val = parseFloat((e.target as HTMLInputElement).value.replace(',', '.')) || 0;
@@ -499,6 +503,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                                     }
                                   }}
                                 />
+                                <span className="text-xs text-slate-400 font-medium w-8 text-left shrink-0">tiết</span>
                               </div>
                             </div>
                           </div>
