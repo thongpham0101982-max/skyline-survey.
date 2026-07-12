@@ -25,6 +25,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   });
   const [activeTab, setActiveTab] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [rawInputs, setRawInputs] = useState<Record<string, string>>({});
 
   const startEdit = (s?: any) => {
     if (s) {
@@ -457,9 +458,24 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                                 <span className={`text-sm font-bold w-14 shrink-0 ${color.title}`}>Khối {g}</span>
                                 <input
                                   type="number" min={0} step="any"
-                                  value={q[`quotaG${g}`] !== undefined && q[`quotaG${g}`] !== 0 ? q[`quotaG${g}`] : ''}
-                                  onChange={e => updateQuota(`quotaG${g}`, parseFloat(e.target.value) || 0)}
+                                  value={rawInputs[`${activeTab}-quotaG${g}`] !== undefined
+                                    ? rawInputs[`${activeTab}-quotaG${g}`]
+                                    : (q[`quotaG${g}`] ? String(q[`quotaG${g}`]) : '')}
+                                  onChange={e => {
+                                    const raw = e.target.value;
+                                    const key = `${activeTab}-quotaG${g}`;
+                                    setRawInputs(prev => ({ ...prev, [key]: raw }));
+                                    const parsed = parseFloat(raw);
+                                    if (!isNaN(parsed)) updateQuota(`quotaG${g}`, parsed);
+                                    else if (raw === '') updateQuota(`quotaG${g}`, 0);
+                                  }}
                                   onFocus={e => e.target.select()}
+                                  onBlur={e => {
+                                    const key = `${activeTab}-quotaG${g}`;
+                                    const parsed = parseFloat(e.target.value);
+                                    updateQuota(`quotaG${g}`, isNaN(parsed) ? 0 : parsed);
+                                    setRawInputs(prev => { const n = {...prev}; delete n[key]; return n; });
+                                  }}
                                   placeholder="0"
                                   className={`flex-1 text-center text-base font-black py-2.5 px-1 rounded-xl border-2 ${color.inputBorder} focus:${color.inputFocus} outline-none transition-all bg-slate-50/80 focus:bg-white hover:bg-white`}
                                 />
