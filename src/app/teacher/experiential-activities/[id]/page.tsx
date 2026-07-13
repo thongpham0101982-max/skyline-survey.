@@ -208,6 +208,16 @@ export default function ActivityResultInput() {
     </div>
   );
 
+  const getSelectClass = (val: string) => {
+    const base = "w-full appearance-none text-xs font-bold rounded-xl focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] pl-3 pr-8 py-2.5 transition-all outline-none border ";
+    if (val) {
+      return base + "bg-emerald-50/40 border-emerald-200/80 text-emerald-700";
+    }
+    return base + "bg-slate-50/30 border-slate-200 text-slate-500";
+  };
+
+  const gradedCount = students.filter(s => s.roleId || s.evalLevelId || s.achievementId).length;
+
   const activityName = activity?.name || activity?.catalog?.name || 'Hoạt động trải nghiệm';
   const activityCode = activity?.code || '';
 
@@ -255,6 +265,9 @@ export default function ActivityResultInput() {
                 <span className="flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-[#00A99D]" />
                   {students.length} học sinh
+                </span>
+                <span className="flex items-center gap-1 bg-teal-50/80 text-[#00A99D] border border-teal-200/60 px-2 py-0.5 rounded-lg text-xs font-black">
+                  Tiến độ: {gradedCount}/{students.length} học sinh đã nhập
                 </span>
                 {students.length > 0 && students[0].class && (
                   <span className="flex items-center gap-1.5">
@@ -418,7 +431,7 @@ export default function ActivityResultInput() {
                         <td className="px-3 py-3">
                           <div className="relative">
                             <select value={student.roleId || ''} onChange={e => handleChange(student.id, 'roleId', e.target.value)}
-                              className="w-full appearance-none bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] pl-3 pr-8 py-2 transition-all outline-none">
+                              className={getSelectClass(student.roleId)}>
                               <option value="">-- Chọn --</option>
                               {categories.role.map(c => <option key={c.id} value={c.code}>{c.name}</option>)}
                             </select>
@@ -431,7 +444,7 @@ export default function ActivityResultInput() {
                         <td className="px-3 py-3">
                           <div className="relative">
                             <select value={student.evalLevelId || ''} onChange={e => handleChange(student.id, 'evalLevelId', e.target.value)}
-                              className="w-full appearance-none bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] pl-3 pr-8 py-2 transition-all outline-none">
+                              className={getSelectClass(student.evalLevelId)}>
                               <option value="">-- Chọn --</option>
                               {categories.result.map(c => <option key={c.id} value={c.code}>{c.name}</option>)}
                             </select>
@@ -444,7 +457,7 @@ export default function ActivityResultInput() {
                         <td className="px-3 py-3">
                           <div className="relative">
                             <select value={student.achievementId || ''} onChange={e => handleChange(student.id, 'achievementId', e.target.value)}
-                              className="w-full appearance-none bg-white border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] pl-3 pr-8 py-2 transition-all outline-none">
+                              className={getSelectClass(student.achievementId)}>
                               <option value="">-- Chọn --</option>
                               {categories.achievement.map(c => <option key={c.id} value={c.code}>{c.name}</option>)}
                             </select>
