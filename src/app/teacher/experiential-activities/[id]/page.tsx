@@ -77,6 +77,9 @@ export default function ActivityResultInput() {
             note: p.note || '{}'
           })));
         }
+      } else {
+        const errText = await actRes.text();
+        toast.error('API Error: ' + actRes.status + ' - ' + errText);
       }
 
       if (catRes.ok) {

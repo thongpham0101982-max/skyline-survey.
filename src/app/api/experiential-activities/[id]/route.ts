@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { auth } from '@/lib/auth';
 
-export async function GET(req: Request, props: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -10,6 +10,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
     const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
     if (!teacher) return NextResponse.json({ error: 'Only teachers can view activities' }, { status: 403 });
 
+    const params = await params;
     const id = params.id;
     const activity = await prisma.activityRecord.findUnique({
       where: { id: id },
@@ -29,7 +30,7 @@ export async function GET(req: Request, props: { params: Promise<{ id: string }>
   }
 }
 
-export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -37,6 +38,7 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
     const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
     if (!teacher) return NextResponse.json({ error: 'Only teachers can delete activities' }, { status: 403 });
 
+    const params = await params;
     const id = params.id;
     const activity = await prisma.activityRecord.findUnique({ where: { id: id } });
 
@@ -52,7 +54,7 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
   }
 }
 
-export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const session = await auth();
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -60,7 +62,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
     const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
     if (!teacher) return NextResponse.json({ error: 'Only teachers can edit activities' }, { status: 403 });
 
-    const params = await props.params;
+    const params = await params;
     const id = params.id;
     const activity = await prisma.activityRecord.findUnique({ where: { id: id } });
 
