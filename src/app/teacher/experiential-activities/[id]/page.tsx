@@ -56,6 +56,18 @@ export default function ActivityResultInput() {
 
       if (actRes.ok) {
         const data = await actRes.json();
+        
+        // Check year mismatch
+        const match = document.cookie.match(/(?:^|; )selectedAcademicYear=([^;]*)/);
+        const currentYearId = match ? decodeURIComponent(match[1]) : localStorage.getItem("selectedAcademicYear");
+        if (currentYearId && data.academicYearId && data.academicYearId !== currentYearId) {
+          toast.error("Hoạt động này không thuộc năm học đang chọn. Đang chuyển hướng...");
+          setTimeout(() => {
+            router.push('/teacher/experiential-activities');
+          }, 1500);
+          return;
+        }
+
         setActivity(data);
         setEditData({
           name: data.name || data.catalog?.name || '',
