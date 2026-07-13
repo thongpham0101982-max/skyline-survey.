@@ -5,7 +5,7 @@ import { Upload, Users, BookOpen, Download, Calendar, Building2, GraduationCap, 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import * as xlsx from "xlsx"
-import { importClassesAction, deleteClasses, updateClass, createClassAction, previewClassTransferAction, transferClassesAction, previewStudentCopyAction, copyStudentsAction, previewTeachingAssignmentCopyAction, copyTeachingAssignmentsAction } from "./actions"
+import { importClassesAction, deleteClasses, updateClass, createClassAction, previewClassTransferAction, transferClassesAction, previewStudentCopyAction, copyStudentsAction, previewTeachingAssignmentCopyAction, copyTeachingAssignmentsAction, getClassesByYearAndCampusAction, getStudentsByClassAction, copyStudentsToTargetClassAction } from "./actions"
 
 const K12_LEVELS = [
   { value: "", label: "Tất cả" },
@@ -167,14 +167,60 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const [transferLoading, setTransferLoading] = useState(false)
   const [transferResult, setTransferResult] = useState<any>(null)
 
-  // Modal: Sao chép học sinh
+  // Modal: Sao chép học sinh (Granular)
   const [copyStudentModal, setCopyStudentModal] = useState(false)
   const [copyStudentSourceYear, setCopyStudentSourceYear] = useState("")
+  const [copyStudentSourceCampus, setCopyStudentSourceCampus] = useState("")
+  const [copyStudentSourceClass, setCopyStudentSourceClass] = useState("")
   const [copyStudentTargetYear, setCopyStudentTargetYear] = useState("")
-  const [copyStudentPreview, setCopyStudentPreview] = useState<any[]>([])
+  const [copyStudentTargetCampus, setCopyStudentTargetCampus] = useState("")
+  const [copyStudentTargetClass, setCopyStudentTargetClass] = useState("")
+  const [copyStudentSourceClasses, setCopyStudentSourceClasses] = useState<any[]>([])
+  const [copyStudentTargetClasses, setCopyStudentTargetClasses] = useState<any[]>([])
+  const [copyStudentSourceStudents, setCopyStudentSourceStudents] = useState<any[]>([])
+  const [copyStudentSelectedIds, setCopyStudentSelectedIds] = useState<string[]>([])
   const [copyStudentLoading, setCopyStudentLoading] = useState(false)
   const [copyStudentResult, setCopyStudentResult] = useState<any>(null)
-  const [copyStudentClassMap, setCopyStudentClassMap] = useState<any[]>([])
+
+  useEffect(() => {
+    if (copyStudentSourceYear && copyStudentSourceCampus) {
+      getClassesByYearAndCampusAction(copyStudentSourceYear, copyStudentSourceCampus).then(res => {
+        if (res.success) setCopyStudentSourceClasses(res.classes || []);
+      });
+    } else {
+      setCopyStudentSourceClasses([]);
+    }
+    setCopyStudentSourceClass("");
+    setCopyStudentSourceStudents([]);
+    setCopyStudentSelectedIds([]);
+  }, [copyStudentSourceYear, copyStudentSourceCampus]);
+
+  useEffect(() => {
+    if (copyStudentTargetYear && copyStudentTargetCampus) {
+      getClassesByYearAndCampusAction(copyStudentTargetYear, copyStudentTargetCampus).then(res => {
+        if (res.success) setCopyStudentTargetClasses(res.classes || []);
+      });
+    } else {
+      setCopyStudentTargetClasses([]);
+    }
+    setCopyStudentTargetClass("");
+  }, [copyStudentTargetYear, copyStudentTargetCampus]);
+
+  useEffect(() => {
+    if (copyStudentSourceClass) {
+      setCopyStudentLoading(true);
+      getStudentsByClassAction(copyStudentSourceClass).then(res => {
+        if (res.success) {
+          setCopyStudentSourceStudents(res.students || []);
+          setCopyStudentSelectedIds((res.students || []).map((s: any) => s.id));
+        }
+        setCopyStudentLoading(false);
+      });
+    } else {
+      setCopyStudentSourceStudents([]);
+      setCopyStudentSelectedIds([]);
+    }
+  }, [copyStudentSourceClass]);
 
   // Modal: Phân công giảng dạy
   const [copyAssignModal, setCopyAssignModal] = useState(false)
@@ -446,27 +492,31 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
   const handleOpenCopyStudentModal = () => {
     setCopyStudentModal(true);
     setCopyStudentSourceYear(selectedYearId || academicYears[0]?.id || "");
+    setCopyStudentSourceCampus("");
+    setCopyStudentSourceClass("");
     setCopyStudentTargetYear("");
-    setCopyStudentPreview([]);
+    setCopyStudentTargetCampus("");
+    setCopyStudentTargetClass("");
+    setCopyStudentSourceClasses([]);
+    setCopyStudentTargetClasses([]);
+    setCopyStudentSourceStudents([]);
+    setCopyStudentSelectedIds([]);
     setCopyStudentResult(null);
-    setCopyStudentClassMap([]);
-  };
-  const handleCopyStudentPreview = async () => {
-    if (!copyStudentSourceYear || !copyStudentTargetYear) return;
-    setCopyStudentLoading(true);
-    const res = await previewStudentCopyAction(copyStudentSourceYear, copyStudentTargetYear);
-    if (res.success) {
-      setCopyStudentPreview(res.preview || []);
-      setCopyStudentClassMap(res.classMappingList || []);
-    }
-    setCopyStudentLoading(false);
   };
   const handleCopyStudentExecute = async () => {
+    if (!copyStudentTargetClass || copyStudentSelectedIds.length === 0) return;
     setCopyStudentLoading(true);
-    const res = await copyStudentsAction(copyStudentSourceYear, copyStudentTargetYear);
+    const res = await copyStudentsToTargetClassAction(
+      copyStudentSelectedIds,
+      copyStudentTargetClass,
+      copyStudentTargetYear
+    );
     setCopyStudentResult(res);
     setCopyStudentLoading(false);
-    if (res.success) { router.refresh(); setCopyStudentPreview([]); }
+    if (res.success) {
+      router.refresh();
+      setCopyStudentSelectedIds([]);
+    }
   };
 
   // ─── Phân công giảng dạy handlers ───
@@ -1054,7 +1104,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
     {/* Modal: Sao chép học sinh */}
     {copyStudentModal && (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden text-xs">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-800 text-white rounded-t-2xl">
             <div className="flex items-center gap-3">
@@ -1066,119 +1116,150 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             </button>
           </div>
 
-          {/* Year selectors */}
-          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200">
-            <div className="flex flex-wrap items-end gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học nguồn</label>
-                <select value={copyStudentSourceYear} onChange={e => { setCopyStudentSourceYear(e.target.value); setCopyStudentPreview([]); setCopyStudentResult(null); }}
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400/40 min-w-[160px]">
-                  <option value="">-- Chọn --</option>
-                  {academicYears.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
-                </select>
-              </div>
-              <ArrowRightLeft className="w-5 h-5 text-slate-400 mb-2.5" />
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học đích</label>
-                <select value={copyStudentTargetYear} onChange={e => { setCopyStudentTargetYear(e.target.value); setCopyStudentPreview([]); setCopyStudentResult(null); }}
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-400/40 min-w-[160px]">
-                  <option value="">-- Chọn --</option>
-                  {academicYears.filter((y: any) => y.id !== copyStudentSourceYear).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
-                </select>
-              </div>
-              <button onClick={handleCopyStudentPreview} disabled={!copyStudentSourceYear || !copyStudentTargetYear || copyStudentLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
-                {copyStudentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                Kiểm tra
-              </button>
-            </div>
-            {copyStudentClassMap.length > 0 && (
-              <div className="mt-3 text-xs text-slate-500">
-                <span className="font-bold">Mapping lớp (tự động theo tên lớp):</span>
-                <div className="flex flex-wrap gap-2 mt-1.5">
-                  {copyStudentClassMap.slice(0, 8).map((m: any) => (
-                    <span key={m.sourceClassId} className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold ${m.targetClassId ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : "bg-rose-50 text-rose-600 border border-rose-200/60"}`}>
-                      {m.sourceClassName} {m.targetClassId ? "→ ✓" : "→ ✗ Chưa có lớp đích"}
-                    </span>
-                  ))}
-                  {copyStudentClassMap.length > 8 && <span className="text-slate-400">+{copyStudentClassMap.length - 8} lớp khác</span>}
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6 bg-slate-50 flex flex-col md:flex-row gap-6 min-h-0">
+            {/* Column 1: Nguồn */}
+            <div className="flex-1 bg-white rounded-xl border border-slate-200/80 p-4 flex flex-col min-h-[400px]">
+              <h3 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5 text-indigo-700">
+                <Building2 className="w-4 h-4" /> Nguồn (Năm học cũ)
+              </h3>
+              
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Năm học</label>
+                  <select value={copyStudentSourceYear} onChange={e => { setCopyStudentSourceYear(e.target.value); }}
+                    className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400/40">
+                    <option value="">-- Chọn --</option>
+                    {academicYears.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                  </select>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* Result banner */}
-          {copyStudentResult && (
-            <div className={`px-6 py-3 flex items-center gap-3 text-sm font-semibold ${copyStudentResult.success ? "bg-emerald-50 text-emerald-700 border-b border-emerald-200" : "bg-rose-50 text-rose-700 border-b border-rose-200"}`}>
-              {copyStudentResult.success ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-              {copyStudentResult.success
-                ? `Hoàn thành! Đã sao chép ${copyStudentResult.copied} học sinh. Bỏ qua ${copyStudentResult.skipped} (trùng hoặc chưa có lớp đích).`
-                : `Lỗi: ${copyStudentResult.error}`}
-            </div>
-          )}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cơ sở</label>
+                  <select value={copyStudentSourceCampus} onChange={e => { setCopyStudentSourceCampus(e.target.value); }}
+                    className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400/40">
+                    <option value="">-- Chọn --</option>
+                    {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                  </select>
+                </div>
 
-          {/* Preview table */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            {copyStudentPreview.length === 0 && !copyStudentLoading && (
-              <div className="flex flex-col items-center justify-center h-32 text-slate-400 text-sm">
-                <Users className="w-8 h-8 mb-2 opacity-30" />
-                Chọn năm học nguồn và đích, rồi bấm "Kiểm tra" để xem trước
-              </div>
-            )}
-            {copyStudentLoading && (
-              <div className="flex items-center justify-center h-32 gap-3 text-indigo-600">
-                <Loader2 className="w-6 h-6 animate-spin" />
-                <span className="text-sm font-semibold">Đang kiểm tra học sinh...</span>
-              </div>
-            )}
-            {copyStudentPreview.length > 0 && !copyStudentLoading && (
-              <>
-                <div className="flex items-center gap-4 mb-3 text-sm font-bold text-slate-700">
-                  <span>Tổng: <span className="text-indigo-600">{copyStudentPreview.length}</span> học sinh</span>
-                  <span>Sẽ sao chép: <span className="text-emerald-600">{copyStudentPreview.filter(s => !s.isDuplicate && s.hasTargetClass).length}</span></span>
-                  <span>Trùng mã (bỏ qua): <span className="text-amber-600">{copyStudentPreview.filter(s => s.isDuplicate).length}</span></span>
-                  <span>Chưa có lớp đích: <span className="text-rose-600">{copyStudentPreview.filter(s => !s.isDuplicate && !s.hasTargetClass).length}</span></span>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Lớp học</label>
+                  <select value={copyStudentSourceClass} onChange={e => { setCopyStudentSourceClass(e.target.value); }}
+                    disabled={!copyStudentSourceYear || !copyStudentSourceCampus}
+                    className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-400/40 disabled:bg-slate-50">
+                    <option value="">-- Chọn --</option>
+                    {copyStudentSourceClasses.map((c: any) => <option key={c.id} value={c.id}>{c.className}</option>)}
+                  </select>
                 </div>
-                <div className="border border-slate-200 rounded-xl overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
-                      <tr>
-                        <th className="px-3 py-2.5 text-left">Mã học sinh</th>
-                        <th className="px-3 py-2.5 text-left">Họ và tên</th>
-                        <th className="px-3 py-2.5 text-left">Ngày sinh</th>
-                        <th className="px-3 py-2.5 text-left">Lớp nguồn</th>
-                        <th className="px-3 py-2.5 text-left">Cơ sở</th>
-                        <th className="px-3 py-2.5 text-center">Trạng thái</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {copyStudentPreview.map((s: any) => (
-                        <tr key={s.id} className={`transition-colors hover:bg-slate-50 ${s.isDuplicate ? "opacity-60" : ""}`}>
-                          <td className="px-3 py-2.5 font-mono text-xs font-bold text-indigo-700">{s.studentCode}</td>
-                          <td className="px-3 py-2.5 font-semibold text-slate-800">{s.studentName}</td>
-                          <td className="px-3 py-2.5 text-slate-500 text-xs">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                          <td className="px-3 py-2.5 text-slate-600">{s.sourceClassName}</td>
-                          <td className="px-3 py-2.5 text-slate-500 text-xs">{s.campus}</td>
-                          <td className="px-3 py-2.5 text-center">
-                            {s.isDuplicate
-                              ? <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-md border border-amber-200/60"><AlertCircle className="w-3 h-3" /> Trùng mã</span>
-                              : !s.hasTargetClass
-                              ? <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 text-xs font-bold px-2.5 py-1 rounded-md border border-rose-200/60">Chưa có lớp đích</span>
-                              : <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-md border border-emerald-200/60"><CheckCircle2 className="w-3 h-3" /> Sẽ sao chép</span>
-                            }
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              </div>
+
+              {/* Student list */}
+              <div className="flex-grow border border-slate-200 rounded-xl overflow-hidden flex flex-col bg-slate-50/50 min-h-[220px]">
+                {copyStudentLoading ? (
+                  <div className="flex-grow flex items-center justify-center gap-2 text-indigo-600 text-xs font-bold">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải danh sách học sinh...
+                  </div>
+                ) : !copyStudentSourceClass ? (
+                  <div className="flex-grow flex flex-col items-center justify-center text-slate-400 text-xs p-10 text-center">
+                    <Users className="w-8 h-8 mb-1.5 opacity-30 mx-auto" />
+                    Vui lòng chọn Năm học, Cơ sở và Lớp nguồn
+                  </div>
+                ) : copyStudentSourceStudents.length === 0 ? (
+                  <div className="flex-grow flex flex-col items-center justify-center text-slate-400 text-xs p-10 text-center">
+                    Không có học sinh hoạt động nào trong lớp này
+                  </div>
+                ) : (
+                  <div className="flex-grow flex flex-col min-h-0">
+                    <div className="px-3 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-600">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox"
+                          checked={copyStudentSelectedIds.length === copyStudentSourceStudents.length}
+                          onChange={e => setCopyStudentSelectedIds(e.target.checked ? copyStudentSourceStudents.map(s => s.id) : [])}
+                          className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer" />
+                        <span>Chọn tất cả ({copyStudentSourceStudents.length})</span>
+                      </label>
+                      <span>Đang chọn: <strong className="text-indigo-600">{copyStudentSelectedIds.length}</strong></span>
+                    </div>
+                    <div className="overflow-y-auto flex-grow max-h-[250px] divide-y divide-slate-100 bg-white">
+                      {copyStudentSourceStudents.map((s: any) => {
+                        const isChecked = copyStudentSelectedIds.includes(s.id);
+                        return (
+                          <label key={s.id} className={`flex items-center gap-3 px-3 py-2 hover:bg-slate-50 transition-colors cursor-pointer ${isChecked ? "bg-indigo-50/20" : ""}`}>
+                            <input type="checkbox" checked={isChecked}
+                              onChange={e => setCopyStudentSelectedIds(e.target.checked ? [...copyStudentSelectedIds, s.id] : copyStudentSelectedIds.filter(id => id !== s.id))}
+                              className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 cursor-pointer" />
+                            <div className="text-xs">
+                              <div className="font-bold text-slate-800">{s.studentName}</div>
+                              <div className="text-slate-400 font-medium font-mono text-[10px] mt-0.5">{s.studentCode}</div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Column 2: Đích */}
+            <div className="w-full md:w-[360px] bg-white rounded-xl border border-slate-200/80 p-4 flex flex-col">
+              <h3 className="text-sm font-bold text-slate-800 mb-3 pb-2 border-b border-slate-100 flex items-center gap-1.5 text-emerald-700">
+                <Building2 className="w-4 h-4" /> Đích (Năm học mới)
+              </h3>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học đích</label>
+                  <select value={copyStudentTargetYear} onChange={e => { setCopyStudentTargetYear(e.target.value); }}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-400/40">
+                    <option value="">-- Chọn --</option>
+                    {academicYears.filter((y: any) => y.id !== copyStudentSourceYear).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
+                  </select>
                 </div>
-              </>
-            )}
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Cơ sở đích</label>
+                  <select value={copyStudentTargetCampus} onChange={e => { setCopyStudentTargetCampus(e.target.value); }}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-400/40">
+                    <option value="">-- Chọn --</option>
+                    {campuses.map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Lớp học đích</label>
+                  <select value={copyStudentTargetClass} onChange={e => { setCopyStudentTargetClass(e.target.value); }}
+                    disabled={!copyStudentTargetYear || !copyStudentTargetCampus}
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-400/40 disabled:bg-slate-50">
+                    <option value="">-- Chọn --</option>
+                    {copyStudentTargetClasses.map((c: any) => <option key={c.id} value={c.id}>{c.className}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {copyStudentResult && (
+                <div className={`mt-6 p-3 rounded-lg text-xs font-semibold space-y-1 ${copyStudentResult.success ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : "bg-rose-50 text-rose-700 border border-rose-200/60"}`}>
+                  {copyStudentResult.success ? (
+                    <>
+                      <div className="flex items-center gap-1.5 font-bold"><CheckCircle2 className="w-4 h-4 text-emerald-600" /> Thành công!</div>
+                      <p>Đã sao chép {copyStudentResult.copied} học sinh.</p>
+                      {copyStudentResult.skipped > 0 && <p className="text-slate-500 font-medium">Bỏ qua {copyStudentResult.skipped} học sinh trùng mã số.</p>}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1.5 font-bold"><AlertCircle className="w-4 h-4 text-rose-600" /> Thất bại!</div>
+                      <p>{copyStudentResult.error}</p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-3 bg-white rounded-b-2xl">
-            <p className="text-xs text-slate-400">Học sinh trùng mã sẽ được bỏ qua tự động. Chỉ sao chép học sinh có lớp đích tương ứng.</p>
+            <p className="text-xs text-slate-400 font-medium">Chỉ cho phép sao chép khi đã chọn đầy đủ thông tin nguồn/đích và có ít nhất 1 học sinh được chọn.</p>
             <div className="flex gap-3">
               <button onClick={() => { setCopyStudentModal(false); setCopyStudentResult(null); }}
                 className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors">
@@ -1186,10 +1267,10 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               </button>
               {!copyStudentResult?.success && (
                 <button onClick={handleCopyStudentExecute}
-                  disabled={copyStudentPreview.filter((s: any) => !s.isDuplicate && s.hasTargetClass).length === 0 || copyStudentLoading}
+                  disabled={!copyStudentTargetClass || copyStudentSelectedIds.length === 0 || copyStudentLoading}
                   className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 rounded-xl transition-colors shadow-sm">
                   {copyStudentLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Copy className="w-4 h-4" />}
-                  Sao chép {copyStudentPreview.filter((s: any) => !s.isDuplicate && s.hasTargetClass).length} học sinh
+                  Sao chép {copyStudentSelectedIds.length} học sinh
                 </button>
               )}
             </div>

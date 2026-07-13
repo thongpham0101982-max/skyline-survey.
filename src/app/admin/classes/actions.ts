@@ -530,3 +530,86 @@ export async function copyTeachingAssignmentsAction(sourceYearId: string, target
     return { success: false, error: e.message, copied: 0, skipped: 0, errors: [] };
   }
 }
+
+export async function getClassesByYearAndCampusAction(academicYearId: string, campusId: string) {
+  try {
+    const classes = await prisma.class.findMany({
+      where: { academicYearId, campusId },
+      orderBy: { className: "asc" }
+    });
+    return { success: true, classes };
+  } catch (e: any) {
+    return { success: false, error: e.message, classes: [] };
+  }
+}
+
+export async function getStudentsByClassAction(classId: string) {
+  try {
+    const students = await prisma.student.findMany({
+      where: { classId, status: "ACTIVE" },
+      orderBy: { studentName: "asc" }
+    });
+    return { success: true, students };
+  } catch (e: any) {
+    return { success: false, error: e.message, students: [] };
+  }
+}
+
+export async function copyStudentsToTargetClassAction(
+  studentIds: string[],
+  targetClassId: string,
+  targetYearId: string
+) {
+  try {
+    const targetClass = await prisma.class.findUnique({
+      where: { id: targetClassId }
+    });
+    if (!targetClass) {
+      return { success: false, error: "Lớp đích không tồn tại" };
+    }
+
+    const students = await prisma.student.findMany({
+      where: { id: { in: studentIds } }
+    });
+
+    const targetStudents = await prisma.student.findMany({
+      where: { academicYearId: targetYearId },
+      select: { studentCode: true }
+    });
+    const targetCodeSet = new Set(targetStudents.map(s => s.studentCode));
+
+    let copied = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const s of students) {
+      if (targetCodeSet.has(s.studentCode)) {
+        skipped++;
+        continue;
+      }
+      try {
+        await prisma.student.create({
+          data: {
+            studentCode: s.studentCode,
+            studentName: s.studentName,
+            dateOfBirth: s.dateOfBirth || null,
+            gender: s.gender || null,
+            classId: targetClassId,
+            campusId: targetClass.campusId,
+            academicYearId: targetYearId,
+            status: "ACTIVE"
+          }
+        });
+        copied++;
+      } catch (e: any) {
+        errors.push(`${s.studentCode} (${s.studentName}): ${e.message}`);
+        skipped++;
+      }
+    }
+
+    revalidatePath("/admin/classes");
+    return { success: true, copied, skipped, errors };
+  } catch (e: any) {
+    return { success: false, error: e.message, copied: 0, skipped: 0, errors: [] };
+  }
+}
