@@ -44,6 +44,24 @@ export function StudentTransfersClient() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importing, setImporting] = useState(false)
   const [activeTab, setActiveTab] = useState<"OUT" | "IN" | "CHANGE_CLASS">("OUT")
+  const [yearId, setYearId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored) return stored;
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored && stored !== yearId) {
+        setYearId(stored);
+      }
+    };
+    window.addEventListener("academicYearChanged", handleYearChange);
+    return () => window.removeEventListener("academicYearChanged", handleYearChange);
+  }, [yearId]);
   const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
@@ -126,7 +144,8 @@ export function StudentTransfersClient() {
           return;
         }
 
-        const res = await importTransfersOutAction(data);
+        const storedYear = localStorage.getItem("selectedAcademicYear") || "";
+        const res = await importTransfersOutAction(data, storedYear);
         if (res.success) {
           let msg = `Đã import thành công ${res.imported} phiếu chuyển đi.`;
           if (res.skipped > 0) {
@@ -158,6 +177,10 @@ export function StudentTransfersClient() {
 
 
   const filteredTransfers = transfers.filter(t => {
+    const studentYear = t.student?.academicYearId || t.student?.class?.academicYearId;
+    if (yearId && studentYear && studentYear !== yearId) {
+      return false;
+    }
     const isPreschool = checkIsPreschoolStudent(t.student);
     return activeSubTab === "preschool" ? isPreschool : !isPreschool;
   });

@@ -652,7 +652,7 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
   }
 }
 
-export async function importTransfersOutAction(records: any[]) {
+export async function importTransfersOutAction(records: any[], selectedYearId?: string) {
   try {
     const session = await auth()
     const userId = (session?.user as any)?.id
@@ -672,7 +672,11 @@ export async function importTransfersOutAction(records: any[]) {
         }
 
         const student = await prisma.student.findFirst({
-          where: { studentCode, status: "ACTIVE" }
+          where: { 
+            studentCode, 
+            status: "ACTIVE",
+            ...(selectedYearId ? { academicYearId: selectedYearId } : {})
+          }
         })
 
         if (!student) {
