@@ -764,6 +764,11 @@ export async function importTransfersOutAction(records: any[], selectedYearId?: 
         }
 
         await prisma.$transaction(async (tx) => {
+          const destSchool = String(r.destinationSchool || r["Trường chuyển đến"] || "").trim();
+          const destType = String(r.destinationType || r["Loại hình"] || "").trim().toUpperCase();
+          const destProv = String(r.destinationProvince || r["Tỉnh/TP"] || "").trim();
+          const destCountry = String(r.destinationCountry || r["Quốc gia theo học"] || "").trim();
+
           await tx.studentTransfer.create({
             data: {
               studentId: student.id,
@@ -771,8 +776,10 @@ export async function importTransfersOutAction(records: any[], selectedYearId?: 
               transferDate,
               semester,
               transferCategory,
-              destinationSchool: transferCategory === "DOMESTIC" ? destination : null,
-              destinationCountry: transferCategory === "ABROAD" ? destination : null,
+              destinationSchool: transferCategory === "DOMESTIC" ? destSchool : null,
+              destinationType: transferCategory === "DOMESTIC" ? (["TƯ THỤC", "TU THUC", "PRIVATE"].includes(destType) ? "PRIVATE" : ["CÔNG LẬP", "CONG LAP", "PUBLIC"].includes(destType) ? "PUBLIC" : "OTHER") : null,
+              destinationProvince: transferCategory === "DOMESTIC" ? destProv : null,
+              destinationCountry: transferCategory === "ABROAD" ? destCountry : null,
               reserveStartDate,
               reserveEndDate,
               reason: reason || null,

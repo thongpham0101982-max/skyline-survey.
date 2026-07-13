@@ -84,20 +84,39 @@ export function StudentTransfersClient() {
         "Ngày chuyển": "15/07/2026",
         "Kỳ học": "HK1",
         "Diện chuyển": "DOMESTIC",
-        "Nơi đến": "Trường THPT Phan Châu Trinh",
-        "Lý do": "Chuyển nhà",
-        "Ngày bắt đầu bảo lưu": "",
-        "Ngày kết thúc bảo lưu": ""
+        "Trường chuyển đến": "Trường THPT Phan Châu Trinh",
+        "Loại hình": "PUBLIC",
+        "Tỉnh/TP": "Thành phố Đà Nẵng",
+        "Quốc gia theo học": "",
+        "Từ ngày": "",
+        "Đến ngày": "",
+        "Lý do": "Chuyển nhà"
       },
       {
         "Mã học sinh": "HS0002",
         "Ngày chuyển": "20/07/2026",
         "Kỳ học": "SUMMER",
+        "Diện chuyển": "ABROAD",
+        "Trường chuyển đến": "",
+        "Loại hình": "",
+        "Tỉnh/TP": "",
+        "Quốc gia theo học": "Singapore",
+        "Từ ngày": "",
+        "Đến ngày": "",
+        "Lý do": "Du học học bổng"
+      },
+      {
+        "Mã học sinh": "HS0003",
+        "Ngày chuyển": "25/07/2026",
+        "Kỳ học": "HK2",
         "Diện chuyển": "RESERVE",
-        "Nơi đến": "",
-        "Lý do": "Điều trị bệnh",
-        "Ngày bắt đầu bảo lưu": "01/08/2026",
-        "Ngày kết thúc bảo lưu": "31/12/2026"
+        "Trường chuyển đến": "",
+        "Loại hình": "",
+        "Tỉnh/TP": "",
+        "Quốc gia theo học": "",
+        "Từ ngày": "01/08/2026",
+        "Đến ngày": "31/12/2026",
+        "Lý do": "Bảo lưu điều trị bệnh"
       }
     ];
 
@@ -107,15 +126,18 @@ export function StudentTransfersClient() {
 
     // Add note sheet
     const notes = [
-      ["Cột", "Mô tả", "Giá trị hợp lệ"],
+      ["Cột", "Mô tả", "Giá trị hợp lệ / Ví dụ"],
       ["Mã học sinh", "Bắt buộc. Mã học sinh đang học tại trường.", "Ví dụ: HS0001"],
       ["Ngày chuyển", "Bắt buộc. Ngày học sinh chính thức chuyển.", "Định dạng dd/mm/yyyy"],
       ["Kỳ học", "Bắt buộc. Kỳ học chuyển đi.", "HK1, HK2, SUMMER"],
       ["Diện chuyển", "Bắt buộc. Diện chuyển đi.", "DOMESTIC (Chuyển trường VN), ABROAD (Du học), RESERVE (Bảo lưu)"],
-      ["Nơi đến", "Tên trường (đối với diện DOMESTIC) hoặc tên nước (đối với diện ABROAD).", ""],
-      ["Lý do", "Lý do chuyển đi (tự do).", ""],
-      ["Ngày bắt đầu bảo lưu", "Bắt buộc nếu Diện chuyển là RESERVE.", "Định dạng dd/mm/yyyy"],
-      ["Ngày kết thúc bảo lưu", "Bắt buộc nếu Diện chuyển là RESERVE.", "Định dạng dd/mm/yyyy"]
+      ["Trường chuyển đến", "Tên trường chuyển đến (chỉ dùng cho diện DOMESTIC).", "Ví dụ: Trường THPT Phan Châu Trinh"],
+      ["Loại hình", "Loại hình trường (chỉ dùng cho diện DOMESTIC).", "PRIVATE (Tư thục), PUBLIC (Công lập), OTHER (Khác)"],
+      ["Tỉnh/TP", "Tỉnh/Thành phố của trường đến (chỉ dùng cho diện DOMESTIC).", "Ví dụ: Thành phố Đà Nẵng"],
+      ["Quốc gia theo học", "Tên quốc gia du học (chỉ dùng cho diện ABROAD).", "Ví dụ: Singapore, Mỹ, Úc..."],
+      ["Từ ngày", "Ngày bắt đầu bảo lưu (bắt buộc cho diện RESERVE).", "Định dạng dd/mm/yyyy"],
+      ["Đến ngày", "Ngày kết thúc bảo lưu (bắt buộc cho diện RESERVE).", "Định dạng dd/mm/yyyy"],
+      ["Lý do", "Lý do chuyển đi (tự do).", "Ví dụ: Chuyển nhà, Học bổng..."]
     ];
     const wsNotes = XLSX.utils.aoa_to_sheet(notes);
     XLSX.utils.book_append_sheet(wb, wsNotes, "Huong_Dan");
@@ -266,10 +288,32 @@ export function StudentTransfersClient() {
            </div>
            
            {activeTab === "OUT" && (
-             <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20">
-               <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đi
-             </button>
-           )}
+              <div className="flex gap-2">
+                <button 
+                  onClick={handleDownloadTemplate} 
+                  className="px-4 py-2 bg-white text-slate-700 font-bold border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all flex items-center shadow-sm text-xs"
+                >
+                  Tải File Mẫu
+                </button>
+                <button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={importing}
+                  className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs disabled:opacity-50"
+                >
+                  {importing ? <Loader2 className="w-4 h-4 animate-spin mr-1"/> : null} Import File Excel
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImportExcel} 
+                  accept=".xlsx, .xls" 
+                  className="hidden" 
+                />
+                <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20 text-xs">
+                  <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đi
+                </button>
+              </div>
+            )}
 
            {activeTab === "CHANGE_CLASS" && (
              <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20">
