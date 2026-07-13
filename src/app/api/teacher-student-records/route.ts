@@ -54,7 +54,7 @@ export async function GET(req: Request) {
         const allSubjects = await prisma.subject.findMany()
         subjectIds = allSubjects
           .filter(s => {
-            const name = (s.name || "").toLowerCase()
+            const name = (s.subjectName || s.name || "").toLowerCase()
             return name.includes("hướng nghiệp") || name.includes("huong nghiep")
           })
           .map(s => s.id)
