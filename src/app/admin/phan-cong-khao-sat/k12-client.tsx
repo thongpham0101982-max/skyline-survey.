@@ -170,8 +170,9 @@ export function PhanCongK12Client({
   const [asNotifyingAll, setAsNotifyingAll] = useState(false)
 
   // ─── Student stats state ───
-  const [studentStats, setStudentStats] = useState<Record<string, number>>({})
+  const [studentStats, setStudentStats] = useState<Record<string, any[]>>({})
   const [statsLoading, setStatsLoading] = useState(false)
+  const [expandedGrades, setExpandedGrades] = useState<Record<string, boolean>>({})
 
   const fetchStudentStats = useCallback(async () => {
     if (!asPeriodId) {
@@ -185,12 +186,13 @@ export function PhanCongK12Client({
       const res = await fetch(url)
       if (res.ok) {
         const students = await res.json()
-        const counts = {}
+        const grouped = {}
         students.forEach((s) => {
           const g = s.grade || "Chưa xác định"
-          counts[g] = (counts[g] || 0) + 1
+          if (!grouped[g]) grouped[g] = []
+          grouped[g].push(s)
         })
-        setStudentStats(counts)
+        setStudentStats(grouped)
       } else {
         setStudentStats({})
       }
@@ -418,7 +420,7 @@ export function PhanCongK12Client({
                         <div className="flex items-center gap-2">
                           {statsLoading && <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />}
                           <span className="text-xs font-bold text-slate-500">
-                            Tổng: {Object.values(studentStats).reduce((a, b) => a + b, 0)} HS
+                            Tổng: {Object.values(studentStats).reduce((a, b) => a + b.length, 0)} HS
                           </span>
                         </div>
                       </div>
@@ -427,15 +429,34 @@ export function PhanCongK12Client({
                           {statsLoading ? "Đang tải dữ liệu..." : "Không có học sinh trong đợt khảo sát này"}
                         </div>
                       ) : (
-                        <div className="grid grid-cols-2 gap-2">
-                          {Object.entries(studentStats).map(([grade, count]) => (
-                            <div key={grade} className="flex items-center justify-between bg-white border border-slate-200/50 px-3.5 py-2.5 rounded-xl text-xs shadow-sm">
-                              <span className="font-bold text-slate-700 truncate mr-2" title={grade}>Khối {grade}</span>
-                              <span className="text-xs font-extrabold text-[#00A99D] flex-shrink-0">
-                                {count} HS
-                              </span>
-                            </div>
-                          ))}
+                        <div className="space-y-2">
+                          {Object.entries(studentStats).map(([grade, studentsList]) => {
+                            const isExpanded = !!expandedGrades[grade];
+                            return (
+                              <div key={grade} className="border border-slate-200/60 rounded-xl overflow-hidden shadow-sm bg-white">
+                                <div 
+                                  onClick={() => setExpandedGrades(prev => ({ ...prev, [grade]: !prev[grade] }))}
+                                  className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors text-xs"
+                                >
+                                  <span className="font-bold text-slate-700">Khối {grade}</span>
+                                  <div className="flex items-center gap-1.5 font-extrabold text-[#00A99D]">
+                                    <span>{studentsList.length} HS</span>
+                                    <span className="text-slate-400 font-bold text-[10px]">{isExpanded ? "▲" : "▼"}</span>
+                                  </div>
+                                </div>
+                                {isExpanded && (
+                                  <div className="border-t border-slate-100 bg-slate-50/50 p-2.5 max-h-[160px] overflow-y-auto divide-y divide-slate-100/60 text-[11px] animate-in slide-in-from-top-2 duration-200">
+                                    {studentsList.map((student: any) => (
+                                      <div key={student.id} className="flex justify-between items-center py-1.5 px-1 hover:bg-white rounded transition-colors">
+                                        <span className="font-semibold text-slate-700">{student.fullName}</span>
+                                        <span className="text-slate-400 font-mono">{student.studentCode}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
