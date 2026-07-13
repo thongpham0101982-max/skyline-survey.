@@ -47,7 +47,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
   }
 
   const handleDelete = async (id, name) => {
-    if (!confirm("Xóa năm học \"" + name + "\"? Tài khoản GV/PHHS sẽ bị mất liên kết.")) return
+    if (!confirm("Xóa năm học \"" + name + "\"? Tài khoản GV/Học sinh sẽ bị mất liên kết.")) return
     try { await deleteAction(id); setYears(years.filter(y => y.id !== id)) } catch(e) {}
   }
 
@@ -83,7 +83,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
     <div className="space-y-4">
       <div className="text-sm text-amber-700 font-medium text-xs font-semibold">
         <Star className="inline w-4 h-4 mr-1.5 text-amber-500" />
-        Năm học <strong>ACTIVE</strong> sẽ được dùng làm mặc định khi tạo tài khoản GV/PHHS mới.
+        Năm học <strong>ACTIVE</strong> sẽ được dùng làm mặc định khi tạo tài khoản GV/Học sinh mới.
         Click <strong>&quot;Đặt Active&quot;</strong> để thay đổi năm học hiện tại.
       </div>
 
@@ -142,7 +142,7 @@ export function AcademicYearsClient({ initialYears, updateAction, deleteAction, 
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold"><Users className="w-3.5 h-3.5 text-blue-600" /></div>
-                        <span className="font-bold text-slate-800">{y.parentCount ?? 0}</span><span className="text-slate-400 text-xs">PHHS</span>
+                        <span className="font-bold text-slate-800">{y._count?.students ?? 0}</span><span className="text-slate-400 text-xs">HS</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <div className="w-7 h-7 flex items-center justify-center text-xs font-semibold"><BookOpen className="w-3.5 h-3.5 text-emerald-600" /></div>
