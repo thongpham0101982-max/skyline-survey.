@@ -164,13 +164,43 @@ export default async function AcademicYearsPage() {
     }
   })
 
-  const teacherCounts = [] as { academicYearId: string, cnt: bigint }[]
-  const parentCounts = [] as { academicYearId: string, cnt: bigint }[]
-
-  const yearsWithCounts = years.map(y => ({
-    ...y,
-    teacherCount: Number(teacherCounts.find(r => r.academicYearId === y.id)?.cnt ?? 0),
-    parentCount: Number(parentCounts.find(r => r.academicYearId === y.id)?.cnt ?? 0),
+  const yearsWithCounts = await Promise.all(years.map(async (y) => {
+    const classes = await prisma.class.findMany({
+      where: { academicYearId: y.id },
+      select: { id: true, homeroomTeacherId: true }
+    })
+    
+    const classIds = classes.map(c => c.id)
+    const teacherIds = new Set()
+    
+    classes.forEach(c => {
+      if (c.homeroomTeacherId) {
+        c.homeroomTeacherId.split(',').forEach(id => {
+          const tid = id.trim()
+          if (tid) teacherIds.add(tid)
+        })
+      }
+    })
+    
+    if (classIds.length > 0) {
+      const tcas = await prisma.teacherClassAssignment.findMany({
+        where: { classId: { in: classIds } },
+        select: { teacherId: true }
+      })
+      tcas.forEach(t => teacherIds.add(t.teacherId))
+    }
+    
+    const tas = await prisma.teachingAssignment.findMany({
+      where: { academicYearId: y.id },
+      select: { teacherId: true }
+    })
+    tas.forEach(t => teacherIds.add(t.teacherId))
+    
+    return {
+      ...y,
+      teacherCount: teacherIds.size,
+      parentCount: 0
+    }
   }))
 
   return (
