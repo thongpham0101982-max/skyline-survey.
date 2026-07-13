@@ -10,8 +10,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
     if (!teacher) return NextResponse.json({ error: 'Only teachers can edit results' }, { status: 403 });
 
-    const params = await params;
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
     const activity = await prisma.activityRecord.findUnique({ where: { id: id } });
 
     if (!activity) return NextResponse.json({ error: 'Not found' }, { status: 404 });
