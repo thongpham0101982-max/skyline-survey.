@@ -18,7 +18,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
 
   // Form states for new assignment
   const [newSubj, setNewSubj] = useState("")
-  const [newClass, setNewClass] = useState("")
+  const [newClasses, setNewClasses] = useState([])
   const [hk1, setHk1] = useState(true)
   const [hk2, setHk2] = useState(true)
   const [selectedLevel, setSelectedLevel] = useState("")
@@ -59,7 +59,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
   }, [classes, selectedYear, selectedLevel, selectedGrade])
 
   const handleAdd = async () => {
-    if (!selectedTeacherId || !newSubj || !newClass || (!hk1 && !hk2)) return alert("Vui lòng chọn đủ thông tin môn, lớp và ít nhất 1 học kỳ!")
+    if (!selectedTeacherId || !newSubj || newClasses.length === 0 || (!hk1 && !hk2)) return alert("Vui lòng chọn đủ thông tin môn, lớp và ít nhất 1 học kỳ!")
     setLoading(true)
     const semesters = []
     if (hk1) semesters.push(1)
@@ -67,7 +67,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
     
     const res = await saveAssignment({
       teacherId: selectedTeacherId,
-      classId: newClass,
+      classIds: newClasses,
       subjectId: newSubj,
       academicYearId: selectedYear,
       semesters
@@ -75,10 +75,10 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
 
     if (res.success) {
       setAssignments([...assignments.filter((a:any) => 
-        !(a.teacherId === selectedTeacherId && a.classId === newClass && a.subjectId === newSubj && a.academicYearId === selectedYear)
+        !(a.teacherId === selectedTeacherId && newClasses.includes(a.classId) && a.subjectId === newSubj && a.academicYearId === selectedYear)
       ), ...res.added])
       setNewSubj("")
-      setNewClass("")
+      setNewClasses([])
     } else {
       alert("Lỗi: " + res.error)
     }
@@ -130,7 +130,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
               <option value="">Tất cả Tổ chuyên môn</option>
               {(departments || []).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-            <select value={selectedYear} onChange={e=>{ setSelectedYear(e.target.value); setSelectedLevel(""); setSelectedGrade(""); setNewClass(""); }} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
+            <select value={selectedYear} onChange={e=>{ setSelectedYear(e.target.value); setSelectedLevel(""); setSelectedGrade(""); setNewClasses([]); }} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
               {years.filter((y: any) => !y.isOff).map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
             </select>
           </div>
@@ -180,19 +180,62 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                   {subjects.map((s:any) => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
                 </select>
                 <div className="grid grid-cols-2 gap-2">
-                  <select value={selectedLevel} onChange={e=>{ setSelectedLevel(e.target.value); setNewClass(""); }} className="w-full p-2 border rounded-lg text-sm bg-white">
+                  <select value={selectedLevel} onChange={e=>{ setSelectedLevel(e.target.value); setNewClasses([]); }} className="w-full p-2 border rounded-lg text-sm bg-white">
                     <option value="">Tất cả Bậc học</option>
                     {levels.map((l: any) => <option key={l} value={l}>{l}</option>)}
                   </select>
-                  <select value={selectedGrade} onChange={e=>{ setSelectedGrade(e.target.value); setNewClass(""); }} className="w-full p-2 border rounded-lg text-sm bg-white">
+                  <select value={selectedGrade} onChange={e=>{ setSelectedGrade(e.target.value); setNewClasses([]); }} className="w-full p-2 border rounded-lg text-sm bg-white">
                     <option value="">Tất cả Khối</option>
                     {grades.map((g: any) => <option key={g} value={g}>Khối {g}</option>)}
                   </select>
                 </div>
-                <select value={newClass} onChange={e=>setNewClass(e.target.value)} className="w-full p-2 border rounded-lg text-sm">
-                  <option value="">-- Chọn Lớp học ({filteredClasses.length}) --</option>
-                  {filteredClasses.map((c:any) => <option key={c.id} value={c.id}>{c.className}</option>)}
-                </select>
+
+                <div className="space-y-2 border border-slate-200 rounded-lg p-2.5 max-h-[160px] overflow-y-auto bg-slate-50">
+                  <div className="font-bold text-slate-700 mb-1.5 text-[11px] flex justify-between items-center">
+                    <span>Lớp học ({filteredClasses.length})</span>
+                    {filteredClasses.length > 0 && (
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          if (newClasses.length === filteredClasses.length) {
+                            setNewClasses([])
+                          } else {
+                            setNewClasses(filteredClasses.map((c: any) => c.id))
+                          }
+                        }}
+                        className="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold"
+                      >
+                        {newClasses.length === filteredClasses.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                      </button>
+                    )}
+                  </div>
+                  {filteredClasses.length === 0 ? (
+                    <div className="text-slate-400 text-center py-4 italic text-xs">Không có lớp phù hợp</div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2">
+                      {filteredClasses.map((c: any) => {
+                        const isChecked = newClasses.includes(c.id);
+                        return (
+                          <label key={c.id} className={`flex items-center gap-1.5 p-1.5 rounded-lg border cursor-pointer text-xs transition-all ${isChecked ? 'bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] font-bold' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              onChange={() => {
+                                if (isChecked) {
+                                  setNewClasses(newClasses.filter(id => id !== c.id))
+                                } else {
+                                  setNewClasses([...newClasses, c.id])
+                                }
+                              }}
+                              className="w-3.5 h-3.5 text-[#00A99D] rounded border-slate-300 focus:ring-[#00A99D]"
+                            />
+                            <span className="truncate">{c.className}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
                     <input type="checkbox" checked={hk1} onChange={e=>setHk1(e.target.checked)} className="w-4 h-4 rounded text-[#00A99D]"/> Học kỳ 1
