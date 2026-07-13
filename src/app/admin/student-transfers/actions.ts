@@ -309,7 +309,7 @@ export async function createTransferInAction(data: any) {
       if (!studentCode) {
         throw new Error("Mã học sinh không được để trống!");
       }
-      const existing = await tx.student.findUnique({
+      const existing = await tx.student.findFirst({
         where: { studentCode }
       });
       if (existing) {
@@ -652,4 +652,146 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
   }
 }
 
+export async function importTransfersOutAction(records: any[]) {
+  try {
+    const session = await auth()
+    const userId = (session?.user as any)?.id
+    if (!userId) return { success: false, error: "Unauthorized" }
 
+    let imported = 0
+    let skipped = 0
+    const errors = []
+
+    for (const r of records) {
+      try {
+        const studentCode = String(r.studentCode || r["Mã học sinh"] || "").trim().toUpperCase()
+        if (!studentCode) {
+          skipped++
+          errors.push("Dòng trống hoặc thiếu Mã học sinh")
+          continue
+        }
+
+        const student = await prisma.student.findFirst({
+          where: { studentCode, status: "ACTIVE" }
+        })
+
+        if (!student) {
+          skipped++
+          errors.push(`Học sinh mã ${studentCode} không tồn tại hoặc không ở trạng thái ACTIVE`)
+          continue
+        }
+
+        const rawDate = r.transferDate || r["Ngày chuyển"]
+        if (!rawDate) {
+          skipped++
+          errors.push(`Học sinh mã ${studentCode} thiếu Ngày chuyển`)
+          continue
+        }
+
+        let transferDate = null
+        if (typeof rawDate === "number") {
+          // Excel date number
+          transferDate = new Date((rawDate - 25569) * 86400 * 1000)
+        } else {
+          // Parse string date dd/mm/yyyy or yyyy-mm-dd
+          const str = String(rawDate).trim()
+          if (str.includes("/")) {
+            const parts = str.split("/")
+            transferDate = new Date(parts[2], parts[1] - 1, parts[0])
+          } else {
+            transferDate = new Date(str)
+          }
+        }
+
+        if (!transferDate || isNaN(transferDate.getTime())) {
+          skipped++
+          errors.push(`Học sinh mã ${studentCode} có Ngày chuyển không hợp lệ: ${rawDate}`)
+          continue
+        }
+
+        const rawSemester = String(r.semester || r["Kỳ học"] || "").trim().toUpperCase()
+        let semester = null
+        if (["HK1", "HỌC KỲ 1", "HỌC KY 1"].includes(rawSemester)) semester = "HK1"
+        else if (["HK2", "HỌC KỲ 2", "HỌC KY 2"].includes(rawSemester)) semester = "HK2"
+        else if (["SUMMER", "TRONG HÈ", "TRONG HE"].includes(rawSemester)) semester = "SUMMER"
+
+        if (!semester) {
+          skipped++
+          errors.push(`Học sinh mã ${studentCode} có Kỳ học không hợp lệ ("${rawSemester}"). Phải là HK1, HK2 hoặc SUMMER`)
+          continue
+        }
+
+        const rawCategory = String(r.transferCategory || r["Diện chuyển"] || "").trim().toUpperCase()
+        let transferCategory = ""
+        if (["DOMESTIC", "CHUYỂN TRƯỜNG VN", "CHUYEN TRUONG VN"].includes(rawCategory)) transferCategory = "DOMESTIC"
+        else if (["ABROAD", "DU HỌC", "DU HOC"].includes(rawCategory)) transferCategory = "ABROAD"
+        else if (["RESERVE", "BẢO LƯU", "BAO LUU"].includes(rawCategory)) transferCategory = "RESERVE"
+
+        if (!transferCategory) {
+          skipped++
+          errors.push(`Học sinh mã ${studentCode} có Diện chuyển không hợp lệ ("${rawCategory}"). Phải là DOMESTIC, ABROAD hoặc RESERVE`)
+          continue
+        }
+
+        const destination = String(r.destination || r["Nơi đến"] || "").trim()
+        const reason = String(r.reason || r["Lý do"] || "").trim()
+
+        let reserveStartDate = null
+        let reserveEndDate = null
+        if (transferCategory === "RESERVE") {
+          const rawStart = r.reserveStartDate || r["Ngày bắt đầu bảo lưu"]
+          const rawEnd = r.reserveEndDate || r["Ngày kết thúc bảo lưu"]
+          
+          if (rawStart) {
+            if (typeof rawStart === "number") reserveStartDate = new Date((rawStart - 25569) * 86400 * 1000)
+            else {
+              const str = String(rawStart).trim()
+              reserveStartDate = str.includes("/") ? new Date(str.split("/")[2], str.split("/")[1] - 1, str.split("/")[0]) : new Date(str)
+            }
+          }
+
+          if (rawEnd) {
+            if (typeof rawEnd === "number") reserveEndDate = new Date((rawEnd - 25569) * 86400 * 1000)
+            else {
+              const str = String(rawEnd).trim()
+              reserveEndDate = str.includes("/") ? new Date(str.split("/")[2], str.split("/")[1] - 1, str.split("/")[0]) : new Date(str)
+            }
+          }
+        }
+
+        await prisma.$transaction(async (tx) => {
+          await tx.studentTransfer.create({
+            data: {
+              studentId: student.id,
+              type: "OUT",
+              transferDate,
+              semester,
+              transferCategory,
+              destinationSchool: transferCategory === "DOMESTIC" ? destination : null,
+              destinationCountry: transferCategory === "ABROAD" ? destination : null,
+              reserveStartDate,
+              reserveEndDate,
+              reason: reason || null,
+              createdById: userId,
+            }
+          })
+
+          await tx.student.update({
+            where: { id: student.id },
+            data: { status: "TRANSFERRED_OUT" }
+          })
+        })
+
+        imported++
+      } catch (e: any) {
+        skipped++
+        errors.push(`Mã học sinh ${r.studentCode || ""}: ${e.message}`)
+      }
+    }
+
+    revalidatePath("/admin/student-transfers")
+    return { success: true, imported, skipped, errors }
+  } catch (e: any) {
+    return { success: false, error: e.message, imported: 0, skipped: 0, errors: [] }
+  }
+}

@@ -1,11 +1,15 @@
 "use client"
-import { useState, useEffect } from "react"
+import * as XLSX from "xlsx"
+import { useRef } from "react"
+import { useState, useEffect } from "react" 
+// import useRef added above
 import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby } from "lucide-react"
 import { 
   getTransferFormOptionsAction, 
   getClassesByCampusAndYearAction, 
   getStudentsByClassAction, 
   createTransferOutAction, 
+  importTransfersOutAction,
   getTransfersAction, 
   createChangeClassAction, 
   updateTransferInAction, 
@@ -37,6 +41,8 @@ const checkIsPreschoolStudent = (student: any) => {
 };
 
 export function StudentTransfersClient() {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [importing, setImporting] = useState(false)
   const [activeTab, setActiveTab] = useState<"OUT" | "IN" | "CHANGE_CLASS">("OUT")
   const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
   const [showOutModal, setShowOutModal] = useState(false)
@@ -52,6 +58,94 @@ export function StudentTransfersClient() {
   useEffect(() => {
     loadTransfers()
   }, [])
+
+  const handleDownloadTemplate = () => {
+    const data = [
+      {
+        "Mã học sinh": "HS0001",
+        "Ngày chuyển": "15/07/2026",
+        "Kỳ học": "HK1",
+        "Diện chuyển": "DOMESTIC",
+        "Nơi đến": "Trường THPT Phan Châu Trinh",
+        "Lý do": "Chuyển nhà",
+        "Ngày bắt đầu bảo lưu": "",
+        "Ngày kết thúc bảo lưu": ""
+      },
+      {
+        "Mã học sinh": "HS0002",
+        "Ngày chuyển": "20/07/2026",
+        "Kỳ học": "SUMMER",
+        "Diện chuyển": "RESERVE",
+        "Nơi đến": "",
+        "Lý do": "Điều trị bệnh",
+        "Ngày bắt đầu bảo lưu": "01/08/2026",
+        "Ngày kết thúc bảo lưu": "31/12/2026"
+      }
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Mau_Import_Chuyen_Di");
+
+    // Add note sheet
+    const notes = [
+      ["Cột", "Mô tả", "Giá trị hợp lệ"],
+      ["Mã học sinh", "Bắt buộc. Mã học sinh đang học tại trường.", "Ví dụ: HS0001"],
+      ["Ngày chuyển", "Bắt buộc. Ngày học sinh chính thức chuyển.", "Định dạng dd/mm/yyyy"],
+      ["Kỳ học", "Bắt buộc. Kỳ học chuyển đi.", "HK1, HK2, SUMMER"],
+      ["Diện chuyển", "Bắt buộc. Diện chuyển đi.", "DOMESTIC (Chuyển trường VN), ABROAD (Du học), RESERVE (Bảo lưu)"],
+      ["Nơi đến", "Tên trường (đối với diện DOMESTIC) hoặc tên nước (đối với diện ABROAD).", ""],
+      ["Lý do", "Lý do chuyển đi (tự do).", ""],
+      ["Ngày bắt đầu bảo lưu", "Bắt buộc nếu Diện chuyển là RESERVE.", "Định dạng dd/mm/yyyy"],
+      ["Ngày kết thúc bảo lưu", "Bắt buộc nếu Diện chuyển là RESERVE.", "Định dạng dd/mm/yyyy"]
+    ];
+    const wsNotes = XLSX.utils.aoa_to_sheet(notes);
+    XLSX.utils.book_append_sheet(wb, wsNotes, "Huong_Dan");
+
+    XLSX.writeFile(wb, "Form_Mau_Import_Chuyen_Di.xlsx");
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        setImporting(true);
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        if (data.length === 0) {
+          alert("File Excel trống hoặc không đúng định dạng!");
+          setImporting(false);
+          return;
+        }
+
+        const res = await importTransfersOutAction(data);
+        if (res.success) {
+          let msg = `Đã import thành công ${res.imported} phiếu chuyển đi.`;
+          if (res.skipped > 0) {
+            msg += `\nBỏ qua ${res.skipped} dòng lỗi. Chi tiết:\n${res.errors.join("\n")}`;
+          }
+          alert(msg);
+          loadTransfers();
+        } else {
+          alert("Lỗi import: " + res.error);
+        }
+      } catch (err: any) {
+        alert("Lỗi đọc file: " + err.message);
+      } finally {
+        setImporting(false);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
 
   async function loadTransfers() {
     setLoadingList(true)
