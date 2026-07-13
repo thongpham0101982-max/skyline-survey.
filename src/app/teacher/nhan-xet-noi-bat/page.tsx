@@ -5,6 +5,24 @@ import { MessageSquare, Loader2, Save, Plus, Trash2, Edit2, User, CheckCircle2 }
 
 export default function TeacherHighlightCommentsPage() {
   const [students, setStudents] = useState<any[]>([])
+  const [yearId, setYearId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored) return stored;
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored && stored !== yearId) {
+        setYearId(stored);
+      }
+    };
+    window.addEventListener("academicYearChanged", handleYearChange);
+    return () => window.removeEventListener("academicYearChanged", handleYearChange);
+  }, [yearId]);
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   
@@ -25,15 +43,17 @@ export default function TeacherHighlightCommentsPage() {
   const [apiError, setApiError] = useState("")
 
   useEffect(() => {
+    if (!yearId) return
     async function loadHomeroomStudents() {
       try {
         setLoadingStudents(true)
-        const res = await fetch("/api/teacher-student-records?action=getHomeroomStudents")
+        const res = await fetch(`/api/teacher-student-records?action=getHomeroomStudents&academicYearId=${yearId}`)
         if (res.ok) {
           const data = await res.json()
           setStudents(data)
           if (data.length > 0) {
             setSelectedStudentId(data[0].id)
+            setIsNotGVCN(false)
           } else {
             const gvcnCheckRes = await fetch("/api/teacher-student-records?action=checkGVCN")
             if (gvcnCheckRes.ok) {
@@ -63,7 +83,7 @@ export default function TeacherHighlightCommentsPage() {
       }
     }
     loadHomeroomStudents()
-  }, [])
+  }, [yearId])
 
   useEffect(() => {
     if (!selectedStudentId) {

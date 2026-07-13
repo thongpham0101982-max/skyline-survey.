@@ -20,13 +20,16 @@ export async function GET(req: Request) {
     }
 
     if (action === "getHomeroomStudents") {
-      // Find classes where teacher is GVCN
+      const academicYearId = searchParams.get("academicYearId")
+
+      // Find classes where teacher is GVCN in the given academic year
       const classes = await prisma.class.findMany({
         where: {
           OR: [
             { homeroomTeacherId: teacher.id },
             { homeroomTeacherId: { contains: teacher.id } }
-          ]
+          ],
+          ...(academicYearId ? { academicYearId } : {})
         },
         include: {
           students: {
