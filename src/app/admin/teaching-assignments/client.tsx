@@ -21,9 +21,42 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
   const [newClass, setNewClass] = useState("")
   const [hk1, setHk1] = useState(true)
   const [hk2, setHk2] = useState(true)
+  const [selectedLevel, setSelectedLevel] = useState("")
+  const [selectedGrade, setSelectedGrade] = useState("")
 
-  // Filter classes by year
-  const yearClasses = classes.filter((c:any) => c.academicYearId === selectedYear)
+  // Extract levels and grades for the selected year
+  const levels = useMemo(() => {
+    const set = new Set()
+    classes.filter((c: any) => c.academicYearId === selectedYear).forEach((c: any) => {
+      if (c.level) set.add(c.level.trim())
+    })
+    return Array.from(set).sort()
+  }, [classes, selectedYear])
+
+  const grades = useMemo(() => {
+    const set = new Set()
+    classes.filter((c: any) => c.academicYearId === selectedYear).forEach((c: any) => {
+      if (c.grade) set.add(c.grade.trim())
+    })
+    return Array.from(set).sort((a, b) => {
+      const na = parseInt(a, 10)
+      const nb = parseInt(b, 10)
+      if (!isNaN(na) && !isNaN(nb)) return na - nb
+      return String(a).localeCompare(String(b))
+    })
+  }, [classes, selectedYear])
+
+  // Filter classes by year, level and grade
+  const filteredClasses = useMemo(() => {
+    let list = classes.filter((c: any) => c.academicYearId === selectedYear)
+    if (selectedLevel) {
+      list = list.filter((c: any) => (c.level || "").toLowerCase().trim() === selectedLevel.toLowerCase().trim())
+    }
+    if (selectedGrade) {
+      list = list.filter((c: any) => (c.grade || "").toLowerCase().trim() === selectedGrade.toLowerCase().trim())
+    }
+    return list
+  }, [classes, selectedYear, selectedLevel, selectedGrade])
 
   const handleAdd = async () => {
     if (!selectedTeacherId || !newSubj || !newClass || (!hk1 && !hk2)) return alert("Vui lòng chọn đủ thông tin môn, lớp và ít nhất 1 học kỳ!")
@@ -97,7 +130,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
               <option value="">Tất cả Tổ chuyên môn</option>
               {(departments || []).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
-            <select value={selectedYear} onChange={e=>setSelectedYear(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
+            <select value={selectedYear} onChange={e=>{ setSelectedYear(e.target.value); setSelectedLevel(""); setSelectedGrade(""); setNewClass(""); }} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
               {years.filter((y: any) => !y.isOff).map((y:any) => <option key={y.id} value={y.id}>{y.name}</option>)}
             </select>
           </div>
@@ -146,9 +179,19 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                   <option value="">-- Chọn Môn học --</option>
                   {subjects.map((s:any) => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
                 </select>
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={selectedLevel} onChange={e=>{ setSelectedLevel(e.target.value); setNewClass(""); }} className="w-full p-2 border rounded-lg text-sm bg-white">
+                    <option value="">Tất cả Bậc học</option>
+                    {levels.map((l: any) => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                  <select value={selectedGrade} onChange={e=>{ setSelectedGrade(e.target.value); setNewClass(""); }} className="w-full p-2 border rounded-lg text-sm bg-white">
+                    <option value="">Tất cả Khối</option>
+                    {grades.map((g: any) => <option key={g} value={g}>Khối {g}</option>)}
+                  </select>
+                </div>
                 <select value={newClass} onChange={e=>setNewClass(e.target.value)} className="w-full p-2 border rounded-lg text-sm">
-                  <option value="">-- Chọn Lớp học --</option>
-                  {yearClasses.map((c:any) => <option key={c.id} value={c.id}>{c.className}</option>)}
+                  <option value="">-- Chọn Lớp học ({filteredClasses.length}) --</option>
+                  {filteredClasses.map((c:any) => <option key={c.id} value={c.id}>{c.className}</option>)}
                 </select>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
