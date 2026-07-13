@@ -172,7 +172,7 @@ model TeacherClassAssignment {
 
 model Student {
   id                   String                      @id @default(cuid())
-  studentCode          String                      @unique
+  studentCode          String
   studentName          String
   //  userId         String?             @unique
   classId              String
@@ -199,6 +199,7 @@ model Student {
   @@index([classId])
   @@index([campusId])
   @@index([academicYearId])
+  @@unique([studentCode, academicYearId])
 }
 
 model ParentStudentLink {
