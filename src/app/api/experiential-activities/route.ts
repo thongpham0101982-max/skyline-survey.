@@ -24,6 +24,7 @@ export async function GET(req: Request) {
       code: act.code || '',
       name: act.name || act.catalog.name,
       catalogName: act.catalog.name,
+      academicYearId: act.academicYearId,
       date: act.date.toISOString().split('T')[0],
       location: act.locationId || 'Không rõ',
       status: act.status,

@@ -9,6 +9,7 @@ export default function ExperientialActivitiesList() {
   const [search, setSearch] = useState('');
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYearId, setSelectedYearId] = useState<string | null>(null);
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -28,6 +29,20 @@ export default function ExperientialActivitiesList() {
   };
 
   useEffect(() => {
+    const getYear = () => {
+      const match = document.cookie.match(/(?:^|; )selectedAcademicYear=([^;]*)/);
+      return match ? decodeURIComponent(match[1]) : localStorage.getItem("selectedAcademicYear");
+    };
+    setSelectedYearId(getYear());
+
+    const handleYearChange = () => {
+      setSelectedYearId(getYear());
+    };
+    window.addEventListener("academicYearChanged", handleYearChange);
+    return () => window.removeEventListener("academicYearChanged", handleYearChange);
+  }, []);
+
+  useEffect(() => {
     fetch('/api/experiential-activities')
       .then(res => res.json())
       .then(data => {
@@ -37,11 +52,13 @@ export default function ExperientialActivitiesList() {
       .catch(() => setLoading(false));
   }, []);
 
-  const filtered = activities.filter(a =>
-    (a.name || '').toLowerCase().includes(search.toLowerCase()) ||
-    (a.code || '').toLowerCase().includes(search.toLowerCase()) ||
-    (a.catalogName || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = activities.filter(a => {
+    const matchesSearch = (a.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (a.code || '').toLowerCase().includes(search.toLowerCase()) ||
+      (a.catalogName || '').toLowerCase().includes(search.toLowerCase());
+    const matchesYear = selectedYearId ? a.academicYearId === selectedYearId : true;
+    return matchesSearch && matchesYear;
+  });
 
   const getStatusBadge = (status: string) => {
     if (status === 'SUBMITTED') return { label: 'Đã nhập kết quả', cls: 'bg-emerald-50 text-emerald-600 border border-emerald-200' };
