@@ -5,6 +5,24 @@ import { BookOpen, Loader2, Save, Plus, Trash2, Edit2, User, CheckCircle2 } from
 
 export default function TeacherProjectsPage() {
   const [classes, setClasses] = useState<any[]>([])
+  const [yearId, setYearId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored) return stored;
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    const handleYearChange = () => {
+      const stored = localStorage.getItem("selectedAcademicYear");
+      if (stored && stored !== yearId) {
+        setYearId(stored);
+      }
+    };
+    window.addEventListener("academicYearChanged", handleYearChange);
+    return () => window.removeEventListener("academicYearChanged", handleYearChange);
+  }, [yearId]);
   const [students, setStudents] = useState<any[]>([])
   const [selectedClassId, setSelectedClassId] = useState("")
   const [selectedStudentId, setSelectedStudentId] = useState("")
@@ -28,15 +46,19 @@ export default function TeacherProjectsPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   useEffect(() => {
+    if (!yearId) return
     async function loadClasses() {
       try {
         setLoadingClasses(true)
-        const res = await fetch("/api/teacher-student-records?action=getAssignedClasses")
+        const res = await fetch(`/api/teacher-student-records?action=getAssignedClasses&academicYearId=${yearId}`)
         if (res.ok) {
           const data = await res.json()
           setClasses(data)
           if (data.length > 0) {
             setSelectedClassId(data[0].id)
+          } else {
+            setSelectedClassId("")
+            setStudents([])
           }
         }
       } catch (err) {
@@ -46,7 +68,7 @@ export default function TeacherProjectsPage() {
       }
     }
     loadClasses()
-  }, [])
+  }, [yearId])
 
   useEffect(() => {
     if (!selectedClassId) return

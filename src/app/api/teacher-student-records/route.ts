@@ -48,43 +48,52 @@ export async function GET(req: Request) {
       const subject = searchParams.get("subject")
       const academicYearId = searchParams.get("academicYearId")
 
+      // Find all matching subject IDs if we are targeting a specific subject
+      let subjectIds: string[] | undefined = undefined;
       if (subject === "orientation") {
         const allSubjects = await prisma.subject.findMany()
-        const hnIds = allSubjects
+        subjectIds = allSubjects
           .filter(s => {
             const name = (s.name || "").toLowerCase()
             return name.includes("hướng nghiệp") || name.includes("huong nghiep")
           })
           .map(s => s.id)
-
-        const assignments = await prisma.teachingAssignment.findMany({
-          where: {
-            teacherId: teacher.id,
-            subjectId: { in: hnIds },
-            ...(academicYearId ? { academicYearId } : {})
-          },
-          select: { classId: true }
-        })
-
-        const classIds = assignments.map(a => a.classId)
-        const classes = await prisma.class.findMany({
-          where: { id: { in: classIds } },
-          orderBy: { className: "asc" }
-        })
-        return NextResponse.json(classes)
-      } else {
-        const classes = await prisma.class.findMany({
-          where: {
-            OR: [
-              { homeroomTeacherId: teacher.id },
-              { homeroomTeacherId: { contains: teacher.id } },
-              { teachers: { some: { teacherId: teacher.id } } }
-            ]
-          },
-          orderBy: { className: "asc" }
-        })
-        return NextResponse.json(classes)
       }
+
+      // Query teaching assignments in this academic year
+      const assignments = await prisma.teachingAssignment.findMany({
+        where: {
+          teacherId: teacher.id,
+          ...(subjectIds ? { subjectId: { in: subjectIds } } : {}),
+          ...(academicYearId ? { academicYearId } : {})
+        },
+        select: { classId: true }
+      })
+
+      const assignedClassIds = assignments.map(a => a.classId)
+
+      // Query homeroom classes in this academic year
+      const homeroomClasses = await prisma.class.findMany({
+        where: {
+          OR: [
+            { homeroomTeacherId: teacher.id },
+            { homeroomTeacherId: { contains: teacher.id } }
+          ],
+          ...(academicYearId ? { academicYearId } : {})
+        },
+        select: { id: true }
+      })
+
+      const homeroomClassIds = homeroomClasses.map(c => c.id)
+
+      // Union class IDs
+      const allClassIds = Array.from(new Set([...assignedClassIds, ...homeroomClassIds]))
+
+      const classes = await prisma.class.findMany({
+        where: { id: { in: allClassIds } },
+        orderBy: { className: "asc" }
+      })
+      return NextResponse.json(classes)
     }
 
     if (action === "getClassStudents") {
