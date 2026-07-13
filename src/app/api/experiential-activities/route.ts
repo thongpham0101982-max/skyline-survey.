@@ -21,7 +21,9 @@ export async function GET(req: Request) {
 
     const formattedActivities = activities.map(act => ({
       id: act.id,
-      name: act.catalog.name,
+      code: act.code || '',
+      name: act.name || act.catalog.name,
+      catalogName: act.catalog.name,
       date: act.date.toISOString().split('T')[0],
       location: act.locationId || 'Không rõ',
       status: act.status,
@@ -64,8 +66,13 @@ export async function POST(req: Request) {
       });
     }
 
+    const count = await prisma.activityRecord.count();
+    const generatedCode = `HĐ-${String(count + 1).padStart(3, '0')}`;
+
     const activityRecord = await prisma.activityRecord.create({
       data: {
+        code: generatedCode,
+        name: info.activityName || catalog.name,
         catalogId: catalog.id,
         date: info.date ? new Date(info.date) : new Date(),
         semester: parseInt(info.semester) || 1,

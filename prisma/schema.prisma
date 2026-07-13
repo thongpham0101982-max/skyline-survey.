@@ -417,22 +417,22 @@ model SubjectQuota {
   subjectId      String
   academicYearId String
   studyProgram   String       @default("DEFAULT")
-  quota          Int          @default(0)
-  quotaPrimary   Int          @default(0)
-  quotaMiddle    Int          @default(0)
-  quotaHigh      Int          @default(0)
-  quotaG1        Int          @default(0)
-  quotaG2        Int          @default(0)
-  quotaG3        Int          @default(0)
-  quotaG4        Int          @default(0)
-  quotaG5        Int          @default(0)
-  quotaG6        Int          @default(0)
-  quotaG7        Int          @default(0)
-  quotaG8        Int          @default(0)
-  quotaG9        Int          @default(0)
-  quotaG10       Int          @default(0)
-  quotaG11       Int          @default(0)
-  quotaG12       Int          @default(0)
+  quota          Float        @default(0)
+  quotaPrimary   Float        @default(0)
+  quotaMiddle    Float        @default(0)
+  quotaHigh      Float        @default(0)
+  quotaG1        Float        @default(0)
+  quotaG2        Float        @default(0)
+  quotaG3        Float        @default(0)
+  quotaG4        Float        @default(0)
+  quotaG5        Float        @default(0)
+  quotaG6        Float        @default(0)
+  quotaG7        Float        @default(0)
+  quotaG8        Float        @default(0)
+  quotaG9        Float        @default(0)
+  quotaG10       Float        @default(0)
+  quotaG11       Float        @default(0)
+  quotaG12       Float        @default(0)
   academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
   subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 
@@ -1349,6 +1349,8 @@ model ActivityCatalog {
 
 model ActivityRecord {
   id             String   @id @default(cuid())
+  code           String?  @unique
+  name           String?
   catalogId      String
   date           DateTime
   semester       Int?
@@ -1398,3 +1400,4 @@ model ActivityEvidence {
 
   record ActivityRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
 }
+
