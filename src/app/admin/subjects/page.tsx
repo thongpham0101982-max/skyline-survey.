@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { SubjectsClient } from "./client"
 
 export const metadata = { title: "Quan ly mon hoc | Admin Portal" }
