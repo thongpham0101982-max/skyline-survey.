@@ -56,6 +56,7 @@ export function TeacherSupportClient({
   const [proposePsychReason, setProposePsychReason] = useState("Hỗ trợ Tâm lý")
   const [proposeNotes, setProposeNotes] = useState("")
   const [commitmentCandidates, setCommitmentCandidates] = useState<any[]>([])
+  const [studentSearchQuery, setStudentSearchQuery] = useState("")
   const [loadingCommitmentCandidates, setLoadingCommitmentCandidates] = useState(false)
 
   // Evaluation Form States
@@ -716,89 +717,65 @@ export function TeacherSupportClient({
 
       {/* 1. Modal Đề xuất học sinh bồi dưỡng */}
       {isProposeModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Plus className="h-5 w-5 text-indigo-600" />
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col transition-all duration-300">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-600 text-white shadow-xs">
+              <h2 className="text-base font-bold flex items-center gap-2">
+                <Plus className="h-5 w-5" />
                 Đề xuất Học sinh cần Hỗ trợ học tập
               </h2>
-              <button onClick={() => setIsProposeModalOpen(false)}>
-                <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
+              <button 
+                onClick={() => setIsProposeModalOpen(false)}
+                className="rounded-lg p-1 hover:bg-white/20 transition-all"
+              >
+                <X className="h-5 w-5 text-white" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-              {/* Select class */}
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Chọn lớp được phân công giảng dạy/chủ nhiệm:</label>
-                {loadingClassesOfTeacher ? (
-                  <div className="text-xs text-slate-500 flex items-center gap-1.5 py-1">
-                    <RefreshCw className="h-3 w-3 animate-spin" /> Đang tải danh sách lớp...
-                  </div>
-                ) : (
-                  <select
-                    value={proposeClassId}
-                    onChange={e => {
-                      setProposeClassId(e.target.value)
-                      fetchClassStudents(e.target.value)
-                    }}
-                    className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                  >
-                    <option value="">-- Chọn lớp học --</option>
-                    {assignedClasses.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.className} {c.isHomeroom ? "(Lớp chủ nhiệm)" : "(Lớp giảng dạy)"}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
+            <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto bg-slate-50/50">
+              {/* Cột trái: Thông tin lớp & Chọn học sinh */}
+              <div className="space-y-4 bg-white p-5 rounded-2xl border shadow-2xs flex flex-col">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
+                  <Users className="h-4 w-4 text-indigo-600" />
+                  Bước 1: Chọn Lớp & Học sinh
+                </h3>
 
-              {/* Multiple selection of students */}
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700 flex justify-between items-center">
-                  <span>Chọn học sinh cần hỗ trợ (Chọn một hoặc nhiều em):</span>
-                  {classStudents.length > 0 && (() => {
-                    const eligibleStudents = classStudents.filter(s => {
-                      const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
-                      const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
-                      
-                      const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
-                      const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
-
-                      const isBlocked = (proposeAcademic && proposePsychological)
-                        ? (hasAcademicBlock && hasPsychBlock)
-                        : (proposeAcademic ? hasAcademicBlock : hasPsychBlock)
-
-                      return !isBlocked
-                    })
-                    if (eligibleStudents.length === 0) return null
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (selectedStudentIds.length === eligibleStudents.length) {
-                            setSelectedStudentIds([])
-                          } else {
-                            setSelectedStudentIds(eligibleStudents.map(s => s.id))
-                          }
-                        }}
-                        className="text-indigo-600 hover:text-indigo-800 text-xs font-bold"
-                      >
-                        {selectedStudentIds.length === eligibleStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
-                      </button>
-                    )
-                  })()}
-                </label>
+                {/* Select class */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Lớp học phụ trách:</label>
+                  {loadingClassesOfTeacher ? (
+                    <div className="text-xs text-slate-500 flex items-center gap-1.5 py-1">
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" /> Đang tải danh sách lớp...
+                    </div>
+                  ) : (
+                    <select
+                      value={proposeClassId}
+                      onChange={e => {
+                        setProposeClassId(e.target.value)
+                        setStudentSearchQuery("")
+                        fetchClassStudents(e.target.value)
+                      }}
+                      className="w-full rounded-xl border-slate-200 border py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold bg-slate-50 hover:bg-slate-100/50 cursor-pointer"
+                    >
+                      <option value="">-- Chọn lớp học --</option>
+                      {assignedClasses.map((c: any) => (
+                        <option key={c.id} value={c.id}>
+                          {c.className} {c.isHomeroom ? "(Lớp chủ nhiệm)" : "(Lớp giảng dạy)"}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
 
                 {/* Auto-select from Commitment (KSĐV) button */}
                 {proposeClassId && proposeAcademic && (
-                  <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-1">
-                    <div className="text-xs text-amber-800">
-                      <span className="font-bold">Tự động từ KS đầu vào:</span>{" "}
+                  <div className={`flex items-center justify-between border rounded-xl px-4 py-2.5 transition-all duration-300 ${
+                    commitmentCandidates.length > 0 ? "bg-amber-50 border-amber-200 text-amber-900" : "bg-slate-50 border-slate-200 text-slate-500"
+                  }`}>
+                    <div className="text-[11px] leading-snug">
+                      <span className="font-bold">Khảo sát đầu vào:</span>{" "}
                       {loadingCommitmentCandidates ? (
-                        <span className="italic">Đang tìm...</span>
+                        <span className="italic text-slate-400">Đang tìm...</span>
                       ) : commitmentCandidates.length > 0 ? (
                         <span>Tìm thấy <strong>{commitmentCandidates.length}</strong> học sinh có cam kết môn phù hợp</span>
                       ) : (
@@ -820,192 +797,304 @@ export function TeacherSupportClient({
                             ? commitmentCandidates[0].matchedSubjects 
                             : selectedSubjects)
                         }}
-                        className="ml-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap transition-all"
+                        className="ml-2 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-black px-3 py-1.5 rounded-lg whitespace-nowrap transition-all shadow-xs"
                       >
-                        ✓ Chọn tất cả
+                        Chọn nhanh
                       </button>
                     )}
                   </div>
                 )}
-                {loadingStudentsOfClass ? (
-                  <div className="text-xs text-slate-500 flex items-center gap-1.5 py-1">
-                    <RefreshCw className="h-3 w-3 animate-spin" /> Đang tải danh sách học sinh...
-                  </div>
-                ) : classStudents.length === 0 ? (
-                  <div className="text-xs text-slate-400 italic py-2">
-                    {proposeClassId ? "Không có học sinh nào trong lớp này." : "Vui lòng chọn lớp học trước."}
-                  </div>
-                ) : (
-                  <div className="border rounded-lg max-h-36 overflow-y-auto p-2 space-y-1.5 bg-slate-50">
-                    {classStudents.map((s: any) => {
-                      const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
-                      const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
-                      const hasCommitment = commitmentCandidates.some(c => c.id === s.id)
-                      const commitmentCandidate = commitmentCandidates.find(c => c.id === s.id)
 
-                      const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
-                      const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
+                {/* Multiple selection of students */}
+                {proposeClassId && (
+                  <div className="space-y-2 flex-1 flex flex-col">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        Danh sách học sinh ({classStudents.length > 0 ? `Đang chọn: ${selectedStudentIds.length}/${classStudents.length}` : "0"}):
+                      </label>
+                      {classStudents.length > 0 && (() => {
+                        const eligibleStudents = classStudents.filter(s => {
+                          const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                          const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                          
+                          const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
+                          const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
 
-                      const isAlreadyProposed = (proposeAcademic && proposePsychological)
-                        ? (hasAcademicBlock && hasPsychBlock)
-                        : (proposeAcademic ? hasAcademicBlock : hasPsychBlock)
+                          const isBlocked = (proposeAcademic && proposePsychological)
+                            ? (hasAcademicBlock && hasPsychBlock)
+                            : (proposeAcademic ? hasAcademicBlock : hasPsychBlock)
 
-                      const isAlreadyTarget = (proposeAcademic && proposePsychological)
-                        ? (existingAcademic !== undefined && existingPsych !== undefined)
-                        : (proposeAcademic ? existingAcademic !== undefined : existingPsych !== undefined)
-
-                      const isChecked = selectedStudentIds.includes(s.id)
-                      return (
-                        <label 
-                          key={s.id} 
-                          className={`flex items-center gap-2 text-xs font-medium p-1 rounded ${
-                            isAlreadyProposed ? "opacity-50 cursor-not-allowed bg-slate-100/60" : hasCommitment ? "text-amber-900 cursor-pointer bg-amber-50 hover:bg-amber-100 border border-amber-200" : "text-slate-700 cursor-pointer hover:bg-slate-100"
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isAlreadyProposed ? false : isChecked}
-                            disabled={isAlreadyProposed}
-                            onChange={() => {
-                              if (isAlreadyProposed) return
-                              if (isChecked) {
-                                setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id))
+                          return !isBlocked
+                        })
+                        if (eligibleStudents.length === 0) return null
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (selectedStudentIds.length === eligibleStudents.length) {
+                                setSelectedStudentIds([])
                               } else {
-                                setSelectedStudentIds([...selectedStudentIds, s.id])
+                                setSelectedStudentIds(eligibleStudents.map(s => s.id))
                               }
                             }}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
-                          />
-                          <span>
-                            {s.studentName} ({s.studentCode})
-                            {hasAcademicBlock && (
-                              <span className="ml-1.5 text-[10px] text-rose-500 font-bold block">
-                                (Đã đề xuất bồi dưỡng Văn hóa{existingAcademic?.createdBy?.teacherName ? ` bởi ${existingAcademic.createdBy.teacherName}` : ""})
-                              </span>
-                            )}
-                            {hasPsychBlock && (
-                              <span className="ml-1.5 text-[10px] text-rose-500 font-bold block">
-                                (Đã đề xuất hỗ trợ Tâm lý{existingPsych?.createdBy?.teacherName ? ` bởi ${existingPsych.createdBy.teacherName}` : ""})
-                              </span>
-                            )}
-                            {hasCommitment && (
-                              <span className="ml-1.5 text-[10px] text-amber-700 font-extrabold">
-                                ⭐ Đã cam kết{commitmentCandidate?.matchedSubjects?.length > 0 ? ': ' + commitmentCandidate.matchedSubjects.join(', ') : ''}
-                              </span>
-                            )}
-                            {existingAcademic && !hasAcademicBlock && proposeAcademic && (
-                              <span className="ml-1.5 text-[10px] text-amber-600 font-extrabold block">
-                                (Đang bồi dưỡng Văn hóa - Chưa liên kết người đề xuất)
-                              </span>
-                            )}
-                            {existingPsych && !hasPsychBlock && proposePsychological && (
-                              <span className="ml-1.5 text-[10px] text-amber-600 font-extrabold block">
-                                (Đang hỗ trợ Tâm lý - Chưa liên kết người đề xuất)
-                              </span>
-                            )}
-                          </span>
-                        </label>
-                      )
-                    })}
+                            className="text-indigo-600 hover:text-indigo-800 text-[10px] font-black transition-all"
+                          >
+                            {selectedStudentIds.length === eligibleStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                          </button>
+                        )
+                      })()}
+                    </div>
+
+                    {/* Student search input */}
+                    {classStudents.length > 0 && (
+                      <div className="relative">
+                        <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Tìm kiếm học sinh theo tên, mã số..."
+                          value={studentSearchQuery}
+                          onChange={e => setStudentSearchQuery(e.target.value)}
+                          className="w-full rounded-xl border-slate-200 border py-2 pl-9 pr-3 text-[11px] focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50 font-semibold"
+                        />
+                      </div>
+                    )}
+
+                    {loadingStudentsOfClass ? (
+                      <div className="text-xs text-slate-500 flex items-center justify-center gap-1.5 py-8">
+                        <RefreshCw className="h-4 w-4 animate-spin text-indigo-600" /> Đang tải danh sách học sinh...
+                      </div>
+                    ) : classStudents.length === 0 ? (
+                      <div className="text-xs text-slate-400 italic py-8 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50/30">
+                        Không có học sinh nào trong lớp này.
+                      </div>
+                    ) : (() => {
+                      const filteredList = classStudents.filter((s) => {
+                        const nameMatch = (s.studentName || "").toLowerCase().includes(studentSearchQuery.toLowerCase());
+                        const codeMatch = (s.studentCode || "").toLowerCase().includes(studentSearchQuery.toLowerCase());
+                        return nameMatch || codeMatch;
+                      });
+
+                      if (filteredList.length === 0) {
+                        return (
+                          <div className="text-xs text-slate-400 italic py-8 text-center bg-slate-50/30 rounded-xl">
+                            Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div className="border border-slate-100 rounded-xl max-h-56 overflow-y-auto p-2 space-y-1.5 bg-slate-50/50">
+                          {filteredList.map((s: any) => {
+                            const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                            const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                            const hasCommitment = commitmentCandidates.some(c => c.id === s.id)
+                            const commitmentCandidate = commitmentCandidates.find(c => c.id === s.id)
+
+                            const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
+                            const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
+
+                            const isAlreadyProposed = (proposeAcademic && proposePsychological)
+                              ? (hasAcademicBlock && hasPsychBlock)
+                              : (proposeAcademic ? hasAcademicBlock : hasPsychBlock)
+
+                            const isChecked = selectedStudentIds.includes(s.id)
+                            return (
+                              <label 
+                                key={s.id} 
+                                className={`flex items-start gap-2.5 text-xs font-semibold p-2 rounded-xl transition-all border ${
+                                  isAlreadyProposed 
+                                    ? "opacity-50 cursor-not-allowed bg-slate-100/60 border-transparent" 
+                                    : isChecked
+                                    ? "bg-indigo-50 border-indigo-200 text-indigo-900 cursor-pointer shadow-3xs"
+                                    : hasCommitment 
+                                    ? "text-amber-900 cursor-pointer bg-amber-50 hover:bg-amber-100 border-amber-200" 
+                                    : "text-slate-700 cursor-pointer hover:bg-white border-transparent hover:border-slate-200"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isAlreadyProposed ? false : isChecked}
+                                  disabled={isAlreadyProposed}
+                                  onChange={() => {
+                                    if (isAlreadyProposed) return
+                                    if (isChecked) {
+                                      setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id))
+                                    } else {
+                                      setSelectedStudentIds([...selectedStudentIds, s.id])
+                                    }
+                                  }}
+                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4.5 w-4.5 disabled:opacity-50 mt-0.5"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-bold flex items-center justify-between">
+                                    <span className="truncate">{s.studentName}</span>
+                                    <span className="text-[10px] text-slate-400 font-medium ml-1.5 shrink-0">#{s.studentCode}</span>
+                                  </div>
+                                  {hasAcademicBlock && (
+                                    <span className="text-[10px] text-rose-500 font-bold block mt-0.5">
+                                      (Đã đề xuất bồi dưỡng Văn hóa{existingAcademic?.createdBy?.teacherName ? ` bởi ${existingAcademic.createdBy.teacherName}` : ""})
+                                    </span>
+                                  )}
+                                  {hasPsychBlock && (
+                                    <span className="text-[10px] text-rose-500 font-bold block mt-0.5">
+                                      (Đã đề xuất hỗ trợ Tâm lý{existingPsych?.createdBy?.teacherName ? ` bởi ${existingPsych.createdBy.teacherName}` : ""})
+                                    </span>
+                                  )}
+                                  {hasCommitment && (
+                                    <span className="text-[10px] text-amber-700 font-extrabold flex items-center gap-1 mt-0.5">
+                                      ⭐ Cam kết đầu vào{commitmentCandidate?.matchedSubjects?.length > 0 ? ': ' + commitmentCandidate.matchedSubjects.join(', ') : ''}
+                                    </span>
+                                  )}
+                                  {existingAcademic && !hasAcademicBlock && proposeAcademic && (
+                                    <span className="text-[10px] text-amber-600 font-extrabold block mt-0.5">
+                                      (Đang bồi dưỡng Văn hóa - Chưa liên kết người đề xuất)
+                                    </span>
+                                  )}
+                                  {existingPsych && !hasPsychBlock && proposePsychological && (
+                                    <span className="text-[10px] text-amber-600 font-extrabold block mt-0.5">
+                                      (Đang hỗ trợ Tâm lý - Chưa liên kết người đề xuất)
+                                    </span>
+                                  )}
+                                </div>
+                              </label>
+                            )
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700 block">Loại bồi dưỡng (Có thể chọn một hoặc cả hai):</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={proposeAcademic}
-                      onChange={e => setProposeAcademic(e.target.checked)}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                    />
-                    Bồi dưỡng Văn hóa
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={proposePsychological}
-                      onChange={e => setProposePsychological(e.target.checked)}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
-                    />
-                    Hỗ trợ Tâm lý
-                  </label>
-                </div>
-              </div>
+              {/* Cột phải: Loại bồi dưỡng, Môn bồi dưỡng, Ghi chú */}
+              <div className="space-y-4 bg-white p-5 rounded-2xl border shadow-2xs flex flex-col justify-between">
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
+                    <FileText className="h-4 w-4 text-indigo-600" />
+                    Bước 2: Cấu hình Đề xuất
+                  </h3>
 
-              {proposeAcademic && (
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700 block">Môn học bồi dưỡng (Có thể chọn một hoặc nhiều môn):</label>
-                  <div className="border rounded-lg max-h-36 overflow-y-auto p-2 space-y-1 bg-slate-50">
-                    {subjects.map((sub: any) => {
-                      const name = sub.subjectName || sub.name
-                      const isChecked = selectedSubjects.includes(name)
-                      const selClassObj = assignedClasses.find(c => c.id === proposeClassId)
-                      const isTeacherSubject = selClassObj?.subjects?.some((s: any) => (s.subjectName || s.name) === name)
+                  {/* Loại bồi dưỡng */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Loại chương trình hỗ trợ:</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                        proposeAcademic 
+                          ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
+                          : "hover:bg-slate-50 border-slate-200 text-slate-700"
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={proposeAcademic}
+                          onChange={e => setProposeAcademic(e.target.checked)}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                        />
+                        Bồi dưỡng Văn hóa
+                      </label>
+                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                        proposePsychological 
+                          ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
+                          : "hover:bg-slate-50 border-slate-200 text-slate-700"
+                      }`}>
+                        <input
+                          type="checkbox"
+                          checked={proposePsychological}
+                          onChange={e => setProposePsychological(e.target.checked)}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                        />
+                        Hỗ trợ Tâm lý
+                      </label>
+                    </div>
+                  </div>
 
-                      return (
-                        <label key={sub.id} className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => {
-                              if (isChecked) {
-                                setSelectedSubjects(selectedSubjects.filter(s => s !== name))
-                              } else {
-                                setSelectedSubjects([...selectedSubjects, name])
-                              }
-                            }}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
-                          />
-                          <span>
-                            {name}
-                            {isTeacherSubject && (
-                              <span className="ml-1 text-[10px] text-indigo-600 font-extrabold">(Môn giảng dạy)</span>
-                            )}
-                          </span>
-                        </label>
-                      )
-                    })}
+                  {/* Môn học bồi dưỡng */}
+                  {proposeAcademic && (
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Môn học cần bồi dưỡng:</label>
+                      <div className="border border-slate-100 rounded-xl max-h-36 overflow-y-auto p-2 space-y-1 bg-slate-50/50">
+                        {subjects.map((sub: any) => {
+                          const name = sub.subjectName || sub.name
+                          const isChecked = selectedSubjects.includes(name)
+                          const selClassObj = assignedClasses.find(c => c.id === proposeClassId)
+                          const isTeacherSubject = selClassObj?.subjects?.some((s: any) => (s.subjectName || s.name) === name)
+
+                          return (
+                            <label 
+                              key={sub.id} 
+                              className={`flex items-center gap-2 text-xs font-semibold p-1.5 rounded-lg transition-all cursor-pointer ${
+                                isChecked 
+                                  ? "bg-indigo-50 text-indigo-900 font-bold" 
+                                  : "text-slate-700 hover:bg-white"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedSubjects(selectedSubjects.filter(s => s !== name))
+                                  } else {
+                                    setSelectedSubjects([...selectedSubjects, name])
+                                  }
+                                }}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                              />
+                              <span className="flex-1 min-w-0 flex items-center justify-between">
+                                <span>{name}</span>
+                                {isTeacherSubject && (
+                                  <span className="text-[9px] bg-indigo-100 text-indigo-700 font-black px-1.5 py-0.5 rounded-md shrink-0">Môn giảng dạy</span>
+                                )}
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Lý do hỗ trợ tâm lý */}
+                  {proposePsychological && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Lý do hỗ trợ tâm lý:</label>
+                      <input
+                        type="text"
+                        placeholder="Mô tả lý do tâm lý..."
+                        value={proposePsychReason}
+                        onChange={e => setProposePsychReason(e.target.value)}
+                        className="w-full rounded-xl border-slate-200 border py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50 font-semibold"
+                      />
+                    </div>
+                  )}
+
+                  {/* Ghi chú bồi dưỡng ban đầu */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ý kiến / Ghi chú ban đầu:</label>
+                    <textarea
+                      placeholder="Mô tả các biểu hiện học lực, kỹ năng, tâm lý của học sinh cần hỗ trợ..."
+                      value={proposeNotes}
+                      onChange={e => setProposeNotes(e.target.value)}
+                      className="w-full rounded-xl border-slate-200 border py-2 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50 h-24 resize-none font-semibold"
+                    />
                   </div>
                 </div>
-              )}
-
-              {proposePsychological && (
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700 block">Lý do hỗ trợ tâm lý:</label>
-                  <input
-                    type="text"
-                    placeholder="Mô tả lý do tâm lý..."
-                    value={proposePsychReason}
-                    onChange={e => setProposePsychReason(e.target.value)}
-                    className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Ghi chú bồi dưỡng ban đầu:</label>
-                <textarea
-                  placeholder="Mô tả các biểu hiện học lực, tâm lý cần hỗ trợ..."
-                  value={proposeNotes}
-                  onChange={e => setProposeNotes(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none h-20"
-                />
               </div>
             </div>
 
             <div className="px-6 py-4 border-t flex justify-end gap-3 bg-slate-50">
               <button
                 onClick={() => setIsProposeModalOpen(false)}
-                className="border hover:bg-slate-100 py-2 px-4 rounded-lg text-sm font-medium transition-all"
+                className="border hover:bg-slate-100 py-2 px-4 rounded-xl text-sm font-medium transition-all"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={handlePropose}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
+                disabled={selectedStudentIds.length === 0 || (!proposeAcademic && !proposePsychological) || (proposeAcademic && selectedSubjects.length === 0)}
+                className={`py-2 px-5 rounded-xl text-sm font-bold shadow-xs transition-all text-white ${
+                  selectedStudentIds.length === 0 || (!proposeAcademic && !proposePsychological) || (proposeAcademic && selectedSubjects.length === 0)
+                    ? "bg-slate-300 cursor-not-allowed"
+                    : "bg-indigo-600 hover:bg-indigo-700"
+                }`}
               >
                 Gửi đề xuất
               </button>
