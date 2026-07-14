@@ -806,3 +806,34 @@ export async function importTransfersOutAction(records: any[], selectedYearId?: 
     return { success: false, error: e.message, imported: 0, skipped: 0, errors: [] }
   }
 }
+
+export async function revertTransferAction(transferId: string) {
+  try {
+    const session = await auth()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    await prisma.$transaction(async (tx) => {
+      const transfer = await tx.studentTransfer.findUnique({
+        where: { id: transferId }
+      })
+      if (!transfer) throw new Error("Không tìm thấy phiếu chuyển")
+
+      // Revert student status to ACTIVE
+      await tx.student.update({
+        where: { id: transfer.studentId },
+        data: { status: "ACTIVE" }
+      })
+
+      // Delete the transfer record
+      await tx.studentTransfer.delete({
+        where: { id: transferId }
+      })
+    })
+
+    revalidatePath("/admin/student-transfers")
+    return { success: true }
+  } catch (e: any) {
+    console.error("revertTransferAction Error:", e)
+    return { success: false, error: e.message }
+  }
+}

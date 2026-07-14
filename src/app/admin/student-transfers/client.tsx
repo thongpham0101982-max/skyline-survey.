@@ -3,7 +3,7 @@ import * as XLSX from "xlsx"
 import { useRef } from "react"
 import { useState, useEffect } from "react" 
 // import useRef added above
-import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby } from "lucide-react"
+import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, RotateCcw } from "lucide-react"
 import { 
   getTransferFormOptionsAction, 
   getClassesByCampusAndYearAction, 
@@ -21,7 +21,8 @@ import {
   completeEnrollmentAction,
   getPreschoolInputAssessmentPeriodsAction,
   getPreschoolInputAssessmentBatchesAction,
-  getPreschoolInputAssessmentStudentsByPeriodAction
+  getPreschoolInputAssessmentStudentsByPeriodAction,
+  revertTransferAction
 } from "./actions"
 
 const isClassPreschool = (c: any) => {
@@ -197,6 +198,26 @@ export function StudentTransfersClient() {
     setLoadingList(false)
   }
 
+  const handleRevert = async (transferId: string, studentName?: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn hoàn trả học sinh ${studentName || ""} và xóa phiếu chuyển đi?`)) {
+      return
+    }
+    setLoadingList(true)
+    try {
+      const res = await revertTransferAction(transferId)
+      if (res.success) {
+        alert("Đã hoàn trả học sinh thành công!")
+        await loadTransfers()
+      } else {
+        alert("Lỗi: " + res.error)
+      }
+    } catch (e: any) {
+      alert("Đã xảy ra lỗi: " + e.message)
+    } finally {
+      setLoadingList(false)
+    }
+  }
+
 
   const filteredTransfers = transfers.filter(t => {
     const studentYear = t.student?.academicYearId || t.student?.class?.academicYearId;
@@ -341,6 +362,7 @@ export function StudentTransfersClient() {
                     <th className="p-2 border border-slate-200">Lớp / Cơ sở cũ</th>
                     <th className="p-2 border border-slate-200">Diện chuyển</th>
                     <th className="p-2 border border-slate-200">Nơi đến</th>
+                    <th className="p-2 text-right border border-slate-200">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -351,6 +373,15 @@ export function StudentTransfersClient() {
                       <td className="p-2 border border-slate-200"><span className="px-2 py-1 bg-slate-100 rounded-md font-bold text-slate-600">{t.student?.class?.className}</span> <br/><span className="text-xs text-slate-500">{t.student?.class?.campus?.campusName}</span></td>
                       <td className="p-2 font-medium text-rose-600 border border-slate-200">{t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : "Bảo lưu"}</td>
                       <td className="p-2 text-slate-600 border border-slate-200">{t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}</td>
+                      <td className="p-2 text-right border border-slate-200">
+                        <button
+                          onClick={() => handleRevert(t.id, t.student?.studentName)}
+                          className="px-3 py-1.5 border border-amber-500 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Hoàn trả
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
