@@ -2,11 +2,11 @@
 
 import React from 'react'
 import { 
-  User, Lock, GraduationCap, Users, ShieldCheck, 
-  Eye, EyeOff, AlertCircle, CheckCircle2, Loader2, ArrowRight
+  User, Lock, GraduationCap, Users, Shield,
+  Eye, EyeOff, AlertCircle
 } from 'lucide-react'
 
-// RoleSelector Component with segmented control style
+// RoleSelector Component with segmented card style
 interface RoleSelectorProps {
   role: string
   setRole: (role: string) => void
@@ -15,36 +15,43 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ role, setRole, setError }: RoleSelectorProps) {
   const roles = [
-    { id: 'STAFF', label: 'CBGV', icon: ShieldCheck },
+    { id: 'STAFF', label: 'Cán bộ, Giáo viên', icon: User },
     { id: 'PARENT', label: 'Phụ huynh', icon: Users },
     { id: 'STUDENT', label: 'Học sinh', icon: GraduationCap }
   ]
 
   return (
-    <div className="p-1 mb-6 flex bg-[#F4F8F8] border border-[#DCE7E7] rounded-xl relative">
-      {roles.map((r) => {
-        const Icon = r.icon
-        const isActive = role === r.id
-        return (
-          <button
-            key={r.id}
-            type="button"
-            onClick={() => {
-              setRole(r.id)
-              setError('')
-            }}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA4]/40 ${
-              isActive
-                ? 'bg-white text-[#173B3A] shadow-sm border border-[#DCE7E7]'
-                : 'text-[#64748B] hover:text-[#08AAA4] hover:bg-white/50 border border-transparent'
-            }`}
-            style={{ minHeight: '44px' }}
-          >
-            <Icon className={`w-4 h-4 transition-transform duration-200 ${isActive ? 'scale-110 text-[#08AAA4]' : ''}`} aria-hidden="true" />
-            <span>{r.label}</span>
-          </button>
-        )
-      })}
+    <div className="mb-6">
+      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+        Chọn vai trò
+      </label>
+      <div className="grid grid-cols-3 gap-3">
+        {roles.map((r) => {
+          const Icon = r.icon
+          const isActive = role === r.id
+          return (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => {
+                setRole(r.id)
+                setError('')
+              }}
+              className={`flex flex-col items-center justify-center gap-2 p-3 rounded-2xl border text-center transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA4]/40 ${
+                isActive
+                  ? 'bg-white border-[#08AAA4] text-[#08AAA4] shadow-[0_4px_12px_rgba(8,170,164,0.08)]'
+                  : 'bg-[#F8FAFC] border-slate-100 text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+              }`}
+              style={{ minHeight: '84px' }}
+            >
+              <div className={`p-1.5 rounded-xl transition-all duration-300 ${isActive ? 'bg-[#E6F6F5] text-[#08AAA4]' : 'text-slate-400'}`}>
+                <Icon className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <span className="text-[11px] font-bold tracking-tight leading-tight">${r.label}</span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -69,8 +76,8 @@ export function PasswordInput({
 }: PasswordInputProps) {
   return (
     <div className="relative group">
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#64748B] group-focus-within:text-[#08AAA4] transition-colors" aria-hidden="true">
-        <Lock className="w-4 h-4" />
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#08AAA4] transition-colors" aria-hidden="true">
+        <Lock className="w-4.5 h-4.5" />
       </div>
       <input
         id={id}
@@ -78,18 +85,18 @@ export function PasswordInput({
         required={required}
         value={value}
         onChange={onChange}
-        placeholder="••••••••••"
+        placeholder="Nhập mật khẩu"
         autoComplete="current-password"
-        className="w-full h-[52px] pl-12 pr-12 rounded-[14px] border border-[#DCE7E7] bg-[#F4F8F8] text-sm font-medium text-[#173B3A] placeholder-[#64748B]/60 hover:border-[#08AAA4]/40 focus:bg-white focus:border-[#08AAA4] focus:ring-4 focus:ring-[#08AAA4]/10 outline-none transition-all duration-200"
+        className="w-full h-[52px] pl-12 pr-12 rounded-[14px] border border-slate-200 bg-white text-sm font-medium text-[#173B3A] placeholder-slate-400 hover:border-slate-300 focus:bg-white focus:border-[#08AAA4] focus:ring-4 focus:ring-[#08AAA4]/10 outline-none transition-all duration-200"
       />
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-[#64748B] hover:text-[#173B3A] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA4]/40 rounded-lg"
+        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#08AAA4]/40 rounded-lg"
         aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
         style={{ minHeight: '44px', minWidth: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
-        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
       </button>
     </div>
   )
@@ -112,11 +119,27 @@ export function LoginAlert({ message }: LoginAlertProps) {
   )
 }
 
+// SecurityBanner Component
+export function SecurityBanner() {
+  return (
+    <div className="w-full p-4 flex items-center gap-3 bg-[#E6F6F5]/60 border border-[#CCEBEA] rounded-2xl text-[#008b82] mt-6 select-none">
+      <div className="p-2 rounded-xl bg-white text-[#08AAA4] shrink-0 shadow-sm border border-teal-50/50">
+        <Shield className="w-5 h-5" />
+      </div>
+      <p className="text-[11px] font-semibold leading-relaxed text-slate-600">
+        Hệ thống bảo mật theo tiêu chuẩn quốc tế, đảm bảo an toàn dữ liệu và quyền riêng tư.
+      </p>
+    </div>
+  )
+}
+
 // PageFooter Component
 export function PageFooter() {
   return (
-    <footer className="w-full py-6 text-center text-xs font-semibold text-teal-100/60 uppercase tracking-widest relative z-10 border-t border-white/5 backdrop-blur-md">
-      © 2026 SQMS – BAN KHẢO THÍ VÀ ĐẢM BẢO CHẤT LƯỢNG
+    <footer className="w-full py-4 text-center text-xs font-semibold text-slate-400 select-none">
+      <span className="tracking-wide">SQMS PORTAL V2.5</span>
+      <span className="mx-2 text-slate-300">|</span>
+      <span>© 2026 Sky-Line Education</span>
     </footer>
   )
 }
