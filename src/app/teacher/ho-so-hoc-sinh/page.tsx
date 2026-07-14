@@ -144,7 +144,7 @@ export default function TeacherStudentProfilePage() {
       if (res.ok) {
         setNewPostText("")
         // Refresh profile data
-        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}`)
+        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
         if (profileRes.ok) {
           const data = await profileRes.json()
           setProfileData(data)
@@ -210,7 +210,7 @@ export default function TeacherStudentProfilePage() {
         const activeStudent = students.find(s => s.id === selectedStudentId)
         setSelectedStudent(activeStudent)
 
-        const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}`)
+        const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
         if (res.ok) {
           const data = await res.json()
           setProfileData(data)
@@ -254,7 +254,8 @@ export default function TeacherStudentProfilePage() {
     { id: "orientation", label: "Hướng nghiệp", icon: Compass },
     { id: "commitment", label: "Cam kết học tập", icon: FileText },
     { id: "projects", label: "Dự án & Trải nghiệm", icon: BookOpen },
-    { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare }
+    { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare },
+    { id: "support", label: "Hỗ trợ học tập", icon: FileText }
   ]
 
   return (
@@ -787,6 +788,92 @@ export default function TeacherStudentProfilePage() {
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* TAB: SUPPORT */}
+                    {activeTab === "support" && (
+                      <div className="space-y-6">
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Lịch sử theo dõi Hỗ trợ Học tập & Tâm lý</h4>
+                        {!(profileData as any).learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh không thuộc đối tượng nhận hỗ trợ học tập/tâm lý trong năm học này.</div>
+                        ) : (
+                          <div className="space-y-6">
+                            {(profileData as any).learningSupportTargets.map((target: any) => {
+                              const isTerminated = target.terminationStatus === "TERMINATED";
+                              const isPending = target.terminationStatus === "PENDING_TERMINATION";
+                              const gvName = target.assignments?.[0]?.teacher?.teacherName || "Chưa phân công";
+
+                              return (
+                                <div key={target.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                                  <div className="px-5 py-4 border-b bg-slate-50 flex items-center justify-between flex-wrap gap-2">
+                                    <div>
+                                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mr-2 ${
+                                        target.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                                      }`}>
+                                        {target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-800">{target.reason}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                        isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
+                                      }`}>
+                                        {isTerminated ? "Đã hoàn thành" : isPending ? "Chờ duyệt hoàn thành" : target.status}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-5 space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-slate-500">
+                                      <div>
+                                        <span>Ngày bắt đầu: </span>
+                                        <span className="text-slate-800">{new Date(target.startDate).toLocaleDateString("vi-VN")}</span>
+                                      </div>
+                                      <div>
+                                        <span>Giáo viên phụ trách: </span>
+                                        <span className="text-slate-800">{gvName}</span>
+                                      </div>
+                                      {target.endDate && (
+                                        <div>
+                                          <span>Ngày chấm dứt: </span>
+                                          <span className="text-slate-800">{new Date(target.endDate).toLocaleDateString("vi-VN")}</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {target.outcome && (
+                                      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-lg text-xs font-semibold">
+                                        <span className="font-extrabold">Kết quả đạt được: </span> {target.outcome}
+                                      </div>
+                                    )}
+
+                                    {/* Evaluation timeline for this student target */}
+                                    <div className="pt-2">
+                                      <h5 className="font-black text-slate-700 text-xs uppercase tracking-wide mb-3">Nhật ký nhận xét định kỳ</h5>
+                                      {!target.evaluations || target.evaluations.length === 0 ? (
+                                        <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
+                                      ) : (
+                                        <div className="relative border-l border-slate-200 pl-4 space-y-4 ml-1">
+                                          {target.evaluations.map((ev: any) => (
+                                            <div key={ev.id} className="relative">
+                                              <span className="absolute -left-[21px] top-1 bg-indigo-500 rounded-full h-2.5 w-2.5 border border-white shadow-xs"></span>
+                                              <div className="text-[10px] text-slate-400 font-bold">
+                                                {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
+                                              </div>
+                                              <div className="text-xs font-black text-indigo-700 mt-0.5">Tiến bộ: {ev.trackingLevel}</div>
+                                              <p className="text-xs text-slate-600 mt-1 leading-relaxed">{ev.comment}</p>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>

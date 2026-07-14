@@ -1,5 +1,5 @@
-import { ChatBotWidget } from "@/components/ChatBotWidget"
-
+﻿import { ChatBotWidget } from "@/components/ChatBotWidget"
+import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { Sidebar } from "@/components/Sidebar"
 import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
@@ -42,9 +42,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         {/* Top Header */}
         <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
+            <MobileMenuTrigger />
             <div className="hidden md:flex text-sm font-medium text-slate-500">
-              <span className="text-[#00A99D] font-bold">Giáo viên</span>
-              
+              <span className="text-[#00A99D] font-bold">GiĂ¡o viĂªn</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -61,3 +61,4 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     </div>
   )
 }
+

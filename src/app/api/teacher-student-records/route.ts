@@ -141,8 +141,24 @@ export async function GET(req: Request) {
       })
 
       // Fetch commitment
-      const commitment = await prisma.studentLearningCommitment.findUnique({
-        where: { studentId }
+      const commitment = await prisma.studentLearningCommitment.findFirst({
+        where: { studentId, ...(academicYearId ? { academicYearId } : {}) }
+      })
+
+      // Fetch learning support targets & evaluations
+      const learningSupportTargets = await prisma.learningSupportTarget.findMany({
+        where: { studentId, ...(academicYearId ? { academicYearId } : {}) },
+        include: {
+          assignments: {
+            include: {
+              teacher: { select: { teacherName: true } }
+            }
+          },
+          evaluations: {
+            orderBy: { createdAt: "desc" }
+          }
+        },
+        orderBy: { createdAt: "desc" }
       })
 
       // Fetch highlight comments
@@ -235,7 +251,8 @@ export async function GET(req: Request) {
         commitment,
         highlightComments,
         entranceSurvey,
-        transfers
+        transfers,
+        learningSupportTargets
       })
     }
 
@@ -364,23 +381,73 @@ export async function POST(req: Request) {
     }
 
     if (action === "saveCommitment") {
-      const { studentId, content, status } = body
-      if (!studentId || !content) {
-        return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      const { studentId, content, status, academicYearId } = body
+      if (!studentId || !content || !academicYearId) {
+        return NextResponse.json({ error: "Missing required fields: studentId, content, academicYearId" }, { status: 400 })
       }
 
-      const commitment = await prisma.studentLearningCommitment.upsert({
-        where: { studentId },
-        create: {
+      const existing = await prisma.studentLearningCommitment.findFirst({
+        where: { studentId, academicYearId }
+      })
+
+      let commitment;
+      if (existing) {
+        commitment = await prisma.studentLearningCommitment.update({
+          where: { id: existing.id },
+          data: {
+            content,
+            status: status || "ACTIVE",
+            teacherId: teacher.id,
+            teacherName: teacher.teacherName
+          }
+        })
+      } else {
+        commitment = await prisma.studentLearningCommitment.create({
+          data: {
+            studentId,
+            academicYearId,
+            content,
+            status: status || "ACTIVE",
+            teacherId: teacher.id,
+            teacherName: teacher.teacherName
+          }
+        })
+      }
+      return NextResponse.json(commitment)
+    }
+
+    if (action === "inheritCommitment") {
+      const { studentId, academicYearId } = body
+      if (!studentId || !academicYearId) {
+        return NextResponse.json({ error: "Missing required fields: studentId, academicYearId" }, { status: 400 })
+      }
+
+      const previousCommitment = await prisma.studentLearningCommitment.findFirst({
+        where: {
           studentId,
-          content,
-          status: status || "ACTIVE",
-          teacherId: teacher.id,
-          teacherName: teacher.teacherName
+          academicYearId: { not: academicYearId }
         },
-        update: {
-          content,
-          status: status || "ACTIVE",
+        orderBy: { createdAt: "desc" }
+      })
+
+      if (!previousCommitment) {
+        return NextResponse.json({ error: "Không tìm thấy cam kết năm học cũ để kế thừa" }, { status: 404 })
+      }
+
+      const existing = await prisma.studentLearningCommitment.findFirst({
+        where: { studentId, academicYearId }
+      })
+
+      if (existing) {
+        return NextResponse.json({ error: "Cam kết cho năm học hiện tại đã tồn tại" }, { status: 400 })
+      }
+
+      const commitment = await prisma.studentLearningCommitment.create({
+        data: {
+          studentId,
+          academicYearId,
+          content: previousCommitment.content,
+          status: "ACTIVE",
           teacherId: teacher.id,
           teacherName: teacher.teacherName
         }

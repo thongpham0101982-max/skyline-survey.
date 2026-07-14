@@ -30,6 +30,9 @@ export default function TeacherCommitmentPage() {
   
   const [content, setContent] = useState("")
   const [status, setStatus] = useState("ACTIVE")
+  const [hasPrevious, setHasPrevious] = useState(false)
+  const [previousCommitment, setPreviousCommitment] = useState<any>(null)
+  const [inheriting, setInheriting] = useState(false)
 
   const [loadingClasses, setLoadingClasses] = useState(true)
   const [loadingStudents, setLoadingStudents] = useState(false)
@@ -102,7 +105,9 @@ export default function TeacherCommitmentPage() {
         const activeStudent = students.find(s => s.id === selectedStudentId)
         setSelectedStudent(activeStudent)
 
-        const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}`)
+        setHasPrevious(false)
+        setPreviousCommitment(null)
+        const res = await fetch(`/api/ktdbcl/support?action=getCommitment&studentId=${selectedStudentId}&academicYearId=${yearId}`)
         if (res.ok) {
           const data = await res.json()
           if (data.commitment) {
@@ -113,6 +118,10 @@ export default function TeacherCommitmentPage() {
             const defaultContent = `BẢN CAM KẾT HỌC TẬP & RÈN LUYỆN\n\nHọc sinh: ${activeStudent?.studentName || ""}\nLớp: ${activeStudent?.className || activeStudent?.class?.className || ""}\n\nHọc sinh và gia đình cam kết thực hiện nghiêm túc các điều khoản rèn luyện:\n1. Đi học đúng giờ, chuyên cần học tập.\n2. Tích cực tham gia các hoạt động học tập nhóm và hoạt động trải nghiệm.\n3. Phối hợp với thầy cô giáo bộ môn để hoàn thành đầy đủ nhiệm vụ học tập.\n4. Rèn luyện đạo đức, tác phong chuẩn mực của học sinh trường Sky-Line.`
             setContent(defaultContent)
             setStatus("ACTIVE")
+            if (data.hasPrevious) {
+              setHasPrevious(true)
+              setPreviousCommitment(data.previousCommitment)
+            }
           }
         }
       } catch (err) {
@@ -123,6 +132,45 @@ export default function TeacherCommitmentPage() {
     }
     loadRecord()
   }, [selectedStudentId, students])
+
+  const handleInherit = async () => {
+    if (!selectedStudentId || !yearId) return
+    try {
+      setInheriting(true)
+      setMessage(null)
+      const res = await fetch("/api/teacher-student-records?action=inheritCommitment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: selectedStudentId,
+          academicYearId: yearId
+        })
+      })
+      if (res.ok) {
+        toast?.success?.("Kế thừa cam kết thành công!") || alert("Kế thừa cam kết thành công!")
+        setMessage({ type: "success", text: "Kế thừa cam kết thành công!" })
+        // Reload record
+        const activeStudent = students.find(s => s.id === selectedStudentId)
+        setSelectedStudent(activeStudent)
+        const loadRes = await fetch(`/api/ktdbcl/support?action=getCommitment&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+        if (loadRes.ok) {
+          const loadData = await loadRes.json()
+          if (loadData.commitment) {
+            setContent(loadData.commitment.content || "")
+            setStatus(loadData.commitment.status || "ACTIVE")
+            setHasPrevious(false)
+          }
+        }
+      } else {
+        const errData = await res.json()
+        setMessage({ type: "error", text: errData.error || "Không thể kế thừa cam kết." })
+      }
+    } catch (e) {
+      setMessage({ type: "error", text: "Lỗi kết nối." })
+    } finally {
+      setInheriting(false)
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,6 +184,7 @@ export default function TeacherCommitmentPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: selectedStudentId,
+          academicYearId: yearId,
           content,
           status
         })
@@ -285,6 +334,22 @@ export default function TeacherCommitmentPage() {
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#00A99D] transition-all resize-none"
                     />
                   </div>
+
+                  {hasPrevious && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs font-semibold space-y-2 mb-4">
+                      <p className="text-amber-800">
+                        Học sinh này chưa có cam kết học tập cho năm học hiện tại, nhưng đã có cam kết ở năm học trước. Bạn có muốn kế thừa nội dung cam kết cũ?
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleInherit}
+                        disabled={inheriting}
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-3 rounded-lg transition-colors text-[10px]"
+                      >
+                        {inheriting ? "Đang kế thừa..." : "Kế thừa cam kết từ năm học trước"}
+                      </button>
+                    </div>
+                  )}
 
                   <div className="flex justify-end pt-2">
                     <button

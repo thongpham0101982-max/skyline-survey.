@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { TeacherClassesClient } from "./client"
+import { cookies } from "next/headers"
 
 async function getTeacherClasses(userId: string) {
   const teacher = await prisma.teacher.findUnique({ where: { userId } })
@@ -35,12 +36,16 @@ export default async function TeacherClassesPage() {
     orderBy: { startDate: "desc" }
   })
 
+  const cookieStore = await cookies()
+  const activeYearCookie = cookieStore.get("selectedAcademicYear")?.value
+
   const safeJson = (d: any) => JSON.parse(JSON.stringify(d))
 
   return (
     <TeacherClassesClient 
       initialClasses={safeJson(classes)} 
       academicYears={safeJson(academicYears)} 
+      selectedYearCookie={activeYearCookie}
     />
   )
 }
