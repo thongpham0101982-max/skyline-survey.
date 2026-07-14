@@ -2,10 +2,12 @@
 
 import React, { useState } from 'react'
 import { 
-  User, Lock, GraduationCap, Users, Shield, 
+  User, Lock, GraduationCap, Users,
   Eye, EyeOff, AlertCircle, ArrowRight,
-  ClipboardCheck, Presentation, Trophy, Heart, Compass, BookOpen,
-  FileText, ShieldCheck, TrendingUp, AlertTriangle, ChevronDown, ChevronUp
+  FileText, ShieldCheck, TrendingUp, AlertTriangle, ChevronDown, ChevronUp,
+  BookOpen, Heart, Trophy, Compass, BarChart3, Microscope,
+  ClipboardList, Clock, Medal, BrainCircuit, Target, Lightbulb,
+  CheckCircle, Star
 } from 'lucide-react'
 
 // FeatureCard Component
@@ -14,20 +16,25 @@ interface FeatureCardProps {
   title: string
   description: string
   icon: React.ComponentType<any>
+  gradientFrom: string
+  gradientTo: string
   iconColor: string
 }
 
-export function FeatureCard({ index, title, description, icon: Icon, iconColor }: FeatureCardProps) {
+export function FeatureCard({ index, title, description, icon: Icon, gradientFrom, gradientTo, iconColor }: FeatureCardProps) {
   return (
     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 group select-none">
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] font-black text-teal-300/80">{index}</span>
-        <div className={`w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md select-none shrink-0 pointer-events-none group-hover:scale-110 transition-transform ${iconColor}`}>
-          <Icon className="w-5 h-5" />
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] font-black text-teal-300/60 tracking-widest">{index}</span>
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shrink-0 pointer-events-none group-hover:scale-110 transition-transform"
+          style={{ background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})` }}
+        >
+          <Icon className={`w-4.5 h-4.5 ${iconColor}`} />
         </div>
       </div>
-      <h3 className="text-xs font-bold text-white mt-3 leading-tight">{title}</h3>
-      <p className="text-[10px] text-teal-100/60 leading-relaxed font-semibold mt-1.5">
+      <h3 className="text-xs font-bold text-white leading-tight">{title}</h3>
+      <p className="text-[10px] text-teal-100/50 leading-relaxed mt-1.5">
         {description}
       </p>
     </div>
@@ -39,8 +46,8 @@ export function StudentProfileHighlight() {
   const badges = [
     { text: 'Kết quả học tập', icon: BookOpen },
     { text: 'Hỗ trợ học tập & tâm lý', icon: Heart },
-    { text: 'Trải nghiệm & dự án', icon: ClipboardCheck },
-    { text: 'Khảo sát đầu vào', icon: User },
+    { text: 'Trải nghiệm & dự án', icon: ClipboardList },
+    { text: 'Khảo sát đầu vào', icon: BarChart3 },
     { text: 'Thành tích kỳ thi', icon: Trophy },
     { text: 'Hướng nghiệp', icon: Compass },
     { text: 'Chuẩn đầu ra', icon: ShieldCheck },
@@ -49,29 +56,29 @@ export function StudentProfileHighlight() {
   ]
 
   return (
-    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 mt-6 relative overflow-hidden select-none">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-5">
+    <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 mt-5 relative overflow-hidden select-none">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
         
         {/* Folder Illustration */}
-        <div className="flex-shrink-0 w-[120px] h-[96px] bg-teal-500/10 border border-teal-300/20 rounded-2xl flex items-center justify-center relative shadow-inner group">
-          <div className="w-16 h-12 bg-[#0CB3AD]/20 border border-[#0CB3AD]/40 rounded-xl relative flex items-center justify-center transition-all duration-300 group-hover:scale-105 group-hover:bg-[#0CB3AD]/30 pointer-events-none">
-            <FileText className="w-6 h-6 text-[#0CB3AD]" />
-            <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-[#004F4B] flex items-center justify-center">
+        <div className="flex-shrink-0 w-[100px] h-[84px] bg-teal-500/10 border border-teal-300/20 rounded-2xl flex items-center justify-center relative shadow-inner group">
+          <div className="w-14 h-10 bg-[#0CB3AD]/20 border border-[#0CB3AD]/40 rounded-xl relative flex items-center justify-center transition-all duration-300 group-hover:scale-105 pointer-events-none">
+            <FileText className="w-5 h-5 text-[#0CB3AD]" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#004F4B] flex items-center justify-center">
               <div className="w-1 h-1 rounded-full bg-white animate-pulse" />
             </div>
           </div>
         </div>
 
         <div className="flex-1">
-          <h3 className="text-sm font-bold text-white tracking-wide uppercase font-heading">
+          <h3 className="text-xs font-extrabold text-white tracking-wide uppercase">
             Hồ sơ học tập điện tử học sinh
           </h3>
-          <p className="text-[11px] font-semibold text-teal-100/40 leading-relaxed mt-1">
+          <p className="text-[10px] text-teal-100/40 leading-relaxed mt-1">
             Tổng hợp toàn bộ quá trình học tập, rèn luyện và phát triển của học sinh qua từng năm học.
           </p>
           
           {/* Badges container */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 mt-3">
             {badges.map((badge, idx) => {
               const BIcon = badge.icon;
               return (
@@ -98,43 +105,55 @@ export function FeatureOverview() {
       index: '01',
       title: 'Khảo sát năng lực đầu vào',
       description: 'Tổ chức khảo sát, nhập kết quả, phân tích năng lực, hỗ trợ tuyển sinh và xếp lớp.',
-      icon: ClipboardCheck,
-      iconColor: 'text-[#21875A]'
+      icon: Microscope,
+      gradientFrom: '#059669',
+      gradientTo: '#10B981',
+      iconColor: 'text-white'
     },
     {
       index: '02',
       title: 'Quản lý dự giờ giáo viên',
-      description: 'Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn giáo viên.',
-      icon: Presentation,
-      iconColor: 'text-[#004F4B]'
+      description: 'Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn.',
+      icon: Clock,
+      gradientFrom: '#0369A1',
+      gradientTo: '#0EA5E9',
+      iconColor: 'text-white'
     },
     {
       index: '03',
       title: 'Thành tích và kỳ thi học sinh',
-      description: 'Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích học sinh.',
-      icon: Trophy,
-      iconColor: 'text-[#D97706]'
+      description: 'Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích.',
+      icon: Medal,
+      gradientFrom: '#B45309',
+      gradientTo: '#F59E0B',
+      iconColor: 'text-white'
     },
     {
       index: '04',
       title: 'Hỗ trợ học tập và tâm lý',
-      description: 'Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập, tư vấn tâm lý và kết quả chuyển hóa.',
-      icon: Heart,
-      iconColor: 'text-[#D64545]'
+      description: 'Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập và tư vấn tâm lý.',
+      icon: BrainCircuit,
+      gradientFrom: '#BE185D',
+      gradientTo: '#EC4899',
+      iconColor: 'text-white'
     },
     {
       index: '05',
       title: 'Hướng nghiệp & tài chính',
-      description: 'Quản lý hoạt động hướng nghiệp, kết quả định hướng nghề nghiệp và thông tin tài chính theo phân quyền.',
-      icon: Compass,
-      iconColor: 'text-[#0EA5E9]'
+      description: 'Quản lý hoạt động hướng nghiệp, định hướng nghề nghiệp và thông tin tài chính theo phân quyền.',
+      icon: Target,
+      gradientFrom: '#6D28D9',
+      gradientTo: '#8B5CF6',
+      iconColor: 'text-white'
     },
     {
       index: '06',
-      title: 'Kết quả học tập, dự án',
-      description: 'Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ, dự án và mức độ tham gia của học sinh.',
-      icon: BookOpen,
-      iconColor: 'text-[#8B5CF6]'
+      title: 'Kết quả học tập & dự án',
+      description: 'Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ và mức độ tham gia.',
+      icon: Lightbulb,
+      gradientFrom: '#0F766E',
+      gradientTo: '#14B8A6',
+      iconColor: 'text-white'
     }
   ]
 
@@ -156,24 +175,26 @@ export function FeatureOverview() {
       {/* Main Content Area */}
       <div className={`transition-all duration-300 overflow-hidden md:block ${expanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'}`}>
         {/* Title and Subtitle */}
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-xl lg:text-2xl font-black text-white leading-tight tracking-wide font-heading">
+        <div className="mb-6 md:mb-7">
+          <h1 className="text-xl lg:text-2xl font-black text-white leading-tight tracking-wide">
             HỆ THỐNG QUẢN TRỊ<br />CHẤT LƯỢNG GIÁO DỤC SKY-LINE
           </h1>
-          <p className="text-xs font-semibold text-teal-100/60 leading-relaxed max-w-xl mt-3">
+          <p className="text-xs text-teal-100/60 leading-relaxed max-w-xl mt-2.5">
             Nền tảng quản trị tập trung dữ liệu người học, người dạy và các hoạt động giáo dục trong toàn Hệ thống Sky-Line.
           </p>
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {modules.map((m) => (
             <FeatureCard 
               key={m.index} 
               index={m.index} 
               title={m.title} 
               description={m.description} 
-              icon={m.icon} 
+              icon={m.icon}
+              gradientFrom={m.gradientFrom}
+              gradientTo={m.gradientTo}
               iconColor={m.iconColor}
             />
           ))}
@@ -256,7 +277,6 @@ export function PasswordInput({
 }: PasswordInputProps) {
   return (
     <div className="relative group w-full">
-      {/* Icon wrapper is absolutely positioned with pointer-events-none */}
       <div className="absolute left-[18px] top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#0CB3AD] transition-colors pointer-events-none" aria-hidden="true">
         <Lock className="w-4.5 h-4.5" />
       </div>
@@ -270,7 +290,6 @@ export function PasswordInput({
         autoComplete="current-password"
         className="w-full h-[54px] pl-[50px] pr-[50px] rounded-[14px] border border-[#D7E2E5] bg-white text-sm font-medium text-[#17383D] placeholder-slate-400 hover:border-slate-300 focus:bg-white focus:border-[#0CB3AD] focus:ring-4 focus:ring-[#0CB3AD]/10 outline-none transition-all duration-200"
       />
-      {/* Toggle password visibility button */}
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}
