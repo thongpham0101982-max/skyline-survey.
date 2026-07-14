@@ -400,6 +400,15 @@ model Subject {
   status                     String                      @default("ACTIVE")
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
+
+  // Relationships for Parent-Child subjects
+  parentId                   String?
+  parentSubject              Subject?                    @relation("SubSubjects", fields: [parentId], references: [id], onDelete: SetNull)
+  subSubjects                Subject[]                   @relation("SubSubjects")
+
+  // Subject category: MOET, SKL, INTERNATIONAL
+  category                   String?                     @default("MOET")
+
   quotas                     SubjectQuota[]
   mainTeachers               Teacher[]                   @relation("teacherMainSubject")
   assignments                TeachingAssignment[]

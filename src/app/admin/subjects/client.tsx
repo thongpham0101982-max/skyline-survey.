@@ -1,6 +1,6 @@
 "use client"
 import React, { useState } from "react"
-import { Plus, Edit2, Trash2, CheckCircle2, X, CalendarDays, Filter, BookOpen, Layers } from "lucide-react"
+import { Plus, Edit2, Trash2, CheckCircle2, X, CalendarDays, Filter, BookOpen, Layers, GitMerge } from "lucide-react"
 import { createSubject, updateSubject, deleteSubject } from "./actions"
 
 const DEFAULT_QUOTA = {
@@ -16,11 +16,14 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   const [selectedYearId, setSelectedYearId] = useState(defaultYearId || (safeYears[0]?.id || ""));
   const [filterLevel, setFilterLevel] = useState("ALL_LEVELS");
   const [filterProgram, setFilterProgram] = useState("ALL_PROGRAMS");
+  const [filterCategory, setFilterCategory] = useState("ALL_CATEGORIES");
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({ 
     id: "", code: "", name: "", levels: [] as string[], desc: "", 
     studyPrograms: [] as string[],
+    parentId: "",
+    category: "MOET",
     quotasByProgram: {} as Record<string, typeof DEFAULT_QUOTA>
   });
   const [activeTab, setActiveTab] = useState<string>("");
@@ -40,6 +43,8 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         levels: s.level && s.level !== "ALL" ? s.level.split(', ') : [], 
         desc: s.description || "", 
         studyPrograms: progs,
+        parentId: s.parentId || "",
+        category: s.category || "MOET",
         quotasByProgram: qByProg
       });
       setActiveTab(progs[0] || "");
@@ -50,6 +55,8 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
         levels: filterLevel !== "ALL_LEVELS" ? [filterLevel] : [], 
         desc: "", 
         studyPrograms: [initialProg],
+        parentId: "",
+        category: "MOET",
         quotasByProgram: { [initialProg]: { ...DEFAULT_QUOTA } }
       });
       setActiveTab(initialProg);
@@ -92,10 +99,12 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
       ...(formData.quotasByProgram[prog] || { ...DEFAULT_QUOTA })
     }));
     
+    const pId = formData.parentId || null;
+
     if (formData.id === "new") {
-      res = await createSubject(formData.code, formData.name, formData.levels.length > 0 ? formData.levels.join(', ') : "ALL", formData.desc, undefined, formData.studyPrograms.join(', '), quotasArr);
+      res = await createSubject(formData.code, formData.name, formData.levels.length > 0 ? formData.levels.join(', ') : "ALL", formData.desc, undefined, formData.studyPrograms.join(', '), quotasArr, pId, formData.category);
     } else {
-      res = await updateSubject(formData.id, formData.code, formData.name, formData.levels.length > 0 ? formData.levels.join(', ') : "ALL", formData.desc, undefined, formData.studyPrograms.join(', '), quotasArr);
+      res = await updateSubject(formData.id, formData.code, formData.name, formData.levels.length > 0 ? formData.levels.join(', ') : "ALL", formData.desc, undefined, formData.studyPrograms.join(', '), quotasArr, pId, formData.category);
     }
     
     if (res.success) {
@@ -114,7 +123,12 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
   }
 
   const levelLabels: any = { "ALL": "Tất cả", "PRIMARY": "Tiểu học", "MIDDLE": "THCS", "HIGH": "THPT" };
-  const displayedSubjects = subjects.filter((s:any) => (filterLevel === "ALL_LEVELS" || (s.level && s.level.includes(filterLevel))) && (filterProgram === "ALL_PROGRAMS" || (s.studyPrograms && s.studyPrograms.includes(filterProgram))));
+  
+  const displayedSubjects = subjects.filter((s:any) => 
+    (filterLevel === "ALL_LEVELS" || (s.level && s.level.includes(filterLevel))) && 
+    (filterProgram === "ALL_PROGRAMS" || (s.studyPrograms && s.studyPrograms.includes(filterProgram))) &&
+    (filterCategory === "ALL_CATEGORIES" || s.category === filterCategory)
+  );
 
   const explodedRows = displayedSubjects.flatMap((s: any) => {
     const progs = s.studyPrograms ? s.studyPrograms.split(', ') : ["DEFAULT"];
@@ -126,9 +140,46 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
       });
   });
 
-  const primaryRows = explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("PRIMARY")));
-  const middleRows = explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("MIDDLE")));
-  const highRows = explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("HIGH")));
+  const sortRowsAsTree = (rowsList: any[]) => {
+    const rootRows = rowsList.filter(r => !r.subject.parentId);
+    const childRows = rowsList.filter(r => r.subject.parentId);
+    
+    const result: any[] = [];
+    rootRows.forEach(root => {
+      result.push(root);
+      const children = childRows.filter(child => child.subject.parentId === root.subject.id);
+      result.push(...children);
+    });
+    
+    // Append orphans if any
+    const orphanRows = childRows.filter(child => !rootRows.some(root => root.subject.id === child.subject.parentId));
+    result.push(...orphanRows);
+    
+    return result;
+  }
+
+  const primaryRows = sortRowsAsTree(explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("PRIMARY"))));
+  const middleRows = sortRowsAsTree(explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("MIDDLE"))));
+  const highRows = sortRowsAsTree(explodedRows.filter((r:any) => r.subject.level === "ALL" || (r.subject.level && r.subject.level.includes("HIGH"))));
+
+  const renderCategoryBadge = (cat?: string) => {
+    const c = cat || "MOET";
+    const styles: any = {
+      MOET: "bg-blue-50 text-blue-700 border-blue-200",
+      SKL: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      INTERNATIONAL: "bg-amber-50 text-amber-700 border-amber-200"
+    };
+    const labels: any = {
+      MOET: "MOET",
+      SKL: "SKL",
+      INTERNATIONAL: "Quốc tế"
+    };
+    return (
+      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${styles[c] || styles.MOET}`} aria-hidden="true">
+        {labels[c] || c}
+      </span>
+    );
+  };
 
   const renderTable = (title: string, theme: string, rows: any[], grades: number[], totalField: string) => {
     if (rows.length === 0) return null;
@@ -159,7 +210,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
           <table className="w-full text-left whitespace-nowrap min-w-[800px]">
             <thead>
               <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[120px]">Mã môn</th>
+                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider w-[150px]">Mã môn</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[200px]">Tên môn</th>
                 <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Hệ học</th>
                 {grades.map(g => (
@@ -178,11 +229,21 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                   <tr key={`${s.id}-${p}`} className="hover:bg-slate-50/80 transition-colors group">
                     <td className="px-6 py-4">
                       {isFirstOfSubject ? (
-                        <span className="font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md text-xs">{s.subjectCode}</span>
-                      ) : <span className="text-slate-300 ml-4">↳</span>}
+                        <div className="flex items-center gap-1.5">
+                          {s.parentId && <span className="text-slate-400 font-normal text-xs">└─</span>}
+                          <span className={`font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-md text-xs ${s.parentId ? 'opacity-80' : ''}`}>{s.subjectCode}</span>
+                        </div>
+                      ) : <span className="text-slate-300 ml-6">↳</span>}
                     </td>
                     <td className="px-6 py-4">
-                      {isFirstOfSubject ? <span className="font-bold text-slate-800">{s.subjectName}</span> : ''}
+                      {isFirstOfSubject ? (
+                        <div className="flex items-center gap-2">
+                          <span className={`font-bold text-slate-800 ${s.parentId ? 'text-slate-600 font-semibold' : ''}`}>
+                            {s.subjectName}
+                          </span>
+                          {renderCategoryBadge(s.category)}
+                        </div>
+                      ) : ''}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -245,6 +306,9 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
     );
   };
 
+  // Only subjects that do not have a parent and are not the current subject
+  const parentCandidates = subjects.filter((s: any) => !s.parentId && s.id !== formData.id);
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto pb-12">
       {/* Header Area */}
@@ -264,7 +328,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
         <div className="space-y-2">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
             <CalendarDays className="w-4 h-4 text-indigo-500" /> Năm học áp dụng
@@ -306,6 +370,26 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
           >
             {["ALL_LEVELS", "PRIMARY", "MIDDLE", "HIGH"].map((lvl) => (
               <option key={lvl} value={lvl}>{lvl === "ALL_LEVELS" ? "Tất cả Bậc học" : levelLabels[lvl]}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            <Filter className="w-4 h-4 text-blue-500" /> Danh mục môn học
+          </label>
+          <select 
+            value={filterCategory} 
+            onChange={e => setFilterCategory(e.target.value)}
+            className="w-full bg-slate-50/50 border border-slate-200 text-slate-700 text-sm font-bold rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 block p-3.5 outline-none transition-all cursor-pointer hover:bg-slate-50"
+          >
+            {[
+              { id: "ALL_CATEGORIES", label: "Tất cả Danh mục" },
+              { id: "MOET", label: "Môn MOET (Bộ GD&ĐT)" },
+              { id: "SKL", label: "Môn SKL (Đặc thù)" },
+              { id: "INTERNATIONAL", label: "Môn Quốc tế" }
+            ].map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.label}</option>
             ))}
           </select>
         </div>
@@ -363,6 +447,34 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       className="w-full p-3.5 bg-slate-50 rounded-2xl border-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-indigo-500 outline-none transition-all font-bold text-sm" 
                       placeholder="VD: Toán học" />
                   </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Danh mục môn học</label>
+                    <select 
+                      value={formData.category} 
+                      onChange={e=>setFormData({...formData, category: e.target.value})}
+                      className="w-full p-3.5 bg-slate-50 rounded-2xl border-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-indigo-500 outline-none transition-all font-bold text-sm cursor-pointer"
+                    >
+                      <option value="MOET">Môn học Bộ GD&ĐT (MOET)</option>
+                      <option value="SKL">Môn học đặc thù Sky-Line (SKL)</option>
+                      <option value="INTERNATIONAL">Môn học Quốc tế</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700">Thuộc môn học (Môn cha)</label>
+                    <select 
+                      value={formData.parentId} 
+                      onChange={e=>setFormData({...formData, parentId: e.target.value})}
+                      className="w-full p-3.5 bg-slate-50 rounded-2xl border-none ring-1 ring-inset ring-slate-200 focus:ring-2 focus:ring-inset focus:ring-indigo-500 outline-none transition-all font-bold text-sm cursor-pointer"
+                    >
+                      <option value="">Không có (Môn chính)</option>
+                      {parentCandidates.map((p: any) => (
+                        <option key={p.id} value={p.id}>{p.subjectName} ({p.subjectCode})</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Hệ đào tạo</label>
                     <div className="flex flex-wrap gap-3">
@@ -381,6 +493,7 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                       })}
                     </div>
                   </div>
+
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700">Cấp bậc áp dụng</label>
                     <div className="flex flex-wrap gap-3">
@@ -465,7 +578,6 @@ export function SubjectsClient({ initialSubjects, years, defaultYearId }: any) {
                                       : (q[`quotaG${g}`] ? String(q[`quotaG${g}`]) : '')}
                                     onChange={e => {
                                       const raw = e.target.value;
-                                      // Only allow: digits, one dot or comma, optional leading minus
                                       if (raw !== '' && !/^-?[0-9]*[.,]?[0-9]*$/.test(raw)) return;
                                       const key = `${activeTab}-quotaG${g}`;
                                       setRawInputs(prev => ({ ...prev, [key]: raw }));
