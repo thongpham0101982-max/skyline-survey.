@@ -1,13 +1,17 @@
-import { prisma } from "@/lib/db"
+﻿import { prisma } from "@/lib/db"
 import { SubjectsClient } from "./client"
 
-export const metadata = { title: "Quản lý môn học | Admin Portal" }
+export const metadata = { title: "Quan ly mon hoc | Admin Portal" }
 export const dynamic = "force-dynamic";
 
 export default async function SubjectsPage() {
   const subjects = await prisma.subject.findMany({
     orderBy: { subjectCode: 'asc' },
-    include: { quotas: true }
+    include: {
+      quotas: true,
+      parentSubject: { select: { id: true, subjectName: true, subjectCode: true } },
+      subSubjects: { select: { id: true, subjectName: true, subjectCode: true } }
+    }
   })
 
   const years = await prisma.academicYear.findMany({
@@ -20,11 +24,10 @@ export default async function SubjectsPage() {
   return (
     <div className="space-y-6">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900">Quản lý môn học</h1>
-        <p className="text-slate-500 mt-1">Thêm mới, sửa và quản lý danh sách môn học trong trường.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Quan ly mon hoc</h1>
+        <p className="text-slate-500 mt-1">Them moi, sua va quan ly danh sach mon hoc trong truong.</p>
       </div>
       <SubjectsClient initialSubjects={subjects} years={years} defaultYearId={defaultYearId} />
     </div>
   )
 }
-// trigger reload
