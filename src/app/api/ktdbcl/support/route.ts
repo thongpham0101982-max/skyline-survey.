@@ -224,6 +224,31 @@ export async function POST(req: Request) {
         })
         return NextResponse.json(updated)
       } else {
+        // Check if unique target already exists
+        const existing = await prisma.learningSupportTarget.findUnique({
+          where: {
+            studentId_supportType_academicYearId: {
+              studentId,
+              supportType,
+              academicYearId
+            }
+          }
+        })
+
+        if (existing) {
+          const updated = await prisma.learningSupportTarget.update({
+            where: { id: existing.id },
+            data: {
+              status: status || "TIẾP TỤC THEO TUẦN",
+              terminationStatus: "ACTIVE",
+              reason: reason || existing.reason,
+              notes: notes || existing.notes,
+              createdById: existing.createdById || (teacher ? teacher.id : null)
+            }
+          })
+          return NextResponse.json(updated)
+        }
+
         const created = await prisma.learningSupportTarget.create({
           data: {
             studentId,

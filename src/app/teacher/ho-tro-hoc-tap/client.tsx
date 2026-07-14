@@ -643,21 +643,27 @@ export function TeacherSupportClient({
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700 flex justify-between items-center">
                   <span>Chọn học sinh cần hỗ trợ (Chọn một hoặc nhiều em):</span>
-                  {classStudents.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedStudentIds.length === classStudents.length) {
-                          setSelectedStudentIds([])
-                        } else {
-                          setSelectedStudentIds(classStudents.map(s => s.id))
-                        }
-                      }}
-                      className="text-indigo-600 hover:text-indigo-800 text-xs font-bold"
-                    >
-                      {selectedStudentIds.length === classStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
-                    </button>
-                  )}
+                  {classStudents.length > 0 && (() => {
+                    const eligibleStudents = classStudents.filter(s => {
+                      return !targets.some(t => t.studentId === s.id && t.supportType === proposeType)
+                    })
+                    if (eligibleStudents.length === 0) return null
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedStudentIds.length === eligibleStudents.length) {
+                            setSelectedStudentIds([])
+                          } else {
+                            setSelectedStudentIds(eligibleStudents.map(s => s.id))
+                          }
+                        }}
+                        className="text-indigo-600 hover:text-indigo-800 text-xs font-bold"
+                      >
+                        {selectedStudentIds.length === eligibleStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                      </button>
+                    )
+                  })()}
                 </label>
 
                 {loadingStudentsOfClass ? (
@@ -671,22 +677,37 @@ export function TeacherSupportClient({
                 ) : (
                   <div className="border rounded-lg max-h-36 overflow-y-auto p-2 space-y-1.5 bg-slate-50">
                     {classStudents.map((s: any) => {
+                      const isAlreadyTarget = targets.some(t => t.studentId === s.id && t.supportType === proposeType)
                       const isChecked = selectedStudentIds.includes(s.id)
                       return (
-                        <label key={s.id} className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded">
+                        <label 
+                          key={s.id} 
+                          className={`flex items-center gap-2 text-xs font-medium p-1 rounded ${
+                            isAlreadyTarget ? "opacity-50 cursor-not-allowed bg-slate-100/60" : "text-slate-700 cursor-pointer hover:bg-slate-100"
+                          }`}
+                        >
                           <input
                             type="checkbox"
-                            checked={isChecked}
+                            checked={isAlreadyTarget ? false : isChecked}
+                            disabled={isAlreadyTarget}
                             onChange={() => {
+                              if (isAlreadyTarget) return
                               if (isChecked) {
                                 setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id))
                               } else {
                                 setSelectedStudentIds([...selectedStudentIds, s.id])
                               }
                             }}
-                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                           />
-                          <span>{s.studentName} ({s.studentCode})</span>
+                          <span>
+                            {s.studentName} ({s.studentCode})
+                            {isAlreadyTarget && (
+                              <span className="ml-1.5 text-[10px] text-amber-600 font-extrabold">
+                                ({proposeType === "ACADEMIC" ? "Đang bồi dưỡng môn học" : "Đang được hỗ trợ tâm lý"})
+                              </span>
+                            )}
+                          </span>
                         </label>
                       )
                     })}
