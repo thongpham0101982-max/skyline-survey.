@@ -70,7 +70,9 @@ export async function GET(req: Request) {
           ...(subjectIds ? { subjectId: { in: subjectIds } } : {}),
           ...(academicYearId ? { academicYearId } : {})
         },
-        select: { classId: true }
+        include: {
+          subject: true
+        }
       })
 
       const assignedClassIds = assignments.map(a => a.classId)
@@ -96,7 +98,19 @@ export async function GET(req: Request) {
         where: { id: { in: allClassIds } },
         orderBy: { className: "asc" }
       })
-      return NextResponse.json(classes)
+
+      const result = classes.map(c => {
+        const classAssignments = assignments.filter(a => a.classId === c.id)
+        const isHomeroom = homeroomClassIds.includes(c.id)
+        return {
+          id: c.id,
+          className: c.className,
+          isHomeroom,
+          subjects: classAssignments.map(a => a.subject)
+        }
+      })
+
+      return NextResponse.json(result)
     }
 
     if (action === "getClassStudents") {

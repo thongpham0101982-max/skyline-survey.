@@ -43,7 +43,12 @@ export function TeacherSupportClient({
   const [isRequestTermModalOpen, setIsRequestTermModalOpen] = useState(false)
 
   // Propose Form States
-  const [proposeStudentId, setProposeStudentId] = useState("")
+  const [proposeClassId, setProposeClassId] = useState("")
+  const [assignedClasses, setAssignedClasses] = useState<any[]>([])
+  const [classStudents, setClassStudents] = useState<any[]>([])
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
+  const [loadingClassesOfTeacher, setLoadingClassesOfTeacher] = useState(false)
+  const [loadingStudentsOfClass, setLoadingStudentsOfClass] = useState(false)
   const [proposeType, setProposeType] = useState("ACADEMIC")
   const [proposeReason, setProposeReason] = useState("")
   const [proposeNotes, setProposeNotes] = useState("")
@@ -62,6 +67,54 @@ export function TeacherSupportClient({
   const [termTargetId, setTermTargetId] = useState("")
   const [termOutcome, setTermOutcome] = useState("Học sinh tiến bộ vượt bậc, đạt yêu cầu")
   const [termNotes, setTermNotes] = useState("")
+
+  const fetchAssignedClasses = async () => {
+    setLoadingClassesOfTeacher(true)
+    try {
+      const res = await fetch(`/api/teacher-student-records?action=getAssignedClasses&academicYearId=${selectedYearId}`)
+      const data = await res.json()
+      if (!data.error) {
+        setAssignedClasses(data)
+        if (data.length > 0) {
+          setProposeClassId(data[0].id)
+          fetchClassStudents(data[0].id, data)
+        } else {
+          setProposeClassId("")
+          setClassStudents([])
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingClassesOfTeacher(false)
+    }
+  }
+
+  const fetchClassStudents = async (classId: string, currentClasses = assignedClasses) => {
+    if (!classId) return
+    setLoadingStudentsOfClass(true)
+    setSelectedStudentIds([])
+    try {
+      const res = await fetch(`/api/teacher-student-records?action=getClassStudents&classId=${classId}`)
+      const data = await res.json()
+      if (!data.error) {
+        setClassStudents(data)
+      }
+      
+      // Auto-populate default subject
+      const selectedClassObj = currentClasses.find(c => c.id === classId)
+      const classSubjects = selectedClassObj?.subjects || []
+      if (classSubjects.length > 0) {
+        setProposeReason(classSubjects[0].subjectName || classSubjects[0].name || "")
+      } else {
+        setProposeReason("")
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingStudentsOfClass(false)
+    }
+  }
 
   // Fetch initial configs & targets on selectYearId change
   useEffect(() => {
@@ -115,37 +168,60 @@ export function TeacherSupportClient({
     return () => window.removeEventListener("academicYearChanged", handleYearChange)
   }, [selectedYearId])
 
-  // Submit new learning support proposal
+  // Submit new learning support proposal for multiple selected students
   const handlePropose = async () => {
-    if (!proposeStudentId || !proposeReason) {
-      toast.error("Vui lòng điền đầy đủ thông tin học sinh và lý do đề xuất")
+    if (selectedStudentIds.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một học sinh để đề xuất")
       return
     }
+    if (!proposeReason) {
+      toast.error("Vui lòng điền môn học hoặc lý do bồi dưỡng")
+      return
+    }
+    setLoading(true)
     try {
-      const res = await fetch("/api/ktdbcl/support", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "saveTarget",
-          academicYearId: selectedYearId,
-          studentId: proposeStudentId,
-          supportType: proposeType,
-          sourceType: proposeType === "ACADEMIC" ? "GVBM" : "TAM_LY",
-          reason: proposeReason,
-          notes: proposeNotes,
-          status: "TIẾP TỤC THEO TUẦN"
-        })
-      })
-      const data = await res.json()
-      if (data.error) {
-        toast.error(data.error)
-      } else {
-        toast.success("Đề xuất bồi dưỡng học sinh thành công!")
-        setIsProposeModalOpen(false)
-        fetchTeacherData()
+      let successCount = 0
+      let failCount = 0
+      for (const studentId of selectedStudentIds) {
+        try {
+          const res = await fetch("/api/ktdbcl/support", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "saveTarget",
+              academicYearId: selectedYearId,
+              studentId,
+              supportType: proposeType,
+              sourceType: proposeType === "ACADEMIC" ? "GVBM" : "TAM_LY",
+              reason: proposeReason,
+              notes: proposeNotes,
+              status: "TIẾP TỤC THEO TUẦN"
+            })
+          })
+          const data = await res.json()
+          if (data.error) {
+            failCount++
+          } else {
+            successCount++
+          }
+        } catch (e) {
+          failCount++
+        }
       }
+
+      if (successCount > 0) {
+        toast.success(`Đề xuất thành công ${successCount} học sinh!`)
+      }
+      if (failCount > 0) {
+        toast.error(`Đề xuất thất bại ${failCount} học sinh.`)
+      }
+
+      setIsProposeModalOpen(false)
+      fetchTeacherData()
     } catch (e) {
-      toast.error("Gửi đề xuất thất bại")
+      toast.error("Gửi đề xuất bồi dưỡng học sinh thất bại")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -274,10 +350,13 @@ export function TeacherSupportClient({
         <div className="flex items-center gap-3">
           <button
             onClick={() => {
-              setProposeStudentId("")
+              setProposeClassId("")
+              setClassStudents([])
+              setSelectedStudentIds([])
               setProposeReason("")
               setProposeNotes("")
               setIsProposeModalOpen(true)
+              fetchAssignedClasses()
             }}
             className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
           >
@@ -427,19 +506,86 @@ export function TeacherSupportClient({
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              {/* Select class */}
               <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Chọn học sinh lớp chủ nhiệm hoặc giảng dạy:</label>
-                <select
-                  value={proposeStudentId}
-                  onChange={e => setProposeStudentId(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                >
-                  <option value="">-- Chọn học sinh --</option>
-                  {homeroomClasses.flatMap(c => c.students).map((s: any) => (
-                    <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>
-                  ))}
-                </select>
+                <label className="text-sm font-semibold text-slate-700">Chọn lớp được phân công giảng dạy/chủ nhiệm:</label>
+                {loadingClassesOfTeacher ? (
+                  <div className="text-xs text-slate-500 flex items-center gap-1.5 py-1">
+                    <RefreshCw className="h-3 w-3 animate-spin" /> Đang tải danh sách lớp...
+                  </div>
+                ) : (
+                  <select
+                    value={proposeClassId}
+                    onChange={e => {
+                      setProposeClassId(e.target.value)
+                      fetchClassStudents(e.target.value)
+                    }}
+                    className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
+                  >
+                    <option value="">-- Chọn lớp học --</option>
+                    {assignedClasses.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.className} {c.isHomeroom ? "(Lớp chủ nhiệm)" : "(Lớp giảng dạy)"}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Multiple selection of students */}
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-slate-700 flex justify-between items-center">
+                  <span>Chọn học sinh cần hỗ trợ (Chọn một hoặc nhiều em):</span>
+                  {classStudents.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedStudentIds.length === classStudents.length) {
+                          setSelectedStudentIds([])
+                        } else {
+                          setSelectedStudentIds(classStudents.map(s => s.id))
+                        }
+                      }}
+                      className="text-indigo-600 hover:text-indigo-800 text-xs font-bold"
+                    >
+                      {selectedStudentIds.length === classStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                    </button>
+                  )}
+                </label>
+
+                {loadingStudentsOfClass ? (
+                  <div className="text-xs text-slate-500 flex items-center gap-1.5 py-1">
+                    <RefreshCw className="h-3 w-3 animate-spin" /> Đang tải danh sách học sinh...
+                  </div>
+                ) : classStudents.length === 0 ? (
+                  <div className="text-xs text-slate-400 italic py-2">
+                    {proposeClassId ? "Không có học sinh nào trong lớp này." : "Vui lòng chọn lớp học trước."}
+                  </div>
+                ) : (
+                  <div className="border rounded-lg max-h-36 overflow-y-auto p-2 space-y-1.5 bg-slate-50">
+                    {classStudents.map((s: any) => {
+                      const isChecked = selectedStudentIds.includes(s.id)
+                      return (
+                        <label key={s.id} className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id))
+                              } else {
+                                setSelectedStudentIds([...selectedStudentIds, s.id])
+                              }
+                            }}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                          />
+                          <span>{s.studentName} ({s.studentCode})</span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -456,13 +602,57 @@ export function TeacherSupportClient({
 
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700">Môn học bồi dưỡng (Lý do cụ thể):</label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: Môn Toán, môn Tiếng Anh..."
-                  value={proposeReason}
-                  onChange={e => setProposeReason(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                />
+                {proposeType === "ACADEMIC" ? (
+                  <div className="space-y-1">
+                    {/* If teacher teaches subjects in this class, show a dropdown with those subjects */}
+                    {(() => {
+                      const selClassObj = assignedClasses.find(c => c.id === proposeClassId)
+                      const classSubjects = selClassObj?.subjects || []
+                      if (classSubjects.length > 0) {
+                        return (
+                          <select
+                            value={proposeReason}
+                            onChange={e => setProposeReason(e.target.value)}
+                            className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
+                          >
+                            {classSubjects.map((sub: any) => (
+                              <option key={sub.id} value={sub.subjectName || sub.name}>
+                                {sub.subjectName || sub.name}
+                              </option>
+                            ))}
+                            <option value="Khác">Khác...</option>
+                          </select>
+                        )
+                      }
+                      return (
+                        <input
+                          type="text"
+                          placeholder="Ví dụ: Môn Toán, môn Tiếng Anh..."
+                          value={proposeReason}
+                          onChange={e => setProposeReason(e.target.value)}
+                          className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
+                        />
+                      )
+                    })()}
+                    
+                    {proposeReason === "Khác" && (
+                      <input
+                        type="text"
+                        placeholder="Nhập tên môn học khác..."
+                        onChange={e => setProposeReason(e.target.value)}
+                        className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none mt-1.5"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Mô tả lý do tâm lý..."
+                    value={proposeReason}
+                    onChange={e => setProposeReason(e.target.value)}
+                    className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
+                  />
+                )}
               </div>
 
               <div className="space-y-1">
@@ -471,7 +661,7 @@ export function TeacherSupportClient({
                   placeholder="Mô tả các biểu hiện học lực, tâm lý cần hỗ trợ..."
                   value={proposeNotes}
                   onChange={e => setProposeNotes(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none h-24"
+                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none h-20"
                 />
               </div>
             </div>
