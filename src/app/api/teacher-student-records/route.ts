@@ -241,6 +241,137 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
+    if (action === "getEntranceCommitments") {
+      const academicYearId = searchParams.get("academicYearId")
+      const teacherId = searchParams.get("teacherId")
+      if (!teacherId || !academicYearId) {
+        return NextResponse.json({ error: "Missing teacherId or academicYearId" }, { status: 400 })
+      }
+
+      // Find all teaching assignments for this teacher in this academic year
+      const assignments = await prisma.teachingAssignment.findMany({
+        where: {
+          teacherId,
+          class: {
+            academicYearId
+          }
+        },
+        include: {
+          class: true,
+          subject: true
+        }
+      })
+
+      // Find all homeroom classes for this teacher in this academic year
+      const homeroomClasses = await prisma.class.findMany({
+        where: {
+          academicYearId,
+          OR: [
+            { homeroomTeacherId: teacherId },
+            { homeroomTeacherId: { contains: teacherId } }
+          ]
+        }
+      })
+
+      // Collect all class IDs
+      const classIds = Array.from(new Set([
+        ...assignments.map(a => a.classId),
+        ...homeroomClasses.map(c => c.id)
+      ]))
+
+      if (classIds.length === 0) {
+        return NextResponse.json([])
+      }
+
+      // Fetch all students in these classes
+      const students = await prisma.student.findMany({
+        where: {
+          classId: { in: classIds }
+        },
+        include: {
+          class: true
+        },
+        orderBy: {
+          studentName: "asc"
+        }
+      })
+
+      // Fetch input assessment records for these students
+      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          studentCode: { in: studentCodes },
+          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+        },
+        select: {
+          studentCode: true,
+          directorNote: true,
+          admissionResult: true
+        }
+      })
+
+      const parseCommittedSubjects = (note) => {
+        if (!note) return []
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        if (match && match[1]) {
+          return match[1].split(",").map(s => s.trim())
+        }
+        return []
+      }
+
+      // Filter and construct candidates
+      const candidates = students
+        .map((s) => {
+          const assessment = inputAssessments.find((a) => a.studentCode === s.studentCode)
+          if (!assessment) return null
+
+          const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
+          if (committedSubjects.length === 0) return null
+
+          // Determine if the teacher teaches any of the committed subjects in this student's class
+          const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
+          const teacherSubjectsInClass = assignments
+            .filter(a => a.classId === s.classId)
+            .map(a => a.subject?.name || a.subject?.subjectName || "")
+
+          const matchedSubjects = committedSubjects.filter(cs => {
+            const cleanCS = cs.toLowerCase()
+            return teacherSubjectsInClass.some(ts => {
+              const cleanTS = ts.toLowerCase()
+              if (cleanTS.includes("toán")) {
+                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
+              }
+              if (cleanTS.includes("tiếng việt") || cleanTS.includes("ngữ văn") || cleanTS.includes("văn")) {
+                return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
+              }
+              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) {
+                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
+              }
+              return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
+            })
+          })
+
+          // Include if it is Homeroom class OR if there is at least one matched subject
+          if (!isHomeroom && matchedSubjects.length === 0) return null
+
+          return {
+            id: s.id,
+            studentName: s.studentName,
+            studentCode: s.studentCode,
+            classId: s.classId,
+            className: s.class?.className || "",
+            committedSubjects,
+            matchedSubjects,
+            isHomeroom,
+            admissionResult: assessment.admissionResult,
+            directorNote: assessment.directorNote
+          }
+        })
+        .filter(Boolean)
+
+      return NextResponse.json(candidates)
+    }
+
     if (action === "getStudentRecord") {
       const studentId = searchParams.get("studentId")
       if (!studentId) return NextResponse.json({ error: "Missing studentId" }, { status: 400 })

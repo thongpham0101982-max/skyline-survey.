@@ -27,7 +27,9 @@ export function TeacherSupportClient({
   const [selectedYearId, setSelectedYearId] = useState(
     academicYears[0]?.id || ""
   )
-  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "history">("assigned")
+  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history">("assigned")
+  const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
+  const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
 
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
@@ -179,6 +181,22 @@ export function TeacherSupportClient({
     }
   }, [academicYears])
 
+  const fetchEntranceCommitments = async () => {
+    if (!selectedYearId || !teacher?.id) return
+    setLoadingEntranceCommitments(true)
+    try {
+      const res = await fetch(`/api/teacher-student-records?action=getEntranceCommitments&teacherId=${teacher.id}&academicYearId=${selectedYearId}`)
+      const data = await res.json()
+      if (!data.error) {
+        setEntranceCommitmentStudents(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingEntranceCommitments(false)
+    }
+  }
+
   const fetchTeacherData = async () => {
     if (!selectedYearId) return
     setLoading(true)
@@ -206,6 +224,7 @@ export function TeacherSupportClient({
   useEffect(() => {
     fetchTeacherData()
     fetchAssignedClasses()
+    fetchEntranceCommitments()
   }, [selectedYearId])
 
   // Local storage year sync listener
@@ -307,6 +326,7 @@ export function TeacherSupportClient({
 
       setIsProposeModalOpen(false)
       fetchTeacherData()
+      fetchEntranceCommitments()
     } catch (e) {
       toast.error("Gửi đề xuất bồi dưỡng học sinh thất bại")
     } finally {
@@ -464,7 +484,7 @@ export function TeacherSupportClient({
       <div className="flex border-b border-slate-200 gap-6">
         <button
           onClick={() => setActiveSubTab("assigned")}
-          className={`py-3 px-1 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
             activeSubTab === "assigned"
               ? "border-indigo-600 text-indigo-600 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800"
@@ -474,8 +494,19 @@ export function TeacherSupportClient({
           Học sinh được phân công phụ đạo / chủ nhiệm
         </button>
         <button
+          onClick={() => setActiveSubTab("commitments")}
+          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeSubTab === "commitments"
+              ? "border-indigo-600 text-indigo-600 font-extrabold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Calendar className="h-4 w-4" />
+          Cam kết Khảo sát đầu vào
+        </button>
+        <button
           onClick={() => setActiveSubTab("history")}
-          className={`py-3 px-1 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
             activeSubTab === "history"
               ? "border-indigo-600 text-indigo-600 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800"
@@ -629,6 +660,137 @@ export function TeacherSupportClient({
                   )
                 })
               )}
+            </tbody>
+          </table>
+        </div>
+      ) : activeSubTab === "commitments" ? (
+        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cam kết Khảo sát đầu vào (KSĐV)</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng hiện tại</th>
+                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 text-sm">
+              {loadingEntranceCommitments ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-slate-400">
+                    <RefreshCw className="h-6 w-6 animate-spin inline-block mr-2 text-indigo-600" /> Đang tải danh sách học sinh cam kết đầu vào...
+                  </td>
+                </tr>
+              ) : entranceCommitmentStudents.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-slate-400 font-medium">
+                    Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
+                  </td>
+                </tr>
+              ) : (() => {
+                const query = searchQuery.trim().toLowerCase();
+                const filtered = entranceCommitmentStudents.filter(s => 
+                  (s.studentName || "").toLowerCase().includes(query) || 
+                  (s.studentCode || "").toLowerCase().includes(query) ||
+                  (s.className || "").toLowerCase().includes(query)
+                );
+
+                if (filtered.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={5} className="text-center py-10 text-slate-400">
+                        Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
+                      </td>
+                    </tr>
+                  );
+                }
+
+                return filtered.map((s: any) => {
+                  const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                  const isApproved = existingAcademic?.assignments && existingAcademic.assignments.length > 0
+                  const isTerminated = existingAcademic?.terminationStatus === "TERMINATED"
+                  const isPending = existingAcademic?.terminationStatus === "PENDING_TERMINATION"
+
+                  let statusText = "Chưa đề xuất bồi dưỡng"
+                  let statusClass = "bg-slate-100 text-slate-600 border border-slate-200"
+
+                  if (existingAcademic) {
+                    if (isTerminated) {
+                      statusText = "Hoàn thành bồi dưỡng"
+                      statusClass = "bg-emerald-100 text-emerald-800"
+                    } else if (isPending) {
+                      statusText = "Chờ duyệt kết thúc"
+                      statusClass = "bg-amber-100 text-amber-800"
+                    } else if (isApproved) {
+                      statusText = "Đang bồi dưỡng (Đã duyệt)"
+                      statusClass = "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    } else {
+                      statusText = "Đang bồi dưỡng (Chờ duyệt)"
+                      statusClass = "bg-amber-50 text-amber-700 border border-amber-200"
+                    }
+                  }
+
+                  return (
+                    <tr key={s.id} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-800">{s.studentName}</div>
+                        <div className="text-xs text-slate-500">#{s.studentCode}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-bold text-xs">
+                        {s.className}
+                        {s.isHomeroom && <span className="text-[10px] text-indigo-600 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {s.committedSubjects.map((sub: string, index: number) => {
+                            const isMatched = s.matchedSubjects?.includes(sub)
+                            return (
+                              <span 
+                                key={index} 
+                                className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
+                                  isMatched 
+                                    ? "bg-indigo-50 text-indigo-700 border-indigo-200" 
+                                    : "bg-slate-100 text-slate-600 border-slate-200"
+                                }`}
+                              >
+                                {sub} {isMatched && "✓"}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${statusClass}`}>
+                          {statusText}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        {existingAcademic ? (
+                          <span className="text-xs text-slate-400 font-medium">Đã tạo đề xuất</span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setProposeClassId(s.classId)
+                              setIsProposeModalOpen(true)
+                              setSelectedStudentIds([s.id])
+                              const activeSubs = s.matchedSubjects?.length > 0 
+                                ? s.matchedSubjects 
+                                : [s.committedSubjects[0]]
+                              setSelectedSubjects(activeSubs)
+                              setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào.`)
+                              fetchClassStudents(s.classId)
+                            }}
+                            className="bg-[#00A99D] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
+                          >
+                            Đề xuất bồi dưỡng
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                });
+              })()}
             </tbody>
           </table>
         </div>
