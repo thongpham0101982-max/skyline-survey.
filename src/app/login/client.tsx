@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { 
   LoginForm, FeatureOverview, MicrosoftLoginButton, 
-  SecurityBanner, PageFooter 
+  PageFooter 
 } from './components'
 
 export function LoginClient() {
@@ -187,12 +187,9 @@ export function LoginClient() {
           />
 
           <div className="relative z-10 w-full">
-            {/* Header Brand */}
-            <div className="flex flex-col items-start gap-1">
+            {/* Header Brand without Slogan */}
+            <div className="flex flex-col items-start">
               <img src="/logo.png" alt="Sky-Line Logo" className="h-10 w-auto object-contain brightness-0 invert opacity-95 pointer-events-none" />
-              <span className="text-[10px] font-extrabold text-[#D97706] tracking-[3px] uppercase mt-2 font-heading">
-                Nâng tầm giáo dục - Kiến tạo tương lai
-              </span>
             </div>
 
             {/* Features overview section */}
@@ -266,9 +263,6 @@ export function LoginClient() {
               </span>
               <MicrosoftLoginButton />
             </div>
-
-            {/* Security Banner */}
-            <SecurityBanner />
 
           </div>
 

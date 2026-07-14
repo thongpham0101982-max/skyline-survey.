@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { 
   User, Lock, GraduationCap, Users, Shield, 
   Eye, EyeOff, AlertCircle, ArrowRight,
-  ClipboardCheck, UserCheck, Trophy, HeartHandshake, Compass, BookOpen,
+  ClipboardCheck, Presentation, Trophy, Heart, Compass, BookOpen,
   FileText, ShieldCheck, TrendingUp, AlertTriangle, ChevronDown, ChevronUp
 } from 'lucide-react'
 
@@ -14,15 +14,16 @@ interface FeatureCardProps {
   title: string
   description: string
   icon: React.ComponentType<any>
+  iconColor: string
 }
 
-export function FeatureCard({ index, title, description, icon: Icon }: FeatureCardProps) {
+export function FeatureCard({ index, title, description, icon: Icon, iconColor }: FeatureCardProps) {
   return (
     <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 group select-none">
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-black text-teal-300/80">{index}</span>
-        <div className="p-1.5 rounded-xl bg-white/5 text-[#0CB3AD] group-hover:scale-110 transition-transform pointer-events-none">
-          <Icon className="w-4.5 h-4.5" />
+        <div className={`w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md select-none shrink-0 pointer-events-none group-hover:scale-110 transition-transform ${iconColor}`}>
+          <Icon className="w-5 h-5" />
         </div>
       </div>
       <h3 className="text-xs font-bold text-white mt-3 leading-tight">{title}</h3>
@@ -37,9 +38,9 @@ export function FeatureCard({ index, title, description, icon: Icon }: FeatureCa
 export function StudentProfileHighlight() {
   const badges = [
     { text: 'Kết quả học tập', icon: BookOpen },
-    { text: 'Hỗ trợ học tập & tâm lý', icon: HeartHandshake },
+    { text: 'Hỗ trợ học tập & tâm lý', icon: Heart },
     { text: 'Trải nghiệm & dự án', icon: ClipboardCheck },
-    { text: 'Khảo sát đầu vào', icon: UserCheck },
+    { text: 'Khảo sát đầu vào', icon: User },
     { text: 'Thành tích kỳ thi', icon: Trophy },
     { text: 'Hướng nghiệp', icon: Compass },
     { text: 'Chuẩn đầu ra', icon: ShieldCheck },
@@ -97,37 +98,43 @@ export function FeatureOverview() {
       index: '01',
       title: 'Khảo sát năng lực đầu vào',
       description: 'Tổ chức khảo sát, nhập kết quả, phân tích năng lực, hỗ trợ tuyển sinh và xếp lớp.',
-      icon: ClipboardCheck
+      icon: ClipboardCheck,
+      iconColor: 'text-[#21875A]'
     },
     {
       index: '02',
       title: 'Quản lý dự giờ giáo viên',
       description: 'Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn giáo viên.',
-      icon: UserCheck
+      icon: Presentation,
+      iconColor: 'text-[#004F4B]'
     },
     {
       index: '03',
       title: 'Thành tích và kỳ thi học sinh',
       description: 'Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích học sinh.',
-      icon: Trophy
+      icon: Trophy,
+      iconColor: 'text-[#D97706]'
     },
     {
       index: '04',
       title: 'Hỗ trợ học tập và tâm lý',
       description: 'Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập, tư vấn tâm lý và kết quả chuyển hóa.',
-      icon: HeartHandshake
+      icon: Heart,
+      iconColor: 'text-[#D64545]'
     },
     {
       index: '05',
       title: 'Hướng nghiệp & tài chính',
       description: 'Quản lý hoạt động hướng nghiệp, kết quả định hướng nghề nghiệp và thông tin tài chính theo phân quyền.',
-      icon: Compass
+      icon: Compass,
+      iconColor: 'text-[#0EA5E9]'
     },
     {
       index: '06',
       title: 'Kết quả học tập, dự án',
       description: 'Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ, dự án và mức độ tham gia của học sinh.',
-      icon: BookOpen
+      icon: BookOpen,
+      iconColor: 'text-[#8B5CF6]'
     }
   ]
 
@@ -167,6 +174,7 @@ export function FeatureOverview() {
               title={m.title} 
               description={m.description} 
               icon={m.icon} 
+              iconColor={m.iconColor}
             />
           ))}
         </div>
@@ -310,20 +318,6 @@ export function MicrosoftLoginButton() {
       </svg>
       <span>Đăng nhập bằng Microsoft 365</span>
     </button>
-  )
-}
-
-// SecurityBanner Component
-export function SecurityBanner() {
-  return (
-    <div className="w-full p-4 flex items-center gap-3 bg-[#E6F6F5]/60 border border-[#CCEBEA] rounded-2xl text-[#008b82] mt-5 select-none">
-      <div className="p-2 rounded-xl bg-white text-[#0CB3AD] shrink-0 shadow-sm border border-teal-50/50 pointer-events-none">
-        <Shield className="w-5 h-5" />
-      </div>
-      <p className="text-[11px] font-semibold leading-relaxed text-slate-600">
-        Hệ thống bảo mật theo tiêu chuẩn quốc tế, đảm bảo an toàn dữ liệu và quyền riêng tư.
-      </p>
-    </div>
   )
 }
 
