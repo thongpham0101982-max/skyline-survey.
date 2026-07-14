@@ -36,15 +36,15 @@ export function FeatureCard({ index, title, description, icon: Icon }: FeatureCa
 // StudentProfileHighlight Component
 export function StudentProfileHighlight() {
   const badges = [
-    { text: 'Káº¿t quáº£ há»c táº­p', icon: BookOpen },
-    { text: 'Há»— trá»£ há»c táº­p & tĂ¢m lĂ½', icon: HeartHandshake },
-    { text: 'Tráº£i nghiá»‡m & dá»± Ă¡n', icon: ClipboardCheck },
-    { text: 'Kháº£o sĂ¡t Ä‘áº§u vĂ o', icon: UserCheck },
-    { text: 'ThĂ nh tĂ­ch ká»³ thi', icon: Trophy },
-    { text: 'HÆ°á»›ng nghiá»‡p', icon: Compass },
-    { text: 'Chuáº©n Ä‘áº§u ra', icon: ShieldCheck },
-    { text: 'Tiáº¿n bá»™ há»c táº­p', icon: TrendingUp },
-    { text: 'Cáº£nh bĂ¡o sá»›m', icon: AlertTriangle }
+    { text: 'Kết quả học tập', icon: BookOpen },
+    { text: 'Hỗ trợ học tập & tâm lý', icon: HeartHandshake },
+    { text: 'Trải nghiệm & dự án', icon: ClipboardCheck },
+    { text: 'Khảo sát đầu vào', icon: UserCheck },
+    { text: 'Thành tích kỳ thi', icon: Trophy },
+    { text: 'Hướng nghiệp', icon: Compass },
+    { text: 'Chuẩn đầu ra', icon: ShieldCheck },
+    { text: 'Tiến bộ học tập', icon: TrendingUp },
+    { text: 'Cảnh báo sớm', icon: AlertTriangle }
   ]
 
   return (
@@ -63,10 +63,10 @@ export function StudentProfileHighlight() {
 
         <div className="flex-1">
           <h3 className="text-sm font-bold text-white tracking-wide uppercase font-heading">
-            Há»“ sÆ¡ há»c táº­p Ä‘iá»‡n tá»­ há»c sinh
+            Hồ sơ học tập điện tử học sinh
           </h3>
           <p className="text-[11px] font-semibold text-teal-100/40 leading-relaxed mt-1">
-            Tá»•ng há»£p toĂ n bá»™ quĂ¡ trĂ¬nh há»c táº­p, rĂ¨n luyá»‡n vĂ  phĂ¡t triá»ƒn cá»§a há»c sinh qua tá»«ng nÄƒm há»c.
+            Tổng hợp toàn bộ quá trình học tập, rèn luyện và phát triển của học sinh qua từng năm học.
           </p>
           
           {/* Badges container */}
@@ -95,38 +95,38 @@ export function FeatureOverview() {
   const modules = [
     {
       index: '01',
-      title: 'Kháº£o sĂ¡t nÄƒng lá»±c Ä‘áº§u vĂ o',
-      description: 'Tá»• chá»©c kháº£o sĂ¡t, nháº­p káº¿t quáº£, phĂ¢n tĂ­ch nÄƒng lá»±c, há»— trá»£ tuyá»ƒn sinh vĂ  xáº¿p lá»›p.',
+      title: 'Khảo sát năng lực đầu vào',
+      description: 'Tổ chức khảo sát, nhập kết quả, phân tích năng lực, hỗ trợ tuyển sinh và xếp lớp.',
       icon: ClipboardCheck
     },
     {
       index: '02',
-      title: 'Quáº£n lĂ½ dá»± giá» giĂ¡o viĂªn',
-      description: 'ÄÄƒng kĂ½ tiáº¿t dáº¡y, phĂ¢n cĂ´ng dá»± giá», Ä‘Ă¡nh giĂ¡, phĂª duyá»‡t vĂ  theo dĂµi nÄƒng lá»±c chuyĂªn mĂ´n giĂ¡o viĂªn.',
+      title: 'Quản lý dự giờ giáo viên',
+      description: 'Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn giáo viên.',
       icon: UserCheck
     },
     {
       index: '03',
-      title: 'ThĂ nh tĂ­ch vĂ  ká»³ thi há»c sinh',
-      description: 'Quáº£n lĂ½ ká»³ thi, cuá»™c thi, giáº£i thÆ°á»Ÿng, huy chÆ°Æ¡ng, xáº¿p háº¡ng vĂ  lá»‹ch sá»­ thĂ nh tĂ­ch há»c sinh.',
+      title: 'Thành tích và kỳ thi học sinh',
+      description: 'Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích học sinh.',
       icon: Trophy
     },
     {
       index: '04',
-      title: 'Há»— trá»£ há»c táº­p vĂ  tĂ¢m lĂ½',
-      description: 'Theo dĂµi há»c sinh cáº§n há»— trá»£, káº¿ hoáº¡ch phá»¥ Ä‘áº¡o, cam káº¿t há»c táº­p, tÆ° váº¥n tĂ¢m lĂ½ vĂ  káº¿t quáº£ chuyá»ƒn hĂ³a.',
+      title: 'Hỗ trợ học tập và tâm lý',
+      description: 'Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập, tư vấn tâm lý và kết quả chuyển hóa.',
       icon: HeartHandshake
     },
     {
       index: '05',
-      title: 'HÆ°á»›ng nghiá»‡p & tĂ i chĂ­nh',
-      description: 'Quáº£n lĂ½ hoáº¡t Ä‘á»™ng hÆ°á»›ng nghiá»‡p, káº¿t quáº£ Ä‘á»‹nh hÆ°á»›ng nghá» nghiá»‡p vĂ  thĂ´ng tin tĂ i chĂ­nh theo phĂ¢n quyá»n.',
+      title: 'Hướng nghiệp & tài chính',
+      description: 'Quản lý hoạt động hướng nghiệp, kết quả định hướng nghề nghiệp và thông tin tài chính theo phân quyền.',
       icon: Compass
     },
     {
       index: '06',
-      title: 'Káº¿t quáº£ há»c táº­p, dá»± Ă¡n',
-      description: 'Tá»•ng há»£p káº¿t quáº£ mĂ´n há»c, hoáº¡t Ä‘á»™ng tráº£i nghiá»‡m, cĂ¢u láº¡c bá»™, dá»± Ă¡n vĂ  má»©c Ä‘á»™ tham gia cá»§a há»c sinh.',
+      title: 'Kết quả học tập, dự án',
+      description: 'Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ, dự án và mức độ tham gia của học sinh.',
       icon: BookOpen
     }
   ]
@@ -135,13 +135,13 @@ export function FeatureOverview() {
     <div className="relative z-10 w-full">
       {/* Mobile Toggle Bar */}
       <div className="md:hidden flex items-center justify-between border-t border-b border-white/5 py-3 mb-4 select-none">
-        <span className="text-xs font-bold text-teal-100/80">KhĂ¡m phĂ¡ cĂ¡c phĂ¢n há»‡ SQMS</span>
+        <span className="text-xs font-bold text-teal-100/80">Khám phá các phân hệ SQMS</span>
         <button 
           type="button" 
           onClick={() => setExpanded(!expanded)} 
           className="flex items-center gap-1.5 text-xs font-bold text-[#0CB3AD] bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/10 active:scale-95 transition-all"
         >
-          <span>{expanded ? 'Thu gá»n' : 'Xem chi tiáº¿t'}</span>
+          <span>{expanded ? 'Thu gọn' : 'Xem chi tiết'}</span>
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
       </div>
@@ -151,10 +151,10 @@ export function FeatureOverview() {
         {/* Title and Subtitle */}
         <div className="mb-6 md:mb-8">
           <h1 className="text-xl lg:text-2xl font-black text-white leading-tight tracking-wide font-heading">
-            Há»† THá»NG QUáº¢N TRá»<br />CHáº¤T LÆ¯á»¢NG GIĂO Dá»¤C SKY-LINE
+            HỆ THỐNG QUẢN TRỊ<br />CHẤT LƯỢNG GIÁO DỤC SKY-LINE
           </h1>
           <p className="text-xs font-semibold text-teal-100/60 leading-relaxed max-w-xl mt-3">
-            Ná»n táº£ng quáº£n trá»‹ táº­p trung dá»¯ liá»‡u ngÆ°á»i há»c, ngÆ°á»i dáº¡y vĂ  cĂ¡c hoáº¡t Ä‘á»™ng giĂ¡o dá»¥c trong toĂ n Há»‡ thá»‘ng Sky-Line.
+            Nền tảng quản trị tập trung dữ liệu người học, người dạy và các hoạt động giáo dục trong toàn Hệ thống Sky-Line.
           </p>
         </div>
 
@@ -187,15 +187,15 @@ interface RoleSelectorProps {
 
 export function RoleSelector({ role, setRole, setError }: RoleSelectorProps) {
   const roles = [
-    { id: 'STAFF', label: 'CĂ¡n bá»™, GiĂ¡o viĂªn', icon: User },
-    { id: 'PARENT', label: 'Phá»¥ huynh', icon: Users },
-    { id: 'STUDENT', label: 'Há»c sinh', icon: GraduationCap }
+    { id: 'STAFF', label: 'Cán bộ, Giáo viên', icon: User },
+    { id: 'PARENT', label: 'Phụ huynh', icon: Users },
+    { id: 'STUDENT', label: 'Học sinh', icon: GraduationCap }
   ]
 
   return (
     <div className="mb-6 select-none">
       <label className="block text-xs font-bold text-[#667A83] uppercase tracking-wider mb-2.5">
-        Chá»n vai trĂ²
+        Chọn vai trò
       </label>
       <div className="grid grid-cols-3 gap-3">
         {roles.map((r) => {
@@ -258,7 +258,7 @@ export function PasswordInput({
         required={required}
         value={value}
         onChange={onChange}
-        placeholder="Nháº­p máº­t kháº©u"
+        placeholder="Nhập mật khẩu"
         autoComplete="current-password"
         className="w-full h-[54px] pl-[50px] pr-[50px] rounded-[14px] border border-[#D7E2E5] bg-white text-sm font-medium text-[#17383D] placeholder-slate-400 hover:border-slate-300 focus:bg-white focus:border-[#0CB3AD] focus:ring-4 focus:ring-[#0CB3AD]/10 outline-none transition-all duration-200"
       />
@@ -267,7 +267,7 @@ export function PasswordInput({
         type="button"
         onClick={() => setShowPassword(!showPassword)}
         className="absolute right-[10px] top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0CB3AD]/40 rounded-lg"
-        aria-label={showPassword ? 'áº¨n máº­t kháº©u' : 'Hiá»‡n máº­t kháº©u'}
+        aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
         style={{ minHeight: '40px', minWidth: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
       >
         {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
@@ -300,7 +300,7 @@ export function MicrosoftLoginButton() {
       type="button"
       disabled
       className="w-full h-[52px] border border-[#D7E2E5] text-slate-500 rounded-[14px] text-xs font-bold flex items-center justify-center gap-2 bg-[#F5F8F8]/50 hover:bg-[#F5F8F8] transition-colors opacity-70 cursor-not-allowed select-none"
-      title="ÄÄƒng nháº­p báº±ng Microsoft 365 (ChÆ°a Ä‘Æ°á»£c cáº¥u hĂ¬nh)"
+      title="Đăng nhập bằng Microsoft 365 (Chưa được cấu hình)"
     >
       <svg className="w-4.5 h-4.5 shrink-0 pointer-events-none" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M0 0H10.8V10.8H0V0Z" fill="#F25022"/>
@@ -308,7 +308,7 @@ export function MicrosoftLoginButton() {
         <path d="M0 12.2H10.8V23H0V12.2Z" fill="#00A4EF"/>
         <path d="M12.2 12.2H23V23H12.2V12.2Z" fill="#FFB900"/>
       </svg>
-      <span>ÄÄƒng nháº­p báº±ng Microsoft 365</span>
+      <span>Đăng nhập bằng Microsoft 365</span>
     </button>
   )
 }
@@ -321,7 +321,7 @@ export function SecurityBanner() {
         <Shield className="w-5 h-5" />
       </div>
       <p className="text-[11px] font-semibold leading-relaxed text-slate-600">
-        Há»‡ thá»‘ng báº£o máº­t theo tiĂªu chuáº©n quá»‘c táº¿, Ä‘áº£m báº£o an toĂ n dá»¯ liá»‡u vĂ  quyá»n riĂªng tÆ°.
+        Hệ thống bảo mật theo tiêu chuẩn quốc tế, đảm bảo an toàn dữ liệu và quyền riêng tư.
       </p>
     </div>
   )
@@ -333,7 +333,7 @@ export function PageFooter() {
     <footer className="w-full py-4 text-center text-[11px] font-semibold text-slate-400 select-none">
       <span className="tracking-wide">SQMS PORTAL V2.5</span>
       <span className="mx-2 text-slate-300">|</span>
-      <span>Â© 2026 Sky-Line Education</span>
+      <span>© 2026 Sky-Line Education</span>
     </footer>
   )
 }
@@ -392,7 +392,7 @@ export function LoginForm({
           htmlFor="identifier"
           className="block text-xs font-bold text-[#667A83] uppercase tracking-wider mb-2 ml-1"
         >
-          TĂ i khoáº£n
+          Tài khoản
         </label>
         <div className="relative group">
           <div className="absolute left-[18px] top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-slate-400 group-focus-within:text-[#0CB3AD] transition-colors pointer-events-none" aria-hidden="true">
@@ -404,7 +404,7 @@ export function LoginForm({
             required
             value={identifier}
             onChange={e => setIdentifier(e.target.value)} 
-            placeholder="Nháº­p tĂ i khoáº£n"
+            placeholder="Nhập tài khoản"
             autoComplete="username"
             className="w-full h-[54px] pl-[50px] pr-4 rounded-[14px] border border-[#D7E2E5] bg-white text-sm font-medium text-[#17383D] placeholder-slate-400 hover:border-slate-300 focus:bg-white focus:border-[#0CB3AD] focus:ring-4 focus:ring-[#0CB3AD]/10 outline-none transition-all duration-200"
           />
@@ -417,7 +417,7 @@ export function LoginForm({
           htmlFor="password"
           className="block text-xs font-bold text-[#667A83] uppercase tracking-wider mb-2 ml-1"
         >
-          Máº­t kháº©u
+          Mật khẩu
         </label>
         
         <PasswordInput 
@@ -431,7 +431,7 @@ export function LoginForm({
 
         {role === 'STUDENT' && (
           <p className="text-[11px] text-slate-400 font-semibold mt-2 ml-1 italic leading-normal select-none">
-            * Máº­t kháº©u máº·c Ä‘á»‹nh lĂ  mĂ£ há»c sinh
+            * Mật khẩu mặc định là mã học sinh
           </p>
         )}
       </div>
@@ -445,14 +445,14 @@ export function LoginForm({
             onChange={e => setRememberMe(e.target.checked)}
             className="w-4 h-4 rounded border-[#D7E2E5] text-[#0CB3AD] focus:ring-[#0CB3AD]/20 focus:ring-opacity-50 transition-all cursor-pointer animate-none"
           />
-          <span>Ghi nhá»› Ä‘Äƒng nháº­p</span>
+          <span>Ghi nhớ đăng nhập</span>
         </label>
         <button
           type="button"
           onClick={onForgotPassword}
           className="text-[#0CB3AD] hover:text-[#099c97] hover:underline cursor-pointer transition-colors"
         >
-          QuĂªn máº­t kháº©u?
+          Quên mật khẩu?
         </button>
       </div>
 
@@ -465,11 +465,11 @@ export function LoginForm({
         {loading ? (
           <>
             <div className="w-4.5 h-4.5 border-2 border-white border-t-transparent rounded-full animate-spin pointer-events-none" />
-            <span>Äang Ä‘Äƒng nháº­p...</span>
+            <span>Đang đăng nhập...</span>
           </>
         ) : (
           <>
-            <span>ÄÄƒng nháº­p</span>
+            <span>Đăng nhập</span>
             <ArrowRight className="w-4.5 h-4.5 pointer-events-none" />
           </>
         )}

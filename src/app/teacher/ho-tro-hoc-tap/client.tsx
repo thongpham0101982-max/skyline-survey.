@@ -50,8 +50,10 @@ export function TeacherSupportClient({
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   const [loadingClassesOfTeacher, setLoadingClassesOfTeacher] = useState(false)
   const [loadingStudentsOfClass, setLoadingStudentsOfClass] = useState(false)
-  const [proposeType, setProposeType] = useState("ACADEMIC")
-  const [proposeReason, setProposeReason] = useState("")
+  const [proposeAcademic, setProposeAcademic] = useState(true)
+  const [proposePsychological, setProposePsychological] = useState(false)
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+  const [proposePsychReason, setProposePsychReason] = useState("Hỗ trợ Tâm lý")
   const [proposeNotes, setProposeNotes] = useState("")
 
   // Evaluation Form States
@@ -106,9 +108,9 @@ export function TeacherSupportClient({
       const selectedClassObj = currentClasses.find(c => c.id === classId)
       const classSubjects = selectedClassObj?.subjects || []
       if (classSubjects.length > 0) {
-        setProposeReason(classSubjects[0].subjectName || classSubjects[0].name || "")
+        setSelectedSubjects([classSubjects[0].subjectName || classSubjects[0].name || ""])
       } else {
-        setProposeReason("")
+        setSelectedSubjects([])
       }
     } catch (e) {
       console.error(e)
@@ -176,8 +178,12 @@ export function TeacherSupportClient({
       toast.error("Vui lòng chọn ít nhất một học sinh để đề xuất")
       return
     }
-    if (!proposeReason) {
-      toast.error("Vui lòng điền môn học hoặc lý do bồi dưỡng")
+    if (!proposeAcademic && !proposePsychological) {
+      toast.error("Vui lòng chọn ít nhất một loại bồi dưỡng (Văn hóa hoặc Tâm lý)")
+      return
+    }
+    if (proposeAcademic && selectedSubjects.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một môn học bồi dưỡng")
       return
     }
     setLoading(true)
@@ -185,37 +191,68 @@ export function TeacherSupportClient({
       let successCount = 0
       let failCount = 0
       for (const studentId of selectedStudentIds) {
-        try {
-          const res = await fetch("/api/ktdbcl/support", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "saveTarget",
-              academicYearId: selectedYearId,
-              studentId,
-              supportType: proposeType,
-              sourceType: proposeType === "ACADEMIC" ? "GVBM" : "TAM_LY",
-              reason: proposeReason,
-              notes: proposeNotes,
-              status: "TIẾP TỤC THEO TUẦN"
+        const existingAcademic = targets.find(t => t.studentId === studentId && t.supportType === "ACADEMIC")
+        const existingPsych = targets.find(t => t.studentId === studentId && t.supportType === "PSYCHOLOGICAL")
+
+        const blockAcademic = existingAcademic && existingAcademic.createdById !== null
+        const blockPsych = existingPsych && existingPsych.createdById !== null
+
+        // 1. Propose Academic support if chosen and not already proposed by a teacher
+        if (proposeAcademic && !blockAcademic) {
+          try {
+            const res = await fetch("/api/ktdbcl/support", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "saveTarget",
+                academicYearId: selectedYearId,
+                studentId,
+                supportType: "ACADEMIC",
+                sourceType: "GVBM",
+                reason: selectedSubjects.join(", "),
+                notes: proposeNotes,
+                status: "TIẾP TỤC THEO TUẦN"
+              })
             })
-          })
-          const data = await res.json()
-          if (data.error) {
+            const data = await res.json()
+            if (data.error) failCount++
+            else successCount++
+          } catch (e) {
             failCount++
-          } else {
-            successCount++
           }
-        } catch (e) {
-          failCount++
+        }
+
+        // 2. Propose Psychological support if chosen and not already proposed by a teacher
+        if (proposePsychological && !blockPsych) {
+          try {
+            const res = await fetch("/api/ktdbcl/support", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "saveTarget",
+                academicYearId: selectedYearId,
+                studentId,
+                supportType: "PSYCHOLOGICAL",
+                sourceType: "TAM_LY",
+                reason: proposePsychReason || "Hỗ trợ Tâm lý",
+                notes: proposeNotes,
+                status: "TIẾP TỤC THEO TUẦN"
+              })
+            })
+            const data = await res.json()
+            if (data.error) failCount++
+            else successCount++
+          } catch (e) {
+            failCount++
+          }
         }
       }
 
       if (successCount > 0) {
-        toast.success(`Đề xuất thành công ${successCount} học sinh!`)
+        toast.success(`Đề xuất thành công ${successCount} lượt bồi dưỡng!`)
       }
       if (failCount > 0) {
-        toast.error(`Đề xuất thất bại ${failCount} học sinh.`)
+        toast.error(`Đề xuất thất bại ${failCount} lượt bồi dưỡng.`)
       }
 
       setIsProposeModalOpen(false)
@@ -674,8 +711,17 @@ export function TeacherSupportClient({
                   <span>Chọn học sinh cần hỗ trợ (Chọn một hoặc nhiều em):</span>
                   {classStudents.length > 0 && (() => {
                     const eligibleStudents = classStudents.filter(s => {
-                      const existingTarget = targets.find(t => t.studentId === s.id && t.supportType === proposeType)
-                      return !existingTarget || existingTarget.createdById === null
+                      const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                      const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                      
+                      const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
+                      const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
+
+                      const isBlocked = (proposeAcademic && proposePsychological)
+                        ? (hasAcademicBlock && hasPsychBlock)
+                        : (proposeAcademic ? hasAcademicBlock : hasPsychBlock)
+
+                      return !isBlocked
                     })
                     if (eligibleStudents.length === 0) return null
                     return (
@@ -707,9 +753,20 @@ export function TeacherSupportClient({
                 ) : (
                   <div className="border rounded-lg max-h-36 overflow-y-auto p-2 space-y-1.5 bg-slate-50">
                     {classStudents.map((s: any) => {
-                      const existingTarget = targets.find(t => t.studentId === s.id && t.supportType === proposeType)
-                      const isAlreadyTarget = existingTarget !== undefined
-                      const isAlreadyProposed = existingTarget && existingTarget.createdById !== null
+                      const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                      const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+
+                      const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
+                      const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
+
+                      const isAlreadyProposed = (proposeAcademic && proposePsychological)
+                        ? (hasAcademicBlock && hasPsychBlock)
+                        : (proposeAcademic ? hasAcademicBlock : hasPsychBlock)
+
+                      const isAlreadyTarget = (proposeAcademic && proposePsychological)
+                        ? (existingAcademic !== undefined && existingPsych !== undefined)
+                        : (proposeAcademic ? existingAcademic !== undefined : existingPsych !== undefined)
+
                       const isChecked = selectedStudentIds.includes(s.id)
                       return (
                         <label 
@@ -734,14 +791,24 @@ export function TeacherSupportClient({
                           />
                           <span>
                             {s.studentName} ({s.studentCode})
-                            {isAlreadyProposed && (
-                              <span className="ml-1.5 text-[10px] text-rose-500 font-bold">
-                                ({proposeType === "ACADEMIC" ? "Đã đề xuất" : "Đã hỗ trợ tâm lý"}{existingTarget.createdBy?.teacherName ? ` bởi ${existingTarget.createdBy.teacherName}` : ""})
+                            {hasAcademicBlock && (
+                              <span className="ml-1.5 text-[10px] text-rose-500 font-bold block">
+                                (Đã đề xuất bồi dưỡng Văn hóa{existingAcademic?.createdBy?.teacherName ? ` bởi ${existingAcademic.createdBy.teacherName}` : ""})
                               </span>
                             )}
-                            {isAlreadyTarget && !isAlreadyProposed && (
-                              <span className="ml-1.5 text-[10px] text-amber-600 font-extrabold">
-                                (Đang nhận hỗ trợ - Chưa liên kết người đề xuất)
+                            {hasPsychBlock && (
+                              <span className="ml-1.5 text-[10px] text-rose-500 font-bold block">
+                                (Đã đề xuất hỗ trợ Tâm lý{existingPsych?.createdBy?.teacherName ? ` bởi ${existingPsych.createdBy.teacherName}` : ""})
+                              </span>
+                            )}
+                            {existingAcademic && !hasAcademicBlock && proposeAcademic && (
+                              <span className="ml-1.5 text-[10px] text-amber-600 font-extrabold block">
+                                (Đang bồi dưỡng Văn hóa - Chưa liên kết người đề xuất)
+                              </span>
+                            )}
+                            {existingPsych && !hasPsychBlock && proposePsychological && (
+                              <span className="ml-1.5 text-[10px] text-amber-600 font-extrabold block">
+                                (Đang hỗ trợ Tâm lý - Chưa liên kết người đề xuất)
                               </span>
                             )}
                           </span>
@@ -752,72 +819,79 @@ export function TeacherSupportClient({
                 )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Loại bồi dưỡng:</label>
-                <select
-                  value={proposeType}
-                  onChange={e => setProposeType(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                >
-                  <option value="ACADEMIC">Văn hóa (Môn học)</option>
-                  <option value="PSYCHOLOGICAL">Hỗ trợ Tâm lý</option>
-                </select>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 block">Loại bồi dưỡng (Có thể chọn một hoặc cả hai):</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={proposeAcademic}
+                      onChange={e => setProposeAcademic(e.target.checked)}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                    />
+                    Bồi dưỡng Văn hóa
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={proposePsychological}
+                      onChange={e => setProposePsychological(e.target.checked)}
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                    />
+                    Hỗ trợ Tâm lý
+                  </label>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Môn học bồi dưỡng (Lý do cụ thể):</label>
-                {proposeType === "ACADEMIC" ? (
-                  <div className="space-y-1">
-                    {/* If teacher teaches subjects in this class, show a dropdown with those subjects */}
-                    {(() => {
+              {proposeAcademic && (
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700 block">Môn học bồi dưỡng (Có thể chọn một hoặc nhiều môn):</label>
+                  <div className="border rounded-lg max-h-36 overflow-y-auto p-2 space-y-1 bg-slate-50">
+                    {subjects.map((sub: any) => {
+                      const name = sub.subjectName || sub.name
+                      const isChecked = selectedSubjects.includes(name)
                       const selClassObj = assignedClasses.find(c => c.id === proposeClassId)
-                      const classSubjects = selClassObj?.subjects || []
-                      if (classSubjects.length > 0) {
-                        return (
-                          <select
-                            value={proposeReason}
-                            onChange={e => setProposeReason(e.target.value)}
-                            className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                          >
-                            {classSubjects.map((sub: any) => (
-                              <option key={sub.id} value={sub.subjectName || sub.name}>
-                                {sub.subjectName || sub.name}
-                              </option>
-                            ))}
-                            <option value="Khác">Khác...</option>
-                          </select>
-                        )
-                      }
+                      const isTeacherSubject = selClassObj?.subjects?.some((s: any) => (s.subjectName || s.name) === name)
+
                       return (
-                        <input
-                          type="text"
-                          placeholder="Ví dụ: Môn Toán, môn Tiếng Anh..."
-                          value={proposeReason}
-                          onChange={e => setProposeReason(e.target.value)}
-                          className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                        />
+                        <label key={sub.id} className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer hover:bg-slate-100 p-1 rounded">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedSubjects(selectedSubjects.filter(s => s !== name))
+                              } else {
+                                setSelectedSubjects([...selectedSubjects, name])
+                              }
+                            }}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                          />
+                          <span>
+                            {name}
+                            {isTeacherSubject && (
+                              <span className="ml-1 text-[10px] text-indigo-600 font-extrabold">(Môn giảng dạy)</span>
+                            )}
+                          </span>
+                        </label>
                       )
-                    })()}
-                    
-                    {proposeReason === "Khác" && (
-                      <input
-                        type="text"
-                        placeholder="Nhập tên môn học khác..."
-                        onChange={e => setProposeReason(e.target.value)}
-                        className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none mt-1.5"
-                      />
-                    )}
+                    })}
                   </div>
-                ) : (
+                </div>
+              )}
+
+              {proposePsychological && (
+                <div className="space-y-1">
+                  <label className="text-sm font-semibold text-slate-700 block">Lý do hỗ trợ tâm lý:</label>
                   <input
                     type="text"
                     placeholder="Mô tả lý do tâm lý..."
-                    value={proposeReason}
-                    onChange={e => setProposeReason(e.target.value)}
+                    value={proposePsychReason}
+                    onChange={e => setProposePsychReason(e.target.value)}
                     className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
                   />
-                )}
-              </div>
+                </div>
+              )}
 
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-slate-700">Ghi chú bồi dưỡng ban đầu:</label>

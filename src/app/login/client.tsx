@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { 
-  GraduationCap, CheckCircle2, Loader2, ArrowRight
+  GraduationCap, CheckCircle2, Loader2 
 } from 'lucide-react'
 import { 
   LoginForm, FeatureOverview, MicrosoftLoginButton, 
@@ -38,11 +38,11 @@ export function LoginClient() {
 
   const validateForm = () => {
     if (!identifier.trim()) {
-      setError('Vui lĂ²ng nháº­p tĂ i khoáº£n.')
+      setError('Vui lòng nhập tài khoản.')
       return false
     }
     if (role !== 'STUDENT' && !password) {
-      setError('Vui lĂ²ng nháº­p máº­t kháº©u.')
+      setError('Vui lòng nhập mật khẩu.')
       return false
     }
     return true
@@ -59,9 +59,9 @@ export function LoginClient() {
 
     try {
       if (role === 'STUDENT') {
-        setLoadingSteps([{ text: 'Äang xĂ¡c thá»±c...', done: false }])
+        setLoadingSteps([{ text: 'Đang xác thực...', done: false }])
         await new Promise(r => setTimeout(r, 600))
-        addStep('Báº¯t Ä‘áº§u xá»­ lĂ½ Ä‘Äƒng nháº­p Há»c sinh...')
+        addStep('Bắt đầu xử lý đăng nhập Học sinh...')
         await new Promise(r => setTimeout(r, 400))
 
         const res = await fetch('/api/hocsinh/login', {
@@ -75,14 +75,14 @@ export function LoginClient() {
         const data = await res.json()
 
         if (!res.ok) {
-          setError(data.error || 'ThĂ´ng tin mĂ£ há»c sinh khĂ´ng há»£p lá»‡.')
+          setError(data.error || 'Thông tin mã học sinh không hợp lệ.')
           setLoading(false)
           setLoadingSteps([])
           return
         }
 
         setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
-        addStep('ÄÄƒng nháº­p thĂ nh cĂ´ng! Äang chuyá»ƒn trang...')
+        addStep('Đăng nhập thành công! Đang chuyển trang...')
         await new Promise(r => setTimeout(r, 500))
 
         const targetUrl = '/hocsinh/hs-khaosat/danh-sach'
@@ -93,7 +93,7 @@ export function LoginClient() {
 
         window.location.href = targetUrl
       } else {
-        setLoadingSteps([{ text: 'Äang xĂ¡c thá»±c tĂ i khoáº£n...', done: false }])
+        setLoadingSteps([{ text: 'Đang xác thực tài khoản...', done: false }])
         await new Promise(r => setTimeout(r, 400))
 
         const result = await signIn('credentials', {
@@ -104,35 +104,35 @@ export function LoginClient() {
         if (result?.error) {
           console.error('[LOGIN] SignIn Error:', result.error)
           if (result.error === 'TAI_KHOAN_BI_KHOA' || result.error.includes('TAI_KHOAN_BI_KHOA')) {
-             setError('TĂ i khoáº£n cá»§a báº¡n Ä‘Ă£ bá»‹ khĂ³a hoáº·c ngá»«ng hoáº¡t Ä‘á»™ng.')
+             setError('Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.')
           } else {
-             setError('Sai tĂªn Ä‘Äƒng nháº­p hoáº·c máº­t kháº©u.')
+             setError('Sai tên đăng nhập hoặc mật khẩu.')
           }
           setLoading(false)
           setLoadingSteps([])
         } else {
           setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
-          addStep('ÄÄƒng nháº­p thĂ nh cĂ´ng! Äang chuyá»ƒn trang...')
+          addStep('Đăng nhập thành công! Đang chuyển trang...')
           await new Promise(r => setTimeout(r, 400))
           window.location.assign('/')
         }
       }
     } catch (err) {
-      setError('Lá»—i káº¿t ná»‘i há»‡ thá»‘ng. Vui lĂ²ng thá»­ láº¡i.')
+      setError('Lỗi kết nối hệ thống. Vui lòng thử lại.')
       setLoading(false)
       setLoadingSteps([])
     }
   }
 
   const handleForgotPassword = () => {
-    setError('Vui lĂ²ng liĂªn há»‡ Ban Kháº£o thĂ­ & Äáº£m báº£o cháº¥t lÆ°á»£ng Ä‘á»ƒ Ä‘Æ°á»£c cáº¥p láº¡i máº­t kháº©u.')
+    setError('Vui lòng liên hệ Ban Khảo thí & Đảm bảo chất lượng để được cấp lại mật khẩu.')
   }
 
   if (!mounted) return null
 
   const roleLabel =
-    role === 'STUDENT' ? 'Há»c sinh' :
-    role === 'PARENT' ? 'Phá»¥ huynh' : 'CBGV'
+    role === 'STUDENT' ? 'Học sinh' :
+    role === 'PARENT' ? 'Phụ huynh' : 'CBGV'
 
   return (
     <>
@@ -150,7 +150,7 @@ export function LoginClient() {
                 </div>
               </div>
             </div>
-            <h3 className="text-center text-lg font-bold text-[#17383D] mb-1">Äang Ä‘Äƒng nháº­p</h3>
+            <h3 className="text-center text-lg font-bold text-[#17383D] mb-1">Đang đăng nhập</h3>
             <p className="text-center text-xs text-[#0CB3AD] font-extrabold mb-6 uppercase tracking-wider">{roleLabel}</p>
             <div className="space-y-3">
               {(loadingSteps as any[]).map((step: any, i: number) => (
@@ -191,7 +191,7 @@ export function LoginClient() {
             <div className="flex flex-col items-start gap-1">
               <img src="/logo.png" alt="Sky-Line Logo" className="h-10 w-auto object-contain brightness-0 invert opacity-95 pointer-events-none" />
               <span className="text-[10px] font-extrabold text-[#D97706] tracking-[3px] uppercase mt-2 font-heading">
-                NĂ¢ng táº§m giĂ¡o dá»¥c - Kiáº¿n táº¡o tÆ°Æ¡ng lai
+                Nâng tầm giáo dục - Kiến tạo tương lai
               </span>
             </div>
 
@@ -205,19 +205,19 @@ export function LoginClient() {
           <div className="relative z-10 border-t border-white/5 pt-5 mt-8 flex flex-wrap items-center justify-between gap-3 text-[9px] font-extrabold tracking-wider text-teal-100/40 select-none">
             <div className="flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#0CB3AD]" />
-              <span>Dá»® LIá»†U CHĂNH XĂC</span>
+              <span>DỮ LIỆU CHÍNH XÁC</span>
             </div>
             <div className="flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#0CB3AD]" />
-              <span>QUáº¢N TRá» MINH Báº CH</span>
+              <span>QUẢN TRỊ MINH BẠCH</span>
             </div>
             <div className="flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#0CB3AD]" />
-              <span>THEO DĂ•I LIĂN Tá»¤C</span>
+              <span>THEO DÕI LIÊN TỤC</span>
             </div>
             <div className="flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#0CB3AD]" />
-              <span>Äá»’NG HĂ€NH PHĂT TRIá»‚N</span>
+              <span>ĐỒNG HÀNH PHÁT TRIỂN</span>
             </div>
           </div>
 
@@ -235,10 +235,10 @@ export function LoginClient() {
                 className="h-12 w-auto object-contain mb-4 pointer-events-none" 
               />
               <h2 className="text-xl font-bold text-[#17383D] tracking-tight">
-                ÄÄƒng nháº­p há»‡ thá»‘ng
+                Đăng nhập hệ thống
               </h2>
               <p className="text-xs font-semibold text-[#667A83] mt-1">
-                Truy cáº­p há»‡ thá»‘ng theo tĂ i khoáº£n Ä‘Æ°á»£c cáº¥p
+                Truy cập hệ thống theo tài khoản được cấp
               </p>
             </div>
 
@@ -262,7 +262,7 @@ export function LoginClient() {
             {/* SSO Microsoft Option */}
             <div className="mt-5 pt-5 border-t border-slate-100 flex flex-col items-center">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest bg-[#F5F8F8] md:bg-white px-3 relative -top-7 select-none">
-                hoáº·c
+                hoặc
               </span>
               <MicrosoftLoginButton />
             </div>
