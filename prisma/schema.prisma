@@ -52,6 +52,7 @@ model Parent {
 
 model Teacher {
   id                    String                    @id @default(cuid())
+  proposedSupportTargets LearningSupportTarget[] @relation(name: "ProposerRelation")
   userId                String                    @unique
   teacherCode           String                    @unique
   teacherName           String
@@ -1456,6 +1457,8 @@ model LearningSupportTarget {
   terminationStatus       String    @default("ACTIVE") // "ACTIVE", "PENDING_TERMINATION", "TERMINATED"
   terminationApprovedById String?
   terminationApprovedAt   DateTime?
+  createdById             String?
+  createdBy               Teacher?  @relation(name: "ProposerRelation", fields: [createdById], references: [id], onDelete: SetNull)
 
   assignments LearningSupportAssignment[]
   evaluations LearningSupportEvaluation[]

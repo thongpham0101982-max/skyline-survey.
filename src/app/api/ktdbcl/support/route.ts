@@ -58,7 +58,13 @@ export async function GET(req: Request) {
               subject: { select: { id: true, subjectName: true } }
             }
           },
-          evaluations: true
+          evaluations: true,
+          createdBy: {
+            select: {
+              id: true,
+              teacherName: true
+            }
+          }
         },
         orderBy: { createdAt: "desc" }
       })
@@ -207,6 +213,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Missing required target fields" }, { status: 400 })
       }
 
+      const teacher = await prisma.teacher.findUnique({
+        where: { userId: session.user.id }
+      })
+
       if (id) {
         const updated = await prisma.learningSupportTarget.update({
           where: { id },
@@ -224,7 +234,8 @@ export async function POST(req: Request) {
             notes,
             academicYearId,
             startDate: startDate ? new Date(startDate) : new Date(),
-            terminationStatus: "ACTIVE"
+            terminationStatus: "ACTIVE",
+            createdById: teacher ? teacher.id : null
           }
         })
         return NextResponse.json(created)

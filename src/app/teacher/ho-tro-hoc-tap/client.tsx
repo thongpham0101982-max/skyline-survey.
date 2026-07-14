@@ -27,6 +27,7 @@ export function TeacherSupportClient({
   const [selectedYearId, setSelectedYearId] = useState(
     academicYears[0]?.id || ""
   )
+  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "history">("assigned")
 
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
@@ -307,6 +308,17 @@ export function TeacherSupportClient({
     return matchesSearch
   })
 
+  // Proposal history filter
+  const historyTargets = targets.filter(t => {
+    const isProposedByMe = t.createdById === teacher.id
+    if (!isProposedByMe) return false
+    const name = t.student?.studentName || ""
+    const code = t.student?.studentCode || ""
+    return searchQuery === "" || 
+      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      code.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
   // Options for tracking level loaded dynamically based on configs
   const dynamicLevelOptions = configs.filter(c => c.supportType === evalTargetType)
 
@@ -345,6 +357,32 @@ export function TeacherSupportClient({
         </div>
       </div>
 
+      {/* Sub tabs navigation */}
+      <div className="flex border-b border-slate-200 gap-6">
+        <button
+          onClick={() => setActiveSubTab("assigned")}
+          className={`py-3 px-1 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeSubTab === "assigned"
+              ? "border-indigo-600 text-indigo-600 font-extrabold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          Học sinh được phân công phụ đạo / chủ nhiệm
+        </button>
+        <button
+          onClick={() => setActiveSubTab("history")}
+          className={`py-3 px-1 text-sm font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeSubTab === "history"
+              ? "border-indigo-600 text-indigo-600 font-extrabold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <Clock className="h-4 w-4" />
+          Lược sử đề xuất bồi dưỡng
+        </button>
+      </div>
+
       {/* Action panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border">
         <div className="flex items-center gap-3">
@@ -366,15 +404,17 @@ export function TeacherSupportClient({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <select
-            value={roleFilter}
-            onChange={e => setRoleFilter(e.target.value as any)}
-            className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
-          >
-            <option value="ALL">Toàn bộ học sinh phụ trách</option>
-            <option value="HOMEROOM">Học sinh lớp Chủ nhiệm</option>
-            <option value="ASSIGNED">Học sinh kèm phụ đạo</option>
-          </select>
+          {activeSubTab === "assigned" && (
+            <select
+              value={roleFilter}
+              onChange={e => setRoleFilter(e.target.value as any)}
+              className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
+            >
+              <option value="ALL">Toàn bộ học sinh phụ trách</option>
+              <option value="HOMEROOM">Học sinh lớp Chủ nhiệm</option>
+              <option value="ASSIGNED">Học sinh kèm phụ đạo</option>
+            </select>
+          )}
 
           <div className="relative">
             <input
@@ -394,7 +434,7 @@ export function TeacherSupportClient({
         <div className="flex justify-center py-20">
           <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
         </div>
-      ) : (
+      ) : activeSubTab === "assigned" ? (
         <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
@@ -480,6 +520,72 @@ export function TeacherSupportClient({
                         {(isTerminated || isPending) && (
                           <span className="text-xs text-slate-400 font-medium">Không thể thao tác</span>
                         )}
+                      </td>
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Chương trình hỗ trợ</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn/Lý do đề xuất</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày đề xuất</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GV Phụ trách (GVPT)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 text-sm">
+              {historyTargets.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-10 text-slate-400">
+                    Bạn chưa gửi đề xuất bồi dưỡng nào trong năm học này.
+                  </td>
+                </tr>
+              ) : (
+                historyTargets.map((t: any) => {
+                  const isTerminated = t.terminationStatus === "TERMINATED"
+                  const isPending = t.terminationStatus === "PENDING_TERMINATION"
+                  const gvName = t.assignments?.map((a: any) => a.teacher?.teacherName).join(', ') || "Chưa phân công"
+
+                  return (
+                    <tr key={t.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="font-bold text-slate-800">{t.student?.studentName}</div>
+                        <div className="text-xs text-slate-500">{t.student?.studentCode}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
+                        {t.student?.class?.className}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
+                          t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
+                        }`}>
+                          {t.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-700 font-semibold">
+                        {t.reason}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-500 text-xs">
+                        {new Date(t.createdAt).toLocaleDateString("vi-VN")}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                          isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
+                        }`}>
+                          {isTerminated ? "Hoàn thành bồi dưỡng" : isPending ? "Chờ duyệt kết thúc" : t.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs">
+                        {gvName}
                       </td>
                     </tr>
                   )
