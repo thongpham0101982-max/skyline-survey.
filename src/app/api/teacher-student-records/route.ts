@@ -124,6 +124,74 @@ export async function GET(req: Request) {
       return NextResponse.json(students)
     }
 
+    // NEW: Get students in a class with learning commitments matching the teacher's assigned subjects
+    if (action === "getCommitmentCandidates") {
+      const classId = searchParams.get("classId")
+      const subjectsParam = searchParams.get("subjects") // comma separated list of subject names
+      const academicYearId = searchParams.get("academicYearId")
+      if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
+
+      const subjectNames = (subjectsParam || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+
+      // Fetch all students in the class
+      const students = await prisma.student.findMany({
+        where: { classId },
+        orderBy: { studentName: "asc" }
+      })
+
+      // Fetch learning commitments for these students in the given academic year
+      const studentIds = students.map((s) => s.id)
+      const commitments = await prisma.studentLearningCommitment.findMany({
+        where: {
+          studentId: { in: studentIds },
+          ...(academicYearId ? { academicYearId } : {})
+        }
+      })
+
+      // Filter students whose commitment content includes any of the subject names
+      const candidates = students
+        .map((s) => {
+          const commitment = commitments.find((c) => c.studentId === s.id)
+          if (!commitment) return null
+
+          const commitContent = (commitment.content || "").toLowerCase()
+
+          // Check if any teacher subject appears in the commitment content
+          const matchedSubjects: string[] = []
+          for (const subName of subjectNames) {
+            if (subjectNames.length === 0 || commitContent.includes(subName)) {
+              matchedSubjects.push(subName)
+            }
+          }
+
+          // If no subject filter provided, include all students with a commitment
+          if (subjectNames.length === 0 && commitContent.trim()) {
+            return {
+              id: s.id,
+              studentName: s.studentName,
+              studentCode: s.studentCode,
+              gender: s.gender,
+              commitmentContent: commitment.content,
+              matchedSubjects: []
+            }
+          }
+
+          if (matchedSubjects.length === 0) return null
+
+          return {
+            id: s.id,
+            studentName: s.studentName,
+            studentCode: s.studentCode,
+            gender: s.gender,
+            commitmentContent: commitment.content,
+            matchedSubjects
+          }
+        })
+        .filter(Boolean)
+
+      return NextResponse.json(candidates)
+    }
+
     if (action === "getStudentRecord") {
       const studentId = searchParams.get("studentId")
       if (!studentId) return NextResponse.json({ error: "Missing studentId" }, { status: 400 })

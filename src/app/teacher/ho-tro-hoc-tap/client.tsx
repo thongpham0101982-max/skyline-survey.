@@ -55,6 +55,8 @@ export function TeacherSupportClient({
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [proposePsychReason, setProposePsychReason] = useState("Hỗ trợ Tâm lý")
   const [proposeNotes, setProposeNotes] = useState("")
+  const [commitmentCandidates, setCommitmentCandidates] = useState<any[]>([])
+  const [loadingCommitmentCandidates, setLoadingCommitmentCandidates] = useState(false)
 
   // Evaluation Form States
   const [evalTargetId, setEvalTargetId] = useState("")
@@ -97,6 +99,7 @@ export function TeacherSupportClient({
     if (!classId) return
     setLoadingStudentsOfClass(true)
     setSelectedStudentIds([])
+    setCommitmentCandidates([])
     try {
       const res = await fetch(`/api/teacher-student-records?action=getClassStudents&classId=${classId}`)
       const data = await res.json()
@@ -108,14 +111,38 @@ export function TeacherSupportClient({
       const selectedClassObj = currentClasses.find(c => c.id === classId)
       const classSubjects = selectedClassObj?.subjects || []
       if (classSubjects.length > 0) {
-        setSelectedSubjects([classSubjects[0].subjectName || classSubjects[0].name || ""])
+        const defaultSubs = classSubjects.map((s: any) => s.subjectName || s.name || "")
+        setSelectedSubjects([defaultSubs[0]])
+        // Pre-fetch commitment candidates for this class based on teacher's subjects
+        fetchCommitmentCandidates(classId, defaultSubs)
       } else {
         setSelectedSubjects([])
+        fetchCommitmentCandidates(classId, [])
       }
     } catch (e) {
       console.error(e)
     } finally {
       setLoadingStudentsOfClass(false)
+    }
+  }
+
+  // Fetch commitment candidates for a class (students with learning commitments matching assigned subjects)
+  const fetchCommitmentCandidates = async (classId: string, subjectNames: string[]) => {
+    if (!classId || !selectedYearId) return
+    setLoadingCommitmentCandidates(true)
+    try {
+      const subjectsParam = subjectNames.join(",")
+      const res = await fetch(
+        `/api/teacher-student-records?action=getCommitmentCandidates&classId=${classId}&subjects=${encodeURIComponent(subjectsParam)}&academicYearId=${selectedYearId}`
+      )
+      const data = await res.json()
+      if (!data.error) {
+        setCommitmentCandidates(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingCommitmentCandidates(false)
     }
   }
 
@@ -742,6 +769,41 @@ export function TeacherSupportClient({
                   })()}
                 </label>
 
+                {/* Auto-select from Commitment (KSĐV) button */}
+                {proposeClassId && proposeAcademic && (
+                  <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-1">
+                    <div className="text-xs text-amber-800">
+                      <span className="font-bold">Tự động từ KS đầu vào:</span>{" "}
+                      {loadingCommitmentCandidates ? (
+                        <span className="italic">Đang tìm...</span>
+                      ) : commitmentCandidates.length > 0 ? (
+                        <span>Tìm thấy <strong>{commitmentCandidates.length}</strong> học sinh có cam kết môn phù hợp</span>
+                      ) : (
+                        <span className="text-slate-400 italic">Không có học sinh cam kết môn này</span>
+                      )}
+                    </div>
+                    {commitmentCandidates.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const eligibleFromCommitment = commitmentCandidates
+                            .filter(c => {
+                              const existingAcademic = targets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
+                              return !existingAcademic || existingAcademic.createdById === null
+                            })
+                            .map(c => c.id)
+                          setSelectedStudentIds(prev => Array.from(new Set([...prev, ...eligibleFromCommitment])))
+                          setSelectedSubjects(commitmentCandidates[0]?.matchedSubjects?.length > 0 
+                            ? commitmentCandidates[0].matchedSubjects 
+                            : selectedSubjects)
+                        }}
+                        className="ml-3 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap transition-all"
+                      >
+                        ✓ Chọn tất cả
+                      </button>
+                    )}
+                  </div>
+                )}
                 {loadingStudentsOfClass ? (
                   <div className="text-xs text-slate-500 flex items-center gap-1.5 py-1">
                     <RefreshCw className="h-3 w-3 animate-spin" /> Đang tải danh sách học sinh...
@@ -755,6 +817,8 @@ export function TeacherSupportClient({
                     {classStudents.map((s: any) => {
                       const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
                       const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                      const hasCommitment = commitmentCandidates.some(c => c.id === s.id)
+                      const commitmentCandidate = commitmentCandidates.find(c => c.id === s.id)
 
                       const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
                       const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
@@ -772,7 +836,7 @@ export function TeacherSupportClient({
                         <label 
                           key={s.id} 
                           className={`flex items-center gap-2 text-xs font-medium p-1 rounded ${
-                            isAlreadyProposed ? "opacity-50 cursor-not-allowed bg-slate-100/60" : "text-slate-700 cursor-pointer hover:bg-slate-100"
+                            isAlreadyProposed ? "opacity-50 cursor-not-allowed bg-slate-100/60" : hasCommitment ? "text-amber-900 cursor-pointer bg-amber-50 hover:bg-amber-100 border border-amber-200" : "text-slate-700 cursor-pointer hover:bg-slate-100"
                           }`}
                         >
                           <input
@@ -799,6 +863,11 @@ export function TeacherSupportClient({
                             {hasPsychBlock && (
                               <span className="ml-1.5 text-[10px] text-rose-500 font-bold block">
                                 (Đã đề xuất hỗ trợ Tâm lý{existingPsych?.createdBy?.teacherName ? ` bởi ${existingPsych.createdBy.teacherName}` : ""})
+                              </span>
+                            )}
+                            {hasCommitment && (
+                              <span className="ml-1.5 text-[10px] text-amber-700 font-extrabold">
+                                ⭐ Đã cam kết{commitmentCandidate?.matchedSubjects?.length > 0 ? ': ' + commitmentCandidate.matchedSubjects.join(', ') : ''}
                               </span>
                             )}
                             {existingAcademic && !hasAcademicBlock && proposeAcademic && (
