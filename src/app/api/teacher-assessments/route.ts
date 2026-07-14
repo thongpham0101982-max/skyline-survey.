@@ -69,6 +69,111 @@ export async function GET(req: any) {
             }
         });
 
+        // Tự động lấy cấu hình phân công GV giảng dạy có môn Cam kết để đề xuất/đánh giá
+        const periods = await prisma.inputAssessmentPeriod.findMany({
+            where: { ...(academicYearId ? { academicYearId } : {}) }
+        });
+
+        const currentTeacherForAss = await prisma.teacher.findUnique({
+            where: { userId: session.user.id }
+        });
+        
+        let synthesizedAssignments = [];
+        if (currentTeacherForAss) {
+            const teachingAssignments = await prisma.teachingAssignment.findMany({
+                where: {
+                    teacherId: currentTeacherForAss.id,
+                    ...(academicYearId ? { academicYearId } : {})
+                },
+                include: {
+                    class: true,
+                    subject: true
+                }
+            });
+
+            const targetStudents = await prisma.learningSupportTarget.findMany({
+                where: {
+                    supportType: "ACADEMIC",
+                    terminationStatus: { not: "TERMINATED" },
+                    ...(academicYearId ? { academicYearId } : {}),
+                    student: {
+                        classId: { in: teachingAssignments.map(ta => ta.classId) }
+                    }
+                },
+                include: {
+                    student: true
+                }
+            });
+
+            const commitmentStudents = await prisma.studentLearningCommitment.findMany({
+                where: {
+                    status: "ACTIVE",
+                    ...(academicYearId ? { academicYearId } : {}),
+                    student: {
+                        classId: { in: teachingAssignments.map(ta => ta.classId) }
+                    }
+                },
+                include: {
+                    student: true
+                }
+            });
+
+            for (const p of periods) {
+                for (const ta of teachingAssignments) {
+                    const studentClassId = ta.classId;
+                    const subName = (ta.subject?.subjectName || ta.subject?.name || "").toLowerCase();
+
+                    const hasCommitments = targetStudents.some(ts => {
+                        if (ts.student?.classId !== studentClassId) return false;
+                        const reason = (ts.reason || "").toLowerCase();
+                        return reason.includes(subName) || subName.includes(reason);
+                    }) || commitmentStudents.some(cs => {
+                        if (cs.student?.classId !== studentClassId) return false;
+                        const content = (cs.content || "").toLowerCase();
+                        return content.includes(subName) || subName.includes(content);
+                    });
+
+                    if (hasCommitments) {
+                        const className = ta.class?.className || "";
+                        let gradeStr = className;
+                        const match = className.match(/^(\d+)/);
+                        if (match) {
+                            gradeStr = `Khối ${match[1]}`;
+                        }
+
+                        synthesizedAssignments.push({
+                            id: `synthesized_${ta.id}_${p.id}`,
+                            periodId: p.id,
+                            batchId: null,
+                            userId: session.user.id,
+                            subjectId: ta.subjectId,
+                            grade: gradeStr,
+                            isPreschool: false,
+                            subject: ta.subject,
+                            period: {
+                                id: p.id,
+                                name: p.name,
+                                code: p.code,
+                                academicYearId: p.academicYearId
+                            }
+                        });
+                    }
+                }
+            }
+        }
+
+        const combinedAssignments = [...assignments];
+        synthesizedAssignments.forEach(sa => {
+            const exists = combinedAssignments.some(a => 
+                a.periodId === sa.periodId && 
+                a.subjectId === sa.subjectId && 
+                (a.grade || "").toLowerCase().trim() === (sa.grade || "").toLowerCase().trim()
+            );
+            if (!exists) {
+                combinedAssignments.push(sa);
+            }
+        });
+
         // Filter by academicYear in-memory (relation filter may not work on preschool model)
         const preschoolAssignments = academicYearId
             ? preschoolAssignmentsRaw.filter((a: any) => a.period?.academicYearId === academicYearId)
@@ -165,7 +270,7 @@ export async function GET(req: any) {
             console.error("Error fetching virtual probationary assignments:", eError);
         }
 
-        return NextResponse.json([...assignments, ...mappedPreschool]);
+        return NextResponse.json([...combinedAssignments, ...mappedPreschool]);
     }
     
     if (action === "getStats") {
@@ -657,7 +762,108 @@ export async function GET(req: any) {
         });
         
 
-        return NextResponse.json(filteredStudents);
+        // Tự động bổ sung các Học sinh có cam kết bồi dưỡng môn học này thuộc lớp GV được phân công
+        const currentTeacherForStud = await prisma.teacher.findUnique({
+            where: { userId: session.user.id }
+        });
+
+        const eligibleStudentCodes = new Set();
+        if (currentTeacherForStud) {
+            const teachingAssignments = await prisma.teachingAssignment.findMany({
+                where: {
+                    teacherId: currentTeacherForStud.id,
+                    ...(subjectId ? { subjectId } : {})
+                },
+                include: {
+                    class: true,
+                    subject: true
+                }
+            });
+
+            const targetStudents = await prisma.learningSupportTarget.findMany({
+                where: {
+                    supportType: "ACADEMIC",
+                    terminationStatus: { not: "TERMINATED" },
+                    student: {
+                        classId: { in: teachingAssignments.map(ta => ta.classId) }
+                    }
+                },
+                include: {
+                    student: true
+                }
+            });
+
+            const commitmentStudents = await prisma.studentLearningCommitment.findMany({
+                where: {
+                    status: "ACTIVE",
+                    student: {
+                        classId: { in: teachingAssignments.map(ta => ta.classId) }
+                    }
+                },
+                include: {
+                    student: true
+                }
+            });
+
+            for (const ts of targetStudents) {
+                const studentClassId = ts.student?.classId;
+                const targetReason = (ts.reason || "").toLowerCase();
+                
+                const hasMatchingAssignment = teachingAssignments.some(ta => {
+                    if (ta.classId !== studentClassId) return false;
+                    const subName = (ta.subject?.subjectName || ta.subject?.name || "").toLowerCase();
+                    return targetReason.includes(subName) || subName.includes(targetReason);
+                });
+
+                if (hasMatchingAssignment && ts.student?.studentCode) {
+                    eligibleStudentCodes.add(ts.student.studentCode);
+                }
+            }
+            
+            for (const cs of commitmentStudents) {
+                const studentClassId = cs.student?.classId;
+                const content = (cs.content || "").toLowerCase();
+                
+                const hasMatchingAssignment = teachingAssignments.some(ta => {
+                    if (ta.classId !== studentClassId) return false;
+                    const subName = (ta.subject?.subjectName || ta.subject?.name || "").toLowerCase();
+                    return content.includes(subName) || subName.includes(content);
+                });
+
+                if (hasMatchingAssignment && cs.student?.studentCode) {
+                    eligibleStudentCodes.add(cs.student.studentCode);
+                }
+            }
+        }
+
+        const allPeriodStudents = await prisma.inputAssessmentStudent.findMany({
+            where: {
+                periodId: periodId || undefined,
+                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
+            },
+            include: {
+                scores: {
+                    where: { subjectId: subjectId || undefined },
+                    include: { subject: true }
+                }
+            }
+        });
+
+        const combinedMap = new Map();
+        filteredStudents.forEach(s => combinedMap.set(s.id, s));
+        allPeriodStudents.forEach(s => {
+            if (s.studentCode && eligibleStudentCodes.has(s.studentCode)) {
+                // Ensure preschool flag mapping matches if needed
+                combinedMap.set(s.id, {
+                    ...s,
+                    isPreschool: false,
+                    scoreVals: []
+                });
+            }
+        });
+
+        const finalFilteredStudents = Array.from(combinedMap.values());
+        return NextResponse.json(finalFilteredStudents);
     }
 
     
