@@ -22,6 +22,7 @@ model User {
   preschoolInputAssessmentBatches  PreschoolInputAssessmentBatch[]             @relation("PreschoolBatchAssignee")
   InputAssessmentTeacherAssignment InputAssessmentTeacherAssignment[]
   preschoolTeacherAssignments      PreschoolInputAssessmentTeacherAssignment[]
+  preschoolDelegatedAssignments    PreschoolInputAssessmentTeacherAssignment[] @relation("PreschoolAssignmentDelegated")
   notifications                    Notification[]
   parent                           Parent?
   taskAttachments                  TaskAttachment[]                            @relation("TaskAttachments")
@@ -979,18 +980,21 @@ model PreschoolDevScore {
 }
 
 model PreschoolInputAssessmentTeacherAssignment {
-  id        String                         @id @default(cuid())
-  periodId  String
-  batchId   String?
-  userId    String
-  grade     String // e.g. "18 đến 24 tháng"
-  createdAt DateTime                       @default(now())
-  user      User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  batch     PreschoolInputAssessmentBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  period    PreschoolInputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  id              String                         @id @default(cuid())
+  periodId        String
+  batchId         String?
+  userId          String
+  delegatedUserId String?
+  grade           String // e.g. "18 đến 24 tháng"
+  createdAt       DateTime                       @default(now())
+  user            User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  delegatedUser   User?                          @relation(name: "PreschoolAssignmentDelegated", fields: [delegatedUserId], references: [id], onDelete: SetNull)
+  batch           PreschoolInputAssessmentBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  period          PreschoolInputAssessmentPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
 
   @@unique([periodId, batchId, userId, grade])
   @@index([userId])
+  @@index([delegatedUserId])
   @@index([batchId])
 }
 

@@ -87,6 +87,7 @@ interface Props {
   departments: any[]
   campuses: any[]
   grades: string[]
+  giaoVuCSUsers?: any[]
   currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null
   rolePermissions?: any[]
 }
@@ -98,6 +99,7 @@ export function PhanCongMamNonClient({
   departments = [],
   campuses = [],
   grades = [],
+  giaoVuCSUsers = [],
   currentUser = null,
   rolePermissions = []
 }: Props) {
@@ -460,6 +462,25 @@ export function PhanCongMamNonClient({
         notify("Lỗi khi hủy phân công", "err") 
       }
     } catch { notify("Lỗi hệ thống", "err") }
+  }
+
+  const updateDelegation = async (assignmentId: string, delegatedUserId: string) => {
+    if (!canUpdate) return
+    try {
+      const res = await fetch("/api/preschool-input-assessment-assignments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "UPDATE_DELEGATION", assignmentId, delegatedUserId: delegatedUserId || null })
+      })
+      if (res.ok) {
+        notify("Cập nhật ủy quyền thành công!")
+        fetchAssignments()
+      } else {
+        notify("Lỗi khi cập nhật ủy quyền", "err")
+      }
+    } catch {
+      notify("Có lỗi xảy ra", "err")
+    }
   }
 
   const toggleGradeSelection = (g: string) => {
@@ -931,6 +952,27 @@ export function PhanCongMamNonClient({
                             minute: "2-digit"
                           }) : "—"}
                         </span>
+                      </div>
+                      
+                      {/* Section Ủy quyền */}
+                      <div className="text-[10px] text-slate-400 mt-2.5 flex flex-col gap-1.5 border-t border-slate-100/80 pt-2.5">
+                        <div className="flex items-center gap-1.5 font-bold text-slate-650">
+                          <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
+                          <span>Ủy quyền Giáo vụ:</span>
+                        </div>
+                        <select
+                          value={assign.delegatedUserId || ""}
+                          onChange={(e) => updateDelegation(assign.id, e.target.value)}
+                          disabled={!canUpdate}
+                          className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 outline-none hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:ring-1 focus:ring-teal-50 transition-all shadow-2xs"
+                        >
+                          <option value="">-- Chọn Giáo vụ cơ sở --</option>
+                          {giaoVuCSUsers.map((user) => (
+                            <option key={user.id} value={user.id}>
+                              {user.fullName}
+                            </option>
+                          ))}
+                        </select>
                       </div>
                     </div>
                   </div>

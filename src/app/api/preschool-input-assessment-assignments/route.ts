@@ -50,6 +50,9 @@ export async function GET(req: NextRequest) {
         user: {
           select: { id: true, fullName: true, email: true, role: true }
         },
+        delegatedUser: {
+          select: { id: true, fullName: true, email: true, role: true }
+        },
         period: { select: { id: true, name: true, code: true } },
         batch: { select: { id: true, name: true } }
       },
@@ -69,7 +72,21 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { action, periodId, batchId, grade, userIds, assignmentId } = body;
+    const { action, periodId, batchId, grade, userIds, assignmentId, delegatedUserId } = body;
+
+    // --- Action: Update Delegation ---
+    if (action === "UPDATE_DELEGATION") {
+      if (!assignmentId) {
+        return NextResponse.json({ error: "Missing assignmentId" }, { status: 400 });
+      }
+
+      await (prisma as any).preschoolInputAssessmentTeacherAssignment.update({
+        where: { id: assignmentId },
+        data: { delegatedUserId: delegatedUserId || null }
+      });
+
+      return NextResponse.json({ success: true });
+    }
 
     // --- Action: Save Assignments ---
     if (action === "ASSIGN") {

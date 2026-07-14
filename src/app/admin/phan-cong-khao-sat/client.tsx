@@ -15,6 +15,7 @@ interface Props {
   k12Grades: string[]
   preschoolGrades: string[]
   campuses: any[]
+  giaoVuCSUsers?: any[]
   currentUser?: { id: string; role: string; campusIds: string[]; fullName?: string } | null
   rolePermissions?: any[]
 }
@@ -23,6 +24,7 @@ export function PhanCongKhaoSatClient({
   academicYears = [],
   k12Periods = [],
   preschoolPeriods = [],
+  giaoVuCSUsers = [],
   teachers = [],
   departments = [],
   subjects = [],
@@ -114,6 +116,7 @@ export function PhanCongKhaoSatClient({
             grades={preschoolGrades}
             currentUser={currentUser}
             rolePermissions={rolePermissions}
+            giaoVuCSUsers={giaoVuCSUsers}
           />
         )}
       </div>

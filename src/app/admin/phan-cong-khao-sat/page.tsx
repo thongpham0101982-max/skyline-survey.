@@ -22,6 +22,7 @@ export default async function PhanCongKhaoSatPage() {
   let k12Grades: string[] = ["1","2","3","4","5","6","7","8","9","10","11","12"];
   let preschoolGrades: string[] = ["Nhà trẻ 12-18 tháng", "Nhà trẻ 18-24 tháng", "Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
   let campuses: any[] = [];
+  let giaoVuCSUsers: any[] = [];
 
   try {
     if (pAny.academicYear) {
@@ -33,6 +34,14 @@ export default async function PhanCongKhaoSatPage() {
         where: { status: "ACTIVE" },
         include: { manager: true },
         orderBy: { campusName: "asc" }
+      }).catch(() => []);
+    }
+
+    if (pAny.user) {
+      giaoVuCSUsers = await pAny.user.findMany({
+        where: { role: { in: ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS"] } },
+        select: { id: true, fullName: true, email: true },
+        orderBy: { fullName: "asc" }
       }).catch(() => []);
     }
 
@@ -122,6 +131,7 @@ export default async function PhanCongKhaoSatPage() {
         academicYears={safeJson(academicYears)}
         k12Periods={safeJson(k12Periods)}
         preschoolPeriods={safeJson(preschoolPeriods)}
+        giaoVuCSUsers={safeJson(giaoVuCSUsers)}
         teachers={safeJson(teachers)}
         departments={safeJson(departments)}
         subjects={safeJson(subjects)}

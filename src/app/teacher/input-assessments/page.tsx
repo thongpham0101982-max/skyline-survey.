@@ -12,7 +12,7 @@ export default async function TeacherAssessmentsPage() {
   }
   
   const role = session.user.role;
-  const isAuthorizedRole = role === "TEACHER" || role === "GV_MN" || role === "ADMIN" || role === "Teacher" || role === "Admin";
+  const isAuthorizedRole = role === "TEACHER" || role === "GV_MN" || role === "ADMIN" || role === "Teacher" || role === "Admin" || ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS", "GĐCS"].includes(role);
   
   if (!isAuthorizedRole) {
     try {

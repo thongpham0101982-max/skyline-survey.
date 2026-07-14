@@ -62,7 +62,12 @@ export async function GET(req: any) {
 
         // Fetch preschool assignments (filter by userId only; academicYear filtered below in memory)
         const preschoolAssignmentsRaw = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-            where: { userId: session.user.id },
+            where: {
+                OR: [
+                    { userId: session.user.id },
+                    { delegatedUserId: session.user.id }
+                ]
+            },
             include: {
                 batch: true,
                 period: { include: { assignedUser: true } }
@@ -295,7 +300,12 @@ export async function GET(req: any) {
         });
 
         const preschoolAssignmentsRaw = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-            where: { userId: session.user.id },
+            where: {
+                OR: [
+                    { userId: session.user.id },
+                    { delegatedUserId: session.user.id }
+                ]
+            },
             include: { period: true }
         });
         const preschoolAssignments = preschoolAssignmentsRaw.filter((a: any) => a.period?.academicYearId === academicYearId);
@@ -569,7 +579,13 @@ export async function GET(req: any) {
             let preschoolAssignments = [];
             if (!grade) {
                 preschoolAssignments = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findMany({
-                    where: { userId: session.user.id, periodId: periodId || undefined }
+                    where: {
+                        OR: [
+                            { userId: session.user.id },
+                            { delegatedUserId: session.user.id }
+                        ],
+                        periodId: periodId || undefined
+                    }
                 });
             }
 
