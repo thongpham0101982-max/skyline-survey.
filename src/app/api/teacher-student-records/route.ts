@@ -121,7 +121,39 @@ export async function GET(req: Request) {
         where: { classId },
         orderBy: { studentName: "asc" }
       })
-      return NextResponse.json(students)
+
+      // Fetch input assessment records for these students to get entrance commitments
+      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          studentCode: { in: studentCodes },
+          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+        },
+        select: {
+          studentCode: true,
+          directorNote: true,
+          admissionResult: true
+        }
+      })
+
+      const parseCommittedSubjects = (note) => {
+        if (!note) return []
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        if (match && match[1]) {
+          return match[1].split(",").map(s => s.trim())
+        }
+        return []
+      }
+
+      const result = students.map(s => {
+        const assessment = inputAssessments.find(a => a.studentCode === s.studentCode)
+        return {
+          ...s,
+          entranceCommitmentSubjects: assessment ? parseCommittedSubjects(assessment.directorNote || "") : []
+        }
+      })
+
+      return NextResponse.json(result)
     }
 
     // NEW: Get students in a class with learning commitments matching the teacher's assigned subjects
@@ -139,52 +171,69 @@ export async function GET(req: Request) {
         orderBy: { studentName: "asc" }
       })
 
-      // Fetch learning commitments for these students in the given academic year
-      const studentIds = students.map((s) => s.id)
-      const commitments = await prisma.studentLearningCommitment.findMany({
+      // Fetch input assessment records for these students
+      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
-          studentId: { in: studentIds },
-          ...(academicYearId ? { academicYearId } : {})
+          studentCode: { in: studentCodes },
+          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+        },
+        select: {
+          studentCode: true,
+          directorNote: true,
+          admissionResult: true
         }
       })
 
-      // Filter students whose commitment content includes any of the subject names
+      const parseCommittedSubjects = (note) => {
+        if (!note) return []
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        if (match && match[1]) {
+          return match[1].split(",").map(s => s.trim())
+        }
+        return []
+      }
+
+      // Filter students whose input assessment commitment matches the subjects Param
       const candidates = students
         .map((s) => {
-          const commitment = commitments.find((c) => c.studentId === s.id)
-          if (!commitment) return null
+          const assessment = inputAssessments.find((a) => a.studentCode === s.studentCode)
+          if (!assessment) return null
 
-          const commitContent = (commitment.content || "").toLowerCase()
+          const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
+          const matchedSubjects = []
 
-          // Check if any teacher subject appears in the commitment content
-          const matchedSubjects: string[] = []
           for (const subName of subjectNames) {
-            if (subjectNames.length === 0 || commitContent.includes(subName)) {
+            const cleanSub = subName.toLowerCase()
+            const hasMatch = committedSubjects.some((cs) => {
+              const cleanCS = cs.toLowerCase()
+              if (cleanSub.includes("toán")) {
+                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
+              }
+              if (cleanSub.includes("tiếng việt") || cleanSub.includes("ngữ văn") || cleanSub.includes("văn")) {
+                return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
+              }
+              if (cleanSub.includes("tiếng anh") || cleanSub.includes("anh")) {
+                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
+              }
+              return cleanCS.includes(cleanSub) || cleanSub.includes(cleanCS)
+            })
+            if (hasMatch) {
               matchedSubjects.push(subName)
             }
           }
 
-          // If no subject filter provided, include all students with a commitment
-          if (subjectNames.length === 0 && commitContent.trim()) {
-            return {
-              id: s.id,
-              studentName: s.studentName,
-              studentCode: s.studentCode,
-              gender: s.gender,
-              commitmentContent: commitment.content,
-              matchedSubjects: []
-            }
-          }
-
-          if (matchedSubjects.length === 0) return null
+          if (subjectNames.length > 0 && matchedSubjects.length === 0) return null
 
           return {
             id: s.id,
             studentName: s.studentName,
             studentCode: s.studentCode,
             gender: s.gender,
-            commitmentContent: commitment.content,
-            matchedSubjects
+            commitmentContent: committedSubjects.length > 0 
+              ? `Cam kết Khảo sát đầu vào các môn: ${committedSubjects.join(", ")}`
+              : "Có cam kết đầu vào",
+            matchedSubjects: matchedSubjects.length > 0 ? matchedSubjects : committedSubjects
           }
         })
         .filter(Boolean)

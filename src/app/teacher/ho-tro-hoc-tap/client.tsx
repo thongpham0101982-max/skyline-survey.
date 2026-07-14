@@ -138,6 +138,28 @@ export function TeacherSupportClient({
       const data = await res.json()
       if (!data.error) {
         setCommitmentCandidates(data)
+        // Automatically check/select commitment students and subjects
+        if (data.length > 0) {
+          const eligibleFromCommitment = data
+            .filter(c => {
+              const existingAcademic = targets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
+              return !existingAcademic || existingAcademic.createdById === null
+            })
+            .map(c => c.id)
+
+          if (eligibleFromCommitment.length > 0) {
+            setSelectedStudentIds(prev => Array.from(new Set([...prev, ...eligibleFromCommitment])))
+            
+            // Collect all matched subjects from eligible students
+            const matchedSubs = data
+              .filter(c => eligibleFromCommitment.includes(c.id))
+              .flatMap(c => c.matchedSubjects || [])
+            
+            if (matchedSubs.length > 0) {
+              setSelectedSubjects(prev => Array.from(new Set([...prev, ...matchedSubs])))
+            }
+          }
+        }
       }
     } catch (e) {
       console.error(e)
