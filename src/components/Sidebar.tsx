@@ -43,6 +43,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [hasGeneral, setHasGeneral] = useState(false)
   const [loadingAssignments, setLoadingAssignments] = useState(true)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  const [observesExpanded, setObservesExpanded] = useState(pathname.startsWith("/admin/tong-hop-du-gio"))
+
+  useEffect(() => {
+    if (pathname.startsWith("/admin/tong-hop-du-gio")) {
+      setObservesExpanded(true)
+    }
+  }, [pathname])
 
   const toggleCategory = (catId: string) => {
     setExpandedCategories(prev => ({
@@ -106,16 +113,15 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     })
   }, [pathname, permissionModules, actualRole])
 
+  // Listen to custom toggleSidebar event from top layout header
+  useEffect(() => {
+    const handleToggle = () => setIsOpen(open => !open)
+    window.addEventListener("toggleSidebar", handleToggle)
+    return () => window.removeEventListener("toggleSidebar", handleToggle)
+  }, [])
+
   return (
     <>
-      {/* Mobile Floating Toggle Button */}
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="md:hidden fixed top-4 left-4 z-50 p-3 bg-[#003B3A] text-white rounded-2xl shadow-lg border border-slate-800 hover:bg-white/10 transition-all duration-300 focus:outline-none active:scale-95"
-      >
-        {isOpen ? <X className="w-5 h-5 text-[#1E8B87]" /> : <Menu className="w-5 h-5 text-[#1E8B87]" />}
-      </button>
-
       {/* Mobile Dark Backdrop Overlay */}
       {isOpen && (
         <div 
@@ -126,9 +132,18 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
       {/* Sidebar Content */}
       <aside className={`${isCollapsed ? 'w-20' : 'w-64'} bg-[#003B3A] text-white p-6 flex flex-col shadow-xl fixed md:sticky inset-y-0 left-0 z-40 h-screen transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-2'} mb-8`}>
-          <img src="/logo.png" alt="Sky-Line Logo" className={`h-8 w-auto object-contain brightness-0 invert opacity-90 transition-all ${isCollapsed ? 'scale-75' : ''}`} />
-          {!isCollapsed && <div className="font-bold text-lg tracking-tight leading-none whitespace-nowrap overflow-hidden">{title}</div>}
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-2'} mb-8`}>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Sky-Line Logo" className={`h-8 w-auto object-contain brightness-0 invert opacity-90 transition-all ${isCollapsed ? 'scale-75' : ''}`} />
+            {!isCollapsed && <div className="font-bold text-lg tracking-tight leading-none whitespace-nowrap overflow-hidden">{title}</div>}
+          </div>
+          {/* Mobile close button inside the sidebar */}
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="md:hidden p-1.5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
@@ -149,17 +164,25 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
           {role === "ADMIN" && (isTTCM || isSuperAdmin) && (
             <div className="flex flex-col">
               {/* Parent label */}
-              <div className={`flex items-center px-3 py-2.5 rounded-xl text-sm font-medium ${
-                pathname.startsWith("/admin/tong-hop-du-gio") 
-                  ? "bg-white/20 text-white border border-[#135E5B]/30" 
-                  : "text-white/70"
-              }`}>
-                <PieChart className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60"}`} />
-                {!isCollapsed && <span className="font-semibold">Tổng hợp dự giờ</span>}
-              </div>
+              <button 
+                onClick={() => setObservesExpanded(!observesExpanded)}
+                className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-left w-full hover:bg-white/5 outline-none ${
+                  pathname.startsWith("/admin/tong-hop-du-gio") 
+                    ? "bg-white/20 text-white border border-[#135E5B]/30" 
+                    : "text-white/70"
+                }`}
+              >
+                <div className="flex items-center">
+                  <PieChart className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60"}`} />
+                  {!isCollapsed && <span className="font-semibold">Tổng hợp dự giờ</span>}
+                </div>
+                {!isCollapsed && (
+                  <ChevronDown className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${observesExpanded ? 'rotate-180' : ''}`} />
+                )}
+              </button>
               {/* Sub-items */}
-              {!isCollapsed && (
-                <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3">
+              {!isCollapsed && observesExpanded && (
+                <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3 animate-in slide-in-from-top-2 duration-200">
                   <Link href="/admin/tong-hop-du-gio?block=k12" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
                       pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") !== "mammon" && searchParams?.get("block") !== "dieuhan"
