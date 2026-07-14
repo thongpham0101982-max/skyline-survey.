@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation"
+import { redirect } from "next/navigation"
 import { auth } from "@/lib/auth"
 
 export default async function Home() {
@@ -11,7 +11,7 @@ export default async function Home() {
   const role = (session.user as any)?.role || "PARENT"
   
   if (role === "STUDENT") {
-    redirect("/Hocsinh/khaosat")
+    redirect("/hocsinh/hs-khaosat/danh-sach")
   } else if (["TEACHER", "GV_MN"].includes(role)) {
     redirect("/teacher/classes")
   } else if (role === "PARENT") {
