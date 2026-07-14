@@ -153,6 +153,7 @@ export function TeacherSupportClient({
 
   useEffect(() => {
     fetchTeacherData()
+    fetchAssignedClasses()
   }, [selectedYearId])
 
   // Local storage year sync listener
@@ -289,6 +290,9 @@ export function TeacherSupportClient({
 
   // Filter students related to this teacher
   const filteredTargets = targets.filter(t => {
+    // Only show active targets that are approved (have assigned teachers)
+    if (!t.assignments || t.assignments.length === 0) return false
+
     // Check if homeroom or assigned
     const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
     const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher.id)
@@ -311,7 +315,19 @@ export function TeacherSupportClient({
   // Proposal history filter
   const historyTargets = targets.filter(t => {
     const isProposedByMe = t.createdById === teacher.id
-    if (!isProposedByMe) return false
+    const isHomeroomStudent = homeroomClasses.some(c => c.id === t.student?.classId)
+    const isGVBMForTarget = assignedClasses.some(c => {
+      if (c.id !== t.student?.classId) return false
+      return c.subjects?.some((sub: any) => {
+        const subName = (sub.subjectName || sub.name || "").toLowerCase()
+        const targetReason = (t.reason || "").toLowerCase()
+        return subName === targetReason || targetReason.includes(subName) || subName.includes(targetReason)
+      })
+    })
+
+    const isVisibleInHistory = isProposedByMe || isHomeroomStudent || isGVBMForTarget
+    if (!isVisibleInHistory) return false
+
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
     return searchQuery === "" || 
@@ -551,6 +567,7 @@ export function TeacherSupportClient({
                 </tr>
               ) : (
                 historyTargets.map((t: any) => {
+                  const isApproved = t.assignments && t.assignments.length > 0
                   const isTerminated = t.terminationStatus === "TERMINATED"
                   const isPending = t.terminationStatus === "PENDING_TERMINATION"
                   const gvName = t.assignments?.map((a: any) => a.teacher?.teacherName).join(', ') || "Chưa phân công"
@@ -579,9 +596,21 @@ export function TeacherSupportClient({
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                          isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
+                          isTerminated 
+                            ? "bg-emerald-100 text-emerald-800" 
+                            : isPending 
+                            ? "bg-amber-100 text-amber-800" 
+                            : isApproved 
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}>
-                          {isTerminated ? "Hoàn thành bồi dưỡng" : isPending ? "Chờ duyệt kết thúc" : t.status}
+                          {isTerminated 
+                            ? "Hoàn thành bồi dưỡng" 
+                            : isPending 
+                            ? "Chờ duyệt kết thúc" 
+                            : isApproved 
+                            ? "Đã duyệt" 
+                            : "Chờ xét duyệt"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs">
