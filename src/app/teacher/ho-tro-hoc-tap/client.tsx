@@ -645,7 +645,8 @@ export function TeacherSupportClient({
                   <span>Chọn học sinh cần hỗ trợ (Chọn một hoặc nhiều em):</span>
                   {classStudents.length > 0 && (() => {
                     const eligibleStudents = classStudents.filter(s => {
-                      return !targets.some(t => t.studentId === s.id && t.supportType === proposeType)
+                      const existingTarget = targets.find(t => t.studentId === s.id && t.supportType === proposeType)
+                      return !existingTarget || existingTarget.createdById === null
                     })
                     if (eligibleStudents.length === 0) return null
                     return (
@@ -677,21 +678,23 @@ export function TeacherSupportClient({
                 ) : (
                   <div className="border rounded-lg max-h-36 overflow-y-auto p-2 space-y-1.5 bg-slate-50">
                     {classStudents.map((s: any) => {
-                      const isAlreadyTarget = targets.some(t => t.studentId === s.id && t.supportType === proposeType)
+                      const existingTarget = targets.find(t => t.studentId === s.id && t.supportType === proposeType)
+                      const isAlreadyTarget = existingTarget !== undefined
+                      const isAlreadyProposed = existingTarget && existingTarget.createdById !== null
                       const isChecked = selectedStudentIds.includes(s.id)
                       return (
                         <label 
                           key={s.id} 
                           className={`flex items-center gap-2 text-xs font-medium p-1 rounded ${
-                            isAlreadyTarget ? "opacity-50 cursor-not-allowed bg-slate-100/60" : "text-slate-700 cursor-pointer hover:bg-slate-100"
+                            isAlreadyProposed ? "opacity-50 cursor-not-allowed bg-slate-100/60" : "text-slate-700 cursor-pointer hover:bg-slate-100"
                           }`}
                         >
                           <input
                             type="checkbox"
-                            checked={isAlreadyTarget ? false : isChecked}
-                            disabled={isAlreadyTarget}
+                            checked={isAlreadyProposed ? false : isChecked}
+                            disabled={isAlreadyProposed}
                             onChange={() => {
-                              if (isAlreadyTarget) return
+                              if (isAlreadyProposed) return
                               if (isChecked) {
                                 setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id))
                               } else {
@@ -702,9 +705,14 @@ export function TeacherSupportClient({
                           />
                           <span>
                             {s.studentName} ({s.studentCode})
-                            {isAlreadyTarget && (
+                            {isAlreadyProposed && (
+                              <span className="ml-1.5 text-[10px] text-rose-500 font-bold">
+                                ({proposeType === "ACADEMIC" ? "Đã đề xuất" : "Đã hỗ trợ tâm lý"}{existingTarget.createdBy?.teacherName ? ` bởi ${existingTarget.createdBy.teacherName}` : ""})
+                              </span>
+                            )}
+                            {isAlreadyTarget && !isAlreadyProposed && (
                               <span className="ml-1.5 text-[10px] text-amber-600 font-extrabold">
-                                ({proposeType === "ACADEMIC" ? "Đang bồi dưỡng môn học" : "Đang được hỗ trợ tâm lý"})
+                                (Đang nhận hỗ trợ - Chưa liên kết người đề xuất)
                               </span>
                             )}
                           </span>
