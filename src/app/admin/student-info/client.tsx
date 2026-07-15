@@ -146,6 +146,15 @@ export function StudentInfoClient({
     }
   }, [isDetailsOpen]);
 
+  const [formSubTab, setFormSubTab] = useState<"admin" | "academic" | "approval">("admin");
+
+  // Reset form subtab when form modal opens
+  useEffect(() => {
+    if (isFormOpen) {
+      setFormSubTab("admin");
+    }
+  }, [isFormOpen]);
+
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
@@ -2077,19 +2086,19 @@ export function StudentInfoClient({
 
       {/* Dialog Form: Add / Edit Student */}
       {isFormOpen && (
-        <div className="fixed inset-0 bg-[#1E293B]/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-[900px] max-h-[90vh] overflow-hidden shadow-2xl flex flex-col animate-in scale-in duration-200 border border-[#D9E2EC]">
+        <div className="fixed inset-0 bg-[#1E293B]/65 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl w-full max-w-[900px] max-h-[92vh] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 border border-[#D9E2EC]">
             {/* Header */}
-            <div className="px-6 py-5 flex justify-between items-center bg-white border-b border-[#D9E2EC]">
+            <div className="px-6 py-5 flex justify-between items-center bg-white border-b border-[#D9E2EC] shrink-0">
               <div>
-                <h3 className="text-xl font-bold text-[#004C97] flex items-center gap-2">
-                  <span className="w-1.5 h-6 bg-[#00B5E2] inline-block rounded"></span>
-                  {formMode === "create" ? (activeTab === "general" ? "Thêm mới học sinh" : "Thêm trẻ") : "Chỉnh sửa thông tin học sinh"}
+                <h3 className="text-lg font-black text-[#004C97] flex items-center gap-2">
+                  <span className="w-1.5 h-6 bg-[#00B5E2] inline-block rounded animate-pulse"></span>
+                  {formMode === "create" ? (activeTab === "general" ? "Thêm mới học sinh" : "Thêm trẻ mới") : "Chỉnh sửa thông tin học sinh"}
                 </h3>
                 <p className="text-xs text-[#64748B] font-semibold mt-1">
                   Mã học sinh: <span className="text-[#004C97] font-bold">{formState.studentCode || "(Sẽ tự động sinh nếu trống)"}</span>
                   {formState.admissionResult && (
-                    <span className="ml-3 px-2 py-0.5 bg-[#E6F8FD] text-[#004C97] text-[10px] rounded-full border border-[#00B5E2]/30 font-bold uppercase">
+                    <span className="ml-3 px-2 py-0.5 bg-[#E6F8FD] text-[#004C97] text-[10px] rounded-full border border-[#00B5E2]/30 font-black uppercase">
                       {formState.admissionResult}
                     </span>
                   )}
@@ -2098,389 +2107,452 @@ export function StudentInfoClient({
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="p-2 text-[#64748B] hover:text-[#00B5E2] hover:bg-[#E6F8FD] transition-all rounded-xl cursor-pointer"
+                className="w-8 h-8 rounded-xl text-[#64748B] hover:text-[#00B5E2] hover:bg-[#E6F8FD] transition-all flex items-center justify-center cursor-pointer border border-[#D9E2EC]/50"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveStudent} className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar bg-[#F8FAFC]">
-              {/* SECTION 1: THÔNG TIN CÁ NHÂN */}
-              <div className="bg-white border border-[#D9E2EC] p-5 rounded-xl space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
-                  <span className="w-1 h-4 bg-[#004C97] inline-block rounded"></span>
-                  <h4 className="text-sm font-bold text-[#1E293B] uppercase tracking-wider">SECTION 1: Thông tin cá nhân</h4>
-                </div>
+            {/* Form Tab Switcher */}
+            <div className="bg-slate-50 border-b border-[#D9E2EC] px-6 py-1 flex gap-4 shrink-0 text-xs font-semibold overflow-x-auto scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setFormSubTab("admin")}
+                className={`py-2.5 px-3 border-b-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  formSubTab === "admin"
+                    ? "border-[#004C97] text-[#004C97]"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                <Info className="w-3.5 h-3.5" />
+                Thông tin hành chính
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormSubTab("academic")}
+                className={`py-2.5 px-3 border-b-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  formSubTab === "academic"
+                    ? "border-[#004C97] text-[#004C97]"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Hồ sơ học bạ
+              </button>
+              {formMode === "edit" && (
+                <button
+                  type="button"
+                  onClick={() => setFormSubTab("approval")}
+                  className={`py-2.5 px-3 border-b-2 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                    formSubTab === "approval"
+                      ? "border-[#004C97] text-[#004C97]"
+                      : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  Phê duyệt tuyển sinh
+                </button>
+              )}
+            </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Mã học sinh *</label>
-                    <div className="flex gap-2">
-                      <input
-                        required
-                        type="text"
-                        disabled={formMode === "edit"}
-                        value={formState.studentCode}
-                        onChange={(e) => {
-                          setFormState({ ...formState, studentCode: e.target.value.toUpperCase().replace(/\s/g, "") });
-                          if (e.target.value.trim()) {
-                            setFormErrors(prev => { const n = {...prev}; delete n.studentCode; return n; });
-                          }
-                        }}
-                        placeholder="VD: HS001"
-                        className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.studentCode ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
-                      />
-                      {formMode === "create" && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleAutoGenerateCode();
-                            setFormErrors(prev => { const n = {...prev}; delete n.studentCode; return n; });
-                          }}
-                          className="px-4 h-11 bg-[#E6F8FD] hover:bg-[#00B5E2]/20 text-[#004C97] border border-[#00B5E2]/30 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer"
-                        >
-                          Sinh mã
-                        </button>
-                      )}
-                    </div>
-                    {formErrors.studentCode && (
-                      <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
-                        <span>⚠</span> {formErrors.studentCode}
-                      </p>
-                    )}
-                  </div>
+            <form onSubmit={handleSaveStudent} className="flex-1 overflow-hidden flex flex-col bg-[#F8FAFC]">
+              <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
+                
+                {formSubTab === "admin" && (
+                  <div className="space-y-6 animate-in fade-in duration-200">
+                    {/* SECTION 1: THÔNG TIN CÁ NHÂN */}
+                    <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                        <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
+                        <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Thông tin cá nhân học sinh</h4>
+                      </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Họ và Tên *</label>
-                    <input
-                      required
-                      type="text"
-                      value={formState.fullName}
-                      onChange={(e) => {
-                        setFormState({ ...formState, fullName: e.target.value });
-                        if (e.target.value.trim()) {
-                          setFormErrors(prev => { const n = {...prev}; delete n.fullName; return n; });
-                        }
-                      }}
-                      placeholder="VD: Nguyễn Văn A"
-                      className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.fullName ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
-                    />
-                    {formErrors.fullName && (
-                      <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
-                        <span>⚠</span> {formErrors.fullName}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Ngày sinh *</label>
-                    <input
-                      required
-                      type="date"
-                      value={formState.dateOfBirth}
-                      onChange={(e) => {
-                        setFormState({ ...formState, dateOfBirth: e.target.value });
-                        if (e.target.value) {
-                          setFormErrors(prev => { const n = {...prev}; delete n.dateOfBirth; return n; });
-                        }
-                      }}
-                      className={`h-11 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.dateOfBirth ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
-                    />
-                    {formErrors.dateOfBirth && (
-                      <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
-                        <span>⚠</span> {formErrors.dateOfBirth}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Giới tính *</label>
-                      <select
-                        value={formState.gender}
-                        onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
-                        className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                      >
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Khối *</label>
-                      <select
-                        required
-                        value={formState.grade}
-                        onChange={(e) => {
-                          setFormState({ ...formState, grade: e.target.value });
-                          if (e.target.value) {
-                            setFormErrors(prev => { const n = {...prev}; delete n.grade; return n; });
-                          }
-                        }}
-                        className={`h-11 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.grade ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
-                      >
-                        <option value="">-- Chọn khối --</option>
-                        {activeTab === "general" ? (
-                          grades.map(g => (
-                            <option key={g} value={g}>Khối {g}</option>
-                          ))
-                        ) : (
-                          preschoolGrades.map(g => (
-                            <option key={g} value={g}>{g}</option>
-                          ))
-                        )}
-                      </select>
-                      {formErrors.grade && (
-                        <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
-                          <span>⚠</span> {formErrors.grade}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 2: THÔNG TIN TUYỂN SINH */}
-              <div className="bg-white border border-[#D9E2EC] p-5 rounded-xl space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
-                  <span className="w-1 h-4 bg-[#004C97] inline-block rounded"></span>
-                  <h4 className="text-sm font-bold text-[#1E293B] uppercase tracking-wider">SECTION 2: Thông tin tuyển sinh</h4>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Năm tuyển sinh</label>
-                    <select
-                      disabled
-                      value={activeYearId}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#64748B] text-sm font-semibold rounded-xl outline-none cursor-not-allowed"
-                    >
-                      <option value={activeYearId}>{activeYearName}</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Học kỳ / Năm học</label>
-                    <select
-                      value={formState.hocKy}
-                      onChange={(e) => setFormState({ ...formState, hocKy: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                    >
-                      <option value="">-- Chọn học kỳ --</option>
-                      {configs.filter(c => c.categoryType === "HOC_KY").map(c => (
-                        <option key={c.id} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kỳ khảo sát *</label>
-                    <select
-                      required
-                      value={formState.periodId}
-                      onChange={(e) => {
-                        setFormState({ ...formState, periodId: e.target.value, batchId: "" });
-                        if (e.target.value) {
-                          setFormErrors(prev => { const n = {...prev}; delete n.periodId; return n; });
-                        }
-                      }}
-                      className={`h-11 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-bold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.periodId ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
-                    >
-                      <option value="">-- Chọn Kỳ khảo sát --</option>
-                      {activeTab === "general" ? (
-                        generalPeriods.map((p) => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))
-                      ) : (
-                        preschoolPeriods.map((p) => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))
-                      )}
-                    </select>
-                    {formErrors.periodId && (
-                      <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
-                        <span>⚠</span> {formErrors.periodId}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Đợt khảo sát *</label>
-                    <select
-                      value={formState.batchId}
-                      onChange={(e) => setFormState({ ...formState, batchId: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                    >
-                      <option value="">-- Không phân đợt / Mặc định --</option>
-                      {activeFormBatches.map((b) => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hồ sơ/Bảng điểm</label>
-                    <select
-                      value={formState.hoSoCtQuocTe}
-                      onChange={(e) => setFormState({ ...formState, hoSoCtQuocTe: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                    >
-                      <option value="">-- Chọn hồ sơ --</option>
-                      {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => (
-                        <option key={c.id} value={c.name}>{c.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ khảo sát</label>
-                    <select
-                      value={formState.surveyFormType}
-                      onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
-                      className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                    >
-                      <option value="">-- Chọn Hệ khảo sát --</option>
-                      {activeTab === "general" ? (
-                        currentEduSystems.map(es => (
-                          <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
-                        ))
-                      ) : (
-                        preschoolConfigs.filter(c => c.categoryType === "system").map(c => (
-                          <option key={c.code} value={c.name}>{c.name}</option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* SECTION 3: ĐỐI TƯỢNG TUYỂN SINH (Selectable Tags - Brand Custom) */}
-              <div className="bg-white border border-[#D9E2EC] p-5 rounded-xl space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
-                  <span className="w-1 h-4 bg-[#004C97] inline-block rounded"></span>
-                  <h4 className="text-sm font-bold text-[#1E293B] uppercase tracking-wider">SECTION 3: Đối tượng tuyển sinh</h4>
-                </div>
-
-                <div className="space-y-3">
-                  <span className="text-xs font-semibold text-[#64748B] block">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
-                  <div className="flex flex-wrap gap-2">
-                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
-                      const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
-                      const isChecked = selectedTargets.includes(c.name);
-                      return (
-                        <button
-                          type="button"
-                          key={c.id}
-                          onClick={() => {
-                            let updated;
-                            if (isChecked) {
-                              updated = selectedTargets.filter((t) => t !== c.name);
-                            } else {
-                              updated = [...selectedTargets, c.name];
-                            }
-                            setFormState(f => ({ ...f, targetType: updated.join(", ") }));
-                          }}
-                          className={`px-4 py-2 border rounded-xl flex items-center gap-1.5 transition-all text-sm font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
-                        >
-                          {isChecked ? (
-                            <span className="text-[#00B5E2] font-black text-sm">✓</span>
-                          ) : (
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Mã học sinh *</label>
+                          <div className="flex gap-2">
+                            <input
+                              required
+                              type="text"
+                              disabled={formMode === "edit"}
+                              value={formState.studentCode}
+                              onChange={(e) => {
+                                setFormState({ ...formState, studentCode: e.target.value.toUpperCase().replace(/\s/g, "") });
+                                if (e.target.value.trim()) {
+                                  setFormErrors(prev => { const n = {...prev}; delete n.studentCode; return n; });
+                                }
+                              }}
+                              placeholder="VD: HS001"
+                              className={`h-10.5 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.studentCode ? 'border-[#EF4444] focus:border-[#EF4EF4] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                            />
+                            {formMode === "create" && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleAutoGenerateCode();
+                                  setFormErrors(prev => { const n = {...prev}; delete n.studentCode; return n; });
+                                }}
+                                className="px-4 h-10.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/20 text-[#004C97] border border-[#00B5E2]/30 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                              >
+                                Sinh mã
+                              </button>
+                            )}
+                          </div>
+                          {formErrors.studentCode && (
+                            <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
+                              <span>⚠</span> {formErrors.studentCode}
+                            </p>
                           )}
-                          <span>{c.name}</span>
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => alert("Chức năng thêm cấu hình đối tượng tuyển sinh thực hiện tại trang cấu hình danh mục.")}
-                      className="px-4 py-2 border border-dashed border-[#00B5E2] text-[#00B5E2] bg-transparent hover:bg-[#E6F8FD]/50 rounded-xl flex items-center gap-1.5 transition-all text-sm font-bold cursor-pointer"
-                    >
-                      <span>+</span>
-                      Thêm đối tượng tuyển sinh
-                    </button>
-                  </div>
-                </div>
-              </div>
+                        </div>
 
-              {/* SECTION 4: ĐÁNH GIÁ */}
-              <div className="bg-white border border-[#D9E2EC] p-5 rounded-xl space-y-4">
-                <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
-                  <span className="w-1 h-4 bg-[#004C97] inline-block rounded"></span>
-                  <h4 className="text-sm font-bold text-[#1E293B] uppercase tracking-wider">SECTION 4: Đánh giá</h4>
-                </div>
-
-                {activeTab === "general" ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Diện Khảo sát</label>
-                        <select
-                          value={formState.admissionCriteria}
-                          onChange={(e) => setFormState({ ...formState, admissionCriteria: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                        >
-                          <option value="">--</option>
-                          {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                          ))}
-                        </select>
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Họ và Tên *</label>
+                          <input
+                            required
+                            type="text"
+                            value={formState.fullName}
+                            onChange={(e) => {
+                              setFormState({ ...formState, fullName: e.target.value });
+                              if (e.target.value.trim()) {
+                                setFormErrors(prev => { const n = {...prev}; delete n.fullName; return n; });
+                              }
+                            }}
+                            placeholder="VD: Nguyễn Văn A"
+                            className={`h-10.5 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.fullName ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                          />
+                          {formErrors.fullName && (
+                            <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
+                              <span>⚠</span> {formErrors.fullName}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hình thức KS</label>
-                        <select
-                          value={formState.surveySystem}
-                          onChange={(e) => setFormState({ ...formState, surveySystem: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                        >
-                          <option value="">--</option>
-                          {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                          ))}
-                        </select>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Ngày sinh *</label>
+                          <input
+                            required
+                            type="date"
+                            value={formState.dateOfBirth}
+                            onChange={(e) => {
+                              setFormState({ ...formState, dateOfBirth: e.target.value });
+                              if (e.target.value) {
+                                setFormErrors(prev => { const n = {...prev}; delete n.dateOfBirth; return n; });
+                              }
+                            }}
+                            className={`h-10.5 w-full px-3.5 bg-[#F8FAFC] hover:bg-slate-100/30 focus:bg-white border text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00B5E2]/10 ${formErrors.dateOfBirth ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                          />
+                          {formErrors.dateOfBirth && (
+                            <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
+                              <span>⚠</span> {formErrors.dateOfBirth}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Giới tính *</label>
+                            <select
+                              value={formState.gender}
+                              onChange={(e) => setFormState({ ...formState, gender: e.target.value })}
+                              className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                            >
+                              <option value="Nam">Nam</option>
+                              <option value="Nữ">Nữ</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Khối *</label>
+                            <select
+                              required
+                              value={formState.grade}
+                              onChange={(e) => {
+                                setFormState({ ...formState, grade: e.target.value });
+                                if (e.target.value) {
+                                  setFormErrors(prev => { const n = {...prev}; delete n.grade; return n; });
+                                }
+                              }}
+                              className={`h-10.5 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.grade ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                            >
+                              <option value="">-- Chọn khối --</option>
+                              {activeTab === "general" ? (
+                                grades.map(g => (
+                                  <option key={g} value={g}>Khối {g}</option>
+                                ))
+                              ) : (
+                                preschoolGrades.map(g => (
+                                  <option key={g} value={g}>{g}</option>
+                                ))
+                              )}
+                            </select>
+                            {formErrors.grade && (
+                              <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
+                                <span>⚠</span> {formErrors.grade}
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả Học tập</label>
-                        <select
-                          value={formState.kqHocTap}
-                          onChange={(e) => setFormState({ ...formState, kqHocTap: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                        >
-                          <option value="">--</option>
-                          {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                          ))}
-                        </select>
+                    {/* SECTION 2: THÔNG TIN TUYỂN SINH */}
+                    <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                        <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
+                        <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Thông tin hành chính tuyển sinh</h4>
                       </div>
-                      <div>
-                        <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả Rèn luyện</label>
-                        <select
-                          value={formState.kqRenLuyen}
-                          onChange={(e) => setFormState({ ...formState, kqRenLuyen: e.target.value })}
-                          className="h-11 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                        >
-                          <option value="">--</option>
-                          {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => (
-                            <option key={c.id} value={c.name}>{c.name}</option>
-                          ))}
-                        </select>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Năm tuyển sinh</label>
+                          <select
+                            disabled
+                            value={activeYearId}
+                            className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#64748B] text-sm font-semibold rounded-xl outline-none cursor-not-allowed"
+                          >
+                            <option value={activeYearId}>{activeYearName}</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Học kỳ / Năm học</label>
+                          <select
+                            value={formState.hocKy}
+                            onChange={(e) => setFormState({ ...formState, hocKy: e.target.value })}
+                            className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          >
+                            <option value="">-- Chọn học kỳ --</option>
+                            {configs.filter(c => c.categoryType === "HOC_KY").map(c => (
+                              <option key={c.id} value={c.name}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kỳ khảo sát *</label>
+                          <select
+                            required
+                            value={formState.periodId}
+                            onChange={(e) => {
+                              setFormState({ ...formState, periodId: e.target.value, batchId: "" });
+                              if (e.target.value) {
+                                setFormErrors(prev => { const n = {...prev}; delete n.periodId; return n; });
+                              }
+                            }}
+                            className={`h-10.5 w-full px-3 bg-[#F8FAFC] border text-[#1E293B] text-sm font-bold rounded-xl outline-none focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer ${formErrors.periodId ? 'border-[#EF4444] focus:border-[#EF4444] focus:ring-[#EF4444]/10' : 'border-[#D9E2EC] focus:border-[#00B5E2]'}`}
+                          >
+                            <option value="">-- Chọn Kỳ khảo sát --</option>
+                            {activeTab === "general" ? (
+                              generalPeriods.map((p) => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))
+                            ) : (
+                              preschoolPeriods.map((p) => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))
+                            )}
+                          </select>
+                          {formErrors.periodId && (
+                            <p className="text-[#EF4444] text-[11px] font-semibold mt-1 flex items-center gap-1">
+                              <span>⚠</span> {formErrors.periodId}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Đợt khảo sát *</label>
+                          <select
+                            value={formState.batchId}
+                            onChange={(e) => setFormState({ ...formState, batchId: e.target.value })}
+                            className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          >
+                            <option value="">-- Không phân đợt / Mặc định --</option>
+                            {activeFormBatches.map((b) => (
+                              <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ khảo sát</label>
+                          <select
+                            value={formState.surveyFormType}
+                            onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
+                            className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          >
+                            <option value="">-- Chọn Hệ khảo sát --</option>
+                            {activeTab === "general" ? (
+                              currentEduSystems.map(es => (
+                                <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
+                              ))
+                            ) : (
+                              preschoolConfigs.filter(c => c.categoryType === "system").map(c => (
+                                <option key={c.code} value={c.name}>{c.name}</option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+
+                        {activeTab === "general" && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Diện Khảo sát</label>
+                              <select
+                                value={formState.admissionCriteria}
+                                onChange={(e) => setFormState({ ...formState, admissionCriteria: e.target.value })}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">--</option>
+                                {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
+                                  <option key={c.id} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hình thức KS</label>
+                              <select
+                                value={formState.surveySystem}
+                                onChange={(e) => setFormState({ ...formState, surveySystem: e.target.value })}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">--</option>
+                                {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => (
+                                  <option key={c.id} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Preschool Comments Area */}
-                    {formMode === "edit" && (
-                      <div className="space-y-4">
+                )}
+
+                {formSubTab === "academic" && (
+                  <div className="space-y-6 animate-in fade-in duration-200">
+                    {/* SECTION 3: HỒ SƠ HỌC BẠ */}
+                    <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                        <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
+                        <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Hồ sơ & Học bạ học tập</h4>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hồ sơ/Bảng điểm</label>
+                          <select
+                            value={formState.hoSoCtQuocTe}
+                            onChange={(e) => setFormState({ ...formState, hoSoCtQuocTe: e.target.value })}
+                            className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          >
+                            <option value="">-- Chọn hồ sơ --</option>
+                            {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => (
+                              <option key={c.id} value={c.name}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {activeTab === "general" && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả Học tập</label>
+                              <select
+                                value={formState.kqHocTap}
+                                onChange={(e) => setFormState({ ...formState, kqHocTap: e.target.value })}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">--</option>
+                                {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => (
+                                  <option key={c.id} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả Rèn luyện</label>
+                              <select
+                                value={formState.kqRenLuyen}
+                                onChange={(e) => setFormState({ ...formState, kqRenLuyen: e.target.value })}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">--</option>
+                                {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => (
+                                  <option key={c.id} value={c.name}>{c.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {activeTab === "general" && (
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Học bạ tiểu học / THCS</label>
+                          <textarea
+                            value={formState.kqgdTieuHoc}
+                            onChange={(e) => setFormState({ ...formState, kqgdTieuHoc: e.target.value })}
+                            rows={3}
+                            placeholder="Nhập thông tin kết quả giáo dục tiểu học / THCS hoặc ghi chú học bạ học sinh..."
+                            className="w-full p-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-3">
+                        <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Đối tượng tuyển sinh</label>
+                        <span className="text-[11px] font-semibold text-[#64748B] block mt-0.5">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                            const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
+                            const isChecked = selectedTargets.includes(c.name);
+                            return (
+                              <button
+                                type="button"
+                                key={c.id}
+                                onClick={() => {
+                                  let updated;
+                                  if (isChecked) {
+                                    updated = selectedTargets.filter((t) => t !== c.name);
+                                  } else {
+                                    updated = [...selectedTargets, c.name];
+                                  }
+                                  setFormState(f => ({ ...f, targetType: updated.join(", ") }));
+                                }}
+                                className={`px-3 py-1.5 border rounded-xl flex items-center gap-1.5 transition-all text-xs font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
+                              >
+                                {isChecked ? (
+                                  <span className="text-[#00B5E2] font-black text-sm">✓</span>
+                                ) : (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
+                                )}
+                                <span>{c.name}</span>
+                              </button>
+                            );
+                          })}
+                          <button
+                            type="button"
+                            onClick={() => alert("Chức năng thêm cấu hình đối tượng tuyển sinh thực hiện tại trang cấu hình danh mục.")}
+                            className="px-3 py-1.5 border border-dashed border-[#00B5E2] text-[#00B5E2] bg-transparent hover:bg-[#E6F8FD]/50 rounded-xl flex items-center gap-1.5 transition-all text-xs font-bold cursor-pointer"
+                          >
+                            <span>+</span>
+                            Thêm đối tượng tuyển sinh
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* SECTION 4: ĐÁNH GIÁ MẦM NON (Chỉ hiển thị cho mầm non) */}
+                    {activeTab === "preschool" && formMode === "edit" && (
+                      <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
+                        <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                          <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
+                          <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Đánh giá phát triển mầm non</h4>
+                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                           <div>
                             <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Nhận xét chuyên môn</label>
@@ -2509,7 +2581,7 @@ export function StudentInfoClient({
                               value={formState.devImportantNote}
                               onChange={(e) => setFormState({ ...formState, devImportantNote: e.target.value })}
                               placeholder="VD: Bé còn rụt rè, khó hòa nhập"
-                              className="h-11 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                              className="h-10.5 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
                             />
                           </div>
                           <div>
@@ -2519,7 +2591,7 @@ export function StudentInfoClient({
                               value={formState.devAssessmentResult}
                               onChange={(e) => setFormState({ ...formState, devAssessmentResult: e.target.value })}
                               placeholder="VD: Đạt khảo sát"
-                              className="h-11 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                              className="h-10.5 w-full px-3.5 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
                             />
                           </div>
                         </div>
@@ -2527,80 +2599,82 @@ export function StudentInfoClient({
                     )}
                   </div>
                 )}
+
+                {formSubTab === "approval" && formMode === "edit" && (
+                  <div className="space-y-6 animate-in fade-in duration-200">
+                    {/* SECTION 5: XÉT DUYỆT & Ý KIẾN CHỈ ĐẠO */}
+                    <div className="bg-[#E6F8FD]/45 border border-[#00B5E2]/30 p-5 rounded-2xl space-y-4 shadow-sm">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#00B5E2]/20">
+                        <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
+                        <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Xét duyệt & Ý kiến chỉ đạo của Giám đốc</h4>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả xét duyệt tuyển sinh</label>
+                          <select
+                            value={formState.admissionResult}
+                            onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
+                            className="h-10.5 w-full px-3 bg-white border border-[#D9E2EC] text-[#004C97] text-sm font-bold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          >
+                            {activeTab === "general" ? (
+                              <Fragment>
+                                <option value="">Chưa duyệt / Khác</option>
+                                <option value="Đạt">Đạt</option>
+                                <option value="Đạt cam kết">Đạt cam kết</option>
+                                <option value="Học thử">Học thử</option>
+                                <option value="Không đạt">Không đạt</option>
+                                <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
+                                <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
+                              </Fragment>
+                            ) : (
+                              <Fragment>
+                                <option value="">Chưa duyệt</option>
+                                <option value="Đạt">Đạt</option>
+                                <option value="Không đạt">Không đạt</option>
+                                <option value="Học thử">Học thử</option>
+                              </Fragment>
+                            )}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Giám đốc tuyển sinh ký duyệt</label>
+                          <input
+                            type="text"
+                            value={formState.signatureName}
+                            onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
+                            placeholder="Họ tên Giám đốc tuyển sinh"
+                            className="h-10.5 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Ý kiến chỉ đạo / Ghi chú của Giám đốc</label>
+                        <textarea
+                          value={formState.directorNote}
+                          onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
+                          rows={3}
+                          placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
+                          className="w-full p-3 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* SECTION 5: XÉT DUYỆT & Ý KIẾN CHỈ ĐẠO (Chỉ xuất hiện khi Edit) */}
-              {formMode === "edit" && (
-                <div className="bg-[#E6F8FD]/45 border border-[#00B5E2]/30 p-5 rounded-xl space-y-4">
-                  <div className="flex items-center gap-2 pb-2 border-b border-[#00B5E2]/20">
-                    <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
-                    <h4 className="text-sm font-bold text-[#004C97] uppercase tracking-wider">Xét duyệt & Ý kiến chỉ đạo của Giám đốc</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div>
-                      <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kết quả xét duyệt tuyển sinh</label>
-                      <select
-                        value={formState.admissionResult}
-                        onChange={(e) => setFormState({ ...formState, admissionResult: e.target.value })}
-                        className="h-11 w-full px-3 bg-white border border-[#D9E2EC] text-[#004C97] text-sm font-bold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                      >
-                        {activeTab === "general" ? (
-                          <Fragment>
-                            <option value="">Chưa duyệt / Khác</option>
-                            <option value="Đạt">Đạt</option>
-                            <option value="Đạt cam kết">Đạt cam kết</option>
-                            <option value="Học thử">Học thử</option>
-                            <option value="Không đạt">Không đạt</option>
-                            <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
-                            <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
-                          </Fragment>
-                        ) : (
-                          <Fragment>
-                            <option value="">Chưa duyệt</option>
-                            <option value="Đạt">Đạt</option>
-                            <option value="Không đạt">Không đạt</option>
-                            <option value="Học thử">Học thử</option>
-                          </Fragment>
-                        )}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Giám đốc tuyển sinh ký duyệt</label>
-                      <input
-                        type="text"
-                        value={formState.signatureName}
-                        onChange={(e) => setFormState({ ...formState, signatureName: e.target.value })}
-                        placeholder="Họ tên Giám đốc tuyển sinh"
-                        className="h-11 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Ý kiến chỉ đạo / Ghi chú của Giám đốc</label>
-                    <textarea
-                      value={formState.directorNote}
-                      onChange={(e) => setFormState({ ...formState, directorNote: e.target.value })}
-                      rows={2}
-                      placeholder="Ghi ý kiến chỉ đạo tuyển sinh..."
-                      className="w-full p-3 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 resize-none"
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* FOOTER */}
-              <div className="pt-4 border-t border-[#D9E2EC] flex justify-end gap-3 bg-transparent">
+              <div className="p-4 bg-slate-50 border-t border-[#D9E2EC] flex justify-end gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-6 py-2.5 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
+                  className="px-6 py-2 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider flex items-center gap-1.5"
+                  className="px-6 py-2 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider flex items-center gap-1.5"
                 >
                   Lưu dữ liệu
                 </button>
@@ -2609,8 +2683,6 @@ export function StudentInfoClient({
           </div>
         </div>
       )}
-
-
       {/* Dialog Form: Import Excel */}
       {isImportOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
