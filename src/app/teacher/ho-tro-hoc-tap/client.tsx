@@ -900,9 +900,33 @@ export function TeacherSupportClient({
                     <select
                       value={proposeClassId}
                       onChange={e => {
-                        setProposeClassId(e.target.value)
+                        const newClassId = e.target.value
+                        setProposeClassId(newClassId)
                         setStudentSearchQuery("")
-                        fetchClassStudents(e.target.value)
+                        fetchClassStudents(newClassId)
+                        
+                        // Cập nhật loại hỗ trợ dựa theo vai trò (GVCN vs GVBM)
+                        const selectedClass = assignedClasses.find((c: any) => c.id === newClassId)
+                        if (selectedClass) {
+                          if (selectedClass.isHomeroom) {
+                            setProposePsychological(true)
+                            setProposeAcademic(false)
+                            setSelectedSubjects([])
+                          } else {
+                            setProposePsychological(false)
+                            setProposeAcademic(true)
+                            // Tự động chọn các môn học GV đang phụ trách tại lớp này
+                            if (selectedClass.subjects && selectedClass.subjects.length > 0) {
+                              setSelectedSubjects(selectedClass.subjects.map((s: any) => s.subjectName || s.name))
+                            } else {
+                              setSelectedSubjects([])
+                            }
+                          }
+                        } else {
+                           setProposePsychological(false)
+                           setProposeAcademic(false)
+                           setSelectedSubjects([])
+                        }
                       }}
                       className="w-full rounded-xl border-slate-200 border py-2.5 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold bg-slate-50 hover:bg-slate-100/50 cursor-pointer"
                     >
@@ -1127,29 +1151,31 @@ export function TeacherSupportClient({
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Loại chương trình hỗ trợ:</label>
                     <div className="grid grid-cols-2 gap-3">
-                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
                         proposeAcademic 
                           ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
-                          : "hover:bg-slate-50 border-slate-200 text-slate-700"
-                      }`}>
+                          : "bg-slate-50 border-slate-200 text-slate-500"
+                      } ${!assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom && proposeClassId ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
                         <input
                           type="checkbox"
                           checked={proposeAcademic}
+                          disabled={!proposeClassId || assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom}
                           onChange={e => setProposeAcademic(e.target.checked)}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                         />
                         Bồi dưỡng Văn hóa
                       </label>
-                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold cursor-pointer transition-all ${
+                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
                         proposePsychological 
                           ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
-                          : "hover:bg-slate-50 border-slate-200 text-slate-700"
-                      }`}>
+                          : "bg-slate-50 border-slate-200 text-slate-500"
+                      } ${assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
                         <input
                           type="checkbox"
                           checked={proposePsychological}
+                          disabled={!proposeClassId || !assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom}
                           onChange={e => setProposePsychological(e.target.checked)}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                         />
                         Hỗ trợ Tâm lý
                       </label>

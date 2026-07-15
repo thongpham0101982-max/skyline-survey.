@@ -500,8 +500,9 @@ export function SupportClient({
     const matchesSource = targetSourceFilter === "ALL" || t.sourceType === targetSourceFilter
     const matchesStatus = targetStatusFilter === "ALL" || 
       (targetStatusFilter === "TERMINATED" && t.terminationStatus === "TERMINATED") ||
-      (targetStatusFilter === "ACTIVE" && t.terminationStatus === "ACTIVE") ||
-      (targetStatusFilter === "PENDING" && t.terminationStatus === "PENDING_TERMINATION")
+      (targetStatusFilter === "ACTIVE" && t.terminationStatus === "ACTIVE" && t.assignments && t.assignments.length > 0) ||
+      (targetStatusFilter === "PENDING" && t.terminationStatus === "PENDING_TERMINATION") ||
+      (targetStatusFilter === "UNAPPROVED" && t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0))
 
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
@@ -674,6 +675,7 @@ export function SupportClient({
                 className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
               >
                 <option value="ALL">Mọi trạng thái</option>
+                <option value="UNAPPROVED">Chờ duyệt đề xuất mới</option>
                 <option value="ACTIVE">Đang hoạt động</option>
                 <option value="PENDING">Chờ duyệt kết thúc</option>
                 <option value="TERMINATED">Đã dừng / Hoàn thành</option>
