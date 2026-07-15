@@ -61,7 +61,7 @@ export function SupportClient({
 
   // Filtering states for targets tab
   const [targetTypeFilter, setTargetTypeFilter] = useState("ALL")
-  const [targetSourceFilter, setTargetSourceFilter] = useState("ALL")
+  const [targetSourceFilter, setTargetSourceFilter] = useState("TEACHER_ALL")
   const [targetStatusFilter, setTargetStatusFilter] = useState("ALL")
   const [targetSearch, setTargetSearch] = useState("")
 
@@ -497,7 +497,9 @@ export function SupportClient({
   // Filtering targets lists
   const filteredTargets = targets.filter(t => {
     const matchesType = targetTypeFilter === "ALL" || t.supportType === targetTypeFilter
-    const matchesSource = targetSourceFilter === "ALL" || t.sourceType === targetSourceFilter
+    const matchesSource = targetSourceFilter === "ALL" || 
+      (targetSourceFilter === "TEACHER_ALL" && (t.sourceType === "GVCN" || t.sourceType === "GVBM")) ||
+      t.sourceType === targetSourceFilter
     const matchesStatus = targetStatusFilter === "ALL" || 
       (targetStatusFilter === "TERMINATED" && t.terminationStatus === "TERMINATED") ||
       (targetStatusFilter === "ACTIVE" && t.terminationStatus === "ACTIVE" && t.assignments && t.assignments.length > 0) ||
@@ -566,7 +568,7 @@ export function SupportClient({
           }`}
         >
           <Users className="h-4 w-4" />
-          Đối tượng Hỗ trợ
+          Đối tượng Hỗ trợ theo Giáo viên
         </button>
 
         <button
@@ -662,10 +664,11 @@ export function SupportClient({
                 onChange={e => setTargetSourceFilter(e.target.value)}
                 className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
               >
+                <option value="TEACHER_ALL">Giáo viên đề xuất (GVCN & GVBM)</option>
                 <option value="ALL">Mọi nguồn đề xuất</option>
-                <option value="ADMISSION">Khảo sát đầu vào</option>
                 <option value="GVCN">Giáo viên chủ nhiệm</option>
                 <option value="GVBM">Giáo viên bộ môn</option>
+                <option value="ADMISSION">Khảo sát đầu vào</option>
                 <option value="TAM_LY">Chuyên viên tâm lý</option>
               </select>
 
@@ -719,11 +722,22 @@ export function SupportClient({
                 ) : (
                   filteredTargets.map((t: any) => {
                     const gvName = t.assignments?.[0]?.teacher?.teacherName || "Chưa phân công"
+                    const isUnapproved = !t.assignments || t.assignments.length === 0
                     const progressBadge = t.terminationStatus === "TERMINATED" 
                       ? "bg-emerald-100 text-emerald-800"
                       : t.terminationStatus === "PENDING_TERMINATION"
                       ? "bg-amber-100 text-amber-800 animate-pulse"
+                      : isUnapproved
+                      ? "bg-orange-100 text-orange-800 font-bold"
                       : "bg-indigo-100 text-indigo-800"
+
+                    const statusText = t.terminationStatus === "TERMINATED"
+                      ? "Kết thúc bồi dưỡng"
+                      : t.terminationStatus === "PENDING_TERMINATION"
+                      ? "Chờ duyệt kết thúc"
+                      : isUnapproved
+                      ? "Chờ duyệt đề xuất"
+                      : t.status
 
                     return (
                       <tr key={t.id} className="hover:bg-slate-50 transition-colors">
@@ -746,7 +760,7 @@ export function SupportClient({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${progressBadge}`}>
-                            {t.terminationStatus === "TERMINATED" ? "Kết thúc bồi dưỡng" : t.status}
+                            {statusText}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-slate-600">
@@ -767,6 +781,28 @@ export function SupportClient({
                           </button>
 
                           {/* Approval buttons for GĐCS/BGH */}
+                          {isUnapproved && (isGDCS || isKTDBCL) && (
+                            <button
+                              onClick={() => {
+                                setAssignTargetId(t.id)
+                                setAssignTeacherId("")
+                                if (t.supportType === "ACADEMIC") {
+                                  const reasonText = t.reason || ""
+                                  const foundSubject = subjects.find(s => reasonText.toLowerCase().includes(s.subjectName.toLowerCase()))
+                                  setAssignSubjectId(foundSubject?.id || "")
+                                } else {
+                                  setAssignSubjectId("")
+                                }
+                                setAssignNotes("")
+                                setIsAssignModalOpen(true)
+                              }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-2.5 rounded text-xs inline-flex items-center gap-1 shadow-sm mr-2"
+                              title="Duyệt & Phân công"
+                            >
+                              <Check className="h-3 w-3" /> Duyệt
+                            </button>
+                          )}
+
                           {t.terminationStatus === "PENDING_TERMINATION" && (isGDCS || isKTDBCL) && (
                             <>
                               <button
