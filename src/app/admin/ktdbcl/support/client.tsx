@@ -618,34 +618,7 @@ export function SupportClient({
       {/* Tab 1: Đối tượng hỗ trợ */}
       {!loading && activeTab === "targets" && (
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border">
-            {/* Sync and Manual addition buttons */}
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                onClick={() => {
-                  setSyncClassId("")
-                  setSyncCandidates([])
-                  setIsSyncModalOpen(true)
-                }}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Đồng bộ nhanh từ Khảo sát đầu vào
-              </button>
-
-              <button
-                onClick={() => {
-                  setNewTargetStudentId("")
-                  setNewTargetReason("")
-                  setNewTargetNotes("")
-                  setIsAddTargetModalOpen(true)
-                }}
-                className="border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 transition-all"
-              >
-                <Plus className="h-4 w-4" />
-                Thêm đối tượng thủ công
-              </button>
-            </div>
+          <div className="flex flex-col md:flex-row md:items-center justify-end gap-4 bg-slate-50 p-4 rounded-xl border">
 
             {/* Advanced Filters */}
             <div className="flex flex-wrap items-center gap-2">
