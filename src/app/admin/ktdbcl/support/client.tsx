@@ -619,57 +619,7 @@ export function SupportClient({
       {/* Tab 1: Đối tượng hỗ trợ */}
       {!loading && activeTab === "targets" && (
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-end gap-4 bg-slate-50 p-4 rounded-xl border">
 
-            {/* Advanced Filters */}
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={targetTypeFilter}
-                onChange={e => setTargetTypeFilter(e.target.value)}
-                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
-              >
-                <option value="ALL">Mọi loại hỗ trợ</option>
-                <option value="ACADEMIC">Văn hóa</option>
-                <option value="PSYCHOLOGICAL">Tâm lý</option>
-              </select>
-
-              <select
-                value={targetSourceFilter}
-                onChange={e => setTargetSourceFilter(e.target.value)}
-                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
-              >
-                <option value="TEACHER_ALL">Giáo viên đề xuất (GVCN & GVBM)</option>
-                <option value="ALL">Mọi nguồn đề xuất</option>
-                <option value="GVCN">Giáo viên chủ nhiệm</option>
-                <option value="GVBM">Giáo viên bộ môn</option>
-                <option value="ADMISSION">Khảo sát đầu vào</option>
-                <option value="TAM_LY">Chuyên viên tâm lý</option>
-              </select>
-
-              <select
-                value={targetStatusFilter}
-                onChange={e => setTargetStatusFilter(e.target.value)}
-                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
-              >
-                <option value="ALL">Mọi trạng thái</option>
-                <option value="UNAPPROVED">Chờ duyệt đề xuất mới</option>
-                <option value="ACTIVE">Đang hoạt động</option>
-                <option value="PENDING">Chờ duyệt kết thúc</option>
-                <option value="TERMINATED">Đã dừng / Hoàn thành</option>
-              </select>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Tìm học sinh..."
-                  value={targetSearch}
-                  onChange={e => setTargetSearch(e.target.value)}
-                  className="rounded-lg border-slate-300 border py-1.5 pl-8 pr-3 text-xs w-48 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-              </div>
-            </div>
-          </div>
 
           {/* Targets Table */}
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
