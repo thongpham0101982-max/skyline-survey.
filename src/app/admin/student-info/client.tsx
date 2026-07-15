@@ -190,6 +190,45 @@ export function StudentInfoClient({
     }
   }, [isFormOpen]);
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [formMode, setFormMode] = useState<"create" | "edit">("create");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [formState, setFormState] = useState<any>({
+    studentCode: "",
+    fullName: "",
+    dateOfBirth: "",
+    gender: "Nam",
+    grade: "",
+    className: "",
+    periodId: "",
+    batchId: "",
+    surveySystem: "",
+    admissionCriteria: "",
+    admissionCampus: "",
+    admissionResult: "",
+    directorNote: "",
+    signatureName: "",
+    surveyFormType: "",
+    kqHocTap: "",
+    kqRenLuyen: "",
+    hoSoCtQuocTe: "",
+    hocKy: "",
+    targetType: "",
+    kqgdTieuHoc: "",
+    devProfessionalComment: "",
+    devPsychologyComment: "",
+    devImportantNote: "",
+    devAssessmentResult: "",
+    registeredCampus: "",
+    isAbsent: false,
+    cityName: "",
+    districtName: "",
+    wardName: "",
+    countryName: "",
+    oldSchoolName: "",
+    oldSchoolType: ""
+  });
+
   const [selectedLocationType, setSelectedLocationType] = useState<"Nội tỉnh" | "Ngoại tỉnh" | "Nước ngoài" | "">("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedWard, setSelectedWard] = useState<string>("");
@@ -326,44 +365,7 @@ export function StudentInfoClient({
       });
     }
   }, [selectedLocationType, selectedDistrict, selectedWard, selectedProvince, selectedCountry, schoolNameInput, schoolTypeInput, originalKqgd, isFormOpen]);
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
-  const [formMode, setFormMode] = useState<"create" | "edit">("create");
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [formState, setFormState] = useState<any>({
-    studentCode: "",
-    fullName: "",
-    dateOfBirth: "",
-    gender: "Nam",
-    grade: "",
-    className: "",
-    periodId: "",
-    batchId: "",
-    surveySystem: "",
-    admissionCriteria: "",
-    admissionCampus: "",
-    admissionResult: "",
-    directorNote: "",
-    signatureName: "",
-    surveyFormType: "",
-    kqHocTap: "",
-    kqRenLuyen: "",
-    hoSoCtQuocTe: "",
-    hocKy: "",
-    targetType: "",
-    kqgdTieuHoc: "",
-    devProfessionalComment: "",
-    devPsychologyComment: "",
-    devImportantNote: "",
-    devAssessmentResult: "",
-    registeredCampus: "",
-    isAbsent: false,
-    cityName: "",
-    districtName: "",
-    wardName: "",
-    countryName: "",
-    oldSchoolName: "",
-    oldSchoolType: ""
-  });
+
 
   // Import excel modal states
   const [isImportOpen, setIsImportOpen] = useState(false);
