@@ -420,6 +420,31 @@ export function TeacherSupportClient({
     }
   }
 
+  // Delete a proposed target
+  const handleDeleteTarget = async (id: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa đề xuất này?")) return
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deleteTarget",
+          academicYearId: selectedYearId,
+          id
+        })
+      })
+      const data = await res.json()
+      if (data.error) {
+        toast.error(data.error)
+      } else {
+        toast.success("Xóa đề xuất thành công!")
+        setTargets(prev => prev.filter(t => t.id !== id))
+      }
+    } catch (e: any) {
+      toast.error("Lỗi xóa đề xuất: " + e.message)
+    }
+  }
+
   // Request termination of support
   const handleRequestTermination = async () => {
     try {
@@ -575,7 +600,7 @@ export function TeacherSupportClient({
             className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
           >
             <Plus className="h-4 w-4" />
-            Đề xuất Bổ sung Học sinh hỗ trợ
+            Thêm
           </button>
         </div>
 
@@ -846,7 +871,7 @@ export function TeacherSupportClient({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn/Lý do đề xuất</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày đề xuất</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GV Phụ trách (GVPT)</th>
+                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-sm">
@@ -904,8 +929,17 @@ export function TeacherSupportClient({
                             : "Chờ xét duyệt"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs">
-                        {gvName}
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
+                        {!isApproved ? (
+                          <button
+                            onClick={() => handleDeleteTarget(t.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
+                          >
+                            Xóa
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 font-medium">Đã duyệt (Không thể xóa)</span>
+                        )}
                       </td>
                     </tr>
                   )
