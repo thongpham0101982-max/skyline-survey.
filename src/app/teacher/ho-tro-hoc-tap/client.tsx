@@ -79,7 +79,7 @@ export function TeacherSupportClient({
   const fetchAssignedClasses = async () => {
     setLoadingClassesOfTeacher(true)
     try {
-      const res = await fetch(`/api/teacher-student-records?action=getAssignedClasses&academicYearId=${selectedYearId}`)
+      const res = await fetch(`/api/teacher-student-records?action=getAssignedClasses&academicYearId=${selectedYearId}&_=${Date.now()}`)
       const data = await res.json()
       if (!data.error) {
         setAssignedClasses(data)
@@ -104,7 +104,7 @@ export function TeacherSupportClient({
     setSelectedStudentIds([])
     setCommitmentCandidates([])
     try {
-      const res = await fetch(`/api/teacher-student-records?action=getClassStudents&classId=${classId}`)
+      const res = await fetch(`/api/teacher-student-records?action=getClassStudents&classId=${classId}&_=${Date.now()}`)
       const data = await res.json()
       if (!data.error) {
         setClassStudents(data)
@@ -136,7 +136,7 @@ export function TeacherSupportClient({
     try {
       const subjectsParam = subjectNames.join(",")
       const res = await fetch(
-        `/api/teacher-student-records?action=getCommitmentCandidates&classId=${classId}&subjects=${encodeURIComponent(subjectsParam)}&academicYearId=${selectedYearId}`
+        `/api/teacher-student-records?action=getCommitmentCandidates&classId=${classId}&subjects=${encodeURIComponent(subjectsParam)}&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
       const data = await res.json()
       if (!data.error) {
@@ -185,7 +185,7 @@ export function TeacherSupportClient({
     if (!selectedYearId || !teacher?.id) return
     setLoadingEntranceCommitments(true)
     try {
-      const res = await fetch(`/api/teacher-student-records?action=getEntranceCommitments&teacherId=${teacher.id}&academicYearId=${selectedYearId}`)
+      const res = await fetch(`/api/teacher-student-records?action=getEntranceCommitments&teacherId=${teacher.id}&academicYearId=${selectedYearId}&_=${Date.now()}`)
       const data = await res.json()
       if (!data.error) {
         setEntranceCommitmentStudents(data)
@@ -203,14 +203,14 @@ export function TeacherSupportClient({
     try {
       // 1. Fetch configs
       const resConfig = await fetch(
-        `/api/ktdbcl/support?action=getConfigs&academicYearId=${selectedYearId}`
+        `/api/ktdbcl/support?action=getConfigs&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
       const dataConfig = await resConfig.json()
       if (!dataConfig.error) setConfigs(dataConfig)
 
       // 2. Fetch targets
       const resTargets = await fetch(
-        `/api/ktdbcl/support?action=getTargets&academicYearId=${selectedYearId}`
+        `/api/ktdbcl/support?action=getTargets&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
       const dataTargets = await resTargets.json()
       if (!dataTargets.error) setTargets(dataTargets)
@@ -419,15 +419,9 @@ export function TeacherSupportClient({
     return matchesSearch
   })
 
-  // Proposal history filter
+  // Proposal history filter - server already filters by teacher visibility
+  // Only apply local search filter here
   const historyTargets = targets.filter(t => {
-    const isProposedByMe = t.createdById === teacher.id || t.createdBy?.id === teacher.id
-    const isHomeroomStudent = homeroomClasses.some(c => c.id === t.student?.classId)
-    const isGVBMForTarget = assignedClasses.some(c => c.id === t.student?.classId)
-
-    const isVisibleInHistory = isProposedByMe || isHomeroomStudent || isGVBMForTarget
-    if (!isVisibleInHistory) return false
-
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
     return searchQuery === "" || 

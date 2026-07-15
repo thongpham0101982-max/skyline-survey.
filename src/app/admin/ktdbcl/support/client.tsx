@@ -125,21 +125,21 @@ export function SupportClient({
     try {
       // 1. Fetch outcome configs
       const resConfig = await fetch(
-        `/api/ktdbcl/support?action=getConfigs&academicYearId=${selectedYearId}`
+        `/api/ktdbcl/support?action=getConfigs&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
       const dataConfig = await resConfig.json()
       if (!dataConfig.error) setConfigs(dataConfig)
 
       // 2. Fetch targets
       const resTargets = await fetch(
-        `/api/ktdbcl/support?action=getTargets&academicYearId=${selectedYearId}`
+        `/api/ktdbcl/support?action=getTargets&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
       const dataTargets = await resTargets.json()
       if (!dataTargets.error) setTargets(dataTargets)
 
       // 3. Fetch assignments
       const resAssignments = await fetch(
-        `/api/ktdbcl/support?action=getAssignments&academicYearId=${selectedYearId}`
+        `/api/ktdbcl/support?action=getAssignments&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
       const dataAssignments = await resAssignments.json()
       if (!dataAssignments.error) setAssignments(dataAssignments)
@@ -173,7 +173,7 @@ export function SupportClient({
     if (!syncClassId) return
     try {
       const res = await fetch(
-        `/api/ktdbcl/support?action=getClassSyncCandidates&classId=${syncClassId}&academicYearId=${selectedYearId}`
+        `/api/ktdbcl/support?action=getClassSyncCandidates&classId=${syncClassId}&academicYearId=${selectedYearId}&_=${Date.now()}`
       )
       const data = await res.json()
       if (data.error) {
