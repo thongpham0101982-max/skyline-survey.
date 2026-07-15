@@ -122,6 +122,10 @@ export function StudentInfoClient({
   rolePermissions = [],
   gradesPreschool = []
 }: StudentInfoClientProps) {
+  useEffect(() => {
+    console.log("--- StudentInfoClient VERSION 3.0 LOADED ---");
+  }, []);
+
   const generalPeriods = useMemo(() => {
     return rawGeneralPeriods.map((p: any) => ({
       ...p,
