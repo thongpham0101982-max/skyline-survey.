@@ -32,8 +32,47 @@ export async function GET(req: Request) {
 
     // 2. Action: getTargets
     if (action === "getTargets") {
+      // For teachers: filter to only targets relevant to this teacher
+      // For admin/GDCS/KTDBCL: return all targets
+      const callerTeacher = (!isGDCS && !isKTDBCL)
+        ? await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+        : null
+
+      let teacherClassIds: string[] = []
+      if (callerTeacher) {
+        const [assignments, homeroomClasses] = await Promise.all([
+          prisma.teachingAssignment.findMany({
+            where: { teacherId: callerTeacher.id, academicYearId },
+            select: { classId: true }
+          }),
+          prisma.class.findMany({
+            where: {
+              academicYearId,
+              OR: [
+                { homeroomTeacherId: callerTeacher.id },
+                { homeroomTeacherId: { contains: callerTeacher.id } }
+              ]
+            },
+            select: { id: true }
+          })
+        ])
+        teacherClassIds = Array.from(new Set([
+          ...assignments.map((a: any) => a.classId),
+          ...homeroomClasses.map((c: any) => c.id)
+        ]))
+      }
+
+      const whereClause: any = { academicYearId }
+      if (callerTeacher) {
+        const orConditions: any[] = [{ createdById: callerTeacher.id }]
+        if (teacherClassIds.length > 0) {
+          orConditions.push({ student: { classId: { in: teacherClassIds } } })
+        }
+        whereClause.OR = orConditions
+      }
+
       const targets = await prisma.learningSupportTarget.findMany({
-        where: { academicYearId },
+        where: whereClause,
         include: {
           student: {
             select: {
