@@ -70,6 +70,34 @@ interface StudentInfoClientProps {
 
 const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
+const danangData: Record<string, string[]> = {
+  "Quận Hải Châu": ["Hòa Cường Bắc", "Hòa Cường Nam", "Hòa Thuận Đông", "Hòa Thuận Tây", "Bình Thuận", "Bình Hiên", "Nam Dương", "Phước Ninh", "Thạch Thang", "Thanh Bình", "Thuận Phước", "Hải Châu I", "Hải Châu II"],
+  "Quận Thanh Khê": ["An Khê", "Hòa Khê", "Tam Thuận", "Thanh Khê Đông", "Thanh Khê Tây", "Xuân Hà", "Tân Chính", "Chính Gián", "Vĩnh Trung", "Thạc Gián"],
+  "Quận Sơn Trà": ["An Hải Bắc", "An Hải Đông", "An Hải Tây", "Mân Thái", "Nại Hiên Đông", "Phước Mỹ", "Thọ Quang"],
+  "Quận Ngũ Hành Sơn": ["Mỹ An", "Khuê Mỹ", "Hòa Quý", "Hòa Hải"],
+  "Quận Liên Chiểu": ["Hòa Minh", "Hòa Khánh Bắc", "Hòa Khánh Nam", "Hòa Hiệp Bắc", "Hòa Hiệp Nam"],
+  "Quận Cẩm Lệ": ["Khuê Trung", "Hòa Thọ Đông", "Hòa Thọ Tây", "Hòa An", "Hòa Phát", "Hòa Xuân"],
+  "Huyện Hòa Vang": ["Hòa Bắc", "Hòa Liên", "Hòa Ninh", "Hòa Sơn", "Hòa Nhơn", "Hòa Phú", "Hòa Khương", "Hòa Phong", "Hòa Tiến", "Hòa Châu", "Hòa Phước"]
+};
+
+const vietnamProvinces = [
+  "Quảng Nam", "Thừa Thiên Huế", "Quảng Trị", "Quảng Bình", "Hà Nội", "TP Hồ Chí Minh",
+  "Bình Định", "Quảng Ngãi", "Kon Tum", "Gia Lai", "Đắk Lắk", "Đắk Nông", "Lâm Đồng",
+  "Khánh Hòa", "Phú Yên", "Ninh Thuận", "Bình Thuận", "Bà Rịa - Vũng Tàu", "Đồng Nai",
+  "Bình Dương", "Long An", "Tiền Giang", "Bến Tre", "Trà Vinh", "Vĩnh Long", "Đồng Tháp",
+  "An Giang", "Kiên Giang", "Cần Thơ", "Hậu Giang", "Sóc Trăng", "Bạc Liêu", "Cà Mau",
+  "Hải Phòng", "Đà Nẵng", "Nghệ An", "Thanh Hóa", "Hà Tĩnh", "Hải Dương", "Hưng Yên",
+  "Thái Bình", "Nam Định", "Ninh Bình", "Hà Nam", "Vĩnh Phúc", "Bắc Ninh", "Quảng Ninh",
+  "Thái Nguyên", "Phú Thọ", "Bắc Giang", "Tuyên Quang", "Hòa Bình", "Yên Bái", "Lạng Sơn",
+  "Cao Bằng", "Hà Giang", "Sơn La", "Điện Biên", "Lai Châu", "Lào Cai", "Bắc Kạn"
+].sort();
+
+const worldCountries = [
+  "Mỹ", "Anh", "Úc", "Canada", "Pháp", "Đức", "Nhật Bản", "Hàn Quốc",
+  "Singapore", "Trung Quốc", "Đài Loan", "Hồng Kông", "Thái Lan", "Malaysia", "Philippines",
+  "Nga", "Ý", "Tây Ban Nha", "Thụy Sĩ", "Thụy Điển", "Phần Lan", "Đan Mạch", "New Zealand"
+].sort();
+
 export function StudentInfoClient({ 
   initialGeneralStudents = [], 
   initialPreschoolStudents = [],
@@ -161,6 +189,122 @@ export function StudentInfoClient({
       setFormSubTab("admin");
     }
   }, [isFormOpen]);
+
+  const [selectedLocationType, setSelectedLocationType] = useState<"Nội tỉnh" | "Ngoại tỉnh" | "Nước ngoài" | "">("");
+  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
+  const [selectedWard, setSelectedWard] = useState<string>("");
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [schoolNameInput, setSchoolNameInput] = useState<string>("");
+  const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
+  const [originalKqgd, setOriginalKqgd] = useState<string>("");
+
+  // Sync selectedLocationType when targetType changes
+  useEffect(() => {
+    if (!isFormOpen) return;
+    const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
+    if (selectedTargets.includes("Nội tỉnh")) {
+      setSelectedLocationType("Nội tỉnh");
+    } else if (selectedTargets.includes("Ngoại tỉnh")) {
+      setSelectedLocationType("Ngoại tỉnh");
+    } else if (selectedTargets.includes("Nước ngoài")) {
+      setSelectedLocationType("Nước ngoài");
+    } else {
+      setSelectedLocationType("");
+    }
+  }, [formState.targetType, isFormOpen]);
+
+  // Parse kqgdTieuHoc when form opens
+  useEffect(() => {
+    if (isFormOpen) {
+      if (formMode === "edit" && formState.kqgdTieuHoc) {
+        const match = formState.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(Nội tỉnh|Ngoại tỉnh|Nước ngoài)\s*-\s*(.*)/);
+        if (match) {
+          const [, sName, sType, locType, locDetail] = match;
+          setSchoolNameInput(sName);
+          setSchoolTypeInput(sType);
+          setSelectedLocationType(locType);
+          
+          if (locType === "Nội tỉnh") {
+            const parts = locDetail.split(" - ");
+            if (parts.length > 1) {
+              setSelectedDistrict(parts[0].trim());
+              setSelectedWard(parts[1].trim());
+            } else {
+              setSelectedDistrict("");
+              setSelectedWard(locDetail.trim());
+            }
+            setSelectedProvince("");
+            setSelectedCountry("");
+          } else if (locType === "Ngoại tỉnh") {
+            setSelectedProvince(locDetail.trim());
+            setSelectedDistrict("");
+            setSelectedWard("");
+            setSelectedCountry("");
+          } else if (locType === "Nước ngoài") {
+            setSelectedCountry(locDetail.trim());
+            setSelectedDistrict("");
+            setSelectedWard("");
+            setSelectedProvince("");
+          }
+          
+          const lines = formState.kqgdTieuHoc.split("\n");
+          if (lines.length > 1) {
+            setOriginalKqgd(lines.slice(1).join("\n"));
+          } else {
+            setOriginalKqgd("");
+          }
+        } else {
+          setSchoolNameInput("");
+          setSchoolTypeInput("");
+          setSelectedLocationType("");
+          setSelectedDistrict("");
+          setSelectedWard("");
+          setSelectedProvince("");
+          setSelectedCountry("");
+          setOriginalKqgd(formState.kqgdTieuHoc || "");
+        }
+      } else {
+        setSchoolNameInput("");
+        setSchoolTypeInput("");
+        setSelectedLocationType("");
+        setSelectedDistrict("");
+        setSelectedWard("");
+        setSelectedProvince("");
+        setSelectedCountry("");
+        setOriginalKqgd("");
+      }
+    }
+  }, [isFormOpen, formMode]);
+
+  // Update formState.kqgdTieuHoc when location inputs change
+  useEffect(() => {
+    if (!isFormOpen) return;
+    
+    if (selectedLocationType) {
+      let locDetail = "";
+      if (selectedLocationType === "Nội tỉnh") {
+        locDetail = selectedDistrict ? `${selectedDistrict} - ${selectedWard}` : selectedWard;
+      } else if (selectedLocationType === "Ngoại tỉnh") {
+        locDetail = selectedProvince;
+      } else if (selectedLocationType === "Nước ngoài") {
+        locDetail = selectedCountry;
+      }
+      
+      const locationStr = `Trường cũ: ${schoolNameInput} (${schoolTypeInput}) | Đối tượng: ${selectedLocationType} - ${locDetail}`;
+      const finalKq = originalKqgd ? `${locationStr}\n${originalKqgd}` : locationStr;
+      
+      setFormState(prev => {
+        if (prev.kqgdTieuHoc === finalKq) return prev;
+        return { ...prev, kqgdTieuHoc: finalKq };
+      });
+    } else {
+      setFormState(prev => {
+        if (prev.kqgdTieuHoc === originalKqgd) return prev;
+        return { ...prev, kqgdTieuHoc: originalKqgd };
+      });
+    }
+  }, [selectedLocationType, selectedDistrict, selectedWard, selectedProvince, selectedCountry, schoolNameInput, schoolTypeInput, originalKqgd, isFormOpen]);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -2545,6 +2689,118 @@ export function StudentInfoClient({
                           </button>
                         </div>
                       </div>
+
+                      {/* CONDITIONAL LOCATION INPUTS */}
+                      {selectedLocationType && (
+                        <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
+                          <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                            <span className="w-1.5 h-4 bg-[#00B5E2] inline-block rounded"></span>
+                            <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Thông tin trường học cũ ({selectedLocationType})</h4>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            {selectedLocationType === "Nội tỉnh" && (
+                              <Fragment>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quận / Huyện *</label>
+                                  <select
+                                    required
+                                    value={selectedDistrict}
+                                    onChange={(e) => {
+                                      setSelectedDistrict(e.target.value);
+                                      setSelectedWard("");
+                                    }}
+                                    className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                  >
+                                    <option value="">-- Chọn Quận/Huyện --</option>
+                                    {Object.keys(danangData).map((d) => (
+                                      <option key={d} value={d}>{d}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
+                                  <select
+                                    required
+                                    disabled={!selectedDistrict}
+                                    value={selectedWard}
+                                    onChange={(e) => setSelectedWard(e.target.value)}
+                                    className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
+                                  >
+                                    <option value="">-- Chọn Phường/Xã --</option>
+                                    {selectedDistrict && danangData[selectedDistrict]?.map((w) => (
+                                      <option key={w} value={w}>{w}</option>
+                                    ))}
+                                  </select>
+                                </div>
+                              </Fragment>
+                            )}
+
+                            {selectedLocationType === "Ngoại tỉnh" && (
+                              <div className="col-span-2 md:col-span-1">
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                                <select
+                                  required
+                                  value={selectedProvince}
+                                  onChange={(e) => setSelectedProvince(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Tỉnh/Thành --</option>
+                                  {vietnamProvinces.map((p) => (
+                                    <option key={p} value={p}>{p}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            {selectedLocationType === "Nước ngoài" && (
+                              <div className="col-span-2 md:col-span-1">
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
+                                <select
+                                  required
+                                  value={selectedCountry}
+                                  onChange={(e) => setSelectedCountry(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Quốc gia --</option>
+                                  {worldCountries.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                              <input
+                                required
+                                type="text"
+                                value={schoolNameInput}
+                                onChange={(e) => setSchoolNameInput(e.target.value)}
+                                placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
+                                className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
+                              <select
+                                required
+                                value={schoolTypeInput}
+                                onChange={(e) => setSchoolTypeInput(e.target.value)}
+                                className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Chọn loại hình --</option>
+                                <option value="Công lập">Công lập</option>
+                                <option value="Tư thục">Tư thục</option>
+                                <option value="Song ngữ">Song ngữ</option>
+                                <option value="Quốc tế">Quốc tế</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* SECTION 4: ĐÁNH GIÁ MẦM NON (Chỉ hiển thị cho mầm non) */}
