@@ -2691,7 +2691,7 @@ export function StudentInfoClient({
 
                       <div className="space-y-3">
                         <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Đối tượng tuyển sinh</label>
-                        <span className="text-[11px] font-semibold text-[#64748B] block mt-0.5">Chọn một hoặc nhiều đối tượng tuyển sinh:</span>
+                        <span className="text-[11px] font-semibold text-[#64748B] block mt-0.5">Chọn một đối tượng tuyển sinh:</span>
                         <div className="flex flex-wrap gap-2">
                           {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                             const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
@@ -2701,13 +2701,8 @@ export function StudentInfoClient({
                                 type="button"
                                 key={c.id}
                                 onClick={() => {
-                                  let updated;
-                                  if (isChecked) {
-                                    updated = selectedTargets.filter((t) => t !== c.name);
-                                  } else {
-                                    updated = [...selectedTargets, c.name];
-                                  }
-                                  setFormState(f => ({ ...f, targetType: updated.join(", ") }));
+                                  const updated = isChecked ? "" : c.name;
+                                  setFormState(f => ({ ...f, targetType: updated }));
                                 }}
                                 className={`px-3 py-1.5 border rounded-xl flex items-center gap-1.5 transition-all text-xs font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
                               >
