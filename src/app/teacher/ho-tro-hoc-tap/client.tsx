@@ -900,7 +900,7 @@ export function TeacherSupportClient({
                             : isPending 
                             ? "Chờ duyệt kết thúc" 
                             : isApproved 
-                            ? "Đã duyệt" 
+                            ? "Đồng ý" 
                             : "Chờ xét duyệt"}
                         </span>
                       </td>

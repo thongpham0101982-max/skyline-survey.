@@ -67,6 +67,7 @@ export function SupportClient({
 
   // Timeline Drawer state
   const [selectedTargetForTimeline, setSelectedTargetForTimeline] = useState<any>(null)
+  const [selectedTargetForDetail, setSelectedTargetForDetail] = useState<any>(null)
 
   // Modal Open states
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
@@ -675,20 +676,17 @@ export function SupportClient({
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Giáo viên đề xuất</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Loại hỗ trợ</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nguồn đề xuất</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GV/Chuyên viên phụ trách</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày bắt đầu</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày kết thúc</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn học / Lĩnh vực</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
                   <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200 text-sm">
                 {filteredTargets.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-10 text-slate-400">
+                    <td colSpan={5} className="text-center py-10 text-slate-400">
                       Không tìm thấy đối tượng bồi dưỡng phù hợp
                     </td>
                   </tr>
@@ -710,13 +708,13 @@ export function SupportClient({
                       ? "Chờ duyệt kết thúc"
                       : isUnapproved
                       ? "Chờ duyệt đề xuất"
-                      : t.status
+                      : "Đồng ý"
 
                     return (
                       <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-800">{t.student?.studentName}</div>
-                          <div className="text-xs text-slate-500">{t.student?.studentCode} - Lớp {t.student?.class?.className}</div>
+                          <div className="font-bold text-slate-800">{t.createdBy?.teacherName || "Hệ thống"}</div>
+                          <div className="text-xs text-slate-500">{t.sourceType === "ADMISSION" ? "Khảo sát đầu vào (KSĐV)" : "Đề xuất"}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
@@ -725,27 +723,21 @@ export function SupportClient({
                             {t.supportType === "ACADEMIC" ? "Môn học" : "Tâm lý"}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                          {t.sourceType === "ADMISSION" && "Khảo sát đầu vào"}
-                          {t.sourceType === "GVCN" && "Đề xuất GVCN"}
-                          {t.sourceType === "GVBM" && "Đề xuất GVBM"}
-                          {t.sourceType === "TAM_LY" && "Đề xuất Tâm lý"}
+                        <td className="px-6 py-4 text-slate-700 font-medium">
+                          {t.reason || "-"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${progressBadge}`}>
                             {statusText}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                          {gvName}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-slate-500">
-                          {new Date(t.startDate).toLocaleDateString("vi-VN")}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-slate-500">
-                          {t.endDate ? new Date(t.endDate).toLocaleDateString("vi-VN") : "-"}
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
+                          <button
+                            onClick={() => setSelectedTargetForDetail(t)}
+                            className="text-teal-600 hover:text-teal-900 font-bold mr-2 text-xs"
+                          >
+                            Chi tiết
+                          </button>
                           <button
                             onClick={() => setSelectedTargetForTimeline(t)}
                             className="text-indigo-600 hover:text-indigo-900 font-semibold hover:underline mr-2 text-xs"
