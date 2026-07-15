@@ -94,6 +94,12 @@ export async function POST(req) {
          batchId: data.batchId || null,
            registeredCampus: data.registeredCampus || null,
            isAbsent: data.isAbsent || false,
+            cityName: data.cityName || null,
+            districtName: data.districtName || null,
+            wardName: data.wardName || null,
+            countryName: data.countryName || null,
+            oldSchoolName: data.oldSchoolName || null,
+            oldSchoolType: data.oldSchoolType || null,
         }
       });
       return NextResponse.json(result);
@@ -487,6 +493,12 @@ export async function PUT(req) {
          ...(data.admissionCampus !== undefined && { admissionCampus: data.admissionCampus }),
          ...(data.signatureName !== undefined && { signatureName: data.signatureName }),
          ...(data.isAbsent !== undefined && { isAbsent: data.isAbsent }),
+         cityName: data.cityName || null,
+         districtName: data.districtName || null,
+         wardName: data.wardName || null,
+         countryName: data.countryName || null,
+         oldSchoolName: data.oldSchoolName || null,
+         oldSchoolType: data.oldSchoolType || null,
       }
     });
     return NextResponse.json(result);

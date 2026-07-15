@@ -295,13 +295,34 @@ export function StudentInfoClient({
       const finalKq = originalKqgd ? `${locationStr}\n${originalKqgd}` : locationStr;
       
       setFormState(prev => {
-        if (prev.kqgdTieuHoc === finalKq) return prev;
-        return { ...prev, kqgdTieuHoc: finalKq };
+        const cityName = selectedLocationType === "Nội tỉnh" ? "TP Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : "");
+        const countryName = selectedLocationType === "Nước ngoài" ? selectedCountry : "Việt Nam";
+        const districtName = selectedLocationType === "Nội tỉnh" ? selectedDistrict : "";
+        const wardName = selectedLocationType === "Nội tỉnh" ? selectedWard : "";
+        
+        return {
+          ...prev,
+          kqgdTieuHoc: finalKq,
+          cityName,
+          districtName,
+          wardName,
+          countryName,
+          oldSchoolName: schoolNameInput,
+          oldSchoolType: schoolTypeInput
+        };
       });
     } else {
       setFormState(prev => {
-        if (prev.kqgdTieuHoc === originalKqgd) return prev;
-        return { ...prev, kqgdTieuHoc: originalKqgd };
+        return {
+          ...prev,
+          kqgdTieuHoc: originalKqgd,
+          cityName: "",
+          districtName: "",
+          wardName: "",
+          countryName: "",
+          oldSchoolName: "",
+          oldSchoolType: ""
+        };
       });
     }
   }, [selectedLocationType, selectedDistrict, selectedWard, selectedProvince, selectedCountry, schoolNameInput, schoolTypeInput, originalKqgd, isFormOpen]);
@@ -335,7 +356,13 @@ export function StudentInfoClient({
     devImportantNote: "",
     devAssessmentResult: "",
     registeredCampus: "",
-    isAbsent: false
+    isAbsent: false,
+    cityName: "",
+    districtName: "",
+    wardName: "",
+    countryName: "",
+    oldSchoolName: "",
+    oldSchoolType: ""
   });
 
   // Import excel modal states
@@ -963,7 +990,13 @@ export function StudentInfoClient({
       devImportantNote: "",
       devAssessmentResult: "",
       registeredCampus: "",
-      isAbsent: false
+      isAbsent: false,
+      cityName: "",
+      districtName: "",
+      wardName: "",
+      countryName: "",
+      oldSchoolName: "",
+      oldSchoolType: ""
     });
     setIsFormOpen(true);
   };
@@ -1009,7 +1042,13 @@ export function StudentInfoClient({
       devImportantNote: student.devImportantNote || "",
       devAssessmentResult: student.devAssessmentResult || "",
       registeredCampus: student.registeredCampus || "",
-      isAbsent: student.isAbsent || false
+      isAbsent: student.isAbsent || false,
+      cityName: student.cityName || "",
+      districtName: student.districtName || "",
+      wardName: student.wardName || "",
+      countryName: student.countryName || "",
+      oldSchoolName: student.oldSchoolName || "",
+      oldSchoolType: student.oldSchoolType || ""
     });
     setIsFormOpen(true);
   };
@@ -2702,36 +2741,47 @@ export function StudentInfoClient({
                             {selectedLocationType === "Nội tỉnh" && (
                               <Fragment>
                                 <div>
-                                  <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quận / Huyện *</label>
-                                  <select
-                                    required
-                                    value={selectedDistrict}
-                                    onChange={(e) => {
-                                      setSelectedDistrict(e.target.value);
-                                      setSelectedWard("");
-                                    }}
-                                    className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                                  >
-                                    <option value="">-- Chọn Quận/Huyện --</option>
-                                    {Object.keys(danangData).map((d) => (
-                                      <option key={d} value={d}>{d}</option>
-                                    ))}
-                                  </select>
+                                  <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố</label>
+                                  <input
+                                    disabled
+                                    type="text"
+                                    value="TP Đà Nẵng"
+                                    className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-slate-500 text-xs font-semibold rounded-xl outline-none cursor-not-allowed"
+                                  />
                                 </div>
-                                <div>
-                                  <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
-                                  <select
-                                    required
-                                    disabled={!selectedDistrict}
-                                    value={selectedWard}
-                                    onChange={(e) => setSelectedWard(e.target.value)}
-                                    className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
-                                  >
-                                    <option value="">-- Chọn Phường/Xã --</option>
-                                    {selectedDistrict && danangData[selectedDistrict]?.map((w) => (
-                                      <option key={w} value={w}>{w}</option>
-                                    ))}
-                                  </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quận / Huyện *</label>
+                                    <select
+                                      required
+                                      value={selectedDistrict}
+                                      onChange={(e) => {
+                                        setSelectedDistrict(e.target.value);
+                                        setSelectedWard("");
+                                      }}
+                                      className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                    >
+                                      <option value="">-- Chọn Quận/Huyện --</option>
+                                      {Object.keys(danangData).map((d) => (
+                                        <option key={d} value={d}>{d}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
+                                    <select
+                                      required
+                                      disabled={!selectedDistrict}
+                                      value={selectedWard}
+                                      onChange={(e) => setSelectedWard(e.target.value)}
+                                      className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
+                                    >
+                                      <option value="">-- Chọn Phường/Xã --</option>
+                                      {selectedDistrict && danangData[selectedDistrict]?.map((w) => (
+                                        <option key={w} value={w}>{w}</option>
+                                      ))}
+                                    </select>
+                                  </div>
                                 </div>
                               </Fragment>
                             )}
