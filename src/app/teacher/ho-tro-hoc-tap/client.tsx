@@ -325,8 +325,12 @@ export function TeacherSupportClient({
       }
 
       setIsProposeModalOpen(false)
-      fetchTeacherData()
-      fetchEntranceCommitments()
+      
+      // Delay fetching to allow for DB replication
+      await new Promise(r => setTimeout(r, 1500))
+      
+      await fetchTeacherData()
+      await fetchEntranceCommitments()
     } catch (e) {
       toast.error("Gửi đề xuất bồi dưỡng học sinh thất bại")
     } finally {
@@ -422,6 +426,8 @@ export function TeacherSupportClient({
   // Proposal history filter - server already filters by teacher visibility
   // Only apply local search filter here
   const historyTargets = targets.filter(t => {
+    if (t.createdById !== teacher?.id) return false
+
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
     return searchQuery === "" || 
@@ -1435,3 +1441,5 @@ export function TeacherSupportClient({
     </div>
   )
 }
+
+
