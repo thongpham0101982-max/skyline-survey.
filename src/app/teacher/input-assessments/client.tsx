@@ -307,9 +307,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             const subName = (assignment.subject?.name || "").toLowerCase();
             const numVal = parseFloat(val);
             if (!isNaN(numVal)) {
-                if (subName.includes("vấn đáp") && numVal > 30) {
-                    alert("Điểm Tiếng Anh (vấn đáp) tối đa là 30 đ!");
-                    val = "30";
+                const student = students.find(s => s.id === studentId);
+                const isGrade1 = student && String(student.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
+                
+                if (subName.includes("vấn đáp")) {
+                    const maxScore = isGrade1 ? 10 : 30;
+                    if (numVal > maxScore) {
+                        alert(`Điểm Tiếng Anh (vấn đáp) tối đa là ${maxScore} đ!`);
+                        val = String(maxScore);
+                    }
                 } else if (subName.includes("viết") && numVal > 70) {
                     alert("Điểm Tiếng Anh (viết) tối đa là 70 đ!");
                     val = "70";
@@ -1103,8 +1109,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     const isTotal = cName.toLowerCase().includes("tổng");
                     const subNameLower = (currentAssignment.subject.name || "").toLowerCase();
                     let maxScoreStr = "";
-                    if (subNameLower.includes("vấn đáp")) maxScoreStr = " (Max 30)";
-                    else if (subNameLower.includes("viết")) maxScoreStr = " (Max 70)";
+                    if (subNameLower.includes("vấn đáp")) {
+                        const isGrade1 = String(st.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
+                        maxScoreStr = isGrade1 ? " (Max 10)" : " (Max 30)";
+                    } else if (subNameLower.includes("viết")) {
+                        maxScoreStr = " (Max 70)";
+                    }
                     
                     return (
                         <div key={"sc-input-"+colIdx} className="flex flex-col gap-1.5 w-24 flex-none">

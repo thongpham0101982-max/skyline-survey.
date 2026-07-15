@@ -80,6 +80,7 @@ export default function TeacherDashboard() {
       iconColor: "#4F46E5",
       borderColor: "#C7D2FE",
       accent: "#6366F1",
+      href: "/teacher/phan-cong-giang-day",
     },
     {
       label: "Da cham diem",
@@ -156,10 +157,9 @@ export default function TeacherDashboard() {
       <div className="teacher-grid-4">
         {statCards.map((card) => {
           const Icon = card.icon
-          return (
+          const CardContent = (
             <div
-              key={card.label}
-              className="teacher-stat-card group"
+              className="teacher-stat-card group h-full relative"
               style={{ borderTop: `3px solid ${card.accent}` }}
             >
               <div
@@ -178,7 +178,17 @@ export default function TeacherDashboard() {
                 style={{ background: card.iconBg }}
               />
             </div>
-          )
+          );
+
+          if ((card as any).href) {
+            return (
+              <Link key={card.label} href={(card as any).href} className="block transition-all hover:scale-[1.02] h-full">
+                {CardContent}
+              </Link>
+            )
+          }
+
+          return <div key={card.label}>{CardContent}</div>
         })}
       </div>
 
