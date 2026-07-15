@@ -146,6 +146,13 @@ export function StudentInfoClient({
     }
   }, [isDetailsOpen]);
 
+
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // Add/Edit student modal states
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [formSubTab, setFormSubTab] = useState<"admin" | "academic" | "approval">("admin");
 
   // Reset form subtab when form modal opens
@@ -154,12 +161,6 @@ export function StudentInfoClient({
       setFormSubTab("admin");
     }
   }, [isFormOpen]);
-
-  // Multi-select state
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-
-  // Add/Edit student modal states
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formMode, setFormMode] = useState<"create" | "edit">("create");
   const [editingId, setEditingId] = useState<string | null>(null);
