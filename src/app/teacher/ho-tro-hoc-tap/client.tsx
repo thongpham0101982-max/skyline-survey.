@@ -421,16 +421,9 @@ export function TeacherSupportClient({
 
   // Proposal history filter
   const historyTargets = targets.filter(t => {
-    const isProposedByMe = t.createdById === teacher.id
+    const isProposedByMe = t.createdById === teacher.id || t.createdBy?.id === teacher.id
     const isHomeroomStudent = homeroomClasses.some(c => c.id === t.student?.classId)
-    const isGVBMForTarget = assignedClasses.some(c => {
-      if (c.id !== t.student?.classId) return false
-      return c.subjects?.some((sub: any) => {
-        const subName = (sub.subjectName || sub.name || "").toLowerCase()
-        const targetReason = (t.reason || "").toLowerCase()
-        return subName === targetReason || targetReason.includes(subName) || subName.includes(targetReason)
-      })
-    })
+    const isGVBMForTarget = assignedClasses.some(c => c.id === t.student?.classId)
 
     const isVisibleInHistory = isProposedByMe || isHomeroomStudent || isGVBMForTarget
     if (!isVisibleInHistory) return false
