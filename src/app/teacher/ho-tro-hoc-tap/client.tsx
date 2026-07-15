@@ -284,8 +284,32 @@ export function TeacherSupportClient({
               })
             })
             const data = await res.json()
-            if (data.error) failCount++
-            else successCount++
+            if (data.error) {
+              failCount++
+            } else {
+              successCount++
+              const studentInfo = classStudents.find(s => s.id === studentId)
+              if (studentInfo) {
+                const newTarget = {
+                  ...data,
+                  student: {
+                    ...studentInfo,
+                    class: assignedClasses.find(c => c.id === proposeClassId)
+                  },
+                  assignments: [],
+                  evaluations: []
+                }
+                setTargets(prev => {
+                  const exists = prev.findIndex(t => t.id === data.id)
+                  if (exists >= 0) {
+                    const newTargets = [...prev]
+                    newTargets[exists] = newTarget
+                    return newTargets
+                  }
+                  return [newTarget, ...prev]
+                })
+              }
+            }
           } catch (e) {
             failCount++
           }
@@ -309,8 +333,32 @@ export function TeacherSupportClient({
               })
             })
             const data = await res.json()
-            if (data.error) failCount++
-            else successCount++
+            if (data.error) {
+              failCount++
+            } else {
+              successCount++
+              const studentInfo = classStudents.find(s => s.id === studentId)
+              if (studentInfo) {
+                const newTarget = {
+                  ...data,
+                  student: {
+                    ...studentInfo,
+                    class: assignedClasses.find(c => c.id === proposeClassId)
+                  },
+                  assignments: [],
+                  evaluations: []
+                }
+                setTargets(prev => {
+                  const exists = prev.findIndex(t => t.id === data.id)
+                  if (exists >= 0) {
+                    const newTargets = [...prev]
+                    newTargets[exists] = newTarget
+                    return newTargets
+                  }
+                  return [newTarget, ...prev]
+                })
+              }
+            }
           } catch (e) {
             failCount++
           }
