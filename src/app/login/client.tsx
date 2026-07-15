@@ -163,7 +163,7 @@ export function LoginClient() {
             <div className="mb-5 flex flex-col items-start select-none">
               <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain mb-3 pointer-events-none" />
               <h2 className="text-[22px] font-extrabold text-[#17383D] tracking-tight leading-tight">Đăng nhập hệ thống</h2>
-              <p className="text-xs text-[#0CB3AD] mt-1 font-bold">Truy cập hệ thống theo tài khoản được cấp (v3.0 - Tabbed Form)</p>
+              <p className="text-xs text-[#8FA5AE] mt-1 font-medium">Truy cập hệ thống theo tài khoản được cấp</p>
             </div>
 
             {/* Form */}
