@@ -203,7 +203,6 @@ model Student {
   highlightComments          StudentHighlightComment[]
   activityParticipants       ActivityParticipant[]
   learningSupportTargets     LearningSupportTarget[]
-  learningSupportAssignments LearningSupportAssignment[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -1497,8 +1496,6 @@ model LearningSupportAssignment {
   notes          String?
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
-  Student        Student?              @relation(fields: [studentId], references: [id])
-  studentId      String?
 
   @@unique([teacherId, targetId, academicYearId, subjectId])
   @@index([teacherId])
