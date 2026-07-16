@@ -1171,6 +1171,108 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [importing, setImporting] = useState(false)
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
+
+  // ───────── TRANSFER SYSTEM STATES ─────────
+  const [transferCampusId, setTransferCampusId] = useState("");
+  const [transferClassId, setTransferClassId] = useState("");
+  const [transferStudents, setTransferStudents] = useState<any[]>([]);
+  const [transferStudentsLoading, setTransferStudentsLoading] = useState(false);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [allClassesLoading, setAllClassesLoading] = useState(false);
+  const [targetSystem, setTargetSystem] = useState("");
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+
+  const selectedFormPeriod = useMemo(() => {
+    const pId = sForm.periodId || sPeriodId || "";
+    return periods.find(p => p.id === pId);
+  }, [sForm.periodId, sPeriodId, periods]);
+
+  const isChuyenHe = useMemo(() => {
+    if (!selectedFormPeriod) return false;
+    const name = selectedFormPeriod.name?.toLowerCase() || "";
+    return name.includes("chuyển hệ") || name.includes("chuyenhe") || name.includes("chuyen he");
+  }, [selectedFormPeriod]);
+
+  const activeFormBatches = useMemo(() => {
+    return (selectedFormPeriod?.batches || []).filter((b: any) => b.status === "ACTIVE");
+  }, [selectedFormPeriod]);
+
+  const currentEduSystems = useMemo(() => {
+    return eduSystems;
+  }, [eduSystems]);
+
+  const filteredClasses = useMemo(() => {
+    if (!transferCampusId) return [];
+    return allClasses.filter(c => c.campusId === transferCampusId);
+  }, [allClasses, transferCampusId]);
+
+  const selectedClassObj = useMemo(() => {
+    return allClasses.find(c => c.id === transferClassId);
+  }, [allClasses, transferClassId]);
+
+  const filteredTransferStudents = useMemo(() => {
+    if (!studentSearchQuery.trim()) return transferStudents;
+    const q = studentSearchQuery.toLowerCase();
+    return transferStudents.filter(s => 
+      s.studentName?.toLowerCase().includes(q) || 
+      s.studentCode?.toLowerCase().includes(q)
+    );
+  }, [transferStudents, studentSearchQuery]);
+
+  // Sync modal states
+  useEffect(() => {
+    if (sModal) {
+      if (!editS) {
+        setTransferCampusId("");
+        setTransferClassId("");
+        setTransferStudents([]);
+        setSelectedStudentIds([]);
+        setTargetSystem("");
+      } else {
+        setTargetSystem(sForm.surveyFormType || "");
+      }
+    }
+  }, [sModal, editS]);
+
+  // Fetch classes for active academic year when modal is open and isChuyenHe is true
+  useEffect(() => {
+    if (sModal && isChuyenHe && allClasses.length === 0 && !allClassesLoading) {
+      setAllClassesLoading(true);
+      fetch("/api/classes")
+        .then(res => res.json())
+        .then(data => {
+          setAllClasses(data || []);
+          setAllClassesLoading(false);
+        })
+        .catch(err => {
+          console.error("Lỗi fetch lớp:", err);
+          setAllClassesLoading(false);
+        });
+    }
+  }, [sModal, isChuyenHe, allClasses.length, allClassesLoading]);
+
+  // Fetch students when transferClassId is selected
+  useEffect(() => {
+    if (transferClassId) {
+      setTransferStudentsLoading(true);
+      setTransferStudents([]);
+      setSelectedStudentIds([]);
+      fetch(`/api/student-transfers/assessment-students?classId=${transferClassId}`)
+        .then(res => res.json())
+        .then(data => {
+          setTransferStudents(data.students || []);
+          setTransferStudentsLoading(false);
+        })
+        .catch(err => {
+          console.error("Lỗi fetch học sinh của lớp:", err);
+          setTransferStudentsLoading(false);
+        });
+    } else {
+      setTransferStudents([]);
+      setSelectedStudentIds([]);
+    }
+  }, [transferClassId]);
   const [sSelected, setSSelected] = useState<string[]>([])
 
   // ───────── REPORTS STATE ─────────
@@ -3226,9 +3328,59 @@ ${reportForm.directorNote}`;
   const openEditStudent = (s:Student) => { setEditS(s); setSForm({ studentCode:s.studentCode, fullName:s.fullName, dateOfBirth:s.dateOfBirth?.slice(0,10)||"", grade:s.grade||"", admissionCriteria:s.admissionCriteria||"", className:s.className||"", hocKy:s.hocKy||"", kqgdTieuHoc:s.kqgdTieuHoc||"", kqHocTap:s.kqHocTap||"", kqRenLuyen:s.kqRenLuyen||"", targetType:s.targetType||"", surveySystem:s.surveySystem||"", hoSoCtQuocTe:s.hoSoCtQuocTe||"", surveyFormType:s.surveyFormType||"" , gender:s.gender||"", batchId:s.batchId||"", registeredCampus:s.registeredCampus||"", periodId:s.periodId||"", cityName: s.cityName || "", districtName: s.districtName || "", wardName: s.wardName || "", countryName: s.countryName || "", oldSchoolName: s.oldSchoolName || "", oldSchoolType: s.oldSchoolType || "" }); setSModal(true) }
   const saveStudent = async () => {
     if (editS ? cannotUpdate : cannotCreate) return;
+    
+    if (isChuyenHe && !editS) {
+      if (selectedStudentIds.length === 0) {
+        return notify("Vui lòng chọn ít nhất một học sinh để chuyển hệ", "err");
+      }
+      if (!targetSystem) {
+        return notify("Vui lòng chọn hệ chuyển", "err");
+      }
+      
+      const currentClass = allClasses.find(c => c.id === transferClassId);
+      const selectedStudentsData = transferStudents.filter(s => selectedStudentIds.includes(s.id));
+      
+      const endpoint = "/api/input-assessment-students";
+      const bodyData = {
+        action: "BULK_CREATE",
+        data: selectedStudentsData.map(s => ({
+          studentCode: s.studentCode,
+          fullName: s.studentName,
+          dateOfBirth: s.dateOfBirth,
+          gender: s.gender || "Nam",
+          className: currentClass?.className || "",
+          grade: currentClass?.grade || "",
+          registeredCampus: campuses.find(c => c.id === transferCampusId)?.campusName || "",
+          periodId: sForm.periodId || sPeriodId,
+          batchId: sForm.batchId || sBatchId || null,
+          surveySystem: currentClass?.educationSystem || "", // Hệ đang học
+          surveyFormType: targetSystem, // Hệ chuyển
+        }))
+      };
+      
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyData)
+        });
+        if (res.ok) {
+          notify("Đã ghi nhận thông tin chuyển hệ cho " + selectedStudentIds.length + " học sinh!");
+          setSModal(false);
+          fetchStudents();
+        } else {
+          const err = await res.json();
+          notify("Lỗi: " + (err.error || "Gửi yêu cầu thất bại"), "err");
+        }
+      } catch (e) {
+        notify("Lỗi kết nối máy chủ", "err");
+      }
+      return;
+    }
+
     if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
     const r = editS
-      ? await fetch("/api/input-assessment-students", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editS.id, data:sForm }) })
+      ? await fetch("/api/input-assessment-students", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editS.id, data:{ ...sForm, surveyFormType: isChuyenHe ? targetSystem : sForm.surveyFormType } }) })
       : await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"CREATE", data:{...sForm, periodId:sPeriodId, batchId:sForm.batchId || sBatchId || null, registeredCampus:sForm.registeredCampus || null} }) })
     if (r.ok) { setSModal(false); fetchStudents(); notify(editS?"Đã cập nhật học sinh":"Đã thêm học sinh") }
     else notify("Lỗi","err")
@@ -6640,7 +6792,190 @@ return {
       </Modal>
 
       <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 px-6 py-3 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider">Đóng</button> <button onClick={saveStudent} className="flex-1 px-6 py-3 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider">Lưu dữ liệu</button></>}>
-        <div className="space-y-4 pt-1">
+        {isChuyenHe && !editS ? (
+          <div className="space-y-6 pt-1 text-left animate-in fade-in duration-200">
+            <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
+              <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
+                <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Thông tin học sinh chuyển hệ</h4>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <Field label="Kỳ khảo sát" required>
+                  <select
+                    value={sForm.periodId || sPeriodId || ""}
+                    onChange={(e) => {
+                      const pId = e.target.value;
+                      setSForm(f => ({ ...f, periodId: pId, batchId: "" }));
+                    }}
+                    className={inp}
+                  >
+                    <option value="">-- Chọn Kỳ --</option>
+                    {periods.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Đợt khảo sát">
+                  <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
+                    <option value="">-- Không có / Mặc định --</option>
+                    {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || []).map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <Field label="Cơ sở" required>
+                  <select
+                    required
+                    value={transferCampusId}
+                    onChange={(e) => {
+                      setTransferCampusId(e.target.value);
+                      setTransferClassId("");
+                      setTransferStudents([]);
+                      setSelectedStudentIds([]);
+                      setTargetSystem("");
+                    }}
+                    className={inp}
+                  >
+                    <option value="">-- Chọn Cơ sở --</option>
+                    {campuses.map((c) => (
+                      <option key={c.id} value={c.id}>{c.campusName}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="Lớp học" required>
+                  <select
+                    required
+                    disabled={!transferCampusId}
+                    value={transferClassId}
+                    onChange={(e) => {
+                      setTransferClassId(e.target.value);
+                      setTransferStudents([]);
+                      setSelectedStudentIds([]);
+                    }}
+                    className={inp + " disabled:opacity-50"}
+                  >
+                    <option value="">-- Chọn Lớp học --</option>
+                    {filteredClasses.map((c) => (
+                      <option key={c.id} value={c.id}>{c.className}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ đang học</label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={selectedClassObj?.educationSystem || "Không xác định"}
+                    className="h-10.5 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-slate-500 text-sm font-semibold rounded-xl outline-none"
+                  />
+                </div>
+                <Field label="Hệ chuyển" required>
+                  <select
+                    required
+                    value={targetSystem}
+                    onChange={(e) => setTargetSystem(e.target.value)}
+                    className={inp}
+                  >
+                    <option value="">-- Chọn Hệ chuyển --</option>
+                    {currentEduSystems.map((es) => (
+                      <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              {/* Student Checklist Selection */}
+              <div className="space-y-3 pt-2">
+                <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Danh sách Học sinh *</label>
+                <div className="border border-[#D9E2EC] rounded-2xl bg-white overflow-hidden shadow-sm">
+                  <div className="p-3 bg-slate-50 border-b border-[#D9E2EC] flex justify-between items-center gap-4">
+                    <input
+                      type="text"
+                      placeholder="Tìm nhanh học sinh..."
+                      value={studentSearchQuery}
+                      onChange={(e) => setStudentSearchQuery(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-[#D9E2EC] rounded-lg text-xs font-semibold outline-none focus:border-[#00B5E2] max-w-xs w-full"
+                    />
+                    {transferStudents.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (selectedStudentIds.length === transferStudents.length) {
+                            setSelectedStudentIds([]);
+                          } else {
+                            setSelectedStudentIds(transferStudents.map(s => s.id));
+                          }
+                        }}
+                        className="px-3 py-1.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/25 text-[#004C97] border border-[#00B5E2]/30 rounded-lg text-[11px] font-bold transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                      >
+                        {selectedStudentIds.length === transferStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="max-h-[220px] overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                    {transferStudentsLoading ? (
+                      <div className="py-6 flex justify-center items-center text-slate-400 text-xs font-semibold gap-2">
+                        <span className="w-4 h-4 border-2 border-[#00B5E2] border-t-transparent rounded-full animate-spin"></span>
+                        Đang tải danh sách học sinh...
+                      </div>
+                    ) : transferStudents.length === 0 ? (
+                      <div className="py-6 text-center text-slate-400 text-xs font-semibold">
+                        {transferClassId ? "Không có học sinh nào trong lớp này." : "Vui lòng chọn Lớp học trước."}
+                      </div>
+                    ) : filteredTransferStudents.length === 0 ? (
+                      <div className="py-6 text-center text-slate-400 text-xs font-semibold">
+                        Không tìm thấy học sinh phù hợp.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {filteredTransferStudents.map((s) => {
+                          const isChecked = selectedStudentIds.includes(s.id);
+                          return (
+                            <label
+                              key={s.id}
+                              className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all hover:bg-slate-50/50 ${isChecked ? 'bg-[#E6F8FD]/50 border-[#00B5E2]' : 'border-[#D9E2EC]'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id));
+                                  } else {
+                                    setSelectedStudentIds([...selectedStudentIds, s.id]);
+                                  }
+                                }}
+                                className="rounded border-[#D9E2EC] text-[#00B5E2] focus:ring-[#00B5E2]/15 w-4 h-4 cursor-pointer"
+                              />
+                              <div className="text-left">
+                                <div className={`text-xs font-bold ${isChecked ? 'text-[#004C97]' : 'text-slate-700'}`}>{s.studentName}</div>
+                                <div className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">{s.studentCode}</div>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {selectedStudentIds.length > 0 && (
+                  <div className="text-[11px] font-bold text-[#004C97] mt-1">
+                    Đã chọn <span className="text-[#00B5E2]">{selectedStudentIds.length}</span> học sinh.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4 pt-1">
            <div className="grid grid-cols-2 gap-4">
               <Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
               <Field label="Ngày sinh"><input type="date" value={sForm.dateOfBirth} onChange={e=>setSForm(f=>({...f,dateOfBirth:e.target.value}))} className={inp}/></Field>
@@ -6895,6 +7230,7 @@ return {
                 </Field>
              </div>
         </div>
+        )}
       </Modal>
 
       <Modal open={cModal} onClose={()=>setCModal(false)} title="Giá trị Danh mục" size="sm" footer={<><button onClick={()=>setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveConfig} className="flex-1 text-white text-xs font-black uppercase tracking-widest text-xs font-semibold">Lưu</button></>}>
