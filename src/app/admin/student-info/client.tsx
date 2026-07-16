@@ -264,6 +264,45 @@ export function StudentInfoClient({
   const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
   const [originalKqgd, setOriginalKqgd] = useState<string>("");
 
+  // System transfer states
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [allClassesLoading, setAllClassesLoading] = useState(false);
+  const [transferCampusId, setTransferCampusId] = useState("");
+  const [transferClassId, setTransferClassId] = useState("");
+  const [transferStudents, setTransferStudents] = useState<any[]>([]);
+  const [transferStudentsLoading, setTransferStudentsLoading] = useState(false);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [targetSystem, setTargetSystem] = useState("");
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+
+  const selectedPeriod = useMemo(() => {
+    return [...generalPeriods, ...preschoolPeriods].find(p => p.id === formState.periodId);
+  }, [formState.periodId, generalPeriods, preschoolPeriods]);
+
+  const isChuyenHe = useMemo(() => {
+    if (!selectedPeriod) return false;
+    const name = selectedPeriod.name?.toLowerCase() || "";
+    return name.includes("chuyển hệ") || name.includes("chuyenhe") || name.includes("chuyen he");
+  }, [selectedPeriod]);
+
+  const filteredTransferStudents = useMemo(() => {
+    if (!studentSearchQuery.trim()) return transferStudents;
+    const q = studentSearchQuery.toLowerCase();
+    return transferStudents.filter(s => 
+      s.studentName?.toLowerCase()?.includes(q) || 
+      s.studentCode?.toLowerCase()?.includes(q)
+    );
+  }, [transferStudents, studentSearchQuery]);
+
+  const selectedClassObj = useMemo(() => {
+    return allClasses.find((c) => c.id === transferClassId);
+  }, [allClasses, transferClassId]);
+
+  const filteredClasses = useMemo(() => {
+    if (!transferCampusId) return [];
+    return allClasses.filter((c) => c.campusId === transferCampusId);
+  }, [allClasses, transferCampusId]);
+
   // Sync selectedLocationType when targetType changes
   useEffect(() => {
     if (!isFormOpen) return;
@@ -670,6 +709,42 @@ export function StudentInfoClient({
   useEffect(() => {
     setSelectedIds([]);
   }, [subTab, activeTab]);
+
+  // Fetch classes for active academic year when modal is open and isChuyenHe is true
+  useEffect(() => {
+    if (isFormOpen && activeYearId && allClasses.length === 0 && !allClassesLoading) {
+      setAllClassesLoading(true);
+      fetch(`/api/classes?academicYearId=${activeYearId}`)
+        .then(res => res.json())
+        .then(data => {
+          setAllClasses(data);
+          setAllClassesLoading(false);
+        })
+        .catch(err => {
+          console.error("Error fetching classes:", err);
+          setAllClassesLoading(false);
+        });
+    }
+  }, [isFormOpen, activeYearId, allClasses.length, allClassesLoading]);
+
+  // Fetch students of the selected class
+  useEffect(() => {
+    if (transferClassId && activeYearId) {
+      setTransferStudentsLoading(true);
+      fetch(`/api/students/search?academicYearId=${activeYearId}&classId=${transferClassId}`)
+        .then(res => res.json())
+        .then(data => {
+          setTransferStudents(data);
+          setTransferStudentsLoading(false);
+        })
+        .catch(err => {
+          console.error("Error fetching class students:", err);
+          setTransferStudentsLoading(false);
+        });
+    } else {
+      setTransferStudents([]);
+    }
+  }, [transferClassId, activeYearId]);
   
   const currentEduSystems = useMemo(() => {
     if (!activeYearId) return eduSystems;
@@ -1027,6 +1102,12 @@ export function StudentInfoClient({
       oldSchoolName: "",
       oldSchoolType: ""
     });
+    setTransferCampusId("");
+    setTransferClassId("");
+    setTransferStudents([]);
+    setSelectedStudentIds([]);
+    setTargetSystem("");
+    setStudentSearchQuery("");
     setIsFormOpen(true);
   };
 
@@ -1079,12 +1160,67 @@ export function StudentInfoClient({
       oldSchoolName: student.oldSchoolName || "",
       oldSchoolType: student.oldSchoolType || ""
     });
+    setTransferCampusId("");
+    setTransferClassId("");
+    setTransferStudents([]);
+    setSelectedStudentIds([]);
+    setTargetSystem(student.surveyFormType || "");
+    setStudentSearchQuery("");
     setIsFormOpen(true);
   };
 
   // Handle Save Student (Create/Edit)
   const handleSaveStudent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isChuyenHe && formMode === "create") {
+      if (selectedStudentIds.length === 0) {
+        return showNotification("Vui lòng chọn ít nhất một học sinh để chuyển hệ", "err");
+      }
+      if (!targetSystem) {
+        return showNotification("Vui lòng chọn hệ chuyển", "err");
+      }
+      
+      const currentClass = allClasses.find(c => c.id === transferClassId);
+      const selectedStudentsData = transferStudents.filter(s => selectedStudentIds.includes(s.id));
+      
+      const endpoint = "/api/input-assessment-students";
+      const bodyData = {
+        action: "BULK_CREATE",
+        data: selectedStudentsData.map(s => ({
+          studentCode: s.studentCode,
+          fullName: s.studentName,
+          dateOfBirth: s.dateOfBirth,
+          gender: s.gender || "Nam",
+          className: currentClass?.className || "",
+          grade: currentClass?.grade || "",
+          registeredCampus: campuses.find(c => c.id === transferCampusId)?.campusName || "",
+          periodId: formState.periodId,
+          batchId: formState.batchId || null,
+          surveySystem: currentClass?.educationSystem || "", // Hệ đang học
+          surveyFormType: targetSystem, // Hệ chuyển
+        }))
+      };
+      
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyData)
+        });
+        if (res.ok) {
+          showNotification("Đã ghi nhận thông tin chuyển hệ cho " + selectedStudentIds.length + " học sinh!");
+          setIsFormOpen(false);
+          setTimeout(() => window.location.reload(), 1000);
+        } else {
+          const err = await res.json();
+          showNotification("Lỗi: " + (err.error || "Gửi yêu cầu thất bại"), "err");
+        }
+      } catch (e) {
+        showNotification("Lỗi kết nối máy chủ", "err");
+      }
+      return;
+    }
+
     if (!formState.studentCode.trim()) return showNotification("Mã học sinh không được để trống", "err");
     if (!formState.fullName.trim()) return showNotification("Họ và tên không được để trống", "err");
     if (!formState.periodId) return showNotification("Kỳ khảo sát là bắt buộc", "err");
@@ -2372,6 +2508,7 @@ export function StudentInfoClient({
             </div>
 
             {/* Form Tab Switcher */}
+            {!isChuyenHe && (
             <div className="bg-slate-50 border-b border-[#D9E2EC] px-6 py-1 flex gap-4 shrink-0 text-xs font-semibold overflow-x-auto scrollbar-none">
               <button
                 type="button"
@@ -2413,10 +2550,273 @@ export function StudentInfoClient({
               )}
             </div>
 
+            )}
+
             <form onSubmit={handleSaveStudent} className="flex-1 overflow-hidden flex flex-col bg-[#F8FAFC]">
-              <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
+              <div className="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar text-left">
                 
-                {formSubTab === "admin" && (
+                {isChuyenHe ? (
+                  // Redesigned form layout for transfer system
+                  <div className="space-y-6 animate-in fade-in duration-200">
+                    <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
+                      <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                        <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
+                        <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Thông tin học sinh chuyển hệ</h4>
+                      </div>
+
+                      {/* Always show Period and Batch selectors so user can edit them if needed */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Kỳ khảo sát *</label>
+                          <select
+                            required
+                            value={formState.periodId}
+                            onChange={(e) => {
+                              setFormState({ ...formState, periodId: e.target.value, batchId: "" });
+                            }}
+                            className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-bold rounded-xl outline-none focus:border-[#00B5E2] cursor-pointer"
+                          >
+                            <option value="">-- Chọn Kỳ khảo sát --</option>
+                            {activeTab === "general" ? (
+                              generalPeriods.map((p) => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))
+                            ) : (
+                              preschoolPeriods.map((p) => (
+                                <option key={p.id} value={p.id}>{p.name}</option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Đợt khảo sát</label>
+                          <select
+                            value={formState.batchId}
+                            onChange={(e) => setFormState({ ...formState, batchId: e.target.value })}
+                            className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] cursor-pointer"
+                          >
+                            <option value="">-- Không phân đợt / Mặc định --</option>
+                            {activeFormBatches.map((b) => (
+                              <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {formMode === "create" ? (
+                        /* CREATE MODE */
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Cơ sở *</label>
+                              <select
+                                required
+                                value={transferCampusId}
+                                onChange={(e) => {
+                                  setTransferCampusId(e.target.value);
+                                  setTransferClassId("");
+                                  setTransferStudents([]);
+                                  setSelectedStudentIds([]);
+                                  setTargetSystem("");
+                                }}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Chọn Cơ sở --</option>
+                                {campuses.map((c) => (
+                                  <option key={c.id} value={c.id}>{c.campusName}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Lớp học *</label>
+                              <select
+                                required
+                                disabled={!transferCampusId}
+                                value={transferClassId}
+                                onChange={(e) => {
+                                  setTransferClassId(e.target.value);
+                                  setTransferStudents([]);
+                                  setSelectedStudentIds([]);
+                                }}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer disabled:opacity-50"
+                              >
+                                <option value="">-- Chọn Lớp học --</option>
+                                {filteredClasses.map((c) => (
+                                  <option key={c.id} value={c.id}>{c.className}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ đang học</label>
+                              <input
+                                type="text"
+                                readOnly
+                                value={selectedClassObj?.educationSystem || "Không xác định"}
+                                className="h-10.5 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-slate-500 text-sm font-semibold rounded-xl outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ chuyển *</label>
+                              <select
+                                required
+                                value={targetSystem}
+                                onChange={(e) => setTargetSystem(e.target.value)}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Chọn Hệ chuyển --</option>
+                                {currentEduSystems.map((es) => (
+                                  <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Student Checklist Selection */}
+                          <div className="space-y-3 pt-2">
+                            <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Danh sách Học sinh *</label>
+                            <div className="border border-[#D9E2EC] rounded-2xl bg-white overflow-hidden shadow-sm">
+                              <div className="p-3 bg-slate-50 border-b border-[#D9E2EC] flex justify-between items-center gap-4">
+                                <input
+                                  type="text"
+                                  placeholder="Tìm nhanh học sinh..."
+                                  value={studentSearchQuery}
+                                  onChange={(e) => setStudentSearchQuery(e.target.value)}
+                                  className="px-3 py-1.5 bg-white border border-[#D9E2EC] rounded-lg text-xs font-semibold outline-none focus:border-[#00B5E2] max-w-xs w-full"
+                                />
+                                {transferStudents.length > 0 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (selectedStudentIds.length === transferStudents.length) {
+                                        setSelectedStudentIds([]);
+                                      } else {
+                                        setSelectedStudentIds(transferStudents.map(s => s.id));
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/25 text-[#004C97] border border-[#00B5E2]/30 rounded-lg text-[11px] font-bold transition-all active:scale-95 cursor-pointer whitespace-nowrap"
+                                  >
+                                    {selectedStudentIds.length === transferStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+                                  </button>
+                                )}
+                              </div>
+                              
+                              <div className="max-h-[220px] overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                                {transferStudentsLoading ? (
+                                  <div className="py-6 flex justify-center items-center text-slate-400 text-xs font-semibold gap-2">
+                                    <span className="w-4 h-4 border-2 border-[#00B5E2] border-t-transparent rounded-full animate-spin"></span>
+                                    Đang tải danh sách học sinh...
+                                  </div>
+                                ) : transferStudents.length === 0 ? (
+                                  <div className="py-6 text-center text-slate-400 text-xs font-semibold">
+                                    {transferClassId ? "Không có học sinh nào trong lớp này." : "Vui lòng chọn Lớp học trước."}
+                                  </div>
+                                ) : filteredTransferStudents.length === 0 ? (
+                                  <div className="py-6 text-center text-slate-400 text-xs font-semibold">
+                                    Không tìm thấy học sinh phù hợp.
+                                  </div>
+                                ) : (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                    {filteredTransferStudents.map((s) => {
+                                      const isChecked = selectedStudentIds.includes(s.id);
+                                      return (
+                                        <label
+                                          key={s.id}
+                                          className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all hover:bg-slate-50/50 ${isChecked ? 'bg-[#E6F8FD]/50 border-[#00B5E2]' : 'border-[#D9E2EC]'}`}
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={isChecked}
+                                            onChange={() => {
+                                              if (isChecked) {
+                                                setSelectedStudentIds(selectedStudentIds.filter(id => id !== s.id));
+                                              } else {
+                                                setSelectedStudentIds([...selectedStudentIds, s.id]);
+                                              }
+                                            }}
+                                            className="rounded border-[#D9E2EC] text-[#00B5E2] focus:ring-[#00B5E2]/15 w-4 h-4 cursor-pointer"
+                                          />
+                                          <div className="text-left">
+                                            <div className={`text-xs font-bold ${isChecked ? 'text-[#004C97]' : 'text-slate-700'}`}>{s.studentName}</div>
+                                            <div className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">{s.studentCode}</div>
+                                          </div>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {selectedStudentIds.length > 0 && (
+                              <div className="text-[11px] font-bold text-[#004C97] mt-1">
+                                Đã chọn <span className="text-[#00B5E2]">{selectedStudentIds.length}</span> học sinh.
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        /* EDIT MODE */
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Học sinh</label>
+                              <input
+                                type="text"
+                                readOnly
+                                value={`${formState.fullName} (${formState.studentCode})`}
+                                className="h-10.5 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-slate-500 text-sm font-semibold rounded-xl outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Lớp / Cơ sở</label>
+                              <input
+                                type="text"
+                                readOnly
+                                value={`${formState.className || "Chưa xếp lớp"} - ${formState.registeredCampus || ""}`}
+                                className="h-10.5 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-slate-500 text-sm font-semibold rounded-xl outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ đang học *</label>
+                              <select
+                                required
+                                value={formState.surveySystem}
+                                onChange={(e) => setFormState({ ...formState, surveySystem: e.target.value })}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Chọn Hệ đang học --</option>
+                                {currentEduSystems.map((es) => (
+                                  <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ chuyển *</label>
+                              <select
+                                required
+                                value={formState.surveyFormType}
+                                onChange={(e) => setFormState({ ...formState, surveyFormType: e.target.value })}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Chọn Hệ chuyển --</option>
+                                {currentEduSystems.map((es) => (
+                                  <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {formSubTab === "admin" && (
                   <div className="space-y-6 animate-in fade-in duration-200">
                     {/* SECTION 1: THÔNG TIN CÁ NHÂN */}
                     <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
@@ -3018,6 +3418,8 @@ export function StudentInfoClient({
                       </div>
                     </div>
                   </div>
+                )}
+                </>
                 )}
               </div>
 

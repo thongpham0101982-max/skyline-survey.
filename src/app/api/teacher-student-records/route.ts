@@ -127,7 +127,7 @@ export async function GET(req: Request) {
         subjectIds = allSubjects
           .filter(s => {
             const name = (s.subjectName || s.name || "").toLowerCase()
-            return name.includes("hÆ°á»›ng nghiá»‡p") || name.includes("huong nghiep")
+            return name.includes("hướng nghiệp") || name.includes("huong nghiep")
           })
           .map(s => s.id)
       }
@@ -196,7 +196,7 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes },
-          admissionResult: { in: ["Äáº¡t cam káº¿t", "Äáº¡t - Cam káº¿t"] }
+          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
         },
         select: {
           studentCode: true,
@@ -207,7 +207,7 @@ export async function GET(req: Request) {
 
       const parseCommittedSubjects = (note) => {
         if (!note) return []
-        const match = note.match(/MĂ´n cam káº¿t:\s*\[([^\]]+)\]/i)
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
           return match[1].split(",").map(s => s.trim())
         }
@@ -245,7 +245,7 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes },
-          admissionResult: { in: ["Äáº¡t cam káº¿t", "Äáº¡t - Cam káº¿t"] }
+          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
         },
         select: {
           studentCode: true,
@@ -256,7 +256,7 @@ export async function GET(req: Request) {
 
       const parseCommittedSubjects = (note) => {
         if (!note) return []
-        const match = note.match(/MĂ´n cam káº¿t:\s*\[([^\]]+)\]/i)
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
           return match[1].split(",").map(s => s.trim())
         }
@@ -276,14 +276,14 @@ export async function GET(req: Request) {
             const cleanSub = subName.toLowerCase()
             const hasMatch = committedSubjects.some((cs) => {
               const cleanCS = cs.toLowerCase()
-              if (cleanSub.includes("toĂ¡n")) {
-                return cleanCS.includes("mĂ´n toĂ¡n") || cleanCS.includes("toĂ¡n")
+              if (cleanSub.includes("toán")) {
+                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
               }
-              if (cleanSub.includes("tiáº¿ng viá»‡t") || cleanSub.includes("ngá»¯ vÄƒn") || cleanSub.includes("vÄƒn")) {
-                return cleanCS.includes("tiáº¿ng viá»‡t") || cleanCS.includes("ngá»¯ vÄƒn") || cleanCS.includes("vÄƒn")
+              if (cleanSub.includes("tiếng việt") || cleanSub.includes("ngữ văn") || cleanSub.includes("văn")) {
+                return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
-              if (cleanSub.includes("tiáº¿ng anh") || cleanSub.includes("anh")) {
-                return cleanCS.includes("tiáº¿ng anh") || cleanCS.includes("anh")
+              if (cleanSub.includes("tiếng anh") || cleanSub.includes("anh")) {
+                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
               }
               return cleanCS.includes(cleanSub) || cleanSub.includes(cleanCS)
             })
@@ -300,8 +300,8 @@ export async function GET(req: Request) {
             studentCode: s.studentCode,
             gender: s.gender,
             commitmentContent: committedSubjects.length > 0 
-              ? `Cam káº¿t Kháº£o sĂ¡t Ä‘áº§u vĂ o cĂ¡c mĂ´n: ${committedSubjects.join(", ")}`
-              : "CĂ³ cam káº¿t Ä‘áº§u vĂ o",
+              ? `Cam kết Khảo sát đầu vào các môn: ${committedSubjects.join(", ")}`
+              : "Có cam kết đầu vào",
             matchedSubjects: matchedSubjects.length > 0 ? matchedSubjects : committedSubjects
           }
         })
@@ -370,7 +370,7 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes },
-          admissionResult: { in: ["Äáº¡t cam káº¿t", "Äáº¡t - Cam káº¿t"] }
+          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
         },
         select: {
           studentCode: true,
@@ -381,7 +381,7 @@ export async function GET(req: Request) {
 
       const parseCommittedSubjects = (note) => {
         if (!note) return []
-        const match = note.match(/MĂ´n cam káº¿t:\s*\[([^\]]+)\]/i)
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
           return match[1].split(",").map(s => s.trim())
         }
@@ -407,14 +407,14 @@ export async function GET(req: Request) {
             const cleanCS = cs.toLowerCase()
             return teacherSubjectsInClass.some(ts => {
               const cleanTS = ts.toLowerCase()
-              if (cleanTS.includes("toĂ¡n")) {
-                return cleanCS.includes("mĂ´n toĂ¡n") || cleanCS.includes("toĂ¡n")
+              if (cleanTS.includes("toán")) {
+                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
               }
-              if (cleanTS.includes("tiáº¿ng viá»‡t") || cleanTS.includes("ngá»¯ vÄƒn") || cleanTS.includes("vÄƒn")) {
-                return cleanCS.includes("tiáº¿ng viá»‡t") || cleanCS.includes("ngá»¯ vÄƒn") || cleanCS.includes("vÄƒn")
+              if (cleanTS.includes("tiếng việt") || cleanTS.includes("ngữ văn") || cleanTS.includes("văn")) {
+                return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
-              if (cleanTS.includes("tiáº¿ng anh") || cleanTS.includes("anh")) {
-                return cleanCS.includes("tiáº¿ng anh") || cleanCS.includes("anh")
+              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) {
+                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
               }
               return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
             })

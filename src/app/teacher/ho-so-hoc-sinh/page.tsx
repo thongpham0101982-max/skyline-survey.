@@ -564,6 +564,46 @@ export default function TeacherStudentProfilePage() {
                                         <div>• Kết quả học tập cấp trước: <span className="font-extrabold text-slate-800">{survey.kqHocTap ?? "—"}</span></div>
                                         <div>• Kết quả rèn luyện cấp trước: <span className="font-extrabold text-slate-800">{survey.kqRenLuyen ?? "—"}</span></div>
                                       </div>
+
+                                      {/* Committed Subjects & Approval Details */}
+                                      {(survey.directorNote || survey.admissionResult === "Đạt cam kết" || survey.admissionResult === "Đạt - Cam kết") && (() => {
+                                        const parseCommittedSubjects = (note) => {
+                                          if (!note) return []
+                                          const match = note.match(/(?:Môn cam kết|Mon cam ket):\s*\[([^\]]+)\]/i)
+                                          if (match && match[1]) {
+                                            return match[1].split(',').map(s => s.trim())
+                                          }
+                                          return []
+                                        }
+                                        const committedSubjects = parseCommittedSubjects(survey.directorNote || "")
+                                        return (
+                                          <div className="bg-amber-50/40 border border-amber-200/50 p-4 rounded-xl space-y-3">
+                                            <div className="flex items-center gap-2 border-b border-amber-200/30 pb-2">
+                                              <span className="text-[10px] font-black text-amber-800 uppercase tracking-wider">Chi tiết xét duyệt & Cam kết</span>
+                                            </div>
+                                            {committedSubjects.length > 0 && (
+                                              <div className="text-xs">
+                                                <span className="text-slate-500 font-bold">Môn cam kết:</span>
+                                                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                                  {committedSubjects.map((sub, idx) => (
+                                                    <span key={idx} className="bg-amber-100/80 text-amber-800 border border-amber-200/60 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
+                                                      {sub}
+                                                    </span>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                            {survey.directorNote && (
+                                              <div className="text-xs">
+                                                <span className="text-slate-500 font-bold">Ý kiến chỉ đạo / Ghi chú xét duyệt:</span>
+                                                <p className="text-slate-700 bg-white border border-slate-200 p-3 rounded-lg font-semibold mt-1.5 leading-relaxed whitespace-pre-wrap">
+                                                  {survey.directorNote}
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )
+                                      })()}
                                     </div>
                                   )
                                 })()}
