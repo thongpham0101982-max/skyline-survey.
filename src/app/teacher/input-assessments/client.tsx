@@ -1143,13 +1143,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     return (
                         <div key={"cm-input-"+colIdx} className="flex flex-col gap-1.5 w-full min-w-[200px] flex-1">
                             <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName}>{cName}</span>
-                            <input 
-                                type="text"
+                            <textarea 
                                 value={st.commentVals?.[colIdx] || ""}
                                 onChange={e => handleCommentChange(st.id, colIdx, e.target.value)}
                                 disabled={isLocked}
-                                className={`w-full border border-slate-300 rounded-lg py-1 px-3 text-xs font-medium shadow-sm outline-none transition-all h-[30px] text-[12px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 placeholder-slate-400"}`}
-                                placeholder="..."
+                                rows={2}
+                                className={`w-full border border-slate-300 rounded-lg py-1.5 px-3 text-xs font-medium shadow-sm outline-none transition-all resize-y min-h-[50px] max-h-[120px] text-[12px] text-[13px] leading-relaxed custom-scrollbar ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 placeholder-slate-400"}`}
+                                placeholder="Nhập nhận xét..."
                             />
                         </div>
                     );

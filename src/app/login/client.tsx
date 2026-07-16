@@ -97,25 +97,25 @@ export function LoginClient() {
     <>
       {/* Loading modal */}
       {loading && loadingSteps.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,31,30,0.85)', backdropFilter: 'blur(8px)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,31,30,0.9)', backdropFilter: 'blur(8px)' }}>
           <div className="bg-white rounded-[24px] p-8 shadow-2xl max-w-sm w-full mx-6 border border-slate-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-center mb-6">
               <div className="relative w-16 h-16">
                 <div className="absolute inset-0 rounded-full border-4 border-slate-50" />
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#0CB3AD] animate-spin" />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#00A99D] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-[#0CB3AD]" />
+                  <GraduationCap className="w-6 h-6 text-[#00A99D]" />
                 </div>
               </div>
             </div>
             <h3 className="text-center text-lg font-bold text-[#17383D] mb-1">Đang đăng nhập</h3>
-            <p className="text-center text-xs text-[#0CB3AD] font-extrabold mb-6 uppercase tracking-wider">{roleLabel}</p>
+            <p className="text-center text-xs text-[#00A99D] font-extrabold mb-6 uppercase tracking-wider">{roleLabel}</p>
             <div className="space-y-3">
               {(loadingSteps as any[]).map((step: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 px-2">
                   {step.done
                     ? <CheckCircle2 className="w-5 h-5 text-[#21875A] shrink-0" />
-                    : <Loader2 className="w-5 h-5 text-[#0CB3AD] shrink-0 animate-spin" />}
+                    : <Loader2 className="w-5 h-5 text-[#00A99D] shrink-0 animate-spin" />}
                   <span className={`text-xs font-semibold ${step.done ? 'text-slate-400 line-through opacity-60' : 'text-[#17383D]'}`}>
                     {step.text}
                   </span>
@@ -127,12 +127,12 @@ export function LoginClient() {
       )}
 
       {/* Main layout */}
-      <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F5F8F8] overflow-hidden font-sans">
+      <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F5F8F8] font-sans">
 
         {/* LEFT: Features */}
-        <div className="hidden md:flex md:w-[50%] xl:w-[58%] flex-col justify-between p-8 lg:p-12 bg-[#004F4B] relative overflow-y-auto max-h-screen select-none">
-          <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full bg-[#0CB3AD]/10 blur-[130px] pointer-events-none" />
-          <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-teal-500/10 blur-[110px] pointer-events-none" />
+        <div className="hidden md:flex md:w-[50%] xl:w-[58%] flex-col justify-between p-8 lg:p-12 xl:p-16 bg-[#003B3A] relative select-none">
+          <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full bg-[#00A99D]/12 blur-[130px] pointer-events-none" />
+          <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-teal-500/8 blur-[110px] pointer-events-none" />
           <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
           <div className="relative z-10 w-full">
@@ -147,7 +147,7 @@ export function LoginClient() {
           <div className="relative z-10 border-t border-white/5 pt-4 mt-6 flex flex-wrap items-center justify-between gap-2 text-[9px] font-extrabold tracking-wider text-teal-100/30 select-none">
             {['DỮ LIỆU CHÍNH XÁC', 'QUẢN TRỊ MINH BẠCH', 'THEO DÕI LIÊN TỤC', 'ĐỒNG HÀNH PHÁT TRIỂN'].map(t => (
               <span key={t} className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#0CB3AD] inline-block" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#00A99D] inline-block" />
                 {t}
               </span>
             ))}
@@ -155,15 +155,15 @@ export function LoginClient() {
         </div>
 
         {/* RIGHT: Login */}
-        <div className="w-full md:w-[50%] xl:w-[42%] min-h-screen bg-white flex flex-col justify-center p-6 sm:p-8 md:p-10 relative z-10 overflow-y-auto max-h-screen">
+        <div className="w-full md:w-[50%] xl:w-[42%] bg-[#F5F8F8] flex flex-col justify-center p-4 sm:p-6 md:p-8 relative z-10">
 
-          <div className="max-w-[420px] w-full mx-auto">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_16px_40px_rgba(0,31,30,0.04)] border border-[#E2ECF0]/80 max-w-[440px] w-full mx-auto transition-all duration-300">
 
             {/* Brand */}
-            <div className="mb-5 flex flex-col items-start select-none">
+            <div className="mb-6 flex flex-col items-start select-none">
               <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain mb-3 pointer-events-none" />
-              <h2 className="text-[22px] font-extrabold text-[#17383D] tracking-tight leading-tight">Đăng nhập hệ thống</h2>
-              <p className="text-xs text-[#8FA5AE] mt-1 font-medium">Truy cập hệ thống theo tài khoản được cấp</p>
+              <h2 className="text-[22px] font-black text-[#003B3A] tracking-tight leading-tight">Đăng nhập hệ thống</h2>
+              <p className="text-xs text-[#8FA5AE] mt-1 font-semibold">Truy cập hệ thống theo tài khoản được cấp</p>
             </div>
 
             {/* Form */}
@@ -178,11 +178,13 @@ export function LoginClient() {
               onForgotPassword={handleForgotPassword}
             />
 
-            <PageFooter />
+            <div className="mt-6 border-t border-slate-100/60 pt-4">
+              <PageFooter />
+            </div>
           </div>
 
           {/* Mobile: Feature overview below form */}
-          <div className="block md:hidden mt-6 border-t border-slate-100 pt-6 bg-[#004F4B] rounded-2xl p-6">
+          <div className="block md:hidden mt-6 bg-[#003B3A] rounded-2xl p-6 shadow-sm border border-teal-950/20">
             <FeatureOverview />
           </div>
 
