@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { getDefaultAcademicYear } from "@/lib/academicYear"
 import fs from "fs"
 import path from "path"
 
@@ -30,13 +31,24 @@ export async function GET(req: Request) {
     const notes = portalNotesConfig?.name || ""
 
     // 2. Query Student
-    const student = await prisma.student.findUnique({
-      where: { studentCode },
+    const defaultYear = await getDefaultAcademicYear(prisma);
+    const student = await prisma.student.findFirst({
+      where: { 
+        studentCode,
+        ...(defaultYear ? { academicYearId: defaultYear.id } : {})
+      },
       include: {
         class: true,
         campus: true
       }
-    })
+    }) || await prisma.student.findFirst({
+      where: { studentCode },
+      orderBy: { academicYear: { startDate: 'desc' } },
+      include: {
+        class: true,
+        campus: true
+      }
+    });
 
     if (!student) {
       return NextResponse.json({ error: "Không tìm thấy học sinh với mã này." }, { status: 404 })

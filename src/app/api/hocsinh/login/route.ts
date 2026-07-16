@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { signStudentToken } from '@/lib/student-session'
+import { getDefaultAcademicYear } from '@/lib/academicYear'
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,8 +10,12 @@ export async function POST(req: NextRequest) {
     const code = String(studentCode || '').trim()
     
     // Tìm học sinh
-    const student = await prisma.student.findUnique({
-      where: { studentCode: code },
+    const defaultYear = await getDefaultAcademicYear(prisma);
+    const student = await prisma.student.findFirst({
+      where: { 
+        studentCode: code,
+        ...(defaultYear ? { academicYearId: defaultYear.id } : {})
+      },
       select: { 
         id: true, 
         studentCode: true, 
@@ -22,7 +27,21 @@ export async function POST(req: NextRequest) {
         class: { select: { className: true } }, 
         campus: { select: { campusName: true } } 
       }
-    })
+    }) || await prisma.student.findFirst({
+      where: { studentCode: code },
+      orderBy: { academicYear: { startDate: 'desc' } },
+      select: { 
+        id: true, 
+        studentCode: true, 
+        studentName: true, 
+        classId: true, 
+        campusId: true,
+        academicYearId: true,
+        status: true, 
+        class: { select: { className: true } }, 
+        campus: { select: { campusName: true } } 
+      }
+    });
     
     if (!student) return NextResponse.json({ error: 'Mã học sinh không đúng.' }, { status: 401 })
     

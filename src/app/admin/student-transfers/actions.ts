@@ -91,13 +91,13 @@ export async function getClassesByCampusAndYearAction(campusId: string, academic
 
   // Fetch all teachers to map homeroomTeacherId to name
   const teachers = await prisma.teacher.findMany({
-    select: { userId: true, teacherName: true }
+    select: { id: true, teacherName: true }
   })
   
   const teacherMap = {}
   teachers.forEach(t => {
-    if (t.userId) {
-      teacherMap[t.userId.trim()] = t.teacherName
+    if (t.id) {
+      teacherMap[t.id.trim()] = t.teacherName
     }
   })
 
@@ -580,8 +580,11 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
       if (!studentCode) {
         throw new Error("Mã học sinh không được để trống!");
       }
-      const existing = await tx.student.findUnique({
-        where: { studentCode }
+      const existing = await tx.student.findFirst({
+        where: { 
+          studentCode,
+          academicYearId: data.academicYearId
+        }
       });
       if (existing) {
         throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức!`);

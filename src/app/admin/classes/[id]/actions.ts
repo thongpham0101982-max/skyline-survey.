@@ -95,7 +95,12 @@ export async function addStudentAction(classId: string, data: any) {
     }
 
     // Check duplicate studentCode
-    const existing = await prisma.student.findUnique({ where: { studentCode } })
+    const existing = await prisma.student.findFirst({ 
+      where: { 
+        studentCode,
+        academicYearId: cls.academicYearId
+      } 
+    })
     if (existing) {
       return { success: false, error: `Mã học sinh '${studentCode}' đã tồn tại trong hệ thống. Vui lòng nhập mã khác!` }
     }
@@ -136,13 +141,21 @@ export async function updateStudentAction(classId: string, studentId: string, da
       return { success: false, error: "Mã học sinh không được để trống!" }
     }
 
+    const oldStudent = await prisma.student.findUnique({ where: { id: studentId } })
+    if (!oldStudent) {
+      return { success: false, error: "Học sinh không tồn tại!" }
+    }
+
     // Check if another student has this code
-    const existing = await prisma.student.findUnique({ where: { studentCode } })
+    const existing = await prisma.student.findFirst({ 
+      where: { 
+        studentCode,
+        academicYearId: oldStudent.academicYearId
+      } 
+    })
     if (existing && existing.id !== studentId) {
       return { success: false, error: `Mã học sinh '${studentCode}' đã tồn tại trên một học sinh khác!` }
     }
-
-    const oldStudent = await prisma.student.findUnique({ where: { id: studentId } })
     await prisma.student.update({
       where: { id: studentId },
       data: {

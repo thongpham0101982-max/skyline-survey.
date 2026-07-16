@@ -64,8 +64,9 @@ export async function POST(req: NextRequest) {
       }
 
       // Find student ID
-      const student = await prisma.student.findUnique({
-        where: { studentCode }
+      const student = await prisma.student.findFirst({
+        where: { studentCode },
+        orderBy: { academicYear: { startDate: 'desc' } }
       })
 
       if (!student) {

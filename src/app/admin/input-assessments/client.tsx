@@ -315,32 +315,51 @@ const renderTemplate = (template, student) => {
 
 
 
-const danangData: Record<string, string[]> = {
-  "Quận Hải Châu": ["Hòa Cường Bắc", "Hòa Cường Nam", "Hòa Thuận Đông", "Hòa Thuận Tây", "Bình Thuận", "Bình Hiên", "Nam Dương", "Phước Ninh", "Thạch Thang", "Thanh Bình", "Thuận Phước", "Hải Châu I", "Hải Châu II"],
-  "Quận Thanh Khê": ["An Khê", "Hòa Khê", "Tam Thuận", "Thanh Khê Đông", "Thanh Khê Tây", "Xuân Hà", "Tân Chính", "Chính Gián", "Vĩnh Trung", "Thạc Gián"],
-  "Quận Sơn Trà": ["An Hải Bắc", "An Hải Đông", "An Hải Tây", "Mân Thái", "Nại Hiên Đông", "Phước Mỹ", "Thọ Quang"],
-  "Quận Ngũ Hành Sơn": ["Mỹ An", "Khuê Mỹ", "Hòa Quý", "Hòa Hải"],
-  "Quận Liên Chiểu": ["Hòa Minh", "Hòa Khánh Bắc", "Hòa Khánh Nam", "Hòa Hiệp Bắc", "Hòa Hiệp Nam"],
-  "Quận Cẩm Lệ": ["Khuê Trung", "Hòa Thọ Đông", "Hòa Thọ Tây", "Hòa An", "Hòa Phát", "Hòa Xuân"],
-  "Huyện Hòa Vang": ["Hòa Bắc", "Hòa Liên", "Hòa Ninh", "Hòa Sơn", "Hòa Nhơn", "Hòa Phú", "Hòa Khương", "Hòa Phong", "Hòa Tiến", "Hòa Châu", "Hòa Phước"]
-};
+const danangWards = [
+  "Hòa Cường Bắc", "Hòa Cường Nam", "Hòa Thuận Đông", "Hòa Thuận Tây", "Bình Thuận", "Bình Hiên", "Nam Dương", "Phước Ninh", "Thạch Thang", "Thanh Bình", "Thuận Phước", "Hải Châu I", "Hải Châu II",
+  "An Khê", "Hòa Khê", "Tam Thuận", "Thanh Khê Đông", "Thanh Khê Tây", "Xuân Hà", "Tân Chính", "Chính Gián", "Vĩnh Trung", "Thạc Gián",
+  "An Hải Bắc", "An Hải Đông", "An Hải Tây", "Mân Thái", "Nại Hiên Đông", "Phước Mỹ", "Thọ Quang",
+  "Mỹ An", "Khuê Mỹ", "Hòa Quý", "Hòa Hải",
+  "Hòa Minh", "Hòa Khánh Bắc", "Hòa Khánh Nam", "Hòa Hiệp Bắc", "Hòa Hiệp Nam",
+  "Khuê Trung", "Hòa Thọ Đông", "Hòa Thọ Tây", "Hòa An", "Hòa Phát", "Hòa Xuân",
+  "Hòa Bắc", "Hòa Liên", "Hòa Ninh", "Hòa Sơn", "Hòa Nhơn", "Hòa Phú", "Hòa Khương", "Hòa Phong", "Hòa Tiến", "Hòa Châu", "Hòa Phước"
+].sort();
 
 const vietnamProvinces = [
-  "Quảng Nam", "Thừa Thiên Huế", "Quảng Trị", "Quảng Bình", "Hà Nội", "TP Hồ Chí Minh",
-  "Bình Định", "Quảng Ngãi", "Kon Tum", "Gia Lai", "Đắk Lắk", "Đắk Nông", "Lâm Đồng",
-  "Khánh Hòa", "Phú Yên", "Ninh Thuận", "Bình Thuận", "Bà Rịa - Vũng Tàu", "Đồng Nai",
-  "Bình Dương", "Long An", "Tiền Giang", "Bến Tre", "Trà Vinh", "Vĩnh Long", "Đồng Tháp",
-  "An Giang", "Kiên Giang", "Cần Thơ", "Hậu Giang", "Sóc Trăng", "Bạc Liêu", "Cà Mau",
-  "Hải Phòng", "Đà Nẵng", "Nghệ An", "Thanh Hóa", "Hà Tĩnh", "Hải Dương", "Hưng Yên",
-  "Thái Bình", "Nam Định", "Ninh Bình", "Hà Nam", "Vĩnh Phúc", "Bắc Ninh", "Quảng Ninh",
-  "Thái Nguyên", "Phú Thọ", "Bắc Giang", "Tuyên Quang", "Hòa Bình", "Yên Bái", "Lạng Sơn",
-  "Cao Bằng", "Hà Giang", "Sơn La", "Điện Biên", "Lai Châu", "Lào Cai", "Bắc Kạn"
+  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định", 
+  "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau", "Cần Thơ", "Cao Bằng", "Đà Nẵng", "Đắk Lắk", 
+  "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", 
+  "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", 
+  "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An", 
+  "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", 
+  "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", 
+  "Tiền Giang", "TP Hồ Chí Minh", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
 ].sort();
 
 const worldCountries = [
-  "Mỹ", "Anh", "Úc", "Canada", "Pháp", "Đức", "Nhật Bản", "Hàn Quốc",
-  "Singapore", "Trung Quốc", "Đài Loan", "Hồng Kông", "Thái Lan", "Malaysia", "Philippines",
-  "Nga", "Ý", "Tây Ban Nha", "Thụy Sĩ", "Thụy Điển", "Phần Lan", "Đan Mạch", "New Zealand"
+  "Afghanistan", "Ai Cập", "Albania", "Algeria", "Andorra", "Angola", "Anh", "Antigua và Barbuda", "Áo", 
+  "Argentina", "Armenia", "Azerbaijan", "Ấn Độ", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Bắc Macedonia", 
+  "Bạch Nga (Belarus)", "Bỉ", "Belize", "Benin", "Bhutan", "Bồ Đào Nha", "Bolivia", "Bosnia và Herzegovina", 
+  "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Các Tiểu vương quốc Ả Rập Thống nhất (UAE)", 
+  "Cameroon", "Campuchia", "Canada", "Chile", "Colombia", "Comoros", "Cộng hòa Congo", "Cộng hòa Dân chủ Congo", 
+  "Cộng hòa Dominica", "Cộng hòa Séc", "Cộng hòa Trung Phi", "Costa Rica", "Croatia", "Cuba", "Djibouti", 
+  "Dominica", "Đan Mạch", "Đông Timor", "Đức", "Ecuador", "El Salvador", "Eritrea", "Estonia", "Eswatini", 
+  "Ethiopia", "Fiji", "Gabon", "Gambia", "Georgia", "Ghana", "Grenada", "Guatemala", "Guinea", 
+  "Guinea-Bissau", "Equatorial Guinea", "Guyana", "Hà Lan", "Haiti", "Hàn Quốc", "Hoa Kỳ (Mỹ)", "Honduras", 
+  "Hungary", "Hy Lạp", "Iceland", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Jamaica", 
+  "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Lào", "Latvia", "Lebanon", 
+  "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", 
+  "Maldives", "Mali", "Malta", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", 
+  "Mông Cổ", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nam Phi", "Nam Sudan", 
+  "Nepal", "New Zealand", "Nga", "Nhật Bản", "Nicaragua", "Niger", "Nigeria", "Na Uy", "Oman", 
+  "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Pháp", "Phần Lan", 
+  "Philippines", "Poland (Ba Lan)", "Qatar", "Romania", "Rwanda", "Saint Kitts và Nevis", "Saint Lucia", 
+  "Saint Vincent và Grenadines", "Samoa", "San Marino", "Sao Tome và Principe", "Saudi Arabia (Ả Rập Xê Út)", 
+  "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", 
+  "Somalia", "Sri Lanka", "Sudan", "Suriname", "Thụy Điển", "Thụy Sĩ", "Syria", "Tajikistan", 
+  "Tanzania", "Tây Ban Nha", "Chad", "Thái Lan", "Togo", "Tonga", "Trinidad và Tobago", "Tunisia", 
+  "Thổ Nhĩ Kỳ", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "Uruguay", "Uzbekistan", "Vanuatu", 
+  "Vatican", "Venezuela", "Việt Nam", "Ý (Italy)", "Yemen", "Zambia", "Zimbabwe", "Đài Loan", "Hồng Kông"
 ].sort();
 
 // ========= MAIN =========
@@ -2787,21 +2806,22 @@ ${reportForm.directorNote}`;
           setSchoolTypeInput(sType);
           setSelectedLocationType(locType as any);
           
-          if (locType === "Nội tỉnh") {
+                    if (locType === "Nội tỉnh") {
             const parts = locDetail.split(" - ");
-            if (parts.length > 1) {
-              setSelectedDistrict(parts[0].trim());
-              setSelectedWard(parts[1].trim());
-            } else {
-              setSelectedDistrict("");
-              setSelectedWard(locDetail.trim());
-            }
+            setSelectedDistrict("");
+            setSelectedWard(parts[parts.length - 1].trim());
             setSelectedProvince("");
             setSelectedCountry("");
           } else if (locType === "Ngoại tỉnh") {
-            setSelectedProvince(locDetail.trim());
+            const parts = locDetail.split(" - ");
+            if (parts.length > 1) {
+              setSelectedWard(parts[0].trim());
+              setSelectedProvince(parts[1].trim());
+            } else {
+              setSelectedWard("");
+              setSelectedProvince(locDetail.trim());
+            }
             setSelectedDistrict("");
-            setSelectedWard("");
             setSelectedCountry("");
           } else if (locType === "Nước ngoài") {
             setSelectedCountry(locDetail.trim());
@@ -2856,16 +2876,16 @@ ${reportForm.directorNote}`;
     }
   }, [sModal, editS]);
 
-  // Update sForm when location inputs change
+    // Update sForm when location inputs change
   useEffect(() => {
     if (!sModal) return;
     
     if (selectedLocationType) {
       let locDetail = "";
       if (selectedLocationType === "Nội tỉnh") {
-        locDetail = selectedDistrict ? `${selectedDistrict} - ${selectedWard}` : selectedWard;
+        locDetail = selectedWard;
       } else if (selectedLocationType === "Ngoại tỉnh") {
-        locDetail = selectedProvince;
+        locDetail = selectedWard ? `${selectedWard} - ${selectedProvince}` : selectedProvince;
       } else if (selectedLocationType === "Nước ngoài") {
         locDetail = selectedCountry;
       }
@@ -2876,8 +2896,8 @@ ${reportForm.directorNote}`;
       setSForm(prev => {
         const cityName = selectedLocationType === "Nội tỉnh" ? "TP Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : "");
         const countryName = selectedLocationType === "Nước ngoài" ? selectedCountry : "Việt Nam";
-        const districtName = selectedLocationType === "Nội tỉnh" ? selectedDistrict : "";
-        const wardName = selectedLocationType === "Nội tỉnh" ? selectedWard : "";
+        const districtName = "";
+        const wardName = (selectedLocationType === "Nội tỉnh" || selectedLocationType === "Ngoại tỉnh") ? selectedWard : "";
         
         return {
           ...prev,
@@ -6740,68 +6760,50 @@ return {
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                      {selectedLocationType === "Nội tỉnh" && (
-                       <>
-                         <div>
-                           <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố</label>
-                           <input
-                             disabled
-                             type="text"
-                             value="TP Đà Nẵng"
-                             className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-slate-500 text-xs font-semibold rounded-xl outline-none cursor-not-allowed"
-                           />
-                         </div>
-                         <div className="grid grid-cols-2 gap-4">
-                           <div>
-                             <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quận / Huyện *</label>
-                             <select
-                               required
-                               value={selectedDistrict}
-                               onChange={(e) => {
-                                 setSelectedDistrict(e.target.value);
-                                 setSelectedWard("");
-                               }}
-                               className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                             >
-                               <option value="">-- Chọn Quận/Huyện --</option>
-                               {Object.keys(danangData).map((d) => (
-                                 <option key={d} value={d}>{d}</option>
-                               ))}
-                             </select>
-                           </div>
-                           <div>
-                             <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
-                             <select
-                               required
-                               disabled={!selectedDistrict}
-                               value={selectedWard}
-                               onChange={(e) => setSelectedWard(e.target.value)}
-                               className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer disabled:bg-slate-50 disabled:cursor-not-allowed"
-                             >
-                               <option value="">-- Chọn Phường/Xã --</option>
-                               {selectedDistrict && danangData[selectedDistrict]?.map((w) => (
-                                 <option key={w} value={w}>{w}</option>
-                               ))}
-                             </select>
-                           </div>
-                         </div>
-                       </>
-                     )}
-
-                     {selectedLocationType === "Ngoại tỉnh" && (
                        <div className="col-span-2 md:col-span-1">
-                         <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                         <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
                          <select
                            required
-                           value={selectedProvince}
-                           onChange={(e) => setSelectedProvince(e.target.value)}
+                           value={selectedWard}
+                           onChange={(e) => setSelectedWard(e.target.value)}
                            className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                          >
-                           <option value="">-- Chọn Tỉnh/Thành --</option>
-                           {vietnamProvinces.map((p) => (
-                             <option key={p} value={p}>{p}</option>
+                           <option value="">-- Chọn Phường/Xã --</option>
+                           {danangWards.map((w) => (
+                             <option key={w} value={w}>{w}</option>
                            ))}
                          </select>
                        </div>
+                     )}
+
+                     {selectedLocationType === "Ngoại tỉnh" && (
+                       <>
+                         <div>
+                           <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
+                           <input
+                             required
+                             type="text"
+                             value={selectedWard}
+                             onChange={(e) => setSelectedWard(e.target.value)}
+                             placeholder="Nhập Phường / Xã"
+                             className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                           <select
+                             required
+                             value={selectedProvince}
+                             onChange={(e) => setSelectedProvince(e.target.value)}
+                             className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                           >
+                             <option value="">-- Chọn Tỉnh/Thành --</option>
+                             {vietnamProvinces.map((p) => (
+                               <option key={p} value={p}>{p}</option>
+                             ))}
+                           </select>
+                         </div>
+                       </>
                      )}
 
                      {selectedLocationType === "Nước ngoài" && (

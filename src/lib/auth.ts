@@ -77,16 +77,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         }
 
-        // 4. Student Code Match
+        // 4. Student Code Match (Note: Students currently login via separate endpoint, this is kept for compatibility)
         if (!user) {
-          const student = await prisma.student.findUnique({
+          const student = await prisma.student.findFirst({
             where: { studentCode: identifier },
-            include: { user: true }
+            orderBy: { academicYear: { startDate: 'desc' } }
           })
-          if (student?.user) {
-            user = student.user
-            console.log('[AUTH] User found via Student Code:', identifier)
-          }
+          // Student has no user relation in current schema
         }
 
         if (!user) {
