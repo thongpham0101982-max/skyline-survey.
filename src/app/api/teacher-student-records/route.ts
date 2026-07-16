@@ -418,6 +418,7 @@ export async function GET(req: Request) {
 
     if (action === "getStudentRecord") {
       const studentId = searchParams.get("studentId")
+      const academicYearId = searchParams.get("academicYearId")
       if (!studentId) return NextResponse.json({ error: "Missing studentId" }, { status: 400 })
 
       const student = await prisma.student.findUnique({
