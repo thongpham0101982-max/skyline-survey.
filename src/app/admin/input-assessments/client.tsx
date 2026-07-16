@@ -1172,104 +1172,7 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
 
-  // ───────── TRANSFER SYSTEM STATES ─────────
-  const [transferCampusId, setTransferCampusId] = useState("");
-  const [transferClassId, setTransferClassId] = useState("");
-  const [transferStudents, setTransferStudents] = useState<any[]>([]);
-  const [transferStudentsLoading, setTransferStudentsLoading] = useState(false);
-  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
-  const [allClasses, setAllClasses] = useState<any[]>([]);
-  const [allClassesLoading, setAllClassesLoading] = useState(false);
-  const [targetSystem, setTargetSystem] = useState("");
-  const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
-  const selectedFormPeriod = useMemo(() => {
-    const pId = sForm.periodId || sPeriodId || "";
-    return periods.find(p => p.id === pId);
-  }, [sForm.periodId, sPeriodId, periods]);
-
-  const isChuyenHe = useMemo(() => {
-    if (!selectedFormPeriod) return false;
-    const name = selectedFormPeriod.name?.toLowerCase() || "";
-    return name.includes("chuyển hệ") || name.includes("chuyenhe") || name.includes("chuyen he");
-  }, [selectedFormPeriod]);
-
-  const activeFormBatches = useMemo(() => {
-    return (selectedFormPeriod?.batches || []).filter((b: any) => b.status === "ACTIVE");
-  }, [selectedFormPeriod]);
-
-
-  const filteredClasses = useMemo(() => {
-    if (!transferCampusId) return [];
-    return allClasses.filter(c => c.campusId === transferCampusId);
-  }, [allClasses, transferCampusId]);
-
-  const selectedClassObj = useMemo(() => {
-    return allClasses.find(c => c.id === transferClassId);
-  }, [allClasses, transferClassId]);
-
-  const filteredTransferStudents = useMemo(() => {
-    if (!studentSearchQuery.trim()) return transferStudents;
-    const q = studentSearchQuery.toLowerCase();
-    return transferStudents.filter(s => 
-      s.studentName?.toLowerCase().includes(q) || 
-      s.studentCode?.toLowerCase().includes(q)
-    );
-  }, [transferStudents, studentSearchQuery]);
-
-  // Sync modal states
-  useEffect(() => {
-    if (sModal) {
-      if (!editS) {
-        setTransferCampusId("");
-        setTransferClassId("");
-        setTransferStudents([]);
-        setSelectedStudentIds([]);
-        setTargetSystem("");
-      } else {
-        setTargetSystem(sForm.surveyFormType || "");
-      }
-    }
-  }, [sModal, editS]);
-
-  // Fetch classes for active academic year when modal is open and isChuyenHe is true
-  useEffect(() => {
-    if (sModal && isChuyenHe && allClasses.length === 0 && !allClassesLoading) {
-      setAllClassesLoading(true);
-      fetch("/api/classes")
-        .then(res => res.json())
-        .then(data => {
-          setAllClasses(data || []);
-          setAllClassesLoading(false);
-        })
-        .catch(err => {
-          console.error("Lỗi fetch lớp:", err);
-          setAllClassesLoading(false);
-        });
-    }
-  }, [sModal, isChuyenHe, allClasses.length, allClassesLoading]);
-
-  // Fetch students when transferClassId is selected
-  useEffect(() => {
-    if (transferClassId) {
-      setTransferStudentsLoading(true);
-      setTransferStudents([]);
-      setSelectedStudentIds([]);
-      fetch(`/api/student-transfers/assessment-students?classId=${transferClassId}`)
-        .then(res => res.json())
-        .then(data => {
-          setTransferStudents(data.students || []);
-          setTransferStudentsLoading(false);
-        })
-        .catch(err => {
-          console.error("Lỗi fetch học sinh của lớp:", err);
-          setTransferStudentsLoading(false);
-        });
-    } else {
-      setTransferStudents([]);
-      setSelectedStudentIds([]);
-    }
-  }, [transferClassId]);
   const [sSelected, setSSelected] = useState<string[]>([])
 
   // ───────── REPORTS STATE ─────────
@@ -2881,6 +2784,105 @@ ${reportForm.directorNote}`;
   const [schoolNameInput, setSchoolNameInput] = useState<string>("");
   const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
   const [originalKqgd, setOriginalKqgd] = useState<string>("");
+
+// ───────── TRANSFER SYSTEM STATES ─────────
+  const [transferCampusId, setTransferCampusId] = useState("");
+  const [transferClassId, setTransferClassId] = useState("");
+  const [transferStudents, setTransferStudents] = useState<any[]>([]);
+  const [transferStudentsLoading, setTransferStudentsLoading] = useState(false);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
+  const [allClasses, setAllClasses] = useState<any[]>([]);
+  const [allClassesLoading, setAllClassesLoading] = useState(false);
+  const [targetSystem, setTargetSystem] = useState("");
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+
+  const selectedFormPeriod = useMemo(() => {
+    const pId = sForm.periodId || sPeriodId || "";
+    return periods.find(p => p.id === pId);
+  }, [sForm.periodId, sPeriodId, periods]);
+
+  const isChuyenHe = useMemo(() => {
+    if (!selectedFormPeriod) return false;
+    const name = selectedFormPeriod.name?.toLowerCase() || "";
+    return name.includes("chuyển hệ") || name.includes("chuyenhe") || name.includes("chuyen he");
+  }, [selectedFormPeriod]);
+
+  const activeFormBatches = useMemo(() => {
+    return (selectedFormPeriod?.batches || []).filter((b: any) => b.status === "ACTIVE");
+  }, [selectedFormPeriod]);
+
+
+  const filteredClasses = useMemo(() => {
+    if (!transferCampusId) return [];
+    return allClasses.filter(c => c.campusId === transferCampusId);
+  }, [allClasses, transferCampusId]);
+
+  const selectedClassObj = useMemo(() => {
+    return allClasses.find(c => c.id === transferClassId);
+  }, [allClasses, transferClassId]);
+
+  const filteredTransferStudents = useMemo(() => {
+    if (!studentSearchQuery.trim()) return transferStudents;
+    const q = studentSearchQuery.toLowerCase();
+    return transferStudents.filter(s => 
+      s.studentName?.toLowerCase().includes(q) || 
+      s.studentCode?.toLowerCase().includes(q)
+    );
+  }, [transferStudents, studentSearchQuery]);
+
+  // Sync modal states
+  useEffect(() => {
+    if (sModal) {
+      if (!editS) {
+        setTransferCampusId("");
+        setTransferClassId("");
+        setTransferStudents([]);
+        setSelectedStudentIds([]);
+        setTargetSystem("");
+      } else {
+        setTargetSystem(sForm.surveyFormType || "");
+      }
+    }
+  }, [sModal, editS]);
+
+  // Fetch classes for active academic year when modal is open and isChuyenHe is true
+  useEffect(() => {
+    if (sModal && isChuyenHe && allClasses.length === 0 && !allClassesLoading) {
+      setAllClassesLoading(true);
+      fetch("/api/classes")
+        .then(res => res.json())
+        .then(data => {
+          setAllClasses(data || []);
+          setAllClassesLoading(false);
+        })
+        .catch(err => {
+          console.error("Lỗi fetch lớp:", err);
+          setAllClassesLoading(false);
+        });
+    }
+  }, [sModal, isChuyenHe, allClasses.length, allClassesLoading]);
+
+  // Fetch students when transferClassId is selected
+  useEffect(() => {
+    if (transferClassId) {
+      setTransferStudentsLoading(true);
+      setTransferStudents([]);
+      setSelectedStudentIds([]);
+      fetch(`/api/student-transfers/assessment-students?classId=${transferClassId}`)
+        .then(res => res.json())
+        .then(data => {
+          setTransferStudents(data.students || []);
+          setTransferStudentsLoading(false);
+        })
+        .catch(err => {
+          console.error("Lỗi fetch học sinh của lớp:", err);
+          setTransferStudentsLoading(false);
+        });
+    } else {
+      setTransferStudents([]);
+      setSelectedStudentIds([]);
+    }
+  }, [transferClassId]);
 
   // Sync selectedLocationType when targetType changes
   useEffect(() => {
