@@ -134,7 +134,21 @@ function Badge({ s }: { s: string }) {
 
 function ConfirmDialog({ open, onClose, onConfirm, message }: any) {
   if (!open) return null;
-  return <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/50 backdrop-blur-sm"><div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-sm text-center animate-in zoom-in-95 duration-200"><div className="w-14 h-14 flex items-center justify-center mx-auto mb-4 text-xs font-semibold"><AlertCircle className="w-7 h-7 text-rose-500" /></div><p className="font-black text-slate-800 text-base mb-6">{message}</p><div className="flex gap-3"><button onClick={onClose} className="flex-1 py-3 bg-slate-100 text-slate-600 font-black rounded-none hover:bg-slate-200 transition-all">Hủy</button><button onClick={() => { onConfirm(); onClose(); }} className="flex-1 text-white font-black hover:bg-rose-600 transition-all text-xs font-semibold">Xác nhận</button></div></div></div>;
+  return (
+    <div className="fixed inset-0 z-[9998] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose}/>
+      <div className="relative bg-white rounded-[28px] border border-slate-100 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.15)] p-7 max-w-[360px] w-full text-center animate-in zoom-in-95 duration-300">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"><X className="w-4 h-4" /></button>
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 border-4 border-rose-100/40 text-rose-500 flex items-center justify-center mx-auto mb-5 shadow-sm"><Trash2 className="w-6 h-6" /></div>
+        <h3 className="text-base font-black text-slate-800 tracking-tight mb-2">Xác nhận xóa</h3>
+        <p className="text-xs text-slate-500 font-semibold leading-relaxed mb-6 px-1">{message}</p>
+        <div className="flex gap-3">
+          <button onClick={onClose} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.97]">Hủy</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>Xóa</button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function Modal({ open, onClose, title, children, footer, size = "md" }: any) {

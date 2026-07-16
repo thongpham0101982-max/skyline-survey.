@@ -118,17 +118,16 @@ function Modal({ open, onClose, title, size="md", children, footer }: {
 function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; onClose:()=>void; onConfirm:()=>void; message:string }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose}/>
-      <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center animate-in zoom-in-95 duration-200">
-        <div className="w-14 h-14 flex items-center justify-center mx-auto mb-4 text-xs font-semibold">
-          <AlertCircle className="w-7 h-7 text-rose-600"/>
-        </div>
-        <h3 className="text-base font-black text-slate-800 mb-2">Xác nhận xóa</h3>
-        <p className="text-sm text-slate-500 mb-6">{message}</p>
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-md" onClick={onClose}/>
+      <div className="relative bg-white rounded-[28px] border border-slate-100 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.15)] p-7 max-w-[360px] w-full text-center animate-in zoom-in-95 duration-300">
+        <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"><X className="w-4 h-4" /></button>
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 border-4 border-rose-100/40 text-rose-500 flex items-center justify-center mx-auto mb-5 shadow-sm"><Trash2 className="w-6 h-6" /></div>
+        <h3 className="text-base font-black text-slate-800 tracking-tight mb-2">Xác nhận xóa</h3>
+        <p className="text-xs text-slate-500 font-semibold leading-relaxed mb-6 px-1">{message}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors text-xs font-semibold">Hủy</button>
-          <button onClick={()=>{onConfirm(); onClose()}} className="flex-1 text-white text-sm font-bold hover:bg-rose-700 shadow-lg shadow-rose-100 transition-all text-xs font-semibold">Xóa</button>
+          <button onClick={onClose} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.97]">Hủy</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>Xóa</button>
         </div>
       </div>
     </div>
