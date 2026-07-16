@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState, useEffect } from "react"
 import { 
@@ -471,34 +471,102 @@ export default function TeacherStudentProfilePage() {
                                       </table>
                                     </div>
                                   </div>
-                                ) : (
-                                  <div className="space-y-4">
-                                    <h5 className="text-xs font-black text-slate-700">Điểm số các môn khảo sát:</h5>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Toán</div>
-                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.mathScore ?? "N/A"}</div>
+                                ) : (() => {
+                                  const survey = profileData.entranceSurvey
+                                  let mathVal: any = survey.mathScore
+                                  let litVal: any = survey.literatureScore
+                                  let writtenVal: any = survey.writtenEnglishScore
+                                  let oralVal: any = survey.oralEnglishScore
+                                  let psychVal: any = survey.psychologyScore
+                                  let oralComment = ""
+                                  let psychConclusion = ""
+                                  ;(survey.scores || []).forEach((sc: any) => {
+                                    const sName = (sc.subjectName || "").toLowerCase().normalize("NFC")
+                                    const scoresArr: any[] = Array.isArray(sc.scores) ? sc.scores : []
+                                    const scoreVal = scoresArr.find((x: any) => x !== undefined && x !== null && x !== "")
+                                    const commentsArr: any[] = Array.isArray(sc.comments) ? sc.comments : []
+                                    if (sName.includes("toán") || sName.includes("math")) {
+                                      if (scoreVal !== undefined) mathVal = scoreVal
+                                    } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn")) {
+                                      if (scoreVal !== undefined) litVal = scoreVal
+                                    } else if (sName.includes("tiếng anh")) {
+                                      if (sName.includes("viết") || sName.includes("written")) {
+                                        if (scoreVal !== undefined) writtenVal = scoreVal
+                                      } else if (sName.includes("vấn đáp") || sName.includes("nói") || sName.includes("oral")) {
+                                        if (scoreVal !== undefined) oralVal = scoreVal
+                                        oralComment = commentsArr[0] || ""
+                                      }
+                                    } else if (sName.includes("tâm lý")) {
+                                      const total = scoresArr.reduce((s: number, v: any) => s + (parseFloat(v) || 0), 0)
+                                      psychVal = total
+                                      psychConclusion = commentsArr[0] || ""
+                                    }
+                                  })
+                                  const isGrade1 = (() => { const m = String(survey.className || survey.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
+                                  const writtenDisplay = writtenVal !== null && writtenVal !== undefined ? (isGrade1 ? `${writtenVal}` : `${writtenVal}/70`) : "—"
+                                  const oralDisplay = oralVal !== null && oralVal !== undefined ? (isGrade1 ? `${oralVal}` : `${oralVal}/30`) : "—"
+                                  const wNum = parseFloat(writtenVal), oNum = parseFloat(oralVal)
+                                  const totalEnglish = (!isGrade1 && (!isNaN(wNum) || !isNaN(oNum))) ? (isNaN(wNum) ? 0 : wNum) + (isNaN(oNum) ? 0 : oNum) : null
+                                  let psychLabel = ""; let psychClass = "bg-slate-50 border-slate-200 text-slate-700"
+                                  if (psychVal !== null && psychVal !== undefined) {
+                                    const pn = parseFloat(psychVal)
+                                    if (!isNaN(pn)) {
+                                      if (pn <= 15) { psychLabel = "Bình thường"; psychClass = "bg-teal-50 border-teal-200 text-teal-700" }
+                                      else if (pn <= 31) { psychLabel = "Dấu hiệu nhẹ"; psychClass = "bg-amber-50 border-amber-200 text-amber-700" }
+                                      else if (pn <= 47) { psychLabel = "Dấu hiệu vừa"; psychClass = "bg-orange-50 border-orange-200 text-orange-700" }
+                                      else { psychLabel = "Nguy cơ cao"; psychClass = "bg-rose-50 border-rose-200 text-rose-700" }
+                                    }
+                                  }
+                                  return (
+                                    <div className="space-y-4">
+                                      <h5 className="text-xs font-black text-slate-700">Điểm số các môn khảo sát:</h5>
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                        <div className="bg-[#00A99D]/5 border border-[#00A99D]/20 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-[#00A99D] font-bold uppercase tracking-wider">Toán</div>
+                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
+                                          <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
+                                        </div>
+                                        <div className="bg-indigo-50/30 border border-indigo-100 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">Ngữ văn</div>
+                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{litVal !== null && litVal !== undefined ? litVal : "—"}</div>
+                                          <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
+                                        </div>
+                                        <div className="bg-sky-50/30 border border-sky-100 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Anh viết</div>
+                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{writtenDisplay}</div>
+                                          <div className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 70"}</div>
+                                        </div>
+                                        <div className="bg-sky-50/20 border border-sky-100/60 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Anh nói</div>
+                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{oralDisplay}</div>
+                                          <div className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 30"}</div>
+                                        </div>
                                       </div>
-                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Văn</div>
-                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.literatureScore ?? "N/A"}</div>
-                                      </div>
-                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Anh viết</div>
-                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.writtenEnglishScore ?? "N/A"}</div>
-                                      </div>
-                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Anh nói</div>
-                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.oralEnglishScore ?? "N/A"}</div>
+                                      {totalEnglish !== null && (
+                                        <div className="bg-gradient-to-r from-indigo-50 to-sky-50 p-3 rounded-xl border border-indigo-100 text-center">
+                                          <span className="text-xs text-indigo-600 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh: </span>
+                                          <span className="text-sm font-extrabold text-indigo-700">{totalEnglish}/100</span>
+                                        </div>
+                                      )}
+                                      {oralComment && (
+                                        <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                                          <div className="text-[10px] font-black text-sky-700 uppercase tracking-wider mb-1">Nhận xét Tiếng Anh Nói</div>
+                                          <p className="text-xs text-slate-600 font-semibold leading-relaxed italic">"{oralComment}"</p>
+                                        </div>
+                                      )}
+                                      <div className={`text-xs font-semibold space-y-1 p-3 rounded-xl border ${psychClass}`}>
+                                        <div className="flex items-center gap-2">
+                                          <span>• Đánh giá tâm lý:</span>
+                                          <span className="font-extrabold">{psychVal !== null && psychVal !== undefined ? psychVal : "Chưa có"}</span>
+                                          {psychLabel && <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${psychClass}`}>{psychLabel}</span>}
+                                        </div>
+                                        {psychConclusion && <div className="pl-3 italic opacity-80">→ {psychConclusion}</div>}
+                                        <div>• Kết quả học tập cấp trước: <span className="font-extrabold text-slate-800">{survey.kqHocTap ?? "—"}</span></div>
+                                        <div>• Kết quả rèn luyện cấp trước: <span className="font-extrabold text-slate-800">{survey.kqRenLuyen ?? "—"}</span></div>
                                       </div>
                                     </div>
-                                    <div className="text-xs text-slate-500 font-semibold space-y-1 mt-2">
-                                      <div>• Đánh giá tâm lý học sinh: <span className="font-bold text-slate-800">{profileData.entranceSurvey.psychologyScore ?? "N/A"}</span></div>
-                                      <div>• Kết quả học tập cấp trước: <span className="font-bold text-slate-800">{profileData.entranceSurvey.kqHocTap ?? "N/A"}</span></div>
-                                      <div>• Kết quả rèn luyện cấp trước: <span className="font-bold text-slate-800">{profileData.entranceSurvey.kqRenLuyen ?? "N/A"}</span></div>
-                                    </div>
-                                  </div>
-                                )}
+                                  )
+                                })()}
                               </div>
                             )}
 
