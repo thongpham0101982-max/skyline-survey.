@@ -275,15 +275,15 @@ export function StudentInfoClient({
   const [targetSystem, setTargetSystem] = useState("");
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
-  const selectedPeriod = useMemo(() => {
+  const selectedFormPeriod = useMemo(() => {
     return [...generalPeriods, ...preschoolPeriods].find(p => p.id === formState.periodId);
   }, [formState.periodId, generalPeriods, preschoolPeriods]);
 
   const isChuyenHe = useMemo(() => {
-    if (!selectedPeriod) return false;
-    const name = selectedPeriod.name?.toLowerCase() || "";
+    if (!selectedFormPeriod) return false;
+    const name = selectedFormPeriod.name?.toLowerCase() || "";
     return name.includes("chuyển hệ") || name.includes("chuyenhe") || name.includes("chuyen he");
-  }, [selectedPeriod]);
+  }, [selectedFormPeriod]);
 
   const filteredTransferStudents = useMemo(() => {
     if (!studentSearchQuery.trim()) return transferStudents;
