@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
@@ -45,9 +45,12 @@ export async function GET(req: Request) {
       })))
 
       // Batch query to find if students were admitted via entrance survey
+      // Strategy: match by code first, then fallback by DOB+Name for students whose survey code differs from official code
       const studentCodes = students.map(s => s.studentCode).filter(Boolean)
-      
-      const k12Candidates = await prisma.inputAssessmentStudent.findMany({
+      const studentDOBs = students.map(s => s.dateOfBirth).filter(Boolean)
+
+      // Code-based match
+      const k12ByCode = await prisma.inputAssessmentStudent.findMany({
         where: {
           OR: [
             { studentCode: { in: studentCodes } },
@@ -57,7 +60,19 @@ export async function GET(req: Request) {
         select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
       })
 
-      const preschoolCandidates = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+      // DOB-based fallback - fetch candidates born on same dates as our students
+      const k12ByDOB = studentDOBs.length > 0 ? await prisma.inputAssessmentStudent.findMany({
+        where: { dateOfBirth: { in: studentDOBs as any[] } },
+        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+      }) : []
+
+      // Merge and deduplicate
+      const k12CandidateMap = new Map<string, any>()
+      ;[...k12ByCode, ...k12ByDOB].forEach(c => k12CandidateMap.set(c.studentCode + '|' + c.fullName, c))
+      const k12Candidates = Array.from(k12CandidateMap.values())
+
+      // Same for preschool
+      const preschoolByCode = await (prisma as any).preschoolInputAssessmentStudent.findMany({
         where: {
           OR: [
             { studentCode: { in: studentCodes } },
@@ -66,20 +81,30 @@ export async function GET(req: Request) {
         },
         select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
       })
+
+      const preschoolByDOB = studentDOBs.length > 0 ? await (prisma as any).preschoolInputAssessmentStudent.findMany({
+        where: { dateOfBirth: { in: studentDOBs } },
+        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+      }) : []
+
+      const preschoolCandidateMap = new Map<string, any>()
+      ;[...preschoolByCode, ...preschoolByDOB].forEach((c: any) => preschoolCandidateMap.set(c.studentCode + '|' + c.fullName, c))
+      const preschoolCandidates = Array.from(preschoolCandidateMap.values())
+
+      const normName = (n: string) => n.trim().toLowerCase().replace(/\s+/g, ' ')
+      const sameTime = (a: any, b: any) => a && b && new Date(a).getTime() === new Date(b).getTime()
 
       const enrichedStudents = students.map(s => {
-        const isK12Candidate = k12Candidates.some(c => 
-          c.studentCode === s.studentCode || 
+        const isK12Candidate = k12Candidates.some(c =>
+          c.studentCode === s.studentCode ||
           c.enrollmentCode === s.studentCode ||
-          (c.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === s.studentName.trim().toLowerCase().replace(/\s+/g, ' ') &&
-           c.dateOfBirth && s.dateOfBirth && new Date(c.dateOfBirth).getTime() === new Date(s.dateOfBirth).getTime())
+          (normName(c.fullName) === normName(s.studentName) && sameTime(c.dateOfBirth, s.dateOfBirth))
         )
 
-        const isPreschoolCandidate = preschoolCandidates.some(c => 
-          c.studentCode === s.studentCode || 
+        const isPreschoolCandidate = preschoolCandidates.some((c: any) =>
+          c.studentCode === s.studentCode ||
           c.enrollmentCode === s.studentCode ||
-          (c.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === s.studentName.trim().toLowerCase().replace(/\s+/g, ' ') &&
-           c.dateOfBirth && s.dateOfBirth && new Date(c.dateOfBirth).getTime() === new Date(s.dateOfBirth).getTime())
+          (normName(c.fullName) === normName(s.studentName) && sameTime(c.dateOfBirth, s.dateOfBirth))
         )
 
         return {
@@ -102,7 +127,7 @@ export async function GET(req: Request) {
         subjectIds = allSubjects
           .filter(s => {
             const name = (s.subjectName || s.name || "").toLowerCase()
-            return name.includes("hướng nghiệp") || name.includes("huong nghiep")
+            return name.includes("hÆ°á»›ng nghiá»‡p") || name.includes("huong nghiep")
           })
           .map(s => s.id)
       }
@@ -171,7 +196,7 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes },
-          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+          admissionResult: { in: ["Äáº¡t cam káº¿t", "Äáº¡t - Cam káº¿t"] }
         },
         select: {
           studentCode: true,
@@ -182,7 +207,7 @@ export async function GET(req: Request) {
 
       const parseCommittedSubjects = (note) => {
         if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        const match = note.match(/MĂ´n cam káº¿t:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
           return match[1].split(",").map(s => s.trim())
         }
@@ -220,7 +245,7 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes },
-          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+          admissionResult: { in: ["Äáº¡t cam káº¿t", "Äáº¡t - Cam káº¿t"] }
         },
         select: {
           studentCode: true,
@@ -231,7 +256,7 @@ export async function GET(req: Request) {
 
       const parseCommittedSubjects = (note) => {
         if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        const match = note.match(/MĂ´n cam káº¿t:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
           return match[1].split(",").map(s => s.trim())
         }
@@ -251,14 +276,14 @@ export async function GET(req: Request) {
             const cleanSub = subName.toLowerCase()
             const hasMatch = committedSubjects.some((cs) => {
               const cleanCS = cs.toLowerCase()
-              if (cleanSub.includes("toán")) {
-                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
+              if (cleanSub.includes("toĂ¡n")) {
+                return cleanCS.includes("mĂ´n toĂ¡n") || cleanCS.includes("toĂ¡n")
               }
-              if (cleanSub.includes("tiếng việt") || cleanSub.includes("ngữ văn") || cleanSub.includes("văn")) {
-                return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
+              if (cleanSub.includes("tiáº¿ng viá»‡t") || cleanSub.includes("ngá»¯ vÄƒn") || cleanSub.includes("vÄƒn")) {
+                return cleanCS.includes("tiáº¿ng viá»‡t") || cleanCS.includes("ngá»¯ vÄƒn") || cleanCS.includes("vÄƒn")
               }
-              if (cleanSub.includes("tiếng anh") || cleanSub.includes("anh")) {
-                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
+              if (cleanSub.includes("tiáº¿ng anh") || cleanSub.includes("anh")) {
+                return cleanCS.includes("tiáº¿ng anh") || cleanCS.includes("anh")
               }
               return cleanCS.includes(cleanSub) || cleanSub.includes(cleanCS)
             })
@@ -275,8 +300,8 @@ export async function GET(req: Request) {
             studentCode: s.studentCode,
             gender: s.gender,
             commitmentContent: committedSubjects.length > 0 
-              ? `Cam kết Khảo sát đầu vào các môn: ${committedSubjects.join(", ")}`
-              : "Có cam kết đầu vào",
+              ? `Cam káº¿t Kháº£o sĂ¡t Ä‘áº§u vĂ o cĂ¡c mĂ´n: ${committedSubjects.join(", ")}`
+              : "CĂ³ cam káº¿t Ä‘áº§u vĂ o",
             matchedSubjects: matchedSubjects.length > 0 ? matchedSubjects : committedSubjects
           }
         })
@@ -345,7 +370,7 @@ export async function GET(req: Request) {
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           studentCode: { in: studentCodes },
-          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+          admissionResult: { in: ["Äáº¡t cam káº¿t", "Äáº¡t - Cam káº¿t"] }
         },
         select: {
           studentCode: true,
@@ -356,7 +381,7 @@ export async function GET(req: Request) {
 
       const parseCommittedSubjects = (note) => {
         if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        const match = note.match(/MĂ´n cam káº¿t:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
           return match[1].split(",").map(s => s.trim())
         }
@@ -382,14 +407,14 @@ export async function GET(req: Request) {
             const cleanCS = cs.toLowerCase()
             return teacherSubjectsInClass.some(ts => {
               const cleanTS = ts.toLowerCase()
-              if (cleanTS.includes("toán")) {
-                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
+              if (cleanTS.includes("toĂ¡n")) {
+                return cleanCS.includes("mĂ´n toĂ¡n") || cleanCS.includes("toĂ¡n")
               }
-              if (cleanTS.includes("tiếng việt") || cleanTS.includes("ngữ văn") || cleanTS.includes("văn")) {
-                return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
+              if (cleanTS.includes("tiáº¿ng viá»‡t") || cleanTS.includes("ngá»¯ vÄƒn") || cleanTS.includes("vÄƒn")) {
+                return cleanCS.includes("tiáº¿ng viá»‡t") || cleanCS.includes("ngá»¯ vÄƒn") || cleanCS.includes("vÄƒn")
               }
-              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) {
-                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
+              if (cleanTS.includes("tiáº¿ng anh") || cleanTS.includes("anh")) {
+                return cleanCS.includes("tiáº¿ng anh") || cleanCS.includes("anh")
               }
               return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
             })
@@ -768,7 +793,7 @@ export async function POST(req: Request) {
       })
 
       if (!previousCommitment) {
-        return NextResponse.json({ error: "Không tìm thấy cam kết năm học cũ để kế thừa" }, { status: 404 })
+        return NextResponse.json({ error: "KhĂ´ng tĂ¬m tháº¥y cam káº¿t nÄƒm há»c cÅ© Ä‘á»ƒ káº¿ thá»«a" }, { status: 404 })
       }
 
       const existing = await prisma.studentLearningCommitment.findFirst({
@@ -776,7 +801,7 @@ export async function POST(req: Request) {
       })
 
       if (existing) {
-        return NextResponse.json({ error: "Cam kết cho năm học hiện tại đã tồn tại" }, { status: 400 })
+        return NextResponse.json({ error: "Cam káº¿t cho nÄƒm há»c hiá»‡n táº¡i Ä‘Ă£ tá»“n táº¡i" }, { status: 400 })
       }
 
       const commitment = await prisma.studentLearningCommitment.create({
