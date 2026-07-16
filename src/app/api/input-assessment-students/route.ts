@@ -163,6 +163,12 @@ export async function POST(req) {
             batchId: d.batchId || null,
             registeredCampus: d.registeredCampus || null,
             isAbsent: d.isAbsent || false,
+            cityName: d.cityName || null,
+            districtName: d.districtName || null,
+            wardName: d.wardName || null,
+            countryName: d.countryName || null,
+            oldSchoolName: d.oldSchoolName || null,
+            oldSchoolType: d.oldSchoolType || null,
           };
 
           let result;

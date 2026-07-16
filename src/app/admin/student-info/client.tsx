@@ -1250,6 +1250,12 @@ export function StudentInfoClient({
           "Học bạ": s.kqgdTieuHoc || "",
           "Học kỳ / Năm TS": s.hocKy || "",
           "Đối tượng TS": s.targetType || "",
+          "Tỉnh/Thành": s.cityName || "",
+          "Quận/Huyện": s.districtName || "",
+          "Phường/Xã": s.wardName || "",
+          "Quốc gia": s.countryName || "",
+          "Tên trường cũ": s.oldSchoolName || "",
+          "Loại hình trường": s.oldSchoolType || "",
           ...(selectedPeriod?.toLowerCase().includes("open day") && {
             "Đăng ký CS": campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "",
             "Ủy quyền xét duyệt": campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || ""
@@ -1295,10 +1301,21 @@ export function StudentInfoClient({
           "Hạnh kiểm": "",
           "Học bạ": "",
           "Học kỳ / Năm TS": "HK1",
-          "Đối tượng TS": ""
+          "Đối tượng TS": "",
+          "Tỉnh/Thành": "",
+          "Quận/Huyện": "",
+          "Phường/Xã": "",
+          "Quốc gia": "",
+          "Tên trường cũ": "",
+          "Loại hình trường": ""
         }
       ]);
-      ws["!cols"] = [{ wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
+      ws["!cols"] = [
+        { wch: 15 }, { wch: 25 }, { wch: 10 }, { wch: 10 }, { wch: 15 },
+        { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 },
+        { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 },
+        { wch: 20 }, { wch: 15 }
+      ];
     } else {
       ws = XLSX.utils.json_to_sheet([
         { 
@@ -1388,6 +1405,13 @@ export function StudentInfoClient({
           const kqgdTieuHoc = String(row["Học bạ"] || findVal(row, ["học bạ", "hoc ba"]) || "").trim();
           const registeredCampusRaw = String(row["Đăng ký CS"] || row["Cơ sở đăng ký"] || findVal(row, ["đăng ký cs", "co so dang ky", "cs dang ky"]) || "").trim();
           let registeredCampus = null;
+          
+          const cityName = String(row["Tỉnh/Thành"] || row["Tỉnh / Thành"] || findVal(row, ["tỉnh", "thành"]) || "").trim();
+          const districtName = String(row["Quận/Huyện"] || row["Quận / Huyện"] || findVal(row, ["quận", "huyện"]) || "").trim();
+          const wardName = String(row["Phường/Xã"] || row["Phường / Xã"] || findVal(row, ["phường", "xã"]) || "").trim();
+          const countryName = String(row["Quốc gia"] || findVal(row, ["quốc gia", "country"]) || "").trim();
+          const oldSchoolName = String(row["Tên trường cũ"] || row["Trường cũ"] || findVal(row, ["trường cũ", "old school"]) || "").trim();
+          const oldSchoolType = String(row["Loại hình trường"] || findVal(row, ["loại hình", "school type"]) || "").trim();
           if (registeredCampusRaw) {
             const matchedCampus = campuses.find(c => 
               c.campusCode?.toUpperCase() === registeredCampusRaw.toUpperCase() || 
@@ -1405,6 +1429,21 @@ export function StudentInfoClient({
           const kqHocTap = String(row["Học lực"] || row["Kết quả Học tập"] || findVal(row, ["học lực", "học tập"]) || "").trim();
           const kqRenLuyen = String(row["Hạnh kiểm"] || row["Kết quả Rèn luyện"] || findVal(row, ["hạnh kiểm", "rèn luyện"]) || "").trim();
 
+          // Construct kqgdTieuHoc from location if not provided
+          let finalKqgd = kqgdTieuHoc;
+          if (targetType) {
+            let locDetail = "";
+            if (targetType === "Nội tỉnh") {
+              locDetail = districtName ? `${districtName} - ${wardName}` : wardName;
+            } else if (targetType === "Ngoại tỉnh") {
+              locDetail = cityName;
+            } else if (targetType === "Nước ngoài") {
+              locDetail = countryName;
+            }
+            const locationStr = `Trường cũ: ${oldSchoolName} (${oldSchoolType}) | Đối tượng: ${targetType} - ${locDetail}`;
+            finalKqgd = kqgdTieuHoc ? `${locationStr}\n${kqgdTieuHoc}` : locationStr;
+          }
+
           return {
             studentCode,
             fullName,
@@ -1414,8 +1453,14 @@ export function StudentInfoClient({
             hocKy,
             surveyFormType,
             hoSoCtQuocTe,
-            kqgdTieuHoc,
+            kqgdTieuHoc: finalKqgd,
             targetType,
+            cityName,
+            districtName,
+            wardName,
+            countryName,
+            oldSchoolName,
+            oldSchoolType,
             admissionCriteria,
             surveySystem,
             kqHocTap,
@@ -3521,10 +3566,28 @@ export function StudentInfoClient({
                               <span className="text-xs font-semibold text-slate-700 mt-1 block">{selectedStudent.hocKy || "-"}</span>
                             </div>
                             <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đối tượng tuyển sinh</label>
-                              <span className="text-xs font-semibold text-slate-700 mt-1 block">{selectedStudent.targetType || "-"}</span>
-                            </div>
-                          </div>
+                               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đối tượng tuyển sinh</label>
+                               <span className="text-xs font-semibold text-slate-700 mt-1 block">{selectedStudent.targetType || "-"}</span>
+                             </div>
+
+                             {selectedStudent.oldSchoolName && (
+                               <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl md:col-span-3">
+                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trường học cũ & Địa chỉ</label>
+                                 <div className="text-xs font-semibold text-slate-700 mt-1.5 space-y-1.5">
+                                   <div><span className="text-slate-400">Tên trường cũ:</span> {selectedStudent.oldSchoolName} ({selectedStudent.oldSchoolType})</div>
+                                   {selectedStudent.targetType === "Nội tỉnh" && (
+                                     <div><span className="text-slate-400">Địa chỉ trường cũ:</span> {selectedStudent.wardName} - {selectedStudent.districtName} - {selectedStudent.cityName || "TP Đà Nẵng"}</div>
+                                   )}
+                                   {selectedStudent.targetType === "Ngoại tỉnh" && (
+                                     <div><span className="text-slate-400">Tỉnh / Thành phố:</span> {selectedStudent.cityName}</div>
+                                   )}
+                                   {selectedStudent.targetType === "Nước ngoài" && (
+                                     <div><span className="text-slate-400">Quốc gia:</span> {selectedStudent.countryName}</div>
+                                   )}
+                                 </div>
+                               </div>
+                             )}
+                           </div>
                         </div>
 
                         {/* Section: Final Approval Result */}
