@@ -44,7 +44,51 @@ export async function GET(req: Request) {
         classCode: c.classCode
       })))
 
-      return NextResponse.json(students)
+      // Batch query to find if students were admitted via entrance survey
+      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      
+      const k12Candidates = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: studentCodes } },
+            { enrollmentCode: { in: studentCodes } }
+          ]
+        },
+        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+      })
+
+      const preschoolCandidates = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: studentCodes } },
+            { enrollmentCode: { in: studentCodes } }
+          ]
+        },
+        select: { studentCode: true, enrollmentCode: true, fullName: true, dateOfBirth: true }
+      })
+
+      const enrichedStudents = students.map(s => {
+        const isK12Candidate = k12Candidates.some(c => 
+          c.studentCode === s.studentCode || 
+          c.enrollmentCode === s.studentCode ||
+          (c.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === s.studentName.trim().toLowerCase().replace(/\s+/g, ' ') &&
+           c.dateOfBirth && s.dateOfBirth && new Date(c.dateOfBirth).getTime() === new Date(s.dateOfBirth).getTime())
+        )
+
+        const isPreschoolCandidate = preschoolCandidates.some(c => 
+          c.studentCode === s.studentCode || 
+          c.enrollmentCode === s.studentCode ||
+          (c.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === s.studentName.trim().toLowerCase().replace(/\s+/g, ' ') &&
+           c.dateOfBirth && s.dateOfBirth && new Date(c.dateOfBirth).getTime() === new Date(s.dateOfBirth).getTime())
+        )
+
+        return {
+          ...s,
+          isEntranceAdmitted: isK12Candidate || isPreschoolCandidate
+        }
+      })
+
+      return NextResponse.json(enrichedStudents)
     }
 
     if (action === "getAssignedClasses") {
@@ -429,11 +473,16 @@ export async function GET(req: Request) {
         orderBy: { createdAt: "desc" }
       })
 
-      // Fetch entrance survey (if any) matching studentCode
+      // Fetch entrance survey (if any) matching studentCode or enrollmentCode or name/dateOfBirth
       let entranceSurvey: any = null
       
-      const generalSurvey = await prisma.inputAssessmentStudent.findFirst({
-        where: { studentCode: student.studentCode },
+      let generalSurvey = await prisma.inputAssessmentStudent.findFirst({
+        where: {
+          OR: [
+            { studentCode: student.studentCode },
+            { enrollmentCode: student.studentCode }
+          ]
+        },
         include: {
           scores: {
             include: { subject: true }
@@ -443,34 +492,66 @@ export async function GET(req: Request) {
         }
       })
 
+      if (!generalSurvey) {
+        // Fallback matching by name and DOB
+        const allPossible = await prisma.inputAssessmentStudent.findMany({
+          where: {
+            dateOfBirth: student.dateOfBirth || undefined
+          },
+          include: {
+            scores: {
+              include: { subject: true }
+            },
+            period: true,
+            batch: true
+          }
+        });
+        
+        generalSurvey = allPossible.find(x => 
+          x.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === student.studentName.trim().toLowerCase().replace(/\s+/g, ' ')
+        ) || null;
+      }
+
       if (generalSurvey) {
         entranceSurvey = {
+          ...generalSurvey,
           type: "K12",
-          fullName: generalSurvey.fullName,
-          studentCode: generalSurvey.studentCode,
-          admissionCampus: generalSurvey.admissionCampus,
-          admissionResult: generalSurvey.admissionResult,
           scores: generalSurvey.scores.map(s => ({
             subjectName: s.subject.name,
             scores: s.scores ? JSON.parse(s.scores) : {},
             comments: s.comments ? JSON.parse(s.comments) : {}
-          })),
-          psychologyScore: generalSurvey.psychologyScore,
-          mathScore: generalSurvey.mathScore,
-          literatureScore: generalSurvey.literatureScore,
-          writtenEnglishScore: generalSurvey.writtenEnglishScore,
-          oralEnglishScore: generalSurvey.oralEnglishScore,
-          kqHocTap: generalSurvey.kqHocTap,
-          kqRenLuyen: generalSurvey.kqRenLuyen
+          }))
         }
       } else {
-        const preschoolSurvey = await (prisma as any).preschoolInputAssessmentStudent.findFirst({
-          where: { studentCode: student.studentCode },
+        let preschoolSurvey = await (prisma as any).preschoolInputAssessmentStudent.findFirst({
+          where: {
+            OR: [
+              { studentCode: student.studentCode },
+              { enrollmentCode: student.studentCode }
+            ]
+          },
           include: {
             period: true,
             batch: true
           }
         })
+        
+        if (!preschoolSurvey) {
+          // Fallback matching by name and DOB in preschool
+          const allPossiblePre = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+            where: {
+              dateOfBirth: student.dateOfBirth || undefined
+            },
+            include: {
+              period: true,
+              batch: true
+            }
+          });
+          
+          preschoolSurvey = allPossiblePre.find((x: any) => 
+            x.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === student.studentName.trim().toLowerCase().replace(/\s+/g, ' ')
+          ) || null;
+        }
         
         if (preschoolSurvey) {
           // Fetch preschool scores
@@ -480,15 +561,8 @@ export async function GET(req: Request) {
           })
 
           entranceSurvey = {
+            ...preschoolSurvey,
             type: "PRESCHOOL",
-            fullName: preschoolSurvey.fullName,
-            studentCode: preschoolSurvey.studentCode,
-            admissionCampus: preschoolSurvey.admissionCampus,
-            admissionResult: preschoolSurvey.admissionResult,
-            devAssessmentResult: preschoolSurvey.devAssessmentResult,
-            devImportantNote: preschoolSurvey.devImportantNote,
-            devProfessionalComment: preschoolSurvey.devProfessionalComment,
-            devPsychologyComment: preschoolSurvey.devPsychologyComment,
             scores: pScores.map((s: any) => ({
               areaName: s.criteria.area.name,
               criterionName: s.criteria.name,

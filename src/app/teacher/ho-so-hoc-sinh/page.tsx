@@ -30,6 +30,7 @@ export default function TeacherStudentProfilePage() {
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
   const [activeTab, setActiveTab] = useState("entrance")
+  const [entranceSubTab, setEntranceSubTab] = useState<"results" | "admin" | "academic">("results")
   const [loadingStudents, setLoadingStudents] = useState(true)
   const [loadingProfile, setLoadingProfile] = useState(false)
   const [isNotGVCN, setIsNotGVCN] = useState(false)
@@ -196,6 +197,10 @@ export default function TeacherStudentProfilePage() {
   }
 
   useEffect(() => {
+    setEntranceSubTab("results");
+  }, [selectedStudentId]);
+
+  useEffect(() => {
     if (!selectedStudentId) {
       setSelectedStudent(null)
       setProfileData(null)
@@ -291,7 +296,9 @@ export default function TeacherStudentProfilePage() {
                     className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
                       selectedStudentId === s.id
                         ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30"
-                        : "text-slate-600 hover:bg-slate-50 border border-transparent"
+                        : s.isEntranceAdmitted
+                          ? "bg-sky-50 text-sky-700 border border-sky-100 hover:bg-sky-100/60"
+                          : "text-slate-600 hover:bg-slate-50 border border-transparent"
                     }`}
                   >
                     <div>
@@ -384,73 +391,227 @@ export default function TeacherStudentProfilePage() {
 
                         {profileData.entranceSurvey ? (
                           <div className="space-y-6">
-                            {/* Summary Box */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs font-bold">
-                              <div>Cơ sở đăng ký: <span className="text-slate-800">{profileData.entranceSurvey.admissionCampus || "N/A"}</span></div>
-                              <div>Kết quả tuyển sinh: <span className="text-slate-800">{profileData.entranceSurvey.admissionResult || "Chưa xác định"}</span></div>
+                            {/* Entrance sub-tabs navigation */}
+                            <div className="flex gap-4 border-b border-slate-200 overflow-x-auto custom-scrollbar">
+                              <button
+                                onClick={() => setEntranceSubTab("results")}
+                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+                                  entranceSubTab === "results"
+                                    ? "border-[#00A99D] text-[#00A99D]"
+                                    : "border-transparent text-slate-400 hover:text-slate-600"
+                                }`}
+                              >
+                                <Award className="w-3.5 h-3.5" />
+                                {profileData.entranceSurvey.type === "PRESCHOOL" ? "Đánh giá phát triển" : "Kết quả đánh giá"}
+                              </button>
+                              <button
+                                onClick={() => setEntranceSubTab("admin")}
+                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+                                  entranceSubTab === "admin"
+                                    ? "border-[#00A99D] text-[#00A99D]"
+                                    : "border-transparent text-slate-400 hover:text-slate-600"
+                                }`}
+                              >
+                                <User className="w-3.5 h-3.5" />
+                                Thông tin hành chính
+                              </button>
+                              <button
+                                onClick={() => setEntranceSubTab("academic")}
+                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+                                  entranceSubTab === "academic"
+                                    ? "border-[#00A99D] text-[#00A99D]"
+                                    : "border-transparent text-slate-400 hover:text-slate-600"
+                                }`}
+                              >
+                                <FileText className="w-3.5 h-3.5" />
+                                {profileData.entranceSurvey.type === "PRESCHOOL" ? "Học thử & Quyết định" : "Hồ sơ & Học bạ"}
+                              </button>
                             </div>
 
-                            {/* Scores details */}
-                            {profileData.entranceSurvey.type === "PRESCHOOL" ? (
-                              <div className="space-y-4">
-                                <h5 className="text-xs font-black text-slate-700">Đánh giá Phát triển Mầm non:</h5>
-                                <div className="space-y-2">
-                                  <div>Kết quả chung: <span className="font-bold text-slate-700">{profileData.entranceSurvey.devAssessmentResult || "N/A"}</span></div>
-                                  <div>Lưu ý quan trọng: <span className="font-bold text-slate-700">{profileData.entranceSurvey.devImportantNote || "Không có"}</span></div>
+                            {/* Sub-tab: results */}
+                            {entranceSubTab === "results" && (
+                              <div className="space-y-6 animate-in fade-in duration-200">
+                                {/* Summary Box */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs font-bold">
+                                  <div>Cơ sở đăng ký: <span className="text-slate-800">{profileData.entranceSurvey.admissionCampus || "N/A"}</span></div>
+                                  <div>Kết quả tuyển sinh: <span className="text-slate-800">{profileData.entranceSurvey.admissionResult || "Chưa xác định"}</span></div>
                                 </div>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-xs text-left border-collapse border border-slate-200">
-                                    <thead>
-                                      <tr className="bg-slate-50 text-slate-600 font-bold">
-                                        <th className="p-2 border border-slate-200">Lĩnh vực phát triển</th>
-                                        <th className="p-2 border border-slate-200">Tiêu chí đánh giá</th>
-                                        <th className="p-2 border border-slate-200">Kết quả</th>
-                                        <th className="p-2 border border-slate-200">Ghi chú</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {profileData.entranceSurvey.scores?.length > 0 ? (
-                                        profileData.entranceSurvey.scores.map((sc: any, idx: number) => (
-                                          <tr key={idx} className="font-semibold text-slate-700">
-                                            <td className="p-2 border border-slate-200 font-bold">{sc.areaName}</td>
-                                            <td className="p-2 border border-slate-200">{sc.criterionName}</td>
-                                            <td className="p-2 border border-slate-200">{sc.result}</td>
-                                            <td className="p-2 border border-slate-200">{sc.note || "-"}</td>
+
+                                {profileData.entranceSurvey.type === "PRESCHOOL" ? (
+                                  <div className="space-y-4">
+                                    <h5 className="text-xs font-black text-slate-700">Đánh giá Phát triển Mầm non:</h5>
+                                    <div className="space-y-2 text-xs font-semibold">
+                                      <div>Kết quả chung: <span className="font-bold text-slate-700">{profileData.entranceSurvey.devAssessmentResult || "N/A"}</span></div>
+                                      <div>Lưu ý quan trọng: <span className="font-bold text-slate-700">{profileData.entranceSurvey.devImportantNote || "Không có"}</span></div>
+                                    </div>
+                                    <div className="overflow-x-auto">
+                                      <table className="w-full text-xs text-left border-collapse border border-slate-200">
+                                        <thead>
+                                          <tr className="bg-slate-50 text-slate-600 font-bold">
+                                            <th className="p-2 border border-slate-200">Lĩnh vực phát triển</th>
+                                            <th className="p-2 border border-slate-200">Tiêu chí đánh giá</th>
+                                            <th className="p-2 border border-slate-200">Kết quả</th>
+                                            <th className="p-2 border border-slate-200">Ghi chú</th>
                                           </tr>
-                                        ))
-                                      ) : (
-                                        <tr><td colSpan={4} className="p-2 text-center text-slate-400 italic">Không tìm thấy chi tiết điểm tiêu chí mầm non.</td></tr>
-                                      )}
-                                    </tbody>
-                                  </table>
+                                        </thead>
+                                        <tbody>
+                                          {profileData.entranceSurvey.scores?.length > 0 ? (
+                                            profileData.entranceSurvey.scores.map((sc: any, idx: number) => (
+                                              <tr key={idx} className="font-semibold text-slate-700">
+                                                <td className="p-2 border border-slate-200 font-bold">{sc.areaName}</td>
+                                                <td className="p-2 border border-slate-200">{sc.criterionName}</td>
+                                                <td className="p-2 border border-slate-200">{sc.result}</td>
+                                                <td className="p-2 border border-slate-200">{sc.note || "-"}</td>
+                                              </tr>
+                                            ))
+                                          ) : (
+                                            <tr><td colSpan={4} className="p-2 text-center text-slate-400 italic">Không tìm thấy chi tiết điểm tiêu chí mầm non.</td></tr>
+                                          )}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-4">
+                                    <h5 className="text-xs font-black text-slate-700">Điểm số các môn khảo sát:</h5>
+                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Toán</div>
+                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.mathScore ?? "N/A"}</div>
+                                      </div>
+                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Văn</div>
+                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.literatureScore ?? "N/A"}</div>
+                                      </div>
+                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Anh viết</div>
+                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.writtenEnglishScore ?? "N/A"}</div>
+                                      </div>
+                                      <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
+                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Anh nói</div>
+                                        <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.oralEnglishScore ?? "N/A"}</div>
+                                      </div>
+                                    </div>
+                                    <div className="text-xs text-slate-500 font-semibold space-y-1 mt-2">
+                                      <div>• Đánh giá tâm lý học sinh: <span className="font-bold text-slate-800">{profileData.entranceSurvey.psychologyScore ?? "N/A"}</span></div>
+                                      <div>• Kết quả học tập cấp trước: <span className="font-bold text-slate-800">{profileData.entranceSurvey.kqHocTap ?? "N/A"}</span></div>
+                                      <div>• Kết quả rèn luyện cấp trước: <span className="font-bold text-slate-800">{profileData.entranceSurvey.kqRenLuyen ?? "N/A"}</span></div>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Sub-tab: admin */}
+                            {entranceSubTab === "admin" && (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-in fade-in duration-200 text-xs font-semibold">
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kỳ khảo sát</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.period?.name || "-"}</span>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đợt khảo sát</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.batch?.name || "-"}</span>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lớp dự tuyển</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.isPreschool ? (profileData.entranceSurvey.grade || "-") : (profileData.entranceSurvey.className || "-")}</span>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hệ đào tạo</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.surveySystem || "-"}</span>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở dự tuyển</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.admissionCampus || "-"}</span>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Diện tuyển sinh</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.admissionCriteria || "-"}</span>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giới tính</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.gender || "-"}</span>
+                                </div>
+                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ngày sinh</label>
+                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.dateOfBirth ? new Date(profileData.entranceSurvey.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span>
                                 </div>
                               </div>
-                            ) : (
-                              <div className="space-y-4">
-                                <h5 className="text-xs font-black text-slate-700">Điểm số các môn khảo sát:</h5>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                  <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Toán</div>
-                                    <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.mathScore ?? "N/A"}</div>
+                            )}
+
+                            {/* Sub-tab: academic */}
+                            {entranceSubTab === "academic" && (
+                              <div className="space-y-6 animate-in fade-in duration-200 text-xs">
+                                {profileData.entranceSurvey.type === "PRESCHOOL" ? (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl md:col-span-2">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Kết quả học thử</label>
+                                      <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.probationaryResult || "Chưa có kết quả"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl md:col-span-2">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Nhận xét chi tiết của giáo viên học thử</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block leading-relaxed whitespace-pre-wrap">{profileData.entranceSurvey.probationaryComment || "Chưa có nhận xét"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Đợt học thử</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block">{profileData.entranceSurvey.probationaryPeriod || "-"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Lớp học thử</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block">{profileData.entranceSurvey.probationaryClass || "-"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Giáo viên phụ trách học thử</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block">{profileData.entranceSurvey.probationaryTeacher || "-"}</span>
+                                    </div>
                                   </div>
-                                  <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Văn</div>
-                                    <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.literatureScore ?? "N/A"}</div>
+                                ) : (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl md:col-span-3">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Học bạ tiểu học / THCS</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block leading-relaxed whitespace-pre-wrap">{profileData.entranceSurvey.kqgdTieuHoc || "-"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Kết quả học tập</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block">{profileData.entranceSurvey.kqHocTap || "-"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Kết quả rèn luyện</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block">{profileData.entranceSurvey.kqRenLuyen || "-"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Hồ sơ / Bảng điểm khác</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block leading-relaxed">{profileData.entranceSurvey.hoSoCtQuocTe || "-"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Học kỳ / Năm tuyển sinh</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block">{profileData.entranceSurvey.hocKy || "-"}</span>
+                                    </div>
+                                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Đối tượng tuyển sinh</label>
+                                      <span className="text-xs font-semibold text-slate-700 mt-1 block">{profileData.entranceSurvey.targetType || "-"}</span>
+                                    </div>
+
+                                    {profileData.entranceSurvey.oldSchoolName && (
+                                      <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl md:col-span-3">
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Trường học cũ & Địa chỉ</label>
+                                        <div className="text-xs font-semibold text-slate-700 mt-1.5 space-y-1.5">
+                                          <div><span className="text-slate-400">Tên trường cũ:</span> {profileData.entranceSurvey.oldSchoolName} ({profileData.entranceSurvey.oldSchoolType})</div>
+                                          {profileData.entranceSurvey.targetType === "Nội tỉnh" && (
+                                            <div><span className="text-slate-400">Địa chỉ trường cũ:</span> {profileData.entranceSurvey.wardName} - {profileData.entranceSurvey.cityName || "TP Đà Nẵng"}</div>
+                                          )}
+                                          {profileData.entranceSurvey.targetType === "Ngoại tỉnh" && (
+                                            <div><span className="text-slate-400">Địa chỉ trường cũ:</span> {profileData.entranceSurvey.wardName} - {profileData.entranceSurvey.cityName}</div>
+                                          )}
+                                          {profileData.entranceSurvey.targetType === "Nước ngoài" && (
+                                            <div><span className="text-slate-400">Quốc gia:</span> {profileData.entranceSurvey.countryName}</div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Anh viết</div>
-                                    <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.writtenEnglishScore ?? "N/A"}</div>
-                                  </div>
-                                  <div className="bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-center">
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Anh nói</div>
-                                    <div className="text-xl font-extrabold text-slate-800 mt-1">{profileData.entranceSurvey.oralEnglishScore ?? "N/A"}</div>
-                                  </div>
-                                </div>
-                                <div className="text-xs text-slate-500 font-semibold space-y-1 mt-2">
-                                  <div>• Đánh giá tâm lý học sinh: <span className="font-bold text-slate-800">{profileData.entranceSurvey.psychologyScore ?? "N/A"}</span></div>
-                                  <div>• Kết quả học tập cấp trước: <span className="font-bold text-slate-800">{profileData.entranceSurvey.kqHocTap ?? "N/A"}</span></div>
-                                  <div>• Kết quả rèn luyện cấp trước: <span className="font-bold text-slate-800">{profileData.entranceSurvey.kqRenLuyen ?? "N/A"}</span></div>
-                                </div>
+                                )}
                               </div>
                             )}
                           </div>
