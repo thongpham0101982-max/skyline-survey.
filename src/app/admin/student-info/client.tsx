@@ -2154,16 +2154,14 @@ export function StudentInfoClient({
                         setIsDetailsOpen(true);
                       }}
                     >
-                      {subTab === "info" && (
-                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                          <input
+                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
                             type="checkbox"
                             className="w-4 h-4 rounded text-[#00A99D] accent-[#00A99D]"
                             checked={selectedIds.includes(s.id)}
                             onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
                           />
                         </td>
-                      )}
                       <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{s.studentCode}</td>
                       <td className="px-5 py-4 border-b border-slate-100">
                         <div className="flex flex-col">
@@ -2346,16 +2344,14 @@ export function StudentInfoClient({
                         setIsDetailsOpen(true);
                       }}
                     >
-                      {subTab === "info" && (
-                        <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
-                          <input
+                      <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                            <input
                             type="checkbox"
                             className="w-4 h-4 rounded accent-[#00A99D]"
                             checked={selectedIds.includes(child.id)}
                             onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, child.id] : prev.filter(id => id !== child.id))}
                           />
                         </td>
-                      )}
                       <td className="px-5 py-4 border-b border-slate-100 text-slate-400 text-xs">{(currentPage - 1) * pageSize + i + 1}</td>
                       <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{child.studentCode}</td>
                       <td className="px-5 py-4 border-b border-slate-100">
