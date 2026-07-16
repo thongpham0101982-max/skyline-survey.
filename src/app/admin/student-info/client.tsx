@@ -2695,7 +2695,7 @@ export function StudentInfoClient({
 
                       <div className="space-y-3">
                         <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Đối tượng tuyển sinh</label>
-                        <span className="text-[11px] font-semibold text-[#64748B] block mt-0.5">Chọn một đối tượng tuyển sinh:</span>
+                        <span className="text-[11px] font-semibold text-[#64748B] block mt-0.5">Chọn 1 đối tượng tuyển sinh:</span>
                         <div className="flex flex-wrap gap-2">
                           {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                             const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];

@@ -157,29 +157,32 @@ export function LoginClient() {
         {/* RIGHT: Login */}
         <div className="w-full md:w-[50%] xl:w-[42%] bg-[#F5F8F8] flex flex-col justify-center p-4 sm:p-6 md:p-8 relative z-10">
 
-          <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 shadow-[0_16px_40px_rgba(0,31,30,0.04)] border border-[#E2ECF0]/80 max-w-[440px] w-full mx-auto transition-all duration-300">
+          {/* Premium Sky-Line, Earthy Yellow, and Tím Than Gradient Border Wrapper */}
+          <div className="bg-gradient-to-tr from-[#00A99D] via-[#D97706] to-[#251b4b] p-[1.5px] rounded-3xl shadow-[0_16px_40px_rgba(0,31,30,0.06)] max-w-[440px] w-full mx-auto transition-all duration-300">
+            <div className="bg-white rounded-[23px] p-6 sm:p-8 md:p-10 w-full">
 
-            {/* Brand */}
-            <div className="mb-6 flex flex-col items-start select-none">
-              <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain mb-3 pointer-events-none" />
-              <h2 className="text-[22px] font-black text-[#003B3A] tracking-tight leading-tight">Đăng nhập hệ thống</h2>
-              <p className="text-xs text-[#8FA5AE] mt-1 font-semibold">Truy cập hệ thống theo tài khoản được cấp</p>
-            </div>
+              {/* Brand */}
+              <div className="mb-6 flex flex-col items-start select-none">
+                <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain mb-3 pointer-events-none" />
+                <h2 className="text-[22px] font-black text-[#003B3A] tracking-tight leading-tight">Đăng nhập hệ thống</h2>
+                <p className="text-xs text-[#8FA5AE] mt-1 font-semibold">Truy cập hệ thống theo tài khoản được cấp</p>
+              </div>
 
-            {/* Form */}
-            <LoginForm
-              role={role} setRole={setRole}
-              identifier={identifier} setIdentifier={setIdentifier}
-              password={password} setPassword={setPassword}
-              rememberMe={rememberMe} setRememberMe={setRememberMe}
-              error={error} setError={setError}
-              loading={loading}
-              onSubmit={handleSubmit}
-              onForgotPassword={handleForgotPassword}
-            />
+              {/* Form */}
+              <LoginForm
+                role={role} setRole={setRole}
+                identifier={identifier} setIdentifier={setIdentifier}
+                password={password} setPassword={setPassword}
+                rememberMe={rememberMe} setRememberMe={setRememberMe}
+                error={error} setError={setError}
+                loading={loading}
+                onSubmit={handleSubmit}
+                onForgotPassword={handleForgotPassword}
+              />
 
-            <div className="mt-6 border-t border-slate-100/60 pt-4">
-              <PageFooter />
+              <div className="mt-6 border-t border-slate-100/60 pt-4">
+                <PageFooter />
+              </div>
             </div>
           </div>
 

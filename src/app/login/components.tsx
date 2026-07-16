@@ -303,7 +303,7 @@ export function LoginForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-[48px] bg-[#00A99D] hover:bg-[#009085] active:bg-[#007068] text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-md hover:shadow-teal-500/10 flex items-center justify-center gap-2 hover:-translate-y-px active:translate-y-0 transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A99D]/40"
+        className="w-full h-[48px] bg-gradient-to-r from-[#00A99D] via-[#00A99D] to-[#009085] hover:from-[#00A99D] hover:via-[#D97706] hover:to-[#251b4b] text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-md hover:shadow-teal-500/10 flex items-center justify-center gap-2 hover:-translate-y-px active:translate-y-0 transition-all duration-300 disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A99D]/40"
       >
         {loading ? (
           <>
