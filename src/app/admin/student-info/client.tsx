@@ -71,13 +71,16 @@ interface StudentInfoClientProps {
 const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
 const danangWards = [
-  "Hòa Cường Bắc", "Hòa Cường Nam", "Hòa Thuận Đông", "Hòa Thuận Tây", "Bình Thuận", "Bình Hiên", "Nam Dương", "Phước Ninh", "Thạch Thang", "Thanh Bình", "Thuận Phước", "Hải Châu I", "Hải Châu II",
-  "An Khê", "Hòa Khê", "Tam Thuận", "Thanh Khê Đông", "Thanh Khê Tây", "Xuân Hà", "Tân Chính", "Chính Gián", "Vĩnh Trung", "Thạc Gián",
-  "An Hải Bắc", "An Hải Đông", "An Hải Tây", "Mân Thái", "Nại Hiên Đông", "Phước Mỹ", "Thọ Quang",
-  "Mỹ An", "Khuê Mỹ", "Hòa Quý", "Hòa Hải",
-  "Hòa Minh", "Hòa Khánh Bắc", "Hòa Khánh Nam", "Hòa Hiệp Bắc", "Hòa Hiệp Nam",
-  "Khuê Trung", "Hòa Thọ Đông", "Hòa Thọ Tây", "Hòa An", "Hòa Phát", "Hòa Xuân",
-  "Hòa Bắc", "Hòa Liên", "Hòa Ninh", "Hòa Sơn", "Hòa Nhơn", "Hòa Phú", "Hòa Khương", "Hòa Phong", "Hòa Tiến", "Hòa Châu", "Hòa Phước"
+  "Hải Châu", "Hòa Cường", "Thanh Khê", "An Khê", "An Hải", "Sơn Trà", "Ngũ Hành Sơn", "Hòa Khánh", "Hải Vân", "Liên Chiểu", 
+  "Cẩm Lệ", "Hòa Xuân", "Hòa Vang", "Hòa Tiến", "Bà Nà", "Hoàng Sa (Đặc khu)", "Núi Thành", "Tam Mỹ", "Tam Anh", "Đức Phú", 
+  "Tam Xuân", "Tam Hải", "Tam Kỳ", "Quảng Phú", "Hương Trà", "Bàn Thạch", "Tây Hồ", "Chiên Đàn", "Phú Ninh", "Lãnh Ngọc", 
+  "Tiên Phước", "Thạnh Bình", "Sơn Cẩm Hà", "Trà Liên", "Trà Giáp", "Trà Tân", "Trà Đốc", "Trà My", "Nam Trà My", "Trà Tập", 
+  "Trà Vân", "Trà Linh", "Trà Leng", "Thăng Bình", "Thăng An", "Thăng Trường", "Thăng Điền", "Thăng Phú", "Đồng Dương", "Quế Sơn Trung", 
+  "Quế Sơn", "Xuân Phú", "Nông Sơn", "Quế Phước", "Duy Nghĩa", "Nam Phước", "Duy Xuyên", "Thu Bồn", "Điện Bàn", "Điện Bàn Đông", 
+  "An Thắng", "Điện Bàn Bắc", "Điện Bàn Tây", "Gò Nổi", "Hội An", "Hội An Đông", "Hội An Tây", "Tân Hiệp", "Đại Lộc", "Hà Nha", 
+  "Thượng Đức", "Vu Gia", "Phú Thuận", "Thạnh Mỹ", "Bến Giằng", "Nam Giang", "Đắc Pring", "La Dêê", "La Êê", "Sông Vàng", 
+  "Sông Kôn", "Đông Giang", "Bến Hiên", "Avương", "Tây Giang", "Hùng Sơn", "Hiệp Đức", "Việt An", "Phước Trà", "Khâm Đức", 
+  "Phước Năng", "Phước Chánh", "Phước Thành", "Phước Hiệp"
 ].sort();
 
 const vietnamProvinces = [

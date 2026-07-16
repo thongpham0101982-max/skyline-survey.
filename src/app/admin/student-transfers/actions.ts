@@ -370,6 +370,11 @@ export async function createTransferInAction(data: any) {
         });
       }
 
+      // Send notification to GVCN if requested
+      if (data.notifyGVCN) {
+        await notifyGVCNOfNewStudent(tx, newStudent, data.classId);
+      }
+
       return { success: true }
     })
   } catch (error: any) {
@@ -412,6 +417,11 @@ export async function updateTransferInAction(id: string, data: any) {
             academicYearId: data.academicYearId,
           }
         })
+
+        // Send notification to GVCN if requested
+        if (data.notifyGVCN) {
+          await notifyGVCNOfNewStudent(tx, { studentName: data.studentName, studentCode: data.studentCode }, data.classId);
+        }
       }
     })
 
@@ -647,6 +657,11 @@ export async function completeEnrollmentAction(id: string, isPreschool: boolean,
         });
       }
 
+      // 4. Send notification to GVCN if requested
+      if (data.notifyGVCN) {
+        await notifyGVCNOfNewStudent(tx, newStudent, data.classId);
+      }
+
       return { success: true }
     });
   } catch (e: any) {
@@ -837,6 +852,163 @@ export async function revertTransferAction(transferId: string) {
     return { success: true }
   } catch (e: any) {
     console.error("revertTransferAction Error:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+async function notifyGVCNOfNewStudent(tx: any, student: any, classId: string) {
+  try {
+    const destClass = await tx.class.findUnique({
+      where: { id: classId }
+    });
+    if (destClass && destClass.homeroomTeacherId) {
+      const teacherIds = destClass.homeroomTeacherId.split(',').map((id) => id.trim()).filter(Boolean);
+      const teachers = await tx.teacher.findMany({
+        where: { id: { in: teacherIds } },
+        select: { userId: true }
+      });
+      
+      const title = "Học sinh mới nhập học";
+      const message = `Học sinh ${student.studentName} (Mã HS: ${student.studentCode}) đã được xếp vào lớp ${destClass.className} của bạn.`;
+      const link = "/teacher/ho-so-hoc-sinh";
+      
+      for (const t of teachers) {
+        if (t.userId) {
+          await tx.notification.create({
+            data: {
+              userId: t.userId,
+              title,
+              message,
+              link
+            }
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error sending notification to GVCN:", err);
+  }
+}
+
+export async function completeBatchEnrollmentAction(ids: string[], isPreschool: boolean, data: any) {
+  try {
+    const session = await auth()
+    const userId = (session?.user as any)?.id
+    if (!userId) return { success: false, error: "Unauthorized" }
+
+    if (!data.classId || !data.academicYearId || !data.campusId || !data.transferDate) {
+      return { success: false, error: "Thiếu thông tin bắt buộc" }
+    }
+
+    const results = []
+    const errors = []
+
+    for (const id of ids) {
+      let candidate;
+      if (isPreschool) {
+        candidate = await prisma.preschoolInputAssessmentStudent.findUnique({
+          where: { id },
+          include: { period: true }
+        });
+      } else {
+        candidate = await prisma.inputAssessmentStudent.findUnique({
+          where: { id },
+          include: { period: true }
+        });
+      }
+
+      if (!candidate) {
+        errors.push(`Không tìm thấy học sinh khảo sát với ID: ${id}`);
+        continue;
+      }
+
+      try {
+        const res = await prisma.$transaction(async (tx) => {
+          const studentCode = candidate.studentCode?.trim().toUpperCase();
+          if (!studentCode) {
+            throw new Error("Mã học sinh của ứng viên không được để trống!");
+          }
+          const existing = await tx.student.findFirst({
+            where: { 
+              studentCode,
+              academicYearId: data.academicYearId
+            }
+          });
+          if (existing) {
+            throw new Error(`Mã học sinh '${studentCode}' đã tồn tại trong hệ thống học sinh chính thức cho năm học này!`);
+          }
+
+          // 1. Create official student in Student table
+          const newStudent = await tx.student.create({
+            data: {
+              studentCode: studentCode,
+              studentName: candidate.fullName,
+              dateOfBirth: candidate.dateOfBirth,
+              gender: candidate.gender,
+              classId: data.classId,
+              campusId: data.campusId,
+              academicYearId: data.academicYearId,
+              status: "ACTIVE"
+            }
+          });
+
+          // Fetch class info for recording
+          const destClass = await tx.class.findUnique({
+            where: { id: data.classId },
+            include: { campus: true }
+          });
+          const destName = destClass ? destClass.className + " (" + destClass.campus.campusName + ")" : data.classId;
+
+          // 2. Create student transfer log
+          await tx.studentTransfer.create({
+            data: {
+              studentId: newStudent.id,
+              type: "IN",
+              transferDate: new Date(data.transferDate),
+              semester: data.semester || "HK1",
+              originSchool: "Khảo sát đầu vào: " + (candidate.period?.name || ""),
+              destinationSchool: destName,
+              reason: data.reason || "Tổ chức nhập học từ kết quả khảo sát",
+              status: "COMPLETED",
+              createdById: userId
+            }
+          });
+
+          // 3. Update candidate's enrollment status to COMPLETED
+          if (isPreschool) {
+            await tx.preschoolInputAssessmentStudent.update({
+              where: { id },
+              data: { enrollmentStatus: "COMPLETED" }
+            });
+          } else {
+            await tx.inputAssessmentStudent.update({
+              where: { id },
+              data: { enrollmentStatus: "COMPLETED" }
+            });
+          }
+
+          // 4. Send notification to GVCN if requested
+          if (data.notifyGVCN) {
+            await notifyGVCNOfNewStudent(tx, newStudent, data.classId);
+          }
+
+          return newStudent;
+        });
+        results.push(res);
+      } catch (err: any) {
+        errors.push(`Học sinh ${candidate.fullName}: ${err.message}`);
+      }
+    }
+
+    revalidatePath("/admin/student-transfers")
+    revalidatePath("/admin/student-info")
+
+    if (errors.length > 0 && results.length === 0) {
+      return { success: false, error: errors.join("\n") }
+    }
+    return { success: true, count: results.length, errors: errors.length > 0 ? errors : null }
+  } catch (e: any) {
+    console.error("completeBatchEnrollmentAction Error:", e);
     return { success: false, error: e.message }
   }
 }
