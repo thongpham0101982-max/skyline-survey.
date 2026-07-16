@@ -532,3 +532,36 @@ export async function DELETE(req) {
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
+export async function PATCH(req: any) {
+  try {
+    const session = await auth();
+    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    const body = await req.json();
+    const { action, ids, targetPeriodId, targetBatchId } = body;
+
+    if (action === "BULK_UPDATE_BATCH") {
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return NextResponse.json({ error: "Danh sách học sinh không hợp lệ" }, { status: 400 });
+      }
+
+      if (!targetPeriodId) {
+        return NextResponse.json({ error: "Vui lòng chọn Kỳ khảo sát đích" }, { status: 400 });
+      }
+
+      const result = await (prisma as any).inputAssessmentStudent.updateMany({
+        where: { id: { in: ids } },
+        data: {
+          periodId: targetPeriodId,
+          batchId: targetBatchId || null
+        }
+      });
+
+      return NextResponse.json({ success: true, count: result.count });
+    }
+
+    return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+  }
+}

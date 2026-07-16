@@ -204,6 +204,43 @@ export function StudentInfoClient({
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [isPreschoolMoveModalOpen, setIsPreschoolMoveModalOpen] = useState(false);
+
+  const handleBulkMoveToBatch = async (targetPeriodId: string, targetBatchId: string) => {
+    if (!targetPeriodId) {
+      showNotification('Vui lòng chọn Kỳ khảo sát đích', 'error');
+      return;
+    }
+    
+    try {
+      const isPreschool = activeTab === 'preschool';
+      const endpoint = isPreschool ? '/api/preschool-input-assessment-students' : '/api/input-assessment-students';
+      
+      const res = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'BULK_UPDATE_BATCH',
+          ids: selectedIds,
+          targetPeriodId,
+          targetBatchId
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lỗi khi chuyển đợt khảo sát');
+      
+      showNotification(`Đã chuyển ${data.count} học sinh thành công!`, 'success');
+      setSelectedIds([]);
+      setIsMoveModalOpen(false);
+      setIsPreschoolMoveModalOpen(false);
+      // Reload page to reflect changes
+      window.location.reload();
+    } catch (err: any) {
+      showNotification(err.message, 'error');
+    }
+  };
+
 
   // Add/Edit student modal states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -2062,8 +2099,7 @@ export function StudentInfoClient({
             <table className="w-full text-sm text-left whitespace-nowrap border-collapse">
               <thead className="text-xs font-bold bg-slate-50/50 text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
                 <tr>
-                  {subTab === "info" && (
-                    <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
+                  <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded text-[#00A99D] accent-[#00A99D]"
@@ -2071,7 +2107,6 @@ export function StudentInfoClient({
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(s => s.id) : [])}
                       />
                     </th>
-                  )}
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Mã học sinh</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600">Họ và tên</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Khối</th>
@@ -2272,8 +2307,7 @@ export function StudentInfoClient({
             <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
               <thead className="text-xs font-bold bg-slate-50/50 text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
                 <tr>
-                  {subTab === "info" && (
-                    <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
+                  <th className="px-5 py-4 border-b border-slate-200/60 w-12 text-center">
                       <input
                         type="checkbox"
                         className="w-4 h-4 rounded accent-[#00A99D]"
@@ -2281,7 +2315,6 @@ export function StudentInfoClient({
                         onChange={(e) => setSelectedIds(e.target.checked ? filteredStudents.map(c => c.id) : [])}
                       />
                     </th>
-                  )}
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-14">STT</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Mã bé</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600">Họ và tên</th>
@@ -4363,6 +4396,223 @@ export function StudentInfoClient({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+function MoveToBatchModal({
+  open,
+  onClose,
+  selectedIds,
+  periods,
+  onSubmit
+}: {
+  open: boolean;
+  onClose: () => void;
+  selectedIds: string[];
+  periods: any[];
+  onSubmit: (targetPeriodId: string, targetBatchId: string) => Promise<void>;
+}) {
+  const [selectedPeriodId, setSelectedPeriodId] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // Update batches when period changes
+  const activePeriod = periods.find(p => p.id === selectedPeriodId);
+  const availableBatches = activePeriod ? activePeriod.batches : [];
+
+  // Reset state on open
+  useEffect(() => {
+    if (open) {
+      setSelectedPeriodId("");
+      setSelectedBatchId("");
+      setLoading(false);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  async function handleSubmit() {
+    setLoading(true);
+    await onSubmit(selectedPeriodId, selectedBatchId);
+    setLoading(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h3 className="text-xl font-black text-slate-800 tracking-tight">Chuyển đợt KS</h3>
+            <p className="text-xs font-semibold text-slate-500 mt-1">Đang chọn {selectedIds.length} học sinh</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5 bg-white">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Kỳ Khảo sát đích <span className="text-red-500">*</span></label>
+              <select
+                value={selectedPeriodId}
+                onChange={(e) => {
+                  setSelectedPeriodId(e.target.value);
+                  setSelectedBatchId("");
+                }}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
+              >
+                <option value="">-- Chọn Kỳ KS --</option>
+                {periods.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Đợt Khảo sát đích</label>
+              <select
+                value={selectedBatchId}
+                onChange={(e) => setSelectedBatchId(e.target.value)}
+                disabled={!selectedPeriodId || availableBatches.length === 0}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <option value="">-- Có thể chọn sau --</option>
+                {availableBatches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 rounded-xl transition-colors cursor-pointer"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedPeriodId || loading}
+            className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Xác nhận Chuyển
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreschoolMoveToBatchModal({
+  open,
+  onClose,
+  selectedIds,
+  periods,
+  onSubmit
+}: {
+  open: boolean;
+  onClose: () => void;
+  selectedIds: string[];
+  periods: any[];
+  onSubmit: (targetPeriodId: string, targetBatchId: string) => Promise<void>;
+}) {
+  const [selectedPeriodId, setSelectedPeriodId] = useState("");
+  const [selectedBatchId, setSelectedBatchId] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const activePeriod = periods.find(p => p.id === selectedPeriodId);
+  const availableBatches = activePeriod ? activePeriod.batches : [];
+
+  useEffect(() => {
+    if (open) {
+      setSelectedPeriodId("");
+      setSelectedBatchId("");
+      setLoading(false);
+    }
+  }, [open]);
+
+  if (!open) return null;
+
+  async function handleSubmit() {
+    setLoading(true);
+    await onSubmit(selectedPeriodId, selectedBatchId);
+    setLoading(false);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div>
+            <h3 className="text-xl font-black text-slate-800 tracking-tight">Chuyển đợt KS Mầm non</h3>
+            <p className="text-xs font-semibold text-slate-500 mt-1">Đang chọn {selectedIds.length} học sinh</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5 bg-white">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Kỳ Khảo sát đích <span className="text-red-500">*</span></label>
+              <select
+                value={selectedPeriodId}
+                onChange={(e) => {
+                  setSelectedPeriodId(e.target.value);
+                  setSelectedBatchId("");
+                }}
+                className="w-full px-4 py-3 bg-slate-50 border border-[#00A99D]/20 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] transition-all cursor-pointer"
+              >
+                <option value="">-- Chọn Kỳ KS --</option>
+                {periods.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Đợt Khảo sát đích</label>
+              <select
+                value={selectedBatchId}
+                onChange={(e) => setSelectedBatchId(e.target.value)}
+                disabled={!selectedPeriodId || availableBatches.length === 0}
+                className="w-full px-4 py-3 bg-slate-50 border border-[#00A99D]/20 rounded-xl text-sm font-semibold text-slate-700 outline-none focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] transition-all cursor-pointer disabled:opacity-50"
+              >
+                <option value="">-- Có thể chọn sau --</option>
+                {availableBatches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="px-6 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200/50 rounded-xl transition-colors cursor-pointer"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!selectedPeriodId || loading}
+            className="flex items-center gap-2 px-6 py-2.5 bg-[#00A99D] hover:bg-[#00A99D]/90 text-white text-sm font-bold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Xác nhận Chuyển
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
