@@ -567,11 +567,11 @@ export default function TeacherStudentProfilePage() {
 
                                       {/* Committed Subjects & Approval Details */}
                                       {(survey.directorNote || survey.admissionResult === "Đạt cam kết" || survey.admissionResult === "Đạt - Cam kết") && (() => {
-                                        const parseCommittedSubjects = (note) => {
+                                        const parseCommittedSubjects = (note: string) => {
                                           if (!note) return []
                                           const match = note.match(/(?:Môn cam kết|Mon cam ket):\s*\[([^\]]+)\]/i)
                                           if (match && match[1]) {
-                                            return match[1].split(',').map(s => s.trim())
+                                            return match[1].split(',').map((s: string) => s.trim())
                                           }
                                           return []
                                         }
@@ -585,7 +585,7 @@ export default function TeacherStudentProfilePage() {
                                               <div className="text-xs">
                                                 <span className="text-slate-500 font-bold">Môn cam kết:</span>
                                                 <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                                  {committedSubjects.map((sub, idx) => (
+                                                  {committedSubjects.map((sub: string, idx: number) => (
                                                     <span key={idx} className="bg-amber-100/80 text-amber-800 border border-amber-200/60 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
                                                       {sub}
                                                     </span>

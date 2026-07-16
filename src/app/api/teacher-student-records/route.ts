@@ -205,11 +205,11 @@ export async function GET(req: Request) {
         }
       })
 
-      const parseCommittedSubjects = (note) => {
+      const parseCommittedSubjects = (note: string) => {
         if (!note) return []
         const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
-          return match[1].split(",").map(s => s.trim())
+          return match[1].split(",").map((s: string) => s.trim())
         }
         return []
       }
@@ -254,11 +254,11 @@ export async function GET(req: Request) {
         }
       })
 
-      const parseCommittedSubjects = (note) => {
+      const parseCommittedSubjects = (note: string) => {
         if (!note) return []
         const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
-          return match[1].split(",").map(s => s.trim())
+          return match[1].split(",").map((s: string) => s.trim())
         }
         return []
       }
@@ -274,7 +274,7 @@ export async function GET(req: Request) {
 
           for (const subName of subjectNames) {
             const cleanSub = subName.toLowerCase()
-            const hasMatch = committedSubjects.some((cs) => {
+            const hasMatch = committedSubjects.some((cs: string) => {
               const cleanCS = cs.toLowerCase()
               if (cleanSub.includes("toán")) {
                 return cleanCS.includes("môn toán") || cleanCS.includes("toán")
@@ -379,11 +379,11 @@ export async function GET(req: Request) {
         }
       })
 
-      const parseCommittedSubjects = (note) => {
+      const parseCommittedSubjects = (note: string) => {
         if (!note) return []
         const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
-          return match[1].split(",").map(s => s.trim())
+          return match[1].split(",").map((s: string) => s.trim())
         }
         return []
       }
@@ -403,7 +403,7 @@ export async function GET(req: Request) {
             .filter(a => a.classId === s.classId)
             .map(a => a.subject?.name || a.subject?.subjectName || "")
 
-          const matchedSubjects = committedSubjects.filter(cs => {
+          const matchedSubjects = committedSubjects.filter((cs: string) => {
             const cleanCS = cs.toLowerCase()
             return teacherSubjectsInClass.some(ts => {
               const cleanTS = ts.toLowerCase()
