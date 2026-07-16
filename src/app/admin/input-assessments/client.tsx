@@ -1198,9 +1198,6 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     return (selectedFormPeriod?.batches || []).filter((b: any) => b.status === "ACTIVE");
   }, [selectedFormPeriod]);
 
-  const currentEduSystems = useMemo(() => {
-    return eduSystems;
-  }, [eduSystems]);
 
   const filteredClasses = useMemo(() => {
     if (!transferCampusId) return [];
