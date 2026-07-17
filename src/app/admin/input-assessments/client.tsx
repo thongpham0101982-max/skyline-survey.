@@ -3777,81 +3777,32 @@ return {
       {toast && <Toast msg={toast.msg} type={toast.type}/>}
       {confirm && <ConfirmDialog open={true} onClose={()=>setConfirm(null)} onConfirm={confirm.fn} message={confirm.msg}/>}
 
-      <div className="no-print flex flex-col gap-3 w-full">
-      {/* HEADER BAR */}
-      {mode !== "input" && (
-        <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 flex items-center justify-center flex-shrink-0 text-xs font-semibold">
-              <ClipboardCheck className="w-4 h-4 text-white"/>
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Phổ thông K-12</h1>
-              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát & phân công giáo viên</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0 text-xs font-semibold">
-            <Calendar className="w-3.5 h-3.5 text-slate-400"/>
-            <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
-              {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
-            </select>
-          </div>
-        </div>
-      )}
+      <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-teal-100/50 border border-teal-200/60 ring-1 ring-teal-900/5 group hover:shadow-lg transition-all">
+<div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
+<div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
 
-      {/* TAB NAV - icon + label, wraps to fit, no overflow */}
-      {mode !== "input" && (
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-1 py-1">
-        <div className="flex flex-wrap gap-0.5">
-          {[
-            { id:"periods",              label:"T\u1ea1o \u0111\u1ee3t kh\u1ea3o s\u00e1t",      tip:"K\u1ef3 & \u0110\u1ee3t kh\u1ea3o s\u00e1t",        icon:Clock },
-            { id:"categories",           label:"Danh m\u1ee5c",   tip:"Danh m\u1ee5c",            icon:Settings },
-            { id:"subjects",             label:"M\u00f4n KS",     tip:"M\u00f4n kh\u1ea3o s\u00e1t",        icon:BookOpen },
-            { id:"mapping",              label:"C\u1ea5u h\u00ecnh",   tip:"C\u1ea5u h\u00ecnh theo Kh\u1ed1i",  icon:Layers },
-            { id:"students",             label:"Danh s\u00e1ch Kh\u1ea3o s\u00e1t",   tip:"DS HS kh\u1ea3o s\u00e1t",      icon:Users },
-
-          ].filter(t => !(mode === "input" && ["categories", "subjects", "mapping"].includes(t.id))).map(t => {
-            const p = getTabPermissions(t.id);
-            const canRead = p.canRead;
-            const isTabReadOnly = canRead && !p.canCreate && !p.canUpdate && !p.canDelete;
-            return (
-              <button
-                key={t.id}
-                onClick={() => { if (canRead) setTab(t.id); }}
-                title={!canRead ? "Bạn không có quyền xem chức năng này" : isTabReadOnly ? `${t.tip} (Chỉ xem)` : t.tip}
-                className={"flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[11px] font-bold transition-all duration-200 min-w-[44px] sm:min-w-0 " + 
-                  (!canRead 
-                    ? "opacity-35 cursor-not-allowed select-none" 
-                    : (tab===t.id 
-                        ? (isTabReadOnly ? "bg-amber-600 text-white shadow-sm" : "bg-indigo-600 text-white shadow-sm") 
-                        : (isTabReadOnly 
-                            ? "text-slate-500 hover:bg-slate-50 hover:text-slate-700 border border-dashed border-amber-300/40" 
-                            : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-                          )
-                      )
-                  )}
-              >
-                {!canRead && <Lock className="w-3 h-3 text-slate-400 mr-0.5" />}
-                {isTabReadOnly && <Lock className="w-3.5 h-3.5 text-amber-500 mr-0.5 flex-shrink-0" />}
-                <t.icon className={"w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 " + (tab===t.id ? "text-white" : (isTabReadOnly ? "text-amber-500/80" : "text-slate-400"))}/>
-                <span className="leading-tight text-center whitespace-nowrap">{t.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      )}
-
-      {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
-      {tab==="assignments" && (
-        <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
-          {latestBatchInfo && (
-            <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 mb-4">
-              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
-              <span>
-                Thông báo: Đợt khảo sát mới nhất: <strong>{latestBatchInfo.name}</strong> thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
-              </span>
-            </div>
+<div className="relative flex items-start sm:items-center gap-4">
+<div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-teal-100/80 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+<AlertCircle className="w-6 h-6 text-[#00A99D] animate-pulse" />
+</div>
+<div className="flex-1 min-w-0 flex flex-col justify-center">
+<div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
+<span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-700 to-emerald-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-teal-100/50 shadow-sm mr-2 flex items-center gap-1.5">
+Thông báo
+</span>
+<span className="opacity-90">Đợt khảo sát mới nhất:</span> 
+<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-md shadow-teal-900/10 mx-0.5 text-xs tracking-wide">
+{latestBatchInfo.name}
+</span> 
+<span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
+<span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black border border-emerald-200/60 shadow-sm mx-0.5 text-xs">
+{latestBatchInfo.periodName}
+</span>
+<span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
+</div>
+</div>
+</div>
+</div>
           )}
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
