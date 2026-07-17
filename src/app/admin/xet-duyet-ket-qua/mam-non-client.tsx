@@ -1242,49 +1242,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     setCurrentPage(1);
   }, [cPeriodId, cBatchId, approvalFilter, cSearch, cCampusFilter, cAgeGroupFilter, devTab]);
 
-  const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
 
-  useEffect(() => {
-    if (Array.isArray(periods) && periods.length > 0 && cPeriodId === "all") {
-      const allBatches = periods.flatMap(p => 
-        (p.batches || []).map(b => ({
-          ...b,
-          periodId: p.id,
-          periodName: p.name,
-          periodCode: p.code
-        }))
-      );
-      
-      if (allBatches.length > 0) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        let activeBatch = allBatches.find(b => {
-          if (!b.startDate || !b.endDate) return false;
-          const start = new Date(b.startDate);
-          const end = new Date(b.endDate);
-          start.setHours(0, 0, 0, 0);
-          end.setHours(23, 59, 59, 999);
-          return today >= start && today <= end;
-        });
-        
-        if (!activeBatch) {
-          const sorted = [...allBatches].sort((a, b) => {
-            const dateA = new Date(a.endDate || a.startDate || 0);
-            const dateB = new Date(b.endDate || b.startDate || 0);
-            return dateB.getTime() - dateA.getTime();
-          });
-          activeBatch = sorted[0];
-        }
-        
-        if (activeBatch) {
-          setCPeriodId(activeBatch.periodId);
-          setCBatchId(activeBatch.id);
-          setLatestBatchInfo(activeBatch);
-        }
-      }
-    }
-  }, [periods, cPeriodId]);
 
   // Summary scores for students list (Moved here to avoid TDZ ReferenceError in useMemo hooks below)
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
@@ -1748,6 +1706,50 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       };
     });
   }, [rawPeriods, tab, isGDCSUser, currentUser]);
+
+  const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if (Array.isArray(periods) && periods.length > 0 && cPeriodId === "all") {
+      const allBatches = periods.flatMap(p => 
+        (p.batches || []).map(b => ({
+          ...b,
+          periodId: p.id,
+          periodName: p.name,
+          periodCode: p.code
+        }))
+      );
+      
+      if (allBatches.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let activeBatch = allBatches.find(b => {
+          if (!b.startDate || !b.endDate) return false;
+          const start = new Date(b.startDate);
+          const end = new Date(b.endDate);
+          start.setHours(0, 0, 0, 0);
+          end.setHours(23, 59, 59, 999);
+          return today >= start && today <= end;
+        });
+        
+        if (!activeBatch) {
+          const sorted = [...allBatches].sort((a, b) => {
+            const dateA = new Date(a.endDate || a.startDate || 0);
+            const dateB = new Date(b.endDate || b.startDate || 0);
+            return dateB.getTime() - dateA.getTime();
+          });
+          activeBatch = sorted[0];
+        }
+        
+        if (activeBatch) {
+          setCPeriodId(activeBatch.periodId);
+          setCBatchId(activeBatch.id);
+          setLatestBatchInfo(activeBatch);
+        }
+      }
+    }
+  }, [periods, cPeriodId]);
   const [pLoading, setPLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [pModal, setPModal] = useState(false);
