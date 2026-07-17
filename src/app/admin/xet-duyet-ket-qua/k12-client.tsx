@@ -4673,11 +4673,31 @@ return {
       {tab==="students" && (
         <div className={"space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {latestBatchInfo && (
-            <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 mb-4">
-              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
-              <span>
-                Thông báo: Đợt khảo sát mới nhất: <strong>{latestBatchInfo.name}</strong> thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
-              </span>
+            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-teal-100/50 border border-teal-200/60 ring-1 ring-teal-900/5 group hover:shadow-lg transition-all">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+            
+            <div className="relative flex items-start sm:items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-teal-100/80 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+            <AlertCircle className="w-6 h-6 text-[#00A99D] animate-pulse" />
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-700 to-emerald-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-teal-100/50 shadow-sm mr-2 flex items-center gap-1.5">
+            Thông báo
+            </span>
+            <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-md shadow-teal-900/10 mx-0.5 text-xs tracking-wide">
+            {latestBatchInfo.name}
+            </span> 
+            <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black border border-emerald-200/60 shadow-sm mx-0.5 text-xs">
+            {latestBatchInfo.periodName}
+            </span>
+            <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
+            </div>
+            </div>
+            </div>
             </div>
           )}
           {isReadOnly && (
@@ -5664,11 +5684,31 @@ return {
       {tab === "reports" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {latestBatchInfo && (
-            <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 mb-4">
-              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
-              <span>
-                Thông báo: Đợt khảo sát mới nhất: <strong>{latestBatchInfo.name}</strong> thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
-              </span>
+            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-teal-100/50 border border-teal-200/60 ring-1 ring-teal-900/5 group hover:shadow-lg transition-all">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+            
+            <div className="relative flex items-start sm:items-center gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-teal-100/80 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+            <AlertCircle className="w-6 h-6 text-[#00A99D] animate-pulse" />
+            </div>
+            <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-700 to-emerald-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-teal-100/50 shadow-sm mr-2 flex items-center gap-1.5">
+            Thông báo
+            </span>
+            <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-md shadow-teal-900/10 mx-0.5 text-xs tracking-wide">
+            {latestBatchInfo.name}
+            </span> 
+            <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black border border-emerald-200/60 shadow-sm mx-0.5 text-xs">
+            {latestBatchInfo.periodName}
+            </span>
+            <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
+            </div>
+            </div>
+            </div>
             </div>
           )}
           
