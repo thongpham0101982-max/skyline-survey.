@@ -6810,7 +6810,7 @@ return {
          </div>
       </Modal>
 
-      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
+      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 px-6 py-3 bg-[#00A99D] hover:bg-[#0098C2] rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
            <Field label="Tên đợt" required>
