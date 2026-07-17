@@ -6,7 +6,7 @@ import {
   AlertCircle, X, Plus, RefreshCw, Users
 } from "lucide-react"
 
-// â”€â”€â”€ Helpers â”€â”€â”€
+// ─── Helpers ───
 function Toast({ msg, type }: { msg: string; type: "ok" | "err" }) {
   return (
     <div className={`fixed top-5 right-5 z-[400] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-sm font-bold animate-in slide-in-from-top-3 duration-300 ${type === "ok" ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`}>
@@ -52,18 +52,18 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; on
       <div className="relative bg-white rounded-[28px] border border-slate-100 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.15)] p-7 max-w-[360px] w-full text-center animate-in zoom-in-95 duration-300">
         <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"><X className="w-4 h-4" /></button>
         <div className="w-16 h-16 rounded-2xl bg-rose-50 border-4 border-rose-100/40 text-rose-500 flex items-center justify-center mx-auto mb-5 shadow-sm"><Trash2 className="w-6 h-6" /></div>
-        <h3 className="text-base font-black text-slate-800 tracking-tight mb-2">XĂ¡c nháº­n xĂ³a</h3>
+        <h3 className="text-base font-black text-slate-800 tracking-tight mb-2">Xác nhận xóa</h3>
         <p className="text-xs text-slate-500 font-semibold leading-relaxed mb-6 px-1">{message}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.97]">Há»§y</button>
-          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>XĂ³a</button>
+          <button onClick={onClose} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.97]">Hủy</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>Xóa</button>
         </div>
       </div>
     </div>
   )
 }
 
-// â”€â”€â”€ Props â”€â”€â”€
+// ─── Props ───
 interface Props {
   academicYears: any[]
   initialPeriods: any[]
@@ -99,18 +99,18 @@ export function PhanCongK12Client({
   const notify = (msg: string, type: "ok" | "err" = "ok") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3200) }
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
 
-  // â”€â”€â”€ Year â”€â”€â”€
+  // ─── Year ───
   const defaultYear = academicYears.find(y => !y.isOff) || academicYears[0]
   const [yearId, setYearId] = useState(defaultYear?.id || "")
 
-  // â”€â”€â”€ Grades â”€â”€â”€
+  // ─── Grades ───
   const [activeGrades, setActiveGrades] = useState<string[]>(grades)
 
   useEffect(() => {
     setActiveGrades(grades)
   }, [grades])
 
-  // â”€â”€â”€ Periods â”€â”€â”€
+  // ─── Periods ───
   const [periods, setPeriods] = useState<any[]>(initialPeriods)
   const [pLoading, setPLoading] = useState(false)
 
@@ -122,7 +122,7 @@ export function PhanCongK12Client({
 
     if (!currentUser?.role) return activeBatchesPeriods
     if (isAdmin) return activeBatchesPeriods
-    if (["GDCS", "GÄ_CS", "GIAO_VU_CS", "GÄCS"].includes(userRole)) {
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const allowedIds = currentUser.campusIds || []
       return activeBatchesPeriods.map(p => ({
         ...p,
@@ -161,7 +161,7 @@ export function PhanCongK12Client({
 
   useEffect(() => { fetchPeriods() }, [fetchPeriods])
 
-  // â”€â”€â”€ Assignments State â”€â”€â”€
+  // ─── Assignments State ───
   const [assignments, setAssignments] = useState<any[]>([])
   const [asLoading, setAsLoading] = useState(false)
   const [asPeriodId, setAsPeriodId] = useState("")
@@ -170,7 +170,7 @@ export function PhanCongK12Client({
   const [asNotifyingId, setAsNotifyingId] = useState<string | null>(null)
   const [asNotifyingAll, setAsNotifyingAll] = useState(false)
 
-  // â”€â”€â”€ Student stats state â”€â”€â”€
+  // ─── Student stats state ───
   const [studentStats, setStudentStats] = useState<Record<string, any[]>>({})
   const [statsLoading, setStatsLoading] = useState(false)
   const [expandedGrades, setExpandedGrades] = useState<Record<string, boolean>>({})
@@ -189,7 +189,7 @@ export function PhanCongK12Client({
         const students = await res.json()
         const grouped = {}
         students.forEach((s) => {
-          const g = s.grade || "ChÆ°a xĂ¡c Ä‘á»‹nh"
+          const g = s.grade || "Chưa xác định"
           if (!grouped[g]) grouped[g] = []
           grouped[g].push(s)
         })
@@ -215,7 +215,7 @@ export function PhanCongK12Client({
   const [asSelSystems, setAsSelSystems] = useState<string[]>([])
   const [asSubmitting, setAsSubmitting] = useState(false)
 
-  // â”€â”€â”€ Auto-set period â”€â”€â”€
+  // ─── Auto-set period ───
   useEffect(() => {
     if (visiblePeriods.length > 0 && !asPeriodId) {
       setAsPeriodId(visiblePeriods[0].id)
@@ -225,7 +225,7 @@ export function PhanCongK12Client({
   useEffect(() => { setAsFilterBatchId("") }, [asPeriodId])
   useEffect(() => { if (asBatchId) setAsFilterBatchId(asBatchId) }, [asBatchId])
 
-  // â”€â”€â”€ Computed â”€â”€â”€
+  // ─── Computed ───
   const currentEduSystems = useMemo(() => eduSystems.filter((es: any) => es.academicYearId === yearId), [eduSystems, yearId])
   const filteredTeachers = useMemo(() => asDeptId ? teachers.filter(t => t.departmentId === asDeptId) : teachers, [teachers, asDeptId])
   const asSelPeriod = visiblePeriods.find(p => p.id === asPeriodId)
@@ -248,7 +248,7 @@ export function PhanCongK12Client({
     return Object.values(groups)
   }, [assignments, asFilterBatchId])
 
-  // â”€â”€â”€ Fetch Assignments â”€â”€â”€
+  // ─── Fetch Assignments ───
   const fetchAssignments = useCallback(async () => {
     if (!asPeriodId) return
     setAsLoading(true)
@@ -260,11 +260,11 @@ export function PhanCongK12Client({
 
   useEffect(() => { fetchAssignments() }, [fetchAssignments])
 
-  // â”€â”€â”€ Actions â”€â”€â”€
+  // ─── Actions ───
   const submitAssignment = async () => {
     if (!canCreate) return
     if (!asPeriodId || !asBatchId || !asTeacherId || !asSelSubjects.length || !asSelGrades.length || !asSelSystems.length) {
-      return notify("Vui lĂ²ng chá»n Ä‘áº§y Ä‘á»§ Ká»³, Äá»£t, GV, MĂ´n, Khá»‘i vĂ  Há»‡ há»c", "err")
+      return notify("Vui lòng chọn đầy đủ Kỳ, Đợt, GV, Môn, Khối và Hệ học", "err")
     }
     setAsSubmitting(true)
     try {
@@ -283,12 +283,12 @@ export function PhanCongK12Client({
       })
       if (res.ok) {
         const j = await res.json()
-        if (j.emailError) { notify(`PhĂ¢n cĂ´ng thĂ nh cĂ´ng NHÆ¯NG gá»­i mail tháº¥t báº¡i: ${j.emailError}`, "err") } else { notify("ÄĂ£ hoĂ n táº¥t phĂ¢n cĂ´ng vĂ  gá»­i email") }
+        if (j.emailError) { notify(`Phân công thành công NHƯNG gửi mail thất bại: ${j.emailError}`, "err") } else { notify("Đã hoàn tất phân công và gửi email") }
         fetchAssignments()
         setAsSelSubjects([]); setAsSelGrades([]); setAsSelSystems([])
       } else {
         const j = await res.json()
-        notify(j.error || "Lá»—i phĂ¢n cĂ´ng", "err")
+        notify(j.error || "Lỗi phân công", "err")
       }
     } finally { setAsSubmitting(false) }
   }
@@ -304,15 +304,15 @@ export function PhanCongK12Client({
       })
       if (res.ok) {
         const result = await res.json()
-        if (result.success && result.sentCount > 0) { notify(`ÄĂ£ gá»­i email thĂ´ng bĂ¡o cho GV ${a.user?.fullName || ""}!`) }
-        else { notify(`Gá»­i email tháº¥t báº¡i: ${result.errors?.[0] || "KhĂ´ng gá»­i Ä‘Æ°á»£c email"}`, "err") }
-      } else { notify("Lá»—i khi káº¿t ná»‘i gá»­i thĂ´ng bĂ¡o", "err") }
-    } catch { notify("CĂ³ lá»—i xáº£y ra", "err") }
+        if (result.success && result.sentCount > 0) { notify(`Đã gửi email thông báo cho GV ${a.user?.fullName || ""}!`) }
+        else { notify(`Gửi email thất bại: ${result.errors?.[0] || "Không gửi được email"}`, "err") }
+      } else { notify("Lỗi khi kết nối gửi thông báo", "err") }
+    } catch { notify("Có lỗi xảy ra", "err") }
     finally { setAsNotifyingId(null) }
   }
 
   const sendAllNotifications = async () => {
-    if (!canUpdate || groupedAssignments.length === 0) return notify("KhĂ´ng cĂ³ phĂ¢n cĂ´ng nĂ o Ä‘á»ƒ gá»­i thĂ´ng bĂ¡o", "err")
+    if (!canUpdate || groupedAssignments.length === 0) return notify("Không có phân công nào để gửi thông báo", "err")
     setAsNotifyingAll(true)
     try {
       const res = await fetch("/api/input-assessment-assignments", {
@@ -323,18 +323,18 @@ export function PhanCongK12Client({
       if (res.ok) {
         const result = await res.json()
         if (result.success) {
-          notify(`ÄĂ£ gá»­i thĂ´ng bĂ¡o thĂ nh cĂ´ng cho ${result.sentCount} giĂ¡o viĂªn!`)
-          if (result.failedCount > 0) notify(`Gá»­i tháº¥t báº¡i cho ${result.failedCount} giĂ¡o viĂªn`, "err")
-        } else { notify("Gá»­i thĂ´ng bĂ¡o hĂ ng loáº¡t tháº¥t báº¡i", "err") }
-      } else { notify("Lá»—i káº¿t ná»‘i", "err") }
-    } catch { notify("CĂ³ lá»—i xáº£y ra", "err") }
+          notify(`Đã gửi thông báo thành công cho ${result.sentCount} giáo viên!`)
+          if (result.failedCount > 0) notify(`Gửi thất bại cho ${result.failedCount} giáo viên`, "err")
+        } else { notify("Gửi thông báo hàng loạt thất bại", "err") }
+      } else { notify("Lỗi kết nối", "err") }
+    } catch { notify("Có lỗi xảy ra", "err") }
     finally { setAsNotifyingAll(false) }
   }
 
   const deleteAssignment = async (ids: string[]) => {
     if (!canDelete) return
     const res = await fetch(`/api/input-assessment-assignments?ids=${ids.join(",")}`, { method: "DELETE" })
-    if (res.ok) { notify("ÄĂ£ xĂ³a phĂ¢n cĂ´ng"); fetchAssignments() }
+    if (res.ok) { notify("Đã xóa phân công"); fetchAssignments() }
   }
 
   const openEditAssignment = (a: any) => {
@@ -348,7 +348,7 @@ export function PhanCongK12Client({
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  // â”€â”€â”€ RENDER â”€â”€â”€
+  // ─── RENDER ───
   return (
     <div className="space-y-6 font-sans max-w-[1440px] mx-auto pb-16">
       {toast && <Toast msg={toast.msg} type={toast.type} />}
@@ -361,8 +361,8 @@ export function PhanCongK12Client({
             <UserCheck className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-base font-black text-slate-800 tracking-tight">PhĂ¢n cĂ´ng K-12</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">Giao nhiá»‡m vá»¥ phá»¥ trĂ¡ch mĂ´n thi cho giĂ¡o viĂªn</p>
+            <h1 className="text-base font-black text-slate-800 tracking-tight">Phân công K-12</h1>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest">Giao nhiệm vụ phụ trách môn thi cho giáo viên</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -382,52 +382,52 @@ export function PhanCongK12Client({
           <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
             <div className="bg-slate-50/60 border-b border-slate-100 px-6 py-4 flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-indigo-100">1</div>
-              <h2 className="font-bold text-slate-800 text-sm tracking-tight">Ká»³ Kháº£o sĂ¡t & NgÆ°á»i phá»¥ trĂ¡ch</h2>
+              <h2 className="font-bold text-slate-800 text-sm tracking-tight">Kỳ Khảo sát & Người phụ trách</h2>
             </div>
             <div className="p-6 space-y-6 flex-1">
               <div>
                 <div className="space-y-5">
-                  <Field label="Ká»³ kháº£o sĂ¡t" required>
+                  <Field label="Kỳ khảo sát" required>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <Calendar className="w-4 h-4" />
                       </div>
                       <select value={asPeriodId} onChange={e => { setAsPeriodId(e.target.value); setAsBatchId("") }} className={inp + " pl-10"}>
-                        <option value="">-- Chá»n Ká»³ --</option>
+                        <option value="">-- Chọn Kỳ --</option>
                         {visiblePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                     </div>
                   </Field>
-                  <Field label="Äá»£t kháº£o sĂ¡t" required>
+                  <Field label="Đợt khảo sát" required>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <Layers className="w-4 h-4" />
                       </div>
                       <select value={asBatchId} onChange={e => setAsBatchId(e.target.value)} className={inp + " pl-10"} disabled={!asPeriodId}>
-                        <option value="">-- Chá»n Äá»£t --</option>
+                        <option value="">-- Chọn Đợt --</option>
                         {visiblePeriods.find(p => p.id === asPeriodId)?.batches?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </div>
                   </Field>
 
-                  {/* Thá»‘ng kĂª theo Khá»‘i */}
+                  {/* Thống kê theo Khối */}
                   {asPeriodId && (
                     <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100/70 space-y-3 animate-in fade-in duration-350">
                       <div className="flex items-center justify-between border-b border-slate-200/40 pb-2">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-[#00A99D]" />
-                          <span className="text-xs font-bold text-slate-800">Thá»‘ng kĂª theo Khá»‘i</span>
+                          <span className="text-xs font-bold text-slate-800">Thống kê theo Khối</span>
                         </div>
                         <div className="flex items-center gap-2">
                           {statsLoading && <Loader2 className="w-3.5 h-3.5 text-teal-600 animate-spin" />}
                           <span className="text-xs font-bold text-slate-500">
-                            Tá»•ng: {Object.values(studentStats).reduce((a, b) => a + b.length, 0)} HS
+                            Tổng: {Object.values(studentStats).reduce((a, b) => a + b.length, 0)} HS
                           </span>
                         </div>
                       </div>
                       {Object.keys(studentStats).length === 0 ? (
                         <div className="text-xs text-slate-400 font-medium text-center py-2">
-                          {statsLoading ? "Äang táº£i dá»¯ liá»‡u..." : "KhĂ´ng cĂ³ há»c sinh trong Ä‘á»£t kháº£o sĂ¡t nĂ y"}
+                          {statsLoading ? "Đang tải dữ liệu..." : "Không có học sinh trong đợt khảo sát này"}
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -439,10 +439,10 @@ export function PhanCongK12Client({
                                   onClick={() => setExpandedGrades(prev => ({ ...prev, [grade]: !prev[grade] }))}
                                   className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors text-xs"
                                 >
-                                  <span className="font-bold text-slate-700">Khá»‘i {grade}</span>
+                                  <span className="font-bold text-slate-700">Khối {grade}</span>
                                   <div className="flex items-center gap-1.5 font-extrabold text-[#00A99D]">
                                     <span>{studentsList.length} HS</span>
-                                    <span className="text-slate-400 font-bold text-[10px]">{isExpanded ? "â–²" : "â–¼"}</span>
+                                    <span className="text-slate-400 font-bold text-[10px]">{isExpanded ? "▲" : "▼"}</span>
                                   </div>
                                 </div>
                                 {isExpanded && (
@@ -462,48 +462,48 @@ export function PhanCongK12Client({
                       )}
                     </div>
                   )}
-                  <Field label="Lá»c theo Tá»• chuyĂªn mĂ´n (KhĂ´ng báº¯t buá»™c)">
+                  <Field label="Lọc theo Tổ chuyên môn (Không bắt buộc)">
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <Users className="w-4 h-4" />
                       </div>
                       <select value={asDeptId} onChange={e => setAsDeptId(e.target.value)} className={inp + " pl-10"}>
-                        <option value="">Táº¥t cáº£ Tá»• chuyĂªn mĂ´n</option>
+                        <option value="">Tất cả Tổ chuyên môn</option>
                         {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                       </select>
                     </div>
                   </Field>
-                  <Field label="GiĂ¡o viĂªn phá»¥ trĂ¡ch" required>
+                  <Field label="Giáo viên phụ trách" required>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                         <UserCheck className="w-4 h-4" />
                       </div>
                       <select value={asTeacherId} onChange={e => setAsTeacherId(e.target.value)} className={inp + " pl-10 bg-slate-50/20 hover:border-teal-300 focus:bg-white"}>
-                        <option value="">-- Chá»n GiĂ¡o viĂªn --</option>
+                        <option value="">-- Chọn Giáo viên --</option>
                         {filteredTeachers.map(t => <option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
                       </select>
                     </div>
                   </Field>
 
-                  {/* Hiá»ƒn thá»‹ phĂ¢n cĂ´ng hiá»‡n táº¡i cá»§a giĂ¡o viĂªn */}
+                  {/* Hiển thị phân công hiện tại của giáo viên */}
                   {asTeacherId && (() => {
                     const currentTeacherAssigns = assignments.filter(a => a.userId === asTeacherId)
                     return (
                       <div className="p-4 bg-teal-50/30 border border-teal-100/50 rounded-2xl space-y-2.5 animate-in fade-in duration-300">
                         <div className="text-[11px] font-bold text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
                           <BookOpen className="w-4 h-4 text-[#00A99D]" /> 
-                          <span>PhĂ¢n cĂ´ng hiá»‡n táº¡i cá»§a GV</span>
+                          <span>Phân công hiện tại của GV</span>
                         </div>
                         {currentTeacherAssigns.length === 0 ? (
-                          <div className="text-xs text-slate-400 italic pl-5">ChÆ°a cĂ³ phĂ¢n cĂ´ng nĂ o trong Ä‘á»£t nĂ y.</div>
+                          <div className="text-xs text-slate-400 italic pl-5">Chưa có phân công nào trong đợt này.</div>
                         ) : (
                           <div className="flex flex-wrap gap-2 pl-5">
                             {currentTeacherAssigns.map((a) => (
                               <span key={a.id} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-teal-100/80 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
                                 <span className="font-bold text-[#00A99D]">{a.subject?.name}</span>
-                                <span className="text-slate-300">â€¢</span>
-                                <span>Khá»‘i {a.grade}</span>
-                                <span className="text-slate-300">â€¢</span>
+                                <span className="text-slate-300">•</span>
+                                <span>Khối {a.grade}</span>
+                                <span className="text-slate-300">•</span>
                                 <span className="text-amber-600 text-[10px] font-bold uppercase">{a.educationSystem}</span>
                               </span>
                             ))}
@@ -521,7 +521,7 @@ export function PhanCongK12Client({
           <div className="bg-white rounded-[2rem] border-2 border-slate-100 shadow-sm overflow-hidden flex flex-col">
             <div className="bg-slate-50/60 border-b border-slate-100 px-6 py-4 flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-xs font-bold text-white shadow-md shadow-emerald-100">2</div>
-              <h2 className="font-bold text-slate-800 text-sm tracking-tight">Pháº¡m vi PhĂ¢n cĂ´ng</h2>
+              <h2 className="font-bold text-slate-800 text-sm tracking-tight">Phạm vi Phân công</h2>
             </div>
             <div className="p-6 space-y-6 flex-1">
               <div>
@@ -529,9 +529,9 @@ export function PhanCongK12Client({
                   {/* Subjects */}
                   <div>
                     <div className="flex items-center justify-between mb-3 px-1">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5" /> MĂ´n kháº£o sĂ¡t *</label>
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5" /> Môn khảo sát *</label>
                       <button onClick={() => setAsSelSubjects(asSelSubjects.length === initialSubjects.length ? [] : initialSubjects.map(s => s.id))} className="text-[10px] font-black text-indigo-500 hover:bg-indigo-50 uppercase tracking-wider transition-colors text-xs font-semibold">
-                        {asSelSubjects.length === initialSubjects.length ? "Bá» chá»n háº¿t" : "Chá»n táº¥t cáº£"}
+                        {asSelSubjects.length === initialSubjects.length ? "Bỏ chọn hết" : "Chọn tất cả"}
                       </button>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -548,8 +548,8 @@ export function PhanCongK12Client({
                     {/* Grades */}
                     <div className="p-6 text-xs font-semibold">
                       <div className="flex items-center justify-between mb-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Khá»‘i *</label>
-                        <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className="text-[9px] font-black text-emerald-600 text-xs font-semibold">Chá»n háº¿t</button>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5" /> Khối *</label>
+                        <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className="text-[9px] font-black text-emerald-600 text-xs font-semibold">Chọn hết</button>
                       </div>
                       <div className="grid grid-cols-4 gap-2">
                         {activeGrades.map(g => (
@@ -564,8 +564,8 @@ export function PhanCongK12Client({
                     {/* Systems */}
                     <div className="p-6 text-xs font-semibold">
                       <div className="flex items-center justify-between mb-4">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5" /> Há»‡ há»c *</label>
-                        <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map((es: any) => es.code))} className="text-[9px] font-black text-amber-600 text-xs font-semibold">Chá»n háº¿t</button>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5" /> Hệ học *</label>
+                        <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map((es: any) => es.code))} className="text-[9px] font-black text-amber-600 text-xs font-semibold">Chọn hết</button>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {currentEduSystems.map((es: any) => (
@@ -588,7 +588,7 @@ export function PhanCongK12Client({
           <button onClick={submitAssignment} disabled={asSubmitting || !canCreate}
             className="group flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-[#00A99D] to-[#009085] text-white rounded-[2rem] font-black text-base hover:from-[#009085] hover:to-[#007068] hover:scale-105 transition-all shadow-2xl shadow-teal-100 disabled:opacity-50 cursor-pointer">
             {asSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <UserPlus className="w-6 h-6 group-hover:rotate-12 transition-all" />}
-            XĂ¡c nháº­n PhĂ¢n cĂ´ng cho GiĂ¡o viĂªn
+            Xác nhận Phân công cho Giáo viên
           </button>
         </div>
 
@@ -596,26 +596,26 @@ export function PhanCongK12Client({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
             <div className="flex items-center gap-3">
-              <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500" /> Danh sĂ¡ch Ä‘Ă£ PhĂ¢n cĂ´ng</h3>
-              {asFilterBatchId && <span className="text-indigo-600 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nhĂ³m phĂ¢n cĂ´ng</span>}
+              <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500" /> Danh sách đã Phân công</h3>
+              {asFilterBatchId && <span className="text-indigo-600 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nhóm phân công</span>}
             </div>
             {asPeriodId && (
               <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto text-xs font-semibold">
                 <div className="flex items-center gap-2">
                   <Filter className="w-4 h-4 text-indigo-500" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lá»c Ä‘á»£t:</span>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
                   <select value={asFilterBatchId} onChange={e => setAsFilterBatchId(e.target.value)}
                     className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]">
-                    <option value="">-- Chá»n Äá»£t --</option>
+                    <option value="">-- Chọn Đợt --</option>
                     {asSelPeriod?.batches?.map((b: any) => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 {asFilterBatchId && (
                   <button onClick={sendAllNotifications} disabled={asNotifyingAll || groupedAssignments.length === 0 || !canUpdate}
                     className="flex items-center gap-1.5 text-white text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 text-xs font-semibold"
-                    title="Gá»­i email thĂ´ng bĂ¡o phĂ¢n cĂ´ng cho táº¥t cáº£ giĂ¡o viĂªn">
+                    title="Gửi email thông báo phân công cho tất cả giáo viên">
                     {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                    Gá»­i email hĂ ng loáº¡t
+                    Gửi email hàng loạt
                   </button>
                 )}
               </div>
