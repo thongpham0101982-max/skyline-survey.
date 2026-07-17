@@ -1165,6 +1165,7 @@ export function InputAssessmentsClient({
   const [sLoading, setSLoading] = useState(false)
   const [sPeriodId, setSPeriodId] = useState("")
   const [sBatchId, setSBatchId] = useState("")
+  const [latestBatchInfo, setLatestBatchInfo] = useState(null);
   const [sSearch, setSSearch] = useState("")
   const [studentsCurrentPage, setStudentsCurrentPage] = useState(1);
   const studentsPageSize = 10;
@@ -3099,6 +3100,38 @@ ${reportForm.directorNote}`;
     }
   }, [visiblePeriods, sPeriodId, asPeriodId]);
 
+  // Auto-select latest batch when the selected period changes
+  useEffect(() => {
+    const selP = visiblePeriods.find(p => p.id === sPeriodId);
+    if (!selP || !selP.batches || selP.batches.length === 0) return;
+    const allBatches = (selP.batches || []).map(b => ({
+      ...b,
+      periodId: selP.id,
+      periodName: selP.name,
+      periodCode: selP.code
+    }));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let activeBatch = allBatches.find(b => {
+      if (!b.startDate || !b.endDate) return false;
+      const start = new Date(b.startDate); start.setHours(0, 0, 0, 0);
+      const end = new Date(b.endDate); end.setHours(23, 59, 59, 999);
+      return today >= start && today <= end;
+    });
+    if (!activeBatch) {
+      const sorted = [...allBatches].sort((a, b) => {
+        const dA = new Date(a.endDate || a.startDate || 0);
+        const dB = new Date(b.endDate || b.startDate || 0);
+        return dB.getTime() - dA.getTime();
+      });
+      activeBatch = sorted[0];
+    }
+    if (activeBatch) {
+      setSBatchId(activeBatch.id);
+      setLatestBatchInfo(activeBatch);
+    }
+  }, [sPeriodId, visiblePeriods]);
+
   // ───────── FETCHERS ─────────
   const fetchPeriods = useCallback(async () => {
     if (!yearId) return
@@ -3812,6 +3845,14 @@ return {
       {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
       {tab==="assignments" && (
         <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {latestBatchInfo && (
+            <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 mb-4">
+              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
+              <span>
+                Thông báo: Đợt khảo sát mới nhất thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
+              </span>
+            </div>
+          )}
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />

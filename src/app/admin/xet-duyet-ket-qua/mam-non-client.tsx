@@ -1242,6 +1242,50 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     setCurrentPage(1);
   }, [cPeriodId, cBatchId, approvalFilter, cSearch, cCampusFilter, cAgeGroupFilter, devTab]);
 
+  const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if (Array.isArray(periods) && periods.length > 0 && cPeriodId === "all") {
+      const allBatches = periods.flatMap(p => 
+        (p.batches || []).map(b => ({
+          ...b,
+          periodId: p.id,
+          periodName: p.name,
+          periodCode: p.code
+        }))
+      );
+      
+      if (allBatches.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let activeBatch = allBatches.find(b => {
+          if (!b.startDate || !b.endDate) return false;
+          const start = new Date(b.startDate);
+          const end = new Date(b.endDate);
+          start.setHours(0, 0, 0, 0);
+          end.setHours(23, 59, 59, 999);
+          return today >= start && today <= end;
+        });
+        
+        if (!activeBatch) {
+          const sorted = [...allBatches].sort((a, b) => {
+            const dateA = new Date(a.endDate || a.startDate || 0);
+            const dateB = new Date(b.endDate || b.startDate || 0);
+            return dateB.getTime() - dateA.getTime();
+          });
+          activeBatch = sorted[0];
+        }
+        
+        if (activeBatch) {
+          setCPeriodId(activeBatch.periodId);
+          setCBatchId(activeBatch.id);
+          setLatestBatchInfo(activeBatch);
+        }
+      }
+    }
+  }, [periods, cPeriodId]);
+
   // Summary scores for students list (Moved here to avoid TDZ ReferenceError in useMemo hooks below)
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
   const [sumLoading, setSumLoading] = useState(false);
@@ -4267,6 +4311,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           
           {/* Custom Preschool/School Styled Tab Bar */}
           ﻿          {/* Custom Preschool/School Styled Tab Bar */}
+          {latestBatchInfo && (
+            <div className="no-print mb-6 p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
+              <span>
+                Thông báo: Đợt khảo sát mới nhất thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
+              </span>
+            </div>
+          )}
           <div className="bg-[#EBF5F4]/60 backdrop-blur-md p-1.5 rounded-3xl flex flex-wrap gap-2 w-fit border border-[#00A99D]/15 shadow-sm no-print mb-6">
             <button
               onClick={() => setDevTab("stats")}

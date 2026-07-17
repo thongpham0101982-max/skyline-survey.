@@ -1116,6 +1116,7 @@ export function PreschoolInputAssessmentsClient({
   const [cLoading, setCLoading] = useState(false);
   const [cPeriodId, setCPeriodId] = useState("all");
   const [cBatchId, setCBatchId] = useState("");
+  const [latestBatchInfo, setLatestBatchInfo] = useState(null);
 
   // useMemos that depend on cBatchId - must be AFTER declaration to avoid TDZ crash in production
 
@@ -1591,6 +1592,42 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   }, [yearId, cPeriodId]);
 
   useEffect(() => { fetchPeriods(); }, [fetchPeriods]);
+
+  // Auto-select latest batch and period on load
+  useEffect(() => {
+    if (!Array.isArray(periods) || periods.length === 0) return;
+    if (cPeriodId !== "all" && cPeriodId !== "") return; // already chosen
+    const allBatches = periods.flatMap(p =>
+      (p.batches || []).map(b => ({
+        ...b,
+        periodId: p.id,
+        periodName: p.name,
+        periodCode: p.code
+      }))
+    );
+    if (allBatches.length === 0) return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let activeBatch = allBatches.find(b => {
+      if (!b.startDate || !b.endDate) return false;
+      const start = new Date(b.startDate); start.setHours(0, 0, 0, 0);
+      const end = new Date(b.endDate); end.setHours(23, 59, 59, 999);
+      return today >= start && today <= end;
+    });
+    if (!activeBatch) {
+      const sorted = [...allBatches].sort((a, b) => {
+        const dA = new Date(a.endDate || a.startDate || 0);
+        const dB = new Date(b.endDate || b.startDate || 0);
+        return dB.getTime() - dA.getTime();
+      });
+      activeBatch = sorted[0];
+    }
+    if (activeBatch) {
+      setCPeriodId(activeBatch.periodId);
+      setCBatchId(activeBatch.id);
+      setLatestBatchInfo(activeBatch);
+    }
+  }, [periods, cPeriodId]);
 
   const fetchChildren = useCallback(async () => {
     if (!cPeriodId) return;
@@ -3548,6 +3585,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       {/* Tab: Children */}
       {tab === "children" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {latestBatchInfo && (
+            <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
+              <span>
+                Thông báo: Đợt khảo sát mới nhất thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
+              </span>
+            </div>
+          )}
           <div className="bg-white rounded-none border border-slate-300 shadow-none p-4 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Kỳ KS:</label>

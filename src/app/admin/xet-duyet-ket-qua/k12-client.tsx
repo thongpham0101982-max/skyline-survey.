@@ -1078,6 +1078,49 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [sLoading, setSLoading] = useState(false)
   const [sPeriodId, setSPeriodId] = useState("")
   const [sBatchId, setSBatchId] = useState("")
+  const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
+
+  useEffect(() => {
+    if (Array.isArray(periods) && periods.length > 0 && !sPeriodId) {
+      const allBatches = periods.flatMap(p => 
+        (p.batches || []).map(b => ({
+          ...b,
+          periodId: p.id,
+          periodName: p.name,
+          periodCode: p.code
+        }))
+      );
+      
+      if (allBatches.length > 0) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let activeBatch = allBatches.find(b => {
+          if (!b.startDate || !b.endDate) return false;
+          const start = new Date(b.startDate);
+          const end = new Date(b.endDate);
+          start.setHours(0, 0, 0, 0);
+          end.setHours(23, 59, 59, 999);
+          return today >= start && today <= end;
+        });
+        
+        if (!activeBatch) {
+          const sorted = [...allBatches].sort((a, b) => {
+            const dateA = new Date(a.endDate || a.startDate || 0);
+            const dateB = new Date(b.endDate || b.startDate || 0);
+            return dateB.getTime() - dateA.getTime();
+          });
+          activeBatch = sorted[0];
+        }
+        
+        if (activeBatch) {
+          setSPeriodId(activeBatch.periodId);
+          setSBatchId(activeBatch.id);
+          setLatestBatchInfo(activeBatch);
+        }
+      }
+    }
+  }, [periods, sPeriodId]);
   const [sSearch, setSSearch] = useState("")
   const [importing, setImporting] = useState(false)
   const [sModal, setSModal] = useState(false)
@@ -4629,6 +4672,14 @@ return {
       {/* ===== TAB: STUDENTS (SAAS REDESIGNED) ===== */}
       {tab==="students" && (
         <div className={"space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 " + (isReadOnly ? "select-none" : "")}>
+          {latestBatchInfo && (
+            <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 mb-4">
+              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
+              <span>
+                Thông báo: Đợt khảo sát mới nhất thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
+              </span>
+            </div>
+          )}
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
@@ -5612,6 +5663,14 @@ return {
       {/* ===== OTHER TABS PLACEHOLDERS ===== */}
       {tab === "reports" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {latestBatchInfo && (
+            <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300 mb-4">
+              <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
+              <span>
+                Thông báo: Đợt khảo sát mới nhất thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
+              </span>
+            </div>
+          )}
           
           {/* Sub-tab Navigation & Actions Bar */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-4 p-3.5 shadow-sm text-xs font-semibold">

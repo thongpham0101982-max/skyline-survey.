@@ -20,6 +20,53 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     
     const [selectedPeriodId, setSelectedPeriodId] = useState<string>("");
     const [selectedBatchId, setSelectedBatchId] = useState<string>("all");
+    const [latestBatchInfo, setLatestBatchInfo] = useState<any>(null);
+
+    useEffect(() => {
+        if (Array.isArray(assignments) && assignments.length > 0 && !selectedPeriodId) {
+            const allBatchesMap = new Map();
+            assignments.forEach(a => {
+                if (a && a.batch && a.period) {
+                    allBatchesMap.set(a.batchId, {
+                        ...a.batch,
+                        periodId: a.periodId,
+                        periodName: a.period.name,
+                        periodCode: a.period.code
+                    });
+                }
+            });
+            const allBatches = Array.from(allBatchesMap.values());
+            
+            if (allBatches.length > 0) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                let activeBatch = allBatches.find((b: any) => {
+                    if (!b.startDate || !b.endDate) return false;
+                    const start = new Date(b.startDate);
+                    const end = new Date(b.endDate);
+                    start.setHours(0, 0, 0, 0);
+                    end.setHours(23, 59, 59, 999);
+                    return today >= start && today <= end;
+                });
+                
+                if (!activeBatch) {
+                    const sorted = [...allBatches].sort((a, b) => {
+                        const dateA = new Date(a.endDate || a.startDate || 0);
+                        const dateB = new Date(b.endDate || b.startDate || 0);
+                        return dateB.getTime() - dateA.getTime();
+                    });
+                    activeBatch = sorted[0];
+                }
+                
+                if (activeBatch) {
+                    setSelectedPeriodId(activeBatch.periodId);
+                    setSelectedBatchId(activeBatch.id);
+                    setLatestBatchInfo(activeBatch);
+                }
+            }
+        }
+    }, [assignments, selectedPeriodId]);
     const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
     const [selectedGrade, setSelectedGrade] = useState<string>("all");
     const [selectedSystemCode, setSelectedSystemCode] = useState<string>("all");
@@ -525,6 +572,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
     return (
         <div className="p-3 md:p-6 max-w-[1400px] mx-auto space-y-5 md:space-y-6">
+            {latestBatchInfo && (
+                <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
+                    <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
+                    <span>
+                        Thông báo: Đợt khảo sát mới nhất thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng tiến hành đánh giá.
+                    </span>
+                </div>
+            )}
             
             {/* Premium Welcome Greeting Banner */}
             <div className="relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#005650] to-[#00A99D] rounded-[2rem] p-6 text-white shadow-xl shadow-teal-950/10 animate-fade-in">
