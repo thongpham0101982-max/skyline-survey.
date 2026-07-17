@@ -48,8 +48,31 @@ export async function GET(req) {
       },
       orderBy: { createdAt: 'desc' }
     });
+
+    const userRole = (user?.role || "").toUpperCase();
+    const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
+
+    let filteredPeriods = periods;
+    if (isGDCS && user?.id) {
+      const assignments = await prisma.userCampusAssignment.findMany({
+        where: { userId: user.id }
+      });
+      const userCampusIds = assignments.map(a => a.campusId);
+
+      filteredPeriods = periods.map(p => {
+        const filteredBatches = (p.batches || []).filter(b => 
+          !b.campusId || 
+          userCampusIds.includes(b.campusId) || 
+          b.assignedUserId === user.id
+        );
+        return {
+          ...p,
+          batches: filteredBatches
+        };
+      });
+    }
     
-    return NextResponse.json(periods);
+    return NextResponse.json(filteredPeriods);
   } catch (error) {
     console.error("API GET ERROR:", error.message);
     return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });

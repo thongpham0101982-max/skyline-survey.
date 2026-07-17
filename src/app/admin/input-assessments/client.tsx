@@ -3265,15 +3265,20 @@ ${reportForm.directorNote}`;
     setTargetPeriodId(b.periodId); 
     setEditB(b); 
     let baseName = b.name;
-    const match = b.name.match(/Đợt \d+ - (.*?) \|/);
-    if (match) {
-      baseName = match[1];
+    const parts = b.name.split(" _ ");
+    if (parts.length >= 5) {
+      baseName = parts[4];
     } else {
-      const match2 = b.name.match(/Đợt \d+ - (.*)/);
-      if (match2) baseName = match2[1];
+      const match = b.name.match(/Đợt \d+ - (.*?) \|/);
+      if (match) {
+        baseName = match[1];
+      } else {
+        const match2 = b.name.match(/Đợt \d+ - (.*)/);
+        if (match2) baseName = match2[1];
+      }
     }
     setBForm({ batchNumber:String(b.batchNumber), name:baseName, startDate:b.startDate?.slice(0,10)||"", endDate:b.endDate?.slice(0,10)||"", status:b.status, campusId: b.campusId||"", assignedUserId: b.assignedUserId||"" }); 
-    setBModal(true) 
+    setBModal(true);
   }
   const saveBatch = async () => {
     if (editB ? cannotUpdate : cannotCreate) return;
@@ -3284,7 +3289,9 @@ ${reportForm.directorNote}`;
     const startStr = bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "";
     const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "";
     
-    const fullScientificName = `Đợt ${bForm.batchNumber || "1"} - ${bForm.name} | ${campusName} (${startStr} ~ ${endStr})`;
+    const period = periods.find(p => p.id === targetPeriodId);
+    const periodCode = period ? (period.code || period.name) : "";
+    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name} _ ${endStr}`;
     
     const r = await fetch("/api/input-assessments", { 
       method: editB?"PUT":"POST", 
@@ -6784,8 +6791,8 @@ return {
              <div className="mt-1.5 p-3 text-xs font-semibold">
                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
                <p className="text-xs font-bold text-indigo-600 truncate">
-                 {`Đợt ${bForm.batchNumber || "1"} - ${bForm.name || "Khảo sát đầu vào"} | ${campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} (${bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "__/__/____"} ~ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"})`}
-               </p>
+                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
+                </p>
              </div>
            </Field>
            <div className="grid grid-cols-2 gap-3">

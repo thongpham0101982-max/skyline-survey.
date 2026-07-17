@@ -15,7 +15,8 @@ export default async function XetDuyetKetQuaPage() {
   }
   
   const user = session?.user as any;
-  const isGDCS = user?.role === 'GDCS';
+  const userRole = (user?.role || "").toUpperCase();
+  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
   const allowedCampusIds = user?.campusIds || [];
   let liveCampusIds = [...allowedCampusIds];
   try {
@@ -59,7 +60,7 @@ export default async function XetDuyetKetQuaPage() {
       }
       if (pAny.campus) {
         campuses = await pAny.campus.findMany({ 
-          where: isGDCS ? { id: { in: allowedCampusIds } } : { status: "ACTIVE" }, 
+          where: isGDCS ? { id: { in: liveCampusIds } } : { status: "ACTIVE" }, 
           include: { 
             manager: {
               include: {

@@ -2714,14 +2714,41 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     });
     setBModal(true);
   };
-  const openEditBatch = (b: Batch) => { setTargetPeriodId(b.periodId); setEditB(b); let baseName = b.name; const m = b.name.match(/Đợt \d+ - (.*?) \|/); if (m) baseName = m[1]; else { const m2 = b.name.match(/Đợt \d+ - (.*)/); if (m2) baseName = m2[1]; } setBForm({ batchNumber: String(b.batchNumber), name: baseName, startDate: b.startDate?.slice(0,10) || "", endDate: b.endDate?.slice(0,10) || "", status: b.status, campusId: b.campusId || "", assignedUserId: b.assignedUserId || "" }); setBModal(true); };
+  const openEditBatch = (b: Batch) => {
+    setTargetPeriodId(b.periodId);
+    setEditB(b);
+    let baseName = b.name;
+    const parts = b.name.split(" _ ");
+    if (parts.length >= 5) {
+      baseName = parts[4];
+    } else {
+      const m = b.name.match(/Đợt \d+ - (.*?) \|/);
+      if (m) baseName = m[1];
+      else {
+        const m2 = b.name.match(/Đợt \d+ - (.*)/);
+        if (m2) baseName = m2[1];
+      }
+    }
+    setBForm({
+      batchNumber: String(b.batchNumber),
+      name: baseName,
+      startDate: b.startDate?.slice(0,10) || "",
+      endDate: b.endDate?.slice(0,10) || "",
+      status: b.status,
+      campusId: b.campusId || "",
+      assignedUserId: b.assignedUserId || ""
+    });
+    setBModal(true);
+  };
   const saveBatch = async () => {
     if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("Cần nhập Tên, Ngày bắt đầu và kết thúc", "err");
     const campus = campuses.find(c => c.id === bForm.campusId);
     const campusName = campus ? campus.campusName : "Tất cả";
     const startStr = bForm.startDate.split('-').reverse().join('/');
     const endStr = bForm.endDate.split('-').reverse().join('/');
-    const fullName = `Đợt ${bForm.batchNumber || "1"} - ${bForm.name} | ${campusName} (${startStr} ~ ${endStr})`;
+    const period = periods.find(p => p.id === targetPeriodId);
+    const periodCode = period ? (period.code || period.name) : "";
+    const fullName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name} _ ${endStr}`;
     const r = await fetch("/api/preschool-input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB ? "Đã cập nhật đợt" : "Đã tạo đợt mới"); } else notify("Lỗi", "err");
   };
@@ -5219,6 +5246,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className={inp}
                 placeholder="VD: KS Mầm non CS A"
               />
+              <div className="mt-1.5 p-3 text-xs font-semibold">
+                <p className="text-[10px] font-black text-[#00A99D] uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
+                <p className="text-xs font-bold text-[#00A99D] truncate">
+                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
+                </p>
+              </div>
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">

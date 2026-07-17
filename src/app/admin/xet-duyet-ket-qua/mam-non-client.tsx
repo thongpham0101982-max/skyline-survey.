@@ -338,6 +338,10 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const isBGHUser = userRole === "KT_DBCL" || userRole === "BGH MN" || userRole === "BGH_MN";
   const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
 
+  const filteredCampuses = useMemo(() => {
+    return campuses.filter(c => !isGDCSUser || currentUser?.campusIds?.includes(c.id));
+  }, [campuses, isGDCSUser, currentUser]);
+
   const showBghSection = true;
   const showGdcsSection = true;
 
@@ -1230,12 +1234,13 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [cPeriodId, setCPeriodId] = useState("all");
   const [cBatchId, setCBatchId] = useState("");
   const [cCampusFilter, setCCampusFilter] = useState("");
+  const [cAgeGroupFilter, setCAgeGroupFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [cPeriodId, cBatchId, approvalFilter, cSearch, cCampusFilter, devTab]);
+  }, [cPeriodId, cBatchId, approvalFilter, cSearch, cCampusFilter, cAgeGroupFilter, devTab]);
 
   // Summary scores for students list (Moved here to avoid TDZ ReferenceError in useMemo hooks below)
   const [studentSummaries, setStudentSummaries] = useState<any[]>([]);
@@ -1244,15 +1249,29 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const filteredStudents = useMemo(() => {
     if (!Array.isArray(studentSummaries)) return [];
     const cleanSummaries = studentSummaries.filter(Boolean);
-    const campusFiltered = cleanSummaries.filter(s => {
+    
+    let baseFiltered = cleanSummaries;
+    if (isGDCSUser && currentUser) {
+      const userCampusIds = currentUser.campusIds || [];
+      const userCampuses = campuses.filter(c => userCampusIds.includes(c.id));
+      baseFiltered = cleanSummaries.filter(s =>
+        userCampuses.some(c => isPreschoolCampusMatch(s.admissionCampus, c.campusCode, c.campusName) || s.admissionCampus === c.id)
+      );
+    }
+
+    const campusFiltered = baseFiltered.filter(s => {
       if (!cCampusFilter) return true;
       return isPreschoolCampusMatch(s.admissionCampus, cCampusFilter, cCampusFilter);
     });
+    const ageGroupFiltered = campusFiltered.filter(s => {
+      if (!cAgeGroupFilter) return true;
+      return s.resolvedAgeGroup === cAgeGroupFilter;
+    });
     if (devTab === "assess") {
-      return campusFiltered.filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
+      return ageGroupFiltered.filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
     }
     if (devTab === "xetDuyet") {
-      return campusFiltered
+      return ageGroupFiltered
         .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()))
         .filter(s => {
           if (!approvalFilter) return true;
@@ -1279,7 +1298,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         });
     }
     if (devTab === "dgkqHocThu") {
-      return campusFiltered
+      return ageGroupFiltered
         .filter(s => {
           const result = (s.admissionResult || "").toUpperCase();
           const isMien = result.includes("MIỄN") || result.includes("MIEN");
@@ -1288,7 +1307,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
     }
     if (devTab === "xuatThuChucMung") {
-      return campusFiltered
+      return ageGroupFiltered
         .filter(s => {
           const result = (s.admissionResult || "").toUpperCase();
           return result.includes("MIỄN HỌC THỬ") || result.includes("MIEN_HOC_THU") || s.probationaryResult === "DAT";
@@ -1296,7 +1315,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         .filter(s => !cSearch || (s.studentCode || "").toLowerCase().includes(cSearch.toLowerCase()) || (s.fullName || "").toLowerCase().includes(cSearch.toLowerCase()));
     }
     return [];
-  }, [studentSummaries, devTab, cSearch, approvalFilter, cCampusFilter]);
+  }, [studentSummaries, devTab, cSearch, approvalFilter, cCampusFilter, cAgeGroupFilter]);
 
   const totalPages = Math.ceil(filteredStudents.length / pageSize);
   const paginatedStudents = useMemo(() => {
@@ -1669,11 +1688,22 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
   const [rawPeriods, setRawPeriods] = useState<Period[]>([]);
   const periods = useMemo(() => {
     if (tab === "periods") return rawPeriods;
-    return rawPeriods.map(p => ({
-      ...p,
-      batches: (p.batches || []).filter(b => b.status === "ACTIVE")
-    }));
-  }, [rawPeriods, tab]);
+    return rawPeriods.map(p => {
+      let filteredBatches = (p.batches || []).filter(b => b.status === "ACTIVE");
+      if (isGDCSUser && currentUser) {
+        const userCampusIds = currentUser.campusIds || [];
+        filteredBatches = filteredBatches.filter(b => 
+          !b.campusId || 
+          userCampusIds.includes(b.campusId) || 
+          b.assignedUserId === currentUser.id
+        );
+      }
+      return {
+        ...p,
+        batches: filteredBatches
+      };
+    });
+  }, [rawPeriods, tab, isGDCSUser, currentUser]);
   const [pLoading, setPLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [pModal, setPModal] = useState(false);
@@ -3378,14 +3408,41 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     });
     setBModal(true);
   };
-  const openEditBatch = (b: Batch) => { setTargetPeriodId(b.periodId); setEditB(b); let baseName = b.name; const m = b.name.match(/Đợt \d+ - (.*?) \|/); if (m) baseName = m[1]; else { const m2 = b.name.match(/Đợt \d+ - (.*)/); if (m2) baseName = m2[1]; } setBForm({ batchNumber: String(b.batchNumber), name: baseName, startDate: b.startDate?.slice(0,10) || "", endDate: b.endDate?.slice(0,10) || "", status: b.status, campusId: b.campusId || "", assignedUserId: b.assignedUserId || "" }); setBModal(true); };
+  const openEditBatch = (b: Batch) => {
+    setTargetPeriodId(b.periodId);
+    setEditB(b);
+    let baseName = b.name;
+    const parts = b.name.split(" _ ");
+    if (parts.length >= 5) {
+      baseName = parts[4];
+    } else {
+      const m = b.name.match(/Đợt \d+ - (.*?) \|/);
+      if (m) baseName = m[1];
+      else {
+        const m2 = b.name.match(/Đợt \d+ - (.*)/);
+        if (m2) baseName = m2[1];
+      }
+    }
+    setBForm({
+      batchNumber: String(b.batchNumber),
+      name: baseName,
+      startDate: b.startDate?.slice(0,10) || "",
+      endDate: b.endDate?.slice(0,10) || "",
+      status: b.status,
+      campusId: b.campusId || "",
+      assignedUserId: b.assignedUserId || ""
+    });
+    setBModal(true);
+  };
   const saveBatch = async () => {
     if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("Cần nhập Tên, Ngày bắt đầu và kết thúc", "err");
     const campus = campuses.find(c => c.id === bForm.campusId);
     const campusName = campus ? campus.campusName : "Tất cả";
     const startStr = bForm.startDate.split('-').reverse().join('/');
     const endStr = bForm.endDate.split('-').reverse().join('/');
-    const fullName = `Đợt ${bForm.batchNumber || "1"} - ${bForm.name} | ${campusName} (${startStr} ~ ${endStr})`;
+    const period = periods.find(p => p.id === targetPeriodId);
+    const periodCode = period ? (period.code || period.name) : "";
+    const fullName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name} _ ${endStr}`;
     const r = await fetch("/api/preschool-input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB ? "Đã cập nhật đợt" : "Đã tạo đợt mới"); } else notify("Lỗi", "err");
   };
@@ -4693,26 +4750,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                    </div>
-                  </div>
-                </div>
-
-                                <div className="group relative w-full">
-                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Building className="w-3.5 h-3.5 text-[#00A99D]"/> Cơ sở
-                  </label>
-                  <div className="relative">
-                    <select 
-                      value={cCampusFilter} 
-                      onChange={e => setCCampusFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
-                    >
-                      <option value="">Tất cả Cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
+                      {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -4722,16 +4760,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                 <div className="group relative w-full">
                   <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
-                    <Building className="w-3.5 h-3.5 text-[#00A99D]"/> Cơ sở
+                    <Layers className="w-3.5 h-3.5 text-[#00A99D]"/> Nhóm tuổi
                   </label>
                   <div className="relative">
                     <select 
-                      value={cCampusFilter} 
-                      onChange={e => setCCampusFilter(e.target.value)} 
+                      value={cAgeGroupFilter} 
+                      onChange={e => setCAgeGroupFilter(e.target.value)} 
                       className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
                     >
-                      <option value="">Tất cả Cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
+                      <option value="">Tất cả Nhóm tuổi</option>
+                      <option value="12 đến 18 tháng">12 đến 18 tháng</option>
+                      <option value="18 đến 24 tháng">18 đến 24 tháng</option>
+                      <option value="24 đến 36 tháng">24 đến 36 tháng</option>
+                      <option value="3 tuổi đến 4 tuổi">3 tuổi đến 4 tuổi</option>
+                      <option value="4 tuổi đến 5 tuổi">4 tuổi đến 5 tuổi</option>
+                      <option value="5 tuổi đến 6 tuổi">5 tuổi đến 6 tuổi</option>
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -4739,7 +4782,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
                 </div>
 
-<div className="group relative w-full">
+                <div className="group relative w-full">
                   <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
                     <Search className="w-3.5 h-3.5 text-[#00A99D]"/> Tìm nhanh
                   </label>
@@ -4753,8 +4796,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
                 </div>
-
-                <div className="flex gap-2">
+<div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
                     className="h-10 px-5 text-xs font-black uppercase text-white bg-gradient-to-r from-[#00A99D] to-[#008075] hover:from-[#008075] hover:to-[#007067] hover:scale-[1.01] active:scale-[0.99] rounded-2xl shadow-sm hover:shadow-md shadow-[#00A99D]/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
@@ -4854,7 +4896,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="space-y-6">
               
               {/* Premium Dashboard-style Filter Bar */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6">
+              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 items-end mb-6">
                 <div className="group relative w-full">
                   <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
                     <Calendar className="w-3.5 h-3.5 text-[#00A99D]"/> Kỳ Khảo sát
@@ -4905,7 +4947,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
+                      {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -4914,6 +4956,29 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 </div>
 
                 <div className="group relative w-full">
+                  <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
+                    <Layers className="w-3.5 h-3.5 text-[#00A99D]"/> Nhóm tuổi
+                  </label>
+                  <div className="relative">
+                    <select 
+                      value={cAgeGroupFilter} 
+                      onChange={e => setCAgeGroupFilter(e.target.value)} 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                    >
+                      <option value="">Tất cả Nhóm tuổi</option>
+                      <option value="12 đến 18 tháng">12 đến 18 tháng</option>
+                      <option value="18 đến 24 tháng">18 đến 24 tháng</option>
+                      <option value="24 đến 36 tháng">24 đến 36 tháng</option>
+                      <option value="3 tuổi đến 4 tuổi">3 tuổi đến 4 tuổi</option>
+                      <option value="4 tuổi đến 5 tuổi">4 tuổi đến 5 tuổi</option>
+                      <option value="5 tuổi đến 6 tuổi">5 tuổi đến 6 tuổi</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                  </div>
+                </div>
+<div className="group relative w-full">
                   <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
                     <Sparkles className="w-3.5 h-3.5 text-[#00A99D]"/> Kết quả
                   </label>
@@ -6347,6 +6412,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className={inp}
                 placeholder="VD: KS Mầm non CS A"
               />
+              <div className="mt-1.5 p-3 text-xs font-semibold">
+                <p className="text-[10px] font-black text-[#00A99D] uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
+                <p className="text-xs font-bold text-[#00A99D] truncate">
+                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
+                </p>
+              </div>
             </Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -6406,7 +6477,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               className={inp}
             >
               <option value="">-- Tất cả cơ sở --</option>
-              {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+              {filteredCampuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
             </select>
           </Field>
           <Field label="Người phụ trách"><select value={bForm.assignedUserId} onChange={e => setBForm({...bForm, assignedUserId: e.target.value})} className={inp}><option value="">-- Chưa gán --</option>{giaoVuCSUsers.map((u: any) => <option key={u.id} value={u.id}>{u.fullName}</option>)}</select></Field>
@@ -6452,7 +6523,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               className={inp}
             >
               <option value="">-- Chọn cơ sở --</option>
-              {campuses.map(c => <option key={c.campusName} value={c.campusName}>{c.campusName}</option>)}
+              {filteredCampuses.map(c => <option key={c.campusName} value={c.campusName}>{c.campusName}</option>)}
             </select>
           </Field>
           <Field label="Đợt KS">
@@ -9017,7 +9088,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className="w-full px-4 py-3 border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
               >
                 <option value="">-- Chọn Cơ sở --</option>
-                {campuses.map((c: any) => (
+                {filteredCampuses.map((c: any) => (
                   <option key={c.id} value={c.id}>{c.campusName}</option>
                 ))}
               </select>
