@@ -1615,10 +1615,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       return today >= start && today <= end;
     });
     if (!activeBatch) {
+      const todayTime = today.getTime();
       const sorted = [...allBatches].sort((a, b) => {
-        const dA = new Date(a.endDate || a.startDate || 0);
-        const dB = new Date(b.endDate || b.startDate || 0);
-        return dB.getTime() - dA.getTime();
+        const dA = new Date(a.endDate || a.startDate || 0).getTime();
+        const dB = new Date(b.endDate || b.startDate || 0).getTime();
+        return Math.abs(dA - todayTime) - Math.abs(dB - todayTime);
       });
       activeBatch = sorted[0];
     }

@@ -1105,11 +1105,12 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         });
         
         if (!activeBatch) {
-          const sorted = [...allBatches].sort((a, b) => {
-            const dateA = new Date(a.endDate || a.startDate || 0);
-            const dateB = new Date(b.endDate || b.startDate || 0);
-            return dateB.getTime() - dateA.getTime();
-          });
+          const todayTime = today.getTime();
+                    const sorted = [...allBatches].sort((a, b) => {
+                        const dateA = new Date(a.endDate || a.startDate || 0).getTime();
+                        const dateB = new Date(b.endDate || b.startDate || 0).getTime();
+                        return Math.abs(dateA - todayTime) - Math.abs(dateB - todayTime);
+                    });
           activeBatch = sorted[0];
         }
         
