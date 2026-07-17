@@ -3442,7 +3442,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     const endStr = bForm.endDate.split('-').reverse().join('/');
     const period = periods.find(p => p.id === targetPeriodId);
     const periodCode = period ? (period.code || period.name) : "";
-    const fullName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name} _ ${endStr}`;
+    const periodName = period ? period.name : "Tên đợt";
+    const fullName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periodName} _ ${endStr}`;
     const r = await fetch("/api/preschool-input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB ? "Đã cập nhật đợt" : "Đã tạo đợt mới"); } else notify("Lỗi", "err");
   };
@@ -6284,7 +6285,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       )}
 
       {/* Modal: Period */}
-      <Modal open={pModal} onClose={() => setPModal(false)} title={editP ? "Sửa Kỳ" : "Tạo Kỳ mới"} footer={<><button onClick={() => setPModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={savePeriod} className="flex-1 py-3.5 bg-[#00A99D] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
+      <Modal open={pModal} onClose={() => setPModal(false)} title={editP ? "Sửa Kỳ" : "Tạo Kỳ mới"} footer={<><button onClick={() => setPModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={savePeriod} className="flex-1 py-3.5 bg-[#00A99D] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
         <div className="space-y-4">
           <Field label="Mã Kỳ" required>
             <input
@@ -6416,17 +6417,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 className={inp}
               />
             </Field>
-            <Field label="Tên nội dung" required>
+            <Field label="Tên đợt" required>
               <input
-                value={bForm.name}
-                onChange={e => setBForm({...bForm, name: e.target.value})}
-                className={inp}
-                placeholder="VD: KS Mầm non CS A"
+                value={`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periods.find(p => p.id === targetPeriodId)?.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
+                disabled
+                className={`${inp} bg-slate-100 cursor-not-allowed`}
               />
               <div className="mt-1.5 p-3 text-xs font-semibold">
                 <p className="text-[10px] font-black text-[#00A99D] uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
                 <p className="text-xs font-bold text-[#00A99D] truncate">
-                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
+                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periods.find(p => p.id === targetPeriodId)?.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
                 </p>
               </div>
             </Field>

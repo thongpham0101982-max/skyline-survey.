@@ -3291,7 +3291,8 @@ ${reportForm.directorNote}`;
     
     const period = periods.find(p => p.id === targetPeriodId);
     const periodCode = period ? (period.code || period.name) : "";
-    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name} _ ${endStr}`;
+    const periodName = period ? period.name : "Tên đợt";
+    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periodName} _ ${endStr}`;
     
     const r = await fetch("/api/input-assessments", { 
       method: editB?"PUT":"POST", 
@@ -6795,15 +6796,19 @@ return {
          </div>
       </Modal>
 
-      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">Hoàn tất</button></>}>
+      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
            <Field label="Tên đợt" required>
-             <input value={bForm.name} onChange={e=>setBForm(f=>({...f,name:e.target.value}))} placeholder="Vd: Khảo sát lẻ, Đánh giá Năng lực" className={inp}/>
+             <input
+                value={`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periods.find(p => p.id === targetPeriodId)?.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
+                disabled
+                className={`${inp} bg-slate-100 cursor-not-allowed`}
+              />
              <div className="mt-1.5 p-3 text-xs font-semibold">
                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
                <p className="text-xs font-bold text-indigo-600 truncate">
-                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${bForm.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
+                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${periods.find(p => p.id === targetPeriodId)?.code || periods.find(p => p.id === targetPeriodId)?.name || "Kỳ khảo sát"} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periods.find(p => p.id === targetPeriodId)?.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
                 </p>
              </div>
            </Field>
