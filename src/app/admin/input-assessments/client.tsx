@@ -3315,7 +3315,7 @@ ${reportForm.directorNote}`;
   }
   const saveBatch = async () => {
     if (editB ? cannotUpdate : cannotCreate) return;
-    if (!bForm.name.trim()||!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Tên, Ngày bắt/kết thúc","err")
+    if (!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Ngày bắt/kết thúc","err")
     
     const selectedCampus = campuses.find(c => c.id === bForm.campusId);
     const campusName = selectedCampus ? selectedCampus.campusName : "Tất cả";
