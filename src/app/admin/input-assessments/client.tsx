@@ -4459,66 +4459,45 @@ return {
                       <thead>
                         <tr className="bg-slate-50 border-b-2 border-slate-200">
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-8">#</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giáo viên</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Môn học</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã HS</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ tên</th>
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khối</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giới tính</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày sinh</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ KS</th>
+                          {selPeriod?.name?.toLowerCase().includes("open day") && (
+                            <>
+                              <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Đăng ký CS</th>
+                              <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ủy quyền xét duyệt</th>
+                            </>
+                          )}
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {groupedAssignments.map((a, idx) => (
-                          <tr key={a.id} className="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors">
-                            <td className="px-3 py-2 text-slate-400 font-bold">{idx + 1}</td>
+                        {paginatedFiltStu.map((s, idx) => (
+                          <tr key={s.id} className="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors">
+                            <td className="px-3 py-2 text-slate-400 font-bold">{(studentsCurrentPage - 1) * studentsPageSize + idx + 1}</td>
+                            <td className="px-3 py-2 font-mono text-[10px] font-black text-[#00A99D]">{s.studentCode}</td>
+                            <td className="px-3 py-2 font-bold text-slate-700">{s.fullName}</td>
+                            <td className="px-3 py-2 font-semibold text-slate-650">{s.grade}</td>
+                            <td className="px-3 py-2 font-semibold text-slate-650">{s.gender || "-"}</td>
+                            <td className="px-3 py-2 text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</td>
+                            <td className="px-3 py-2 font-semibold text-[#00A99D]">{s.surveyFormType || "-"}</td>
+                            {selPeriod?.name?.toLowerCase().includes("open day") && (
+                              <>
+                                <td className="px-3 py-2 font-semibold text-slate-700">
+                                  {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
+                                </td>
+                                <td className="px-3 py-2 font-semibold text-slate-700">
+                                  {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
+                                </td>
+                              </>
+                            )}
                             <td className="px-3 py-2">
-                              <p className="font-black text-slate-700">{a.user?.fullName}</p>
-                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{a.batch?.name || "Tất cả đợt"}</p>
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex flex-wrap gap-1">
-                                {a.subjects.map((sub: string) => (
-                                  <span key={sub} className="px-2 py-0.5 bg-indigo-50 border border-indigo-100 rounded-md text-[10px] font-black text-indigo-600">{sub}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex flex-wrap gap-1">
-                                {a.grades.map((g: string) => (
-                                  <span key={g} className="text-[10px] font-black text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{g}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex flex-wrap gap-1">
-                                {a.educationSystems.map((sys: string) => (
-                                  <span key={sys} className="text-[10px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">{sys}</span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-3 py-2">
-                              <div className="flex items-center justify-end gap-0.5">
-                                <button
-                                  onClick={() => sendTeacherNotification(a)}
-                                  disabled={asNotifyingId === a.id || cannotUpdate}
-                                  className={"p-1.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all disabled:opacity-30 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                                  title="Gửi email thông báo phân công"
-                                >
-                                  {asNotifyingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Mail className="w-3.5 h-3.5"/>}
-                                </button>
-                                <button
-                                  onClick={() => openEditAssignment(a)}
-                                  disabled={cannotUpdate}
-                                  className={"p-1.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all disabled:opacity-30 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                                >
-                                  <Edit2 className="w-3.5 h-3.5"/>
-                                </button>
-                                <button
-                                  onClick={() => setConfirm({ msg: `Xóa phân công của GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.ids) })}
-                                  disabled={cannotDelete}
-                                  className={"p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all disabled:opacity-30 " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
-                                >
-                                  <Trash2 className="w-3.5 h-3.5"/>
-                                </button>
+                              <div className="flex items-center justify-end gap-1">
+                                <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A99D] hover:bg-slate-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                                <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                               </div>
                             </td>
                           </tr>
