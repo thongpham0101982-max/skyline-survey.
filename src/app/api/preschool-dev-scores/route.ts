@@ -217,7 +217,7 @@ export async function GET(req: NextRequest) {
         studentScoresMap[sc.studentId].push(sc)
       }
 
-      const result = students.map((s: any) => {
+      let result = students.map((s: any) => {
         const studentScoresList = studentScoresMap[s.id] || []
         
         const theChatScores = studentScoresList.filter((sc: any) => sc.criteria?.area?.code === "THE_CHAT")
