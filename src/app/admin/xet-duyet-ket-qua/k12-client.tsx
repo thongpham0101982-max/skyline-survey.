@@ -4673,25 +4673,25 @@ return {
       {tab==="students" && (
         <div className={"space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {latestBatchInfo && (
-            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-teal-100/50 border border-teal-200/60 ring-1 ring-teal-900/5 group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
             
             <div className="relative flex items-start sm:items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-teal-100/80 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-            <AlertCircle className="w-6 h-6 text-[#00A99D] animate-pulse" />
+            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+            <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
-            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-700 to-emerald-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-teal-100/50 shadow-sm mr-2 flex items-center gap-1.5">
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
             Thông báo
             </span>
             <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-md shadow-teal-900/10 mx-0.5 text-xs tracking-wide">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold shadow-md shadow-amber-900/10 mx-0.5 text-xs tracking-wide">
             {latestBatchInfo.name}
             </span> 
             <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black border border-emerald-200/60 shadow-sm mx-0.5 text-xs">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black border border-orange-200/60 shadow-sm mx-0.5 text-xs">
             {latestBatchInfo.periodName}
             </span>
             <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
@@ -5684,25 +5684,25 @@ return {
       {tab === "reports" && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {latestBatchInfo && (
-            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-teal-100/50 border border-teal-200/60 ring-1 ring-teal-900/5 group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
             
             <div className="relative flex items-start sm:items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-teal-100/80 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-            <AlertCircle className="w-6 h-6 text-[#00A99D] animate-pulse" />
+            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+            <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
-            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-700 to-emerald-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-teal-100/50 shadow-sm mr-2 flex items-center gap-1.5">
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
             Thông báo
             </span>
             <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-md shadow-teal-900/10 mx-0.5 text-xs tracking-wide">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold shadow-md shadow-amber-900/10 mx-0.5 text-xs tracking-wide">
             {latestBatchInfo.name}
             </span> 
             <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black border border-emerald-200/60 shadow-sm mx-0.5 text-xs">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black border border-orange-200/60 shadow-sm mx-0.5 text-xs">
             {latestBatchInfo.periodName}
             </span>
             <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
@@ -9252,7 +9252,7 @@ return {
               </div>
               
               {/* Form Config Card */}
-              <div className="bg-white p-6 rounded-3xl border-2 border-teal-100/80 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-3xl border-2 border-amber-200/70 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
                     NGƯỜI NHẬN (EMAIL)

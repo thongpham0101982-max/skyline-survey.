@@ -4314,25 +4314,25 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {/* Custom Preschool/School Styled Tab Bar */}
           ﻿          {/* Custom Preschool/School Styled Tab Bar */}
           {latestBatchInfo && (
-            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-teal-50/80 via-emerald-50/40 to-teal-100/50 border border-teal-200/60 ring-1 ring-teal-900/5 group hover:shadow-lg transition-all">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
-            <div className="absolute bottom-0 left-0 w-40 h-40 bg-emerald-500/10 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
+            <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
+            <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
             
             <div className="relative flex items-start sm:items-center gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-teal-100/80 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
-            <AlertCircle className="w-6 h-6 text-[#00A99D] animate-pulse" />
+            <div className="w-11 h-11 rounded-2xl bg-white shadow-sm border border-amber-200/70 flex items-center justify-center shrink-0 group-hover:rotate-12 transition-transform duration-300">
+            <AlertCircle className="w-6 h-6 text-amber-600 animate-pulse" />
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
-            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-700 to-emerald-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-teal-100/50 shadow-sm mr-2 flex items-center gap-1.5">
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
             Thông báo
             </span>
             <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold shadow-md shadow-teal-900/10 mx-0.5 text-xs tracking-wide">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold shadow-md shadow-amber-900/10 mx-0.5 text-xs tracking-wide">
             {latestBatchInfo.name}
             </span> 
             <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
-            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-black border border-emerald-200/60 shadow-sm mx-0.5 text-xs">
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black border border-orange-200/60 shadow-sm mx-0.5 text-xs">
             {latestBatchInfo.periodName}
             </span>
             <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
@@ -4934,7 +4934,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-teal-100/50 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-amber-200/50 text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
@@ -4946,7 +4946,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       Khối: {getStandardGrade(s.grade)}
                                     </span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-100/50 rounded-lg text-[10px] font-black">
+                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-amber-200/50 rounded-lg text-[10px] font-black">
                                         Phiếu: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -5226,7 +5226,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               let cardClass = "bg-slate-50 border-slate-200/80 text-slate-700 shadow-xs";
                               let progressBg = "bg-[#00A99D]";
                               let progressTrack = "bg-teal-50";
-                              let pillClass = "text-[#00A99D] bg-teal-50 border-teal-100/50";
+                              let pillClass = "text-[#00A99D] bg-teal-50 border-amber-200/50";
                               let headerIcon = "🧠";
                               let areaName = "Lĩnh vực";
 
@@ -5506,7 +5506,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-teal-100/50 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-amber-200/50 text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
@@ -5518,7 +5518,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       Khối: {getStandardGrade(s.grade)}
                                     </span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-100/50 rounded-lg text-[10px] font-black">
+                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-amber-200/50 rounded-lg text-[10px] font-black">
                                         Phiếu: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -5723,7 +5723,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-teal-100/50 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-amber-200/50 text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
@@ -5735,7 +5735,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       Khối: {getStandardGrade(s.grade)}
                                     </span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-100/50 rounded-lg text-[10px] font-black">
+                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-amber-200/50 rounded-lg text-[10px] font-black">
                                         Phiếu: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -6686,7 +6686,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {emailCongratsLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 space-y-3">
                   <div className="w-8 h-8 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm font-bold text-[#00A99D] animate-pulse">Đang tải danh sách người nhận theo Cơ sở...</span>
+                  <span className="text-sm font-bold text-amber-600 animate-pulse">Đang tải danh sách người nhận theo Cơ sở...</span>
                 </div>
               ) : (
                 <>
@@ -8677,7 +8677,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-200/60">
                   <ClipboardList className="w-4 h-4 text-teal-600" />
                   <h4 className="text-xs font-black text-teal-800 uppercase tracking-wider">Lược sử đánh giá mầm non</h4>
-                  <span className="text-[10px] font-black text-teal-700 ml-auto bg-teal-50 px-2 py-0.5 border border-teal-100/50 rounded-lg">{pastAssessments.length} đợt</span>
+                  <span className="text-[10px] font-black text-teal-700 ml-auto bg-teal-50 px-2 py-0.5 border border-amber-200/50 rounded-lg">{pastAssessments.length} đợt</span>
                 </div>
                 {loadingHistory ? (
                   <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
