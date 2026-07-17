@@ -3589,7 +3589,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="no-print p-4 bg-teal-50 border border-teal-200 rounded-2xl text-teal-800 text-xs font-bold flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-4 duration-300">
               <AlertCircle className="w-5 h-5 text-[#00A99D] flex-shrink-0 animate-bounce" />
               <span>
-                Thông báo: Đợt khảo sát mới nhất thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
+                Thông báo: Đợt khảo sát mới nhất: <strong>{latestBatchInfo.name}</strong> thuộc Kỳ khảo sát <strong>{latestBatchInfo.periodName}</strong>. Vui lòng xét duyệt.
               </span>
             </div>
           )}
