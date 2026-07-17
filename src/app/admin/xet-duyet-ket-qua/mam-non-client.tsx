@@ -2026,7 +2026,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
   const aActiveBatch = useMemo(() => {
     if (!aPeriodId || !aBatchId || aBatchId === "all") return null;
-    return periods.find(p => p.id === aPeriodId)?.batches.find(b => b.id === aBatchId);
+    return periods.find(p => p.id === aPeriodId)?.batches?.find(b => b.id === aBatchId);
   }, [periods, aPeriodId, aBatchId]);
 
   // Probationary Assessment States
@@ -3442,7 +3442,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setTargetPeriodId(pid);
     setEditB(null);
     const period = periods.find(p => p.id === pid);
-    const nextNum = period && period.batches.length > 0 ? Math.max(...period.batches.map(b => b.batchNumber)) + 1 : 1;
+    const nextNum = period && period.batches && period.batches.length > 0 ? Math.max(...period.batches.map(b => b.batchNumber)) + 1 : 1;
     setBForm({
       batchNumber: String(nextNum),
       name: "KSĐV_Tất cả _ Đợt " + nextNum,
@@ -3877,7 +3877,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       className={inp}
                     >
                       <option value="all">Tất cả các đợt</option>
-                      {periods.find(p => p.id === aPeriodId)?.batches.map(b => (
+                      {(periods.find(p => p.id === aPeriodId)?.batches || []).map(b => (
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>
