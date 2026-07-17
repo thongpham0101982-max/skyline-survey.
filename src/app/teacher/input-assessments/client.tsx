@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X, Clock, SlidersHorizontal, ShieldCheck, GraduationCap, TrendingUp } from "lucide-react";
+import { BookOpen, Users, Save, CheckCircle2, CalendarDays, Layers, X, Clock, SlidersHorizontal, ShieldCheck, GraduationCap, TrendingUp, AlertCircle } from "lucide-react";
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 import PsychologyAssessmentForm from "./PsychologyAssessmentForm";
 import ChildDevStandardForm from "./ChildDevStandardForm";
@@ -485,9 +485,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         alert("Đã gửi yêu cầu mở khóa thành công!");
     } else alert("Lỗi: " + (await r.json()).error);
   };
-  const isPeriodLocked = currentAssignment?.period?.status !== "ACTIVE";
-  const isBatchLocked = currentAssignment?.batch?.status === "LOCKED" || currentAssignment?.batch?.status === "CLOSED";
-  const isLocked = (isPeriodLocked || isBatchLocked) && currentAssignment?.unlockRequestStatus !== "APPROVED";
+  const isPeriodLocked = currentAssignment?.period ? currentAssignment.period.status !== "ACTIVE" : false;
+  const isBatchLocked = currentAssignment?.batch ? (currentAssignment.batch.status === "LOCKED" || currentAssignment.batch.status === "CLOSED") : false;
+  const isLocked = currentAssignment ? (isPeriodLocked || isBatchLocked) && currentAssignment.unlockRequestStatus !== "APPROVED" : false;
 
   // Helper to determine if a student is evaluated/saved
   const isStudentSaved = (st: any) => {
@@ -920,7 +920,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 </span>
                             )}
                             <span className="text-[10px] font-black border px-3 py-1.5 rounded-xl shadow-xs bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/15">
-                                {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment.subject.scoreColumns} cột điểm, ${currentAssignment.subject.commentColumns} cột nhận xét`}
+                                {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment?.subject?.scoreColumns ?? 1} cột điểm, ${currentAssignment?.subject?.commentColumns ?? 1} cột nhận xét`}
                             </span>
                         </div>
                     </div>
@@ -964,15 +964,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 <h3 className="text-sm font-black text-rose-800 mb-2 uppercase tracking-wide">Đợt khảo sát đã bị khóa điểm</h3>
                                 <p className="text-xs text-slate-500 leading-relaxed font-semibold">
                                     Đợt hoặc kỳ khảo sát này đã được thiết lập sang trạng thái <strong>KHÓA / KẾT THÚC</strong> nên form nhập liệu đã được ẩn đi. <br/>
-                                    Để điều chỉnh thông tin, vui lòng liên hệ Người phụ trách: <strong>{currentAssignment.period.assignedUser?.fullName || "Ban Khảo thí"}</strong>.
+                                    Để điều chỉnh thông tin, vui lòng liên hệ Người phụ trách: <strong>{currentAssignment?.period?.assignedUser?.fullName || "Ban Khảo thí"}</strong>.
                                 </p>
                             </div>
-                            {currentAssignment.unlockRequestStatus === "REJECTED" && (
+                            {currentAssignment?.unlockRequestStatus === "REJECTED" && (
                                 <div className="bg-red-50 text-red-600 text-xs px-4 py-2 rounded-xl font-bold border border-red-100 shadow-xs">
                                     ❌ Yêu cầu mở khóa của thầy/cô đã bị từ chối.
                                 </div>
                             )}
-                            {currentAssignment.unlockRequestStatus === "PENDING" ? (
+                            {currentAssignment?.unlockRequestStatus === "PENDING" ? (
                                 <div className="text-amber-600 text-xs font-black shadow-xs inline-flex items-center gap-2">
                                     <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357-2H15"></path></svg>
                                     Yêu cầu mở khóa đang chờ duyệt...
@@ -1158,11 +1158,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
               </div>
             ) : (
             <div className="flex flex-wrap gap-4 items-start">
-                {Array.from({length: (currentAssignment.subject.scoreColumns ?? 1)}).map((_, colIdx) => {
+                {Array.from({length: (currentAssignment?.subject?.scoreColumns ?? 1)}).map((_, colIdx) => {
                     let cName = "Điểm " + (colIdx+1);
-                    try { if(currentAssignment.subject.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.scores && p.scores[colIdx]) cName = p.scores[colIdx]; } } catch(e){}
+                    try { if(currentAssignment?.subject?.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.scores && p.scores[colIdx]) cName = p.scores[colIdx]; } } catch(e){}
                     const isTotal = cName.toLowerCase().includes("tổng");
-                    const subNameLower = (currentAssignment.subject.name || "").toLowerCase();
+                    const subNameLower = (currentAssignment?.subject?.name || "").toLowerCase();
                     let maxScoreStr = "";
                     if (subNameLower.includes("vấn đáp")) {
                         const isGrade1 = String(st.grade || "").toLowerCase().replace("khối", "").replace("khoi", "").trim() === "1";
@@ -1192,9 +1192,9 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     );
                 })}
 
-                {!hideComments && Array.from({length: (currentAssignment.subject.commentColumns ?? 1)}).map((_, colIdx) => {
+                {!hideComments && Array.from({length: (currentAssignment?.subject?.commentColumns ?? 1)}).map((_, colIdx) => {
                     let cName = "Nhận xét " + (colIdx+1);
-                    try { if(currentAssignment.subject.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.comments && p.comments[colIdx]) cName = p.comments[colIdx]; } } catch(e){}
+                    try { if(currentAssignment?.subject?.columnNames) { const p = JSON.parse(currentAssignment.subject.columnNames); if(p.comments && p.comments[colIdx]) cName = p.comments[colIdx]; } } catch(e){}
                     return (
                         <div key={"cm-input-"+colIdx} className="flex flex-col gap-1.5 w-full min-w-[200px] flex-1">
                             <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName}>{cName}</span>
