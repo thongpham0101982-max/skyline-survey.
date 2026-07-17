@@ -4210,7 +4210,18 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <button onClick={downloadTemplate} className="flex items-center gap-1.5 text-xs font-black text-blue-600 hover:bg-blue-100 transition-all text-xs font-semibold"><Download className="w-4 h-4" /> Tải mẫu</button>
               <input type="file" ref={fileRef} onChange={handleImport} accept=".xlsx,.xls,.csv" className="hidden" />
               <button onClick={() => fileRef.current?.click()} disabled={importing || !cPeriodId || cPeriodId === "all"} className="flex items-center gap-1.5 text-xs font-black text-emerald-700 hover:bg-emerald-100 transition-all disabled:opacity-50 text-xs font-semibold"><Upload className="w-4 h-4" /> {importing ? "Đang import..." : "Import Excel"}</button>
-              <button onClick={openAddChild} disabled={!cPeriodId} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A99D] hover:bg-[#00A99D]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
+                            <button 
+                onClick={() => {
+                  if (cPeriodId) {
+                    openAddBatch(cPeriodId);
+                  }
+                }} 
+                disabled={!cPeriodId} 
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-none transition-all disabled:opacity-50"
+              >
+                <Plus className="w-4 h-4" /> Tạo đợt
+              </button>
+<button onClick={openAddChild} disabled={!cPeriodId} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#00A99D] hover:bg-[#00A99D]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
             </div>
           </div>
 

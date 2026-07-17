@@ -4656,7 +4656,19 @@ return {
                  <Upload className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Nhập Excel</span>
               </button>
-              <button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#00A99D] text-white text-sm font-bold rounded-xl hover:bg-[#009085] disabled:opacity-50 transition-all shadow-md shadow-[#00A99D]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
+                            <button 
+                onClick={() => {
+                  if (sPeriodId && sPeriodId !== "all") {
+                    openAddBatch(sPeriodId);
+                  }
+                }} 
+                disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} 
+                className={"h-10 px-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl flex items-center justify-center hover:bg-emerald-100 hover:text-emerald-800 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group " + (cannotCreate ? "pointer-events-none opacity-40" : "")} 
+                title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}
+              >
+                <Plus className="w-4 h-4 mr-2"/> Tạo đợt
+              </button>
+<button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#00A99D] text-white text-sm font-bold rounded-xl hover:bg-[#009085] disabled:opacity-50 transition-all shadow-md shadow-[#00A99D]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                 <Plus className="w-4 h-4 mr-2"/> Thêm mới
               </button>
               <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
