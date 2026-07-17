@@ -11,8 +11,10 @@ import {
   Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
   Phone, Printer, Lock
-} from "lucide-react"
+, RefreshCcw } from "lucide-react"
 import * as XLSX from "xlsx"
+import { MoveToBatchModal } from "@/app/admin/student-info/MoveToBatchModal";
+
 
 // ========= TYPES =========
 interface AcademicYear { id: string; name: string; status: string }
@@ -365,7 +367,8 @@ const worldCountries = [
 ].sort();
 
 // ========= MAIN =========
-export function InputAssessmentsClient({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config", forcedTab }: Props) {
+export function InputAssessmentsClient({
+ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [], mode = "config", forcedTab }: Props) {
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
     categories: "INPUT_ASSESSMENTS_CATEGORIES",
@@ -429,6 +432,8 @@ export function InputAssessmentsClient({ academicYears = [], campuses = [], exam
     }
   }, [forcedTab]);
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isMoveBatchModalOpen, setIsMoveBatchModalOpen] = useState(false);
   const [tab, setTab] = useState(() => {
     const userRole = (currentUser?.role || "").toUpperCase();
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
@@ -4373,7 +4378,15 @@ return {
                   <table className="w-full text-left whitespace-nowrap border-collapse">
                     <thead className="bg-slate-50/60 border-b border-slate-200/80 sticky top-0 z-10">
                        <tr>
-                          <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80">Mã HS KS</th>
+                          <th className="px-5 py-3.5 border-b border-slate-200/80 w-12 text-center">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded text-[#00A99D] accent-[#00A99D]"
+                                checked={paginatedFiltStu.length > 0 && selectedIds.length === paginatedFiltStu.length}
+                                onChange={(e) => setSelectedIds(e.target.checked ? paginatedFiltStu.map(c => c.id) : [])}
+                              />
+                            </th>
+                            <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80">Mã HS KS</th>
                           <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200/80">Họ và Tên</th>
                           <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Khối</th>
                           <th className="px-5 py-3.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider text-center border-b border-slate-200/80">Giới tính</th>
@@ -4397,7 +4410,15 @@ return {
                     <tbody className="divide-y divide-slate-100">
                       {paginatedFiltStu.map((s, idx) => (
                         <tr key={s.id} className={`group hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
-                           <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{s.studentCode}</td>
+                           <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded text-[#00A99D] accent-[#00A99D]"
+                                checked={selectedIds.includes(s.id)}
+                                onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id))}
+                              />
+                            </td>
+                            <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{s.studentCode}</td>
                            <td className="px-5 py-4 border-b border-slate-100">
                              <div className="flex flex-col">
                                <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
@@ -8694,6 +8715,50 @@ return {
           </div>
         </div>
       )}
-  </div>
+  
+      {/* Floating Action Bar */}
+      {selectedIds && selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-slate-900/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10 w-[90%] md:w-auto overflow-x-auto whitespace-nowrap">
+          <div className="flex items-center gap-3 pr-6 border-r border-slate-700/50">
+            <div className="bg-[#00A99D]/20 text-[#00A99D] w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+              {selectedIds.length}
+            </div>
+            <span className="font-medium">học sinh đang chọn</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMoveBatchModalOpen(true)}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
+            >
+              <RefreshCcw className="w-4 h-4" />
+              Chuyển đợt KS
+            </button>
+
+            <button
+              onClick={() => setSelectedIds([])}
+              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition-all"
+              title="Bỏ chọn"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Move to Batch Modal */}
+      {isMoveBatchModalOpen && (
+        <MoveToBatchModal
+          selectedIds={selectedIds}
+          onClose={() => setIsMoveBatchModalOpen(false)}
+          onSuccess={() => {
+            setSelectedIds([]);
+            setIsMoveBatchModalOpen(false);
+            window.location.reload();
+          }}
+          periods={periods}
+        />
+      )}
+      </div>
   )
 }

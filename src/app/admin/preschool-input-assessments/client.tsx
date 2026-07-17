@@ -2,12 +2,14 @@
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
+import { PreschoolMoveToBatchModal } from "@/app/admin/student-info/PreschoolMoveToBatchModal";
+
 import { getSurveyFormAgeGroup } from "@/lib/preschool";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
   X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, Info
-} from "lucide-react"
+, RefreshCcw } from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
 interface Batch { id: string; periodId: string; batchNumber: number; name: string; startDate: string; endDate: string; status: string; campusId?: string; assignedUserId?: string }
@@ -118,7 +120,51 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: any) {
           <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>Xóa</button>
         </div>
       </div>
-    </div>
+    
+      {/* Floating Action Bar */}
+      {selectedIds && selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-slate-900/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10 w-[90%] md:w-auto overflow-x-auto whitespace-nowrap">
+          <div className="flex items-center gap-3 pr-6 border-r border-slate-700/50">
+            <div className="bg-[#00A99D]/20 text-[#00A99D] w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+              {selectedIds.length}
+            </div>
+            <span className="font-medium">học sinh đang chọn</span>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMoveBatchModalOpen(true)}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
+            >
+              <RefreshCcw className="w-4 h-4" />
+              Chuyển đợt KS
+            </button>
+
+            <button
+              onClick={() => setSelectedIds([])}
+              className="p-2 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition-all"
+              title="Bỏ chọn"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Move to Batch Modal */}
+      {isMoveBatchModalOpen && (
+        <PreschoolMoveToBatchModal
+          selectedIds={selectedIds}
+          onClose={() => setIsMoveBatchModalOpen(false)}
+          onSuccess={() => {
+            setSelectedIds([]);
+            setIsMoveBatchModalOpen(false);
+            window.location.reload();
+          }}
+          periods={periods}
+        />
+      )}
+      </div>
   )
 }
 
@@ -169,7 +215,10 @@ const getStandardGrade = (grade: string) => {
   return g;
 };
 
-export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, mode = "config", forcedTab }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; mode?: "config" | "input"; forcedTab?: string; }) {
+export function PreschoolInputAssessmentsClient({
+ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, mode = "config", forcedTab }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; mode?: "config" | "input"; forcedTab?: string; }) {
+  /* selectedIds state */
+  /* isMoveBatchModalOpen state */
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
@@ -204,6 +253,8 @@ export function PreschoolInputAssessmentsClient({ academicYears, campuses, giaoV
     }
   }, [forcedTab]);
 
+  /* selectedIds state */
+  /* isMoveBatchModalOpen state */
   const [tab, setTab] = useState(() => {
     if (mode === "input") return "periods";
     return isGDCSUser ? "devCriteria" : "periods";
