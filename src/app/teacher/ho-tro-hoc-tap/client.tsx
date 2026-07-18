@@ -651,7 +651,7 @@ export function TeacherSupportClient({
             <tbody className="divide-y divide-slate-200 text-sm">
               {filteredTargets.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-10 text-slate-400">
+                  <td colSpan={9} className="text-center py-10 text-slate-400">
                     Không tìm thấy học sinh nào thuộc danh sách bồi dưỡng của bạn
                   </td>
                 </tr>
@@ -734,13 +734,15 @@ export function TeacherSupportClient({
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
+                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cam kết Khảo sát đầu vào (KSĐV)</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm khảo sát</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng hiện tại</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thêm vào Form</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-sm">
@@ -774,7 +776,7 @@ export function TeacherSupportClient({
                   );
                 }
 
-                return filtered.map((s: any) => {
+                return filtered.map((s: any, index: number) => {
                   const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
                   const isApproved = existingAcademic?.assignments && existingAcademic.assignments.length > 0
                   const isTerminated = existingAcademic?.terminationStatus === "TERMINATED"
@@ -801,9 +803,14 @@ export function TeacherSupportClient({
 
                   return (
                     <tr key={s.id} className="hover:bg-slate-50/50">
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-500">
+                        {index + 1}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-500">
+                        {s.studentCode}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-bold text-slate-800">{s.studentName}</div>
-                        <div className="text-xs text-slate-500">#{s.studentCode}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-bold text-xs">
                         {s.className}
