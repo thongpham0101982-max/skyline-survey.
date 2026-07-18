@@ -395,7 +395,7 @@ export function TeacherSupportClient({
       toast.error("Vui lòng chọn mức độ kết quả theo dõi và nhập nhận xét chi tiết")
       return
     }
-    const shouldTerminate = evalTrackingLevel.includes("Vượt yêu cầu") || evalTrackingLevel.includes("Hoàn thành");
+    const shouldTerminate = evalUpdatedStatus === "Đề xuất kết thúc bồi dưỡng" || evalUpdatedStatus === "Kết thúc theo dõi";
     try {
       const targetIds = selectedEvalTargetIds.length > 0 ? selectedEvalTargetIds : (evalTargetId ? [evalTargetId] : []);
       if (targetIds.length === 0) return;
@@ -1596,17 +1596,7 @@ export function TeacherSupportClient({
           startDateValue = new Date(evalTargetObj.approvedAt).toLocaleDateString("vi-VN");
         }
 
-        let resultHelper = "";
-        let resultColor = "text-indigo-600";
-        if (evalTrackingLevel.includes("Vượt yêu cầu") || evalTrackingLevel.includes("Hoàn thành")) {
-          resultHelper = "Có thể Đề xuất kết thúc phụ đạo/theo dõi ngay bây giờ.";
-          resultColor = "text-emerald-600";
-        } else if (evalTrackingLevel.includes("Chưa đạt") || evalTrackingLevel.includes("Cần hỗ trợ")) {
-          resultHelper = "Cần điều chỉnh phương pháp hoặc xây dựng kế hoạch chuyên sâu.";
-          resultColor = "text-rose-600";
-        } else if (evalTrackingLevel) {
-          resultHelper = "Tiếp tục phụ đạo và theo dõi theo kế hoạch hiện tại.";
-        }
+        
 
         const months = ["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"];
 
@@ -1724,7 +1714,19 @@ export function TeacherSupportClient({
                     <label className="text-sm font-bold text-slate-700">Kết quả (Mức độ đạt được):</label>
                     <select
                       value={evalTrackingLevel}
-                      onChange={e => setEvalTrackingLevel(e.target.value)}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setEvalTrackingLevel(val);
+                        if (val.includes("Vượt yêu cầu") || val.includes("Hoàn thành")) {
+                          setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
+                        } else if (val.includes("Chưa đạt") || val.includes("Cần hỗ trợ")) {
+                          setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
+                        } else if (val) {
+                          setEvalUpdatedStatus("Tiếp tục theo dõi");
+                        } else {
+                          setEvalUpdatedStatus("");
+                        }
+                      }}
                       className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold bg-white"
                     >
                       <option value="">-- Chọn kết quả --</option>
@@ -1732,15 +1734,20 @@ export function TeacherSupportClient({
                         <option key={c.id} value={c.outcomeLabel}>{c.outcomeLabel}</option>
                       ))}
                     </select>
-                    {resultHelper && (
-                      <div className={`mt-2 p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start gap-2 ${resultColor}`}>
-                        <div className="mt-0.5">💡</div>
-                        <div>
-                          <span className="font-bold text-xs block uppercase">Đề xuất theo gợi ý hành động:</span>
-                          <span className="text-sm font-medium">{resultHelper}</span>
-                        </div>
-                      </div>
-                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700">Đề xuất hành động:</label>
+                    <select
+                      value={evalUpdatedStatus}
+                      onChange={e => setEvalUpdatedStatus(e.target.value)}
+                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold bg-slate-50 text-indigo-700"
+                    >
+                      <option value="">-- Chọn đề xuất --</option>
+                      <option value="Đề xuất kết thúc bồi dưỡng">Đề xuất kết thúc bồi dưỡng</option>
+                      <option value="Xây dựng kế hoạch hỗ trợ chuyên sâu">Xây dựng kế hoạch hỗ trợ chuyên sâu</option>
+                      <option value="Tiếp tục theo dõi">Tiếp tục theo dõi / phụ đạo theo kế hoạch</option>
+                    </select>
                   </div>
 
                   <div className="space-y-1">
