@@ -301,7 +301,6 @@ export function PhanCongMamNonClient({
   const [studentStats, setStudentStats] = useState<Record<string, number>>({})
   const [studentsList, setStudentsList] = useState<any[]>([])
   const [statsLoading, setStatsLoading] = useState(false)
-  const [inspectedGroup, setInspectedGroup] = useState<string | null>(null)
 
   const fetchStudentStats = useCallback(async () => {
     if (!aPeriodId) {
@@ -310,7 +309,6 @@ export function PhanCongMamNonClient({
       return
     }
     setStatsLoading(true)
-    setInspectedGroup(null)
     try {
       let url = `/api/preschool-input-assessment-students?periodId=${aPeriodId}`
       if (aBatchId && aBatchId !== "all" && aBatchId !== "") url += `&batchId=${aBatchId}`
@@ -346,11 +344,11 @@ export function PhanCongMamNonClient({
     return Object.keys(studentStats).find(g => isStatsGroupSelected(g))
   }, [studentStats, aGrades, uiForm, uiStage])
 
-  // Filter students by inspected group
+  // Filter students by active group
   const filteredGroupStudents = useMemo(() => {
-    if (!inspectedGroup) return []
-    return studentsList.filter((s) => (s.grade || "").trim() === inspectedGroup.trim())
-  }, [inspectedGroup, studentsList])
+    if (!activeGroup) return []
+    return studentsList.filter((s) => (s.grade || "").trim() === activeGroup.trim())
+  }, [activeGroup, studentsList])
 
   const aGradesStr = aGrades.join(",")
 
@@ -758,34 +756,37 @@ export function PhanCongMamNonClient({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                       {Object.entries(studentStats).map(([grade, count]) => {
                         const theme = groupThemes[grade] || defaultTheme;
-                        const isActive = inspectedGroup === grade;
+                        const isStandard = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi", "12 đến 24 tháng", "18 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"].includes(grade);
+                        const isActive = isStatsGroupSelected(grade);
                         const total = Object.values(studentStats).reduce((a, b) => a + b, 0) || 1;
                         const pct = Math.round((count / total) * 100);
 
                         return (
                           <div
                             key={grade}
-                            onClick={() => setInspectedGroup(inspectedGroup === grade ? null : grade)}
-                            className={`flex flex-col justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden select-none ${
-                              isActive 
-                                ? `${theme.bg} ${theme.borderActive} shadow-md shadow-slate-100` 
-                                : `bg-white ${theme.border} ${theme.hoverBg} hover:shadow-xs`
+                            onClick={() => isStandard && selectGradeFromStats(grade)}
+                            className={`flex flex-col justify-between p-4 rounded-2xl border transition-all duration-300 relative overflow-hidden select-none ${
+                              !isStandard 
+                                ? "bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed" 
+                                : isActive 
+                                  ? `${theme.bg} ${theme.borderActive} shadow-md shadow-slate-100 cursor-pointer` 
+                                  : `bg-white ${theme.border} ${theme.hoverBg} hover:shadow-xs cursor-pointer`
                             }`}
                           >
                             {/* Accent indicator line */}
-                            <div className={`absolute top-0 left-0 w-1.5 h-full ${theme.accent}`} />
+                            <div className={`absolute top-0 left-0 w-1.5 h-full ${!isStandard ? "bg-slate-350" : theme.accent}`} />
 
                             <div className="flex items-start justify-between gap-2 mb-3 pl-1">
                               <div className="flex items-center gap-2.5">
-                                <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${theme.iconBg}`}>
-                                  <Baby className={`w-4 h-4 ${theme.countColor}`} />
+                                <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${!isStandard ? "bg-slate-200/50" : theme.iconBg}`}>
+                                  <Baby className={`w-4 h-4 ${!isStandard ? "text-slate-400" : theme.countColor}`} />
                                 </div>
-                                <span className={`text-xs font-extrabold ${theme.text} leading-tight truncate`}>
+                                <span className={`text-xs font-extrabold ${!isStandard ? "text-slate-400" : theme.text} leading-tight truncate`}>
                                   {grade}
                                 </span>
                               </div>
 
-                              {isActive && (
+                              {isActive && isStandard && (
                                 <div className="w-4 h-4 rounded-full bg-[#00A99D] flex items-center justify-center">
                                   <Check className="w-2.5 h-2.5 text-white stroke-[3.5px]" />
                                 </div>
@@ -794,7 +795,7 @@ export function PhanCongMamNonClient({
 
                             <div className="pl-1 space-y-1.5">
                               <div className="flex items-baseline gap-1.5">
-                                <span className="text-xl font-black text-slate-800 leading-none">
+                                <span className={`text-xl font-black leading-none ${!isStandard ? "text-slate-400" : "text-slate-800"}`}>
                                   {count}
                                 </span>
                                 <span className="text-[10px] font-bold text-slate-400">
@@ -805,7 +806,7 @@ export function PhanCongMamNonClient({
                               {/* Progress bar */}
                               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                 <div 
-                                  className={`h-full rounded-full transition-all duration-500 ${theme.accent}`}
+                                  className={`h-full rounded-full transition-all duration-500 ${!isStandard ? "bg-slate-305" : theme.accent}`}
                                   style={{ width: `${pct}%` }}
                                 />
                               </div>
@@ -816,16 +817,16 @@ export function PhanCongMamNonClient({
                     </div>
 
                     {/* Inspected group's student list */}
-                    {inspectedGroup && (
+                    {activeGroup && (
                       <div className="mt-4 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-3 animate-in slide-in-from-top-2 duration-300">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                             <Users className="w-3.5 h-3.5 text-[#00A99D]" />
-                            Danh sách trẻ nhóm {inspectedGroup} ({filteredGroupStudents.length})
+                            Danh sách trẻ nhóm {activeGroup} ({filteredGroupStudents.length})
                           </span>
                           <button 
                             type="button" 
-                            onClick={() => setInspectedGroup(null)}
+                            onClick={() => selectGradeFromStats(activeGroup)}
                             className="text-slate-400 hover:text-slate-600 transition-colors"
                           >
                             <X className="w-3.5 h-3.5" />
