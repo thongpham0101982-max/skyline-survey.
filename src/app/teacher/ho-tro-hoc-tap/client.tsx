@@ -827,7 +827,14 @@ export function TeacherSupportClient({
                               }
                             } else if (subLower.includes("tâm lý") && s.psychologyScore != null) scoreDisplay = ` (Điểm: ${s.psychologyScore})`;
                             else if (s.scores && s.scores.length > 0) {
-                              const sc = s.scores.find((x:any) => x.subject?.name?.toLowerCase().includes(subLower));
+                              const sc = s.scores.find((x:any) => {
+                                const n = x.subject?.name?.toLowerCase() || "";
+                                if (subLower.includes("toán")) return n.includes("toán");
+                                if (subLower.includes("văn") || subLower.includes("tiếng việt")) return n.includes("văn") || n.includes("tiếng việt");
+                                if (subLower.includes("anh")) return n.includes("anh");
+                                if (subLower.includes("tâm lý")) return n.includes("tâm lý");
+                                return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
+                              });
                               if (sc && sc.scores) scoreDisplay = ` (Điểm: ${sc.scores})`;
                             }
                             return (
