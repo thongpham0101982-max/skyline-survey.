@@ -3771,7 +3771,9 @@ ${reportForm.directorNote}`;
     setEditB(b); 
     let baseName = b.name;
     const parts = b.name.split(" _ ");
-    if (parts.length >= 5) {
+    if (parts.length >= 6 && parts[4] === "") {
+      baseName = parts[3];
+    } else if (parts.length >= 5) {
       baseName = parts[4];
     } else {
       const match = b.name.match(/Đợt \d+ - (.*?) \|/);
@@ -3787,7 +3789,7 @@ ${reportForm.directorNote}`;
   }
   const saveBatch = async () => {
     if (editB ? cannotUpdate : cannotCreate) return;
-    if (!bForm.startDate||!bForm.endDate) return notify("Cần nhập đủ Ngày bắt/kết thúc","err")
+    if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("Cần nhập Tên Đợt KS, Ngày bắt/kết thúc", "err")
     
     const selectedCampus = campuses.find(c => c.id === bForm.campusId);
     const campusName = selectedCampus ? (selectedCampus.campusCode || selectedCampus.campusName) : "Tất cả";
@@ -3800,7 +3802,7 @@ ${reportForm.directorNote}`;
     if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
       periodCode = "KSL";
     }
-    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periodName} _ ${endStr}`;
+    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
     
     const r = await fetch("/api/input-assessments", { 
       method: editB?"PUT":"POST", 
@@ -7765,35 +7767,49 @@ return {
       <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 px-6 py-3 bg-[#00A99D] hover:bg-[#0098C2] rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
-           <Field label="Tên đợt" required>
-             <input
-                value={`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${(() => {
-  const period = periods.find(p => p.id === targetPeriodId);
-  const periodName = period ? period.name : "Tên đợt";
-  let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
-  if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
-    periodCode = "KSL";
-  }
-  return periodCode;
-})()} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periods.find(p => p.id === targetPeriodId)?.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
-                disabled
-                className={`${inp} bg-slate-100 cursor-not-allowed`}
+                       <Field label="Tên Đợt KS" required>
+              <input
+                value={bForm.name}
+                onChange={e => setBForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="Nhập tên đợt khảo sát (Vd: KSĐV, Học thử...)"
+                className={inp}
               />
-             <div className="mt-1.5 p-3 text-xs font-semibold">
-               <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
-               <p className="text-xs font-bold text-indigo-600 truncate">
-                  {`${campuses.find(c => c.id === bForm.campusId)?.campusCode || campuses.find(c => c.id === bForm.campusId)?.campusName || "Chưa chọn cơ sở"} _ ${(() => {
-  const period = periods.find(p => p.id === targetPeriodId);
-  const periodName = period ? period.name : "Tên đợt";
-  let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
-  if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
-    periodCode = "KSL";
-  }
-  return periodCode;
-})()} _ Đợt ${bForm.batchNumber || "1"} _ KSĐV _ ${periods.find(p => p.id === targetPeriodId)?.name || "Tên đợt"} _ ${bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____"}`}
-                </p>
-             </div>
-           </Field>
+            </Field>
+            <Field label="Tên đợt (Tự động theo cấu trúc)" required>
+              <input
+                 value={(() => {
+                   const campus = campuses.find(c => c.id === bForm.campusId);
+                   const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
+                   const period = periods.find(p => p.id === targetPeriodId);
+                   const periodName = period ? period.name : "Tên đợt";
+                   let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
+                   if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
+                     periodCode = "KSL";
+                   }
+                   const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
+                   return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+                 })()}
+                 disabled
+                 className={`${inp} bg-slate-100 cursor-not-allowed`}
+               />
+              <div className="mt-1.5 p-3 text-xs font-semibold">
+                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
+                <p className="text-xs font-bold text-indigo-600 truncate">
+                   {(() => {
+                     const campus = campuses.find(c => c.id === bForm.campusId);
+                     const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
+                     const period = periods.find(p => p.id === targetPeriodId);
+                     const periodName = period ? period.name : "Tên đợt";
+                     let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
+                     if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
+                       periodCode = "KSL";
+                     }
+                     const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
+                     return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+                   })()}
+                 </p>
+              </div>
+            </Field>
            <div className="grid grid-cols-2 gap-3">
              <Field label="Cơ sở">
                <select value={bForm.campusId} onChange={e=>setBForm(f=>({...f,campusId:e.target.value}))} className={inp}>

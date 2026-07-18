@@ -867,7 +867,6 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 </div>
                 </div>
                 </div>
-                </div>
             )}
 
             {/* Unified Filter Card */}

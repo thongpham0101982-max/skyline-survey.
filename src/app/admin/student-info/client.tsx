@@ -2641,7 +2641,28 @@ export function StudentInfoClient({
                       {formMode === "create" ? (
                         /* CREATE MODE */
                         <>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Năm học *</label>
+                              <select
+                                required
+                                value={transferYearId}
+                                onChange={(e) => {
+                                  setTransferYearId(e.target.value);
+                                  setTransferClassId("");
+                                  setTransferStudents([]);
+                                  setSelectedStudentIds([]);
+                                }}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Chọn Năm học --</option>
+                                {generalPeriods.length > 0 ? academicYears.filter(ay => !ay.isOff).map((y) => (
+                                  <option key={y.id} value={y.id}>{y.name}</option>
+                                )) : academicYears.filter(ay => !ay.isOff).map((y) => (
+                                  <option key={y.id} value={y.id}>{y.name}</option>
+                                ))}
+                              </select>
+                            </div>
                             <div>
                               <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Cơ sở *</label>
                               <select
@@ -2662,11 +2683,32 @@ export function StudentInfoClient({
                                 ))}
                               </select>
                             </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Khối</label>
+                              <select
+                                value={transferGradeId}
+                                onChange={(e) => {
+                                  setTransferGradeId(e.target.value);
+                                  setTransferClassId("");
+                                  setTransferStudents([]);
+                                  setSelectedStudentIds([]);
+                                }}
+                                className="h-10.5 w-full px-3 bg-[#F8FAFC] border border-[#D9E2EC] text-[#1E293B] text-sm font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Tất cả Khối --</option>
+                                {grades.map((g) => (
+                                  <option key={g} value={g}>Khối {g}</option>
+                                ))}
+                              </select>
+                            </div>
                             <div>
                               <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Lớp học *</label>
                               <select
                                 required
-                                disabled={!transferCampusId}
+                                disabled={!transferCampusId || !transferYearId}
                                 value={transferClassId}
                                 onChange={(e) => {
                                   setTransferClassId(e.target.value);
