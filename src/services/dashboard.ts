@@ -51,6 +51,7 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
     generalClasses,
     preschoolClasses,
     transferCount,
+    changeClassCount,
     assessmentGroup,
     admissionGroup,
     classSummaries
@@ -69,7 +70,8 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
         level: "Mầm non"
       }
     }),
-    prisma.studentTransfer.count({ where: transferWhere }),
+    prisma.studentTransfer.count({ where: { ...transferWhere, type: "OUT" } }),
+    prisma.studentTransfer.count({ where: { ...transferWhere, type: "CHANGE_CLASS" } }),
     prisma.inputAssessmentStudent.groupBy({
       by: ["grade"],
       _count: true,
@@ -86,8 +88,110 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
     })
   ])
 
-  // Reconstruct monthly headcount trend
-  let monthlyHeadcount: { month: string; count: number }[] = []
+  // Get new enrollments (type === 'IN')
+  const inTransfers = await prisma.studentTransfer.findMany({
+    where: {
+      ...transferWhere,
+      type: 'IN'
+    },
+    include: {
+      student: {
+        select: { studentCode: true }
+      }
+    }
+  })
+
+  const studentCodes = inTransfers.map(t => t.student?.studentCode).filter(Boolean)
+
+  const [generalCandidates, preschoolCandidates] = await Promise.all([
+    prisma.inputAssessmentStudent.findMany({
+      where: { studentCode: { in: studentCodes } },
+      select: { studentCode: true, cityName: true, countryName: true, oldSchoolType: true, oldSchoolName: true }
+    }),
+    prisma.preschoolInputAssessmentStudent.findMany({
+      where: { studentCode: { in: studentCodes } },
+      select: { studentCode: true, cityName: true, countryName: true, oldSchoolType: true, oldSchoolName: true }
+    })
+  ])
+
+  const candidateMap = new Map()
+  generalCandidates.forEach(c => candidateMap.set(c.studentCode, c))
+  preschoolCandidates.forEach(c => candidateMap.set(c.studentCode, c))
+
+  const newEnrollmentStats = {
+    total: 0,
+    inProvince: 0,
+    outProvince: 0,
+    abroad: 0,
+    inProvincePrivate: 0
+  }
+
+  for (const t of inTransfers) {
+    newEnrollmentStats.total++
+    const code = t.student?.studentCode
+    const cand = code ? candidateMap.get(code) : null
+
+    const country = cand?.countryName || "Việt Nam"
+    const city = cand?.cityName || "TP Đà Nẵng"
+    const oldSchoolType = cand?.oldSchoolType || ""
+
+    const isAbroad = country.toLowerCase() !== "việt nam" && country.toLowerCase() !== "vietnam"
+    const isInProvince = city.includes("Đà Nẵng") || city.includes("Da Nang")
+
+    if (isAbroad) {
+      newEnrollmentStats.abroad++
+    } else if (isInProvince) {
+      newEnrollmentStats.inProvince++
+      const isPrivate = oldSchoolType.toLowerCase() === "tư thục" || oldSchoolType.toLowerCase() === "private" || oldSchoolType.includes("Tư thục") || oldSchoolType.includes("Tư Thục")
+      if (isPrivate) {
+        newEnrollmentStats.inProvincePrivate++
+      }
+    } else {
+      newEnrollmentStats.outProvince++
+    }
+  }
+
+  // Get transfer out stats (type === 'OUT')
+  const outTransfers = await prisma.studentTransfer.findMany({
+    where: {
+      ...transferWhere,
+      type: 'OUT'
+    }
+  })
+
+  const transferOutStats = {
+    total: 0,
+    inProvince: 0,
+    outProvince: 0,
+    abroad: 0,
+    inProvincePrivate: 0
+  }
+
+  for (const t of outTransfers) {
+    transferOutStats.total++
+    const category = t.transferCategory || "DOMESTIC"
+    const country = t.destinationCountry || ""
+    const province = t.destinationProvince || "Đà Nẵng"
+    const destType = t.destinationType || ""
+
+    const isAbroad = category === "ABROAD" || (country !== "" && country.toLowerCase() !== "việt nam" && country.toLowerCase() !== "vietnam")
+    const isInProvince = province.includes("Đà Nẵng") || province.includes("Da Nang")
+
+    if (isAbroad) {
+      transferOutStats.abroad++
+    } else if (isInProvince) {
+      transferOutStats.inProvince++
+      const isPrivate = destType === "PRIVATE" || destType.toLowerCase() === "tư thục" || destType.includes("Tư thục") || destType.includes("Tư Thục")
+      if (isPrivate) {
+        transferOutStats.inProvincePrivate++
+      }
+    } else {
+      transferOutStats.outProvince++
+    }
+  }
+
+  // Reconstruct monthly headcount trend split by General vs Preschool
+  let monthlyHeadcount: { month: string; count: number; generalCount: number; preschoolCount: number }[] = []
   if (academicYear) {
     const start = new Date(academicYear.startDate)
     const end = new Date(academicYear.endDate)
@@ -112,6 +216,9 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
         campusId: isFullAccess ? undefined : { in: allowedCampusIds }
       },
       include: {
+        class: {
+          select: { level: true }
+        },
         studentTransfers: {
           where: { type: { in: ["IN", "OUT"] } },
           orderBy: { transferDate: "asc" }
@@ -121,7 +228,8 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
 
     monthlyHeadcount = months.map(m => {
       const monthEnd = new Date(m.year, m.month + 1, 0, 23, 59, 59, 999)
-      let count = 0
+      let generalCount = 0
+      let preschoolCount = 0
 
       for (const s of allYearStudents) {
         const inTransfers = s.studentTransfers.filter(t => t.type === "IN")
@@ -130,22 +238,33 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
         const firstInDate = inTransfers.length > 0 ? new Date(inTransfers[0].transferDate) : null
         const firstOutDate = outTransfers.length > 0 ? new Date(outTransfers[0].transferDate) : null
 
+        let isActive = false
         if (s.status === "ACTIVE") {
           if (firstInDate && firstInDate > monthEnd) {
             // Not active yet
           } else {
-            count++
+            isActive = true
           }
         } else if (s.status === "TRANSFERRED_OUT") {
           if (firstOutDate && firstOutDate > monthEnd) {
-            count++
+            isActive = true
+          }
+        }
+
+        if (isActive) {
+          if (s.class?.level === "Mầm non") {
+            preschoolCount++
+          } else {
+            generalCount++
           }
         }
       }
 
       return {
-        month: `${m.month + 1}/${m.year}`,
-        count
+        month: (m.month + 1) + '/' + m.year,
+        generalCount,
+        preschoolCount,
+        count: generalCount + preschoolCount
       }
     })
   }
@@ -181,7 +300,9 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
     totalClasses,
     generalClasses,
     preschoolClasses,
-    transferCount,
+    transferCount, // OUT transfers count
+    newEnrollmentsCount: newEnrollmentStats.total, // IN transfers count
+    changeClassCount,
     assessmentGroup,
     admissionGroup,
     surveyedStudents: surveyed,
@@ -189,7 +310,9 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
     completionRate,
     systemAverageSatisfactionScore: avgSatisfaction,
     systemNps,
-    monthlyHeadcount
+    monthlyHeadcount,
+    newEnrollmentStats,
+    transferOutStats
   }
 }
 

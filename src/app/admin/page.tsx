@@ -14,7 +14,7 @@ import {
   Loader2
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
@@ -58,10 +58,14 @@ export default function AdminDashboard() {
     generalClasses: 0,
     preschoolClasses: 0,
     transferCount: 0,
+    newEnrollmentsCount: 0,
+    changeClassCount: 0,
     completionRate: 0,
     assessmentGroup: [],
     admissionGroup: [],
-    monthlyHeadcount: []
+    monthlyHeadcount: [],
+    newEnrollmentStats: { total: 0, inProvince: 0, outProvince: 0, abroad: 0, inProvincePrivate: 0 },
+    transferOutStats: { total: 0, inProvince: 0, outProvince: 0, abroad: 0, inProvincePrivate: 0 }
   }
 
   const campusIds = (session?.user as any)?.campusIds || []
@@ -128,7 +132,16 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">HS Lưu chuyển</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.transferCount}</h3>
+              <h3 className="text-2xl font-black text-slate-800 mt-1">
+                {((finalMetrics.newEnrollmentsCount || 0) + (finalMetrics.transferCount || 0) + (finalMetrics.changeClassCount || 0)).toLocaleString()}
+              </h3>
+              <div className="text-[10px] text-slate-500 font-semibold mt-1 space-x-1.5 flex flex-wrap">
+                <span>Mới: <strong className="text-emerald-600">{finalMetrics.newEnrollmentsCount || 0}</strong></span>
+                <span>•</span>
+                <span>Đi: <strong className="text-rose-500">{finalMetrics.transferCount || 0}</strong></span>
+                <span>•</span>
+                <span>Lớp: <strong className="text-blue-500">{finalMetrics.changeClassCount || 0}</strong></span>
+              </div>
             </div>
           </div>
         </div>
@@ -172,88 +185,96 @@ export default function AdminDashboard() {
                   contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
                   labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
                 />
-                <Line type="monotone" dataKey="count" stroke="#4f46e5" strokeWidth={3} activeDot={{ r: 6 }} name="Sỹ số học sinh" />
+                <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                <Line type="monotone" dataKey="generalCount" stroke="#4f46e5" strokeWidth={3} activeDot={{ r: 6 }} name="Sỹ số Phổ thông" />
+                <Line type="monotone" dataKey="preschoolCount" stroke="#f43f5e" strokeWidth={3} activeDot={{ r: 6 }} name="Sỹ số Mầm non" />
+                <Line type="monotone" dataKey="count" stroke="#0d9488" strokeWidth={2} strokeDasharray="5 5" activeDot={{ r: 4 }} name="Tổng sỹ số" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
+            {/* SECTION: CHI TIẾT LUỒNG HỌC SINH */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
         
-        {/* SECTION LEFT: SURVEY RESULTS BY GRADE */}
-        <div className="bg-white rounded-2xl border-2 border-violet-100 p-6 shadow-sm space-y-6">
+        {/* COLUMN LEFT: NHẬP HỌC MỚI */}
+        <div className="bg-white rounded-2xl border-2 border-emerald-100 p-6 shadow-sm space-y-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 text-violet-600 flex items-center justify-center text-xs font-semibold">
+            <div className="w-10 h-10 text-emerald-600 bg-emerald-50 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black text-slate-800 text-base">Khảo sát theo Khối học</h3>
-              <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider">Thống kê số lượng học sinh hoàn thành khảo sát</p>
-            </div>
-          </div>
-
-          <div className="space-y-4 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-            {finalMetrics.assessmentGroup.map((g: any, idx: number) => {
-              const gradeName = g.grade ? `Khối ${g.grade}` : "Chưa phân khối"
-              return (
-                <div key={idx} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-bold text-slate-600">{gradeName}</span>
-                    <span className="font-black text-indigo-600">{g._count} học sinh</span>
-                  </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div className="h-full transition-all duration-500 text-xs font-semibold" style={{ width: `${Math.min(100, (g._count / (finalMetrics.totalStudents || 1)) * 100)}%` }}></div>
-                  </div>
-                </div>
-              )
-            })}
-            {finalMetrics.assessmentGroup.length === 0 && (
-              <p className="text-sm text-slate-400 font-semibold py-8 text-center uppercase tracking-wider">Chưa có số liệu khảo sát khối</p>
-            )}
-          </div>
-        </div>
-
-        {/* SECTION RIGHT: ADMISSION RESULTS */}
-        <div className="bg-white rounded-2xl border-2 border-emerald-100 p-6 shadow-sm space-y-6">
-          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 text-emerald-600 flex items-center justify-center text-xs font-semibold">
-              <Award className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="font-black text-slate-800 text-base">Thống kê Kết quả Xét tuyển</h3>
-              <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider">Tỷ lệ học sinh đạt điều kiện đầu vào</p>
+              <h3 className="font-black text-slate-800 text-base">Báo cáo Nhập học mới</h3>
+              <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider">Phân tích nguồn học sinh mới nhập học</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            {finalMetrics.admissionGroup.map((a: any, idx: number) => {
-              const resultName = a.admissionResult ? String(a.admissionResult).toUpperCase() : "CHƯA XÉT DUYỆT"
-              let colorClasses = "bg-slate-50 border-slate-200 text-slate-600"
-              let Icon = AlertCircle
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tổng sỹ số nhập mới</span>
+              <span className="text-2xl font-black text-emerald-600 block mt-1">{(finalMetrics.newEnrollmentStats?.total || 0).toLocaleString()}</span>
+            </div>
+            <div className="p-4 rounded-xl bg-emerald-50/30 border border-emerald-100/50 text-center">
+              <span className="text-[10px] font-bold text-teal-600 uppercase tracking-wider block">Nội tỉnh (Tư thục)</span>
+              <span className="text-2xl font-black text-teal-700 block mt-1">{(finalMetrics.newEnrollmentStats?.inProvincePrivate || 0).toLocaleString()}</span>
+            </div>
+          </div>
 
-              if (resultName.includes("KHONG") || resultName.includes("KHÔNG")) {
-                colorClasses = "bg-rose-50 border-rose-100 text-rose-700"
-                Icon = XCircle
-              } else if (resultName.includes("DAT") || resultName.includes("ĐẠT")) {
-                colorClasses = "bg-emerald-50 border-emerald-100 text-emerald-700"
-                Icon = CheckCircle2
-              }
-
-              return (
-                <div key={idx} className={`p-5 rounded-2xl border ${colorClasses} flex flex-col items-center text-center shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-transform`}>
-                  <Icon className="w-8 h-8 opacity-70 mb-2" />
-                  <span className="text-[10px] font-black tracking-wider uppercase">{resultName}</span>
-                  <span className="text-2xl font-black mt-1">{a._count}</span>
-                </div>
-              )
-            })}
-            {finalMetrics.admissionGroup.length === 0 && (
-              <p className="text-sm text-slate-400 font-semibold py-8 text-center uppercase tracking-wider col-span-2">Chưa có kết quả xét duyệt</p>
-            )}
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50">
+              <span className="font-bold text-slate-500">Nội tỉnh (Tổng cộng)</span>
+              <span className="font-black text-slate-800">{(finalMetrics.newEnrollmentStats?.inProvince || 0).toLocaleString()} HS</span>
+            </div>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50">
+              <span className="font-bold text-slate-500">Ngoại tỉnh</span>
+              <span className="font-black text-slate-800">{(finalMetrics.newEnrollmentStats?.outProvince || 0).toLocaleString()} HS</span>
+            </div>
+            <div className="flex items-center justify-between text-sm py-1.5">
+              <span className="font-bold text-slate-500">Nước ngoài</span>
+              <span className="font-black text-slate-800">{(finalMetrics.newEnrollmentStats?.abroad || 0).toLocaleString()} HS</span>
+            </div>
           </div>
         </div>
 
+        {/* COLUMN RIGHT: HỌC SINH CHUYỂN ĐI */}
+        <div className="bg-white rounded-2xl border-2 border-rose-100 p-6 shadow-sm space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 text-rose-600 bg-rose-50 rounded-lg flex items-center justify-center">
+              <ArrowRightLeft className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-800 text-base">Báo cáo Học sinh Chuyển đi</h3>
+              <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider">Phân tích điểm đến của học sinh chuyển trường</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tổng sỹ số chuyển đi</span>
+              <span className="text-2xl font-black text-rose-600 block mt-1">{(finalMetrics.transferOutStats?.total || 0).toLocaleString()}</span>
+            </div>
+            <div className="p-4 rounded-xl bg-rose-50/30 border border-rose-100/50 text-center">
+              <span className="text-[10px] font-bold text-rose-600 uppercase tracking-wider block">Nội tỉnh (sang Tư thục)</span>
+              <span className="text-2xl font-black text-rose-700 block mt-1">{(finalMetrics.transferOutStats?.inProvincePrivate || 0).toLocaleString()}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3.5">
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50">
+              <span className="font-bold text-slate-500">Nội tỉnh (Tổng cộng)</span>
+              <span className="font-black text-slate-800">{(finalMetrics.transferOutStats?.inProvince || 0).toLocaleString()} HS</span>
+            </div>
+            <div className="flex items-center justify-between text-sm py-1.5 border-b border-slate-50">
+              <span className="font-bold text-slate-500">Ngoại tỉnh</span>
+              <span className="font-black text-slate-800">{(finalMetrics.transferOutStats?.outProvince || 0).toLocaleString()} HS</span>
+            </div>
+            <div className="flex items-center justify-between text-sm py-1.5">
+              <span className="font-bold text-slate-500">Nước ngoài</span>
+              <span className="font-black text-slate-800">{(finalMetrics.transferOutStats?.abroad || 0).toLocaleString()} HS</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
