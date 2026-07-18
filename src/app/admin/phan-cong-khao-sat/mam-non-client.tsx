@@ -576,9 +576,8 @@ export function PhanCongMamNonClient({
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Left Column (Span 7/12) */}
-        <div className="lg:col-span-7 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="space-y-6">
           
           {/* Card 1: Configuration */}
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-5 transition-all">
@@ -666,7 +665,67 @@ export function PhanCongMamNonClient({
                 <p className="text-xs font-bold">Hãy chọn Kỳ khảo sát ở cấu hình phân công để hiển thị phạm vi & ánh xạ</p>
               </div>
             ) : (
-              <div className="space-y-5 animate-in fade-in duration-300">
+              <div className="space-y-4 animate-in fade-in duration-300">
+                {/* Ánh xạ tự động */}
+                <div className="border-t border-slate-100 pt-4 space-y-4">
+                  <div className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Kết quả ánh xạ tự động</div>
+                  
+                  {/* Khối */}
+                  <Field label="Khối tương ứng" required tooltip="Tự động lọc khối trong hệ thống dựa trên nhóm tuổi đã chọn">
+                    <div className="grid grid-cols-2 gap-2">
+                      {grades.map(g => {
+                        const isChecked = aGrades.includes(g)
+                        return (
+                          <div 
+                            key={g} 
+                            onClick={() => toggleGradeSelection(g)}
+                            className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-sm border-[#00A99D] bg-teal-50/30 text-[#00A99D]" : "bg-white border-slate-200 text-slate-655 hover:bg-slate-50"}`}>
+                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isChecked ? "border-[#00A99D] bg-[#00A99D]" : "border-slate-300"}`}>
+                              {isChecked && <Check className="w-3 h-3 text-white stroke-[3px]" />}
+                            </div>
+                            <span>{g}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </Field>
+
+                  {/* Phiếu khảo sát */}
+                  <Field label="Mẫu Phiếu khảo sát tự động ánh xạ" tooltip="Mẫu khảo sát tâm lý tương ứng với Khối và Giai đoạn đánh giá">
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                        <Baby className="w-4 h-4" />
+                      </div>
+                      <select 
+                        value={uiForm} 
+                        disabled 
+                        className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed border-slate-200/80`}>
+                        <option value="">Chờ lựa chọn cấu hình phù hợp...</option>
+                        {formOptions.map(f => (
+                          <option key={f} value={f}>Mẫu Phiếu khảo sát: {f}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </Field>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="space-y-6">
+          {/* Card 3: Thống kê Nhóm tuổi */}
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-5 transition-all">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100">
+              <Users className="w-4 h-4 text-[#00A99D]" /> Thống kê Nhóm tuổi
+            </h3>
+
+            {!aPeriodId ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-4">
+                <Info className="w-6 h-6 text-slate-350 mb-2" />
+                <p className="text-xs font-bold">Hãy chọn Kỳ khảo sát ở cấu hình phân công để hiển thị thống kê nhóm tuổi</p>
+              </div>
+            ) : (
+              <div className="space-y-4 animate-in fade-in duration-300">
                 {/* Thống kê Nhóm tuổi */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2">
@@ -743,55 +802,11 @@ export function PhanCongMamNonClient({
                   )}
                 </div>
 
-                {/* Ánh xạ tự động */}
-                <div className="border-t border-slate-100 pt-4 space-y-4">
-                  <div className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Kết quả ánh xạ tự động</div>
-                  
-                  {/* Khối */}
-                  <Field label="Khối tương ứng" required tooltip="Tự động lọc khối trong hệ thống dựa trên nhóm tuổi đã chọn">
-                    <div className="grid grid-cols-2 gap-2">
-                      {grades.map(g => {
-                        const isChecked = aGrades.includes(g)
-                        return (
-                          <div 
-                            key={g} 
-                            onClick={() => toggleGradeSelection(g)}
-                            className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-sm border-[#00A99D] bg-teal-50/30 text-[#00A99D]" : "bg-white border-slate-200 text-slate-655 hover:bg-slate-50"}`}>
-                            <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isChecked ? "border-[#00A99D] bg-[#00A99D]" : "border-slate-300"}`}>
-                              {isChecked && <Check className="w-3 h-3 text-white stroke-[3px]" />}
-                            </div>
-                            <span>{g}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </Field>
-
-                  {/* Phiếu khảo sát */}
-                  <Field label="Mẫu Phiếu khảo sát tự động ánh xạ" tooltip="Mẫu khảo sát tâm lý tương ứng với Khối và Giai đoạn đánh giá">
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <Baby className="w-4 h-4" />
-                      </div>
-                      <select 
-                        value={uiForm} 
-                        disabled 
-                        className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed border-slate-200/80`}>
-                        <option value="">Chờ lựa chọn cấu hình phù hợp...</option>
-                        {formOptions.map(f => (
-                          <option key={f} value={f}>Mẫu Phiếu khảo sát: {f}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </Field>
-                </div>
               </div>
             )}
           </div>
         </div>
-
-        {/* Right Column: Teacher Selector (Span 5/12) */}
-        <div className="lg:col-span-5">
+        <div>
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
