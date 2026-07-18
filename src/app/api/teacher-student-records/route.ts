@@ -191,15 +191,18 @@ export async function GET(req: Request) {
         orderBy: { studentName: "asc" }
       })
 
-      // Fetch input assessment records for these students to get entrance commitments
-      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      // Fetch input assessment records for all candidates with commitment notes or matching results
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
-          studentCode: { in: studentCodes },
-          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+          OR: [
+            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
+            { directorNote: { contains: "Môn cam kết" } }
+          ]
         },
         select: {
           studentCode: true,
+          enrollmentCode: true,
+          fullName: true,
           directorNote: true,
           admissionResult: true
         }
@@ -214,8 +217,21 @@ export async function GET(req: Request) {
         return []
       }
 
+      const cleanString = (str: string) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
       const result = students.map(s => {
-        const assessment = inputAssessments.find(a => a.studentCode === s.studentCode)
+        const assessment = inputAssessments.find((a) => {
+          if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
+            return true
+          }
+          return cleanString(a.fullName) === cleanString(s.studentName)
+        })
         return {
           ...s,
           entranceCommitmentSubjects: assessment ? parseCommittedSubjects(assessment.directorNote || "") : []
@@ -240,15 +256,18 @@ export async function GET(req: Request) {
         orderBy: { studentName: "asc" }
       })
 
-      // Fetch input assessment records for these students
-      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      // Fetch input assessment records for all candidates with commitment notes or matching results
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
-          studentCode: { in: studentCodes },
-          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+          OR: [
+            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
+            { directorNote: { contains: "Môn cam kết" } }
+          ]
         },
         select: {
           studentCode: true,
+          enrollmentCode: true,
+          fullName: true,
           directorNote: true,
           admissionResult: true
         }
@@ -263,10 +282,23 @@ export async function GET(req: Request) {
         return []
       }
 
+      const cleanString = (str: string) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
       // Filter students whose input assessment commitment matches the subjects Param
       const candidates = students
         .map((s) => {
-          const assessment = inputAssessments.find((a) => a.studentCode === s.studentCode)
+          const assessment = inputAssessments.find((a) => {
+            if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
+              return true
+            }
+            return cleanString(a.fullName) === cleanString(s.studentName)
+          })
           if (!assessment) return null
 
           const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
@@ -365,15 +397,18 @@ export async function GET(req: Request) {
         }
       })
 
-      // Fetch input assessment records for these students
-      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+      // Fetch input assessment records for all candidates with commitment notes or matching results
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
-          studentCode: { in: studentCodes },
-          admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] }
+          OR: [
+            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
+            { directorNote: { contains: "Môn cam kết" } }
+          ]
         },
         select: {
           studentCode: true,
+          enrollmentCode: true,
+          fullName: true,
           directorNote: true,
           admissionResult: true
         }
@@ -388,10 +423,23 @@ export async function GET(req: Request) {
         return []
       }
 
+      const cleanString = (str: string) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
       // Filter and construct candidates
       const candidates = students
         .map((s) => {
-          const assessment = inputAssessments.find((a) => a.studentCode === s.studentCode)
+          const assessment = inputAssessments.find((a) => {
+            if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
+              return true
+            }
+            return cleanString(a.fullName) === cleanString(s.studentName)
+          })
           if (!assessment) return null
 
           const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
