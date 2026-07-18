@@ -136,7 +136,7 @@ export function TeacherSupportClient({
     try {
       const subjectsParam = subjectNames.join(",")
       const res = await fetch(
-        `/api/teacher-student-records?action=getCommitmentCandidates&classId=${classId}&subjects=${encodeURIComponent(subjectsParam)}&academicYearId=${selectedYearId}&_=${Date.now()}`
+        `/api/teacher-student-records?action=getCommitmentCandidates&classId=${classId}&subjects=${encodeURIComponent(subjectsParam)}&academicYearId=${selectedYearId}&teacherId=${teacher?.id || ""}&_=${Date.now()}`
       )
       const data = await res.json()
       if (!data.error) {
@@ -736,6 +736,7 @@ export function TeacherSupportClient({
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cam kết Khảo sát đầu vào (KSĐV)</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng hiện tại</th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
@@ -807,10 +808,28 @@ export function TeacherSupportClient({
                         {s.className}
                         {s.isHomeroom && <span className="text-[10px] text-indigo-600 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs font-medium">
+                        {s.enrollmentDate ? new Date(s.enrollmentDate).toLocaleDateString("vi-VN") : "Chưa có"}
+                      </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-wrap gap-1">
                           {s.committedSubjects.map((sub: string, index: number) => {
                             const isMatched = s.matchedSubjects?.includes(sub)
+                            let scoreDisplay = "";
+                            const subLower = sub.toLowerCase();
+                            if (subLower.includes("toán") && s.mathScore != null) scoreDisplay = ` (Điểm: ${s.mathScore})`;
+                            else if ((subLower.includes("văn") || subLower.includes("tiếng việt")) && s.literatureScore != null) scoreDisplay = ` (Điểm: ${s.literatureScore})`;
+                            else if (subLower.includes("anh")) {
+                              const write = s.writtenEnglishScore;
+                              const oral = s.oralEnglishScore;
+                              if (write != null || oral != null) {
+                                scoreDisplay = ` (Điểm: ${write ?? "-"} viết, ${oral ?? "-"} nói)`;
+                              }
+                            } else if (subLower.includes("tâm lý") && s.psychologyScore != null) scoreDisplay = ` (Điểm: ${s.psychologyScore})`;
+                            else if (s.scores && s.scores.length > 0) {
+                              const sc = s.scores.find((x:any) => x.subject?.name?.toLowerCase().includes(subLower));
+                              if (sc && sc.scores) scoreDisplay = ` (Điểm: ${sc.scores})`;
+                            }
                             return (
                               <span 
                                 key={index} 
@@ -820,7 +839,7 @@ export function TeacherSupportClient({
                                     : "bg-slate-100 text-slate-600 border-slate-200"
                                 }`}
                               >
-                                {sub} {isMatched && "✓"}
+                                {sub}{scoreDisplay} {isMatched && "✓"}
                               </span>
                             )
                           })}
@@ -831,9 +850,26 @@ export function TeacherSupportClient({
                           {statusText}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
                         {existingAcademic ? (
-                          <span className="text-xs text-slate-400 font-medium">Đã tạo đề xuất</span>
+                          isApproved && !isTerminated && !isPending ? (
+                            <button
+                              onClick={() => {
+                                setEvalTargetId(existingAcademic.id)
+                                setEvalTargetName(s.studentName)
+                                setEvalTargetType(existingAcademic.supportType)
+                                setEvalComment("")
+                                const options = configs.filter(c => c.supportType === existingAcademic.supportType)
+                                setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                                setIsEvaluationModalOpen(true)
+                              }}
+                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-lg text-xs transition-all shadow-xs"
+                            >
+                              Tiến hành đánh giá
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-400 font-medium">Đã tạo đề xuất</span>
+                          )
                         ) : (
                           <button
                             onClick={() => {

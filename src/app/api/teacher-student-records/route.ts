@@ -246,9 +246,24 @@ export async function GET(req: Request) {
       const classId = searchParams.get("classId")
       const subjectsParam = searchParams.get("subjects") // comma separated list of subject names
       const academicYearId = searchParams.get("academicYearId")
+      const teacherId = searchParams.get("teacherId")
       if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
       const subjectNames = (subjectsParam || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+
+      // Fetch homeroom classes for this teacher (if any)
+      let homeroomClasses: any[] = []
+      if (academicYearId && teacherId) {
+        homeroomClasses = await prisma.class.findMany({
+          where: {
+            academicYearId,
+            OR: [
+              { homeroomTeacherId: teacherId },
+              { homeroomTeacherId: { contains: teacherId } }
+            ]
+          }
+        })
+      }
 
       // Fetch all students in the class
       const students = await prisma.student.findMany({
@@ -302,6 +317,9 @@ export async function GET(req: Request) {
           if (!assessment) return null
 
           const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
+          if (committedSubjects.length === 0) return null
+
+          const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
           const matchedSubjects = []
 
           for (const subName of subjectNames) {
@@ -324,7 +342,7 @@ export async function GET(req: Request) {
             }
           }
 
-          if (subjectNames.length > 0 && matchedSubjects.length === 0) return null
+          if (!isHomeroom && subjectNames.length > 0 && matchedSubjects.length === 0) return null
 
           return {
             id: s.id,
