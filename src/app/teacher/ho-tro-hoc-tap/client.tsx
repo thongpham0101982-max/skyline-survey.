@@ -738,6 +738,7 @@ export function TeacherSupportClient({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cam kết Khảo sát đầu vào (KSĐV)</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm khảo sát</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng hiện tại</th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
               </tr>
@@ -812,41 +813,71 @@ export function TeacherSupportClient({
                         {s.enrollmentDate ? new Date(s.enrollmentDate).toLocaleDateString("vi-VN") : "Chưa có"}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-col gap-1">
                           {s.committedSubjects.map((sub: string, index: number) => {
                             const isMatched = s.matchedSubjects?.includes(sub)
-                            let scoreDisplay = "";
-                            const subLower = sub.toLowerCase();
-                            if (subLower.includes("toán") && s.mathScore != null) scoreDisplay = ` (Điểm: ${s.mathScore})`;
-                            else if ((subLower.includes("văn") || subLower.includes("tiếng việt")) && s.literatureScore != null) scoreDisplay = ` (Điểm: ${s.literatureScore})`;
-                            else if (subLower.includes("anh")) {
-                              const write = s.writtenEnglishScore;
-                              const oral = s.oralEnglishScore;
-                              if (write != null || oral != null) {
-                                scoreDisplay = ` (Điểm: ${write ?? "-"} viết, ${oral ?? "-"} nói)`;
-                              }
-                            } else if (subLower.includes("tâm lý") && s.psychologyScore != null) scoreDisplay = ` (Điểm: ${s.psychologyScore})`;
-                            else if (s.scores && s.scores.length > 0) {
-                              const sc = s.scores.find((x:any) => {
-                                const n = x.subject?.name?.toLowerCase() || "";
-                                if (subLower.includes("toán")) return n.includes("toán");
-                                if (subLower.includes("văn") || subLower.includes("tiếng việt")) return n.includes("văn") || n.includes("tiếng việt");
-                                if (subLower.includes("anh")) return n.includes("anh");
-                                if (subLower.includes("tâm lý")) return n.includes("tâm lý");
-                                return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
-                              });
-                              if (sc && sc.scores) scoreDisplay = ` (Điểm: ${sc.scores})`;
-                            }
                             return (
                               <span 
                                 key={index} 
-                                className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
+                                className={`w-max px-2 py-0.5 rounded text-[11px] font-bold border ${
                                   isMatched 
                                     ? "bg-indigo-50 text-indigo-700 border-indigo-200" 
                                     : "bg-slate-100 text-slate-600 border-slate-200"
                                 }`}
                               >
-                                {sub}{scoreDisplay} {isMatched && "✓"}
+                                {sub} {isMatched && "✓"}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          {s.committedSubjects.map((sub: string, index: number) => {
+                            let scoreDisplay = "Chưa có";
+                            const subLower = sub.toLowerCase();
+                            if (subLower.includes("toán")) {
+                              if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
+                              else {
+                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("toán"));
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+                              if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
+                              else {
+                                const sc = s.scores?.find((x:any) => {
+                                  const n = x.subject?.name?.toLowerCase() || "";
+                                  return n.includes("văn") || n.includes("tiếng việt");
+                                });
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else if (subLower.includes("anh")) {
+                              const write = s.writtenEnglishScore;
+                              const oral = s.oralEnglishScore;
+                              if (write != null || oral != null) {
+                                scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
+                              } else {
+                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("anh"));
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else if (subLower.includes("tâm lý")) {
+                              if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
+                              else {
+                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else {
+                              if (s.scores && s.scores.length > 0) {
+                                const sc = s.scores.find((x:any) => {
+                                  const n = x.subject?.name?.toLowerCase() || "";
+                                  return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
+                                });
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            }
+                            return (
+                              <span key={index} className="text-[11px] font-bold text-slate-600 block whitespace-nowrap">
+                                <span className="text-slate-400 font-normal">{sub}:</span> <span className="text-indigo-600 font-black">{scoreDisplay}</span>
                               </span>
                             )
                           })}
@@ -887,12 +918,56 @@ export function TeacherSupportClient({
                                 ? s.matchedSubjects 
                                 : [s.committedSubjects[0]]
                               setSelectedSubjects(activeSubs)
-                              setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào.`)
+                              let scoreDetails = s.committedSubjects.map((sub: string) => {
+                                let scoreDisplay = "Chưa có";
+                                const subLower = sub.toLowerCase();
+                                if (subLower.includes("toán")) {
+                                  if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
+                                  else {
+                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("toán"));
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+                                  if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
+                                  else {
+                                    const sc = s.scores?.find((x:any) => {
+                                      const n = x.subject?.name?.toLowerCase() || "";
+                                      return n.includes("văn") || n.includes("tiếng việt");
+                                    });
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else if (subLower.includes("anh")) {
+                                  const write = s.writtenEnglishScore;
+                                  const oral = s.oralEnglishScore;
+                                  if (write != null || oral != null) {
+                                    scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
+                                  } else {
+                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("anh"));
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else if (subLower.includes("tâm lý")) {
+                                  if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
+                                  else {
+                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else {
+                                  if (s.scores && s.scores.length > 0) {
+                                    const sc = s.scores.find((x:any) => {
+                                      const n = x.subject?.name?.toLowerCase() || "";
+                                      return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
+                                    });
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                }
+                                return `${sub}: ${scoreDisplay}`;
+                              }).join(", ");
+                              setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào. Điểm khảo sát: ${scoreDetails}`)
                               fetchClassStudents(s.classId)
                             }}
                             className="bg-[#00A99D] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
                           >
-                            Đề xuất bồi dưỡng
+                            Thêm vào Form
                           </button>
                         )}
                       </td>
