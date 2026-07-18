@@ -105,6 +105,33 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             setLatestBatchInfo(null);
         }
     }, [assignments, selectedPeriodId]);
+    const latestBatchStats = useMemo(() => {
+        if (!latestBatchInfo || !Array.isArray(assignments)) return [];
+        
+        const batchAssignments = assignments.filter(a => a.batchId === latestBatchInfo.id);
+        const groups = new Map();
+        
+        batchAssignments.forEach(a => {
+            const grade = a.grade || "Mầm non";
+            let system = a.educationSystem || "Mầm non";
+            if (a.isPreschool) {
+                system = "Mầm non";
+            }
+            
+            const key = grade + "__" + system;
+            const count = a.studentCount || 0;
+            
+            if (!groups.has(key)) {
+                groups.set(key, { grade, system, count });
+            } else {
+                const grp = groups.get(key);
+                grp.count = Math.max(grp.count, count);
+            }
+        });
+        
+        return Array.from(groups.values()).filter(g => g.count > 0);
+    }, [assignments, latestBatchInfo]);
+
     const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
     const [selectedGrade, setSelectedGrade] = useState<string>("all");
     const [selectedSystemCode, setSelectedSystemCode] = useState<string>("all");
@@ -826,6 +853,17 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 {latestBatchInfo.periodName}
                 </span>
                 <span className="opacity-90 ml-0.5">. Vui lòng tiến hành đánh giá.</span>
+                </div>
+                {latestBatchStats && latestBatchStats.length > 0 && (
+                    <div className="mt-2.5 pt-2 border-t border-amber-200/50 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 font-medium animate-in fade-in duration-300">
+                        <span className="font-bold text-slate-600">Số lượng học sinh phân công:</span>
+                        {latestBatchStats.map((stat, idx) => (
+                            <span key={idx} className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-900 px-2 py-0.5 rounded-md text-[11px] font-bold border border-amber-500/10">
+                                {stat.grade} ({stat.system}): {stat.count} HS
+                            </span>
+                        ))}
+                    </div>
+                )}
                 </div>
                 </div>
                 </div>

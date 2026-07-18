@@ -179,43 +179,114 @@ export async function GET(req: any) {
             }
         });
 
+        // Query counts for general K12 students
+        const generalPeriodIds = Array.from(new Set(combinedAssignments.map(a => a.periodId).filter(Boolean)));
+        const generalStudents = generalPeriodIds.length > 0 ? await prisma.inputAssessmentStudent.findMany({
+            where: { periodId: { in: generalPeriodIds } },
+            select: { id: true, periodId: true, batchId: true, grade: true, surveyFormType: true }
+        }) : [];
+
+        const sysList = await prisma.educationSystem.findMany();
+        const eduSystemsMap = {};
+        sysList.forEach(s => {
+            const code = s.code.toLowerCase();
+            if (!eduSystemsMap[code]) eduSystemsMap[code] = new Set();
+            eduSystemsMap[code].add(s.name.toLowerCase());
+        });
+
+        const K12AssignmentsWithCount = combinedAssignments.map(a => {
+            const aGrade = (a.grade || "").toLowerCase().trim();
+            const aGradeNum = aGrade.replace("khối", "").trim();
+            const aSys = (a.educationSystem || "").toLowerCase().trim();
+            const aSysNames = eduSystemsMap[aSys] || new Set();
+
+            const studentCount = generalStudents.filter(st => {
+                if (st.periodId !== a.periodId) return false;
+                if (a.batchId && st.batchId !== a.batchId) return false;
+
+                const stGrade = (st.grade || "").toLowerCase().trim();
+                const stGradeNum = stGrade.replace("khối", "").trim();
+                const stSys = (st.surveyFormType || "").toLowerCase().trim();
+
+                const gradeMatch = !aGrade || aGrade === "tất cả" || stGrade === aGrade ||
+                    (stGradeNum !== "" && aGradeNum !== "" && stGradeNum === aGradeNum);
+
+                let sysMatch = false;
+                if (!aSys || aSys === "tất cả") {
+                    sysMatch = true;
+                } else {
+                    sysMatch = stSys === aSys || stSys.includes(aSys) || aSys.includes(stSys);
+                    if (!sysMatch) {
+                        for (const name of aSysNames) {
+                            if (stSys === name || stSys.includes(name) || name.includes(stSys)) {
+                                sysMatch = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                return gradeMatch && sysMatch;
+            }).length;
+
+            return {
+                ...a,
+                studentCount
+            };
+        });
+
         // Filter by academicYear in-memory (relation filter may not work on preschool model)
         const preschoolAssignments = academicYearId
             ? preschoolAssignmentsRaw.filter((a: any) => a.period?.academicYearId === academicYearId)
             : preschoolAssignmentsRaw;
 
-        const mappedPreschool = preschoolAssignments.map((a: any) => ({
-            id: a.id,
-            periodId: a.periodId,
-            batchId: a.batchId,
-            userId: a.userId,
-            subjectId: "preschool",
-            grade: a.grade,
-            isPreschool: true,
-            subject: {
-                id: "preschool",
-                name: "Đánh giá Mầm non",
-                code: "PRESCHOOL",
-                scoreColumns: 1,
-                commentColumns: 1,
-            },
-            batch: a.batch ? {
-                id: a.batch.id,
-                name: a.batch.name,
-                status: a.batch.status
-            } : null,
-            period: {
-                id: a.period.id,
-                name: a.period.name,
-                code: a.period.code,
-                status: a.period.status,
-                assignedUser: a.period.assignedUser ? {
-                    id: a.period.assignedUser.id,
-                    fullName: a.period.assignedUser.fullName,
-                    email: a.period.assignedUser.email
-                } : null
-            }
-        }));
+        // Query counts for preschool students
+        const preschoolPeriodIds = Array.from(new Set(preschoolAssignments.map((a: any) => a.periodId).filter(Boolean)));
+        const preschoolStudents = preschoolPeriodIds.length > 0 ? await (prisma as any).preschoolInputAssessmentStudent.findMany({
+            where: { periodId: { in: preschoolPeriodIds } },
+            select: { id: true, periodId: true, batchId: true, grade: true, probationaryTeacher: true }
+        }) : [];
+
+        const mappedPreschool = preschoolAssignments.map((a: any) => {
+            const studentCount = preschoolStudents.filter((st: any) => {
+                if (st.periodId !== a.periodId) return false;
+                if (a.batchId && st.batchId !== a.batchId) return false;
+                return matchesPreschoolGrade(st.grade || "", a.grade);
+            }).length;
+
+            return {
+                id: a.id,
+                periodId: a.periodId,
+                batchId: a.batchId,
+                userId: a.userId,
+                subjectId: "preschool",
+                grade: a.grade,
+                isPreschool: true,
+                studentCount,
+                subject: {
+                    id: "preschool",
+                    name: "Đánh giá Mầm non",
+                    code: "PRESCHOOL",
+                    scoreColumns: 1,
+                    commentColumns: 1,
+                },
+                batch: a.batch ? {
+                    id: a.batch.id,
+                    name: a.batch.name,
+                    status: a.batch.status
+                } : null,
+                period: {
+                    id: a.period.id,
+                    name: a.period.name,
+                    code: a.period.code,
+                    status: a.period.status,
+                    assignedUser: a.period.assignedUser ? {
+                        id: a.period.assignedUser.id,
+                        fullName: a.period.assignedUser.fullName,
+                        email: a.period.assignedUser.email
+                    } : null
+                }
+            };
+        });
 
         try {
             const currentTeacher = await prisma.teacher.findUnique({
@@ -249,8 +320,12 @@ export async function GET(req: any) {
 
                 probationStudents.forEach((p: any) => {
                     if (p.period) {
+                        const studentCount = preschoolStudents.filter((st: any) => {
+                            return st.periodId === p.periodId && st.probationaryTeacher === currentTeacher.teacherName;
+                        }).length;
+
                         mappedPreschool.push({
-                            id: `preschool-probation-${p.periodId}`,
+                            id: 'preschool-probation-' + p.periodId,
                             periodId: p.periodId,
                             batchId: null,
                             userId: session.user.id,
@@ -258,6 +333,7 @@ export async function GET(req: any) {
                             grade: "Học thử",
                             isPreschool: true,
                             isPreschoolProbation: true,
+                            studentCount,
                             subject: {
                                 id: "preschool-probation",
                                 name: "Đánh giá Học thử (Mầm non)",
@@ -275,7 +351,7 @@ export async function GET(req: any) {
             console.error("Error fetching virtual probationary assignments:", eError);
         }
 
-        return NextResponse.json([...combinedAssignments, ...mappedPreschool]);
+        return NextResponse.json([...K12AssignmentsWithCount, ...mappedPreschool]);
     }
     
     if (action === "getStats") {
