@@ -204,7 +204,14 @@ export async function GET(req: Request) {
           enrollmentCode: true,
           fullName: true,
           directorNote: true,
-          admissionResult: true
+          admissionResult: true,
+          enrollmentDate: true,
+          mathScore: true,
+          literatureScore: true,
+          writtenEnglishScore: true,
+          oralEnglishScore: true,
+          psychologyScore: true,
+          scores: { include: { subject: true } }
         }
       })
 
@@ -284,7 +291,14 @@ export async function GET(req: Request) {
           enrollmentCode: true,
           fullName: true,
           directorNote: true,
-          admissionResult: true
+          admissionResult: true,
+          enrollmentDate: true,
+          mathScore: true,
+          literatureScore: true,
+          writtenEnglishScore: true,
+          oralEnglishScore: true,
+          psychologyScore: true,
+          scores: { include: { subject: true } }
         }
       })
 
@@ -428,7 +442,14 @@ export async function GET(req: Request) {
           enrollmentCode: true,
           fullName: true,
           directorNote: true,
-          admissionResult: true
+          admissionResult: true,
+          enrollmentDate: true,
+          mathScore: true,
+          literatureScore: true,
+          writtenEnglishScore: true,
+          oralEnglishScore: true,
+          psychologyScore: true,
+          scores: { include: { subject: true } }
         }
       })
 
@@ -499,7 +520,14 @@ export async function GET(req: Request) {
             matchedSubjects,
             isHomeroom,
             admissionResult: assessment.admissionResult,
-            directorNote: assessment.directorNote
+            directorNote: assessment.directorNote,
+            enrollmentDate: assessment.enrollmentDate,
+            mathScore: assessment.mathScore,
+            literatureScore: assessment.literatureScore,
+            writtenEnglishScore: assessment.writtenEnglishScore,
+            oralEnglishScore: assessment.oralEnglishScore,
+            psychologyScore: assessment.psychologyScore,
+            scores: assessment.scores
           }
         })
         .filter(Boolean)
