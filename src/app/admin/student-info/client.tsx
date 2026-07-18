@@ -305,6 +305,8 @@ export function StudentInfoClient({
   const [allClasses, setAllClasses] = useState<any[]>([]);
   const [allClassesLoading, setAllClassesLoading] = useState(false);
   const [transferCampusId, setTransferCampusId] = useState("");
+  const [transferYearId, setTransferYearId] = useState("");
+  const [transferGradeId, setTransferGradeId] = useState("");
   const [transferClassId, setTransferClassId] = useState("");
   const [transferStudents, setTransferStudents] = useState<any[]>([]);
   const [transferStudentsLoading, setTransferStudentsLoading] = useState(false);
@@ -336,9 +338,13 @@ export function StudentInfoClient({
   }, [allClasses, transferClassId]);
 
   const filteredClasses = useMemo(() => {
-    if (!transferCampusId) return [];
-    return allClasses.filter((c) => c.campusId === transferCampusId);
-  }, [allClasses, transferCampusId]);
+    if (!transferCampusId || !transferYearId) return [];
+    return allClasses.filter(c => 
+      c.campusId === transferCampusId && 
+      c.academicYearId === transferYearId &&
+      (!transferGradeId || c.grade === transferGradeId)
+    );
+  }, [allClasses, transferCampusId, transferYearId, transferGradeId]);
 
   // Sync selectedLocationType when targetType changes
   useEffect(() => {
