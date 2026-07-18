@@ -63,9 +63,46 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 if (activeBatch) {
                     setSelectedPeriodId(activeBatch.periodId);
                     setSelectedBatchId(activeBatch.id);
-                    setLatestBatchInfo(activeBatch);
                 }
             }
+        }
+    }, [assignments, selectedPeriodId]);
+
+    useEffect(() => {
+        if (!Array.isArray(assignments) || assignments.length === 0) {
+            setLatestBatchInfo(null);
+            return;
+        }
+
+        const allBatchesMap = new Map();
+        assignments.forEach(a => {
+            if (a && a.batch && a.period && (!selectedPeriodId || a.periodId === selectedPeriodId)) {
+                allBatchesMap.set(a.batchId, {
+                    ...a.batch,
+                    periodId: a.periodId,
+                    periodName: a.period.name,
+                    periodCode: a.period.code
+                });
+            }
+        });
+        const allBatches = Array.from(allBatchesMap.values());
+        
+        if (allBatches.length > 0) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            let activeBatch = allBatches.find((b: any) => {
+                if (!b.startDate || !b.endDate) return false;
+                const start = new Date(b.startDate);
+                const end = new Date(b.endDate);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                return today >= start && today <= end;
+            });
+            
+            setLatestBatchInfo(activeBatch || null);
+        } else {
+            setLatestBatchInfo(null);
         }
     }, [assignments, selectedPeriodId]);
     const [selectedAssignmentId, setSelectedAssignmentId] = useState<string>("");
