@@ -470,7 +470,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     {!isCollapsed && <span>5. Hồ sơ Học sinh</span>}
                   </Link>
 
-                  {/* 6. Hỗ trợ học tập */}
+                  {/* 6. Phụ đạo, bồi dưỡng Học sinh */}
                   <Link 
                     href="/teacher/ho-tro-hoc-tap" 
                     onClick={() => setIsOpen(false)} 
@@ -489,7 +489,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/ho-tro-hoc-tap') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>6. Hỗ trợ học tập</span>}
+                    {!isCollapsed && <span>6. Phụ đạo, bồi dưỡng Học sinh</span>}
                   </Link>
                 </div>
               )}
