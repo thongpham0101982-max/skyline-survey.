@@ -99,6 +99,7 @@ export function SupportClient({
   const [assignSubjectId, setAssignSubjectId] = useState("")
   const [assignNotes, setAssignNotes] = useState("")
   const [selectedDuyetIds, setSelectedDuyetIds] = useState<string[]>([])
+  const [isBulkApproveModalOpen, setIsBulkApproveModalOpen] = useState(false)
 
   // Outcome Config Form States
   const [configId, setConfigId] = useState("")
@@ -376,6 +377,38 @@ export function SupportClient({
       }
     } catch (e) {
       toast.error("Lỗi đồng bộ dữ liệu")
+    }
+  }
+
+  // Save Assignment
+  const handleSaveAssignment = async () => {
+    if (!assignTargetId || !assignTeacherId) {
+      toast.error("Vui lòng chọn đối tượng và giáo viên phụ trách")
+      return
+    }
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "saveAssignment",
+          academicYearId: selectedYearId,
+          targetId: assignTargetId,
+          teacherId: assignTeacherId,
+          subjectId: assignSubjectId || null,
+          notes: assignNotes
+        })
+      })
+      const data = await res.json()
+      if (data.error) {
+        toast.error(data.error)
+      } else {
+        toast.success("Đã phân công giáo viên phụ trách!")
+        setIsBulkApproveModalOpen(false)
+        fetchAllData()
+      }
+    } catch (e) {
+      toast.error("Lỗi lưu phân công")
     }
   }
 
@@ -699,7 +732,7 @@ export function SupportClient({
                             <button
                               onClick={() => {
                                 setSelectedDuyetIds([t.id])
-                                setIsAssignModalOpen(true)
+                                setIsBulkApproveModalOpen(true)
                               }}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-2.5 rounded text-xs inline-flex items-center gap-1 shadow-sm mr-2"
                               title="Duyệt & Phân công"
@@ -1407,7 +1440,7 @@ export function SupportClient({
       )}
 
       {/* 3. Modal Duyệt Đề xuất */}
-      {isAssignModalOpen && (
+      {isBulkApproveModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
@@ -1415,7 +1448,7 @@ export function SupportClient({
                 <CheckCircle2 className="h-5 w-5 text-indigo-600" />
                 Duyệt Đề xuất bồi dưỡng
               </h2>
-              <button onClick={() => setIsAssignModalOpen(false)}>
+              <button onClick={() => setIsBulkApproveModalOpen(false)}>
                 <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
               </button>
             </div>
@@ -1466,7 +1499,7 @@ export function SupportClient({
 
             <div className="px-6 py-4 border-t flex justify-end gap-3 bg-slate-50">
               <button
-                onClick={() => setIsAssignModalOpen(false)}
+                onClick={() => setIsBulkApproveModalOpen(false)}
                 className="border hover:bg-slate-100 py-2 px-4 rounded-lg text-sm font-medium transition-all"
               >
                 Hủy bỏ
@@ -1482,6 +1515,84 @@ export function SupportClient({
                 className="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-lg text-sm font-bold shadow-sm transition-all"
               >
                 Duyệt Đề xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      
+      {/* 3.5. Modal Phân công GVPT (For Tab 2) */}
+      {isAssignModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                Phân công Giáo viên phụ trách
+              </h2>
+              <button onClick={() => setIsAssignModalOpen(false)}>
+                <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Chọn đối tượng cần hỗ trợ <span className="text-rose-500">*</span></label>
+                <select
+                  value={assignTargetId}
+                  onChange={e => setAssignTargetId(e.target.value)}
+                  className="w-full rounded-lg border-slate-300 border py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm bg-slate-50"
+                >
+                  <option value="">-- Chọn đối tượng hỗ trợ --</option>
+                  {targets
+                    .filter((t: any) => t.terminationStatus === "ACTIVE")
+                    .map((t: any) => (
+                      <option key={t.id} value={t.id}>
+                        {t.student?.studentName} - {t.student?.studentCode} ({t.supportType === "ACADEMIC" ? "Môn học" : "Tâm lý"})
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Giáo viên phụ trách <span className="text-rose-500">*</span></label>
+                <select
+                  value={assignTeacherId}
+                  onChange={e => setAssignTeacherId(e.target.value)}
+                  className="w-full rounded-lg border-slate-300 border py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                >
+                  <option value="">-- Chọn giáo viên --</option>
+                  {teachers.map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name} ({t.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Ghi chú phân công</label>
+                <textarea
+                  value={assignNotes}
+                  onChange={e => setAssignNotes(e.target.value)}
+                  placeholder="Nhập ghi chú, nhiệm vụ cụ thể cho giáo viên..."
+                  className="w-full rounded-lg border-slate-300 border py-2.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm min-h-[80px]"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t flex justify-end gap-3 bg-slate-50">
+              <button
+                onClick={() => setIsAssignModalOpen(false)}
+                className="border hover:bg-slate-100 py-2 px-4 rounded-lg text-sm font-medium transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleSaveAssignment}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-bold shadow-sm transition-all"
+              >
+                Lưu Phân công
               </button>
             </div>
           </div>
