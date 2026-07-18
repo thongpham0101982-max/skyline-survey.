@@ -65,13 +65,14 @@ export function TeacherSupportClient({
   const [evalTargetId, setEvalTargetId] = useState("")
   const [evalTargetName, setEvalTargetName] = useState("")
   const [evalTargetType, setEvalTargetType] = useState("")
-  const [evalPeriodType, setEvalPeriodType] = useState("WEEK")
-  const [evalPeriodName, setEvalPeriodName] = useState("Tuần 1")
+  const [evalPeriodType, setEvalPeriodType] = useState("MONTH")
+  const [evalPeriodName, setEvalPeriodName] = useState("")
   const [evalTrackingLevel, setEvalTrackingLevel] = useState("")
   const [evalComment, setEvalComment] = useState("")
   const [evalUpdatedStatus, setEvalUpdatedStatus] = useState("TIẾP TỤC THEO TUẦN")
   const [evalStudent, setEvalStudent] = useState<any>(null)
   const [evalTargetObj, setEvalTargetObj] = useState<any>(null)
+  const [selectedEvalTargetIds, setSelectedEvalTargetIds] = useState<string[]>([])
 
   // Request Termination Form States
   const [termTargetId, setTermTargetId] = useState("")
@@ -394,31 +395,53 @@ export function TeacherSupportClient({
       toast.error("Vui lòng chọn mức độ kết quả theo dõi và nhập nhận xét chi tiết")
       return
     }
+    const shouldTerminate = evalTrackingLevel.includes("Vượt yêu cầu") || evalTrackingLevel.includes("Hoàn thành");
     try {
-      const res = await fetch("/api/ktdbcl/support", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "saveEvaluation",
-          academicYearId: selectedYearId,
-          targetId: evalTargetId,
-          periodType: evalPeriodType,
-          periodName: evalPeriodName,
-          trackingLevel: evalTrackingLevel,
-          comment: evalComment,
-          updatedStatus: evalUpdatedStatus
-        })
-      })
-      const data = await res.json()
-      if (data.error) {
-        toast.error(data.error)
-      } else {
-        toast.success("Ghi nhận đánh giá thành công!")
-        setIsEvaluationModalOpen(false)
-        fetchTeacherData()
+      const targetIds = selectedEvalTargetIds.length > 0 ? selectedEvalTargetIds : (evalTargetId ? [evalTargetId] : []);
+      if (targetIds.length === 0) return;
+
+      const promises = targetIds.map(id => 
+        fetch("/api/ktdbcl/support", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "saveEvaluation",
+            academicYearId: selectedYearId,
+            targetId: id,
+            periodType: evalPeriodType,
+            periodName: evalPeriodName,
+            trackingLevel: evalTrackingLevel,
+            comment: evalComment,
+            updatedStatus: evalUpdatedStatus
+          })
+        }).then(r => r.json())
+      );
+      
+      await Promise.all(promises);
+
+      if (shouldTerminate) {
+        const termPromises = targetIds.map(id =>
+          fetch("/api/ktdbcl/support", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "requestTermination",
+              academicYearId: selectedYearId,
+              id: id,
+              outcome: evalTrackingLevel,
+              notes: evalComment
+            })
+          }).then(r => r.json())
+        );
+        await Promise.all(termPromises);
       }
+
+      toast.success("Ghi nhận đánh giá thành công!");
+      setIsEvaluationModalOpen(false);
+      setSelectedEvalTargetIds([]);
+      fetchTeacherData();
     } catch (e) {
-      toast.error("Lưu nhận xét thất bại")
+      toast.error("Lưu nhận xét thất bại");
     }
   }
 
@@ -638,100 +661,160 @@ export function TeacherSupportClient({
           <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
         </div>
       ) : activeSubTab === "assigned" ? (
-        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Chương trình hỗ trợ</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mức độ theo dõi hiện tại</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-sm">
-              {filteredTargets.length === 0 ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <button
+              disabled={selectedEvalTargetIds.length === 0}
+              onClick={() => {
+                if (selectedEvalTargetIds.length === 0) return;
+                setEvalTargetId("")
+                setEvalTargetName("Nhiều học sinh")
+                const firstSelected = targets.find((t:any) => t.id === selectedEvalTargetIds[0])
+                setEvalTargetType(firstSelected?.supportType || "ACADEMIC")
+                setEvalPeriodType("MONTH")
+                const curMonth = "Tháng " + (new Date().getMonth() + 1)
+                setEvalPeriodName(curMonth)
+                setEvalComment("")
+                setEvalStudent(null)
+                setEvalTargetObj(null)
+                const options = configs.filter((c:any) => c.supportType === (firstSelected?.supportType || "ACADEMIC"))
+                setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                setIsEvaluationModalOpen(true)
+              }}
+              className="bg-indigo-600 disabled:bg-slate-300 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all"
+            >
+              Đánh giá nhiều Học sinh
+            </button>
+          </div>
+          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-400">
-                    Không tìm thấy học sinh nào thuộc danh sách bồi dưỡng của bạn
-                  </td>
+                  <th className="px-4 py-3 w-10">
+                    <input type="checkbox" onChange={e => {
+                      if (e.target.checked) {
+                        const allIds = filteredTargets
+                          .filter((t:any) => t.assignments?.some((a:any) => a.teacherId === teacher?.id) && t.terminationStatus !== "TERMINATED" && t.terminationStatus !== "PENDING_TERMINATION")
+                          .map((t:any) => t.id);
+                        setSelectedEvalTargetIds(allIds);
+                      } else setSelectedEvalTargetIds([]);
+                    }} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"/>
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">TT</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn hỗ trợ</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mức hiện tại</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
                 </tr>
-              ) : (
-                filteredTargets.map((t: any) => {
-                  const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher.id)
-                  const isTerminated = t.terminationStatus === "TERMINATED"
-                  const isPending = t.terminationStatus === "PENDING_TERMINATION"
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-sm">
+                {filteredTargets.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="text-center py-10 text-slate-400">
+                      Không tìm thấy học sinh nào thuộc danh sách bồi dưỡng của bạn
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTargets.map((t: any, index: number) => {
+                    const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher?.id)
+                    const isTerminated = t.terminationStatus === "TERMINATED"
+                    const isPending = t.terminationStatus === "PENDING_TERMINATION"
+                    
+                    const evals = t.evaluations || [];
+                    const sortedEvals = [...evals].sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                    const latestEval = sortedEvals[0];
+                    const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ";
 
-                  return (
-                    <tr key={t.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-bold text-slate-800">{t.student?.studentName}</div>
-                        <div className="text-xs text-slate-500">{t.student?.studentCode}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                        {t.student?.class?.className}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
-                          t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
-                        }`}>
-                          {t.supportType === "ACADEMIC" ? t.reason : "Tâm lý học đường"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                          isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
-                        }`}>
-                          {isTerminated ? "Hoàn thành bồi dưỡng" : isPending ? "Chờ duyệt kết thúc" : t.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-900 font-semibold">
-                        {isTerminated ? t.outcome : t.status}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
-                        {isAssigned && !isTerminated && !isPending && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setEvalTargetId(t.id)
-                                setEvalTargetName(t.student?.studentName)
-                                setEvalTargetType(t.supportType)
-                                setEvalComment("")
-                                setEvalStudent(t.student)
-                                setEvalTargetObj(t)
-                                // Pick first config option as default
-                                const options = configs.filter(c => c.supportType === t.supportType)
-                                setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                                setIsEvaluationModalOpen(true)
-                              }}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-lg text-xs transition-all shadow-xs"
-                            >
-                              Nhận xét & Đánh giá
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setTermTargetId(t.id)
-                                setTermNotes("")
-                                setIsRequestTermModalOpen(true)
-                              }}
-                              className="border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium py-1 px-3 rounded-lg text-xs transition-all"
-                            >
-                              Đề xuất kết thúc
-                            </button>
-                          </>
-                        )}
-                        {(isTerminated || isPending) && (
-                          <span className="text-xs text-slate-400 font-medium">Không thể thao tác</span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
+                    return (
+                      <tr key={t.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {!isTerminated && !isPending && (
+                            <input 
+                              type="checkbox" 
+                              checked={selectedEvalTargetIds.includes(t.id)} 
+                              onChange={e => {
+                                if (e.target.checked) setSelectedEvalTargetIds([...selectedEvalTargetIds, t.id]);
+                                else setSelectedEvalTargetIds(selectedEvalTargetIds.filter(id => id !== t.id));
+                              }} 
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                          )}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-slate-500 font-medium">{index + 1}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-slate-500">{t.student?.studentCode}</td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <div className="font-bold text-slate-800">{t.student?.studentName}</div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-bold">
+                          {t.student?.class?.className}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
+                            t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
+                          }`}>
+                            {t.supportType === "ACADEMIC" ? t.reason : "Tâm lý học đường"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                            isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
+                          }`}>
+                            {isTerminated ? "Hoàn thành bồi dưỡng" : isPending ? "Chờ duyệt kết thúc" : t.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-slate-800 font-bold">
+                          {isTerminated ? t.outcome : currentLevel}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
+                          {isAssigned && !isTerminated && !isPending && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setSelectedEvalTargetIds([t.id])
+                                  setEvalTargetId(t.id)
+                                  setEvalTargetName(t.student?.studentName)
+                                  setEvalTargetType(t.supportType)
+                                  setEvalComment("")
+                                  setEvalStudent(t.student)
+                                  setEvalTargetObj(t)
+                                  setEvalPeriodType("MONTH")
+                                  const curMonth = "Tháng " + (new Date().getMonth() + 1)
+                                  setEvalPeriodName(curMonth)
+                                  const options = configs.filter((c:any) => c.supportType === t.supportType)
+                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                                  setIsEvaluationModalOpen(true)
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
+                              >
+                                Nhận xét & Đánh giá
+                              </button>
+  
+                              <button
+                                onClick={() => {
+                                  setTermTargetId(t.id)
+                                  setTermNotes("")
+                                  setIsRequestTermModalOpen(true)
+                                }}
+                                className="border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium py-1.5 px-3 rounded-lg text-xs transition-all"
+                              >
+                                Đề xuất kết thúc
+                              </button>
+                            </>
+                          )}
+                          {(isTerminated || isPending) && (
+                            <span className="text-[11px] text-slate-400 font-medium">Không thể thao tác</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : activeSubTab === "commitments" ? (
         <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
@@ -1497,9 +1580,8 @@ export function TeacherSupportClient({
         </div>
       )}
 
-      {/* 2. Modal Nhận xét & Đánh giá tuần/tháng */}
+      {/* 2. Modal Nhận xét & Đánh giá định kỳ */}
       {isEvaluationModalOpen && (() => {
-        // Logic xác định các field hiển thị
         const isCommitment = activeSubTab === "commitments" || evalTargetObj?.notes?.includes("Cam kết Khảo sát đầu vào");
         
         let targetLabel = isCommitment ? "Cam kết đầu vào" : "Đề xuất hỗ trợ";
@@ -1515,54 +1597,90 @@ export function TeacherSupportClient({
         }
 
         let resultHelper = "";
-        if (evalTrackingLevel === "Vượt yêu cầu") resultHelper = "Có thể kết thúc phụ đạo hoặc chuyển sang bồi dưỡng.";
-        if (evalTrackingLevel === "Đạt yêu cầu") resultHelper = "Hoàn thành chương trình phụ đạo.";
-        if (evalTrackingLevel === "Đạt một phần") resultHelper = "Tiếp tục phụ đạo theo kế hoạch.";
-        if (evalTrackingLevel === "Cần hỗ trợ thêm") resultHelper = "Điều chỉnh phương pháp hoặc tăng số buổi.";
-        if (evalTrackingLevel === "Chưa đạt") resultHelper = "Xây dựng kế hoạch hỗ trợ chuyên sâu.";
+        let resultColor = "text-indigo-600";
+        if (evalTrackingLevel.includes("Vượt yêu cầu") || evalTrackingLevel.includes("Hoàn thành")) {
+          resultHelper = "Có thể Đề xuất kết thúc phụ đạo/theo dõi ngay bây giờ.";
+          resultColor = "text-emerald-600";
+        } else if (evalTrackingLevel.includes("Chưa đạt") || evalTrackingLevel.includes("Cần hỗ trợ")) {
+          resultHelper = "Cần điều chỉnh phương pháp hoặc xây dựng kế hoạch chuyên sâu.";
+          resultColor = "text-rose-600";
+        } else if (evalTrackingLevel) {
+          resultHelper = "Tiếp tục phụ đạo và theo dõi theo kế hoạch hiện tại.";
+        }
+
+        const months = ["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"];
+
+        const historyEvals = evalTargetObj?.evaluations ? [...evalTargetObj.evaluations].sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
 
         return (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col">
-              <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="px-6 py-4 border-b flex justify-between items-center bg-emerald-50">
                 <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-indigo-600" /> Form Đánh giá định kỳ
+                  <FileText className="h-5 w-5 text-emerald-600" /> Form Đánh giá định kỳ
                 </h2>
                 <button onClick={() => setIsEvaluationModalOpen(false)}>
                   <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="p-6 space-y-6 overflow-y-auto">
                 {/* Phần 1: Thông tin học sinh tĩnh */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <div className="grid grid-cols-3 gap-4 mb-3 pb-3 border-b border-slate-200">
-                    <div>
-                      <span className="text-xs text-slate-500 font-bold block">Mã HS</span>
-                      <span className="text-sm font-semibold text-slate-800">{evalStudent?.studentCode || evalStudent?.code || "N/A"}</span>
+                  {selectedEvalTargetIds.length > 1 ? (
+                    <div className="font-bold text-slate-800">
+                      Đang đánh giá hàng loạt {selectedEvalTargetIds.length} học sinh
                     </div>
-                    <div className="col-span-2">
-                      <span className="text-xs text-slate-500 font-bold block">Họ và tên</span>
-                      <span className="text-sm font-black text-slate-800">{evalStudent?.studentName || evalStudent?.fullName || evalTargetName}</span>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <span className="text-xs text-slate-500 font-bold block">Lớp</span>
-                      <span className="text-sm font-semibold text-slate-800">{evalStudent?.className || evalStudent?.class?.className || "N/A"}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 font-bold block mb-1">Đối tượng</span>
-                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${targetColor}`}>{targetLabel}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-500 font-bold block">{startDateLabel}</span>
-                      <span className="text-sm font-semibold text-slate-800">{startDateValue}</span>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-3 gap-4 mb-3 pb-3 border-b border-slate-200">
+                        <div>
+                          <span className="text-xs text-slate-500 font-bold block">Mã HS</span>
+                          <span className="text-sm font-semibold text-slate-800">{evalStudent?.studentCode || evalStudent?.code || "N/A"}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-xs text-slate-500 font-bold block">Họ và tên</span>
+                          <span className="text-sm font-black text-slate-800">{evalStudent?.studentName || evalStudent?.fullName || evalTargetName}</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <span className="text-xs text-slate-500 font-bold block">Lớp</span>
+                          <span className="text-sm font-semibold text-slate-800">{evalStudent?.className || evalStudent?.class?.className || "N/A"}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-slate-500 font-bold block mb-1">Đối tượng</span>
+                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${targetColor}`}>{targetLabel}</span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-slate-500 font-bold block">{startDateLabel}</span>
+                          <span className="text-sm font-semibold text-slate-800">{startDateValue}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
-                {/* Phần 2: Đánh giá */}
+                {/* Phần 2: Lược sử (nếu chỉ 1 HS) */}
+                {selectedEvalTargetIds.length <= 1 && historyEvals.length > 0 && (
+                  <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4">
+                    <h3 className="text-xs font-bold text-indigo-800 mb-2 uppercase">Lược sử đánh giá gần đây</h3>
+                    <div className="space-y-2 max-h-32 overflow-y-auto pr-2">
+                      {historyEvals.map((ev:any) => (
+                        <div key={ev.id} className="text-sm bg-white border border-slate-200 rounded p-2 shadow-sm">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="font-bold text-slate-800">{ev.periodName} ({ev.periodType === "MONTH" ? "Tháng" : "Tuần"})</span>
+                            <span className="text-[11px] font-semibold bg-slate-100 px-2 py-0.5 rounded text-slate-600">{new Date(ev.createdAt).toLocaleDateString("vi-VN")}</span>
+                          </div>
+                          <div className="font-bold text-indigo-700 text-xs mb-1">Mức độ: {ev.trackingLevel}</div>
+                          <div className="text-slate-600 text-xs italic">{ev.comment}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Phần 3: Đánh giá */}
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
@@ -1572,19 +1690,33 @@ export function TeacherSupportClient({
                         onChange={e => setEvalPeriodType(e.target.value)}
                         className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
                       >
-                        <option value="WEEK">Tuần</option>
                         <option value="MONTH">Tháng</option>
+                        <option value="WEEK">Tuần</option>
                       </select>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-sm font-bold text-slate-700">Tên kỳ (Ví dụ: Tuần 1, Tháng 10):</label>
-                      <input
-                        type="text"
-                        value={evalPeriodName}
-                        onChange={e => setEvalPeriodName(e.target.value)}
-                        className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-                      />
+                      <label className="text-sm font-bold text-slate-700">Tên kỳ (Ví dụ: Tháng 9):</label>
+                      {evalPeriodType === "MONTH" ? (
+                        <select
+                          value={evalPeriodName}
+                          onChange={e => setEvalPeriodName(e.target.value)}
+                          className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                        >
+                          <option value="">-- Chọn tháng --</option>
+                          {months.map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={evalPeriodName}
+                          onChange={e => setEvalPeriodName(e.target.value)}
+                          placeholder="Tuần 1..."
+                          className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -1596,16 +1728,18 @@ export function TeacherSupportClient({
                       className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold bg-white"
                     >
                       <option value="">-- Chọn kết quả --</option>
-                      <option value="Vượt yêu cầu">Vượt yêu cầu</option>
-                      <option value="Đạt yêu cầu">Đạt yêu cầu</option>
-                      <option value="Đạt một phần">Đạt một phần</option>
-                      <option value="Cần hỗ trợ thêm">Cần hỗ trợ thêm</option>
-                      <option value="Chưa đạt">Chưa đạt</option>
+                      {dynamicLevelOptions.map(c => (
+                        <option key={c.id} value={c.outcomeLabel}>{c.outcomeLabel}</option>
+                      ))}
                     </select>
                     {resultHelper && (
-                      <p className="text-xs font-medium text-rose-600 mt-1 flex items-center gap-1">
-                        <span className="font-bold">Gợi ý hành động:</span> {resultHelper}
-                      </p>
+                      <div className={`mt-2 p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-start gap-2 ${resultColor}`}>
+                        <div className="mt-0.5">💡</div>
+                        <div>
+                          <span className="font-bold text-xs block uppercase">Đề xuất theo gợi ý hành động:</span>
+                          <span className="text-sm font-medium">{resultHelper}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -1615,7 +1749,7 @@ export function TeacherSupportClient({
                       placeholder="Ghi cụ thể các nội dung đã kèm cặp, biểu hiện của học sinh và kế hoạch sắp tới..."
                       value={evalComment}
                       onChange={e => setEvalComment(e.target.value)}
-                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-28 resize-none bg-slate-50/50"
+                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-28 resize-none bg-slate-50"
                     />
                   </div>
                 </div>
@@ -1630,7 +1764,7 @@ export function TeacherSupportClient({
                 </button>
                 <button
                   onClick={handleSaveEvaluation}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-6 rounded-lg text-sm font-bold shadow-sm transition-all"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-6 rounded-lg text-sm font-bold shadow-sm transition-all"
                 >
                   Lưu Đánh giá
                 </button>
@@ -1640,8 +1774,7 @@ export function TeacherSupportClient({
         )
       })()}
 
-
-      {/* 3. Modal Đề xuất kết thúc bồi dưỡng */}
+{/* 3. Modal Đề xuất kết thúc bồi dưỡng */}
       {isRequestTermModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
