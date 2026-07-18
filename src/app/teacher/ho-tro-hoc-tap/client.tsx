@@ -70,6 +70,8 @@ export function TeacherSupportClient({
   const [evalTrackingLevel, setEvalTrackingLevel] = useState("")
   const [evalComment, setEvalComment] = useState("")
   const [evalUpdatedStatus, setEvalUpdatedStatus] = useState("TIẾP TỤC THEO TUẦN")
+  const [evalStudent, setEvalStudent] = useState<any>(null)
+  const [evalTargetObj, setEvalTargetObj] = useState<any>(null)
 
   // Request Termination Form States
   const [termTargetId, setTermTargetId] = useState("")
@@ -696,6 +698,8 @@ export function TeacherSupportClient({
                                 setEvalTargetName(t.student?.studentName)
                                 setEvalTargetType(t.supportType)
                                 setEvalComment("")
+                                setEvalStudent(t.student)
+                                setEvalTargetObj(t)
                                 // Pick first config option as default
                                 const options = configs.filter(c => c.supportType === t.supportType)
                                 setEvalTrackingLevel(options[0]?.outcomeLabel || "")
@@ -904,6 +908,8 @@ export function TeacherSupportClient({
                                 setEvalTargetName(s.studentName)
                                 setEvalTargetType(existingAcademic.supportType)
                                 setEvalComment("")
+                                setEvalStudent(s)
+                                setEvalTargetObj(existingAcademic)
                                 const options = configs.filter(c => c.supportType === existingAcademic.supportType)
                                 setEvalTrackingLevel(options[0]?.outcomeLabel || "")
                                 setIsEvaluationModalOpen(true)
@@ -1492,106 +1498,148 @@ export function TeacherSupportClient({
       )}
 
       {/* 2. Modal Nhận xét & Đánh giá tuần/tháng */}
-      {isEvaluationModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
-              <h2 className="text-lg font-bold text-slate-800">
-                Đánh giá định kỳ: {evalTargetName}
-              </h2>
-              <button onClick={() => setIsEvaluationModalOpen(false)}>
-                <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
-              </button>
-            </div>
+      {isEvaluationModalOpen && (() => {
+        // Logic xác định các field hiển thị
+        const isCommitment = activeSubTab === "commitments" || evalTargetObj?.notes?.includes("Cam kết Khảo sát đầu vào");
+        
+        let targetLabel = isCommitment ? "Cam kết đầu vào" : "Đề xuất hỗ trợ";
+        let targetColor = isCommitment ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800";
+        
+        let startDateLabel = isCommitment ? "Ngày nhập học:" : "Ngày duyệt đề xuất:";
+        let startDateValue = "Chưa có dữ liệu";
+        
+        if (isCommitment && evalStudent?.enrollmentDate) {
+          startDateValue = new Date(evalStudent.enrollmentDate).toLocaleDateString("vi-VN");
+        } else if (!isCommitment && evalTargetObj?.approvedAt) {
+          startDateValue = new Date(evalTargetObj.approvedAt).toLocaleDateString("vi-VN");
+        }
 
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Kỳ đánh giá:</label>
-                  <select
-                    value={evalPeriodType}
-                    onChange={e => setEvalPeriodType(e.target.value)}
-                    className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                  >
-                    <option value="WEEK">Tuần</option>
-                    <option value="MONTH">Tháng</option>
-                  </select>
-                </div>
+        let resultHelper = "";
+        if (evalTrackingLevel === "Vượt yêu cầu") resultHelper = "Có thể kết thúc phụ đạo hoặc chuyển sang bồi dưỡng.";
+        if (evalTrackingLevel === "Đạt yêu cầu") resultHelper = "Hoàn thành chương trình phụ đạo.";
+        if (evalTrackingLevel === "Đạt một phần") resultHelper = "Tiếp tục phụ đạo theo kế hoạch.";
+        if (evalTrackingLevel === "Cần hỗ trợ thêm") resultHelper = "Điều chỉnh phương pháp hoặc tăng số buổi.";
+        if (evalTrackingLevel === "Chưa đạt") resultHelper = "Xây dựng kế hoạch hỗ trợ chuyên sâu.";
 
-                <div className="space-y-1">
-                  <label className="text-sm font-semibold text-slate-700">Tên kỳ (Ví dụ: Tuần 1, Tháng 10):</label>
-                  <input
-                    type="text"
-                    value={evalPeriodName}
-                    onChange={e => setEvalPeriodName(e.target.value)}
-                    className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                  />
-                </div>
+        return (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col">
+              <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-indigo-600" /> Form Đánh giá định kỳ
+                </h2>
+                <button onClick={() => setIsEvaluationModalOpen(false)}>
+                  <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
+                </button>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Mức độ kết quả theo dõi (Cấu hình động):</label>
-                <select
-                  value={evalTrackingLevel}
-                  onChange={e => setEvalTrackingLevel(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                >
-                  <option value="">-- Chọn kết quả --</option>
-                  {dynamicLevelOptions.map(c => (
-                    <option key={c.id} value={c.outcomeLabel}>{c.outcomeLabel} ({c.description})</option>
-                  ))}
-                  {dynamicLevelOptions.length === 0 && (
-                    <>
-                      <option value="Cần theo dõi sát">Cần theo dõi sát</option>
-                      <option value="Có tiến bộ">Có tiến bộ</option>
+              <div className="p-6 space-y-6">
+                {/* Phần 1: Thông tin học sinh tĩnh */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                  <div className="grid grid-cols-3 gap-4 mb-3 pb-3 border-b border-slate-200">
+                    <div>
+                      <span className="text-xs text-slate-500 font-bold block">Mã HS</span>
+                      <span className="text-sm font-semibold text-slate-800">{evalStudent?.studentCode || evalStudent?.code || "N/A"}</span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-xs text-slate-500 font-bold block">Họ và tên</span>
+                      <span className="text-sm font-black text-slate-800">{evalStudent?.studentName || evalStudent?.fullName || evalTargetName}</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <span className="text-xs text-slate-500 font-bold block">Lớp</span>
+                      <span className="text-sm font-semibold text-slate-800">{evalStudent?.className || evalStudent?.class?.className || "N/A"}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-500 font-bold block mb-1">Đối tượng</span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${targetColor}`}>{targetLabel}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-slate-500 font-bold block">{startDateLabel}</span>
+                      <span className="text-sm font-semibold text-slate-800">{startDateValue}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phần 2: Đánh giá */}
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-slate-700">Kỳ đánh giá:</label>
+                      <select
+                        value={evalPeriodType}
+                        onChange={e => setEvalPeriodType(e.target.value)}
+                        className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                      >
+                        <option value="WEEK">Tuần</option>
+                        <option value="MONTH">Tháng</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-sm font-bold text-slate-700">Tên kỳ (Ví dụ: Tuần 1, Tháng 10):</label>
+                      <input
+                        type="text"
+                        value={evalPeriodName}
+                        onChange={e => setEvalPeriodName(e.target.value)}
+                        className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700">Kết quả (Mức độ đạt được):</label>
+                    <select
+                      value={evalTrackingLevel}
+                      onChange={e => setEvalTrackingLevel(e.target.value)}
+                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold bg-white"
+                    >
+                      <option value="">-- Chọn kết quả --</option>
+                      <option value="Vượt yêu cầu">Vượt yêu cầu</option>
                       <option value="Đạt yêu cầu">Đạt yêu cầu</option>
-                    </>
-                  )}
-                </select>
+                      <option value="Đạt một phần">Đạt một phần</option>
+                      <option value="Cần hỗ trợ thêm">Cần hỗ trợ thêm</option>
+                      <option value="Chưa đạt">Chưa đạt</option>
+                    </select>
+                    {resultHelper && (
+                      <p className="text-xs font-medium text-rose-600 mt-1 flex items-center gap-1">
+                        <span className="font-bold">Gợi ý hành động:</span> {resultHelper}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700">Nhật ký nhận xét chi tiết (Học lực/Tâm lý):</label>
+                    <textarea
+                      placeholder="Ghi cụ thể các nội dung đã kèm cặp, biểu hiện của học sinh và kế hoạch sắp tới..."
+                      value={evalComment}
+                      onChange={e => setEvalComment(e.target.value)}
+                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-28 resize-none bg-slate-50/50"
+                    />
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Nhận xét chi tiết học lực/tâm lý:</label>
-                <textarea
-                  placeholder="Ghi cụ thể các nội dung đã kèm cặp và biểu hiện của học sinh..."
-                  value={evalComment}
-                  onChange={e => setEvalComment(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none h-24"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Trạng thái bồi dưỡng tiếp theo:</label>
-                <select
-                  value={evalUpdatedStatus}
-                  onChange={e => setEvalUpdatedStatus(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
+              <div className="px-6 py-4 border-t flex justify-end gap-3 bg-slate-50">
+                <button
+                  onClick={() => setIsEvaluationModalOpen(false)}
+                  className="border hover:bg-slate-100 py-2.5 px-5 rounded-lg text-sm font-bold transition-all text-slate-600"
                 >
-                  <option value="TIẾP TỤC THEO TUẦN">Tiếp tục bồi dưỡng theo Tuần</option>
-                  <option value="TIẾP TỤC THEO THÁNG">Tiếp tục bồi dưỡng theo Tháng</option>
-                  <option value="TIẾP TỤC THEO HỌC KỲ">Tiếp tục bồi dưỡng theo Học kỳ</option>
-                  <option value="TIẾP TỤC THEO NĂM HỌC">Tiếp tục bồi dưỡng theo Năm học</option>
-                </select>
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={handleSaveEvaluation}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 px-6 rounded-lg text-sm font-bold shadow-sm transition-all"
+                >
+                  Lưu Đánh giá
+                </button>
               </div>
-            </div>
-
-            <div className="px-6 py-4 border-t flex justify-end gap-3 bg-slate-50">
-              <button
-                onClick={() => setIsEvaluationModalOpen(false)}
-                className="border hover:bg-slate-100 py-2 px-4 rounded-lg text-sm font-medium transition-all"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                onClick={handleSaveEvaluation}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
-              >
-                Lưu Đánh giá
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
+
 
       {/* 3. Modal Đề xuất kết thúc bồi dưỡng */}
       {isRequestTermModalOpen && (
