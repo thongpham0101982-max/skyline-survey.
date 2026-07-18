@@ -147,19 +147,19 @@ export function TeacherSupportClient({
         // Automatically check/select commitment students and subjects
         if (data.length > 0) {
           const eligibleFromCommitment = data
-            .filter(c => {
+            .filter((c: any) => {
               const existingAcademic = targets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
               return !existingAcademic || existingAcademic.createdById === null
             })
-            .map(c => c.id)
+            .map((c: any) => c.id)
 
           if (eligibleFromCommitment.length > 0) {
             setSelectedStudentIds(prev => Array.from(new Set([...prev, ...eligibleFromCommitment])))
             
             // Collect all matched subjects from eligible students
             const matchedSubs = data
-              .filter(c => eligibleFromCommitment.includes(c.id))
-              .flatMap(c => c.matchedSubjects || [])
+              .filter((c: any) => eligibleFromCommitment.includes(c.id))
+              .flatMap((c: any) => c.matchedSubjects || [])
             
             if (matchedSubs.length > 0) {
               setSelectedSubjects(prev => Array.from(new Set([...prev, ...matchedSubs])))
