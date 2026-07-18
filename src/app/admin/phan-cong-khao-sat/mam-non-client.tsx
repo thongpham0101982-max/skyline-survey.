@@ -7,6 +7,20 @@ import {
 } from "lucide-react"
 
 // ─── Helpers ───
+
+const groupThemes: Record<string, { bg: string; hoverBg: string; border: string; borderActive: string; text: string; countColor: string; accent: string; iconBg: string }> = {
+  "12 đến 18 tháng": { bg: "bg-orange-50/40", hoverBg: "hover:bg-orange-50/70", border: "border-orange-100", borderActive: "border-orange-500 ring-2 ring-orange-500/20", text: "text-orange-950", countColor: "text-orange-600", accent: "bg-orange-500", iconBg: "bg-orange-100/70" },
+  "18 đến 24 tháng": { bg: "bg-rose-50/40", hoverBg: "hover:bg-rose-50/70", border: "border-rose-100", borderActive: "border-rose-500 ring-2 ring-rose-500/20", text: "text-rose-955", countColor: "text-rose-600", accent: "bg-rose-500", iconBg: "bg-rose-100/70" },
+  "24 đến 36 tháng": { bg: "bg-indigo-50/40", hoverBg: "hover:bg-indigo-50/70", border: "border-indigo-100", borderActive: "border-indigo-500 ring-2 ring-indigo-500/20", text: "text-indigo-950", countColor: "text-indigo-600", accent: "bg-indigo-500", iconBg: "bg-indigo-100/70" },
+  "3 đến 4 tuổi": { bg: "bg-emerald-50/40", hoverBg: "hover:bg-emerald-50/70", border: "border-emerald-100", borderActive: "border-emerald-500 ring-2 ring-emerald-500/20", text: "text-emerald-950", countColor: "text-emerald-600", accent: "bg-emerald-500", iconBg: "bg-emerald-100/70" },
+  "4 đến 5 tuổi": { bg: "bg-violet-50/40", hoverBg: "hover:bg-violet-50/70", border: "border-violet-100", borderActive: "border-violet-500 ring-2 ring-violet-500/20", text: "text-violet-955", countColor: "text-violet-600", accent: "bg-violet-500", iconBg: "bg-violet-100/70" },
+  "5 đến 6 tuổi": { bg: "bg-amber-50/40", hoverBg: "hover:bg-amber-50/70", border: "border-amber-100", borderActive: "border-amber-500 ring-2 ring-amber-500/20", text: "text-amber-955", countColor: "text-amber-600", accent: "bg-amber-500", iconBg: "bg-amber-100/70" },
+  "Mẫu giáo bé": { bg: "bg-emerald-50/40", hoverBg: "hover:bg-emerald-50/70", border: "border-emerald-100", borderActive: "border-emerald-500 ring-2 ring-emerald-500/20", text: "text-emerald-950", countColor: "text-emerald-600", accent: "bg-emerald-500", iconBg: "bg-emerald-100/70" },
+  "Mẫu giáo nhỡ": { bg: "bg-violet-50/40", hoverBg: "hover:bg-violet-50/70", border: "border-violet-100", borderActive: "border-violet-500 ring-2 ring-violet-500/20", text: "text-violet-955", countColor: "text-violet-600", accent: "bg-violet-500", iconBg: "bg-violet-100/70" },
+  "Mẫu giáo lớn": { bg: "bg-amber-50/40", hoverBg: "hover:bg-amber-50/70", border: "border-amber-100", borderActive: "border-amber-500 ring-2 ring-amber-500/20", text: "text-amber-955", countColor: "text-amber-600", accent: "bg-amber-500", iconBg: "bg-amber-100/70" },
+};
+const defaultTheme = { bg: "bg-slate-50/60", hoverBg: "hover:bg-slate-50/90", border: "border-slate-100", borderActive: "border-slate-400 ring-2 ring-slate-400/20", text: "text-slate-900", countColor: "text-slate-600", accent: "bg-slate-500", iconBg: "bg-slate-200/70" };
+
 function Toast({ msg, type }: { msg: string; type: "ok" | "err" }) {
   return (
     <div className={`fixed top-5 right-5 z-[400] flex items-center gap-3 px-6 py-4 rounded-2xl shadow-2xl text-sm font-bold animate-in slide-in-from-top-3 duration-300 ${type === "ok" ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`}>
@@ -287,6 +301,7 @@ export function PhanCongMamNonClient({
   const [studentStats, setStudentStats] = useState<Record<string, number>>({})
   const [studentsList, setStudentsList] = useState<any[]>([])
   const [statsLoading, setStatsLoading] = useState(false)
+  const [inspectedGroup, setInspectedGroup] = useState<string | null>(null)
 
   const fetchStudentStats = useCallback(async () => {
     if (!aPeriodId) {
@@ -295,6 +310,7 @@ export function PhanCongMamNonClient({
       return
     }
     setStatsLoading(true)
+    setInspectedGroup(null)
     try {
       let url = `/api/preschool-input-assessment-students?periodId=${aPeriodId}`
       if (aBatchId && aBatchId !== "all" && aBatchId !== "") url += `&batchId=${aBatchId}`
@@ -330,11 +346,11 @@ export function PhanCongMamNonClient({
     return Object.keys(studentStats).find(g => isStatsGroupSelected(g))
   }, [studentStats, aGrades, uiForm, uiStage])
 
-  // Filter students by active group
+  // Filter students by inspected group
   const filteredGroupStudents = useMemo(() => {
-    if (!activeGroup) return []
-    return studentsList.filter((s) => (s.grade || "").trim() === activeGroup.trim())
-  }, [activeGroup, studentsList])
+    if (!inspectedGroup) return []
+    return studentsList.filter((s) => (s.grade || "").trim() === inspectedGroup.trim())
+  }, [inspectedGroup, studentsList])
 
   const aGradesStr = aGrades.join(",")
 
@@ -714,94 +730,123 @@ export function PhanCongMamNonClient({
         </div>
         <div className="space-y-6">
           {/* Card 3: Thống kê Nhóm tuổi */}
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-5 transition-all">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Users className="w-4 h-4 text-[#00A99D]" /> Thống kê Nhóm tuổi
-            </h3>
+          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6 transition-all">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                <Users className="w-4 h-4 text-[#00A99D]" /> Thống kê Nhóm tuổi
+              </h3>
+              <span className="text-[10px] font-black text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                Tổng: {Object.values(studentStats).reduce((a, b) => a + b, 0)} trẻ
+              </span>
+            </div>
 
             {!aPeriodId ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-4">
+              <div className="flex flex-col items-center justify-center py-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-4">
                 <Info className="w-6 h-6 text-slate-350 mb-2" />
-                <p className="text-xs font-bold">Hãy chọn Kỳ khảo sát ở cấu hình phân công để hiển thị thống kê nhóm tuổi</p>
+                <p className="text-xs font-bold">Hãy chọn Kỳ khảo sát để hiển thị thống kê nhóm tuổi</p>
               </div>
             ) : (
-              <div className="space-y-4 animate-in fade-in duration-300">
-                {/* Thống kê Nhóm tuổi */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                    <span className="text-[10px] font-black text-slate-450 uppercase tracking-widest">Thống kê Nhóm tuổi</span>
-                    <span className="text-[10px] font-extrabold text-[#00A99D] bg-teal-50/50 px-2 py-0.5 rounded-full">
-                      Tổng số: {Object.values(studentStats).reduce((a, b) => a + b, 0)} trẻ
-                    </span>
+              <div className="space-y-5 animate-in fade-in duration-300">
+                {statsLoading ? (
+                  <div className="flex items-center justify-center py-8 gap-2 text-xs font-bold text-[#00A99D]">
+                    <Loader2 className="w-4.5 h-4.5 animate-spin" /> Đang cập nhật dữ liệu trẻ...
                   </div>
+                ) : Object.keys(studentStats).length === 0 ? (
+                  <p className="text-xs text-slate-400 font-semibold text-center py-6 bg-slate-50 rounded-2xl">Không tìm thấy danh sách trẻ trong kỳ này</p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      {Object.entries(studentStats).map(([grade, count]) => {
+                        const theme = groupThemes[grade] || defaultTheme;
+                        const isActive = inspectedGroup === grade;
+                        const total = Object.values(studentStats).reduce((a, b) => a + b, 0) || 1;
+                        const pct = Math.round((count / total) * 100);
 
-                  {statsLoading ? (
-                    <div className="flex items-center justify-center py-6 gap-2 text-xs font-bold text-[#00A99D]">
-                      <Loader2 className="w-4 h-4 animate-spin" /> Đang cập nhật dữ liệu trẻ...
-                    </div>
-                  ) : Object.keys(studentStats).length === 0 ? (
-                    <p className="text-xs text-slate-400 font-semibold text-center py-4 bg-slate-50 rounded-xl">Không tìm thấy danh sách trẻ trong kỳ/đợt này</p>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {Object.entries(studentStats).map(([grade, count]) => {
-                          const isStandard = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi", "12 đến 24 tháng", "18 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"].includes(grade)
-                          const isSelected = isStatsGroupSelected(grade)
-                          return (
-                            <button key={grade}
-                              onClick={() => isStandard && selectGradeFromStats(grade)}
-                              disabled={!isStandard}
-                              type="button"
-                              className={`flex items-center justify-between border px-3.5 py-3 rounded-xl text-xs shadow-xs transition-all text-left ${
-                                isStandard 
-                                  ? isSelected
-                                    ? "bg-teal-50/40 border-[#00A99D] text-[#00A99D] font-extrabold ring-1 ring-[#00A99D]"
-                                    : "bg-white border-slate-200 hover:border-slate-350 hover:bg-slate-50/50 cursor-pointer"
-                                  : "bg-slate-50 border-slate-100 text-slate-400 cursor-not-allowed"
-                              }`}>
-                              <span className="flex items-center gap-2 truncate mr-2">
-                                {isStandard && (
-                                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? "border-[#00A99D] bg-[#00A99D]" : "border-slate-300"}`}>
-                                    {isSelected && <Check className="w-3 h-3 text-white stroke-[3px]" />}
-                                  </div>
-                                )}
-                                <span className="font-bold truncate text-slate-700" title={grade}>{grade}</span>
-                              </span>
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: isSelected ? "#00A99D20" : "#94a3b815", color: isSelected ? "#00A99D" : "#64748b" }}>
-                                {count} trẻ
-                              </span>
-                            </button>
-                          )
-                        })}
-                      </div>
+                        return (
+                          <div
+                            key={grade}
+                            onClick={() => setInspectedGroup(inspectedGroup === grade ? null : grade)}
+                            className={`flex flex-col justify-between p-4 rounded-2xl border cursor-pointer transition-all duration-300 relative overflow-hidden select-none ${
+                              isActive 
+                                ? `${theme.bg} ${theme.borderActive} shadow-md shadow-slate-100` 
+                                : `bg-white ${theme.border} ${theme.hoverBg} hover:shadow-xs`
+                            }`}
+                          >
+                            {/* Accent indicator line */}
+                            <div className={`absolute top-0 left-0 w-1.5 h-full ${theme.accent}`} />
 
-                      {/* Danh sách học sinh thuộc nhóm tuổi đang chọn */}
-                      {activeGroup && (
-                        <div className="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-2.5 animate-in slide-in-from-top-2 duration-300">
-                          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                              <Users className="w-3.5 h-3.5 text-[#00A99D]" />
-                              Danh sách trẻ nhóm {activeGroup} ({filteredGroupStudents.length})
-                            </span>
-                          </div>
-                          {filteredGroupStudents.length === 0 ? (
-                            <div className="text-[11px] text-slate-400 italic">Không có học sinh trong nhóm này.</div>
-                          ) : (
-                            <div className="max-h-[220px] overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
-                              {filteredGroupStudents.map((stud, idx) => (
-                                <div key={stud.id || idx} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-150 text-[11px] font-medium text-slate-700 hover:shadow-2xs transition-all">
-                                  <span className="font-bold text-slate-800">{stud.fullName}</span>
-                                  <span className="text-[10px] text-slate-450 font-bold uppercase">{stud.studentCode || "—"}</span>
+                            <div className="flex items-start justify-between gap-2 mb-3 pl-1">
+                              <div className="flex items-center gap-2.5">
+                                <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${theme.iconBg}`}>
+                                  <Baby className={`w-4 h-4 ${theme.countColor}`} />
                                 </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
+                                <span className={`text-xs font-extrabold ${theme.text} leading-tight truncate`}>
+                                  {grade}
+                                </span>
+                              </div>
 
+                              {isActive && (
+                                <div className="w-4 h-4 rounded-full bg-[#00A99D] flex items-center justify-center">
+                                  <Check className="w-2.5 h-2.5 text-white stroke-[3.5px]" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="pl-1 space-y-1.5">
+                              <div className="flex items-baseline gap-1.5">
+                                <span className="text-xl font-black text-slate-800 leading-none">
+                                  {count}
+                                </span>
+                                <span className="text-[10px] font-bold text-slate-400">
+                                  trẻ ({pct}%)
+                                </span>
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-500 ${theme.accent}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Inspected group's student list */}
+                    {inspectedGroup && (
+                      <div className="mt-4 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Users className="w-3.5 h-3.5 text-[#00A99D]" />
+                            Danh sách trẻ nhóm {inspectedGroup} ({filteredGroupStudents.length})
+                          </span>
+                          <button 
+                            type="button" 
+                            onClick={() => setInspectedGroup(null)}
+                            className="text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {filteredGroupStudents.length === 0 ? (
+                          <div className="text-[11px] text-slate-400 italic">Không có học sinh trong nhóm này.</div>
+                        ) : (
+                          <div className="max-h-[220px] overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
+                            {filteredGroupStudents.map((stud, idx) => (
+                              <div key={stud.id || idx} className="flex items-center justify-between bg-white px-3.5 py-2.5 rounded-xl border border-slate-150 text-[11px] font-bold text-slate-750 hover:shadow-2xs transition-all">
+                                <span className="text-slate-800">{stud.fullName}</span>
+                                <span className="text-[10px] text-slate-400 font-extrabold uppercase">{stud.studentCode || "—"}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
