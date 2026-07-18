@@ -292,28 +292,67 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
         return Array.from(systems).sort();
     }, [availableGradeOptions]);
 
+    // Reset grade/system when period changes
     useEffect(() => {
-        setSelectedBatchId("");
         setSelectedGrade("all");
         setSelectedSystemCode("all");
     }, [selectedPeriodId]);
+
+    // Auto-select batch and subject when period changes
+    useEffect(() => {
+        if (!selectedPeriodId || !Array.isArray(assignments) || assignments.length === 0) return;
+
+        // Find batches under the selected period
+        const bMap = new Map();
+        assignments.forEach(a => {
+            if (a.periodId === selectedPeriodId && a.batch) {
+                bMap.set(a.batchId, a.batch);
+            }
+        });
+        const periodBatches = Array.from(bMap.values());
+
+        let targetBatchId = "all";
+        if (periodBatches.length > 0) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Try to find active batch first
+            let activeBatch = periodBatches.find((b: any) => {
+                if (!b.startDate || !b.endDate) return false;
+                const start = new Date(b.startDate);
+                const end = new Date(b.endDate);
+                start.setHours(0, 0, 0, 0);
+                end.setHours(23, 59, 59, 999);
+                return today >= start && today <= end;
+            });
+            
+            if (activeBatch) {
+                targetBatchId = activeBatch.id;
+            } else {
+                targetBatchId = periodBatches[0].id;
+            }
+        }
+        
+        setSelectedBatchId(targetBatchId);
+    }, [selectedPeriodId, assignments]);
+
+    // Auto-select assignment (subject) when availableAssignments changes
+    useEffect(() => {
+        if (availableAssignments.length > 0) {
+            const currentValid = availableAssignments.some(a => a.id === selectedAssignmentId);
+            if (!currentValid) {
+                setSelectedAssignmentId(availableAssignments[0].id);
+            }
+        } else {
+            setSelectedAssignmentId("");
+        }
+    }, [availableAssignments, selectedAssignmentId]);
 
     // Reset tab and page when any filter changes
     useEffect(() => {
         setEvaluationTab("pending");
         setCurrentPage(1);
     }, [selectedAssignmentId, selectedBatchId, selectedGrade, selectedSystemCode]);
-
-    // Handle cascading select
-    useEffect(() => {
-        if (!selectedPeriodId) {
-            setSelectedAssignmentId("");
-            return;
-        }
-        if (selectedAssignmentId && !availableAssignments.find(a => a.id === selectedAssignmentId)) {
-            setSelectedAssignmentId("");
-        }
-    }, [selectedPeriodId, availableAssignments, selectedAssignmentId]);
 
     // Reset/auto-select grade khi doi mon hoac dot
     // eslint-disable-next-line react-hooks/exhaustive-deps

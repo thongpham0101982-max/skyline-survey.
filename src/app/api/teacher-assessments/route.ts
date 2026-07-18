@@ -852,33 +852,37 @@ export async function GET(req: any) {
             }
         }
 
-        const allPeriodStudents = await prisma.inputAssessmentStudent.findMany({
-            where: {
-                periodId: periodId || undefined,
-                ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {})
-            },
-            include: {
-                scores: {
-                    where: { subjectId: subjectId || undefined },
-                    include: { subject: true }
+        let finalFilteredStudents = [...filteredStudents];
+        
+        if (eligibleStudentCodes.size > 0) {
+            const allPeriodStudents = await prisma.inputAssessmentStudent.findMany({
+                where: {
+                    periodId: periodId || undefined,
+                    ...(batchId ? { OR: [{ batchId: batchId }, { batchId: null }] } : {}),
+                    studentCode: { in: Array.from(eligibleStudentCodes) as string[] }
+                },
+                include: {
+                    scores: {
+                        where: { subjectId: subjectId || undefined },
+                        include: { subject: true }
+                    }
                 }
-            }
-        });
+            });
 
-        const combinedMap = new Map();
-        filteredStudents.forEach(s => combinedMap.set(s.id, s));
-        allPeriodStudents.forEach(s => {
-            if (s.studentCode && eligibleStudentCodes.has(s.studentCode)) {
-                // Ensure preschool flag mapping matches if needed
-                combinedMap.set(s.id, {
-                    ...s,
-                    isPreschool: false,
-                    scoreVals: []
-                });
-            }
-        });
+            const combinedMap = new Map();
+            filteredStudents.forEach(s => combinedMap.set(s.id, s));
+            allPeriodStudents.forEach(s => {
+                if (s.studentCode && eligibleStudentCodes.has(s.studentCode)) {
+                    combinedMap.set(s.id, {
+                        ...s,
+                        isPreschool: false,
+                        scoreVals: []
+                    });
+                }
+            });
+            finalFilteredStudents = Array.from(combinedMap.values());
+        }
 
-        const finalFilteredStudents = Array.from(combinedMap.values());
         return NextResponse.json(finalFilteredStudents);
     }
 
