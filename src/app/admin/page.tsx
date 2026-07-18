@@ -14,6 +14,7 @@ import {
   Loader2
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession()
@@ -54,10 +55,13 @@ export default function AdminDashboard() {
   const finalMetrics = metrics || {
     totalStudents: 0,
     totalClasses: 0,
+    generalClasses: 0,
+    preschoolClasses: 0,
     transferCount: 0,
     completionRate: 0,
     assessmentGroup: [],
-    admissionGroup: []
+    admissionGroup: [],
+    monthlyHeadcount: []
   }
 
   const campusIds = (session?.user as any)?.campusIds || []
@@ -106,6 +110,11 @@ export default function AdminDashboard() {
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Lớp học Cơ sở</p>
               <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.totalClasses}</h3>
+              <div className="text-[11px] text-slate-500 font-semibold mt-1 space-x-2">
+                <span>Phổ thông: <strong className="text-indigo-600">{finalMetrics.generalClasses || 0}</strong></span>
+                <span>•</span>
+                <span>Mầm non: <strong className="text-rose-500">{finalMetrics.preschoolClasses || 0}</strong></span>
+              </div>
             </div>
           </div>
         </div>
@@ -139,6 +148,36 @@ export default function AdminDashboard() {
         </div>
 
       </div>
+      {/* BIỂU ĐỒ SỸ SỐ HỌC SINH THEO THÁNG */}
+      {finalMetrics.monthlyHeadcount && finalMetrics.monthlyHeadcount.length > 0 && (
+        <div className="bg-white rounded-2xl border-2 border-indigo-100 p-6 shadow-sm space-y-6 mt-8">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 text-indigo-600 flex items-center justify-center bg-indigo-50 rounded-lg">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-black text-slate-800 text-base">Theo dõi Sỹ số Học sinh theo từng Tháng</h3>
+              <p className="text-xs text-slate-400 font-semibold mt-0.5 uppercase tracking-wider">
+                Biểu diễn biến tổng số học sinh đang học trong năm học
+              </p>
+            </div>
+          </div>
+          <div className="h-80 w-full pr-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={finalMetrics.monthlyHeadcount} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} axisLine={false} dx={-5} domain={['auto', 'auto']} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }}
+                  labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
+                />
+                <Line type="monotone" dataKey="count" stroke="#4f46e5" strokeWidth={3} activeDot={{ r: 6 }} name="Sỹ số học sinh" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
         

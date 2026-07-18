@@ -1,31 +1,154 @@
 // @ts-nocheck
 ﻿import { prisma } from "@/lib/db"
 
-export async function getAdminMetrics(allowedCampusIds: string[] = []) {
+export async function getAdminMetrics(academicYearId?: string, allowedCampusIds: string[] = []) {
   const isFullAccess = allowedCampusIds.length === 0
 
-  const studentWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
-  const summaryWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
-  const classWhere = isFullAccess ? {} : { campusId: { in: allowedCampusIds } }
+  let targetYearId = academicYearId
+  if (!targetYearId) {
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+    targetYearId = activeYear?.id || ""
+  }
 
-  const [totalStudents, totalClasses, transferCount, assessmentGroup, admissionGroup, classSummaries] = await Promise.all([
+  const academicYear = await prisma.academicYear.findUnique({
+    where: { id: targetYearId }
+  })
+  const academicYearName = academicYear?.name || ""
+
+  const studentWhere: any = { status: "ACTIVE" }
+  const classWhere: any = { status: "ACTIVE" }
+  const transferWhere: any = {}
+  const assessmentWhere: any = {}
+  const summaryWhere: any = {}
+
+  if (targetYearId) {
+    studentWhere.academicYearId = targetYearId
+    classWhere.academicYearId = targetYearId
+    transferWhere.student = { academicYearId: targetYearId }
+    assessmentWhere.period = { academicYearId: targetYearId }
+    summaryWhere.class = { academicYearId: targetYearId }
+  }
+
+  if (!isFullAccess) {
+    studentWhere.campusId = { in: allowedCampusIds }
+    classWhere.campusId = { in: allowedCampusIds }
+    transferWhere.student = {
+      ...(transferWhere.student || {}),
+      campusId: { in: allowedCampusIds }
+    }
+    assessmentWhere.batch = { campusId: { in: allowedCampusIds } }
+    summaryWhere.class = {
+      ...(summaryWhere.class || {}),
+      campusId: { in: allowedCampusIds }
+    }
+  }
+
+  const [
+    totalStudents,
+    totalClasses,
+    generalClasses,
+    preschoolClasses,
+    transferCount,
+    assessmentGroup,
+    admissionGroup,
+    classSummaries
+  ] = await Promise.all([
     prisma.student.count({ where: studentWhere }),
     prisma.class.count({ where: classWhere }),
-    prisma.studentTransfer.count({
-      where: isFullAccess ? {} : { student: { campusId: { in: allowedCampusIds } } }
+    prisma.class.count({
+      where: {
+        ...classWhere,
+        level: { in: ["Tiểu học", "THCS", "THPT"] }
+      }
     }),
+    prisma.class.count({
+      where: {
+        ...classWhere,
+        level: "Mầm non"
+      }
+    }),
+    prisma.studentTransfer.count({ where: transferWhere }),
     prisma.inputAssessmentStudent.groupBy({
       by: ["grade"],
       _count: true,
-      where: isFullAccess ? {} : { batch: { campusId: { in: allowedCampusIds } } }
+      where: assessmentWhere
     }),
     prisma.inputAssessmentStudent.groupBy({
       by: ["admissionResult"],
       _count: true,
-      where: isFullAccess ? {} : { batch: { campusId: { in: allowedCampusIds } } }
+      where: assessmentWhere
     }),
-    prisma.summaryByClass.findMany({ where: summaryWhere })
+    prisma.summaryByClass.findMany({
+      where: summaryWhere,
+      include: { class: true }
+    })
   ])
+
+  // Reconstruct monthly headcount trend
+  let monthlyHeadcount: { month: string; count: number }[] = []
+  if (academicYear) {
+    const start = new Date(academicYear.startDate)
+    const end = new Date(academicYear.endDate)
+
+    const months: { year: number; month: number }[] = []
+    let curr = new Date(start.getFullYear(), start.getMonth(), 1)
+    const last = new Date(end.getFullYear(), end.getMonth(), 1)
+
+    let limit = 0
+    while (curr <= last && limit < 24) {
+      months.push({
+        year: curr.getFullYear(),
+        month: curr.getMonth()
+      })
+      curr.setMonth(curr.getMonth() + 1)
+      limit++
+    }
+
+    const allYearStudents = await prisma.student.findMany({
+      where: {
+        academicYearId: targetYearId,
+        campusId: isFullAccess ? undefined : { in: allowedCampusIds }
+      },
+      include: {
+        studentTransfers: {
+          where: { type: { in: ["IN", "OUT"] } },
+          orderBy: { transferDate: "asc" }
+        }
+      }
+    })
+
+    monthlyHeadcount = months.map(m => {
+      const monthEnd = new Date(m.year, m.month + 1, 0, 23, 59, 59, 999)
+      let count = 0
+
+      for (const s of allYearStudents) {
+        const inTransfers = s.studentTransfers.filter(t => t.type === "IN")
+        const outTransfers = s.studentTransfers.filter(t => t.type === "OUT")
+
+        const firstInDate = inTransfers.length > 0 ? new Date(inTransfers[0].transferDate) : null
+        const firstOutDate = outTransfers.length > 0 ? new Date(outTransfers[0].transferDate) : null
+
+        if (s.status === "ACTIVE") {
+          if (firstInDate && firstInDate > monthEnd) {
+            // Not active yet
+          } else {
+            count++
+          }
+        } else if (s.status === "TRANSFERRED_OUT") {
+          if (firstOutDate && firstOutDate > monthEnd) {
+            count++
+          }
+        }
+      }
+
+      return {
+        month: `${m.month + 1}/${m.year}`,
+        count
+      }
+    })
+  }
 
   let surveyed = 0
   let notSurveyed = 0
@@ -53,8 +176,11 @@ export async function getAdminMetrics(allowedCampusIds: string[] = []) {
   const systemNps = totalResponses > 0 ? ((totalPromoter / totalResponses) * 100) - ((totalDetractor / totalResponses) * 100) : 0
 
   return {
+    academicYearName,
     totalStudents,
     totalClasses,
+    generalClasses,
+    preschoolClasses,
     transferCount,
     assessmentGroup,
     admissionGroup,
@@ -62,7 +188,8 @@ export async function getAdminMetrics(allowedCampusIds: string[] = []) {
     notSurveyedStudents: notSurveyed,
     completionRate,
     systemAverageSatisfactionScore: avgSatisfaction,
-    systemNps
+    systemNps,
+    monthlyHeadcount
   }
 }
 

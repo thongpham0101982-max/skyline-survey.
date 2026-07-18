@@ -3300,7 +3300,11 @@ ${reportForm.directorNote}`;
     setEditB(b); 
     let baseName = b.name;
     const parts = b.name.split(" _ ");
-    if (parts.length >= 6 && parts[4] === "") {
+    if (parts.length >= 6 && parts[3] === "KSĐV") {
+      baseName = parts[4];
+    } else if (parts.length >= 6 && parts[4] === "") {
+      baseName = parts[3];
+    } else if (parts.length === 5) {
       baseName = parts[3];
     } else if (parts.length >= 5) {
       baseName = parts[4];
@@ -3331,7 +3335,7 @@ ${reportForm.directorNote}`;
     if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
       periodCode = "KSL";
     }
-    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
     
     const r = await fetch("/api/input-assessments", { 
       method: editB?"PUT":"POST", 
@@ -6839,7 +6843,7 @@ return {
                      periodCode = "KSL";
                    }
                    const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                   return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+                   return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
                  })()}
                  disabled
                  className={`${inp} bg-slate-100 cursor-not-allowed`}
@@ -6857,7 +6861,7 @@ return {
                        periodCode = "KSL";
                      }
                      const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                     return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+                     return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
                    })()}
                  </p>
               </div>

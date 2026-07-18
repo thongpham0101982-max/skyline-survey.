@@ -3460,7 +3460,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setEditB(b);
     let baseName = b.name;
     const parts = b.name.split(" _ ");
-    if (parts.length >= 6 && parts[4] === "") {
+    if (parts.length >= 6 && parts[3] === "KSĐV") {
+      baseName = parts[4];
+    } else if (parts.length >= 6 && parts[4] === "") {
+      baseName = parts[3];
+    } else if (parts.length === 5) {
       baseName = parts[3];
     } else if (parts.length >= 5) {
       baseName = parts[4];
@@ -3495,7 +3499,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
       periodCode = "KSL";
     }
-    const fullName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+    const fullName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
     const r = await fetch("/api/preschool-input-assessments", { method: editB ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: editB ? "UPDATE_BATCH" : "CREATE_BATCH", id: editB?.id, data: { ...bForm, name: fullName, periodId: targetPeriodId, batchNumber: parseInt(bForm.batchNumber) || 1 } }) });
     if (r.ok) { setBModal(false); fetchPeriods(); notify(editB ? "Đã cập nhật đợt" : "Đã tạo đợt mới"); } else notify("Lỗi", "err");
   };
@@ -6517,7 +6521,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                      periodCode = "KSL";
                    }
                    const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                   return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+                   return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
                  })()}
                  disabled
                  className={`${inp} bg-slate-100 cursor-not-allowed`}
@@ -6535,7 +6539,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                        periodCode = "KSL";
                      }
                      const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                     return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _  _ ${endStr}`;
+                     return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
                    })()}
                  </p>
               </div>
