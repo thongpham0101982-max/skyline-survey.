@@ -364,6 +364,50 @@ export async function POST(req: Request) {
       }
     }
 
+    // Action: bulkApproveTargets
+    if (action === "bulkApproveTargets") {
+      const { targetIds, approve } = body
+      if (!Array.isArray(targetIds)) return NextResponse.json({ error: "targetIds must be an array" }, { status: 400 })
+
+      if (approve) {
+        // Fetch all targets to check their createdById
+        const targets = await prisma.learningSupportTarget.findMany({
+          where: { id: { in: targetIds } }
+        })
+
+        for (const target of targets) {
+          // If it doesn't have an assignment, and it has a createdById, create an assignment automatically
+          const existingAssign = await prisma.learningSupportAssignment.findFirst({
+            where: { targetId: target.id }
+          })
+          
+          if (!existingAssign && target.createdById) {
+            await prisma.learningSupportAssignment.create({
+              data: {
+                teacherId: target.createdById,
+                targetId: target.id,
+                academicYearId: target.academicYearId,
+                notes: "Tự động phân công cho giáo viên đề xuất"
+              }
+            })
+          }
+
+          // Mark as APPROVED in status
+          await prisma.learningSupportTarget.update({
+            where: { id: target.id },
+            data: { status: "ĐÃ DUYỆT" }
+          })
+        }
+      } else {
+        // Reject - update status
+        await prisma.learningSupportTarget.updateMany({
+          where: { id: { in: targetIds } },
+          data: { status: "TỪ CHỐI", terminationStatus: "TERMINATED" }
+        })
+      }
+      return NextResponse.json({ success: true })
+    }
+
     // 7. Action: deleteAssignment
     if (action === "deleteAssignment") {
       const { id } = body

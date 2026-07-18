@@ -98,6 +98,7 @@ export function SupportClient({
   const [assignTeacherId, setAssignTeacherId] = useState("")
   const [assignSubjectId, setAssignSubjectId] = useState("")
   const [assignNotes, setAssignNotes] = useState("")
+  const [selectedDuyetIds, setSelectedDuyetIds] = useState<string[]>([])
 
   // Outcome Config Form States
   const [configId, setConfigId] = useState("")
@@ -378,10 +379,10 @@ export function SupportClient({
     }
   }
 
-  // Save Assignment
-  const handleSaveAssignment = async () => {
-    if (!assignTargetId || !assignTeacherId) {
-      toast.error("Vui lòng chọn đối tượng và giáo viên phụ trách")
+  // Duyet De Xuat
+  const handleBulkApprove = async (approve: boolean) => {
+    if (selectedDuyetIds.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một học sinh")
       return
     }
     try {
@@ -389,24 +390,22 @@ export function SupportClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "saveAssignment",
+          action: "bulkApproveTargets",
           academicYearId: selectedYearId,
-          targetId: assignTargetId,
-          teacherId: assignTeacherId,
-          subjectId: assignSubjectId || null,
-          notes: assignNotes
+          targetIds: selectedDuyetIds,
+          approve
         })
       })
       const data = await res.json()
       if (data.error) {
         toast.error(data.error)
       } else {
-        toast.success("Đã phân công giáo viên phụ trách!")
+        toast.success(approve ? "Đã duyệt đề xuất thành công!" : "Đã từ chối đề xuất thành công!")
         setIsAssignModalOpen(false)
         fetchAllData()
       }
     } catch (e) {
-      toast.error("Lỗi lưu phân công")
+      toast.error("Lỗi xử lý")
     }
   }
 
@@ -643,7 +642,7 @@ export function SupportClient({
                 ) : (
                   filteredTargets.map((t: any) => {
                     const gvName = t.assignments?.[0]?.teacher?.teacherName || "Chưa phân công"
-                    const isUnapproved = !t.assignments || t.assignments.length === 0
+                    const isUnapproved = (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT"
                     const progressBadge = t.terminationStatus === "TERMINATED" 
                       ? "bg-emerald-100 text-emerald-800"
                       : t.terminationStatus === "PENDING_TERMINATION"
@@ -658,7 +657,7 @@ export function SupportClient({
                       ? "Chờ duyệt kết thúc"
                       : isUnapproved
                       ? "Chờ duyệt đề xuất"
-                      : "Đồng ý"
+                      : "Đã duyệt"
 
                     return (
                       <tr key={t.id} className="hover:bg-slate-50 transition-colors">
@@ -699,16 +698,7 @@ export function SupportClient({
                           {isUnapproved && (isGDCS || isKTDBCL) && (
                             <button
                               onClick={() => {
-                                setAssignTargetId(t.id)
-                                setAssignTeacherId("")
-                                if (t.supportType === "ACADEMIC") {
-                                  const reasonText = t.reason || ""
-                                  const foundSubject = subjects.find(s => reasonText.toLowerCase().includes(s.subjectName.toLowerCase()))
-                                  setAssignSubjectId(foundSubject?.id || "")
-                                } else {
-                                  setAssignSubjectId("")
-                                }
-                                setAssignNotes("")
+                                setSelectedDuyetIds([t.id])
                                 setIsAssignModalOpen(true)
                               }}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-2.5 rounded text-xs inline-flex items-center gap-1 shadow-sm mr-2"
@@ -1416,14 +1406,14 @@ export function SupportClient({
         </div>
       )}
 
-      {/* 3. Modal Phân công GVPT */}
+      {/* 3. Modal Duyệt Đề xuất */}
       {isAssignModalOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden flex flex-col">
+          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <UserCheck className="h-5 w-5 text-indigo-600" />
-                Phân công Giáo viên phụ trách
+                <CheckCircle2 className="h-5 w-5 text-indigo-600" />
+                Duyệt Đề xuất bồi dưỡng
               </h2>
               <button onClick={() => setIsAssignModalOpen(false)}>
                 <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
@@ -1431,61 +1421,46 @@ export function SupportClient({
             </div>
 
             <div className="p-6 space-y-4">
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Chọn học sinh cần phân công:</label>
-                <select
-                  value={assignTargetId}
-                  onChange={e => setAssignTargetId(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                >
-                  <option value="">-- Chọn đối tượng hỗ trợ --</option>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700 flex justify-between items-center">
+                  <span>Chọn học sinh cần duyệt:</span>
+                  <button 
+                    onClick={() => {
+                      const allPendingIds = targets.filter((t: any) => t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT").map((t: any) => t.id)
+                      if (selectedDuyetIds.length === allPendingIds.length && allPendingIds.length > 0) setSelectedDuyetIds([])
+                      else setSelectedDuyetIds(allPendingIds)
+                    }}
+                    className="text-indigo-600 text-xs hover:underline"
+                  >
+                    Chọn tất cả
+                  </button>
+                </label>
+                <div className="max-h-64 overflow-y-auto border rounded-lg p-2 space-y-1">
                   {targets
-                    .filter(t => t.terminationStatus === "ACTIVE")
-                    .map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.student?.studentName} ({t.student?.studentCode}) - {t.supportType === "ACADEMIC" ? "Môn học" : "Tâm lý"}
-                      </option>
+                    .filter((t: any) => t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT")
+                    .map((t: any) => (
+                      <label key={t.id} className="flex items-start gap-3 p-2 hover:bg-slate-50 rounded cursor-pointer border-b last:border-0 border-slate-100">
+                        <input
+                          type="checkbox"
+                          checked={selectedDuyetIds.includes(t.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedDuyetIds([...selectedDuyetIds, t.id])
+                            else setSelectedDuyetIds(selectedDuyetIds.filter(id => id !== t.id))
+                          }}
+                          className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                        />
+                        <div className="flex-1">
+                          <div className="font-bold text-sm text-slate-800">{t.student?.studentName} <span className="text-slate-500 font-normal">({t.student?.studentCode})</span></div>
+                          <div className="text-xs text-slate-600 mt-0.5">
+                            <span className="font-semibold">{t.supportType === "ACADEMIC" ? "Môn học" : "Tâm lý"}</span>: {t.reason}
+                          </div>
+                        </div>
+                      </label>
                     ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Giáo viên phụ trách:</label>
-                <select
-                  value={assignTeacherId}
-                  onChange={e => setAssignTeacherId(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                >
-                  <option value="">-- Chọn giáo viên --</option>
-                  {teachers.map(t => (
-                    <option key={t.id} value={t.id}>{t.teacherName}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Môn học bồi dưỡng (nếu bồi dưỡng văn hóa):</label>
-                <select
-                  value={assignSubjectId}
-                  onChange={e => setAssignSubjectId(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                >
-                  <option value="">-- Chọn môn học --</option>
-                  {subjects.map(s => (
-                    <option key={s.id} value={s.id}>{s.subjectName}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-sm font-semibold text-slate-700">Ghi chú phân công:</label>
-                <input
-                  type="text"
-                  placeholder="Giao nhiệm vụ kèm cặp chi tiết..."
-                  value={assignNotes}
-                  onChange={e => setAssignNotes(e.target.value)}
-                  className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none"
-                />
+                  {targets.filter((t: any) => t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT").length === 0 && (
+                    <div className="text-center py-4 text-sm text-slate-500">Không có đề xuất nào chờ duyệt.</div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1497,10 +1472,16 @@ export function SupportClient({
                 Hủy bỏ
               </button>
               <button
-                onClick={handleSaveAssignment}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg text-sm font-medium shadow-sm transition-all"
+                onClick={() => handleBulkApprove(false)}
+                className="bg-rose-100 text-rose-700 hover:bg-rose-200 py-2 px-4 rounded-lg text-sm font-bold transition-all shadow-sm"
               >
-                Phân công
+                Không Duyệt
+              </button>
+              <button
+                onClick={() => handleBulkApprove(true)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-4 rounded-lg text-sm font-bold shadow-sm transition-all"
+              >
+                Duyệt Đề xuất
               </button>
             </div>
           </div>
