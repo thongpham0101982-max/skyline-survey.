@@ -50,7 +50,7 @@ export function SupportClient({
 
   // Sub-tab state for reports
   const [reportSubTab, setReportSubTab] = useState<
-    "student" | "class" | "subject" | "teacher" | "campus" | "system"
+    "student" | "grade" | "class" | "subject" | "teacher" | "campus" | "system"
   >("student")
 
   // Data states loaded dynamically
@@ -598,6 +598,123 @@ export function SupportClient({
       return acc
     }, [])
 
+  // Grouping classes by grade for Grade Report
+  const gradeStats = classes.reduce((acc: any[], c: any) => {
+    const gradeName = c.grade ? `Khối ${c.grade}` : (parseInt(c.className) ? `Khối ${parseInt(c.className)}` : "Khác")
+    let gradeGroup = acc.find(g => g.name === gradeName)
+    if (!gradeGroup) {
+      gradeGroup = {
+        name: gradeName,
+        academicCount: 0,
+        psychologyCount: 0,
+        pendingCount: 0,
+        approvedCount: 0,
+        terminatedCount: 0,
+        pendingTerminationCount: 0,
+        totalCount: 0,
+      }
+      acc.push(gradeGroup)
+    }
+    
+    // Find targets for students in this class
+    const classTargets = targets.filter(t => t.student?.classId === c.id)
+    classTargets.forEach(t => {
+      gradeGroup.totalCount++
+      if (t.supportType === "ACADEMIC") {
+        gradeGroup.academicCount++
+      } else {
+        gradeGroup.psychologyCount++
+      }
+      
+      const isUnapproved = (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT"
+      if (t.terminationStatus === "TERMINATED") {
+        gradeGroup.terminatedCount++
+      } else if (t.terminationStatus === "PENDING_TERMINATION") {
+        gradeGroup.pendingTerminationCount++
+      } else if (isUnapproved) {
+        gradeGroup.pendingCount++
+      } else {
+        gradeGroup.approvedCount++
+      }
+    })
+    
+    return acc
+  }, [])
+  
+  // Sort gradeStats logically
+  gradeStats.sort((a: any, b: any) => {
+    const numA = parseInt(a.name.replace(/\D/g, "")) || 99
+    const numB = parseInt(b.name.replace(/\D/g, "")) || 99
+    return numA - numB
+  })
+
+  // Calculate monthly evaluations for progress chart
+  const allEvaluations = targets.flatMap((t: any) => 
+    (t.evaluations || []).map((ev: any) => ({
+      ...ev,
+      target: t
+    }))
+  )
+
+  const evalByMonth = allEvaluations.reduce((acc: any, ev: any) => {
+    const date = new Date(ev.createdAt)
+    const monthYear = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+    
+    if (!acc[monthYear]) {
+      acc[monthYear] = {
+        month: monthYear,
+        good: 0,
+        average: 0,
+        weak: 0,
+        total: 0
+      }
+    }
+    
+    const level = ev.trackingLevel?.toLowerCase() || ""
+    if (
+      level.includes("tốt") || 
+      level.includes("đạt") || 
+      level.includes("tiến bộ tốt") || 
+      level.includes("giỏi") || 
+      level.includes("good") || 
+      level.includes("excellent")
+    ) {
+      acc[monthYear].good++
+    } else if (
+      level.includes("trung bình") || 
+      level.includes("cần cố gắng") || 
+      level.includes("khá") || 
+      level.includes("tb") || 
+      level.includes("average") || 
+      level.includes("medium")
+    ) {
+      acc[monthYear].average++
+    } else {
+      acc[monthYear].weak++
+    }
+    
+    acc[monthYear].total++
+    return acc
+  }, {})
+  
+  // Sort monthly data chronologically
+  const sortedMonths = Object.keys(evalByMonth).sort((a: any, b: any) => {
+    const [mA, yA] = a.split("/").map(Number)
+    const [mB, yB] = b.split("/").map(Number)
+    return yA === yB ? mA - mB : yA - yB
+  }).map(key => ({
+    month: `Tháng ${key}`,
+    ...evalByMonth[key]
+  }))
+
+  const hasRealData = sortedMonths.length > 0
+  const chartData = hasRealData ? sortedMonths : [
+    { month: "Tháng 03/2026", good: 5, average: 3, weak: 2, total: 10 },
+    { month: "Tháng 04/2026", good: 8, average: 5, weak: 1, total: 14 },
+    { month: "Tháng 05/2026", good: 14, average: 4, weak: 2, total: 20 },
+    { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
+  ]
+
   return (
     <div className="space-y-6">
       {/* Upper header section */}
@@ -1042,6 +1159,14 @@ export function SupportClient({
               Theo học sinh
             </button>
             <button
+              onClick={() => setReportSubTab("grade")}
+              className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
+                reportSubTab === "grade" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
+              }`}
+            >
+              Theo khối
+            </button>
+            <button
               onClick={() => setReportSubTab("class")}
               className={`px-4 py-2 text-xs font-bold rounded-md transition-colors ${
                 reportSubTab === "class" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-600 hover:bg-slate-100"
@@ -1105,7 +1230,7 @@ export function SupportClient({
                     <th className="px-6 py-3 text-left font-bold text-slate-500">Mã HS</th>
                     <th className="px-6 py-3 text-left font-bold text-slate-500">Họ và tên</th>
                     <th className="px-6 py-3 text-left font-bold text-slate-500">Lớp</th>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Chương trình</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500">Chương trình / Môn</th>
                     <th className="px-6 py-3 text-left font-bold text-slate-500">Thời gian bắt đầu</th>
                     <th className="px-6 py-3 text-left font-bold text-slate-500">Thời gian kết thúc</th>
                     <th className="px-6 py-3 text-left font-bold text-slate-500">Mức tiến bộ / Kết quả</th>
@@ -1118,7 +1243,7 @@ export function SupportClient({
                       <td className="px-6 py-4 font-bold text-slate-800">{t.student?.studentName}</td>
                       <td className="px-6 py-4">{t.student?.class?.className}</td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                        <span className={`px-2.5 py-1 rounded text-xs font-semibold ${
                           t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border border-blue-200" : "bg-purple-50 text-purple-700 border border-purple-200"
                         }`}>
                           {t.supportType === "ACADEMIC" ? t.reason : "Tâm lý học đường"}
@@ -1134,19 +1259,62 @@ export function SupportClient({
             </div>
           )}
 
+          {/* Sub-tab 1.5: Báo cáo Theo Khối */}
+          {reportSubTab === "grade" && (
+            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800">Thống kê theo dõi theo Khối</h3>
+                <span className="text-xs font-medium text-slate-500">Khảo sát & Đề xuất bồi dưỡng</span>
+              </div>
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên Khối</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS bồi dưỡng</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Học tập (Môn học)</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {gradeStats.map((item: any, idx: number) => {
+                    if (item.totalCount === 0) return null
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4 font-bold text-slate-800">{item.name}</td>
+                        <td className="px-6 py-4 text-center font-extrabold text-slate-900">{item.totalCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{item.academicCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{item.psychologyCount}</td>
+                        <td className="px-6 py-4 text-xs font-semibold">
+                          <div className="flex flex-wrap gap-1.5">
+                            {item.pendingCount > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {item.pendingCount}</span>}
+                            {item.approvedCount > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {item.approvedCount}</span>}
+                            {item.pendingTerminationCount > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {item.pendingTerminationCount}</span>}
+                            {item.terminatedCount > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {item.terminatedCount}</span>}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           {/* Sub-tab 2: Báo cáo Theo Lớp */}
           {reportSubTab === "class" && (
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm max-w-2xl">
-              <div className="px-6 py-4 border-b bg-slate-50/50">
+            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
                 <h3 className="font-bold text-slate-800">Thống kê số lượng học sinh bồi dưỡng theo lớp</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Tên lớp</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500">Hỗ trợ Văn hóa</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500">Hỗ trợ Tâm lý</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500">Tổng cộng</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên lớp</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Văn hóa (Môn)</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -1154,13 +1322,26 @@ export function SupportClient({
                     const classTargets = targets.filter(t => t.student?.classId === c.id)
                     const acadCount = classTargets.filter(t => t.supportType === "ACADEMIC").length
                     const psyCount = classTargets.filter(t => t.supportType === "PSYCHOLOGICAL").length
+                    const pending = classTargets.filter(t => t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT").length
+                    const approved = classTargets.filter(t => t.terminationStatus === "ACTIVE" && t.assignments && t.assignments.length > 0).length
+                    const pendingTerm = classTargets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length
+                    const term = classTargets.filter(t => t.terminationStatus === "TERMINATED").length
+                    
                     if (classTargets.length === 0) return null
                     return (
-                      <tr key={c.id} className="hover:bg-slate-50">
+                      <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 font-bold text-slate-800">{c.className}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-blue-600">{acadCount}</td>
-                        <td className="px-6 py-4 text-center font-semibold text-purple-600">{psyCount}</td>
                         <td className="px-6 py-4 text-center font-extrabold text-slate-900">{classTargets.length}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{acadCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{psyCount}</td>
+                        <td className="px-6 py-4 text-xs font-semibold">
+                          <div className="flex flex-wrap gap-1.5">
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
+                            {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
+                          </div>
+                        </td>
                       </tr>
                     )
                   })}
@@ -1171,24 +1352,47 @@ export function SupportClient({
 
           {/* Sub-tab 3: Báo cáo Theo Môn học */}
           {reportSubTab === "subject" && (
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm max-w-2xl">
-              <div className="px-6 py-4 border-b bg-slate-50/50">
-                <h3 className="font-bold text-slate-800">Thống kê số lượng học sinh bồi dưỡng theo môn học</h3>
+            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800">Thống kê theo dõi theo Môn học</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Môn học</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500">Số lượng học sinh đang bồi dưỡng</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên môn học / Lý do</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Học tập (Môn học)</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {subjects.map((sub: any) => {
-                    const count = assignments.filter(a => a.subjectId === sub.id).length
+                    const subTargets = targets.filter(t => 
+                      t.supportType === "ACADEMIC" && 
+                      (t.reason?.toLowerCase().includes(sub.subjectName.toLowerCase()) || 
+                       t.assignments.some((a: any) => a.subjectId === sub.id))
+                    )
+                    const pending = subTargets.filter(t => t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT").length
+                    const approved = subTargets.filter(t => t.terminationStatus === "ACTIVE" && t.assignments && t.assignments.length > 0).length
+                    const pendingTerm = subTargets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length
+                    const term = subTargets.filter(t => t.terminationStatus === "TERMINATED").length
+                    
+                    if (subTargets.length === 0) return null
                     return (
-                      <tr key={sub.id} className="hover:bg-slate-50">
+                      <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 font-semibold text-slate-800">{sub.subjectName}</td>
-                        <td className="px-6 py-4 text-center font-extrabold text-indigo-600">{count}</td>
+                        <td className="px-6 py-4 text-center font-extrabold text-slate-900">{subTargets.length}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{subTargets.length}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">0</td>
+                        <td className="px-6 py-4 text-xs font-semibold">
+                          <div className="flex flex-wrap gap-1.5">
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
+                            {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
+                          </div>
+                        </td>
                       </tr>
                     )
                   })}
@@ -1199,25 +1403,48 @@ export function SupportClient({
 
           {/* Sub-tab 4: Báo cáo Theo Giáo viên */}
           {reportSubTab === "teacher" && (
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm max-w-3xl">
-              <div className="px-6 py-4 border-b bg-slate-50/50">
-                <h3 className="font-bold text-slate-800">Thống kê phân công nhiệm vụ theo Giáo viên</h3>
+            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800">Thống kê phân công bồi dưỡng theo Giáo viên</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Họ tên Giáo viên phụ trách</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500">Số lượng học sinh kèm cặp</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Họ tên Giáo viên phụ trách</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Văn hóa (Môn)</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {teachers.map((t: any) => {
-                    const count = assignments.filter(a => a.teacherId === t.id).length
-                    if (count === 0) return null
+                    const teacherAssignments = assignments.filter(a => a.teacherId === t.id)
+                    const teacherTargets = targets.filter(target => teacherAssignments.some(a => a.targetId === target.id))
+                    
+                    const acadCount = teacherTargets.filter(target => target.supportType === "ACADEMIC").length
+                    const psyCount = teacherTargets.filter(target => target.supportType === "PSYCHOLOGICAL").length
+                    
+                    const pending = teacherTargets.filter(target => target.terminationStatus === "ACTIVE" && (!target.assignments || target.assignments.length === 0) && target.status !== "ĐÃ DUYỆT").length
+                    const approved = teacherTargets.filter(target => target.terminationStatus === "ACTIVE" && target.assignments && target.assignments.length > 0).length
+                    const pendingTerm = teacherTargets.filter(target => target.terminationStatus === "PENDING_TERMINATION").length
+                    const term = teacherTargets.filter(target => target.terminationStatus === "TERMINATED").length
+
+                    if (teacherTargets.length === 0) return null
                     return (
-                      <tr key={t.id} className="hover:bg-slate-50">
+                      <tr key={t.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 font-bold text-slate-800">{t.teacherName}</td>
-                        <td className="px-6 py-4 text-center font-extrabold text-indigo-600">{count}</td>
+                        <td className="px-6 py-4 text-center font-extrabold text-slate-900">{teacherTargets.length}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{acadCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{psyCount}</td>
+                        <td className="px-6 py-4 text-xs font-semibold">
+                          <div className="flex flex-wrap gap-1.5">
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
+                            {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
+                          </div>
+                        </td>
                       </tr>
                     )
                   })}
@@ -1228,24 +1455,45 @@ export function SupportClient({
 
           {/* Sub-tab 5: Báo cáo Theo Cơ sở */}
           {reportSubTab === "campus" && (
-            <div className="bg-white border rounded-xl overflow-hidden shadow-sm max-w-2xl">
-              <div className="px-6 py-4 border-b bg-slate-50/50">
-                <h3 className="font-bold text-slate-800">Thống kê số lượng theo Cơ sở (Campus)</h3>
+            <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+              <div className="px-6 py-4 border-b bg-slate-50/50 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800">Thống kê số lượng học sinh bồi dưỡng theo Cơ sở</h3>
               </div>
               <table className="min-w-full divide-y divide-slate-200 text-sm">
                 <thead className="bg-slate-50">
                   <tr>
-                    <th className="px-6 py-3 text-left font-bold text-slate-500">Tên cơ sở</th>
-                    <th className="px-6 py-3 text-center font-bold text-slate-500">Đang bồi dưỡng</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tên cơ sở</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Tổng số HS</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Văn hóa (Môn)</th>
+                    <th className="px-6 py-3 text-center font-bold text-slate-500 uppercase tracking-wider text-xs">Hỗ trợ Tâm lý</th>
+                    <th className="px-6 py-3 text-left font-bold text-slate-500 uppercase tracking-wider text-xs">Tình trạng theo dõi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {campuses.map((c: any) => {
-                    const count = targets.filter(t => t.student?.class?.campusId === c.id).length
+                    const campusTargets = targets.filter(t => t.student?.class?.campusId === c.id)
+                    const acadCount = campusTargets.filter(t => t.supportType === "ACADEMIC").length
+                    const psyCount = campusTargets.filter(t => t.supportType === "PSYCHOLOGICAL").length
+                    
+                    const pending = campusTargets.filter(t => t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT").length
+                    const approved = campusTargets.filter(t => t.terminationStatus === "ACTIVE" && t.assignments && t.assignments.length > 0).length
+                    const pendingTerm = campusTargets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length
+                    const term = campusTargets.filter(t => t.terminationStatus === "TERMINATED").length
+
                     return (
-                      <tr key={c.id} className="hover:bg-slate-50">
+                      <tr key={c.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 font-bold text-slate-800">{c.campusName}</td>
-                        <td className="px-6 py-4 text-center font-extrabold text-indigo-600">{count}</td>
+                        <td className="px-6 py-4 text-center font-extrabold text-slate-900">{campusTargets.length}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-blue-600 bg-blue-50/30">{acadCount}</td>
+                        <td className="px-6 py-4 text-center font-semibold text-purple-600 bg-purple-50/30">{psyCount}</td>
+                        <td className="px-6 py-4 text-xs font-semibold">
+                          <div className="flex flex-wrap gap-1.5">
+                            {pending > 0 && <span className="px-2 py-0.5 rounded bg-orange-100 text-orange-800 border border-orange-200">Chờ duyệt: {pending}</span>}
+                            {approved > 0 && <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 border border-indigo-200">Đang bồi dưỡng: {approved}</span>}
+                            {pendingTerm > 0 && <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">Chờ kết thúc: {pendingTerm}</span>}
+                            {term > 0 && <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">Đã kết thúc: {term}</span>}
+                          </div>
+                        </td>
                       </tr>
                     )
                   })}
@@ -1270,7 +1518,7 @@ export function SupportClient({
                 </div>
               </div>
               <div className="bg-white p-5 border rounded-xl shadow-sm text-center">
-                <div className="text-slate-500 text-xs uppercase font-bold tracking-wider">Đang hoạt động</div>
+                <div className="text-slate-500 text-xs uppercase font-bold tracking-wider font-bold">Đang hoạt động</div>
                 <div className="text-4xl font-extrabold text-indigo-600 mt-2">
                   {targets.filter(t => t.terminationStatus === "ACTIVE").length}
                 </div>
@@ -1283,6 +1531,144 @@ export function SupportClient({
               </div>
             </div>
           )}
+          
+          {/* Monthly Progress Chart section */}
+          <div className="bg-white border rounded-xl p-6 shadow-sm mt-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-indigo-600" />
+                  Biểu đồ Tiến bộ của Học sinh theo Tháng
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Thống kê kết quả đánh giá định kỳ theo các cấp độ tiến bộ ghi nhận từng tháng
+                </p>
+              </div>
+              {!hasRealData && (
+                <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase tracking-wide">
+                  Dữ liệu minh họa (Demo)
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center">
+              {/* SVG Chart */}
+              <div className="lg:col-span-3 h-[300px] flex items-end justify-between border-b border-l pb-6 pl-4 relative">
+                {/* Y-axis helper gridlines */}
+                <div className="absolute left-0 right-0 top-0 border-t border-slate-100 text-[10px] text-slate-400 pt-1">
+                  100%
+                </div>
+                <div className="absolute left-0 right-0 top-1/4 border-t border-slate-100 text-[10px] text-slate-400 pt-1">
+                  75%
+                </div>
+                <div className="absolute left-0 right-0 top-2/4 border-t border-slate-100 text-[10px] text-slate-400 pt-1">
+                  50%
+                </div>
+                <div className="absolute left-0 right-0 top-3/4 border-t border-slate-100 text-[10px] text-slate-400 pt-1">
+                  25%
+                </div>
+
+                {chartData.map((item: any, index: number) => {
+                  const goodPercent = item.total ? (item.good / item.total) * 100 : 0
+                  const avgPercent = item.total ? (item.average / item.total) * 100 : 0
+                  const weakPercent = item.total ? (item.weak / item.total) * 100 : 0
+
+                  return (
+                    <div key={index} className="flex flex-col items-center flex-1 group relative mx-2 max-w-[80px]">
+                      {/* Bar Stack */}
+                      <div className="w-12 h-48 flex flex-col justify-end rounded-t-md overflow-hidden bg-slate-50 border border-slate-200 shadow-inner">
+                        {/* Weak Bar */}
+                        {weakPercent > 0 && (
+                          <div 
+                            style={{ height: `${weakPercent}%` }} 
+                            className="bg-rose-500/90 hover:bg-rose-600 transition-all duration-300"
+                            title={`Chưa tiến bộ: ${item.weak} học sinh (${Math.round(weakPercent)}%)`}
+                          />
+                        )}
+                        {/* Average Bar */}
+                        {avgPercent > 0 && (
+                          <div 
+                            style={{ height: `${avgPercent}%` }} 
+                            className="bg-amber-400/90 hover:bg-amber-500 transition-all duration-300"
+                            title={`Có tiến bộ: ${item.average} học sinh (${Math.round(avgPercent)}%)`}
+                          />
+                        )}
+                        {/* Good Bar */}
+                        {goodPercent > 0 && (
+                          <div 
+                            style={{ height: `${goodPercent}%` }} 
+                            className="bg-emerald-500/90 hover:bg-emerald-600 transition-all duration-300"
+                            title={`Tiến bộ Tốt / Đạt: ${item.good} học sinh (${Math.round(goodPercent)}%)`}
+                          />
+                        )}
+                      </div>
+                      
+                      {/* X-axis label */}
+                      <span className="text-[10px] font-bold text-slate-500 mt-2 truncate w-full text-center" title={item.month}>
+                        {item.month}
+                      </span>
+                      
+                      {/* Floating tooltip on hover */}
+                      <div className="absolute bottom-full mb-2 bg-slate-900 text-white rounded-lg p-2.5 shadow-xl border border-slate-700 text-xs hidden group-hover:block z-10 w-44 pointer-events-none">
+                        <div className="font-bold border-b border-slate-700 pb-1 mb-1.5">{item.month}</div>
+                        <div className="flex justify-between items-center text-emerald-400">
+                          <span>Tiến bộ tốt:</span>
+                          <span className="font-bold">{item.good} HS ({Math.round(goodPercent)}%)</span>
+                        </div>
+                        <div className="flex justify-between items-center text-amber-400 mt-1">
+                          <span>Có tiến bộ:</span>
+                          <span className="font-bold">{item.average} HS ({Math.round(avgPercent)}%)</span>
+                        </div>
+                        <div className="flex justify-between items-center text-rose-400 mt-1">
+                          <span>Chưa tiến bộ:</span>
+                          <span className="font-bold">{item.weak} HS ({Math.round(weakPercent)}%)</span>
+                        </div>
+                        <div className="border-t border-slate-700 pt-1 mt-1.5 font-bold flex justify-between items-center text-slate-300">
+                          <span>Tổng đánh giá:</span>
+                          <span>{item.total} lượt</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Legend & Stats Details */}
+              <div className="space-y-4">
+                <h4 className="font-bold text-xs text-slate-400 uppercase tracking-wider">Chú thích biểu đồ</h4>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50">
+                    <span className="h-4 w-4 bg-emerald-500 rounded-md shadow-xs"></span>
+                    <div>
+                      <div className="text-xs font-bold text-slate-700">Tiến bộ Tốt / Đạt</div>
+                      <p className="text-[10px] text-slate-500 leading-normal">Đánh giá ở mức Tốt, Đạt, Giỏi hoặc có sự tiến bộ vượt bậc</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50">
+                    <span className="h-4 w-4 bg-amber-400 rounded-md shadow-xs"></span>
+                    <div>
+                      <div className="text-xs font-bold text-slate-700">Có tiến bộ / Khá</div>
+                      <p className="text-[10px] text-slate-500 leading-normal">Có chuyển biến tốt, mức trung bình khá hoặc cần nỗ lực thêm</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 p-2 border rounded-lg hover:bg-slate-50">
+                    <span className="h-4 w-4 bg-rose-500 rounded-md shadow-xs"></span>
+                    <div>
+                      <div className="text-xs font-bold text-slate-700">Chưa tiến bộ / Yếu</div>
+                      <p className="text-[10px] text-slate-500 leading-normal">Kết quả còn yếu, chưa có nhiều tiến bộ sau khi theo dõi</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-3 mt-4 text-[11px] text-indigo-800 leading-relaxed font-medium">
+                  💡 Thầy/cô có thể hover (di chuột) lên từng cột trong biểu đồ để xem chi tiết số lượng và tỷ lệ % phân loại học sinh trong tháng đó.
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
