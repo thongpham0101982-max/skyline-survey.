@@ -544,7 +544,8 @@ export async function GET(req: Request) {
         where: { id: studentId },
         include: {
           class: true,
-          campus: true
+          campus: true,
+          academicYear: true
         }
       })
       if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 })
@@ -571,13 +572,19 @@ export async function GET(req: Request) {
         where: { studentId, ...(academicYearId ? { academicYearId } : {}) }
       })
 
-      // Fetch learning support targets & evaluations
+      // Fetch learning support targets & evaluations across ALL years by studentCode
       const learningSupportTargets = await prisma.learningSupportTarget.findMany({
-        where: { studentId, ...(academicYearId ? { academicYearId } : {}) },
+        where: {
+          student: {
+            studentCode: student.studentCode
+          }
+        },
         include: {
+          academicYear: true,
           assignments: {
             include: {
-              teacher: { select: { teacherName: true } }
+              teacher: { select: { teacherName: true } },
+              subject: { select: { subjectName: true } }
             }
           },
           evaluations: {

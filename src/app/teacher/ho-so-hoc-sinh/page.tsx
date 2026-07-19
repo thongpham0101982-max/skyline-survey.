@@ -58,6 +58,7 @@ export default function TeacherStudentProfilePage() {
 
   // Profile data
   const [profileData, setProfileData] = useState<{
+    student: any
     achievements: any[]
     orientation: any
     projects: any[]
@@ -546,8 +547,8 @@ export default function TeacherStudentProfilePage() {
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Student Comprehensive Profile & Portfolio</p>
                             </div>
                             <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5">
-                              <div>Năm học: <span className="text-slate-800 font-bold">{yearId || "2026-2027"}</span></div>
-                              <div>Cơ sở: <span className="text-slate-800 font-bold">{selectedStudent?.campus?.name || "Sky-line Campus"}</span></div>
+                              <div>Năm học: <span className="text-slate-800 font-bold">{profileData?.student?.academicYear?.name || "2026-2027"}</span></div>
+                              <div>Cơ sở: <span className="text-slate-800 font-bold">{profileData?.student?.campus?.campusName || "Sky-line Campus"}</span></div>
                             </div>
                           </div>
 
@@ -561,7 +562,7 @@ export default function TeacherStudentProfilePage() {
                                   {avatarUrl ? (
                                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" onError={() => setAvatarUrl("")} />
                                   ) : (
-                                    <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-350">
+                                    <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-355">
                                       <User className="w-16 h-16" />
                                     </div>
                                   )}
@@ -573,7 +574,7 @@ export default function TeacherStudentProfilePage() {
                               </div>
 
                               {/* Administrative info */}
-                              <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2.5 text-xs text-slate-650 font-semibold">
+                              <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2.5 text-xs text-slate-655 font-semibold">
                                 <div className="flex justify-between">
                                   <span>Mã học sinh:</span>
                                   <span className="font-bold text-slate-805">{selectedStudent?.studentCode}</span>
@@ -837,7 +838,7 @@ export default function TeacherStudentProfilePage() {
                             <div>
                               <div>GIÁO VIÊN CHỦ NHIỆM</div>
                               <div className="h-16"></div>
-                              <div className="text-slate-800">{selectedStudent?.class?.homeroomTeacherId ? profileData.highlightComments?.[0]?.teacherName || "Giáo viên chủ nhiệm" : "Giáo viên chủ nhiệm"}</div>
+                              <div className="text-slate-800">{profileData?.student?.class?.homeroomTeacherId ? profileData.highlightComments?.[0]?.teacherName || "Giáo viên chủ nhiệm" : "Giáo viên chủ nhiệm"}</div>
                               <div className="text-slate-400 font-semibold font-bold">(Ký tên)</div>
                             </div>
                           </div>
@@ -901,8 +902,8 @@ export default function TeacherStudentProfilePage() {
                               <div className="space-y-6 animate-in fade-in duration-200">
                                 {/* Summary Box */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs font-bold">
-                                  <div>Cơ sở đăng ký: <span className="text-slate-800">{profileData.entranceSurvey.admissionCampus || "N/A"}</span></div>
-                                  <div>Kết quả tuyển sinh: <span className="text-slate-800">{profileData.entranceSurvey.admissionResult || "Chưa xác định"}</span></div>
+                                  <div>Cơ sở đăng ký: <span className="text-slate-805">{profileData.entranceSurvey.admissionCampus || "N/A"}</span></div>
+                                  <div>Kết quả tuyển sinh: <span className="text-slate-808">{profileData.entranceSurvey.admissionResult || "Chưa xác định"}</span></div>
                                 </div>
 
                                 {profileData.entranceSurvey.type === "PRESCHOOL" ? (
