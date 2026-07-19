@@ -796,17 +796,7 @@ export function SupportClient({
           Hỗ trợ Tâm lý
         </button>
 
-        <button
-          onClick={() => setActiveTab("configs")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
-            activeTab === "configs"
-              ? "border-indigo-600 text-indigo-600 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <Sliders className="h-4 w-4" />
-          Quy định về Kết quả
-        </button>
+
 
       </div>
 
@@ -1074,91 +1064,7 @@ export function SupportClient({
         </div>
       )}
 
-      {/* Tab 3: Quy định về Kết quả */}
-      {!loading && activeTab === "configs" && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => {
-                setConfigId("")
-                setConfigCode("")
-                setConfigLabel("")
-                setConfigDesc("")
-                setIsConfigModalOpen(true)
-              }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
-            >
-              <Plus className="h-4 w-4" />
-              Thêm quy định kết quả mới
-            </button>
-          </div>
 
-          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Phân loại</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã kết quả</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kết quả theo dõi</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Diễn giải / Quy chuẩn đánh giá</th>
-                  <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-slate-200 text-sm">
-                {configs.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="text-center py-10 text-slate-400">
-                      Chưa có quy định về mức độ kết quả nào được cấu hình
-                    </td>
-                  </tr>
-                ) : (
-                  configs.map((c: any) => (
-                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          c.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
-                        }`}>
-                          {c.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-mono font-bold text-slate-800">
-                        {c.code}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-semibold text-slate-900">
-                        {c.outcomeLabel}
-                      </td>
-                      <td className="px-6 py-4 text-slate-600">
-                        {c.description || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
-                        <button
-                          onClick={() => {
-                            setConfigId(c.id)
-                            setConfigType(c.supportType)
-                            setConfigCode(c.code)
-                            setConfigLabel(c.outcomeLabel)
-                            setConfigDesc(c.description || "")
-                            setIsConfigModalOpen(true)
-                          }}
-                          className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteConfig(c.id)}
-                          className="text-rose-600 hover:text-rose-900 p-1.5 rounded hover:bg-rose-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
 
       {/* Tab 4: Báo cáo thống kê - Đã bỏ */}
       {false && (
