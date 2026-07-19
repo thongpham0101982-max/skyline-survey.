@@ -1,10 +1,12 @@
-﻿"use client"
+"use client"
 
 import { useState, useEffect } from "react"
 import { 
   Users, Loader2, User, Award, Compass, 
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
-  Bell, ThumbsUp, MessageCircle, Share2, Send, Globe, Camera
+  Bell, ThumbsUp, MessageCircle, Share2, Send, Globe, Camera,
+  Search, Printer, Plus, Heart, Trash2, Calendar, 
+  MapPin, CheckCircle, AlertTriangle, GraduationCap
 } from "lucide-react"
 
 export default function TeacherStudentProfilePage() {
@@ -27,9 +29,10 @@ export default function TeacherStudentProfilePage() {
     window.addEventListener("academicYearChanged", handleYearChange);
     return () => window.removeEventListener("academicYearChanged", handleYearChange);
   }, [yearId]);
+
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState("entrance")
+  const [activeTab, setActiveTab] = useState("cv")
   const [entranceSubTab, setEntranceSubTab] = useState<"results" | "admin" | "academic">("results")
   const [loadingStudents, setLoadingStudents] = useState(true)
   const [loadingProfile, setLoadingProfile] = useState(false)
@@ -39,6 +42,14 @@ export default function TeacherStudentProfilePage() {
   const [newPostText, setNewPostText] = useState("")
   const [postingAnnouncement, setPostingAnnouncement] = useState(false)
   const [apiError, setApiError] = useState("")
+  
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("")
+
+  // Highlight comments states
+  const [newCommentText, setNewCommentText] = useState("")
+  const [commentCategory, setCommentCategory] = useState("CHUNG")
+  const [postingComment, setPostingComment] = useState(false)
   
   // Custom interactive mock likes/comments state for the wall posts
   const [postLikes, setPostLikes] = useState<Record<string, { count: number, liked: boolean }>>({})
@@ -158,6 +169,38 @@ export default function TeacherStudentProfilePage() {
     }
   }
 
+  const handleCreateCommentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newCommentText.trim()) return
+
+    try {
+      setPostingComment(true)
+      const res = await fetch("/api/teacher-student-records?action=saveHighlightComment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: selectedStudentId,
+          comment: newCommentText,
+          category: commentCategory
+        })
+      })
+
+      if (res.ok) {
+        setNewCommentText("")
+        // Refresh profile data
+        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+        if (profileRes.ok) {
+          const data = await profileRes.json()
+          setProfileData(data)
+        }
+      }
+    } catch (err) {
+      console.error("Error creating comment:", err)
+    } finally {
+      setPostingComment(false)
+    }
+  }
+
   const toggleLike = (postId: string) => {
     setPostLikes(prev => {
       const current = prev[postId] || { count: 0, liked: false }
@@ -229,6 +272,12 @@ export default function TeacherStudentProfilePage() {
     loadProfile()
   }, [selectedStudentId, students])
 
+  // Filter students based on search query
+  const filteredStudents = students.filter(s => 
+    ((s.studentName || "").toLowerCase().includes(searchQuery.toLowerCase())) ||
+    ((s.studentCode || "").toLowerCase().includes(searchQuery.toLowerCase()))
+  )
+
   if (isNotGVCN) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-700 p-6 rounded-2xl max-w-xl mx-auto mt-20 text-center">
@@ -253,6 +302,7 @@ export default function TeacherStudentProfilePage() {
   }
 
   const tabs = [
+    { id: "cv", label: "Hồ sơ CV Quốc tế", icon: User },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
     { id: "announcements", label: "Bản tin & Thông báo", icon: Bell },
     { id: "achievements", label: "Thành tích", icon: Award },
@@ -260,13 +310,80 @@ export default function TeacherStudentProfilePage() {
     { id: "commitment", label: "Cam kết học tập", icon: FileText },
     { id: "projects", label: "Dự án & Trải nghiệm", icon: BookOpen },
     { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare },
-    { id: "support", label: "Hỗ trợ học tập", icon: FileText }
+    { id: "support", label: "Hỗ trợ học tập", icon: GraduationCap }
   ]
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      {/* Dynamic Print CSS Style */}
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          body {
+            background: white !important;
+            color: black !important;
+            font-size: 11pt !important;
+          }
+          /* Hide all shell menus and UI panels except A4 profile container */
+          .no-print, header, footer, nav, aside, .sidebar, 
+          #sidebar-container, [role="navigation"],
+          .md\\:col-span-1, .header-bar, .bg-white\\/30, button, input, select, form {
+            display: none !important;
+          }
+          /* Reset container margins for print */
+          .max-w-6xl {
+            max-width: 100% !important;
+            width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .md\\:grid-cols-4 {
+            display: block !important;
+          }
+          .md\\:col-span-3 {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          /* CV Page layout force on print */
+          .print-container {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          /* Ensure columns print as grid */
+          .print-grid {
+            display: grid !important;
+            grid-template-columns: 32% 68% !important;
+            gap: 1.5rem !important;
+          }
+          .print-left-col {
+            grid-column: span 1 / span 1 !important;
+            border-right: 1px solid #E2E8F0 !important;
+            padding-right: 1.5rem !important;
+          }
+          .print-right-col {
+            grid-column: span 1 / span 1 !important;
+            padding-left: 1.5rem !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 1.2cm;
+          }
+        }
+      ` }} />
+
       {/* Header Bar */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
+      <div className="header-bar bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px] no-print">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 bg-[#00A99D] rounded-lg flex items-center justify-center flex-shrink-0">
             <Users className="w-4 h-4 text-white" />
@@ -280,22 +397,34 @@ export default function TeacherStudentProfilePage() {
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* Left column: Student list selection */}
-        <div className="md:col-span-1 space-y-4">
+        <div className="md:col-span-1 space-y-4 no-print">
           <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Học sinh Lớp chủ nhiệm</h3>
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Học sinh Lớp chủ nhiệm</h3>
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm học sinh..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D] transition-all"
+                />
+              </div>
+            </div>
             <div className="space-y-1 max-h-[480px] overflow-y-auto pr-1">
-              {students.length === 0 ? (
+              {filteredStudents.length === 0 ? (
                 <div className="text-[11px] text-slate-400 font-semibold italic text-center py-6">
-                  Lớp chủ nhiệm chưa có học sinh nào.
+                  {searchQuery ? "Không tìm thấy học sinh phù hợp." : "Lớp chủ nhiệm chưa có học sinh nào."}
                 </div>
               ) : (
-                students.map(s => (
+                filteredStudents.map(s => (
                   <button
                     key={s.id}
                     onClick={() => setSelectedStudentId(s.id)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                       selectedStudentId === s.id
-                        ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30"
+                        ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30 shadow-xs"
                         : s.isEntranceAdmitted
                           ? "bg-sky-50 text-sky-700 border border-sky-100 hover:bg-sky-100/60"
                           : "text-slate-600 hover:bg-slate-50 border border-transparent"
@@ -318,30 +447,31 @@ export default function TeacherStudentProfilePage() {
           {selectedStudentId ? (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
               {/* Profile header */}
-              <div className="p-6 bg-slate-50 border-b border-slate-100 flex items-center gap-4">
-                <div className="relative group w-14 h-14 rounded-full overflow-hidden bg-teal-50 border border-teal-100 flex items-center justify-center text-[#00A99D] cursor-pointer">
+              <div className="p-6 bg-gradient-to-r from-slate-50 to-slate-100/70 border-b border-slate-155 flex items-center gap-5 no-print relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#00A99D]/5 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none"></div>
+                <div className="relative group w-16 h-16 rounded-full overflow-hidden bg-teal-50 border-2 border-[#00A99D]/40 flex items-center justify-center text-[#00A99D] cursor-pointer shadow-md transition-all hover:scale-105">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" onError={() => setAvatarUrl("")} />
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover animate-in fade-in duration-300" onError={() => setAvatarUrl("")} />
                   ) : (
-                    <User className="w-7 h-7" />
+                    <User className="w-8 h-8" />
                   )}
                   {uploadingAvatar && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
-                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <Loader2 className="w-5 h-5 animate-spin" />
                     </div>
                   )}
                   <label className="absolute inset-0 bg-black/40 text-white text-[8px] font-black uppercase flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                    <Camera className="w-3.5 h-3.5 mb-0.5" />
+                    <Camera className="w-4 h-4 mb-0.5" />
                     Tải ảnh
                     <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                   </label>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-800">{selectedStudent?.studentName}</h3>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400 text-xs font-bold mt-1.5">
-                    <span>Mã HS: <span className="text-slate-700">{selectedStudent?.studentCode}</span></span>
-                    <span>Ngày sinh: <span className="text-slate-700">{selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span></span>
-                    <span>Giới tính: <span className="text-slate-700">{selectedStudent?.gender || 'N/A'}</span></span>
+                <div className="space-y-1">
+                  <h3 className="font-black text-lg text-slate-805 tracking-tight leading-tight">{selectedStudent?.studentName}</h3>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400 text-xs font-bold">
+                    <span>Mã HS: <span className="text-slate-700 font-extrabold">{selectedStudent?.studentCode}</span></span>
+                    <span>Ngày sinh: <span className="text-slate-700 font-extrabold">{selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span></span>
+                    <span>Giới tính: <span className="text-slate-700 font-extrabold">{selectedStudent?.gender || 'N/A'}</span></span>
                   </div>
                 </div>
               </div>
@@ -355,13 +485,13 @@ export default function TeacherStudentProfilePage() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-t-2 border-x rounded-t-xl transition-all ${
+                      className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-t-2 border-x rounded-t-xl transition-all cursor-pointer ${
                         isActive
-                          ? "bg-white text-[#00A99D] border-[#00A99D] border-x-slate-200"
+                          ? "bg-white text-[#00A99D] border-[#00A99D] border-x-slate-200 shadow-xs"
                           : "text-slate-500 border-transparent hover:text-slate-800"
                       }`}
                     >
-                      <Icon className="w-4 h-4" />
+                      <Icon className="w-3.5 h-3.5" />
                       <span>{tab.label}</span>
                     </button>
                   )
@@ -377,6 +507,340 @@ export default function TeacherStudentProfilePage() {
                   </div>
                 ) : profileData ? (
                   <div>
+                    {/* TAB: CV INTERGRATED (NEW STANDARD) */}
+                    {activeTab === "cv" && (
+                      <div className="space-y-6">
+                        {/* CV Action Bar */}
+                        <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-150 no-print">
+                          <div>
+                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Hồ sơ CV Tích hợp Chuẩn Quốc tế</h4>
+                            <p className="text-slate-500 text-[10px] font-semibold mt-0.5">Bản tổng hợp hồ sơ năng lực học tập và rèn luyện của học sinh</p>
+                          </div>
+                          <button
+                            onClick={() => window.print()}
+                            className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                          >
+                            <Printer className="w-4 h-4" />
+                            <span>In hồ sơ / Lưu PDF</span>
+                          </button>
+                        </div>
+
+                        {/* CV Document Container */}
+                        <div className="print-container bg-white border border-slate-200 shadow-lg rounded-2xl p-8 max-w-4xl mx-auto font-sans relative overflow-hidden">
+                          {/* Background decoration elements */}
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none no-print"></div>
+                          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none no-print"></div>
+                          
+                          {/* CV Header */}
+                          <div className="border-b-2 border-[#00A99D] pb-6 flex justify-between items-start gap-4">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <GraduationCap className="w-6 h-6 text-[#00A99D]" />
+                                <span className="font-extrabold text-sm tracking-wider text-slate-700 font-sans">SKY-LINE SYSTEM</span>
+                              </div>
+                              <h2 className="text-xl font-black text-slate-800 uppercase tracking-tight font-sans">Hồ sơ Năng lực Học sinh</h2>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Student Comprehensive Profile & Portfolio</p>
+                            </div>
+                            <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5">
+                              <div>Năm học: <span className="text-slate-800 font-bold">{yearId || "2026-2027"}</span></div>
+                              <div>Cơ sở: <span className="text-slate-800 font-bold">{selectedStudent?.campus?.name || "Sky-line Campus"}</span></div>
+                            </div>
+                          </div>
+
+                          {/* CV Body Grid */}
+                          <div className="print-grid grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                            {/* Left Column (Info, Achievements, Commitment, Orientation) */}
+                            <div className="print-left-col md:col-span-1 border-r border-slate-100 pr-6 space-y-6">
+                              {/* Avatar & Profile Detail */}
+                              <div className="text-center space-y-3">
+                                <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#00A99D]/20 shadow-inner group">
+                                  {avatarUrl ? (
+                                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" onError={() => setAvatarUrl("")} />
+                                  ) : (
+                                    <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-350">
+                                      <User className="w-16 h-16" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <h3 className="font-black text-base text-slate-800">{selectedStudent?.studentName}</h3>
+                                  <p className="text-[10px] text-[#00A99D] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {selectedStudent?.className}</p>
+                                </div>
+                              </div>
+
+                              {/* Administrative info */}
+                              <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2.5 text-xs text-slate-650 font-semibold">
+                                <div className="flex justify-between">
+                                  <span>Mã học sinh:</span>
+                                  <span className="font-bold text-slate-805">{selectedStudent?.studentCode}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Ngày sinh:</span>
+                                  <span className="font-bold text-slate-805">{selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Giới tính:</span>
+                                  <span className="font-bold text-slate-805">{selectedStudent?.gender || 'N/A'}</span>
+                                </div>
+                              </div>
+
+                              {/* Outstanding Achievements */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <Award className="w-4 h-4 text-[#00A99D]" />
+                                  Thành tích nổi bật
+                                </h4>
+                                {profileData.achievements?.length === 0 ? (
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận thành tích.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {profileData.achievements?.slice(0, 3).map((a: any) => (
+                                      <div key={a.id} className="flex gap-2 items-start text-xs bg-amber-50/30 border border-amber-100 p-2 rounded-lg">
+                                        <Award className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                          <div className="font-bold text-slate-850 leading-tight">{a.achievement?.name}</div>
+                                          <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{a.achievement?.level}</div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Learning Commitment */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <FileText className="w-4 h-4 text-[#00A99D]" />
+                                  Cam kết rèn luyện
+                                </h4>
+                                {profileData.commitment ? (
+                                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
+                                    <p className="text-[10px] text-slate-600 italic leading-relaxed line-clamp-4 font-semibold">
+                                      "{profileData.commitment.content}"
+                                    </p>
+                                    <div className="flex justify-between items-center pt-1 border-t border-slate-200/50">
+                                      <span className="text-[9px] text-slate-400 font-bold">Trạng thái:</span>
+                                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                                        profileData.commitment.status === "COMPLETED"
+                                          ? "bg-green-50 text-green-700 border-green-200"
+                                          : profileData.commitment.status === "VIOLATED"
+                                          ? "bg-red-50 text-red-700 border-red-200"
+                                          : "bg-blue-50 text-blue-700 border-blue-200"
+                                      }`}>
+                                        {profileData.commitment.status === "COMPLETED" ? "Hoàn thành" : profileData.commitment.status === "VIOLATED" ? "Vi phạm" : "Đang thực hiện"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa thiết lập cam kết.</p>
+                                )}
+                              </div>
+
+                              {/* Career Orientation */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <Compass className="w-4 h-4 text-[#00A99D]" />
+                                  Định hướng ngành nghề
+                                </h4>
+                                {profileData.orientation ? (
+                                  <div className="bg-teal-50/20 border border-teal-100 p-3 rounded-lg space-y-1">
+                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nhóm ngành quan tâm</div>
+                                    <div className="text-xs font-black text-slate-750">{profileData.orientation.result}</div>
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa định hướng ngành nghề.</p>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Right Column (Academic Entrance, Projects, Support, Testimonial) */}
+                            <div className="print-right-col md:col-span-2 space-y-6">
+                              {/* Section: Academic Intake Profile */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <ClipboardCheck className="w-4 h-4 text-[#00A99D]" />
+                                  Hồ sơ học thuật đầu vào (Intake Evaluation)
+                                </h4>
+                                {profileData.entranceSurvey ? (
+                                  <div className="space-y-3">
+                                    {profileData.entranceSurvey.type === "PRESCHOOL" ? (
+                                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
+                                        <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#00A99D]">{profileData.entranceSurvey.devAssessmentResult || "N/A"}</span></div>
+                                        {profileData.entranceSurvey.probationaryComment && (
+                                          <div className="bg-white p-2.5 rounded border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
+                                            "{profileData.entranceSurvey.probationaryComment}"
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (() => {
+                                      const survey = profileData.entranceSurvey
+                                      let mathVal = survey.mathScore
+                                      let litVal = survey.literatureScore
+                                      let writtenVal = survey.writtenEnglishScore
+                                      let oralVal = survey.oralEnglishScore
+                                      let psychVal = survey.psychologyScore
+                                      ;(survey.scores || []).forEach((sc: any) => {
+                                        const sName = (sc.subjectName || "").toLowerCase().normalize("NFC")
+                                        const scoresArr = Array.isArray(sc.scores) ? sc.scores : []
+                                        const scoreVal = scoresArr.find((x: any) => x !== undefined && x !== null && x !== "")
+                                        if (sName.includes("toán") || sName.includes("math")) {
+                                          if (scoreVal !== undefined) mathVal = scoreVal
+                                        } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn")) {
+                                          if (scoreVal !== undefined) litVal = scoreVal
+                                        } else if (sName.includes("tiếng anh")) {
+                                          if (sName.includes("viết") || sName.includes("written")) {
+                                            if (scoreVal !== undefined) writtenVal = scoreVal
+                                          } else if (sName.includes("vấn đáp") || sName.includes("nói") || sName.includes("oral")) {
+                                            if (scoreVal !== undefined) oralVal = scoreVal
+                                          }
+                                        } else if (sName.includes("tâm lý")) {
+                                          psychVal = scoresArr.reduce((s: number, v: any) => s + (parseFloat(v) || 0), 0)
+                                        }
+                                      })
+                                      
+                                      const isGrade1 = (() => { const m = String(survey.className || survey.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
+
+                                      return (
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
+                                            <div className="text-[9px] text-[#00A99D] font-bold uppercase tracking-wider">Toán học</div>
+                                            <div className="text-lg font-black text-slate-805 mt-0.5">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold">Thang 10</div>
+                                          </div>
+                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
+                                            <div className="text-[9px] text-indigo-650 font-bold uppercase tracking-wider">Ngữ văn</div>
+                                            <div className="text-lg font-black text-slate-805 mt-0.5">{litVal !== null && litVal !== undefined ? litVal : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold">Thang 10</div>
+                                          </div>
+                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
+                                            <div className="text-[9px] text-sky-650 font-bold uppercase tracking-wider">Anh viết</div>
+                                            <div className="text-lg font-black text-slate-805 mt-0.5">{writtenVal !== null && writtenVal !== undefined ? (isGrade1 ? writtenVal : `${writtenVal}/70`) : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 70"}</div>
+                                          </div>
+                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
+                                            <div className="text-[9px] text-sky-650 font-bold uppercase tracking-wider">Anh nói</div>
+                                            <div className="text-lg font-black text-slate-850 mt-0.5">{oralVal !== null && oralVal !== undefined ? (isGrade1 ? oralVal : `${oralVal}/30`) : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 30"}</div>
+                                          </div>
+                                        </div>
+                                      )
+                                    })()}
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận điểm khảo sát đầu vào.</p>
+                                )}
+                              </div>
+
+                              {/* Section: Projects & Experiences */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                                  Dự án học tập & Hoạt động trải nghiệm
+                                </h4>
+                                {profileData.projects?.length === 0 ? (
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia dự án học tập nào.</p>
+                                ) : (
+                                  <div className="space-y-2">
+                                    {profileData.projects?.slice(0, 2).map((p: any) => (
+                                      <div key={p.id} className="bg-slate-50/50 border border-slate-100 p-3 rounded-lg text-xs">
+                                        <div className="flex justify-between items-start">
+                                          <div className="font-bold text-slate-800">{p.projectName}</div>
+                                          <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
+                                            {p.role || "Thành viên"}
+                                          </span>
+                                        </div>
+                                        {p.notes && <p className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">"{p.notes}"</p>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Section: Learning Support Progress */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <GraduationCap className="w-4 h-4 text-[#00A99D]" />
+                                  Kế hoạch hỗ trợ học tập & Phát triển
+                                </h4>
+                                {!(profileData as any).learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">Không thuộc đối tượng nhận hỗ trợ trong năm học này.</p>
+                                ) : (
+                                  <div className="space-y-2.5">
+                                    {(profileData as any).learningSupportTargets.slice(0, 1).map((target: any) => {
+                                      const gvName = target.assignments?.[0]?.teacher?.teacherName || "Chưa phân công"
+                                      return (
+                                        <div key={target.id} className="border border-slate-100 bg-slate-50/30 p-3 rounded-lg text-xs space-y-2">
+                                          <div className="flex justify-between items-center">
+                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                              target.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border border-blue-100" : "bg-purple-50 text-purple-700 border border-purple-100"
+                                            }`}>
+                                              {target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
+                                            </span>
+                                            <span className="text-[9px] font-bold text-slate-500 font-semibold">GV phụ trách: {gvName}</span>
+                                          </div>
+                                          <div className="font-semibold text-slate-705">Mục tiêu: <span className="font-bold text-slate-800">{target.reason}</span></div>
+                                          {target.evaluations?.length > 0 && (
+                                            <div className="border-t border-slate-200/50 pt-2 space-y-1">
+                                              <div className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Tiến độ cập nhật gần nhất:</div>
+                                              <p className="text-[10px] text-slate-500 italic">"{target.evaluations[0].comment}" - <span className="font-bold text-[#00A99D]">{target.evaluations[0].trackingLevel}</span></p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Section: GVCN Testimonial */}
+                              <div className="space-y-3">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <MessageSquare className="w-4 h-4 text-[#00A99D]" />
+                                  Nhận xét định kỳ từ Giáo viên Chủ nhiệm
+                                </h4>
+                                {(() => {
+                                  const primaryComment = profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT")?.[0]
+                                  if (primaryComment) {
+                                    return (
+                                      <div className="bg-teal-50/10 border-l-4 border-[#00A99D] p-3 rounded-r-lg space-y-2">
+                                        <p className="text-xs text-slate-705 font-semibold italic leading-relaxed whitespace-pre-wrap">
+                                          "{primaryComment.comment}"
+                                        </p>
+                                        <div className="text-right text-[9px] text-slate-400 font-bold">
+                                          — {primaryComment.teacherName} (GVCN) • {new Date(primaryComment.updatedAt).toLocaleDateString('vi-VN')}
+                                        </div>
+                                      </div>
+                                    )
+                                  }
+                                  return <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận đánh giá định kỳ.</p>
+                                })()}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Signature Section on A4 Print */}
+                          <div className="hidden print:grid grid-cols-3 gap-6 mt-16 pt-8 border-t border-slate-200 text-center text-xs font-bold text-slate-755">
+                            <div>
+                              <div>HỌC SINH KÝ TÊN</div>
+                              <div className="h-16"></div>
+                              <div className="text-slate-400 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
+                            </div>
+                            <div>
+                              <div>PHỤ HUYNH XÁC NHẬN</div>
+                              <div className="h-16"></div>
+                              <div className="text-slate-400 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
+                            </div>
+                            <div>
+                              <div>GIÁO VIÊN CHỦ NHIỆM</div>
+                              <div className="h-16"></div>
+                              <div className="text-slate-800">{selectedStudent?.class?.homeroomTeacherId ? profileData.highlightComments?.[0]?.teacherName || "Giáo viên chủ nhiệm" : "Giáo viên chủ nhiệm"}</div>
+                              <div className="text-slate-400 font-semibold font-bold">(Ký tên)</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* TAB: ENTRANCE */}
                     {activeTab === "entrance" && (
                       <div className="space-y-6">
@@ -392,10 +856,10 @@ export default function TeacherStudentProfilePage() {
                         {profileData.entranceSurvey ? (
                           <div className="space-y-6">
                             {/* Entrance sub-tabs navigation */}
-                            <div className="flex gap-4 border-b border-slate-200 overflow-x-auto custom-scrollbar">
+                            <div className="flex gap-4 border-b border-slate-200 overflow-x-auto custom-scrollbar no-print">
                               <button
                                 onClick={() => setEntranceSubTab("results")}
-                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "results"
                                     ? "border-[#00A99D] text-[#00A99D]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
@@ -406,7 +870,7 @@ export default function TeacherStudentProfilePage() {
                               </button>
                               <button
                                 onClick={() => setEntranceSubTab("admin")}
-                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "admin"
                                     ? "border-[#00A99D] text-[#00A99D]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
@@ -417,7 +881,7 @@ export default function TeacherStudentProfilePage() {
                               </button>
                               <button
                                 onClick={() => setEntranceSubTab("academic")}
-                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap ${
+                                className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "academic"
                                     ? "border-[#00A99D] text-[#00A99D]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
@@ -523,35 +987,35 @@ export default function TeacherStudentProfilePage() {
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                         <div className="bg-[#00A99D]/5 border border-[#00A99D]/20 p-3.5 rounded-xl text-center">
                                           <div className="text-[10px] text-[#00A99D] font-bold uppercase tracking-wider">Toán</div>
-                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
+                                          <div className="text-2xl font-extrabold text-slate-805 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
                                         <div className="bg-indigo-50/30 border border-indigo-100 p-3.5 rounded-xl text-center">
-                                          <div className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">Ngữ văn</div>
-                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{litVal !== null && litVal !== undefined ? litVal : "—"}</div>
+                                          <div className="text-[10px] text-indigo-650 font-bold uppercase tracking-wider">Ngữ văn</div>
+                                          <div className="text-2xl font-extrabold text-slate-850 mt-1">{litVal !== null && litVal !== undefined ? litVal : "—"}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
                                         <div className="bg-sky-50/30 border border-sky-100 p-3.5 rounded-xl text-center">
-                                          <div className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Anh viết</div>
-                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{writtenDisplay}</div>
+                                          <div className="text-[10px] text-sky-655 font-bold uppercase tracking-wider">Anh viết</div>
+                                          <div className="text-2xl font-extrabold text-slate-850 mt-1">{writtenDisplay}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 70"}</div>
                                         </div>
                                         <div className="bg-sky-50/20 border border-sky-100/60 p-3.5 rounded-xl text-center">
-                                          <div className="text-[10px] text-sky-600 font-bold uppercase tracking-wider">Anh nói</div>
-                                          <div className="text-2xl font-extrabold text-slate-800 mt-1">{oralDisplay}</div>
+                                          <div className="text-[10px] text-sky-655 font-bold uppercase tracking-wider">Anh nói</div>
+                                          <div className="text-2xl font-extrabold text-slate-850 mt-1">{oralDisplay}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 30"}</div>
                                         </div>
                                       </div>
                                       {totalEnglish !== null && (
                                         <div className="bg-gradient-to-r from-indigo-50 to-sky-50 p-3 rounded-xl border border-indigo-100 text-center">
-                                          <span className="text-xs text-indigo-600 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh: </span>
+                                          <span className="text-xs text-indigo-655 font-black uppercase tracking-wider">Tổng điểm Tiếng Anh: </span>
                                           <span className="text-sm font-extrabold text-indigo-700">{totalEnglish}/100</span>
                                         </div>
                                       )}
                                       {oralComment && (
                                         <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                                           <div className="text-[10px] font-black text-sky-700 uppercase tracking-wider mb-1">Nhận xét Tiếng Anh Nói</div>
-                                          <p className="text-xs text-slate-600 font-semibold leading-relaxed italic">"{oralComment}"</p>
+                                          <p className="text-xs text-slate-650 font-semibold leading-relaxed italic">"{oralComment}"</p>
                                         </div>
                                       )}
                                       <div className={`text-xs font-semibold space-y-1 p-3 rounded-xl border ${psychClass}`}>
@@ -586,7 +1050,7 @@ export default function TeacherStudentProfilePage() {
                                                 <span className="text-slate-500 font-bold">Môn cam kết:</span>
                                                 <div className="flex flex-wrap gap-1.5 mt-1.5">
                                                   {committedSubjects.map((sub: string, idx: number) => (
-                                                    <span key={idx} className="bg-amber-100/80 text-amber-800 border border-amber-200/60 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
+                                                    <span key={idx} className="bg-amber-100/80 text-amber-850 border border-amber-200/60 px-2.5 py-0.5 rounded-md font-bold text-[10px]">
                                                       {sub}
                                                     </span>
                                                   ))}
@@ -614,36 +1078,36 @@ export default function TeacherStudentProfilePage() {
                             {entranceSubTab === "admin" && (
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 animate-in fade-in duration-200 text-xs font-semibold">
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kỳ khảo sát</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.period?.name || "-"}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Kỳ khảo sát</label>
+                                  <span className="text-xs font-black text-slate-750 mt-1 block">{profileData.entranceSurvey.period?.name || "-"}</span>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đợt khảo sát</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.batch?.name || "-"}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Đợt khảo sát</label>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.batch?.name || "-"}</span>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lớp dự tuyển</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.isPreschool ? (profileData.entranceSurvey.grade || "-") : (profileData.entranceSurvey.className || "-")}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Lớp dự tuyển</label>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.isPreschool ? (profileData.entranceSurvey.grade || "-") : (profileData.entranceSurvey.className || "-")}</span>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hệ đào tạo</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.surveySystem || "-"}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Hệ đào tạo</label>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.surveySystem || "-"}</span>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở dự tuyển</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.admissionCampus || "-"}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Cơ sở dự tuyển</label>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.admissionCampus || "-"}</span>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Diện tuyển sinh</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.admissionCriteria || "-"}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Diện tuyển sinh</label>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.admissionCriteria || "-"}</span>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Giới tính</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.gender || "-"}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Giới tính</label>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.gender || "-"}</span>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ngày sinh</label>
-                                  <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.dateOfBirth ? new Date(profileData.entranceSurvey.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span>
+                                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Ngày sinh</label>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.dateOfBirth ? new Date(profileData.entranceSurvey.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span>
                                 </div>
                               </div>
                             )}
@@ -655,7 +1119,7 @@ export default function TeacherStudentProfilePage() {
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl md:col-span-2">
                                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Kết quả học thử</label>
-                                      <span className="text-xs font-black text-slate-700 mt-1 block">{profileData.entranceSurvey.probationaryResult || "Chưa có kết quả"}</span>
+                                      <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.probationaryResult || "Chưa có kết quả"}</span>
                                     </div>
                                     <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl md:col-span-2">
                                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Nhận xét chi tiết của giáo viên học thử</label>
@@ -738,7 +1202,7 @@ export default function TeacherStudentProfilePage() {
                           {profileData.transfers?.length > 0 ? (
                             <div className="space-y-3">
                               {profileData.transfers.map(tr => (
-                                <div key={tr.id} className="bg-orange-50 border border-orange-200 p-4 rounded-xl text-xs font-semibold text-slate-700">
+                                <div key={tr.id} className="bg-orange-50 border border-orange-200 p-4 rounded-xl text-xs font-semibold text-slate-705 shadow-2xs">
                                   <div className="font-black text-slate-800">Học sinh Chuyển đến / Chuyển đi: {tr.type === "IN" ? "Chuyển đến" : tr.type === "OUT" ? "Chuyển đi" : "Chuyển lớp"}</div>
                                   <div className="mt-1">Ngày thực hiện: {new Date(tr.transferDate).toLocaleDateString('vi-VN')}</div>
                                   {tr.destinationSchool && <div>Trường chuyển đến/đi: {tr.destinationSchool}</div>}
@@ -753,6 +1217,167 @@ export default function TeacherStudentProfilePage() {
                       </div>
                     )}
 
+                    {/* TAB: ANNOUNCEMENTS */}
+                    {activeTab === "announcements" && (
+                      <div className="space-y-6">
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 flex justify-between items-center">
+                          <span>Bản tin rèn luyện & Thông báo học sinh</span>
+                          <span className="bg-indigo-55 text-indigo-650 border border-indigo-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
+                            <Bell className="w-3 h-3" />
+                            Bảng Tin
+                          </span>
+                        </h4>
+                        
+                        {/* Form to create new post */}
+                        <form onSubmit={handleCreatePostSubmit} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                          <div className="flex gap-3">
+                            <div className="w-9 h-9 rounded-full bg-[#00A99D]/15 text-[#00A99D] flex items-center justify-center font-black text-xs shadow-inner">
+                              {selectedStudent?.studentName?.charAt(0) || "S"}
+                            </div>
+                            <textarea
+                              value={newPostText}
+                              onChange={(e) => setNewPostText(e.target.value)}
+                              placeholder={`Đăng hoạt động, thông báo học tập hoặc nhắc nhở rèn luyện mới về em ${selectedStudent?.studentName}...`}
+                              rows={3}
+                              className="flex-grow bg-white border border-slate-200 rounded-xl p-3 text-xs font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D] resize-none"
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <button
+                              type="submit"
+                              disabled={postingAnnouncement || !newPostText.trim()}
+                              className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
+                            >
+                              {postingAnnouncement ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Send className="w-3.5 h-3.5" />
+                              )}
+                              <span>Đăng bản tin</span>
+                            </button>
+                          </div>
+                        </form>
+
+                        {/* Post Feed */}
+                        {profileData.highlightComments?.filter((c: any) => c.category === "ANNOUNCEMENT").length === 0 ? (
+                          <div className="text-xs text-slate-400 italic text-center py-16 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                            <Bell className="w-8 h-8 mx-auto mb-2 text-slate-355" />
+                            Bản tin chưa có thông báo nào. Bạn có thể đăng bản tin rèn luyện ở trên.
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {profileData.highlightComments
+                              .filter((c: any) => c.category === "ANNOUNCEMENT")
+                              .map((c: any) => {
+                                const isLiked = postLikes[c.id]?.liked || false;
+                                const likeCount = postLikes[c.id]?.count || 0;
+                                const comments = postCommentsState[c.id] || [];
+                                const commentText = newCommentTexts[c.id] || "";
+
+                                return (
+                                  <div key={c.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 hover:border-slate-300 transition-all animate-in fade-in slide-in-from-bottom-2 duration-350">
+                                    {/* Post Header */}
+                                    <div className="flex justify-between items-start">
+                                      <div className="flex gap-3">
+                                        <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[#00A99D] font-black text-xs shadow-inner">
+                                          {c.teacherName?.substring(0, 2).toUpperCase() || "GV"}
+                                        </div>
+                                        <div>
+                                          <div className="font-extrabold text-xs text-slate-805">{c.teacherName} <span className="text-slate-400 font-bold">(GVCN)</span></div>
+                                          <div className="text-[9px] text-slate-400 font-bold mt-0.5">{new Date(c.updatedAt).toLocaleDateString('vi-VN')} • Bản tin</div>
+                                        </div>
+                                      </div>
+                                      <button
+                                        onClick={async () => {
+                                          if (!confirm("Bạn có chắc chắn muốn xóa bản tin này?")) return
+                                          try {
+                                            const deleteRes = await fetch("/api/teacher-student-records?action=deleteHighlightComment", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ id: c.id })
+                                            })
+                                            if (deleteRes.ok) {
+                                              // Refresh profile data
+                                              const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+                                              if (profileRes.ok) {
+                                                const data = await profileRes.json()
+                                                setProfileData(data)
+                                              }
+                                            }
+                                          } catch (err) {
+                                            console.error("Error deleting post:", err)
+                                          }
+                                        }}
+                                        className="text-slate-450 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+
+                                    {/* Post Body */}
+                                    <p className="text-xs text-slate-700 bg-slate-50/30 p-3 rounded-xl border border-slate-100 font-semibold leading-relaxed whitespace-pre-wrap pl-3">
+                                      {c.comment}
+                                    </p>
+
+                                    {/* Post Action Buttons */}
+                                    <div className="flex items-center gap-6 border-t border-b border-slate-100 py-2 px-1 text-slate-500 font-bold text-[11px]">
+                                      <button
+                                        onClick={() => toggleLike(c.id)}
+                                        className={`flex items-center gap-1.5 transition-colors cursor-pointer hover:text-rose-500 ${isLiked ? "text-rose-500 animate-bounce-short" : ""}`}
+                                      >
+                                        <Heart className={`w-4 h-4 ${isLiked ? "fill-rose-500 stroke-rose-500" : ""}`} />
+                                        <span>{likeCount} Thích</span>
+                                      </button>
+                                      <div className="flex items-center gap-1.5">
+                                        <MessageCircle className="w-4 h-4" />
+                                        <span>{comments.length} Bình luận</span>
+                                      </div>
+                                    </div>
+
+                                    {/* Comments List */}
+                                    {comments.length > 0 && (
+                                      <div className="space-y-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100 pl-4">
+                                        {comments.map((comm: any, idx: number) => (
+                                          <div key={idx} className="text-xs space-y-0.5 border-b border-slate-100/50 pb-2 last:border-0 last:pb-0">
+                                            <div className="flex justify-between items-center">
+                                              <span className="font-extrabold text-slate-805">{comm.author}</span>
+                                              <span className="text-[9px] text-slate-400 font-semibold">{comm.time}</span>
+                                            </div>
+                                            <p className="text-slate-650 font-medium leading-relaxed">{comm.text}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Add Comment Input */}
+                                    <div className="flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={commentText}
+                                        onChange={(e) => setNewCommentTexts(prev => ({ ...prev, [c.id]: e.target.value }))}
+                                        placeholder="Nhập ý kiến bình luận của bạn..."
+                                        className="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D]"
+                                        onKeyDown={(e) => {
+                                          if (e.key === "Enter") {
+                                            handleAddComment(c.id, c.teacherName || "Giáo viên")
+                                          }
+                                        }}
+                                      />
+                                      <button
+                                        onClick={() => handleAddComment(c.id, c.teacherName || "Giáo viên")}
+                                        className="bg-[#00A99D]/10 hover:bg-[#00A99D] text-[#00A99D] hover:text-white p-2.5 rounded-xl transition-all cursor-pointer"
+                                      >
+                                        <Send className="w-3.5 h-3.5" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* TAB: ACHIEVEMENTS */}
                     {activeTab === "achievements" && (
                       <div className="space-y-4">
@@ -762,16 +1387,16 @@ export default function TeacherStudentProfilePage() {
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {profileData.achievements.map((a: any) => (
-                              <div key={a.id} className="bg-amber-50/35 border-2 border-amber-100 p-4 rounded-2xl flex items-start gap-3">
-                                <div className="p-2 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                              <div key={a.id} className="bg-amber-50/30 border border-amber-200/50 p-4 rounded-2xl flex items-start gap-3 hover:shadow-xs transition-all">
+                                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs border border-amber-100">
                                   <Award className="w-5 h-5" />
                                 </div>
-                                <div className="text-xs font-semibold">
+                                <div className="text-xs font-semibold space-y-1">
                                   <h4 className="font-black text-slate-800">{a.achievement?.name}</h4>
-                                  <div className="text-amber-700 font-bold mt-1 uppercase tracking-wide text-[9px]">
+                                  <div className="text-amber-800 font-extrabold uppercase tracking-wider text-[9px] bg-amber-100/50 border border-amber-200/40 px-2 py-0.5 rounded inline-block">
                                     Cấp độ giải: {a.achievement?.level || "N/A"}
                                   </div>
-                                  <div className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                  <div className="text-[10px] text-slate-400 font-bold">
                                     Năm học: {a.achievement?.academicYearId || "N/A"}
                                   </div>
                                 </div>
@@ -787,15 +1412,20 @@ export default function TeacherStudentProfilePage() {
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Định hướng Nghề nghiệp & Hướng nghiệp</h4>
                         {profileData.orientation ? (
-                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
-                            <div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Định hướng nhóm ngành</div>
-                              <div className="text-sm font-black text-slate-800 mt-1">{profileData.orientation.result}</div>
+                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-2xs">
+                            <div className="flex items-center gap-3 bg-teal-50/30 border border-teal-100 p-3.5 rounded-xl">
+                              <Compass className="w-5 h-5 text-[#00A99D]" />
+                              <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Định hướng nhóm ngành chủ đạo</div>
+                                <div className="text-sm font-black text-slate-805 mt-0.5">{profileData.orientation.result}</div>
+                              </div>
                             </div>
                             {profileData.orientation.notes && (
                               <div className="pt-3 border-t border-slate-200">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Chi tiết nhận xét của GVBM</div>
-                                <p className="text-xs text-slate-600 font-semibold leading-relaxed bg-white p-3 rounded-xl border border-slate-200">{profileData.orientation.notes}</p>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết nhận xét & Đánh giá của GVBM</div>
+                                <p className="text-xs text-slate-650 font-semibold leading-relaxed bg-white p-3.5 rounded-xl border border-slate-200 italic shadow-2xs">
+                                  "{profileData.orientation.notes}"
+                                </p>
                               </div>
                             )}
                             <div className="text-[9px] text-slate-400 font-bold pt-1 text-right">
@@ -813,9 +1443,16 @@ export default function TeacherStudentProfilePage() {
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Bản cam kết học tập & Rèn luyện</h4>
                         {profileData.commitment ? (
-                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Trạng thái rèn luyện</span>
+                          <div className="bg-slate-50/50 border-2 border-slate-200/60 rounded-3xl p-6 space-y-5 shadow-xs relative overflow-hidden">
+                            {/* Decorative Seal design */}
+                            <div className="absolute top-4 right-4 w-16 h-16 rounded-full border-4 border-slate-200/50 flex items-center justify-center select-none pointer-events-none">
+                              <span className="text-[7px] text-slate-355 font-black tracking-widest uppercase">Verified</span>
+                            </div>
+
+                            <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
+                              <div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mã cam kết: LSC-{profileData.commitment.id.substring(0, 5).toUpperCase()}</span>
+                              </div>
                               <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${
                                 profileData.commitment.status === "COMPLETED"
                                   ? "bg-green-50 text-green-700 border-green-200"
@@ -823,15 +1460,15 @@ export default function TeacherStudentProfilePage() {
                                   ? "bg-red-50 text-red-700 border-red-200"
                                   : "bg-blue-50 text-blue-700 border-blue-200"
                               }`}>
-                                {profileData.commitment.status === "COMPLETED" ? "Đã hoàn thành tốt" : profileData.commitment.status === "VIOLATED" ? "Vi phạm" : "Đang thực hiện"}
+                                {profileData.commitment.status === "COMPLETED" ? "Đã hoàn thành tốt" : profileData.commitment.status === "VIOLATED" ? "Vi phạm cam kết" : "Đang thực hiện"}
                               </span>
                             </div>
                             
-                            <div className="bg-white p-4 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 leading-relaxed whitespace-pre-line">
-                              {profileData.commitment.content}
+                            <div className="bg-white p-5 rounded-2xl border border-slate-200 text-xs font-semibold text-slate-750 leading-relaxed whitespace-pre-line shadow-inner max-w-2xl mx-auto italic">
+                              "{profileData.commitment.content}"
                             </div>
                             
-                            <div className="text-[9px] text-slate-400 font-bold text-right">
+                            <div className="text-[9px] text-slate-455 font-bold text-right pt-2 border-t border-slate-100">
                               Lập bởi: {profileData.commitment.teacherName} • Cập nhật cuối: {new Date(profileData.commitment.updatedAt).toLocaleDateString('vi-VN')}
                             </div>
                           </div>
@@ -848,18 +1485,25 @@ export default function TeacherStudentProfilePage() {
                         {profileData.projects?.length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia dự án học tập nào.</div>
                         ) : (
-                          <div className="space-y-3">
+                          <div className="grid grid-cols-1 gap-3">
                             {profileData.projects.map((p: any) => (
-                              <div key={p.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold">
+                              <div key={p.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-350 hover:shadow-2xs transition-all">
                                 <div className="flex items-start justify-between gap-3">
                                   <div>
-                                    <h4 className="font-extrabold text-sm text-slate-800">{p.projectName}</h4>
-                                    <p className="text-[10px] text-[#00A99D] font-bold mt-0.5">Vai trò: {p.role || "N/A"} • Kết quả: {p.result}</p>
+                                    <h4 className="font-extrabold text-sm text-slate-805">{p.projectName}</h4>
+                                    <div className="flex gap-2 mt-1.5">
+                                      <span className="text-[9px] bg-[#00A99D]/15 text-[#00A99D] border border-[#00A99D]/20 px-2 py-0.5 rounded font-black uppercase">
+                                        Vai trò: {p.role || "N/A"}
+                                      </span>
+                                      <span className="text-[9px] bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded font-black uppercase">
+                                        Kết quả: {p.result}
+                                      </span>
+                                    </div>
                                   </div>
                                 </div>
                                 {p.notes && (
-                                  <div className="text-xs text-slate-600 bg-white border border-slate-200 p-3 rounded-lg mt-3 font-semibold">
-                                    {p.notes}
+                                  <div className="text-xs text-slate-600 bg-white border border-slate-200 p-3 rounded-lg mt-3 font-semibold italic">
+                                    "{p.notes}"
                                   </div>
                                 )}
                                 <div className="text-[9px] text-slate-400 font-bold border-t border-slate-100 pt-2 mt-3 flex justify-between">
@@ -868,6 +1512,109 @@ export default function TeacherStudentProfilePage() {
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* TAB: COMMENTS */}
+                    {activeTab === "comments" && (
+                      <div className="space-y-6">
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 flex justify-between items-center">
+                          <span>Nhận xét nổi bật định kỳ từ Giáo viên Chủ nhiệm</span>
+                          <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            GVCN Đánh giá
+                          </span>
+                        </h4>
+
+                        {/* Input form to add new comment */}
+                        <form onSubmit={handleCreateCommentSubmit} className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <label className="text-xs font-bold text-slate-500 whitespace-nowrap">Phân loại nhận xét:</label>
+                            <select
+                              value={commentCategory}
+                              onChange={(e) => setCommentCategory(e.target.value)}
+                              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
+                            >
+                              <option value="CHUNG">Chung</option>
+                              <option value="HỌC TẬP">Học tập</option>
+                              <option value="RÈN LUYỆN">Rèn luyện</option>
+                              <option value="ĐẠO ĐỨC">Đạo đức</option>
+                            </select>
+                          </div>
+                          <textarea
+                            value={newCommentText}
+                            onChange={(e) => setNewCommentText(e.target.value)}
+                            placeholder={`Thêm nhận xét nổi bật mới về kết quả học tập/rèn luyện của học sinh ${selectedStudent?.studentName}...`}
+                            rows={3}
+                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D] resize-none"
+                          />
+                          <div className="flex justify-end">
+                            <button
+                              type="submit"
+                              disabled={postingComment || !newCommentText.trim()}
+                              className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
+                            >
+                              {postingComment ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Plus className="w-3.5 h-3.5" />
+                              )}
+                              <span>Thêm nhận xét</span>
+                            </button>
+                          </div>
+                        </form>
+
+                        {/* List of comments */}
+                        {profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT").length === 0 ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                            Chưa có nhận xét nổi bật định kỳ nào từ giáo viên chủ nhiệm.
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {profileData.highlightComments
+                              .filter((c: any) => c.category !== "ANNOUNCEMENT")
+                              .map((c: any) => (
+                                <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 transition-all">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="inline-block px-2.5 py-0.5 bg-[#00A99D]/15 text-[#00A99D] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#00A99D]/10">
+                                      {c.category || "Chung"}
+                                    </span>
+                                    <button
+                                      onClick={async () => {
+                                        if (!confirm("Bạn có chắc chắn muốn xóa nhận xét này?")) return
+                                        try {
+                                          const deleteRes = await fetch("/api/teacher-student-records?action=deleteHighlightComment", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ id: c.id })
+                                          })
+                                          if (deleteRes.ok) {
+                                            // Refresh profile data
+                                            const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+                                            if (profileRes.ok) {
+                                              const data = await profileRes.json()
+                                              setProfileData(data)
+                                            }
+                                          }
+                                        } catch (err) {
+                                          console.error("Error deleting comment:", err)
+                                        }
+                                      }}
+                                      className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                  <p className="text-xs text-slate-705 bg-white border border-slate-200 p-3 rounded-lg font-semibold leading-relaxed">
+                                    {c.comment}
+                                  </p>
+                                  <div className="text-[9px] text-slate-400 font-bold border-t border-slate-100 pt-2 mt-3 flex justify-between">
+                                    <span>Ghi nhận bởi: {c.teacherName} (GVCN)</span>
+                                    <span>{new Date(c.updatedAt).toLocaleDateString('vi-VN')}</span>
+                                  </div>
+                                </div>
+                              ))}
                           </div>
                         )}
                       </div>
@@ -887,7 +1634,7 @@ export default function TeacherStudentProfilePage() {
                               const gvName = target.assignments?.[0]?.teacher?.teacherName || "Chưa phân công";
 
                               return (
-                                <div key={target.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                                <div key={target.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white hover:border-slate-350 transition-all">
                                   <div className="px-5 py-4 border-b bg-slate-50 flex items-center justify-between flex-wrap gap-2">
                                     <div>
                                       <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mr-2 ${
@@ -910,16 +1657,16 @@ export default function TeacherStudentProfilePage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-slate-500">
                                       <div>
                                         <span>Ngày bắt đầu: </span>
-                                        <span className="text-slate-800">{new Date(target.startDate).toLocaleDateString("vi-VN")}</span>
+                                        <span className="text-slate-800 font-bold">{new Date(target.startDate).toLocaleDateString("vi-VN")}</span>
                                       </div>
                                       <div>
                                         <span>Giáo viên phụ trách: </span>
-                                        <span className="text-slate-800">{gvName}</span>
+                                        <span className="text-slate-800 font-bold">{gvName}</span>
                                       </div>
                                       {target.endDate && (
                                         <div>
                                           <span>Ngày chấm dứt: </span>
-                                          <span className="text-slate-800">{new Date(target.endDate).toLocaleDateString("vi-VN")}</span>
+                                          <span className="text-slate-800 font-bold">{new Date(target.endDate).toLocaleDateString("vi-VN")}</span>
                                         </div>
                                       )}
                                     </div>
@@ -931,20 +1678,24 @@ export default function TeacherStudentProfilePage() {
                                     )}
 
                                     {/* Evaluation timeline for this student target */}
-                                    <div className="pt-2">
-                                      <h5 className="font-black text-slate-700 text-xs uppercase tracking-wide mb-3">Nhật ký nhận xét định kỳ</h5>
+                                    <div className="pt-2 border-t border-slate-100">
+                                      <h5 className="font-black text-slate-700 text-xs uppercase tracking-wide mb-4">Nhật ký nhận xét định kỳ</h5>
                                       {!target.evaluations || target.evaluations.length === 0 ? (
                                         <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
                                       ) : (
-                                        <div className="relative border-l border-slate-200 pl-4 space-y-4 ml-1">
+                                        <div className="relative border-l-2 border-[#00A99D]/30 pl-5 space-y-5 ml-1.5">
                                           {target.evaluations.map((ev: any) => (
-                                            <div key={ev.id} className="relative">
-                                              <span className="absolute -left-[21px] top-1 bg-indigo-500 rounded-full h-2.5 w-2.5 border border-white shadow-xs"></span>
-                                              <div className="text-[10px] text-slate-400 font-bold">
-                                                {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
+                                            <div key={ev.id} className="relative group">
+                                              <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#00A99D] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                                <span className="h-1.5 w-1.5 bg-[#00A99D] rounded-full"></span>
+                                              </span>
+                                              <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1.5 transition-all">
+                                                <div className="text-[10px] text-slate-400 font-bold">
+                                                  {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
+                                                </div>
+                                                <div className="text-xs font-black text-[#00A99D]">Tiến bộ: {ev.trackingLevel}</div>
+                                                <p className="text-xs text-slate-655 font-semibold leading-relaxed">{ev.comment}</p>
                                               </div>
-                                              <div className="text-xs font-black text-indigo-700 mt-0.5">Tiến bộ: {ev.trackingLevel}</div>
-                                              <p className="text-xs text-slate-600 mt-1 leading-relaxed">{ev.comment}</p>
                                             </div>
                                           ))}
                                         </div>
@@ -958,33 +1709,6 @@ export default function TeacherStudentProfilePage() {
                         )}
                       </div>
                     )}
-
-                    {/* TAB: COMMENTS */}
-                    {activeTab === "comments" && (
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Nhận xét nổi bật định kỳ từ Giáo viên Chủ nhiệm</h4>
-                        {profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT").length === 0 ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa có nhận xét nổi bật định kỳ từ giáo viên chủ nhiệm.</div>
-                        ) : (
-                          <div className="space-y-3">
-                            {profileData.highlightComments.filter((c: any) => c.category !== "ANNOUNCEMENT").map((c: any) => (
-                              <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold">
-                                <span className="inline-block px-2.5 py-0.5 bg-[#00A99D]/15 text-[#00A99D] text-[9px] font-black rounded-full uppercase tracking-wider mb-2">
-                                  {c.category || "Chung"}
-                                </span>
-                                <p className="text-xs text-slate-700 bg-white border border-slate-200 p-3 rounded-lg font-semibold leading-relaxed">
-                                  {c.comment}
-                                </p>
-                                <div className="text-[9px] text-slate-400 font-bold border-t border-slate-100 pt-2 mt-3 flex justify-between">
-                                  <span>Ghi nhận bởi: {c.teacherName} (GVCN)</span>
-                                  <span>{new Date(c.updatedAt).toLocaleDateString('vi-VN')}</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="text-xs text-slate-400 italic text-center py-12">Có lỗi xảy ra khi tải thông tin chi tiết.</div>
@@ -992,7 +1716,7 @@ export default function TeacherStudentProfilePage() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-16 text-center no-print">
               <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <h3 className="text-base font-bold text-slate-800">Chọn học sinh</h3>
               <p className="text-slate-400 text-xs mt-1">Chọn học sinh lớp chủ nhiệm ở danh sách cột bên trái để xem đầy đủ hồ sơ tích hợp.</p>
