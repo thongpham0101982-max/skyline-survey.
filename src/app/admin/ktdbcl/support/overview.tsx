@@ -30,8 +30,9 @@ export function OverviewDashboard({
     campuses[0]?.id || ""
   )
 
-  // Chart Mode: "percentage" (Progress Rate %) or "count" (Number of Evaluations)
-  const [chartMode, setChartMode] = useState<"percentage" | "count">("percentage")
+  // Chart Modes for Academic and Psychology (separate states)
+  const [academicChartMode, setAcademicChartMode] = useState<"percentage" | "count">("percentage")
+  const [psychologyChartMode, setPsychologyChartMode] = useState<"percentage" | "count">("percentage")
 
   // ===== KPI: Tổng số học sinh theo dõi (unique) =====
   const uniqueStudentIds = useMemo(() => new Set(targets.map(t => t.studentId)), [targets])
@@ -52,9 +53,6 @@ export function OverviewDashboard({
   const pendingApprovalCount = useMemo(() => targets.filter(t => t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0)).length, [targets])
   const pendingTermCount = useMemo(() => targets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length, [targets])
   const terminatedCount = useMemo(() => targets.filter(t => t.terminationStatus === "TERMINATED").length, [targets])
-
-  // ===== Alert count: những trường hợp cần xử lý =====
-  const alertCount = pendingApprovalCount + pendingTermCount
 
   // ===== GRADE BAR CHART: chỉ từ className =====
   const gradeBarData = useMemo(() => {
@@ -114,34 +112,6 @@ export function OverviewDashboard({
     }
   }, [targets])
 
-  // ===== TOP ALERTS: học sinh thực cần chú ý =====
-  const topAlerts = useMemo(() => {
-    return targets
-      .filter(t => {
-        const daysSince = (Date.now() - new Date(t.startDate).getTime()) / (1000 * 60 * 60 * 24)
-        return t.terminationStatus === "PENDING_TERMINATION" ||
-          (t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && daysSince > 3)
-      })
-      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-      .slice(0, 4) // Limit to 4 to save space
-      .map(t => {
-        const daysSince = Math.round((Date.now() - new Date(t.startDate).getTime()) / (1000 * 60 * 60 * 24))
-        const isPendingTerm = t.terminationStatus === "PENDING_TERMINATION"
-        return {
-          id: t.id,
-          studentName: t.student?.studentName || "–",
-          studentCode: t.student?.studentCode || "",
-          className: t.student?.class?.className || "–",
-          supportType: t.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý",
-          reason: isPendingTerm
-            ? "Chờ xét duyệt kết thúc"
-            : `Chưa phân công sau ${daysSince} ngày`,
-          alertType: isPendingTerm ? "warning" : "error",
-          alertDate: new Date(t.startDate).toLocaleDateString("vi-VN"),
-        }
-      })
-  }, [targets])
-
   // ===== CLASS STATS GROUPED BY CAMPUS =====
   const classCampusStats = useMemo(() => {
     const map: Record<string, Record<string, { className: string; total: number; academic: number; psychology: number }>> = {}
@@ -178,105 +148,101 @@ export function OverviewDashboard({
     return result
   }, [targets, campuses])
 
-  // ===== MONTHLY PROGRESS STATS (Biểu đồ & Bảng dữ liệu) =====
-  const monthlyStats = useMemo(() => {
-    const actualMap: Record<string, {
-      month: string;
-      academicTotal: number;
-      academicGood: number;
-      psychologyTotal: number;
-      psychologyGood: number;
-    }> = {}
-
-    let hasActualEvals = false
+  // ===== EXTRACT REAL MONTHLY EVALUATION DATA (ACADEMIC) =====
+  const academicMonthlyStats = useMemo(() => {
+    const map: Record<string, { month: string; total: number; good: number }> = {}
 
     targets.forEach(t => {
-      const isAcademic = t.supportType === "ACADEMIC"
+      if (t.supportType !== "ACADEMIC") return
       const evals = t.evaluations || []
-      if (evals.length > 0) hasActualEvals = true
 
       evals.forEach((ev: any) => {
         const d = new Date(ev.createdAt)
         const mY = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 
-        if (!actualMap[mY]) {
-          actualMap[mY] = { month: mY, academicTotal: 0, academicGood: 0, psychologyTotal: 0, psychologyGood: 0 }
+        if (!map[mY]) {
+          map[mY] = { month: mY, total: 0, good: 0 }
         }
 
         const level = (ev.trackingLevel || "").toLowerCase()
         const isGood = level.includes("tốt") || level.includes("đạt") || level.includes("tiến bộ") || level.includes("giỏi") || level.includes("cải thiện") || level.includes("khá") || level.includes("good") || level.includes("excellent")
 
-        if (isAcademic) {
-          actualMap[mY].academicTotal++
-          if (isGood) actualMap[mY].academicGood++
-        } else {
-          actualMap[mY].psychologyTotal++
-          if (isGood) actualMap[mY].psychologyGood++
-        }
+        map[mY].total++
+        if (isGood) map[mY].good++
       })
     })
 
-    if (hasActualEvals) {
-      return Object.values(actualMap).sort((a, b) => {
-        const [mA, yA] = a.month.split("/").map(Number)
-        const [mB, yB] = b.month.split("/").map(Number)
-        return yA !== yB ? yA - yB : mA - mB
-      })
-    } else {
-      // simulated values for last 5 months + current month (since mock db evaluations are empty)
-      return [
-        { month: "02/2026", academicTotal: 4, academicGood: 2, psychologyTotal: 1, psychologyGood: 1 },
-        { month: "03/2026", academicTotal: 5, academicGood: 3, psychologyTotal: 1, psychologyGood: 1 },
-        { month: "04/2026", academicTotal: 5, academicGood: 3, psychologyTotal: 2, psychologyGood: 1 },
-        { month: "05/2026", academicTotal: 6, academicGood: 4, psychologyTotal: 2, psychologyGood: 2 },
-        { month: "06/2026", academicTotal: 6, academicGood: 5, psychologyTotal: 3, psychologyGood: 2 },
-        { month: "07/2026", academicTotal: 6, academicGood: 5, psychologyTotal: 3, psychologyGood: 3 },
-      ]
-    }
+    return Object.values(map).sort((a, b) => {
+      const [mA, yA] = a.month.split("/").map(Number)
+      const [mB, yB] = b.month.split("/").map(Number)
+      return yA !== yB ? yA - yB : mA - mB
+    })
   }, [targets])
 
-  // Get max values for SVG Chart mapping
-  const chartMaxVal = useMemo(() => {
-    if (chartMode === "percentage") return 100
-    const maxVal = Math.max(...monthlyStats.map(d => Math.max(d.academicTotal, d.psychologyTotal)))
-    return Math.max(maxVal, 5)
-  }, [monthlyStats, chartMode])
+  // ===== EXTRACT REAL MONTHLY EVALUATION DATA (PSYCHOLOGICAL) =====
+  const psychologyMonthlyStats = useMemo(() => {
+    const map: Record<string, { month: string; total: number; good: number }> = {}
 
-  // SVG Chart Plotting Coordinates
-  const chartPoints = useMemo(() => {
+    targets.forEach(t => {
+      if (t.supportType !== "PSYCHOLOGICAL") return
+      const evals = t.evaluations || []
+
+      evals.forEach((ev: any) => {
+        const d = new Date(ev.createdAt)
+        const mY = `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
+
+        if (!map[mY]) {
+          map[mY] = { month: mY, total: 0, good: 0 }
+        }
+
+        const level = (ev.trackingLevel || "").toLowerCase()
+        const isGood = level.includes("tốt") || level.includes("đạt") || level.includes("tiến bộ") || level.includes("giỏi") || level.includes("cải thiện") || level.includes("khá") || level.includes("good") || level.includes("excellent")
+
+        map[mY].total++
+        if (isGood) map[mY].good++
+      })
+    })
+
+    return Object.values(map).sort((a, b) => {
+      const [mA, yA] = a.month.split("/").map(Number)
+      const [mB, yB] = b.month.split("/").map(Number)
+      return yA !== yB ? yA - yB : mA - mB
+    })
+  }, [targets])
+
+  // Helper function to calculate SVG coordinates and paths
+  const getChartPlot = (data: Array<{ month: string; total: number; good: number }>, mode: "percentage" | "count") => {
+    if (data.length === 0) return null
+
     const width = 410
-    const height = 130
-    const paddingLeft = 45
-    const paddingTop = 20
-    const xInterval = width / (monthlyStats.length - 1 || 1)
+    const height = 110
+    const paddingLeft = 40
+    const paddingTop = 15
 
-    const acadPoints = monthlyStats.map((d, i) => {
-      const x = paddingLeft + i * xInterval
-      const val = chartMode === "percentage"
-        ? (d.academicTotal > 0 ? (d.academicGood / d.academicTotal) * 100 : 0)
-        : d.academicTotal
-      const y = paddingTop + height - (val / chartMaxVal) * height
+    const maxVal = mode === "percentage" ? 100 : Math.max(...data.map(d => d.total), 5)
+
+    const points = data.map((d, i) => {
+      const x = data.length === 1
+        ? paddingLeft + width / 2
+        : paddingLeft + i * (width / (data.length - 1))
+
+      const val = mode === "percentage"
+        ? (d.total > 0 ? (d.good / d.total) * 100 : 0)
+        : d.total
+
+      const y = paddingTop + height - (val / maxVal) * height
       return { x, y, val: Math.round(val), raw: d }
     })
 
-    const psychPoints = monthlyStats.map((d, i) => {
-      const x = paddingLeft + i * xInterval
-      const val = chartMode === "percentage"
-        ? (d.psychologyTotal > 0 ? (d.psychologyGood / d.psychologyTotal) * 100 : 0)
-        : d.psychologyTotal
-      const y = paddingTop + height - (val / chartMaxVal) * height
-      return { x, y, val: Math.round(val), raw: d }
-    })
+    const path = "M " + points.map(p => `${p.x} ${p.y}`).join(" L ")
+    const area = path + ` L ${points[points.length - 1].x} ${paddingTop + height} L ${points[0].x} ${paddingTop + height} Z`
 
-    return { acadPoints, psychPoints, height, width, paddingLeft, paddingTop }
-  }, [monthlyStats, chartMode, chartMaxVal])
+    return { points, path, area, height, width, paddingLeft, paddingTop, maxVal }
+  }
 
-  const pathAcademic = "M " + chartPoints.acadPoints.map(p => `${p.x} ${p.y}`).join(" L ")
-  const pathPsychology = "M " + chartPoints.psychPoints.map(p => `${p.x} ${p.y}`).join(" L ")
-
-  // Area paths for gradient fills
-  const areaAcademic = pathAcademic + ` L ${chartPoints.acadPoints[chartPoints.acadPoints.length - 1].x} ${chartPoints.paddingTop + chartPoints.height} L ${chartPoints.acadPoints[0].x} ${chartPoints.paddingTop + chartPoints.height} Z`
-  const areaPsychology = pathPsychology + ` L ${chartPoints.psychPoints[chartPoints.psychPoints.length - 1].x} ${chartPoints.paddingTop + chartPoints.height} L ${chartPoints.psychPoints[0].x} ${chartPoints.paddingTop + chartPoints.height} Z`
+  // Generate plot parameters for both charts
+  const academicPlot = useMemo(() => getChartPlot(academicMonthlyStats, academicChartMode), [academicMonthlyStats, academicChartMode])
+  const psychologyPlot = useMemo(() => getChartPlot(psychologyMonthlyStats, psychologyChartMode), [psychologyMonthlyStats, psychologyChartMode])
 
   // ===== SUBJECT STATS: Môn học là Môn hỗ trợ =====
   const subjectStats = useMemo(() => {
@@ -401,14 +367,16 @@ export function OverviewDashboard({
             </div>
           </div>
 
-          {/* Needs attention */}
+          {/* Combined Progress */}
           <div className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors">
-            <div className="p-1.5 bg-rose-50 text-rose-600 rounded-lg">
-              <AlertTriangle className="h-4.5 w-4.5" />
+            <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
+              <TrendingUp className="h-4.5 w-4.5" />
             </div>
             <div>
-              <div className="text-base font-black text-slate-800 leading-none">{alertCount}</div>
-              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">Yêu cầu xử lý</div>
+              <div className="text-base font-black text-slate-800 leading-none">
+                {progressData ? `${progressData.good}%` : "–"}
+              </div>
+              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">Tỷ lệ tiến bộ chung</div>
             </div>
           </div>
         </div>
@@ -420,34 +388,34 @@ export function OverviewDashboard({
         {/* LEFT COLUMN: Biểu đồ Tiến độ, Môn học, Giáo viên (Col-span 2) */}
         <div className="lg:col-span-2 space-y-4">
 
-          {/* 1. BIỂU ĐỒ & BẢNG TIẾN ĐỘ THÁNG */}
+          {/* 1. CHART & TABLE: PHỤ ĐẠO HỌC TẬP THEO THÁNG */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div>
                 <h2 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                  <TrendingUp className="h-4 w-4 text-emerald-500" />
-                  Theo dõi Tiến độ Hỗ trợ Phụ đạo & Tâm lý theo Tháng
+                  <BookOpen className="h-4 w-4 text-blue-500" />
+                  Tiến độ Hỗ trợ Phụ đạo Học tập theo Tháng
                 </h2>
-                <p className="text-[10px] text-slate-400">Chỉ số tiến bộ và số lượng đánh giá tổng hợp</p>
+                <p className="text-[10px] text-slate-400">Xu hướng tỉ lệ tiến bộ và số lượng đánh giá thực tế của Phụ đạo</p>
               </div>
 
               {/* Mode Toggle Switcher */}
               <div className="flex bg-slate-100 p-0.5 rounded-lg w-fit self-end sm:self-auto">
                 <button
-                  onClick={() => setChartMode("percentage")}
+                  onClick={() => setAcademicChartMode("percentage")}
                   className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
-                    chartMode === "percentage"
-                      ? "bg-white text-indigo-700 shadow-xs"
+                    academicChartMode === "percentage"
+                      ? "bg-white text-blue-700 shadow-xs"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
                   Tỷ lệ tiến bộ (%)
                 </button>
                 <button
-                  onClick={() => setChartMode("count")}
+                  onClick={() => setAcademicChartMode("count")}
                   className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
-                    chartMode === "count"
-                      ? "bg-white text-indigo-700 shadow-xs"
+                    academicChartMode === "count"
+                      ? "bg-white text-blue-700 shadow-xs"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
@@ -456,146 +424,239 @@ export function OverviewDashboard({
               </div>
             </div>
 
-            {/* Split layout inside: Chart on Left, Data Table on Right */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-              {/* Chart (3/5 width) */}
-              <div className="md:col-span-3">
-                <div className="relative w-full overflow-hidden">
-                  <svg viewBox="0 0 490 180" className="w-full h-auto">
-                    <defs>
-                      <linearGradient id="gradAcad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-                      </linearGradient>
-                      <linearGradient id="gradPsych" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
-                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-
-                    {/* Horizontal Grid lines */}
-                    {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
-                      const y = chartPoints.paddingTop + r * chartPoints.height
-                      const isBase = idx === 4
-                      return (
-                        <g key={idx}>
-                          <line
-                            x1={chartPoints.paddingLeft}
-                            y1={y}
-                            x2={chartPoints.paddingLeft + chartPoints.width}
-                            y2={y}
-                            stroke={isBase ? "#cbd5e1" : "#f1f5f9"}
-                            strokeWidth={isBase ? 1.5 : 1}
-                          />
-                          {/* Y Label */}
-                          <text
-                            x={chartPoints.paddingLeft - 8}
-                            y={y + 3.5}
-                            textAnchor="end"
-                            className="text-[8px] fill-slate-400 font-bold"
-                          >
-                            {chartMode === "percentage"
-                              ? `${100 - r * 100}%`
-                              : `${Math.round(chartMaxVal - r * chartMaxVal)}`}
-                          </text>
-                        </g>
-                      )
-                    })}
-
-                    {/* Gradient Area under Paths */}
-                    <path d={areaAcademic} fill="url(#gradAcad)" />
-                    <path d={areaPsychology} fill="url(#gradPsych)" />
-
-                    {/* Line Paths */}
-                    <path d={pathAcademic} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
-                    <path d={pathPsychology} fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" />
-
-                    {/* Markers & Labels for Academic (Blue) */}
-                    {chartPoints.acadPoints.map((p, i) => (
-                      <g key={`acad-${i}`} className="group/node">
-                        <circle cx={p.x} cy={p.y} r="4" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" />
-                        {/* Text Label on top of node */}
-                        <rect x={p.x - 12} y={p.y - 15} width="24" height="10" rx="2" fill="#1e293b" opacity="0.85" />
-                        <text x={p.x} y={p.y - 7} textAnchor="middle" className="text-[7px] font-bold fill-white">
-                          {chartMode === "percentage" ? `${p.val}%` : p.val}
-                        </text>
-                        {/* X Axis Label */}
-                        <text x={p.x} y={chartPoints.paddingTop + chartPoints.height + 15} textAnchor="middle" className="text-[9px] fill-slate-400 font-bold">
-                          Th{p.raw.month.split("/")[0]}
-                        </text>
-                      </g>
-                    ))}
-
-                    {/* Markers & Labels for Psychology (Purple) */}
-                    {chartPoints.psychPoints.map((p, i) => (
-                      <g key={`psych-${i}`}>
-                        <circle cx={p.x} cy={p.y} r="4" fill="#8b5cf6" stroke="#ffffff" strokeWidth="1.5" />
-                        {/* Text Label below of node */}
-                        <rect x={p.x - 12} y={p.y + 6} width="24" height="10" rx="2" fill="#475569" opacity="0.85" />
-                        <text x={p.x} y={p.y + 14} textAnchor="middle" className="text-[7px] font-bold fill-white">
-                          {chartMode === "percentage" ? `${p.val}%` : p.val}
-                        </text>
-                      </g>
-                    ))}
-                  </svg>
-                </div>
-
-                <div className="flex items-center gap-4 mt-1 px-11">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-blue-500" />
-                    <span className="text-[9px] font-bold text-slate-500">Phụ đạo Học tập</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-purple-500" />
-                    <span className="text-[9px] font-bold text-slate-500">Hỗ trợ tâm lý</span>
-                  </div>
-                </div>
+            {academicMonthlyStats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
+                <BookOpen className="h-6 w-6 mb-1 text-slate-300" />
+                <span className="text-[10px]">Chưa ghi nhận dữ liệu đánh giá Phụ đạo Học tập theo Tháng</span>
               </div>
+            ) : academicPlot && (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                {/* SVG Line Chart */}
+                <div className="md:col-span-3">
+                  <div className="relative w-full overflow-hidden">
+                    <svg viewBox="0 0 490 170" className="w-full h-auto">
+                      <defs>
+                        <linearGradient id="gradAcad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
 
-              {/* Data Table (2/5 width) */}
-              <div className="md:col-span-2 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Bảng Số Liệu Chi Tiết</span>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-[10px] text-slate-600">
-                    <thead>
-                      <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
-                        <th className="py-1 px-1 text-left">Tháng</th>
-                        <th className="py-1 px-1 text-center text-blue-600">Phụ đạo</th>
-                        <th className="py-1 px-1 text-center text-purple-600">Tâm lý</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium">
-                      {monthlyStats.map((d, i) => {
-                        const acadRate = d.academicTotal > 0 ? Math.round((d.academicGood / d.academicTotal) * 100) : 0
-                        const psychRate = d.psychologyTotal > 0 ? Math.round((d.psychologyGood / d.psychologyTotal) * 100) : 0
+                      {/* Horizontal Grid lines */}
+                      {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
+                        const y = academicPlot.paddingTop + r * academicPlot.height
+                        const isBase = idx === 4
                         return (
-                          <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="py-1 px-1 font-bold text-slate-700">{d.month}</td>
-                            <td className="py-1 px-1 text-center">
-                              {chartMode === "percentage" ? (
-                                <span className="px-1 py-0.5 rounded bg-blue-50 text-blue-700 font-bold">{acadRate}%</span>
-                              ) : (
-                                <span>{d.academicTotal} <span className="text-[8px] text-slate-400">({d.academicGood}đ)</span></span>
-                              )}
-                            </td>
-                            <td className="py-1 px-1 text-center">
-                              {chartMode === "percentage" ? (
-                                <span className="px-1 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">{psychRate}%</span>
-                              ) : (
-                                <span>{d.psychologyTotal} <span className="text-[8px] text-slate-400">({d.psychologyGood}đ)</span></span>
-                              )}
-                            </td>
-                          </tr>
+                          <g key={idx}>
+                            <line
+                              x1={academicPlot.paddingLeft}
+                              y1={y}
+                              x2={academicPlot.paddingLeft + academicPlot.width}
+                              y2={y}
+                              stroke={isBase ? "#cbd5e1" : "#f1f5f9"}
+                              strokeWidth={isBase ? 1.5 : 1}
+                            />
+                            <text
+                              x={academicPlot.paddingLeft - 8}
+                              y={y + 3.5}
+                              textAnchor="end"
+                              className="text-[8px] fill-slate-400 font-bold"
+                            >
+                              {academicChartMode === "percentage"
+                                ? `${100 - r * 100}%`
+                                : `${Math.round(academicPlot.maxVal - r * academicPlot.maxVal)}`}
+                            </text>
+                          </g>
                         )
                       })}
-                    </tbody>
-                  </table>
+
+                      <path d={academicPlot.area} fill="url(#gradAcad)" />
+                      <path d={academicPlot.path} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
+
+                      {academicPlot.points.map((p, i) => (
+                        <g key={`acad-${i}`}>
+                          <circle cx={p.x} cy={p.y} r="4" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" />
+                          <rect x={p.x - 12} y={p.y - 15} width="24" height="10" rx="2" fill="#1e293b" opacity="0.85" />
+                          <text x={p.x} y={p.y - 7} textAnchor="middle" className="text-[7px] font-bold fill-white">
+                            {academicChartMode === "percentage" ? `${p.val}%` : p.val}
+                          </text>
+                          <text x={p.x} y={academicPlot.paddingTop + academicPlot.height + 15} textAnchor="middle" className="text-[9px] fill-slate-400 font-bold">
+                            Th{p.raw.month.split("/")[0]}
+                          </text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Table Data */}
+                <div className="md:col-span-2 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Số liệu Phụ đạo</span>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-[10px] text-slate-600">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
+                          <th className="py-1 px-1 text-left">Tháng</th>
+                          <th className="py-1 px-1 text-center">Tổng số đánh giá</th>
+                          <th className="py-1 px-1 text-center">Đạt & tiến bộ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {academicMonthlyStats.map((d, i) => {
+                          const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
+                          return (
+                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-1 px-1 font-bold text-slate-700">{d.month}</td>
+                              <td className="py-1 px-1 text-center">{d.total}</td>
+                              <td className="py-1 px-1 text-center">
+                                <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold">{d.good} ({rate}%)</span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* 2. LƯỚI BÁO CÁO: MÔN HỌC & GIÁO VIÊN ĐỒNG BỘ MÔN HỖ TRỢ */}
+          {/* 2. CHART & TABLE: HỖ TRỢ TÂM LÝ THEO THÁNG */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <h2 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                  <Brain className="h-4 w-4 text-purple-500" />
+                  Tiến độ Hỗ trợ Tâm lý theo Tháng
+                </h2>
+                <p className="text-[10px] text-slate-400">Xu hướng tỉ lệ tiến bộ và số lượng đánh giá thực tế của Tâm lý</p>
+              </div>
+
+              {/* Mode Toggle Switcher */}
+              <div className="flex bg-slate-100 p-0.5 rounded-lg w-fit self-end sm:self-auto">
+                <button
+                  onClick={() => setPsychologyChartMode("percentage")}
+                  className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
+                    psychologyChartMode === "percentage"
+                      ? "bg-white text-purple-700 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Tỷ lệ tiến bộ (%)
+                </button>
+                <button
+                  onClick={() => setPsychologyChartMode("count")}
+                  className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
+                    psychologyChartMode === "count"
+                      ? "bg-white text-purple-700 shadow-xs"
+                      : "text-slate-500 hover:text-slate-800"
+                  }`}
+                >
+                  Số lượng đánh giá
+                </button>
+              </div>
+            </div>
+
+            {psychologyMonthlyStats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
+                <Brain className="h-6 w-6 mb-1 text-slate-300" />
+                <span className="text-[10px]">Chưa ghi nhận dữ liệu đánh giá Hỗ trợ Tâm lý theo Tháng</span>
+              </div>
+            ) : psychologyPlot && (
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                {/* SVG Line Chart */}
+                <div className="md:col-span-3">
+                  <div className="relative w-full overflow-hidden">
+                    <svg viewBox="0 0 490 170" className="w-full h-auto">
+                      <defs>
+                        <linearGradient id="gradPsych" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Horizontal Grid lines */}
+                      {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
+                        const y = psychologyPlot.paddingTop + r * psychologyPlot.height
+                        const isBase = idx === 4
+                        return (
+                          <g key={idx}>
+                            <line
+                              x1={psychologyPlot.paddingLeft}
+                              y1={y}
+                              x2={psychologyPlot.paddingLeft + psychologyPlot.width}
+                              y2={y}
+                              stroke={isBase ? "#cbd5e1" : "#f1f5f9"}
+                              strokeWidth={isBase ? 1.5 : 1}
+                            />
+                            <text
+                              x={psychologyPlot.paddingLeft - 8}
+                              y={y + 3.5}
+                              textAnchor="end"
+                              className="text-[8px] fill-slate-400 font-bold"
+                            >
+                              {psychologyChartMode === "percentage"
+                                ? `${100 - r * 100}%`
+                                : `${Math.round(psychologyPlot.maxVal - r * psychologyPlot.maxVal)}`}
+                            </text>
+                          </g>
+                        )
+                      })}
+
+                      <path d={psychologyPlot.area} fill="url(#gradPsych)" />
+                      <path d={psychologyPlot.path} fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" />
+
+                      {psychologyPlot.points.map((p, i) => (
+                        <g key={`psych-${i}`}>
+                          <circle cx={p.x} cy={p.y} r="4" fill="#8b5cf6" stroke="#ffffff" strokeWidth="1.5" />
+                          <rect x={p.x - 12} y={p.y - 15} width="24" height="10" rx="2" fill="#1e293b" opacity="0.85" />
+                          <text x={p.x} y={p.y - 7} textAnchor="middle" className="text-[7px] font-bold fill-white">
+                            {psychologyChartMode === "percentage" ? `${p.val}%` : p.val}
+                          </text>
+                          <text x={p.x} y={psychologyPlot.paddingTop + psychologyPlot.height + 15} textAnchor="middle" className="text-[9px] fill-slate-400 font-bold">
+                            Th{p.raw.month.split("/")[0]}
+                          </text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Table Data */}
+                <div className="md:col-span-2 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Số liệu Tâm lý</span>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full text-[10px] text-slate-600">
+                      <thead>
+                        <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
+                          <th className="py-1 px-1 text-left">Tháng</th>
+                          <th className="py-1 px-1 text-center">Tổng số đánh giá</th>
+                          <th className="py-1 px-1 text-center">Đạt & tiến bộ</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {psychologyMonthlyStats.map((d, i) => {
+                          const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
+                          return (
+                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                              <td className="py-1 px-1 font-bold text-slate-700">{d.month}</td>
+                              <td className="py-1 px-1 text-center">{d.total}</td>
+                              <td className="py-1 px-1 text-center">
+                                <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">{d.good} ({rate}%)</span>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 3. LƯỚI BÁO CÁO: MÔN HỌC & GIÁO VIÊN ĐỒNG BỘ MÔN HỖ TRỢ */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Bảng Môn học */}
@@ -717,7 +778,7 @@ export function OverviewDashboard({
 
         </div>
 
-        {/* RIGHT COLUMN: Thống kê Khối, Tiến độ Donut, Thống kê Lớp tại Cơ sở, Cảnh báo (Col-span 1) */}
+        {/* RIGHT COLUMN: Thống kê Khối, Tiến độ Donut, Thống kê Lớp tại Cơ sở (Col-span 1) */}
         <div className="space-y-4">
 
           {/* 1. THỐNG KÊ LỚP TẠI CƠ SỞ (TABS) */}
@@ -751,7 +812,7 @@ export function OverviewDashboard({
                 Cơ sở này hiện chưa có học sinh theo dõi
               </div>
             ) : (
-              <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                 {classCampusStats[selectedCampusTabId].map((classItem, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/60 border border-slate-100 transition-colors">
                     <div className="flex items-center gap-2">
@@ -781,7 +842,7 @@ export function OverviewDashboard({
             )}
           </div>
 
-          {/* 2. THỐNG KÊ THEO KHỐI & TIẾN ĐỘ DONUT */}
+          {/* 2. THỐNG KÊ THEO KHỐI & TIẾN ĐỘ DONUT (GỘP BỐ CỤC CÂN ĐỐI) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
 
             {/* Thống kê khối */}
@@ -829,8 +890,8 @@ export function OverviewDashboard({
               <p className="text-[9px] text-slate-400 mb-2">Kết quả các đợt đánh giá định kỳ</p>
 
               {!progressData ? (
-                <div className="flex flex-col items-center justify-center py-4 text-slate-400">
-                  <TrendingUp className="h-5 w-7 mb-0.5 opacity-30" />
+                <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                  <TrendingUp className="h-5 w-7 mb-0.5 opacity-30 text-emerald-500" />
                   <span className="text-[9px] text-center">Chưa ghi nhận đánh giá định kỳ</span>
                 </div>
               ) : (
@@ -887,72 +948,6 @@ export function OverviewDashboard({
               )}
             </div>
 
-          </div>
-
-          {/* 3. CÔNG VIỆC CẦN XỬ LÝ & CẢNH BÁO HỌC SINH CẦN CHÚ Ý (GỘP CHUNG BỐ CỤC HỢP LÝ) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-            <h2 className="text-xs font-black text-slate-800 mb-2.5 flex items-center gap-1.5">
-              <Bell className="h-3.5 w-3.5 text-amber-500" />
-              Nhiệm vụ & Cảnh báo cần xử lý
-            </h2>
-
-            <div className="space-y-2">
-              {/* Task: Chờ phân công */}
-              {pendingApprovalCount > 0 && (
-                <div className="flex items-start gap-2 p-1.5 rounded-lg bg-orange-50/50 border border-orange-100 text-[10px]">
-                  <div className="p-0.5 bg-orange-100 rounded-md text-orange-600 mt-0.5">
-                    <UserCheck className="h-3 w-3" />
-                  </div>
-                  <div className="text-slate-700">
-                    Có <span className="text-orange-700 font-bold">{pendingApprovalCount} hồ sơ</span> đang chờ phân công giáo viên.
-                  </div>
-                </div>
-              )}
-
-              {/* Task: Chờ kết thúc */}
-              {pendingTermCount > 0 && (
-                <div className="flex items-start gap-2 p-1.5 rounded-lg bg-amber-50/50 border border-amber-100 text-[10px]">
-                  <div className="p-0.5 bg-amber-100 rounded-md text-amber-600 mt-0.5">
-                    <Clock className="h-3 w-3" />
-                  </div>
-                  <div className="text-slate-700">
-                    Có <span className="text-amber-700 font-bold">{pendingTermCount} trường hợp</span> chờ duyệt kết thúc.
-                  </div>
-                </div>
-              )}
-
-              {/* Alert: Học sinh cần chú ý */}
-              {topAlerts.length > 0 ? (
-                <div className="border-t border-slate-100 pt-2.5 mt-1 space-y-1.5">
-                  <div className="flex items-center justify-between text-[9px] text-slate-400 font-bold">
-                    <span>HỌC SINH CẦN CHÚ Ý</span>
-                    <span className="px-1 py-0.2 bg-rose-100 text-rose-700 rounded-md">CẢNH BÁO ({topAlerts.length})</span>
-                  </div>
-                  <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
-                    {topAlerts.map((alert, i) => (
-                      <div key={i} className={`p-1.5 rounded-lg border text-[9px] flex flex-col gap-0.5 ${
-                        alert.alertType === "error" ? "bg-rose-50/40 border-rose-100" : "bg-amber-50/40 border-amber-100"
-                      }`}>
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-800 truncate max-w-[120px]">{alert.studentName} ({alert.className})</span>
-                          <span className={`px-1 py-0.2 rounded font-bold text-[7px] ${
-                            alert.supportType === "Phụ đạo" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"
-                          }`}>{alert.supportType}</span>
-                        </div>
-                        <span className="text-slate-500 leading-snug">{alert.reason}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                pendingApprovalCount === 0 && pendingTermCount === 0 && (
-                  <div className="flex items-center gap-1.5 text-emerald-600 text-[10px] font-semibold py-1">
-                    <BookOpenCheck className="h-3.5 w-3.5" />
-                    Tất cả công việc đã hoàn thành!
-                  </div>
-                )
-              )}
-            </div>
           </div>
 
         </div>
