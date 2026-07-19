@@ -808,17 +808,6 @@ export function SupportClient({
           Quy định về Kết quả
         </button>
 
-        <button
-          onClick={() => setActiveTab("reports")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
-            activeTab === "reports"
-              ? "border-indigo-600 text-indigo-600 font-bold"
-              : "border-transparent text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          <BarChart3 className="h-4 w-4" />
-          Báo cáo thống kê
-        </button>
       </div>
 
       {/* Tab 0: Tổng quan */}
@@ -1171,8 +1160,8 @@ export function SupportClient({
         </div>
       )}
 
-      {/* Tab 4: Báo cáo thống kê */}
-      {!loading && activeTab === "reports" && (
+      {/* Tab 4: Báo cáo thống kê - Đã bỏ */}
+      {false && (
         <div className="space-y-6">
           {/* Sub-tab navigation for reports */}
           <div className="flex flex-wrap border-b border-slate-200 gap-1 bg-slate-50 p-1 rounded-lg">
