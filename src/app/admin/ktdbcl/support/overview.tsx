@@ -2,9 +2,9 @@
 
 import { useMemo } from "react"
 import {
-  Users, BookOpen, Brain, AlertTriangle, ChevronRight,
+  Users, BookOpen, Brain, AlertTriangle,
   Clock, AlertCircle, UserCheck, BookOpenCheck, Bell,
-  LayoutDashboard, TrendingUp, Shield
+  LayoutDashboard, TrendingUp, Shield, GraduationCap
 } from "lucide-react"
 
 interface OverviewDashboardProps {
@@ -151,6 +151,55 @@ export function OverviewDashboard({
 
   // ===== NO DATA STATE =====
   const hasNoData = targets.length === 0
+
+  // ===== SUBJECT STATS: từ assignments[].subject =====
+  const subjectStats = useMemo(() => {
+    const map: Record<string, { name: string; students: Set<string>; academic: number; psychology: number; active: number; terminated: number }> = {}
+
+    targets.forEach(t => {
+      const subjectAssignments = (t.assignments || []).filter((a: any) => a.subject)
+      if (subjectAssignments.length === 0) return
+      subjectAssignments.forEach((a: any) => {
+        const sId = a.subject.id
+        const sName = a.subject.subjectName
+        if (!map[sId]) map[sId] = { name: sName, students: new Set(), academic: 0, psychology: 0, active: 0, terminated: 0 }
+        map[sId].students.add(t.studentId)
+        if (t.supportType === "ACADEMIC") map[sId].academic++
+        else if (t.supportType === "PSYCHOLOGICAL") map[sId].psychology++
+        if (t.terminationStatus === "ACTIVE" || t.terminationStatus === "PENDING_TERMINATION") map[sId].active++
+        else if (t.terminationStatus === "TERMINATED") map[sId].terminated++
+      })
+    })
+
+    return Object.values(map)
+      .map(v => ({ ...v, total: v.students.size }))
+      .sort((a, b) => b.total - a.total)
+  }, [targets])
+
+  // ===== TEACHER STATS: từ assignments[].teacher =====
+  const teacherStats = useMemo(() => {
+    const map: Record<string, { name: string; students: Set<string>; academic: number; psychology: number; active: number; terminated: number; subjects: Set<string> }> = {}
+
+    targets.forEach(t => {
+      const teacherAssignments = (t.assignments || []).filter((a: any) => a.teacher)
+      if (teacherAssignments.length === 0) return
+      teacherAssignments.forEach((a: any) => {
+        const tId = a.teacher.id
+        const tName = a.teacher.teacherName
+        if (!map[tId]) map[tId] = { name: tName, students: new Set(), academic: 0, psychology: 0, active: 0, terminated: 0, subjects: new Set() }
+        map[tId].students.add(t.studentId)
+        if (t.supportType === "ACADEMIC") map[tId].academic++
+        else if (t.supportType === "PSYCHOLOGICAL") map[tId].psychology++
+        if (t.terminationStatus === "ACTIVE" || t.terminationStatus === "PENDING_TERMINATION") map[tId].active++
+        else if (t.terminationStatus === "TERMINATED") map[tId].terminated++
+        if (a.subject?.subjectName) map[tId].subjects.add(a.subject.subjectName)
+      })
+    })
+
+    return Object.values(map)
+      .map(v => ({ ...v, total: v.students.size, subjectList: Array.from(v.subjects).join(", ") }))
+      .sort((a, b) => b.total - a.total)
+  }, [targets])
 
   const campusColors = [
     { from: "from-violet-500", to: "to-purple-600", shadow: "shadow-violet-100", badge: "bg-violet-100 text-violet-700", ring: "ring-violet-200" },
@@ -517,6 +566,185 @@ export function OverviewDashboard({
               </div>
             )
           })}
+        </div>
+      )}
+      {/* ===== SUBJECT & TEACHER STATS ===== */}
+      {(subjectStats.length > 0 || teacherStats.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+          {/* Thống kê theo Môn học */}
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center gap-2">
+              <div className="p-1.5 bg-blue-100 rounded-lg">
+                <BookOpen className="h-4 w-4 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-800">Thống kê theo Môn học</h2>
+                <p className="text-xs text-slate-400">Số học sinh phụ đạo phân theo từng môn</p>
+              </div>
+            </div>
+
+            {subjectStats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                <BookOpen className="h-7 w-7 mb-2 opacity-25" />
+                <span className="text-xs">Chưa có dữ liệu theo môn</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-4 py-3 text-left font-bold text-slate-500 uppercase tracking-wider">Môn học</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">HS Phụ đạo</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">HS Tâm lý</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">Đang theo dõi</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">Đã kết thúc</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {subjectStats.map((s, i) => {
+                      const maxTotal = subjectStats[0]?.total || 1
+                      const pct = Math.round((s.total / maxTotal) * 100)
+                      return (
+                        <tr key={i} className="hover:bg-blue-50/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-800">{s.name}</span>
+                            </div>
+                            <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                              <div
+                                style={{ width: `${pct}%` }}
+                                className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-black">{s.academic}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {s.psychology > 0 ? (
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-black">{s.psychology}</span>
+                            ) : (
+                              <span className="text-slate-300">–</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-black">{s.active}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {s.terminated > 0 ? (
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-black">{s.terminated}</span>
+                            ) : (
+                              <span className="text-slate-300">–</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-50 border-t border-slate-200">
+                      <td className="px-4 py-2.5 font-bold text-slate-600 text-xs">Tổng cộng</td>
+                      <td className="px-4 py-2.5 text-center font-black text-blue-700">{subjectStats.reduce((s, v) => s + v.academic, 0)}</td>
+                      <td className="px-4 py-2.5 text-center font-black text-purple-700">{subjectStats.reduce((s, v) => s + v.psychology, 0)}</td>
+                      <td className="px-4 py-2.5 text-center font-black text-indigo-700">{subjectStats.reduce((s, v) => s + v.active, 0)}</td>
+                      <td className="px-4 py-2.5 text-center font-black text-emerald-700">{subjectStats.reduce((s, v) => s + v.terminated, 0)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Thống kê theo Giáo viên */}
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="px-5 py-4 border-b bg-gradient-to-r from-emerald-50 to-teal-50 flex items-center gap-2">
+              <div className="p-1.5 bg-emerald-100 rounded-lg">
+                <GraduationCap className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-800">Thống kê theo Giáo viên</h2>
+                <p className="text-xs text-slate-400">Số học sinh được phân công theo từng giáo viên</p>
+              </div>
+            </div>
+
+            {teacherStats.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400">
+                <GraduationCap className="h-7 w-7 mb-2 opacity-25" />
+                <span className="text-xs">Chưa có phân công giáo viên nào</span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-4 py-3 text-left font-bold text-slate-500 uppercase tracking-wider">Giáo viên</th>
+                      <th className="px-4 py-3 text-left font-bold text-slate-500 uppercase tracking-wider">Môn phụ trách</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">Phụ đạo</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">Tâm lý</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">Đang TĐ</th>
+                      <th className="px-4 py-3 text-center font-bold text-slate-500 uppercase tracking-wider">Hoàn thành</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {teacherStats.map((t, i) => {
+                      const maxTotal = teacherStats[0]?.total || 1
+                      const pct = Math.round((t.total / maxTotal) * 100)
+                      return (
+                        <tr key={i} className="hover:bg-emerald-50/30 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className="font-bold text-slate-800">{t.name}</div>
+                            <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                              <div
+                                style={{ width: `${pct}%` }}
+                                className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            {t.subjectList ? (
+                              <span className="text-slate-500 text-[11px]">{t.subjectList}</span>
+                            ) : (
+                              <span className="text-slate-300">–</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100 text-blue-700 font-black">{t.academic}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {t.psychology > 0 ? (
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-black">{t.psychology}</span>
+                            ) : (
+                              <span className="text-slate-300">–</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 font-black">{t.active}</span>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            {t.terminated > 0 ? (
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 font-black">{t.terminated}</span>
+                            ) : (
+                              <span className="text-slate-300">–</span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-slate-50 border-t border-slate-200">
+                      <td className="px-4 py-2.5 font-bold text-slate-600 text-xs" colSpan={2}>Tổng cộng</td>
+                      <td className="px-4 py-2.5 text-center font-black text-blue-700">{teacherStats.reduce((s, v) => s + v.academic, 0)}</td>
+                      <td className="px-4 py-2.5 text-center font-black text-purple-700">{teacherStats.reduce((s, v) => s + v.psychology, 0)}</td>
+                      <td className="px-4 py-2.5 text-center font-black text-indigo-700">{teacherStats.reduce((s, v) => s + v.active, 0)}</td>
+                      <td className="px-4 py-2.5 text-center font-black text-emerald-700">{teacherStats.reduce((s, v) => s + v.terminated, 0)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
