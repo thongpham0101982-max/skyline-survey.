@@ -318,13 +318,13 @@ export function OverviewDashboard({
             <span className="font-bold text-slate-400 mr-1">Trạng thái:</span>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
               <span className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
-              Đang bồi dưỡng: {activeCount}
+              Đang hỗ trợ: {activeCount}
             </span>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-orange-50 text-orange-700 font-bold border border-orange-100">
-              Chờ phân công: {pendingApprovalCount}
+              Cần can thiệp: {pendingApprovalCount}
             </span>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-bold border border-amber-100">
-              Chờ kết thúc: {pendingTermCount}
+              Hoàn thành: {pendingTermCount}
             </span>
             <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-100">
               Đã kết thúc: {terminatedCount}

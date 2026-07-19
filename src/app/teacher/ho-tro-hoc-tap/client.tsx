@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { 
   FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, 
-  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock
+  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -59,7 +59,56 @@ export function TeacherSupportClient({
   const [proposeNotes, setProposeNotes] = useState("")
   const [commitmentCandidates, setCommitmentCandidates] = useState<any[]>([])
   const [studentSearchQuery, setStudentSearchQuery] = useState("")
+  // Month and Level Filters
+  const [monthFilter, setMonthFilter] = useState("ALL")
+  const [levelFilter, setLevelFilter] = useState("ALL")
+
+  // Student Profile / Result Book Modal State
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [selectedProfileStudentId, setSelectedProfileStudentId] = useState(null)
+  const [profileData, setProfileData] = useState(null)
+  const [loadingProfile, setLoadingProfile] = useState(false)
+  const [activeProfileTab, setActiveProfileTab] = useState("overview")
+  const [proposeMonth, setProposeMonth] = useState("Tháng 9")
   const [loadingCommitmentCandidates, setLoadingCommitmentCandidates] = useState(false)
+
+  const getStartDateForMonth = (monthName: string, startYear: number) => {
+    const monthMap = {
+      "Tháng 8": { month: 7, yearOffset: 0 },
+      "Tháng 9": { month: 8, yearOffset: 0 },
+      "Tháng 10": { month: 9, yearOffset: 0 },
+      "Tháng 11": { month: 10, yearOffset: 0 },
+      "Tháng 12": { month: 11, yearOffset: 0 },
+      "Tháng 1": { month: 0, yearOffset: 1 },
+      "Tháng 2": { month: 1, yearOffset: 1 },
+      "Tháng 3": { month: 2, yearOffset: 1 },
+      "Tháng 4": { month: 3, yearOffset: 1 },
+      "Tháng 5": { month: 4, yearOffset: 1 },
+    }
+    const info = monthMap[monthName] || { month: new Date().getMonth(), yearOffset: 0 }
+    return new Date(startYear + info.yearOffset, info.month, 1).toISOString()
+  }
+
+  const handleOpenProfile = async (studentId: string) => {
+    setSelectedProfileStudentId(studentId)
+    setProfileData(null)
+    setLoadingProfile(true)
+    setIsProfileModalOpen(true)
+    setActiveProfileTab("overview")
+    try {
+      const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${studentId}&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      const data = await res.json()
+      if (data.error) {
+        toast.error("Không thể tải hồ sơ học sinh: " + data.error)
+      } else {
+        setProfileData(data)
+      }
+    } catch (e) {
+      toast.error("Lỗi kết nối khi tải hồ sơ: " + e.message)
+    } finally {
+      setLoadingProfile(false)
+    }
+  }
 
   // Evaluation Form States
   const [evalTargetId, setEvalTargetId] = useState("")
@@ -511,6 +560,18 @@ export function TeacherSupportClient({
     if (roleFilter === "ASSIGNED" && !isAssigned) return false
     if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned) return false
 
+    // Apply Month filter
+    if (monthFilter !== "ALL") {
+      const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter)
+      if (!hasEvalInMonth) return false
+    }
+
+    // Apply Level filter
+    const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
+    const latestEval = sortedEvals[0]
+    const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ"
+    if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false
+
     // Apply search query
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
@@ -571,7 +632,77 @@ export function TeacherSupportClient({
         </div>
       </div>
 
+      {/* Statistical Dashboard Cards */}
+      {activeSubTab === "assigned" && (() => {
+        const teacherTargets = targets.filter(t => {
+          const isHR = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId));
+          const isAS = t.assignments?.some((a: any) => a.teacherId === teacher?.id);
+          return isHR || isAS;
+        });
+
+        const activeTargetsCount = teacherTargets.filter(t => t.terminationStatus !== "TERMINATED" && t.terminationStatus !== "PENDING_TERMINATION").length;
+        const pendingTermCount = teacherTargets.filter(t => t.terminationStatus === "PENDING_TERMINATION").length;
+        const completedCount = teacherTargets.filter(t => t.terminationStatus === "TERMINATED").length;
+
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100/50 border border-indigo-200/60 p-5 rounded-2xl shadow-xs transition-all hover:scale-[1.02] duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Học sinh phụ trách</p>
+                  <p className="text-3xl font-black text-indigo-900 mt-1">{teacherTargets.length}</p>
+                </div>
+                <div className="p-2.5 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-indigo-600">
+                  <Users className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="text-[10px] text-indigo-500 mt-2 font-medium">Tổng số học sinh được phân công hoặc chủ nhiệm</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 border border-emerald-200/60 p-5 rounded-2xl shadow-xs transition-all hover:scale-[1.02] duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Đang hỗ trợ</p>
+                  <p className="text-3xl font-black text-emerald-900 mt-1">{activeTargetsCount}</p>
+                </div>
+                <div className="p-2.5 bg-emerald-500/10 rounded-xl border border-emerald-500/20 text-emerald-600">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="text-[10px] text-emerald-500 mt-2 font-medium">Học sinh đang nhận hỗ trợ trong tiến trình</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 border border-amber-200/60 p-5 rounded-2xl shadow-xs transition-all hover:scale-[1.02] duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Hoàn thành</p>
+                  <p className="text-3xl font-black text-amber-900 mt-1">{pendingTermCount}</p>
+                </div>
+                <div className="p-2.5 bg-amber-500/10 rounded-xl border border-amber-200/20 text-amber-600">
+                  <Clock className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="text-[10px] text-amber-500 mt-2 font-medium">Đã gửi đề xuất kết thúc chờ cấp trên duyệt</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 border border-teal-200/60 p-5 rounded-2xl shadow-xs transition-all hover:scale-[1.02] duration-300">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[11px] font-bold text-teal-600 uppercase tracking-wider">Đã kết thúc</p>
+                  <p className="text-3xl font-black text-teal-900 mt-1">{completedCount}</p>
+                </div>
+                <div className="p-2.5 bg-teal-500/10 rounded-xl border border-teal-200/20 text-teal-600">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="text-[10px] text-teal-500 mt-2 font-medium">Học sinh đã hoàn thành chương trình hỗ trợ</p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Sub tabs navigation */}
+
       <div className="flex border-b border-slate-200 gap-6">
         <button
           onClick={() => setActiveSubTab("assigned")}
@@ -631,15 +762,40 @@ export function TeacherSupportClient({
 
         <div className="flex flex-wrap items-center gap-2">
           {activeSubTab === "assigned" && (
-            <select
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value as any)}
-              className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs"
-            >
-              <option value="ALL">Toàn bộ học sinh phụ trách</option>
-              <option value="HOMEROOM">Học sinh lớp Chủ nhiệm</option>
-              <option value="ASSIGNED">Học sinh kèm phụ đạo</option>
-            </select>
+            <>
+              <select
+                value={roleFilter}
+                onChange={e => setRoleFilter(e.target.value as any)}
+                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs font-semibold bg-white cursor-pointer hover:border-slate-450"
+              >
+                <option value="ALL">Toàn bộ học sinh phụ trách</option>
+                <option value="HOMEROOM">Học sinh lớp Chủ nhiệm</option>
+                <option value="ASSIGNED">Học sinh kèm phụ đạo</option>
+              </select>
+
+              <select
+                value={monthFilter}
+                onChange={e => setMonthFilter(e.target.value)}
+                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs font-semibold bg-white cursor-pointer hover:border-slate-450"
+              >
+                <option value="ALL">Tất cả các Tháng</option>
+                {["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"].map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+
+              <select
+                value={levelFilter}
+                onChange={e => setLevelFilter(e.target.value)}
+                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs font-semibold bg-white cursor-pointer hover:border-slate-450"
+              >
+                <option value="ALL">Tất cả Mức độ</option>
+                <option value="Đang hỗ trợ">Đang hỗ trợ (Mặc định)</option>
+                {Array.from(new Set(configs.map(c => c.outcomeLabel))).filter(Boolean).map(l => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+            </>
           )}
 
           <div className="relative">
@@ -746,7 +902,7 @@ export function TeacherSupportClient({
                         <td className="px-4 py-4 whitespace-nowrap text-slate-500 font-medium">{index + 1}</td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-500">{t.student?.studentCode}</td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-800">{t.student?.studentName}</div>
+                          <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName}</button>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-bold">
                           {t.student?.class?.className}
@@ -762,7 +918,7 @@ export function TeacherSupportClient({
                           <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
                             isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
                           }`}>
-                            {isTerminated ? "Hoàn thành bồi dưỡng" : isPending ? "Chờ duyệt kết thúc" : t.status}
+                             {isTerminated ? "Đã kết thúc" : isPending ? "Hoàn thành" : (t.status === "ĐÃ DUYỆT" || t.status === "ACTIVE" ? "Đang hỗ trợ" : "Cần can thiệp")}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-800 font-bold">
@@ -869,21 +1025,21 @@ export function TeacherSupportClient({
                   const isTerminated = existingAcademic?.terminationStatus === "TERMINATED"
                   const isPending = existingAcademic?.terminationStatus === "PENDING_TERMINATION"
 
-                  let statusText = "Chưa đề xuất bồi dưỡng"
+                   let statusText = "Chưa đề xuất hỗ trợ"
                   let statusClass = "bg-slate-100 text-slate-600 border border-slate-200"
 
                   if (existingAcademic) {
                     if (isTerminated) {
-                      statusText = "Hoàn thành bồi dưỡng"
+                      statusText = "Đã kết thúc"
                       statusClass = "bg-emerald-100 text-emerald-800"
                     } else if (isPending) {
-                      statusText = "Chờ duyệt kết thúc"
+                      statusText = "Hoàn thành"
                       statusClass = "bg-amber-100 text-amber-800"
                     } else if (isApproved) {
-                      statusText = "Đang bồi dưỡng (Đã duyệt)"
+                      statusText = "Đang hỗ trợ"
                       statusClass = "bg-emerald-50 text-emerald-700 border border-emerald-200"
                     } else {
-                      statusText = "Đang bồi dưỡng (Chờ duyệt)"
+                      statusText = "Cần can thiệp (Chờ duyệt)"
                       statusClass = "bg-amber-50 text-amber-700 border border-amber-200"
                     }
                   }
@@ -897,7 +1053,7 @@ export function TeacherSupportClient({
                         {s.studentCode}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-bold text-slate-800">{s.studentName}</div>
+                        <button onClick={() => handleOpenProfile(s.id)} className="font-bold text-[#00A99D] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">{s.studentName}</button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-bold text-xs">
                         {s.className}
@@ -1014,7 +1170,7 @@ export function TeacherSupportClient({
                                 ? s.matchedSubjects 
                                 : [s.committedSubjects[0]]
                               setSelectedSubjects(activeSubs)
-                              let scoreDetails = s.committedSubjects.map((sub: string) => {
+                              const scoreDetails = s.committedSubjects.map((sub: string) => {
                                 let scoreDisplay = "Chưa có";
                                 const subLower = sub.toLowerCase();
                                 if (subLower.includes("toán")) {
@@ -1105,7 +1261,7 @@ export function TeacherSupportClient({
                   return (
                     <tr key={t.id} className="hover:bg-slate-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-bold text-slate-800">{t.student?.studentName}</div>
+                        <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName}</button>
                         <div className="text-xs text-slate-500">{t.student?.studentCode}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600">
@@ -1135,12 +1291,12 @@ export function TeacherSupportClient({
                             : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}>
                           {isTerminated 
-                            ? "Hoàn thành bồi dưỡng" 
+                            ? "Đã kết thúc" 
                             : isPending 
-                            ? "Chờ duyệt kết thúc" 
+                            ? "Hoàn thành" 
                             : isApproved 
-                            ? "Đồng ý" 
-                            : "Chờ xét duyệt"}
+                            ? "Đang hỗ trợ" 
+                            : "Cần can thiệp"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
@@ -1543,6 +1699,20 @@ export function TeacherSupportClient({
                     </div>
                   )}
 
+                  {/* Tháng đề xuất bồi dưỡng */}
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Tháng bắt đầu hỗ trợ:</label>
+                    <select
+                      value={proposeMonth}
+                      onChange={e => setProposeMonth(e.target.value)}
+                      className="w-full rounded-xl border-slate-200 border py-2 px-3 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold bg-slate-50 cursor-pointer"
+                    >
+                      {["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"].map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Ghi chú bồi dưỡng ban đầu */}
                   <div className="space-y-1">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Ý kiến / Ghi chú ban đầu:</label>
@@ -1584,10 +1754,10 @@ export function TeacherSupportClient({
       {isEvaluationModalOpen && (() => {
         const isCommitment = activeSubTab === "commitments" || evalTargetObj?.notes?.includes("Cam kết Khảo sát đầu vào");
         
-        let targetLabel = isCommitment ? "Cam kết đầu vào" : "Đề xuất hỗ trợ";
-        let targetColor = isCommitment ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800";
+        const targetLabel = isCommitment ? "Cam kết đầu vào" : "Đề xuất hỗ trợ";
+        const targetColor = isCommitment ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800";
         
-        let startDateLabel = isCommitment ? "Ngày nhập học:" : "Ngày duyệt đề xuất:";
+        const startDateLabel = isCommitment ? "Ngày nhập học:" : "Ngày duyệt đề xuất:";
         let startDateValue = "Chưa có dữ liệu";
         
         if (isCommitment && evalStudent?.enrollmentDate) {
@@ -1717,9 +1887,9 @@ export function TeacherSupportClient({
                       onChange={e => {
                         const val = e.target.value;
                         setEvalTrackingLevel(val);
-                        if (val.includes("Vượt yêu cầu") || val.includes("Hoàn thành")) {
+                        if (val === "Đạt mục tiêu" || val === "Đã ổn định" || val === "Có tiến bộ" || val === "Có cải thiện") {
                           setEvalUpdatedStatus("Đề xuất kết thúc bồi dưỡng");
-                        } else if (val.includes("Chưa đạt") || val.includes("Cần hỗ trợ")) {
+                        } else if (val === "Chưa tiến bộ" || val === "Chưa cải thiện" || val === "Giảm sút" || val === "Diễn biến phức tạp" || val === "Chuyển hỗ trợ chuyên sâu") {
                           setEvalUpdatedStatus("Xây dựng kế hoạch hỗ trợ chuyên sâu");
                         } else if (val) {
                           setEvalUpdatedStatus("Tiếp tục theo dõi");
@@ -1730,9 +1900,26 @@ export function TeacherSupportClient({
                       className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold bg-white"
                     >
                       <option value="">-- Chọn kết quả --</option>
-                      {dynamicLevelOptions.map(c => (
-                        <option key={c.id} value={c.outcomeLabel}>{c.outcomeLabel}</option>
-                      ))}
+                      {evalTargetType === "ACADEMIC" ? (
+                        <>
+                          <option value="Đạt mục tiêu">Đạt mục tiêu</option>
+                          <option value="Có tiến bộ">Có tiến bộ</option>
+                          <option value="Duy trì">Duy trì</option>
+                          <option value="Chưa tiến bộ">Chưa tiến bộ</option>
+                          <option value="Giảm sút">Giảm sút</option>
+                          <option value="Chưa đủ dữ liệu">Chưa đủ dữ liệu</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Đã ổn định">Đã ổn định</option>
+                          <option value="Có cải thiện">Có cải thiện</option>
+                          <option value="Duy trì theo dõi">Duy trì theo dõi</option>
+                          <option value="Chưa cải thiện">Chưa cải thiện</option>
+                          <option value="Diễn biến phức tạp">Diễn biến phức tạp</option>
+                          <option value="Chuyển hỗ trợ chuyên sâu">Chuyển hỗ trợ chuyên sâu</option>
+                          <option value="Chưa đủ dữ liệu">Chưa đủ dữ liệu</option>
+                        </>
+                      )}
                     </select>
                   </div>
 
@@ -1744,9 +1931,9 @@ export function TeacherSupportClient({
                       className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold bg-slate-50 text-indigo-700"
                     >
                       <option value="">-- Chọn đề xuất --</option>
-                      <option value="Đề xuất kết thúc bồi dưỡng">Đề xuất kết thúc bồi dưỡng</option>
-                      <option value="Xây dựng kế hoạch hỗ trợ chuyên sâu">Xây dựng kế hoạch hỗ trợ chuyên sâu</option>
-                      <option value="Tiếp tục theo dõi">Tiếp tục theo dõi / phụ đạo theo kế hoạch</option>
+                      <option value="Đề xuất kết thúc bồi dưỡng">Đề xuất hoàn thành (Kết thúc hỗ trợ)</option>
+                      <option value="Xây dựng kế hoạch hỗ trợ chuyên sâu">Yêu cầu can thiệp / hỗ trợ chuyên sâu</option>
+                      <option value="Tiếp tục theo dõi">Tiếp tục hỗ trợ theo kế hoạch</option>
                     </select>
                   </div>
 
@@ -1839,4 +2026,4 @@ export function TeacherSupportClient({
 
 
 
-// Trigger Vercel deploy $(Get-Date -Format 'yyyyMMdd-HHmmss')
+// Redesigned and updated at 2026-07-19T13:25:40.803Z

@@ -874,10 +874,10 @@ export function SupportClient({
                   className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium bg-white"
                 >
                   <option value="ALL">Tất cả trạng thái</option>
-                  <option value="UNAPPROVED">Chờ duyệt đề xuất</option>
-                  <option value="ACTIVE">Đang bồi dưỡng</option>
-                  <option value="PENDING">Chờ duyệt kết thúc</option>
-                  <option value="TERMINATED">Kết thúc bồi dưỡng</option>
+                  <option value="UNAPPROVED">Cần can thiệp</option>
+                  <option value="ACTIVE">Đang hỗ trợ</option>
+                  <option value="PENDING">Hoàn thành</option>
+                  <option value="TERMINATED">Đã kết thúc</option>
                 </select>
               </div>
             </div>
@@ -1539,7 +1539,7 @@ export function SupportClient({
                 </div>
               </div>
               <div className="bg-white p-5 border rounded-xl shadow-sm text-center">
-                <div className="text-slate-500 text-xs uppercase font-bold tracking-wider font-bold">Hoàn thành bồi dưỡng</div>
+                <div className="text-slate-500 text-xs uppercase font-bold tracking-wider font-bold">Đã kết thúc</div>
                 <div className="text-4xl font-extrabold text-emerald-600 mt-2">
                   {targets.filter(t => t.terminationStatus === "TERMINATED").length}
                 </div>
@@ -2379,12 +2379,12 @@ export function SupportClient({
                           : "bg-indigo-100 text-indigo-800"
 
                         const statusText = t.terminationStatus === "TERMINATED"
-                          ? "Kết thúc bồi dưỡng"
+                          ? "Đã kết thúc"
                           : t.terminationStatus === "PENDING_TERMINATION"
-                          ? "Chờ duyệt kết thúc"
+                          ? "Hoàn thành"
                           : isUnapproved
-                          ? "Chờ duyệt đề xuất"
-                          : "Đã duyệt"
+                          ? "Cần can thiệp"
+                          : "Đang hỗ trợ"
 
                         return (
                           <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
