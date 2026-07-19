@@ -68,6 +68,7 @@ export function SupportClient({
   // Timeline Drawer state
   const [selectedTargetForTimeline, setSelectedTargetForTimeline] = useState<any>(null)
   const [selectedTargetForDetail, setSelectedTargetForDetail] = useState<any>(null)
+  const [selectedTeacherForDetail, setSelectedTeacherForDetail] = useState<any>(null)
 
   // Modal Open states
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false)
@@ -548,6 +549,49 @@ export function SupportClient({
     return matchesType && matchesSource && matchesStatus && matchesSearch
   })
 
+  // Group targets by teacher (createdBy)
+  const groupedTargets = filteredTargets.reduce((acc: any[], target: any) => {
+    const teacherId = target.createdBy?.id || "SYSTEM"
+    const teacherName = target.createdBy?.teacherName || "Hệ thống"
+    
+    let group = acc.find(g => g.teacherId === teacherId)
+    if (!group) {
+      group = {
+        teacherId,
+        teacherName,
+        targets: [],
+        academicCount: 0,
+        psychologyCount: 0,
+        pendingCount: 0,
+        approvedCount: 0,
+        terminatedCount: 0,
+        pendingTerminationCount: 0,
+      }
+      acc.push(group)
+    }
+    
+    group.targets.push(target)
+    
+    if (target.supportType === "ACADEMIC") {
+      group.academicCount++
+    } else {
+      group.psychologyCount++
+    }
+    
+    const isUnapproved = (!target.assignments || target.assignments.length === 0) && target.status !== "ĐÃ DUYỆT"
+    if (target.terminationStatus === "TERMINATED") {
+      group.terminatedCount++
+    } else if (target.terminationStatus === "PENDING_TERMINATION") {
+      group.pendingTerminationCount++
+    } else if (isUnapproved) {
+      group.pendingCount++
+    } else {
+      group.approvedCount++
+    }
+    
+    return acc
+  }, [])
+
   return (
     <div className="space-y-6">
       {/* Upper header section */}
@@ -601,7 +645,7 @@ export function SupportClient({
           }`}
         >
           <Users className="h-4 w-4" />
-          Đối tượng Hỗ trợ theo Giáo viên
+          Học sinh Hỗ trợ
         </button>
 
         <button
@@ -651,120 +695,159 @@ export function SupportClient({
       {/* Tab 1: Đối tượng hỗ trợ */}
       {!loading && activeTab === "targets" && (
         <div className="space-y-4">
+          {/* Filters Bar */}
+          <div className="bg-white border rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo tên hoặc mã học sinh..."
+                value={targetSearch}
+                onChange={e => setTargetSearch(e.target.value)}
+                className="pl-9 pr-4 py-2 w-full rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50"
+              />
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Chương trình:</span>
+                <select
+                  value={targetTypeFilter}
+                  onChange={e => setTargetTypeFilter(e.target.value)}
+                  className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium bg-white"
+                >
+                  <option value="ALL">Tất cả chương trình</option>
+                  <option value="ACADEMIC">Văn hóa (Môn học)</option>
+                  <option value="PSYCHOLOGICAL">Tâm lý</option>
+                </select>
+              </div>
 
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Nguồn:</span>
+                <select
+                  value={targetSourceFilter}
+                  onChange={e => setTargetSourceFilter(e.target.value)}
+                  className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium bg-white"
+                >
+                  <option value="ALL">Tất cả nguồn</option>
+                  <option value="TEACHER_ALL">Đề xuất Giáo viên</option>
+                  <option value="ADMISSION">Khảo sát đầu vào (KSĐV)</option>
+                  <option value="GVCN">Giáo viên Chủ nhiệm</option>
+                  <option value="GVBM">Giáo viên Bộ môn</option>
+                </select>
+              </div>
 
-          {/* Targets Table */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái:</span>
+                <select
+                  value={targetStatusFilter}
+                  onChange={e => setTargetStatusFilter(e.target.value)}
+                  className="rounded-lg border border-slate-300 py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium bg-white"
+                >
+                  <option value="ALL">Tất cả trạng thái</option>
+                  <option value="UNAPPROVED">Chờ duyệt đề xuất</option>
+                  <option value="ACTIVE">Đang bồi dưỡng</option>
+                  <option value="PENDING">Chờ duyệt kết thúc</option>
+                  <option value="TERMINATED">Kết thúc bồi dưỡng</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Grouped Teacher Table */}
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Giáo viên đề xuất</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Loại hỗ trợ</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Số lượng HS đề xuất</th>
                   <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn học / Lĩnh vực</th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái tổng quan</th>
                   <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200 text-sm">
-                {filteredTargets.length === 0 ? (
+                {groupedTargets.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center py-10 text-slate-400">
-                      Không tìm thấy đối tượng bồi dưỡng phù hợp
+                      Không tìm thấy giáo viên đề xuất nào phù hợp
                     </td>
                   </tr>
                 ) : (
-                  filteredTargets.map((t: any) => {
-                    const gvName = t.assignments?.[0]?.teacher?.teacherName || "Chưa phân công"
-                    const isUnapproved = (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT"
-                    const progressBadge = t.terminationStatus === "TERMINATED" 
-                      ? "bg-emerald-100 text-emerald-800"
-                      : t.terminationStatus === "PENDING_TERMINATION"
-                      ? "bg-amber-100 text-amber-800 animate-pulse"
-                      : isUnapproved
-                      ? "bg-orange-100 text-orange-800 font-bold"
-                      : "bg-indigo-100 text-indigo-800"
-
-                    const statusText = t.terminationStatus === "TERMINATED"
-                      ? "Kết thúc bồi dưỡng"
-                      : t.terminationStatus === "PENDING_TERMINATION"
-                      ? "Chờ duyệt kết thúc"
-                      : isUnapproved
-                      ? "Chờ duyệt đề xuất"
-                      : "Đã duyệt"
+                  groupedTargets.map((group: any) => {
+                    const subjectsList = Array.from(
+                      new Set(
+                        group.targets.map((t: any) => {
+                          if (t.supportType === "PSYCHOLOGICAL") return "Tâm lý"
+                          return t.reason?.split(" (")?.[0] || t.reason || "Môn học"
+                        })
+                      )
+                    ).filter(Boolean)
 
                     return (
-                      <tr key={t.id} className="hover:bg-slate-50 transition-colors">
+                      <tr key={group.teacherId} className="hover:bg-slate-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-bold text-slate-800">{t.createdBy?.teacherName || "Hệ thống"}</div>
-                          <div className="text-xs text-slate-500">{t.sourceType === "ADMISSION" ? "Khảo sát đầu vào (KSĐV)" : "Đề xuất"}</div>
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center font-bold text-sm shadow-xs border border-white">
+                              {group.teacherName.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-bold text-slate-800">{group.teacherName}</div>
+                              <div className="text-xs text-slate-500">
+                                {group.teacherId === "SYSTEM" ? "Khảo sát tự động" : "Đề xuất hỗ trợ"}
+                              </div>
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                            t.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
-                          }`}>
-                            {t.supportType === "ACADEMIC" ? "Môn học" : "Tâm lý"}
-                          </span>
+                          <div className="font-semibold text-slate-700">
+                            {group.targets.length} học sinh
+                          </div>
+                          <div className="text-xs text-slate-500 mt-0.5 flex gap-2">
+                            {group.academicCount > 0 && <span>{group.academicCount} Môn học</span>}
+                            {group.psychologyCount > 0 && <span>{group.psychologyCount} Tâm lý</span>}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-700 font-medium">
-                          {t.reason || "-"}
+                        <td className="px-6 py-4">
+                          <div className="flex flex-wrap gap-1.5 max-w-md">
+                            {subjectsList.map((sub: any, idx: number) => (
+                              <span key={idx} className="px-2 py-0.5 rounded-md text-xs font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                                {sub}
+                              </span>
+                            ))}
+                            {subjectsList.length === 0 && <span className="text-slate-400">-</span>}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${progressBadge}`}>
-                            {statusText}
-                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {group.pendingCount > 0 && (
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                                {group.pendingCount} Chờ duyệt
+                              </span>
+                            )}
+                            {group.approvedCount > 0 && (
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                {group.approvedCount} Đang bồi dưỡng
+                              </span>
+                            )}
+                            {group.pendingTerminationCount > 0 && (
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+                                {group.pendingTerminationCount} Chờ kết thúc
+                              </span>
+                            )}
+                            {group.terminatedCount > 0 && (
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                {group.terminatedCount} Đã kết thúc
+                              </span>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
                           <button
-                            onClick={() => setSelectedTargetForDetail(t)}
-                            className="text-teal-600 hover:text-teal-900 font-bold mr-2 text-xs"
+                            onClick={() => setSelectedTeacherForDetail(group)}
+                            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1.5 px-4 rounded-lg text-xs transition-colors border border-indigo-200/50 shadow-xs"
                           >
                             Chi tiết
-                          </button>
-                          <button
-                            onClick={() => setSelectedTargetForTimeline(t)}
-                            className="text-indigo-600 hover:text-indigo-900 font-semibold hover:underline mr-2 text-xs"
-                          >
-                            Timeline
-                          </button>
-
-                          {/* Approval buttons for GĐCS/BGH */}
-                          {isUnapproved && (isGDCS || isKTDBCL) && (
-                            <button
-                              onClick={() => {
-                                setSelectedDuyetIds([t.id])
-                                setIsBulkApproveModalOpen(true)
-                              }}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-2.5 rounded text-xs inline-flex items-center gap-1 shadow-sm mr-2"
-                              title="Duyệt & Phân công"
-                            >
-                              <Check className="h-3 w-3" /> Duyệt
-                            </button>
-                          )}
-
-                          {t.terminationStatus === "PENDING_TERMINATION" && (isGDCS || isKTDBCL) && (
-                            <>
-                              <button
-                                onClick={() => handleApproveTermination(t.id, true)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1 px-2.5 rounded text-xs inline-flex items-center gap-1 shadow-sm"
-                                title="Duyệt kết thúc"
-                              >
-                                <Check className="h-3 w-3" /> Duyệt
-                              </button>
-                              <button
-                                onClick={() => handleApproveTermination(t.id, false)}
-                                className="bg-rose-600 hover:bg-rose-700 text-white font-medium py-1 px-2.5 rounded text-xs inline-flex items-center gap-1 shadow-sm"
-                                title="Từ chối"
-                              >
-                                <X className="h-3 w-3" /> Từ chối
-                              </button>
-                            </>
-                          )}
-
-                          <button
-                            onClick={() => handleDeleteTarget(t.id)}
-                            className="text-rose-600 hover:text-rose-900 p-1 rounded hover:bg-rose-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
@@ -1779,6 +1862,220 @@ export function SupportClient({
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Drawer/Modal: Chi tiết đề xuất theo Giáo viên */}
+      {selectedTeacherForDetail && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-scale-in">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-50/50">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <Users className="h-5 w-5 text-indigo-600" />
+                  Đề xuất hỗ trợ từ Giáo viên: {selectedTeacherForDetail.teacherName}
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tổng số {selectedTeacherForDetail.targets.length} học sinh đề xuất bồi dưỡng
+                </p>
+              </div>
+              <button onClick={() => setSelectedTeacherForDetail(null)}>
+                <X className="h-5 w-5 text-slate-500 hover:text-slate-800" />
+              </button>
+            </div>
+
+            {/* Quick action bar */}
+            <div className="px-6 py-3 bg-slate-50 border-b flex justify-between items-center gap-4 flex-wrap">
+              <div className="text-sm text-slate-600 font-medium">
+                Tìm thấy {selectedTeacherForDetail.targets.length} đề xuất.
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedTeacherForDetail.pendingCount > 0 && (isGDCS || isKTDBCL) && (
+                  <button
+                    onClick={async () => {
+                      const pendingTargetIds = selectedTeacherForDetail.targets
+                        .filter((t: any) => {
+                          const isUnapproved = (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT"
+                          return isUnapproved && t.terminationStatus === "ACTIVE"
+                        })
+                        .map((t: any) => t.id)
+                      
+                      if (pendingTargetIds.length === 0) return
+                      if (!confirm(`Bạn có chắc chắn muốn duyệt nhanh tất cả ${pendingTargetIds.length} đề xuất này?`)) return
+                      
+                      try {
+                        setLoading(true)
+                        const res = await fetch("/api/ktdbcl/support", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            action: "bulkApproveTargets",
+                            academicYearId: selectedYearId,
+                            targetIds: pendingTargetIds,
+                            approve: true
+                          })
+                        })
+                        const data = await res.json()
+                        if (data.error) {
+                          toast.error(data.error)
+                        } else {
+                          toast.success("Đã duyệt tất cả đề xuất thành công!")
+                          // Refresh data
+                          await fetchAllData()
+                          // Close or update modal state
+                          setSelectedTeacherForDetail(null)
+                        }
+                      } catch (e) {
+                        toast.error("Lỗi khi duyệt đề xuất")
+                      } finally {
+                        setLoading(false)
+                      }
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1.5 px-4 rounded-lg text-xs inline-flex items-center gap-1.5 shadow-sm transition-colors"
+                  >
+                    <Check className="h-3.5 w-3.5" /> Duyệt nhanh tất cả ({selectedTeacherForDetail.pendingCount})
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Body: Proposals list table */}
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="border rounded-xl overflow-hidden shadow-xs">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Chương trình / Môn</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lý do đề xuất / Ghi chú</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                      <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200 text-xs">
+                    {selectedTeacherForDetail.targets.map((t: any) => {
+                      const isUnapproved = (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT"
+                      const progressBadge = t.terminationStatus === "TERMINATED" 
+                        ? "bg-emerald-100 text-emerald-800"
+                        : t.terminationStatus === "PENDING_TERMINATION"
+                        ? "bg-amber-100 text-amber-800 animate-pulse"
+                        : isUnapproved
+                        ? "bg-orange-100 text-orange-800 font-bold"
+                        : "bg-indigo-100 text-indigo-800"
+
+                      const statusText = t.terminationStatus === "TERMINATED"
+                        ? "Kết thúc bồi dưỡng"
+                        : t.terminationStatus === "PENDING_TERMINATION"
+                        ? "Chờ duyệt kết thúc"
+                        : isUnapproved
+                        ? "Chờ duyệt đề xuất"
+                        : "Đã duyệt"
+
+                      return (
+                        <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="font-bold text-slate-800">{t.student?.studentName}</div>
+                            <div className="text-[10px] text-slate-500 mt-0.5">
+                              {t.student?.studentCode} • Lớp {t.student?.class?.className}
+                            </div>
+                            <div className="text-[9px] text-slate-400 font-medium">
+                              Cơ sở: {t.student?.class?.campus?.campusName || "-"}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex flex-col gap-1">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold w-fit ${
+                                t.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                              }`}>
+                                {t.supportType === "ACADEMIC" ? "Môn học" : "Tâm lý"}
+                              </span>
+                              <span className="font-semibold text-slate-700 text-[10px] max-w-[150px] truncate" title={t.reason}>
+                                {t.reason || "-"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 max-w-xs">
+                            <p className="text-slate-600 leading-normal line-clamp-2" title={t.notes}>
+                              {t.notes || "Không có ghi chú"}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${progressBadge}`}>
+                              {statusText}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Approval buttons for GĐCS/BGH */}
+                              {isUnapproved && (isGDCS || isKTDBCL) && (
+                                <button
+                                  onClick={() => {
+                                    setSelectedDuyetIds([t.id])
+                                    setIsBulkApproveModalOpen(true)
+                                  }}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2 rounded text-[10px] flex items-center gap-0.5 shadow-xs"
+                                  title="Duyệt & Phân công"
+                                >
+                                  <Check className="h-3 w-3" /> Duyệt
+                                </button>
+                              )}
+
+                              {t.terminationStatus === "PENDING_TERMINATION" && (isGDCS || isKTDBCL) && (
+                                <>
+                                  <button
+                                    onClick={() => handleApproveTermination(t.id, true)}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-1 px-2 rounded text-[10px] flex items-center gap-0.5 shadow-xs"
+                                    title="Duyệt kết thúc"
+                                  >
+                                    <Check className="h-3 w-3" /> Duyệt KT
+                                  </button>
+                                  <button
+                                    onClick={() => handleApproveTermination(t.id, false)}
+                                    className="bg-rose-600 hover:bg-rose-700 text-white font-bold py-1 px-2 rounded text-[10px] flex items-center gap-0.5 shadow-xs"
+                                    title="Từ chối kết thúc"
+                                  >
+                                    <X className="h-3 w-3" /> Từ chối KT
+                                  </button>
+                                </>
+                              )}
+
+                              <button
+                                onClick={() => setSelectedTargetForTimeline(t)}
+                                className="border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-1 px-2.5 rounded text-[10px]"
+                              >
+                                Timeline
+                              </button>
+
+                              {(isGDCS || isKTDBCL) && (
+                                <button
+                                  onClick={() => handleDeleteTarget(t.id)}
+                                  className="border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-rose-600 p-1 rounded transition-colors"
+                                  title="Xóa đề xuất"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t flex justify-end gap-3 bg-slate-50">
+              <button
+                onClick={() => setSelectedTeacherForDetail(null)}
+                className="border bg-white hover:bg-slate-100 py-2 px-5 rounded-lg text-sm font-medium transition-all"
+              >
+                Đóng
+              </button>
+            </div>
           </div>
         </div>
       )}
