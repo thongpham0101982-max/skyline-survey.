@@ -936,7 +936,7 @@ export function StudentInfoClient({
 
   // Statistics
   const statistics = useMemo(() => {
-    let total = filteredStudents.length;
+    const total = filteredStudents.length;
     let passed = 0;
     let failed = 0;
     let pending = 0;
@@ -1431,6 +1431,21 @@ export function StudentInfoClient({
     }
   };
 
+  const handleExportStudentProfilesCsv = () => {
+    const params = new URLSearchParams();
+    params.set("action", "exportCsv");
+    if (activeYearId) {
+      params.set("academicYearId", activeYearId);
+    }
+    if (selectedCampusFilter && selectedCampusFilter !== "all") {
+      params.set("campusId", selectedCampusFilter);
+    }
+    if (searchQuery) {
+      params.set("search", searchQuery);
+    }
+    window.location.href = `/api/admin/student-profiles?${params.toString()}`;
+  };
+
   // Export filtered students list to Excel aligned with forms 100% (without admin/approval fields)
   const handleExportExcel = () => {
     if (filteredStudents.length === 0) return showNotification("Không có dữ liệu trong bộ lọc để xuất", "err");
@@ -1834,13 +1849,22 @@ export function StudentInfoClient({
           )}
 
           {subTab === "result" && (
-            <button
-              onClick={handleExportExcel}
-              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 shadow-sm transition-all active:scale-95 cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              Export Excel
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                Export Excel
+              </button>
+              <button
+                onClick={handleExportStudentProfilesCsv}
+                className="flex items-center gap-1.5 px-4 py-2 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                Xuất CSV Hồ Sơ
+              </button>
+            </div>
           )}
         </div>
       </div>
