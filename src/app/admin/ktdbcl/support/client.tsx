@@ -5,9 +5,10 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { 
   FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
-  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus
+  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { OverviewDashboard } from "./overview"
 
 interface Props {
   academicYears: any[]
@@ -44,8 +45,8 @@ export function SupportClient({
   )
 
   // Tabs state
-  const [activeTab, setActiveTab] = useState<"academic" | "psychology" | "configs" | "reports">(
-    "academic"
+  const [activeTab, setActiveTab] = useState<"overview" | "academic" | "psychology" | "configs" | "reports">(
+    "overview"
   )
 
   // Sub-tab state for reports
@@ -760,6 +761,18 @@ export function SupportClient({
       {/* Main Tabs Navigation */}
       <div className="flex border-b border-slate-200">
         <button
+          onClick={() => setActiveTab("overview")}
+          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
+            activeTab === "overview"
+              ? "border-indigo-600 text-indigo-600 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          Tổng quan
+        </button>
+
+        <button
           onClick={() => setActiveTab("academic")}
           className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
             activeTab === "academic"
@@ -807,6 +820,19 @@ export function SupportClient({
           Báo cáo thống kê
         </button>
       </div>
+
+      {/* Tab 0: Tổng quan */}
+      {activeTab === "overview" && (
+        <OverviewDashboard
+          targets={targets}
+          assignments={assignments}
+          classes={classes}
+          campuses={campuses}
+          teachers={teachers}
+          academicYears={academicYears}
+          selectedYearId={selectedYearId}
+        />
+      )}
 
       {/* Loading state indicator */}
       {loading && (
