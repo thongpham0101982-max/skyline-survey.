@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const action = searchParams.get("action") || "getProfiles"
+    const studentId = searchParams.get("studentId")
     const academicYearId = searchParams.get("academicYearId")
     const campusId = searchParams.get("campusId")
     const classId = searchParams.get("classId")
@@ -44,6 +45,7 @@ export async function GET(req: NextRequest) {
 
     // Build filters
     const where: any = {}
+    if (studentId) where.id = studentId
     if (academicYearId) where.academicYearId = academicYearId
     if (campusId) where.campusId = campusId
     if (classId) where.classId = classId
@@ -64,12 +66,22 @@ export async function GET(req: NextRequest) {
         learningCommitments: true,
         careerOrientations: true,
         highlightComments: true,
+        achievements: {
+          include: {
+            achievement: true
+          }
+        },
+        projectExperiences: true,
         learningSupportTargets: {
           include: {
             assignments: {
               include: {
-                teacher: true
+                teacher: true,
+                subject: true
               }
+            },
+            evaluations: {
+              orderBy: { createdAt: "desc" }
             }
           }
         }
@@ -225,6 +237,7 @@ export async function GET(req: NextRequest) {
       }
 
       return {
+        id: s.id,
         yearName,
         campusName,
         classCode,
@@ -248,7 +261,28 @@ export async function GET(req: NextRequest) {
         oralEnglishScore,
         directorNote,
         devAssessment,
-        probationaryComment
+        probationaryComment,
+        
+        // Include raw structured child lists for portfolio details rendering
+        achievements: s.achievements || [],
+        projectExperiences: s.projectExperiences || [],
+        learningCommitment: s.learningCommitments?.[0] || null,
+        highlightComments: s.highlightComments || [],
+        learningSupportTarget: s.learningSupportTargets?.[0] || null,
+        entranceSurvey: matchedSurvey ? {
+          ...matchedSurvey,
+          type: surveyType,
+          scores: surveyType === "K12" ? (matchedSurvey.scores || []).map((sc: any) => ({
+            subjectName: sc.subject?.name,
+            scores: sc.scores ? JSON.parse(sc.scores) : {},
+            comments: sc.comments ? JSON.parse(sc.comments) : {}
+          })) : (preschoolScoresMap.get(matchedSurvey.id) || []).map((s: any) => ({
+            areaName: s.criteria?.area?.name,
+            criterionName: s.criteria?.name,
+            result: s.result,
+            note: s.note
+          }))
+        } : null
       }
     })
 

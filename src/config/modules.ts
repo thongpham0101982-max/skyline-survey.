@@ -121,6 +121,12 @@ export const APP_CATEGORIES = [
         ]
       },
       {
+        code: "ADMIN_STUDENT_PROFILES",
+        name: "Hồ sơ Học sinh",
+        icon: Users,
+        href: "/admin/ho-so-hoc-sinh"
+      },
+      {
         code: "PHAN_CONG_KHAO_SAT",
         name: "Phân công khảo sát",
         icon: UserCheck,
