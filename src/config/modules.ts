@@ -66,6 +66,17 @@ export const APP_CATEGORIES = [
         name: "Hỗ trợ học tập",
         icon: FileText,
         href: "/admin/ktdbcl/support"
+      },
+      {
+        code: "EXPERIENTIAL_ACTIVITIES",
+        name: "Hoạt động trải nghiệm",
+        icon: Award,
+        href: "/admin/experiential-activities/categories",
+        subModules: [
+          { code: "EXP_ACT_CONFIG", name: "Cấu hình", href: "/admin/experiential-activities/config" },
+          { code: "EXP_ACT_CATEGORIES", name: "Danh mục", href: "/admin/experiential-activities/categories" },
+          { code: "EXP_ACT_CATALOG", name: "Hoạt động mẫu", href: "/admin/experiential-activities/catalog" }
+        ]
       }
     ]
   },
@@ -83,7 +94,6 @@ export const APP_CATEGORIES = [
       { code: "ASSIGNMENTS", name: "Phân công giảng dạy", icon: Layout, href: "/admin/teaching-assignments" },
       { code: "STUDENT_TRANSFERS", name: "Quản lý HS lưu chuyển", icon: ArrowRightLeft, href: "/admin/student-transfers" },
       { code: "TEACHER_TRANSFERS", name: "Kết chuyển Nhân sự", icon: RefreshCcw, href: "/admin/teacher-transfers" },
-      { code: "EXPERIENTIAL_ACTIVITIES", name: "Hoạt động trải nghiệm", icon: Award, href: "/admin/experiential-activities/categories", subModules: [ { code: "EXP_ACT_CONFIG", name: "Cấu hình", href: "/admin/experiential-activities/config" }, { code: "EXP_ACT_CATEGORIES", name: "Danh mục", href: "/admin/experiential-activities/categories" }, { code: "EXP_ACT_CATALOG", name: "Hoạt động mẫu", href: "/admin/experiential-activities/catalog" } ] },
     ]
   },
   {
