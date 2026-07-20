@@ -417,31 +417,58 @@ export default function TeacherStudentProfilePage() {
                 />
               </div>
             </div>
-            <div className="space-y-1 max-h-[480px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
               {filteredStudents.length === 0 ? (
                 <div className="text-[11px] text-slate-400 font-semibold italic text-center py-6">
                   {searchQuery ? "Không tìm thấy học sinh phù hợp." : "Lớp chủ nhiệm chưa có học sinh nào."}
                 </div>
               ) : (
-                filteredStudents.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setSelectedStudentId(s.id)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
-                      selectedStudentId === s.id
-                        ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30 shadow-xs"
-                        : s.isEntranceAdmitted
-                          ? "bg-sky-50 text-sky-700 border border-sky-100 hover:bg-sky-100/60"
-                          : "text-slate-600 hover:bg-slate-50 border border-transparent"
-                    }`}
-                  >
-                    <div>
-                      <div className="truncate font-black">{s.studentName}</div>
-                      <div className="text-[9px] opacity-60 font-bold mt-0.5">{s.className || "Lớp chủ nhiệm"}</div>
-                    </div>
-                    <span className="text-[9px] opacity-60 font-semibold">{s.studentCode}</span>
-                  </button>
-                ))
+                filteredStudents.map(s => {
+                  const isSelected = selectedStudentId === s.id;
+                  const initials = s.studentName ? s.studentName.split(" ").pop()?.substring(0, 2).toUpperCase() : "HS";
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setSelectedStudentId(s.id)}
+                      className={`group relative w-full text-left p-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer border ${
+                        isSelected
+                          ? "bg-gradient-to-r from-[#00A99D]/12 to-[#00A99D]/4 text-[#00A99D] border-[#00A99D]/20 shadow-xs translate-x-1"
+                          : "bg-white hover:bg-slate-50/80 border-slate-100 text-slate-655"
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-[#00A99D] rounded-r-md" />
+                      )}
+                      
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 transition-colors ${
+                        isSelected
+                          ? "bg-[#00A99D] text-white"
+                          : s.isEntranceAdmitted
+                            ? "bg-sky-100 text-sky-700 border border-sky-200"
+                            : "bg-slate-100 text-slate-500"
+                      }`}>
+                        {initials}
+                      </div>
+
+                      <div className="min-w-0 flex-grow">
+                        <div className={`truncate text-xs font-black transition-colors ${isSelected ? "text-slate-900" : "text-slate-800 group-hover:text-slate-900"}`}>
+                          {s.studentName}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[9px] opacity-60 font-semibold">{s.studentCode}</span>
+                          <span className="text-[9px] opacity-40 font-bold">•</span>
+                          <span className="text-[9px] opacity-60 font-bold truncate">{s.className || "Lớp chủ nhiệm"}</span>
+                        </div>
+                      </div>
+
+                      {s.isEntranceAdmitted && !isSelected && (
+                        <span className="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-sky-50 text-sky-600 border border-sky-100 flex-shrink-0">
+                          KS
+                        </span>
+                      )}
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
@@ -514,16 +541,16 @@ export default function TeacherStudentProfilePage() {
                   <div>
                     {/* TAB: CV INTERGRATED (NEW STANDARD) */}
                     {activeTab === "cv" && (
-                      <div className="space-y-6">
+                      <div className="space-y-6 animate-in fade-in duration-300">
                         {/* CV Action Bar */}
-                        <div className="flex justify-between items-center bg-slate-50 p-4 rounded-2xl border border-slate-150 no-print">
+                        <div className="flex justify-between items-center bg-slate-50/50 p-4 rounded-2xl border border-slate-100 no-print">
                           <div>
-                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Hồ sơ CV Tích hợp Chuẩn Quốc tế</h4>
-                            <p className="text-slate-500 text-[10px] font-semibold mt-0.5">Bản tổng hợp hồ sơ năng lực học tập và rèn luyện của học sinh</p>
+                            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide">Hồ sơ CV Tích hợp Chuẩn Quốc tế</h4>
+                            <p className="text-slate-400 text-[10px] font-semibold mt-0.5">Bản tổng hợp hồ sơ năng lực học tập và rèn luyện của học sinh</p>
                           </div>
                           <button
                             onClick={() => window.print()}
-                            className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                            className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
                           >
                             <Printer className="w-4 h-4" />
                             <span>In hồ sơ / Lưu PDF</span>
@@ -531,80 +558,93 @@ export default function TeacherStudentProfilePage() {
                         </div>
 
                         {/* CV Document Container */}
-                        <div className="print-container bg-white border border-slate-200 shadow-lg rounded-2xl p-8 max-w-4xl mx-auto font-sans relative overflow-hidden">
+                        <div className="print-container bg-white border border-slate-200 shadow-xl rounded-3xl p-8 max-w-4xl mx-auto font-sans relative overflow-hidden">
+                          {/* Decorative Top Accent Stripe */}
+                          <div className="absolute top-0 left-0 right-0 h-2 bg-[#00A99D]" />
+                          
                           {/* Background decoration elements */}
-                          <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none no-print"></div>
-                          <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none no-print"></div>
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#00A99D]/8 to-transparent rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none no-print"></div>
+                          <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-indigo-500/5 to-transparent rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none no-print"></div>
                           
                           {/* CV Header */}
-                          <div className="border-b-2 border-[#00A99D] pb-6 flex justify-between items-start gap-4">
-                            <div className="space-y-1">
+                          <div className="border-b border-slate-200 pb-6 flex justify-between items-start gap-4">
+                            <div className="space-y-1.5">
                               <div className="flex items-center gap-2">
-                                <GraduationCap className="w-6 h-6 text-[#00A99D]" />
-                                <span className="font-extrabold text-sm tracking-wider text-slate-700 font-sans">SKY-LINE SYSTEM</span>
+                                <div className="w-8 h-8 rounded-lg bg-[#00A99D]/10 flex items-center justify-center border border-[#00A99D]/20">
+                                  <GraduationCap className="w-5 h-5 text-[#00A99D]" />
+                                </div>
+                                <span className="font-black text-xs tracking-wider text-slate-500 font-sans uppercase">SKY-LINE SYSTEM</span>
                               </div>
-                              <h2 className="text-xl font-black text-slate-805 uppercase tracking-tight font-sans">Hồ sơ Năng lực Học sinh</h2>
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Student Comprehensive Profile & Portfolio</p>
+                              <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight font-sans mt-2">HỒ SƠ NĂNG LỰC HỌC SINH</h2>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest font-sans">Student Comprehensive Profile & Portfolio</p>
                             </div>
-                            <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5">
-                              <div>Năm học: <span className="text-slate-800 font-bold">{profileData?.student?.academicYear?.name || "2026-2027"}</span></div>
-                              <div>Cơ sở: <span className="text-slate-800 font-bold">{profileData?.student?.campus?.campusName || "Sky-line Campus"}</span></div>
+                            <div className="text-right text-xs text-slate-500 font-semibold space-y-1 mt-1">
+                              <div className="bg-slate-100 rounded-lg px-2.5 py-1 inline-block">
+                                <span className="text-slate-400 mr-1.5">Năm học:</span>
+                                <span className="text-slate-800 font-bold">{profileData?.student?.academicYear?.name || "2026-2027"}</span>
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-bold block">
+                                Cơ sở: <span className="text-slate-700 font-extrabold">{profileData?.student?.campus?.campusName || "Sky-line Campus"}</span>
+                              </div>
                             </div>
                           </div>
 
                           {/* CV Body Grid */}
-                          <div className="print-grid grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-                            {/* Left Column (Info, Achievements, Commitment, Orientation) */}
+                          <div className="print-grid grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
+                            
+                            {/* Left Column */}
                             <div className="print-left-col md:col-span-1 border-r border-slate-100 pr-6 space-y-6">
                               {/* Avatar & Profile Detail */}
                               <div className="text-center space-y-3">
-                                <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#00A99D]/20 shadow-inner group">
+                                <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-slate-100 shadow-sm flex items-center justify-center bg-slate-50 text-slate-400">
                                   {avatarUrl ? (
                                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" onError={() => setAvatarUrl("")} />
                                   ) : (
-                                    <div className="w-full h-full bg-slate-50 flex items-center justify-center text-slate-355">
-                                      <User className="w-16 h-16" />
-                                    </div>
+                                    <User className="w-16 h-16 text-slate-300" />
                                   )}
                                 </div>
                                 <div>
-                                  <h3 className="font-black text-base text-slate-800">{selectedStudent?.studentName}</h3>
-                                  <p className="text-[10px] text-[#00A99D] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {selectedStudent?.className}</p>
+                                  <h3 className="font-black text-base text-slate-900 leading-tight">{selectedStudent?.studentName}</h3>
+                                  <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#00A99D]/10 text-[#00A99D] text-[10px] font-black uppercase mt-1">
+                                    Lớp: {selectedStudent?.className}
+                                  </div>
                                 </div>
                               </div>
 
-                              {/* Administrative info */}
-                              <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2.5 text-xs text-slate-655 font-semibold">
-                                <div className="flex justify-between">
+                              {/* Administrative Info */}
+                              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-100 space-y-2.5 text-xs text-slate-500 font-bold">
+                                <div className="flex justify-between items-center">
                                   <span>Mã học sinh:</span>
-                                  <span className="font-bold text-slate-805">{selectedStudent?.studentCode}</span>
+                                  <span className="font-extrabold text-slate-800">{selectedStudent?.studentCode}</span>
                                 </div>
-                                <div className="flex justify-between">
+                                <div className="flex justify-between items-center">
                                   <span>Ngày sinh:</span>
-                                  <span className="font-bold text-slate-805">{selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                                  <span className="font-extrabold text-slate-800">{selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span>
                                 </div>
-                                <div className="flex justify-between">
+                                <div className="flex justify-between items-center">
                                   <span>Giới tính:</span>
-                                  <span className="font-bold text-slate-805">{selectedStudent?.gender || 'N/A'}</span>
+                                  <span className="font-extrabold text-slate-800">{selectedStudent?.gender || 'N/A'}</span>
                                 </div>
                               </div>
 
                               {/* Outstanding Achievements */}
                               <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <Award className="w-4 h-4 text-[#00A99D]" />
                                   Thành tích nổi bật
                                 </h4>
                                 {profileData.achievements?.length === 0 ? (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận thành tích.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Chưa ghi nhận thành tích.</p>
                                 ) : (
                                   <div className="space-y-2">
                                     {profileData.achievements?.slice(0, 3).map((a: any) => (
-                                      <div key={a.id} className="flex gap-2 items-start text-xs bg-amber-50/30 border border-amber-100 p-2 rounded-lg">
-                                        <Award className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                                        <div>
-                                          <div className="font-bold text-slate-850 leading-tight">{a.achievement?.name}</div>
-                                          <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{a.achievement?.level}</div>
+                                      <div key={a.id} className="flex gap-2.5 items-start text-xs bg-amber-500/[0.04] border border-amber-500/10 p-2.5 rounded-xl transition-all hover:bg-amber-500/[0.08]">
+                                        <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                                          <Award className="w-4 h-4 text-amber-500" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <div className="font-black text-slate-800 leading-tight truncate">{a.achievement?.name}</div>
+                                          <div className="text-[8px] text-amber-700 font-black uppercase tracking-wider mt-0.5">{a.achievement?.level}</div>
                                         </div>
                                       </div>
                                     ))}
@@ -614,18 +654,18 @@ export default function TeacherStudentProfilePage() {
 
                               {/* Learning Commitment */}
                               <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <FileText className="w-4 h-4 text-[#00A99D]" />
                                   Cam kết rèn luyện
                                 </h4>
                                 {profileData.commitment ? (
-                                  <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
-                                    <p className="text-[10px] text-slate-600 italic leading-relaxed line-clamp-4 font-semibold">
+                                  <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-3">
+                                    <p className="text-[10px] text-slate-600 italic leading-relaxed font-semibold">
                                       "{profileData.commitment.content}"
                                     </p>
-                                    <div className="flex justify-between items-center pt-1 border-t border-slate-200/50">
+                                    <div className="flex justify-between items-center pt-2 border-t border-slate-200/50">
                                       <span className="text-[9px] text-slate-400 font-bold">Trạng thái:</span>
-                                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg border ${
                                         profileData.commitment.status === "COMPLETED"
                                           ? "bg-green-50 text-green-700 border-green-200"
                                           : profileData.commitment.status === "VIOLATED"
@@ -637,42 +677,48 @@ export default function TeacherStudentProfilePage() {
                                     </div>
                                   </div>
                                 ) : (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa thiết lập cam kết.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Chưa thiết lập cam kết.</p>
                                 )}
                               </div>
 
                               {/* Career Orientation */}
                               <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <Compass className="w-4 h-4 text-[#00A99D]" />
                                   Định hướng ngành nghề
                                 </h4>
                                 {profileData.orientation ? (
-                                  <div className="bg-teal-50/20 border border-teal-100 p-3 rounded-lg space-y-1">
-                                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nhóm ngành quan tâm</div>
-                                    <div className="text-xs font-black text-slate-750">{profileData.orientation.result}</div>
+                                  <div className="bg-[#00A99D]/[0.03] border border-[#00A99D]/10 p-3.5 rounded-xl space-y-1.5">
+                                    <div className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Nhóm ngành quan tâm</div>
+                                    <div className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                                      <Compass className="w-3.5 h-3.5 text-[#00A99D]" />
+                                      {profileData.orientation.result}
+                                    </div>
                                   </div>
                                 ) : (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa định hướng ngành nghề.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Chưa định hướng ngành nghề.</p>
                                 )}
                               </div>
                             </div>
 
-                            {/* Right Column (Academic Entrance, Projects, Support, Testimonial) */}
+                            {/* Right Column */}
                             <div className="print-right-col md:col-span-2 space-y-6">
                               {/* Section: Academic Intake Profile */}
-                              <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                              <div className="space-y-4">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <ClipboardCheck className="w-4 h-4 text-[#00A99D]" />
                                   Hồ sơ học thuật đầu vào (Intake Evaluation)
                                 </h4>
                                 {profileData.entranceSurvey ? (
                                   <div className="space-y-3">
                                     {profileData.entranceSurvey.type === "PRESCHOOL" ? (
-                                      <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
-                                        <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#00A99D]">{profileData.entranceSurvey.devAssessmentResult || "N/A"}</span></div>
+                                      <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-2.5">
+                                        <div className="text-xs font-bold text-slate-700 flex justify-between items-center">
+                                          <span>Đánh giá phát triển mầm non:</span>
+                                          <span className="font-black text-[#00A99D] uppercase tracking-wider bg-[#00A99D]/10 px-2 py-0.5 rounded">{profileData.entranceSurvey.devAssessmentResult || "N/A"}</span>
+                                        </div>
                                         {profileData.entranceSurvey.probationaryComment && (
-                                          <div className="bg-white p-2.5 rounded border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
+                                          <div className="bg-white p-3 rounded-xl border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
                                             "{profileData.entranceSurvey.probationaryComment}"
                                           </div>
                                         )}
@@ -706,55 +752,55 @@ export default function TeacherStudentProfilePage() {
                                       const isGrade1 = (() => { const m = String(survey.className || survey.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
 
                                       return (
-                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                                            <div className="text-[9px] text-[#00A99D] font-bold uppercase tracking-wider">Toán học</div>
-                                            <div className="text-lg font-black text-slate-805 mt-0.5">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
-                                            <div className="text-[8px] text-slate-400 font-bold">Thang 10</div>
+                                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                          <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl text-center transition-all hover:bg-slate-50">
+                                            <div className="text-[9px] text-[#00A99D] font-black uppercase tracking-wider">Toán học</div>
+                                            <div className="text-xl font-black text-slate-800 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold mt-0.5">Thang 10</div>
                                           </div>
-                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                                            <div className="text-[9px] text-indigo-650 font-bold uppercase tracking-wider">Ngữ văn</div>
-                                            <div className="text-lg font-black text-slate-805 mt-0.5">{litVal !== null && litVal !== undefined ? litVal : "—"}</div>
-                                            <div className="text-[8px] text-slate-400 font-bold">Thang 10</div>
+                                          <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl text-center transition-all hover:bg-slate-50">
+                                            <div className="text-[9px] text-indigo-500 font-black uppercase tracking-wider">Ngữ văn</div>
+                                            <div className="text-xl font-black text-slate-800 mt-1">{litVal !== null && litVal !== undefined ? litVal : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold mt-0.5">Thang 10</div>
                                           </div>
-                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                                            <div className="text-[9px] text-sky-655 font-bold uppercase tracking-wider">Anh viết</div>
-                                            <div className="text-lg font-black text-slate-805 mt-0.5">{writtenVal !== null && writtenVal !== undefined ? (isGrade1 ? writtenVal : `${writtenVal}/70`) : "—"}</div>
-                                            <div className="text-[8px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 70"}</div>
+                                          <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl text-center transition-all hover:bg-slate-50">
+                                            <div className="text-[9px] text-sky-500 font-black uppercase tracking-wider">Anh viết</div>
+                                            <div className="text-xl font-black text-slate-800 mt-1">{writtenVal !== null && writtenVal !== undefined ? (isGrade1 ? writtenVal : `sub{${writtenVal}}/70`) : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold mt-0.5">{isGrade1 ? "Thang 10" : "Thang 70"}</div>
                                           </div>
-                                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                                            <div className="text-[9px] text-sky-655 font-bold uppercase tracking-wider">Anh nói</div>
-                                            <div className="text-lg font-black text-slate-850 mt-0.5">{oralVal !== null && oralVal !== undefined ? (isGrade1 ? oralVal : `${oralVal}/30`) : "—"}</div>
-                                            <div className="text-[8px] text-slate-400 font-bold">{isGrade1 ? "Thang 10" : "Thang 30"}</div>
+                                          <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl text-center transition-all hover:bg-slate-50">
+                                            <div className="text-[9px] text-sky-500 font-black uppercase tracking-wider">Anh nói</div>
+                                            <div className="text-xl font-black text-slate-800 mt-1">{oralVal !== null && oralVal !== undefined ? (isGrade1 ? oralVal : `sub{${oralVal}}/30`) : "—"}</div>
+                                            <div className="text-[8px] text-slate-400 font-bold mt-0.5">{isGrade1 ? "Thang 10" : "Thang 30"}</div>
                                           </div>
                                         </div>
                                       )
                                     })()}
                                   </div>
                                 ) : (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận điểm khảo sát đầu vào.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Chưa ghi nhận điểm khảo sát đầu vào.</p>
                                 )}
                               </div>
 
                               {/* Section: Projects & Experiences */}
-                              <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                              <div className="space-y-4">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <BookOpen className="w-4 h-4 text-[#00A99D]" />
                                   Dự án học tập & Hoạt động trải nghiệm
                                 </h4>
                                 {profileData.projects?.length === 0 ? (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia dự án học tập nào.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Học sinh chưa tham gia dự án học tập nào.</p>
                                 ) : (
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     {profileData.projects?.slice(0, 2).map((p: any) => (
-                                      <div key={p.id} className="bg-slate-50/50 border border-slate-100 p-3 rounded-lg text-xs">
+                                      <div key={p.id} className="bg-slate-50/40 border border-slate-100 p-3.5 rounded-2xl text-xs space-y-1.5 transition-all hover:bg-slate-50">
                                         <div className="flex justify-between items-start">
-                                          <div className="font-bold text-slate-805">{p.projectName}</div>
+                                          <div className="font-extrabold text-slate-800">{p.projectName}</div>
                                           <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
                                             {p.role || "Thành viên"}
                                           </span>
                                         </div>
-                                        {p.notes && <p className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">"{p.notes}"</p>}
+                                        {p.notes && <p className="text-[10px] text-slate-500 leading-relaxed">"{p.notes}"</p>}
                                       </div>
                                     ))}
                                   </div>
@@ -762,32 +808,32 @@ export default function TeacherStudentProfilePage() {
                               </div>
 
                               {/* Section: Learning Support Progress */}
-                              <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                              <div className="space-y-4">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <GraduationCap className="w-4 h-4 text-[#00A99D]" />
                                   Kế hoạch hỗ trợ học tập & Phát triển
                                 </h4>
                                 {!(profileData as any).learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Không thuộc đối tượng nhận hỗ trợ trong năm học này.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Không thuộc đối tượng nhận hỗ trợ trong năm học này.</p>
                                 ) : (
                                   <div className="space-y-2.5">
                                     {(profileData as any).learningSupportTargets.slice(0, 1).map((target: any) => {
                                       const gvName = target.assignments?.[0]?.teacher?.teacherName || "Chưa phân công"
                                       return (
-                                        <div key={target.id} className="border border-slate-100 bg-slate-50/30 p-3 rounded-lg text-xs space-y-2">
+                                        <div key={target.id} className="border border-slate-100 bg-slate-50/40 p-4 rounded-2xl text-xs space-y-3">
                                           <div className="flex justify-between items-center">
-                                            <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                                            <span className={`px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider ${
                                               target.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border border-blue-100" : "bg-purple-50 text-purple-700 border border-purple-100"
                                             }`}>
                                               {target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
                                             </span>
-                                            <span className="text-[9px] font-bold text-slate-500 font-semibold">GV phụ trách: {gvName}</span>
+                                            <span className="text-[9px] font-black text-slate-500">GV phụ trách: {gvName}</span>
                                           </div>
-                                          <div className="font-semibold text-slate-705">Mục tiêu: <span className="font-bold text-slate-800">{target.reason}</span></div>
+                                          <div className="font-extrabold text-slate-700">Mục tiêu: <span className="font-black text-slate-850">{target.reason}</span></div>
                                           {target.evaluations?.length > 0 && (
-                                            <div className="border-t border-slate-200/50 pt-2 space-y-1">
-                                              <div className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Tiến độ cập nhật gần nhất:</div>
-                                              <p className="text-[10px] text-slate-500 italic">"{target.evaluations[0].comment}" - <span className="font-bold text-[#00A99D]">{target.evaluations[0].trackingLevel}</span></p>
+                                            <div className="border-t border-slate-200/50 pt-2 space-y-1.5">
+                                              <div className="text-[8px] text-slate-400 font-black uppercase tracking-wider">Tiến độ cập nhật gần nhất:</div>
+                                              <p className="text-[10px] text-slate-600 italic">"{target.evaluations[0].comment}" - <span className="font-black text-[#00A99D]">{target.evaluations[0].trackingLevel}</span></p>
                                             </div>
                                           )}
                                         </div>
@@ -798,8 +844,8 @@ export default function TeacherStudentProfilePage() {
                               </div>
 
                               {/* Section: GVCN Testimonial */}
-                              <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                              <div className="space-y-4">
+                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <MessageSquare className="w-4 h-4 text-[#00A99D]" />
                                   Nhận xét định kỳ từ Giáo viên Chủ nhiệm
                                 </h4>
@@ -807,31 +853,32 @@ export default function TeacherStudentProfilePage() {
                                   const primaryComment = profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT")?.[0]
                                   if (primaryComment) {
                                     return (
-                                      <div className="bg-teal-50/10 border-l-4 border-[#00A99D] p-3 rounded-r-lg space-y-2">
-                                        <p className="text-xs text-slate-705 font-semibold italic leading-relaxed whitespace-pre-wrap">
+                                      <div className="bg-[#00A99D]/[0.03] border-l-4 border-[#00A99D] p-4 rounded-r-2xl space-y-3 relative overflow-hidden">
+                                        <p className="text-xs text-slate-700 font-semibold italic leading-relaxed whitespace-pre-wrap relative z-10">
                                           "{primaryComment.comment}"
                                         </p>
-                                        <div className="text-right text-[9px] text-slate-400 font-bold">
+                                        <div className="text-right text-[9px] text-[#00A99D] font-black uppercase tracking-wider">
                                           — {primaryComment.teacherName} (GVCN) • {new Date(primaryComment.updatedAt).toLocaleDateString('vi-VN')}
                                         </div>
                                       </div>
                                     )
                                   }
-                                  return <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận đánh giá định kỳ.</p>
+                                  return <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Chưa ghi nhận đánh giá định kỳ.</p>
                                 })()}
                               </div>
                             </div>
+
                           </div>
                           
                           {/* Signature Section on A4 Print */}
-                          <div className="hidden print:grid grid-cols-3 gap-6 mt-16 pt-8 border-t border-slate-200 text-center text-xs font-bold text-slate-755">
+                          <div className="hidden print:grid grid-cols-3 gap-6 mt-16 pt-8 border-t border-slate-200 text-center text-xs font-black text-slate-700">
                             <div>
                               <div>HỌC SINH KÝ TÊN</div>
                               <div className="h-16"></div>
                               <div className="text-slate-400 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
                             </div>
                             <div>
-                              <div>PHU HUYNH XÁC NHẬN</div>
+                              <div>PHỤ HUYNH XÁC NHẬN</div>
                               <div className="h-16"></div>
                               <div className="text-slate-400 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
                             </div>
@@ -842,11 +889,11 @@ export default function TeacherStudentProfilePage() {
                               <div className="text-slate-400 font-semibold font-bold">(Ký tên)</div>
                             </div>
                           </div>
+
                         </div>
                       </div>
                     )}
 
-                    {/* TAB: ENTRANCE */}
                     {activeTab === "entrance" && (
                       <div className="space-y-6">
                         <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
