@@ -911,7 +911,7 @@ export function TeacherSupportClient({
                           <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
                             t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
                           }`}>
-                            {t.supportType === "ACADEMIC" ? t.reason : "Tâm lý học đường"}
+                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ") : "Tâm lý học đường"}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
@@ -926,39 +926,26 @@ export function TeacherSupportClient({
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
                           {isAssigned && !isTerminated && !isPending && (
-                            <>
-                              <button
-                                onClick={() => {
-                                  setSelectedEvalTargetIds([t.id])
-                                  setEvalTargetId(t.id)
-                                  setEvalTargetName(t.student?.studentName)
-                                  setEvalTargetType(t.supportType)
-                                  setEvalComment("")
-                                  setEvalStudent(t.student)
-                                  setEvalTargetObj(t)
-                                  setEvalPeriodType("MONTH")
-                                  const curMonth = "Tháng " + (new Date().getMonth() + 1)
-                                  setEvalPeriodName(curMonth)
-                                  const options = configs.filter((c:any) => c.supportType === t.supportType)
-                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                                  setIsEvaluationModalOpen(true)
-                                }}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
-                              >
-                                Nhận xét & Đánh giá
-                              </button>
-  
-                              <button
-                                onClick={() => {
-                                  setTermTargetId(t.id)
-                                  setTermNotes("")
-                                  setIsRequestTermModalOpen(true)
-                                }}
-                                className="border border-slate-300 hover:bg-slate-100 text-slate-700 font-medium py-1.5 px-3 rounded-lg text-xs transition-all"
-                              >
-                                Đề xuất kết thúc
-                              </button>
-                            </>
+                            <button
+                              onClick={() => {
+                                setSelectedEvalTargetIds([t.id])
+                                setEvalTargetId(t.id)
+                                setEvalTargetName(t.student?.studentName)
+                                setEvalTargetType(t.supportType)
+                                setEvalComment("")
+                                setEvalStudent(t.student)
+                                setEvalTargetObj(t)
+                                setEvalPeriodType("MONTH")
+                                const curMonth = "Tháng " + (new Date().getMonth() + 1)
+                                setEvalPeriodName(curMonth)
+                                const options = configs.filter((c:any) => c.supportType === t.supportType)
+                                setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                                setIsEvaluationModalOpen(true)
+                              }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
+                            >
+                              Nhận xét & Đánh giá
+                            </button>
                           )}
                           {(isTerminated || isPending) && (
                             <span className="text-[11px] text-slate-400 font-medium">Không thể thao tác</span>
@@ -1275,7 +1262,7 @@ export function TeacherSupportClient({
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-700 font-semibold">
-                        {t.reason}
+                        {Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ")}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-500 text-xs">
                         {new Date(t.createdAt).toLocaleDateString("vi-VN")}
@@ -1956,6 +1943,21 @@ export function TeacherSupportClient({
                 >
                   Hủy bỏ
                 </button>
+                {selectedEvalTargetIds.length <= 1 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTermTargetId(evalTargetId || (selectedEvalTargetIds[0] || ""));
+                      setTermOutcome(evalTrackingLevel);
+                      setTermNotes(evalComment);
+                      setIsEvaluationModalOpen(false);
+                      setIsRequestTermModalOpen(true);
+                    }}
+                    className="border border-slate-300 hover:bg-slate-100 text-slate-750 py-2.5 px-5 rounded-lg text-sm font-bold transition-all"
+                  >
+                    Đề xuất kết thúc
+                  </button>
+                )}
                 <button
                   onClick={handleSaveEvaluation}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-6 rounded-lg text-sm font-bold shadow-sm transition-all"
@@ -1967,6 +1969,485 @@ export function TeacherSupportClient({
           </div>
         )
       })()}
+
+      {/* 4. Sổ theo dõi kết quả từng Học sinh Modal (Học bạ điện tử bồi dưỡng) */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[90vh] transition-all duration-300">
+            {/* Header */}
+            <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-900 text-white shadow-sm no-print">
+              <h2 className="text-base font-bold flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                SỔ THEO DÕI KẾT QUẢ BỒI DƯỠNG & PHÁT TRIỂN HỌC SINH
+              </h2>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-indigo-700 hover:bg-indigo-600 text-white text-xs font-bold py-1.5 px-3.5 rounded-xl border border-indigo-500/30 flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                  In học bạ
+                </button>
+                <button 
+                  onClick={() => setIsProfileModalOpen(false)}
+                  className="rounded-lg p-1 hover:bg-white/20 transition-all"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
+            </div>
+
+            {loadingProfile ? (
+              <div className="flex flex-col justify-center items-center py-24 space-y-4 flex-1">
+                <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
+                <p className="text-xs text-slate-500 font-bold">Đang tải học bạ điện tử học sinh...</p>
+              </div>
+            ) : !profileData ? (
+              <div className="p-8 text-center text-rose-500 font-bold flex-1">
+                Không thể tải dữ liệu học sinh này hoặc hồ sơ bị lỗi.
+              </div>
+            ) : (() => {
+              const student = profileData.student || {};
+              const entrance = profileData.entranceSurvey || {};
+              const supportTargets = profileData.learningSupportTargets || [];
+              const achievements = profileData.achievements || [];
+              const highlights = profileData.highlightComments || [];
+              const orientation = profileData.orientation || {};
+
+              // Split initials
+              const nameParts = (student.studentName || "Học Sinh").split(" ");
+              const initials = nameParts.length > 1 ? nameParts[nameParts.length - 2][0] + nameParts[nameParts.length - 1][0] : nameParts[0].substring(0, 2);
+
+              return (
+                <div className="flex-1 overflow-y-auto flex flex-col p-6 space-y-6 bg-slate-50/50" id="print-student-record">
+                  {/* Style block for print layout customization */}
+                  <style dangerouslySetInnerHTML={{__html: `
+                    @media print {
+                      body {
+                        background: white !important;
+                        color: black !important;
+                      }
+                      .no-print {
+                        display: none !important;
+                      }
+                      #print-student-record {
+                        position: fixed;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        z-index: 99999;
+                        background: white;
+                        padding: 20px;
+                        overflow: visible !important;
+                        display: block !important;
+                      }
+                      .print-page-break {
+                        page-break-before: always;
+                      }
+                    }
+                  `}} />
+
+                  {/* Profile Header Info Card */}
+                  <div className="bg-gradient-to-r from-indigo-900 to-slate-800 text-white rounded-2xl p-6 shadow-md flex flex-col sm:flex-row items-center gap-6 border border-indigo-950">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-400 to-indigo-600 flex items-center justify-center font-extrabold text-lg text-white shadow-inner shrink-0 shadow-black/20 uppercase">
+                      {initials}
+                    </div>
+                    <div className="flex-1 text-center sm:text-left space-y-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <h3 className="text-xl font-black">{student.studentName}</h3>
+                        <span className="bg-indigo-500/25 border border-indigo-400/30 text-indigo-200 text-[10px] font-black px-2 py-0.5 rounded-full w-max mx-auto sm:mx-0">
+                          #{student.studentCode}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-1 text-xs text-indigo-100">
+                        <div><span className="text-indigo-300 font-medium">Lớp:</span> <strong className="text-white font-bold">{student.class?.className || "N/A"}</strong></div>
+                        <div><span className="text-indigo-300 font-medium">Cơ sở:</span> <strong className="text-white font-bold">{student.campus?.name || "N/A"}</strong></div>
+                        <div><span className="text-indigo-300 font-medium">Ngày sinh:</span> <strong className="text-white font-bold">{student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "N/A"}</strong></div>
+                        <div><span className="text-indigo-300 font-medium">Giới tính:</span> <strong className="text-white font-bold">{student.gender || "N/A"}</strong></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Inner Navigation Tabs */}
+                  <div className="flex border-b border-slate-200 gap-4 no-print">
+                    <button
+                      type="button"
+                      onClick={() => setActiveProfileTab("overview")}
+                      className={`py-2.5 px-1.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                        activeProfileTab === "overview"
+                          ? "border-indigo-600 text-indigo-600 font-extrabold"
+                          : "border-transparent text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <School className="h-4 w-4" />
+                      Khảo sát Đầu vào & Cam kết
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveProfileTab("timeline")}
+                      className={`py-2.5 px-1.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                        activeProfileTab === "timeline"
+                          ? "border-indigo-600 text-indigo-600 font-extrabold"
+                          : "border-transparent text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <TrendingUp className="h-4 w-4" />
+                      Tiến trình Hỗ trợ bồi dưỡng
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveProfileTab("achievements")}
+                      className={`py-2.5 px-1.5 text-xs font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                        activeProfileTab === "achievements"
+                          ? "border-indigo-600 text-indigo-600 font-extrabold"
+                          : "border-transparent text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      <Award className="h-4 w-4" />
+                      Thành tích & Nhận xét nổi bật
+                    </button>
+                  </div>
+
+                  {/* Tab Contents */}
+                  <div className="space-y-6">
+                    {/* Tab 1: Entrance & Commitments */}
+                    {(activeProfileTab === "overview" || typeof window === "undefined") && (
+                      <div className={`space-y-6 ${activeProfileTab !== "overview" ? "print-only hidden" : ""}`}>
+                        {/* KSĐV K12 */}
+                        {entrance && entrance.type === "K12" && (
+                          <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-4">
+                            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
+                              <BookOpen className="h-4.5 w-4.5 text-indigo-600" />
+                              Kết quả khảo sát đầu vào (Khối Phổ thông)
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                                <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Môn Toán</span>
+                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.mathScore != null ? entrance.mathScore : "N/A"}</span>
+                              </div>
+                              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                                <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Môn Ngữ văn</span>
+                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.literatureScore != null ? entrance.literatureScore : "N/A"}</span>
+                              </div>
+                              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                                <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Tiếng Anh viết</span>
+                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.writtenEnglishScore != null ? entrance.writtenEnglishScore : "N/A"}</span>
+                              </div>
+                              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-center">
+                                <span className="text-[10px] text-slate-500 font-bold block uppercase tracking-wider">Tiếng Anh nói</span>
+                                <span className="text-xl font-black text-slate-800 mt-1 block">{entrance.oralEnglishScore != null ? entrance.oralEnglishScore : "N/A"}</span>
+                              </div>
+                            </div>
+
+                            {/* Detail Subjects scores if any */}
+                            {entrance.scores && entrance.scores.length > 0 && (
+                              <div className="space-y-2 mt-4">
+                                <span className="text-xs text-slate-500 font-bold block">Chi tiết khảo sát môn chuyên biệt:</span>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  {entrance.scores.map((s, i) => (
+                                    <div key={i} className="border border-slate-100 rounded-xl p-3 bg-slate-50/50 flex justify-between items-center text-xs">
+                                      <span className="font-bold text-slate-700">{s.subjectName}</span>
+                                      <span className="font-black text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
+                                        Điểm: {typeof s.scores === 'object' ? JSON.stringify(s.scores) : s.scores}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Cam kết đầu vào */}
+                            <div className="bg-amber-50/40 border border-amber-200/50 rounded-xl p-4.5 space-y-2.5">
+                              <div className="flex items-center gap-2 text-amber-900">
+                                <AlertTriangle className="h-4.5 w-4.5 text-amber-600" />
+                                <span className="text-xs font-black uppercase tracking-wider">Môn Học Cam Kết Bồi Dưỡng:</span>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {(() => {
+                                  const parseCommittedSubjects = (note) => {
+                                    if (!note) return []
+                                    const match = note.match(/Môn cam kết:\\s*\\[([^\\]]+)\\]/i)
+                                    if (match && match[1]) {
+                                      return match[1].split(",").map((s) => s.trim())
+                                    }
+                                    return []
+                                  }
+                                  const committed = parseCommittedSubjects(entrance.directorNote || "");
+                                  if (committed.length === 0) return <span className="text-xs text-slate-500 font-semibold italic">Không có môn cam kết nào được ghi nhận</span>;
+                                  return committed.map((c, idx) => (
+                                    <span key={idx} className="bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold px-3 py-1 rounded-lg">
+                                      {c}
+                                    </span>
+                                  ));
+                                })()}
+                              </div>
+                              {entrance.directorNote && (
+                                <div className="text-xs text-amber-950/80 bg-white border border-amber-100 rounded-lg p-3 mt-2">
+                                  <strong>Ghi chú Ban giám hiệu:</strong> {entrance.directorNote}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* KSĐV Preschool */}
+                        {entrance && entrance.type === "PRESCHOOL" && (
+                          <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-4">
+                            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
+                              <Heart className="h-4.5 w-4.5 text-rose-500" />
+                              Kết quả khảo sát đầu vào (Khối Mầm non)
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                              {entrance.devProfessionalComment && (
+                                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
+                                  <strong className="text-slate-800 block mb-1">Nhận xét chuyên môn phát triển:</strong>
+                                  <p className="text-slate-600 font-medium leading-relaxed italic">{entrance.devProfessionalComment}</p>
+                                </div>
+                              )}
+                              {entrance.devPsychologyComment && (
+                                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl">
+                                  <strong className="text-slate-800 block mb-1">Nhận xét tâm lý & kỹ năng:</strong>
+                                  <p className="text-slate-600 font-medium leading-relaxed italic">{entrance.devPsychologyComment}</p>
+                                </div>
+                              )}
+                              {entrance.devImportantNote && (
+                                <div className="p-3.5 bg-amber-50/50 border border-amber-100 rounded-xl md:col-span-2">
+                                  <strong className="text-amber-900 block mb-1">Lưu ý quan trọng:</strong>
+                                  <p className="text-amber-800 font-medium leading-relaxed">{entrance.devImportantNote}</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Preschool area scores list */}
+                            {entrance.scores && entrance.scores.length > 0 && (
+                              <div className="mt-4 space-y-2">
+                                <span className="text-xs text-slate-500 font-bold block">Bảng điểm đánh giá năng lực mầm non:</span>
+                                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                                  <table className="min-w-full divide-y divide-slate-200 text-xs">
+                                    <thead className="bg-slate-50">
+                                      <tr>
+                                        <th className="px-4 py-2.5 text-left font-bold text-slate-500">Lĩnh vực phát triển</th>
+                                        <th className="px-4 py-2.5 text-left font-bold text-slate-500">Tiêu chí đánh giá</th>
+                                        <th className="px-4 py-2.5 text-center font-bold text-slate-500">Kết quả</th>
+                                        <th className="px-4 py-2.5 text-left font-bold text-slate-500">Ghi chú tiêu chí</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-200 bg-white">
+                                      {entrance.scores.map((s, idx) => (
+                                        <tr key={idx} className="hover:bg-slate-50/50">
+                                          <td className="px-4 py-2 font-bold text-slate-700 whitespace-nowrap">{s.areaName}</td>
+                                          <td className="px-4 py-2 text-slate-600 font-medium">{s.criterionName}</td>
+                                          <td className="px-4 py-2 text-center whitespace-nowrap">
+                                            <span className={`px-2 py-0.5 rounded font-black text-[10px] ${
+                                              s.result === 'Đạt' || s.result === '3' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-100'
+                                            }`}>
+                                              {s.result === '3' ? 'Đạt (Cần hỗ trợ ít)' : s.result === '2' ? 'Cần hỗ trợ vừa' : s.result === '1' ? 'Cần hỗ trợ nhiều' : s.result}
+                                            </span>
+                                          </td>
+                                          <td className="px-4 py-2 text-slate-400 font-medium italic">{s.note || "-"}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {!entrance && (
+                          <div className="bg-white rounded-2xl border p-8 text-center text-slate-400 italic text-xs font-semibold">
+                            Không tìm thấy dữ liệu khảo sát đầu vào của học sinh này trên hệ thống.
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Tab 2: Tutoring Progress Timeline */}
+                    {(activeProfileTab === "timeline" || typeof window === "undefined") && (
+                      <div className={`space-y-6 ${activeProfileTab !== "timeline" ? "print-only hidden" : ""}`}>
+                        {supportTargets.length === 0 ? (
+                          <div className="bg-white rounded-2xl border p-8 text-center text-slate-400 italic text-xs font-semibold">
+                            Chưa có chương trình bồi dưỡng phụ đạo nào được phê duyệt cho học sinh này trong năm học hiện tại.
+                          </div>
+                        ) : (
+                          supportTargets.map((target, tIdx) => {
+                            const evals = target.evaluations || [];
+                            const sorted = [...evals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                            const proposerName = target.createdBy?.teacherName || "KTDBCL/BGH";
+                            const supportTypeLabel = target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý";
+                            const statusColor = target.terminationStatus === "TERMINATED" ? "bg-emerald-100 text-emerald-800" : target.terminationStatus === "PENDING_TERMINATION" ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800";
+                            const statusText = target.terminationStatus === "TERMINATED" ? "Hoàn thành bồi dưỡng" : target.terminationStatus === "PENDING_TERMINATION" ? "Chờ duyệt kết thúc" : "Đang bồi dưỡng";
+                            const cleanedReason = Array.from(new Set((target.reason || "").split(",").map(x => x.trim()).filter(Boolean))).join(", ");
+
+                            return (
+                              <div key={target.id} className={`bg-white rounded-2xl border p-5 shadow-xs space-y-4 ${tIdx > 0 ? "print-page-break" : ""}`}>
+                                {/* Target info banner */}
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3.5">
+                                  <div>
+                                    <h4 className="text-sm font-black text-slate-800">
+                                      Chương trình: {supportTypeLabel} ({cleanedReason || "N/A"})
+                                    </h4>
+                                    <p className="text-slate-400 text-[10px] mt-0.5 font-semibold">
+                                      Đề xuất bởi: <strong className="text-slate-600">{proposerName}</strong> • Bắt đầu: {new Date(target.startDate || target.createdAt).toLocaleDateString("vi-VN")}
+                                    </p>
+                                  </div>
+                                  <span className={`px-2.5 py-1 rounded-full text-[11px] font-black border ${statusColor}`}>
+                                    {statusText}
+                                  </span>
+                                </div>
+
+                                {/* Timeline */}
+                                <div className="space-y-4">
+                                  <span className="text-xs text-slate-500 font-bold block">Lịch sử đánh giá định kỳ theo tháng/tuần:</span>
+                                  {sorted.length === 0 ? (
+                                    <div className="text-center py-6 text-slate-400 italic text-xs border border-dashed rounded-xl bg-slate-50/50 font-semibold">
+                                      Chưa có bản ghi nhận xét/đánh giá định kỳ nào được ghi nhận cho chương trình này.
+                                    </div>
+                                  ) : (
+                                    <div className="relative pl-6 border-l border-slate-200 space-y-6 py-2 ml-3">
+                                      {sorted.map((ev) => {
+                                        // Level colors
+                                        const lvl = ev.trackingLevel || "";
+                                        const lvlBg = lvl.includes("Vượt yêu cầu") || lvl.includes("Tốt") || lvl.includes("Tiến bộ")
+                                          ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                                          : lvl.includes("Chưa đạt") || lvl.includes("Cần hỗ trợ") || lvl.includes("Yếu")
+                                          ? "bg-rose-50 text-rose-700 border-rose-200"
+                                          : "bg-blue-50 text-blue-700 border-blue-200";
+
+                                        return (
+                                          <div key={ev.id} className="relative">
+                                            {/* Circular timeline node indicator */}
+                                            <span className="absolute -left-[31px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border-2 border-indigo-600 bg-white shadow-2xs">
+                                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-600"></span>
+                                            </span>
+
+                                            {/* Card detail body */}
+                                            <div className="bg-slate-50/60 border border-slate-200/80 rounded-xl p-4 shadow-3xs flex flex-col space-y-2 hover:bg-slate-50 transition-all duration-300">
+                                              <div className="flex justify-between items-center flex-wrap gap-2">
+                                                <div className="flex items-center gap-2">
+                                                  <span className="font-extrabold text-slate-800 text-xs">
+                                                    {ev.periodName} ({ev.periodType === "MONTH" ? "Đánh giá Tháng" : "Đánh giá Tuần"})
+                                                  </span>
+                                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${lvlBg}`}>
+                                                    Mức độ: {lvl}
+                                                  </span>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-slate-400">
+                                                  {new Date(ev.createdAt).toLocaleDateString("vi-VN")}
+                                                </span>
+                                              </div>
+                                              <p className="text-slate-600 text-xs font-semibold leading-relaxed italic bg-white p-3 rounded-lg border border-slate-100">
+                                                &ldquo;{ev.comment}&rdquo;
+                                              </p>
+                                              {ev.updatedStatus && (
+                                                <div className="text-[10px] font-black text-indigo-700">
+                                                  📌 Đề xuất tiếp theo: {ev.updatedStatus}
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
+
+                    {/* Tab 3: Achievements & Highlights */}
+                    {(activeProfileTab === "achievements" || typeof window === "undefined") && (
+                      <div className={`space-y-6 ${activeProfileTab !== "achievements" ? "print-only hidden" : ""}`}>
+                        {/* Achievements Grid */}
+                        <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-3">
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
+                            <Award className="h-4.5 w-4.5 text-indigo-600" />
+                            Danh sách thành tích học sinh đạt được
+                          </h4>
+                          {achievements.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic py-2 text-center font-semibold">Chưa có bản ghi thành tích nào được lập trong năm học</p>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                              {achievements.map((a) => (
+                                <div key={a.id} className="border border-slate-100 p-3.5 rounded-xl bg-slate-50/50 flex flex-col gap-1 text-xs">
+                                  <strong className="text-slate-800 text-sm font-black">{a.achievement?.title || "Khen tặng học tập"}</strong>
+                                  <span className="text-[10px] text-slate-400 font-bold">{a.achievement?.date ? new Date(a.achievement.date).toLocaleDateString("vi-VN") : "Học kỳ"}</span>
+                                  <p className="text-slate-500 font-medium italic mt-1">{a.notes || a.achievement?.description}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Highlight Comments */}
+                        <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-3">
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
+                            <MessageSquare className="h-4.5 w-4.5 text-indigo-600" />
+                            Ghi nhận nhận xét nổi bật từ GVCN / GVBM
+                          </h4>
+                          {highlights.length === 0 ? (
+                            <p className="text-xs text-slate-400 italic py-2 text-center font-semibold">Chưa có nhận xét nổi bật đặc biệt nào được ghi nhận</p>
+                          ) : (
+                            <div className="space-y-3">
+                              {highlights.map((h) => (
+                                <div key={h.id} className="border border-slate-100 p-3.5 rounded-xl bg-slate-50/50 flex flex-col gap-1.5 text-xs">
+                                  <div className="flex justify-between items-center flex-wrap gap-2">
+                                    <span className="font-bold text-slate-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                                      Phân loại: {h.category || "Ý thức học tập"}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-slate-400">
+                                      Ghi nhận bởi: {h.teacherName || "Giáo viên"} ({new Date(h.createdAt).toLocaleDateString("vi-VN")})
+                                    </span>
+                                  </div>
+                                  <p className="text-slate-600 font-medium leading-relaxed italic bg-white p-3 rounded-lg border border-slate-100">
+                                    &ldquo;{h.comment}&rdquo;
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Career Orientation */}
+                        <div className="bg-white rounded-2xl border p-5 shadow-xs space-y-3">
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider border-b pb-2 flex items-center gap-2">
+                            <GraduationCap className="h-4.5 w-4.5 text-indigo-600" />
+                            Định hướng nghề nghiệp sớm (Khối Trung học)
+                          </h4>
+                          {orientation && orientation.result ? (
+                            <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-xl space-y-1 text-xs">
+                              <div><span className="text-slate-400 font-semibold">Hướng nghiệp định xuất:</span> <strong className="text-indigo-800 font-black">{orientation.result}</strong></div>
+                              {orientation.notes && <div className="mt-2 text-slate-600 font-medium leading-relaxed italic bg-white p-3 rounded-lg border border-slate-100"><strong>Ghi chú giáo viên:</strong> {orientation.notes}</div>}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic py-2 text-center font-semibold">Chưa thiết lập thông tin định hướng nghề nghiệp cho học sinh này</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Footer buttons */}
+            <div className="px-6 py-4 border-t flex justify-end gap-3 bg-slate-50 no-print">
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(false)}
+                className="border hover:bg-slate-100 py-2.5 px-6 rounded-xl text-xs font-bold transition-all text-slate-600 cursor-pointer"
+              >
+                Đóng học bạ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 {/* 3. Modal Đề xuất kết thúc bồi dưỡng */}
       {isRequestTermModalOpen && (
