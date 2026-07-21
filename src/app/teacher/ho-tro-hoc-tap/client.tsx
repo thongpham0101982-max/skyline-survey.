@@ -293,6 +293,22 @@ export function TeacherSupportClient({
     return () => window.removeEventListener("academicYearChanged", handleYearChange)
   }, [selectedYearId])
 
+  // Auto-fill Psychological Support program and reason when student with psychological commitment is selected
+  useEffect(() => {
+    if (selectedStudentIds.length > 0 && commitmentCandidates.length > 0) {
+      const selectedCommitments = commitmentCandidates.filter(c => selectedStudentIds.includes(c.id));
+      const hasPsychCommitment = selectedCommitments.some(c => 
+        (c.matchedSubjects || []).some((s) => s.toLowerCase().includes("tâm lý"))
+      );
+      if (hasPsychCommitment) {
+        setProposePsychological(true);
+        if (!proposePsychReason) {
+          setProposePsychReason("Môn Tâm lý");
+        }
+      }
+    }
+  }, [selectedStudentIds, commitmentCandidates, proposePsychReason]);
+
   // Submit new learning support proposal for multiple selected students
   const handlePropose = async () => {
     if (selectedStudentIds.length === 0) {
