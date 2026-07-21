@@ -802,7 +802,7 @@ export function StudentProfilesAdminClient({
                                           </tr>
                                         </thead>
                                         <tbody>
-                                          {selectedStudent.entranceSurvey.scores?.length > 0 ? (
+                                          {(selectedStudent.entranceSurvey.scores || []).length > 0 ? (
                                             selectedStudent.entranceSurvey.scores.map((sc, idx) => (
                                               <tr key={idx} className="font-semibold text-slate-705">
                                                 <td className="p-2 border border-slate-200 font-bold">{sc.areaName}</td>
@@ -1082,7 +1082,7 @@ export function StudentProfilesAdminClient({
                             <ArrowLeftRight className="w-4 h-4 text-slate-400" />
                             Thông tin Học sinh chuyển trường (nếu có)
                           </h4>
-                          {selectedStudent.transfers?.length > 0 ? (
+                          {(selectedStudent.transfers || []).length > 0 ? (
                             <div className="space-y-3">
                               {selectedStudent.transfers.map((tr) => (
                                 <div key={tr.id} className="bg-orange-50 border border-orange-200 p-4 rounded-xl text-xs font-semibold text-slate-705 shadow-2xs animate-in fade-in duration-200">
@@ -1110,14 +1110,14 @@ export function StudentProfilesAdminClient({
                           </span>
                         </h4>
 
-                        {selectedStudent.highlightComments?.filter((c) => c.category === "ANNOUNCEMENT").length === 0 ? (
+                        {((selectedStudent.highlightComments || []).filter((c) => c.category === "ANNOUNCEMENT")).length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-16 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                             <Bell className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                             Bản tin chưa có thông báo nào từ giáo viên chủ nhiệm.
                           </div>
                         ) : (
                           <div className="space-y-4">
-                            {selectedStudent.highlightComments
+                            {(selectedStudent.highlightComments || [])
                               .filter((c) => c.category === "ANNOUNCEMENT")
                               .map((c) => {
                                 const isLiked = postLikes[c.id]?.liked || false;
@@ -1207,7 +1207,7 @@ export function StudentProfilesAdminClient({
                     {activeTab === "achievements" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
                         <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Thành tích & Khen thưởng của Học sinh</h4>
-                        {selectedStudent.achievements?.length === 0 ? (
+                        {(!selectedStudent.achievements || selectedStudent.achievements.length === 0) ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa có ghi nhận giải thưởng hoặc thành tích nổi bật nào.</div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1303,7 +1303,7 @@ export function StudentProfilesAdminClient({
                     {activeTab === "projects" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
                         <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Dự án khoa học & Hoạt động trải nghiệm</h4>
-                        {selectedStudent.projects?.length === 0 ? (
+                        {(!selectedStudent.projects || selectedStudent.projects.length === 0) ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia dự án học tập nào.</div>
                         ) : (
                           <div className="grid grid-cols-1 gap-3">
@@ -1347,13 +1347,13 @@ export function StudentProfilesAdminClient({
                           </span>
                         </h4>
 
-                        {selectedStudent.highlightComments?.filter((c) => c.category !== "ANNOUNCEMENT").length === 0 ? (
+                        {((selectedStudent.highlightComments || []).filter((c) => c.category !== "ANNOUNCEMENT")).length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                             Chưa có nhận xét nổi bật định kỳ nào từ giáo viên chủ nhiệm.
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            {selectedStudent.highlightComments
+                            {(selectedStudent.highlightComments || [])
                               .filter((c) => c.category !== "ANNOUNCEMENT")
                               .map((c) => (
                                 <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 transition-all animate-in fade-in duration-200">
@@ -1439,7 +1439,7 @@ export function StudentProfilesAdminClient({
                                         <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
                                       ) : (
                                         <div className="relative border-l-2 border-[#00A99D]/30 pl-5 space-y-5 ml-1.5">
-                                          {target.evaluations.map((ev) => (
+                                          {(target.evaluations || []).map((ev) => (
                                             <div key={ev.id} className="relative group">
                                               <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#00A99D] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm">
                                                 <span className="h-1.5 w-1.5 bg-[#00A99D] rounded-full"></span>
@@ -1463,9 +1463,7 @@ export function StudentProfilesAdminClient({
                           </div>
                         )}
                       </div>
-                    )}
-
-                  </div>
+                    )}                  </div>
                 ) : (
                   <div className="text-xs text-slate-400 italic text-center py-12">Có lỗi xảy ra khi tải dữ liệu học sinh.</div>
                 )}
