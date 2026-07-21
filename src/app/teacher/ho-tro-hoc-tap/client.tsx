@@ -1084,22 +1084,33 @@ export function TeacherSupportClient({
                 }
 
                 return filtered.map((s: any, index: number) => {
-                  const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
-                  const isApproved = existingAcademic?.assignments && existingAcademic.assignments.length > 0
-                  const isTerminated = existingAcademic?.terminationStatus === "TERMINATED"
-                  const isPending = existingAcademic?.terminationStatus === "PENDING_TERMINATION"
+                  const hasPsychology = s.committedSubjects.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
+                  const existingTarget = targets.find(t => 
+                    t.studentId === s.id && 
+                    (hasPsychology ? t.supportType === "PSYCHOLOGICAL" : t.supportType === "ACADEMIC")
+                  )
+                  const isApproved = existingTarget?.assignments && existingTarget.assignments.length > 0
+                  const isTerminated = existingTarget?.terminationStatus === "TERMINATED"
+                  const isPending = existingTarget?.terminationStatus === "PENDING_TERMINATION"
 
-                   let statusText = "Chưa đề xuất hỗ trợ"
+                  const isAssigned = existingTarget?.assignments?.some((a: any) => a.teacherId === teacher?.id)
+                  const matchedClass = assignedClasses.find((c: any) => c.id === s.classId)
+                  const isHomeroomTeacherOfThisClass = matchedClass ? matchedClass.isHomeroom : false
+                  const canEvaluateCommitment = existingTarget?.supportType === "PSYCHOLOGICAL"
+                    ? (isAssigned && !isHomeroomTeacherOfThisClass)
+                    : isAssigned
+
+                  let statusText = "Chưa đề xuất hỗ trợ"
                   let statusClass = "bg-slate-100 text-slate-600 border border-slate-200"
 
-                  if (existingAcademic) {
+                  if (existingTarget) {
                     if (isTerminated) {
                       statusText = "Đã kết thúc"
                       statusClass = "bg-emerald-100 text-emerald-800"
                     } else if (isPending) {
                       statusText = "Hoàn thành"
                       statusClass = "bg-amber-100 text-amber-800"
-                    } else if (isApproved) {
+                    } else if (isApproved || existingTarget.status === "ĐÃ DUYỆT" || existingTarget.status === "ACTIVE") {
                       statusText = "Đang hỗ trợ"
                       statusClass = "bg-emerald-50 text-emerald-700 border border-emerald-200"
                     } else {
@@ -1203,26 +1214,32 @@ export function TeacherSupportClient({
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
-                        {existingAcademic ? (
+                        {existingTarget ? (
                           isApproved && !isTerminated && !isPending ? (
-                            <button
-                              onClick={() => {
-                                setEvalTargetId(existingAcademic.id)
-                                setEvalTargetName(s.studentName)
-                                setEvalTargetType(existingAcademic.supportType)
-                                setEvalComment("")
-                                setEvalStudent(s)
-                                setEvalTargetObj(existingAcademic)
-                                const options = configs.filter(c => c.supportType === existingAcademic.supportType)
-                                setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                                setIsEvaluationModalOpen(true)
-                              }}
-                              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-lg text-xs transition-all shadow-xs"
-                            >
-                              Tiến hành đánh giá
-                            </button>
+                            canEvaluateCommitment ? (
+                              <button
+                                onClick={() => {
+                                  setEvalTargetId(existingTarget.id)
+                                  setEvalTargetName(s.studentName)
+                                  setEvalTargetType(existingTarget.supportType)
+                                  setEvalComment("")
+                                  setEvalStudent(s)
+                                  setEvalTargetObj(existingTarget)
+                                  const options = configs.filter(c => c.supportType === existingTarget.supportType)
+                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                                  setIsEvaluationModalOpen(true)
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-lg text-xs transition-all shadow-xs"
+                              >
+                                Tiến hành đánh giá
+                              </button>
+                            ) : (
+                              <span className="text-xs text-slate-400 font-medium">Đang hỗ trợ</span>
+                            )
                           ) : (
-                            <span className="text-xs text-slate-400 font-medium">Đã tạo đề xuất</span>
+                            <span className="text-xs text-slate-400 font-medium">
+                              {existingTarget.status === "ĐÃ DUYỆT" || existingTarget.status === "ACTIVE" ? "Đang hỗ trợ" : "Đã tạo đề xuất"}
+                            </span>
                           )
                         ) : (
                           <button
