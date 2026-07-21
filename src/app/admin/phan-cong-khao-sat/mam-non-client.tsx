@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback, useMemo } from "react"
 import {
   UserCheck, Baby, Settings, Search, Trash2,
   Mail, Loader2, Filter, Calendar, CheckCircle2, Layers,
-  AlertCircle, X, RefreshCw, Users, Info, PlusCircle, Check, HelpCircle
+  AlertCircle, X, RefreshCw, Users, Info, PlusCircle, Check, HelpCircle, Sparkles
 } from "lucide-react"
 
 // ─── Helpers ───
@@ -179,6 +179,7 @@ export function PhanCongMamNonClient({
 
   const [uiStage, setUiStage] = useState<"STAGE_1" | "STAGE_2" | "">("")
   const [uiForm, setUiForm] = useState<string>("")
+  const [uiProbationForm, setUiProbationForm] = useState<string>("")
 
   // Auto-detect stage based on batch start date or default to empty on load
   useEffect(() => {
@@ -209,6 +210,15 @@ export function PhanCongMamNonClient({
   useEffect(() => {
     const grade = aGrades[0]
     if (grade) {
+      // Map Probation form statically
+      if (grade === "Nhà trẻ 12-18 tháng") setUiProbationForm("Mẫu phiếu học thử 12_18")
+      else if (grade === "Nhà trẻ 18-24 tháng") setUiProbationForm("Mẫu phiếu học thử 18 đến 24 tháng")
+      else if (grade === "Nhà trẻ 24-36 tháng") setUiProbationForm("Mẫu phiếu học thử 24 đến 36")
+      else if (grade === "Mẫu giáo bé") setUiProbationForm("Mẫu phiếu 3 đến 4 tuổi")
+      else if (grade === "Mẫu giáo nhỡ") setUiProbationForm("Mẫu phiếu 4 đến 5 tuổi")
+      else if (grade === "Mẫu giáo lớn") setUiProbationForm("Mẫu phiếu 5 đến 6 tuổi")
+      else setUiProbationForm("")
+
       if (grade === "Mẫu phiếu học thử") {
         setUiForm("Mẫu phiếu học thử")
         return
@@ -236,6 +246,7 @@ export function PhanCongMamNonClient({
       }
     } else if (!grade) {
       setUiForm("")
+      setUiProbationForm("")
     }
   }, [aGrades, uiStage, uiForm])
 
@@ -822,24 +833,50 @@ export function PhanCongMamNonClient({
                 </div>
               </div>
 
-              <div className="lg:col-span-1 space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700 ml-1 flex items-center gap-1">
-                  Mẫu Phiếu khảo sát tự động ánh xạ
-                  <span className="text-slate-400 hover:text-slate-655 cursor-help" title="Mẫu khảo sát tâm lý tương ứng với Khối và Giai đoạn đánh giá"><HelpCircle className="w-3.5 h-3.5" /></span>
-                </label>
-                <div className="relative mt-1">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Baby className="w-4 h-4" />
+              <div className="lg:col-span-1 space-y-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 ml-1 flex items-center gap-1">
+                    Mẫu Phiếu khảo sát tự động ánh xạ
+                    <span className="text-slate-400 hover:text-slate-655 cursor-help" title="Mẫu khảo sát tâm lý tương ứng với Khối và Giai đoạn đánh giá"><HelpCircle className="w-3.5 h-3.5" /></span>
+                  </label>
+                  <div className="relative mt-1">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Baby className="w-4 h-4" />
+                    </div>
+                    <select 
+                      value={uiForm} 
+                      disabled 
+                      className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed border-slate-200/80 font-bold text-[#00A99D]`}>
+                      <option value="">Chờ lựa chọn cấu hình...</option>
+                      {formOptions.map(f => (
+                        <option key={f} value={f}>Mẫu: {f}</option>
+                      ))}
+                    </select>
                   </div>
-                  <select 
-                    value={uiForm} 
-                    disabled 
-                    className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed border-slate-200/80 font-bold text-[#00A99D]`}>
-                    <option value="">Chờ lựa chọn cấu hình...</option>
-                    {formOptions.map(f => (
-                      <option key={f} value={f}>Mẫu: {f}</option>
-                    ))}
-                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 ml-1 flex items-center gap-1">
+                    Mẫu phiếu học thử tự động ánh xạ
+                    <span className="text-slate-400 hover:text-slate-655 cursor-help" title="Mẫu phiếu khảo sát học thử tương ứng"><HelpCircle className="w-3.5 h-3.5" /></span>
+                  </label>
+                  <div className="relative mt-1">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Sparkles className="w-4 h-4" />
+                    </div>
+                    <select 
+                      value={uiProbationForm} 
+                      disabled 
+                      className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed border-slate-200/80 font-bold text-emerald-600`}>
+                      <option value="">Chờ lựa chọn cấu hình...</option>
+                      <option value="Mẫu phiếu học thử 12_18">Mẫu: Mẫu phiếu học thử 12_18</option>
+                      <option value="Mẫu phiếu học thử 18 đến 24 tháng">Mẫu: Mẫu phiếu học thử 18 đến 24 tháng</option>
+                      <option value="Mẫu phiếu học thử 24 đến 36">Mẫu: Mẫu phiếu học thử 24 đến 36</option>
+                      <option value="Mẫu phiếu 3 đến 4 tuổi">Mẫu: Mẫu phiếu 3 đến 4 tuổi</option>
+                      <option value="Mẫu phiếu 4 đến 5 tuổi">Mẫu: Mẫu phiếu 4 đến 5 tuổi</option>
+                      <option value="Mẫu phiếu 5 đến 6 tuổi">Mẫu: Mẫu phiếu 5 đến 6 tuổi</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
