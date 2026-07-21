@@ -1480,22 +1480,29 @@ export function TeacherSupportClient({
                         setStudentSearchQuery("")
                         fetchClassStudents(newClassId)
                         
-                        // Cập nhật loại hỗ trợ dựa theo vai trò (GVCN vs GVBM)
+                        // Cập nhật loại hỗ trợ dựa theo vai trò (GVCN vs GVBM vs GVBM Tâm lý)
                         const selectedClass = assignedClasses.find((c: any) => c.id === newClassId)
                         if (selectedClass) {
-                          if (selectedClass.isHomeroom) {
+                          const teachesPsych = selectedClass.subjects?.some((sub: any) => 
+                            (sub?.subjectName || sub?.name || "").toLowerCase().includes("tâm lý")
+                          ) || false;
+                          const teachesAcad = selectedClass.subjects?.some((sub: any) => 
+                            !(sub?.subjectName || sub?.name || "").toLowerCase().includes("tâm lý")
+                          ) || false;
+
+                          if (selectedClass.isHomeroom || (teachesPsych && !teachesAcad)) {
                             setProposePsychological(true)
                             setProposeAcademic(false)
                             setSelectedSubjects([])
+                            setProposePsychReason("Tâm lý")
                           } else {
                             setProposePsychological(false)
                             setProposeAcademic(true)
-                            // Tự động chọn các môn học GV đang phụ trách tại lớp này
-                            if (selectedClass.subjects && selectedClass.subjects.length > 0) {
-                              setSelectedSubjects(selectedClass.subjects.map((s: any) => s.subjectName || s.name))
-                            } else {
-                              setSelectedSubjects([])
-                            }
+                            // Tự động chọn các môn học GV đang phụ trách tại lớp này (loại trừ Tâm lý)
+                            const academicSubjects = selectedClass.subjects?.filter((s: any) => 
+                              !(s.subjectName || s.name || "").toLowerCase().includes("tâm lý")
+                            ) || []
+                            setSelectedSubjects(academicSubjects.map((s: any) => s.subjectName || s.name))
                           }
                         } else {
                            setProposePsychological(false)
@@ -1732,8 +1739,11 @@ export function TeacherSupportClient({
                         const teachesPsychology = selectedClassObj?.subjects?.some((sub: any) => 
                           (sub?.subjectName || sub?.name || "").toLowerCase().includes("tâm lý")
                         ) || false
+                        const teachesAcademic = selectedClassObj?.subjects?.some((sub: any) => 
+                          !(sub?.subjectName || sub?.name || "").toLowerCase().includes("tâm lý")
+                        ) || false
                         const canProposePsych = proposeClassId && (isHomeroom || teachesPsychology)
-                        const canProposeAcademic = proposeClassId && !isHomeroom
+                        const canProposeAcademic = proposeClassId && !isHomeroom && teachesAcademic
 
                         return (
                           <>
