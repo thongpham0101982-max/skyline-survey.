@@ -106,6 +106,8 @@ export default function AdminStudentProfilesPrintPage() {
             color: black !important;
             margin: 0 !important;
             padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .print-cv-page {
             box-shadow: none !important;
@@ -118,6 +120,8 @@ export default function AdminStudentProfilesPrintPage() {
             min-height: 100vh !important;
             page-break-after: always !important;
             position: relative !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
           .no-print-layout {
             display: none !important;
