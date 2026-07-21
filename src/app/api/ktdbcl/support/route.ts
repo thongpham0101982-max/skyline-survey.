@@ -107,7 +107,64 @@ export async function GET(req: Request) {
         },
         orderBy: { createdAt: "desc" }
       })
-      return NextResponse.json(targets)
+
+      // Fetch student commitments from input assessment student records
+      const studentCodes = targets.map((t) => t.student?.studentCode).filter(Boolean);
+      const studentNames = targets.map((t) => t.student?.studentName).filter(Boolean);
+
+      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: studentCodes } },
+            { enrollmentCode: { in: studentCodes } },
+            { fullName: { in: studentNames } }
+          ]
+        },
+        select: {
+          studentCode: true,
+          enrollmentCode: true,
+          fullName: true,
+          directorNote: true
+        }
+      });
+
+      const parseCommittedSubjects = (note) => {
+        if (!note) return []
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        if (match && match[1]) {
+          return match[1].split(",").map((s) => s.trim())
+        }
+        return []
+      }
+
+      const cleanString = (str) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
+      const targetsWithCommitment = targets.map((t) => {
+        const assessment = inputAssessments.find((a) => {
+          if (a.studentCode === t.student?.studentCode || a.enrollmentCode === t.student?.studentCode) {
+            return true;
+          }
+          return cleanString(a.fullName) === cleanString(t.student?.studentName);
+        });
+
+        const committedSubjects = assessment ? parseCommittedSubjects(assessment.directorNote || "") : [];
+
+        return {
+          ...t,
+          commitmentSubjects: committedSubjects,
+          commitmentNote: committedSubjects.length > 0 
+            ? committedSubjects.join(", ") 
+            : ""
+        };
+      });
+
+      return NextResponse.json(targetsWithCommitment)
     }
 
     // 3. Action: getAssignments

@@ -954,6 +954,99 @@ export function OverviewDashboard({
 
       </div>
 
+      {/* ===== BẢNG THỐNG KÊ CHI TIẾT THEO CƠ SỞ & KHỐI ===== */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h2 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+              <Building2 className="h-4.5 w-4.5 text-indigo-500" />
+              Thống kê Chi tiết theo Cơ sở & Khối lớp
+            </h2>
+            <p className="text-[10px] text-slate-400">Số liệu chi tiết phân bổ học sinh theo dõi bồi dưỡng và phân công giảng dạy</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto border border-slate-100 rounded-xl">
+          <table className="min-w-full divide-y divide-slate-100 text-xs">
+            <thead className="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+              <tr>
+                <th className="px-4 py-3 text-left">Cơ sở</th>
+                <th className="px-4 py-3 text-left">Khối</th>
+                <th className="px-4 py-3 text-center">Tổng số HS</th>
+                <th className="px-4 py-3 text-center">Phụ đạo học tập</th>
+                <th className="px-4 py-3 text-center">Hỗ trợ tâm lý</th>
+                <th className="px-4 py-3 text-center">Đã phân công GV</th>
+                <th className="px-4 py-3 text-center">Chưa phân công GV</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+              {(() => {
+                const statsMap = {};
+
+                targets.forEach((t) => {
+                  const campusName = t.student?.class?.campus?.campusName || "Không xác định";
+                  const className = t.student?.class?.className || "";
+                  const gradeName = className ? `Khối ${className.match(/^\d+/)?.[0] || className}` : "Không xác định";
+                  
+                  const key = `${campusName}_${gradeName}`;
+                  if (!statsMap[key]) {
+                    statsMap[key] = {
+                      campusName,
+                      gradeName,
+                      total: 0,
+                      academic: 0,
+                      psychology: 0,
+                      assigned: 0,
+                      unassigned: 0
+                    };
+                  }
+
+                  const stats = statsMap[key];
+                  stats.total++;
+                  if (t.supportType === "ACADEMIC") {
+                    stats.academic++;
+                  } else if (t.supportType === "PSYCHOLOGICAL") {
+                    stats.psychology++;
+                  }
+
+                  const isAssigned = t.assignments && t.assignments.length > 0;
+                  if (isAssigned) {
+                    stats.assigned++;
+                  } else {
+                    stats.unassigned++;
+                  }
+                });
+
+                const statsList = Object.values(statsMap).sort((a, b) => {
+                  if (a.campusName !== b.campusName) return a.campusName.localeCompare(b.campusName);
+                  return a.gradeName.localeCompare(b.gradeName);
+                });
+
+                if (statsList.length === 0) {
+                  return (
+                    <tr>
+                      <td colSpan={7} className="text-center py-6 text-slate-400">Không có dữ liệu thống kê</td>
+                    </tr>
+                  );
+                }
+
+                return statsList.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-800">{row.campusName}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-800">{row.gradeName}</td>
+                    <td className="px-4 py-3 text-center font-bold text-indigo-700">{row.total}</td>
+                    <td className="px-4 py-3 text-center text-blue-700 font-semibold">{row.academic}</td>
+                    <td className="px-4 py-3 text-center text-purple-700 font-semibold">{row.psychology}</td>
+                    <td className="px-4 py-3 text-center text-emerald-700 font-semibold">{row.assigned}</td>
+                    <td className="px-4 py-3 text-center text-orange-700 font-semibold">{row.unassigned}</td>
+                  </tr>
+                ));
+              })()}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
     </div>
   )
 }

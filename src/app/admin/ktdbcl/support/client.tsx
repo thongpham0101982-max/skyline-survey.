@@ -2268,10 +2268,11 @@ export function SupportClient({
                     <thead className="bg-slate-50">
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nguồn đề xuất</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Cam kết đầu vào</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Chương trình / Môn</th>
-                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lý do đề xuất / Ghi chú</th>
+                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GV Phân công</th>
                         <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200 text-xs">
@@ -2282,7 +2283,7 @@ export function SupportClient({
                           : t.terminationStatus === "PENDING_TERMINATION"
                           ? "bg-amber-100 text-amber-800 animate-pulse"
                           : isUnapproved
-                          ? "bg-orange-100 text-orange-800 font-bold"
+                          ? "bg-blue-50 text-blue-600 border border-blue-200"
                           : "bg-indigo-100 text-indigo-800"
 
                         const statusText = t.terminationStatus === "TERMINATED"
@@ -2290,37 +2291,78 @@ export function SupportClient({
                           : t.terminationStatus === "PENDING_TERMINATION"
                           ? "Hoàn thành"
                           : isUnapproved
-                          ? "Cần can thiệp"
+                          ? "Đang đề xuất"
                           : "Đang hỗ trợ"
+
+                        const assignedTeachers = t.assignments?.map((a: any) => a.teacher?.teacherName).filter(Boolean) || []
 
                         return (
                           <tr key={t.id} className="hover:bg-slate-50/50 transition-colors">
+                            {/* 1. Học sinh */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="font-bold text-slate-800">{t.student?.studentName}</div>
                               <div className="text-[10px] text-slate-500 mt-0.5">
                                 {t.student?.studentCode} • Lớp {t.student?.class?.className}
                               </div>
                               <div className="text-[9px] text-slate-400 font-medium">
-                                Cơ sở: {t.student?.class?.campus?.campusName || "-"}
+                                Cơ sở: {t.student?.class?.campus?.campusName || "-"} • Khối {t.student?.class?.className?.match(/^\d+/)?.[0] || t.student?.class?.className || "-"}
                               </div>
                             </td>
+
+                            {/* 2. Nguồn đề xuất */}
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                t.sourceType === "GVCN" || t.sourceType === "TAM_LY"
+                                  ? "bg-teal-50 text-teal-700 border border-teal-200"
+                                  : t.sourceType === "GVBM"
+                                  ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                  : "bg-slate-50 text-slate-700 border border-slate-200"
+                              }`}>
+                                {t.sourceType === "GVCN" || t.sourceType === "TAM_LY" ? "GV Chủ nhiệm" : t.sourceType === "GVBM" ? "GV Bộ môn" : "Khảo sát đầu vào"}
+                              </span>
+                            </td>
+
+                            {/* 3. Cam kết đầu vào */}
+                            <td className="px-4 py-3">
+                              {t.commitmentNote ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                                  ⭐ {t.commitmentNote}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[10px]">Không có</span>
+                              )}
+                            </td>
+
+                            {/* 4. Chương trình / Môn */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <div className="flex flex-col gap-1">
                                 <span className={`px-2 py-0.5 rounded text-[10px] font-bold w-fit ${
                                   t.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
                                 }`}>
-                                  {t.supportType === "ACADEMIC" ? "Môn học" : "Tâm lý"}
+                                  {t.supportType === "ACADEMIC" ? "Bồi dưỡng học tập" : "Hỗ trợ Tâm lý"}
                                 </span>
                                 <span className="font-semibold text-slate-700 text-[10px] max-w-[150px] truncate" title={t.reason}>
                                   {t.reason || "-"}
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 max-w-xs">
-                              <p className="text-slate-600 leading-normal line-clamp-2" title={t.notes}>
-                                {t.notes || "Không có ghi chú"}
-                              </p>
+
+                            {/* 5. GV Phân công */}
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {assignedTeachers.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 max-w-[150px]">
+                                  {assignedTeachers.map((name, index) => (
+                                    <span key={index} className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                      {name}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
+                              )}
                             </td>
+
+                            {/* 6. Trạng thái */}
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${progressBadge}`}>
                                 {statusText}
