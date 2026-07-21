@@ -696,63 +696,102 @@ export function TeacherSupportClient({
       </div>
 
       {/* Introduction Card */}
-      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 shadow-3xs space-y-4">
-        <div className="flex items-start gap-3">
-          <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600 mt-0.5">
-            <Info className="h-5 w-5" />
-          </div>
-          <div className="space-y-4 w-full">
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl text-white space-y-6">
+        {/* Glow Effects */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+
+        <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
+          <div className="flex items-start gap-4">
+            <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-3 rounded-2xl shadow-lg shadow-indigo-500/20 text-white mt-1">
+              <Info className="h-6 w-6" />
+            </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-800">Giới thiệu chức năng Phụ đạo, bồi dưỡng Học sinh</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Hướng dẫn quy trình đề xuất và tổ chức hỗ trợ học tập, tâm lý cho học sinh</p>
+              <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">Cẩm nang hướng dẫn</span>
+              <h2 className="text-xl md:text-2xl font-black text-white mt-0.5 tracking-tight">
+                Phụ đạo & Bồi dưỡng Học sinh
+              </h2>
+              <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                Hệ thống đề xuất, tổ chức học tập chuyên biệt và theo dõi sát sao tiến độ phát triển tâm lý, văn học của học sinh tại các cơ sở.
+              </p>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
-              {/* Cột 1: Hỗ trợ Tâm lý */}
-              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-3xs space-y-2">
-                <h4 className="text-xs font-black text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-                  Đề xuất Hỗ trợ Tâm lý
-                </h4>
-                <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4 leading-relaxed">
-                  <li>GVCN và Giáo viên Tâm lý được đề xuất học sinh cần hỗ trợ hoặc tiếp tục theo dõi tâm lý.</li>
-                  <li>Giáo viên Tâm lý thực hiện hỗ trợ, cập nhật diễn biến và đánh giá kết quả định kỳ hằng tuần.</li>
-                </ul>
+          </div>
+        </div>
+
+        <div className="relative grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Cột 1: Hỗ trợ Tâm lý */}
+          <div className="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-indigo-500/30 rounded-2xl p-5 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-indigo-500/20 p-2 rounded-xl text-indigo-400">
+                <Heart className="h-5 w-5" />
               </div>
-              
-              {/* Cột 2: Hỗ trợ Học tập */}
-              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-3xs space-y-2">
-                <h4 className="text-xs font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
-                  Đề xuất Hỗ trợ Học tập (Bồi dưỡng Văn hóa)
-                </h4>
-                <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4 leading-relaxed">
-                  <li>GVBM được đề xuất học sinh cần hỗ trợ học tập theo từng môn học.</li>
-                  <li>GVBM xây dựng nội dung hỗ trợ, theo dõi mức độ tiến bộ và đánh giá kết quả định kỳ hằng tháng.</li>
-                </ul>
-              </div>
+              <h3 className="text-sm font-extrabold text-indigo-300 uppercase tracking-wider">
+                Đề xuất Hỗ trợ Tâm lý
+              </h3>
             </div>
-            
-            {/* Quy trình quản lý chung */}
-            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-3xs space-y-2">
-              <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
-                Quy trình quản lý chung
-              </h4>
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-semibold pt-1">
-                <span className="px-2.5 py-1 bg-slate-50 border rounded-lg text-slate-700">Đề xuất</span>
-                <span className="text-slate-400 font-bold">→</span>
-                <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700">Xác nhận nhu cầu</span>
-                <span className="text-slate-400 font-bold">→</span>
-                <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-700">Phân công hỗ trợ</span>
-                <span className="text-slate-400 font-bold">→</span>
-                <span className="px-2.5 py-1 bg-amber-50 border border-amber-100 rounded-lg text-amber-700">Theo dõi định kỳ</span>
-                <span className="text-slate-400 font-bold">→</span>
-                <span className="px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg text-blue-700">Đánh giá tiến bộ</span>
-                <span className="text-slate-400 font-bold">→</span>
-                <span className="px-2.5 py-1 bg-slate-900 border border-slate-900 rounded-lg text-white">Tiếp tục hoặc kết thúc hỗ trợ</span>
+            <ul className="text-xs text-slate-350 space-y-3 pl-1 leading-relaxed">
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                <span><strong>Đơn vị đề xuất:</strong> GVCN và Giáo viên Tâm lý chủ động đề xuất học sinh cần hỗ trợ hoặc tiếp tục theo dõi tâm lý sát sao.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                <span><strong>Quy trình hỗ trợ:</strong> Giáo viên Tâm lý thực hiện hỗ trợ chuyên sâu, cập nhật diễn biến và đánh giá kết quả định kỳ <strong>hằng tuần</strong>.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Cột 2: Hỗ trợ Học tập */}
+          <div className="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-emerald-500/30 rounded-2xl p-5 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-emerald-500/20 p-2 rounded-xl text-emerald-400">
+                <GraduationCap className="h-5 w-5" />
               </div>
+              <h3 className="text-sm font-extrabold text-emerald-300 uppercase tracking-wider">
+                Đề xuất Hỗ trợ Học tập
+              </h3>
             </div>
+            <ul className="text-xs text-slate-350 space-y-3 pl-1 leading-relaxed">
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span><strong>Đơn vị đề xuất:</strong> Giáo viên Bộ môn (GVBM) đề xuất học sinh cần phụ đạo, bồi dưỡng học tập theo từng môn học được phân công.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span><strong>Quy trình hỗ trợ:</strong> GVBM trực tiếp xây dựng nội dung hỗ trợ, theo dõi mức độ tiến bộ và đánh giá kết quả định kỳ <strong>hằng tháng</strong>.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Quy trình quản lý chung */}
+        <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Award className="h-4.5 w-4.5 text-amber-400" />
+            <h4 className="text-xs font-black text-amber-300 uppercase tracking-widest">
+              Quy trình quản lý chung
+            </h4>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
+            {[
+              { label: "Đề xuất", bg: "bg-slate-800 text-slate-200 border-slate-700" },
+              { label: "Xác nhận nhu cầu", bg: "bg-indigo-950/80 text-indigo-300 border-indigo-900/50" },
+              { label: "Phân công hỗ trợ", bg: "bg-emerald-950/80 text-emerald-300 border-emerald-900/50" },
+              { label: "Theo dõi định kỳ", bg: "bg-amber-950/80 text-amber-300 border-amber-900/50" },
+              { label: "Đánh giá tiến bộ", bg: "bg-blue-950/80 text-blue-300 border-blue-900/50" },
+              { label: "Tiếp tục / Kết thúc hỗ trợ", bg: "bg-white text-slate-900 border-white font-black shadow-lg shadow-white/5" }
+            ].map((step, idx, arr) => (
+              <div key={idx} className="flex items-center gap-2 my-1">
+                <span className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${step.bg} shadow-xs`}>
+                  {step.label}
+                </span>
+                {idx < arr.length - 1 && (
+                  <span className="text-slate-650 font-black text-sm">➔</span>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </div>
