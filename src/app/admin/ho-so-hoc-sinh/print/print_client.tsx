@@ -5,6 +5,30 @@ import { useEffect, useState } from "react"
 import { Loader2, GraduationCap, User, Award, FileText, Compass, ClipboardCheck, BookOpen, MessageSquare } from "lucide-react"
 
 export default function AdminStudentProfilesPrintPage() {
+  useEffect(() => {
+    const style = document.createElement("style")
+    style.id = "hide-portal-layout"
+    style.innerHTML = `
+      aside, header, footer, .no-print, [class*="Sidebar"], [class*="ChatBotWidget"], [class*="chatbot"] {
+        display: none !important;
+      }
+      main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+      }
+      div.p-4, div.p-6, div.p-8, div.p-10, div.p-12, div.px-6 {
+        padding: 0 !important;
+      }
+      div.flex.min-h-screen {
+        display: block !important;
+      }
+    `
+    document.head.appendChild(style)
+    return () => {
+      const el = document.getElementById("hide-portal-layout")
+      if (el) el.remove()
+    }
+  }, [])
   const searchParams = useSearchParams()
   const type = searchParams.get("type") || "class"
   const block = searchParams.get("block") || "k12"
@@ -380,25 +404,7 @@ export default function AdminStudentProfilesPrintPage() {
               </div>
             </div>
 
-            {/* Signature Section on A4 Print */}
-            <div className="grid grid-cols-3 gap-6 mt-16 pt-8 border-t border-slate-200 text-center text-xs font-bold text-slate-755">
-              <div>
-                <div>HỌC SINH KÝ TÊN</div>
-                <div className="h-16"></div>
-                <div className="text-slate-455 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
-              </div>
-              <div>
-                <div>PHỤ HUYNH XÁC NHẬN</div>
-                <div className="h-16"></div>
-                <div className="text-slate-455 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
-              </div>
-              <div>
-                <div>GIÁO VIÊN CHỦ NHIỆM</div>
-                <div className="h-16"></div>
-                <div className="text-slate-800">Giáo viên chủ nhiệm</div>
-                <div className="text-slate-455 font-semibold font-bold">(Ký tên)</div>
-              </div>
-            </div>
+
 
           </div>
         ))}

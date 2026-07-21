@@ -891,25 +891,7 @@ export default function TeacherStudentProfilePage() {
 
                           </div>
                           
-                          {/* Signature Section on A4 Print */}
-                          <div className="hidden print:grid grid-cols-3 gap-6 mt-16 pt-8 border-t border-slate-200 text-center text-xs font-black text-slate-700">
-                            <div>
-                              <div>HỌC SINH KÝ TÊN</div>
-                              <div className="h-16"></div>
-                              <div className="text-slate-400 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
-                            </div>
-                            <div>
-                              <div>PHỤ HUYNH XÁC NHẬN</div>
-                              <div className="h-16"></div>
-                              <div className="text-slate-400 font-semibold font-bold">(Ký và ghi rõ họ tên)</div>
-                            </div>
-                            <div>
-                              <div>GIÁO VIÊN CHỦ NHIỆM</div>
-                              <div className="h-16"></div>
-                              <div className="text-slate-800">{profileData?.student?.class?.homeroomTeacherId ? profileData.highlightComments?.[0]?.teacherName || "Giáo viên chủ nhiệm" : "Giáo viên chủ nhiệm"}</div>
-                              <div className="text-slate-400 font-semibold font-bold">(Ký tên)</div>
-                            </div>
-                          </div>
+
 
                         </div>
                       </div>
