@@ -64,7 +64,10 @@ export async function GET(req: Request) {
 
       const whereClause: any = { academicYearId }
       if (callerTeacher) {
-        const orConditions: any[] = [{ createdById: callerTeacher.id }]
+        const orConditions: any[] = [
+          { createdById: callerTeacher.id },
+          { assignments: { some: { teacherId: callerTeacher.id } } }
+        ]
         if (teacherClassIds.length > 0) {
           orConditions.push({ student: { classId: { in: teacherClassIds } } })
         }
