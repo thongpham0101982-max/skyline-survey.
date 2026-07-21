@@ -594,6 +594,23 @@ export function TeacherSupportClient({
       code.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
+  const groupedHistoryTargets = (() => {
+    const groups = {};
+    historyTargets.forEach((t) => {
+      const studentId = t.studentId;
+      if (!groups[studentId]) {
+        groups[studentId] = {
+          studentId,
+          student: t.student,
+          class: t.student?.class,
+          targets: []
+        };
+      }
+      groups[studentId].targets.push(t);
+    });
+    return Object.values(groups);
+  })();
+
   // Options for tracking level loaded dynamically based on configs
   const dynamicLevelOptions = configs.filter(c => c.supportType === evalTargetType)
 
@@ -1225,78 +1242,114 @@ export function TeacherSupportClient({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Chương trình hỗ trợ</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn/Lý do đề xuất</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn học cần bồi dưỡng</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày đề xuất</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-sm">
-              {historyTargets.length === 0 ? (
+              {groupedHistoryTargets.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="text-center py-10 text-slate-400">
                     Bạn chưa gửi đề xuất bồi dưỡng nào trong năm học này.
                   </td>
                 </tr>
               ) : (
-                historyTargets.map((t: any) => {
-                  const isApproved = t.assignments && t.assignments.length > 0
-                  const isTerminated = t.terminationStatus === "TERMINATED"
-                  const isPending = t.terminationStatus === "PENDING_TERMINATION"
-                  const gvName = t.assignments?.map((a: any) => a.teacher?.teacherName).join(', ') || "Chưa phân công"
-
+                groupedHistoryTargets.map((group: any) => {
                   return (
-                    <tr key={t.id} className="hover:bg-slate-50">
+                    <tr key={group.studentId} className="hover:bg-slate-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName}</button>
-                        <div className="text-xs text-slate-500">{t.student?.studentCode}</div>
+                        <button onClick={() => handleOpenProfile(group.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{group.student?.studentName}</button>
+                        <div className="text-xs text-slate-500">{group.student?.studentCode}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600">
-                        {t.student?.class?.className}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
-                          t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
-                        }`}>
-                          {t.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-700 font-semibold">
-                        {Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ")}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-500 text-xs">
-                        {new Date(t.createdAt).toLocaleDateString("vi-VN")}
+                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-semibold">
+                        {group.class?.className}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                          isTerminated 
-                            ? "bg-emerald-100 text-emerald-800" 
-                            : isPending 
-                            ? "bg-amber-100 text-amber-800" 
-                            : isApproved 
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
-                            : "bg-blue-50 text-blue-700 border border-blue-200"
-                        }`}>
-                          {isTerminated 
-                            ? "Đã kết thúc" 
-                            : isPending 
-                            ? "Hoàn thành" 
-                            : isApproved 
-                            ? "Đang hỗ trợ" 
-                            : "Đang đề xuất"}
-                        </span>
+                        <div className="flex flex-col gap-2.5">
+                          {group.targets.map((t: any) => (
+                            <div key={t.id} className="h-6 flex items-center">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
+                                t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
+                              }`}>
+                                {t.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
-                        {!isApproved ? (
-                          <button
-                            onClick={() => handleDeleteTarget(t.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
-                          >
-                            Xóa
-                          </button>
-                        ) : (
-                          <span className="text-slate-400 font-medium">Đã duyệt (Không thể xóa)</span>
-                        )}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-2.5">
+                          {group.targets.map((t: any) => {
+                            const cleanedReason = Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ");
+                            return (
+                              <div key={t.id} className="h-6 flex items-center text-slate-700 font-semibold text-xs">
+                                {cleanedReason || "N/A"}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-2.5">
+                          {group.targets.map((t: any) => (
+                            <div key={t.id} className="h-6 flex items-center text-slate-500 text-xs">
+                              {new Date(t.createdAt).toLocaleDateString("vi-VN")}
+                            </div>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-2.5">
+                          {group.targets.map((t: any) => {
+                            const isApproved = t.assignments && t.assignments.length > 0
+                            const isTerminated = t.terminationStatus === "TERMINATED"
+                            const isPending = t.terminationStatus === "PENDING_TERMINATION"
+                            return (
+                              <div key={t.id} className="h-6 flex items-center">
+                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                                  isTerminated 
+                                    ? "bg-emerald-100 text-emerald-800" 
+                                    : isPending 
+                                    ? "bg-amber-100 text-amber-800" 
+                                    : isApproved 
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
+                                    : "bg-blue-50 text-blue-700 border border-blue-200"
+                                }`}>
+                                  {isTerminated 
+                                    ? "Đã kết thúc" 
+                                    : isPending 
+                                    ? "Hoàn thành" 
+                                    : isApproved 
+                                    ? "Đang hỗ trợ" 
+                                    : "Đang đề xuất"}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-2.5">
+                          {group.targets.map((t: any) => {
+                            const isApproved = t.assignments && t.assignments.length > 0
+                            return (
+                              <div key={t.id} className="h-6 flex items-center justify-center">
+                                {!isApproved ? (
+                                  <button
+                                    onClick={() => handleDeleteTarget(t.id)}
+                                    className="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3.5 rounded-lg text-[10px] transition-all shadow-xs"
+                                  >
+                                    Xóa
+                                  </button>
+                                ) : (
+                                  <span className="text-slate-400 font-medium text-[10px]">Đã duyệt</span>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
                       </td>
                     </tr>
                   )
