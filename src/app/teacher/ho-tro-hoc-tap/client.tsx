@@ -884,7 +884,15 @@ export function TeacherSupportClient({
                     <input type="checkbox" onChange={e => {
                       if (e.target.checked) {
                         const allIds = filteredTargets
-                          .filter((t:any) => t.assignments?.some((a:any) => a.teacherId === teacher?.id) && t.terminationStatus !== "TERMINATED" && t.terminationStatus !== "PENDING_TERMINATION")
+                          .filter((t:any) => {
+                            const isAssigned = t.assignments?.some((a:any) => a.teacherId === teacher?.id);
+                            const matchedClass = assignedClasses.find((c: any) => c.id === t.student?.classId);
+                            const isHomeroomTeacherOfThisClass = matchedClass ? matchedClass.isHomeroom : false;
+                            const canEval = t.supportType === "PSYCHOLOGICAL"
+                              ? (isAssigned && !isHomeroomTeacherOfThisClass)
+                              : isAssigned;
+                            return canEval && t.terminationStatus !== "TERMINATED" && t.terminationStatus !== "PENDING_TERMINATION";
+                          })
                           .map((t:any) => t.id);
                         setSelectedEvalTargetIds(allIds);
                       } else setSelectedEvalTargetIds([]);
@@ -913,6 +921,12 @@ export function TeacherSupportClient({
                     const isTerminated = t.terminationStatus === "TERMINATED"
                     const isPending = t.terminationStatus === "PENDING_TERMINATION"
                     
+                    const matchedClass = assignedClasses.find((c: any) => c.id === t.student?.classId)
+                    const isHomeroomTeacherOfThisClass = matchedClass ? matchedClass.isHomeroom : false
+                    const canEvaluate = t.supportType === "PSYCHOLOGICAL"
+                      ? (isAssigned && !isHomeroomTeacherOfThisClass)
+                      : isAssigned
+                    
                     const evals = t.evaluations || [];
                     const sortedEvals = [...evals].sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                     const latestEval = sortedEvals[0];
@@ -921,7 +935,7 @@ export function TeacherSupportClient({
                     return (
                       <tr key={t.id} className="hover:bg-slate-50">
                         <td className="px-4 py-4 whitespace-nowrap">
-                          {!isTerminated && !isPending && (
+                          {canEvaluate && !isTerminated && !isPending && (
                             <input 
                               type="checkbox" 
                               checked={selectedEvalTargetIds.includes(t.id)} 
@@ -959,7 +973,7 @@ export function TeacherSupportClient({
                           {isTerminated ? t.outcome : currentLevel}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
-                          {isAssigned && !isTerminated && !isPending && (
+                          {canEvaluate && !isTerminated && !isPending && (
                             <button
                               onClick={() => {
                                 setSelectedEvalTargetIds([t.id])

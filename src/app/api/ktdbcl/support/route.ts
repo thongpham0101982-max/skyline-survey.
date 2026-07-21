@@ -439,7 +439,7 @@ export async function POST(req: Request) {
         
         const txOperations = [];
         for (const target of targets) {
-          if (!existingAssignMap.has(target.id) && target.createdById) {
+          if (!existingAssignMap.has(target.id) && target.createdById && target.supportType !== "PSYCHOLOGICAL") {
             txOperations.push(prisma.learningSupportAssignment.create({
               data: {
                 teacherId: target.createdById,
