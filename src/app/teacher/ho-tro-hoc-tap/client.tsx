@@ -1726,42 +1726,56 @@ export function TeacherSupportClient({
                   <div className="space-y-2">
                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Loại chương trình hỗ trợ:</label>
                     <div className="grid grid-cols-2 gap-3">
-                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
-                        proposeAcademic 
-                          ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
-                          : "bg-slate-50 border-slate-200 text-slate-500"
-                      } ${!assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom && proposeClassId ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
-                        <input
-                          type="checkbox"
-                          checked={proposeAcademic}
-                          disabled={!proposeClassId || assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom}
-                          onChange={e => {
-                            const val = e.target.checked;
-                            setProposeAcademic(val);
-                            if (val) setProposePsychological(false);
-                          }}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
-                        />
-                        Bồi dưỡng Văn hóa
-                      </label>
-                      <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
-                        proposePsychological 
-                          ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
-                          : "bg-slate-50 border-slate-200 text-slate-500"
-                      } ${assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
-                        <input
-                          type="checkbox"
-                          checked={proposePsychological}
-                          disabled={!proposeClassId || !assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom}
-                          onChange={e => {
-                            const val = e.target.checked;
-                            setProposePsychological(val);
-                            if (val) setProposeAcademic(false);
-                          }}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
-                        />
-                        Hỗ trợ Tâm lý
-                      </label>
+                      {(() => {
+                        const selectedClassObj = assignedClasses.find((c: any) => c.id === proposeClassId)
+                        const isHomeroom = selectedClassObj?.isHomeroom || false
+                        const teachesPsychology = selectedClassObj?.subjects?.some((sub: any) => 
+                          (sub?.subjectName || sub?.name || "").toLowerCase().includes("tâm lý")
+                        ) || false
+                        const canProposePsych = proposeClassId && (isHomeroom || teachesPsychology)
+                        const canProposeAcademic = proposeClassId && !isHomeroom
+
+                        return (
+                          <>
+                            <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
+                              proposeAcademic 
+                                ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
+                                : "bg-slate-50 border-slate-200 text-slate-500"
+                            } ${canProposeAcademic ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
+                              <input
+                                type="checkbox"
+                                checked={proposeAcademic}
+                                disabled={!canProposeAcademic}
+                                onChange={e => {
+                                  const val = e.target.checked;
+                                  setProposeAcademic(val);
+                                  if (val) setProposePsychological(false);
+                                }}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
+                              />
+                              Bồi dưỡng Văn hóa
+                            </label>
+                            <label className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all ${
+                              proposePsychological 
+                                ? "bg-indigo-50 border-indigo-500 text-indigo-900 shadow-3xs" 
+                                : "bg-slate-50 border-slate-200 text-slate-500"
+                            } ${canProposePsych ? "cursor-pointer" : "opacity-60 cursor-not-allowed"}`}>
+                              <input
+                                type="checkbox"
+                                checked={proposePsychological}
+                                disabled={!canProposePsych}
+                                onChange={e => {
+                                  const val = e.target.checked;
+                                  setProposePsychological(val);
+                                  if (val) setProposeAcademic(false);
+                                }}
+                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
+                              />
+                              Hỗ trợ Tâm lý
+                            </label>
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
 
