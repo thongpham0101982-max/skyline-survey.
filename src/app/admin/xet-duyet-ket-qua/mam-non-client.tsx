@@ -586,7 +586,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
   const handleCheckboxChange = (group: 'tuvan' | 'giaovu' | 'gdcs' | 'bghmn' | 'cc', cs?: string) => {
     setCheckedEmails(prev => {
-      let nextChecked = { ...prev };
+      const nextChecked = { ...prev };
       if (group === 'cc') {
         nextChecked.cc = !prev.cc;
       } else if (cs) {
@@ -1066,7 +1066,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         const html2pdf = await getHtml2Pdf();
         const eligibleStudents = emailStudents.filter(s => s.admissionResult.includes("Đạt"));
         let currentPdfCount = 0;
-        let totalPdfs = eligibleStudents.length;
+        const totalPdfs = eligibleStudents.length;
 
         for (const s of emailStudents) {
           if (s.admissionResult.includes("Đạt")) {
@@ -1152,7 +1152,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     try {
       const html2pdf = await getHtml2Pdf();
       let count = 0;
-      let totalPdfs = eligibleStudents.length;
+      const totalPdfs = eligibleStudents.length;
 
       for (const s of emailStudents) {
         if (s.admissionResult.includes("Đạt")) {
@@ -3013,11 +3013,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     }
   };
 
-    // Unique preschool grades memoization directly from class list
-  const uniquePreschoolClassGrades = useMemo(() => {
-    const set = new Set(classes.map((c: any) => c.grade).filter(Boolean));
-    return Array.from(set).sort();
-  }, [classes]);
+  // Static list of standard preschool grades
+  const uniquePreschoolClassGrades = [
+    "Nhà trẻ 12-18 tháng",
+    "Nhà trẻ 18-24 tháng",
+    "Nhà trẻ 24-36 tháng",
+    "Mẫu giáo bé",
+    "Mẫu giáo nhỡ",
+    "Mẫu giáo lớn"
+  ];
 
   // Memoize filtered classes and teachers based on chosen Campus/Grade
   const filteredClassesForAssign = useMemo(() => {
