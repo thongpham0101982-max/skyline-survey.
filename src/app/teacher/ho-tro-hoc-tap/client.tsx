@@ -379,7 +379,7 @@ export function TeacherSupportClient({
                 studentId,
                 supportType: "PSYCHOLOGICAL",
                 sourceType: "TAM_LY",
-                reason: proposePsychReason || "Hỗ trợ Tâm lý",
+                reason: proposePsychReason || "Môn Tâm lý",
                 notes: proposeNotes,
                 status: "TIẾP TỤC THEO TUẦN"
               })
@@ -1026,8 +1026,8 @@ export function TeacherSupportClient({
                       statusText = "Đang hỗ trợ"
                       statusClass = "bg-emerald-50 text-emerald-700 border border-emerald-200"
                     } else {
-                      statusText = "Cần can thiệp (Chờ duyệt)"
-                      statusClass = "bg-amber-50 text-amber-700 border border-amber-200"
+                      statusText = "Đang đề xuất"
+                      statusClass = "bg-blue-50 text-blue-700 border border-blue-200"
                     }
                   }
 
@@ -1275,7 +1275,7 @@ export function TeacherSupportClient({
                             ? "bg-amber-100 text-amber-800" 
                             : isApproved 
                             ? "bg-emerald-50 text-emerald-700 border border-emerald-200" 
-                            : "bg-amber-50 text-amber-700 border border-amber-200"
+                            : "bg-blue-50 text-blue-700 border border-blue-200"
                         }`}>
                           {isTerminated 
                             ? "Đã kết thúc" 
@@ -1283,7 +1283,7 @@ export function TeacherSupportClient({
                             ? "Hoàn thành" 
                             : isApproved 
                             ? "Đang hỗ trợ" 
-                            : "Cần can thiệp"}
+                            : "Đang đề xuất"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-xs">
@@ -1632,7 +1632,7 @@ export function TeacherSupportClient({
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Môn học cần bồi dưỡng:</label>
                       <div className="border border-slate-100 rounded-xl max-h-36 overflow-y-auto p-2 space-y-1 bg-slate-50/50">
-                        {subjects.map((sub: any) => {
+                        {subjects.filter((sub: any) => !(sub.subjectName || sub.name || "").toLowerCase().includes("tâm lý")).map((sub: any) => {
                           const name = sub.subjectName || sub.name
                           const isChecked = selectedSubjects.includes(name)
                           const selClassObj = assignedClasses.find(c => c.id === proposeClassId)
