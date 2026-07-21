@@ -819,7 +819,7 @@ export function TeacherSupportClient({
             className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
           >
             <Plus className="h-4 w-4" />
-            Thêm
+            Đề xuất HS Theo dõi
           </button>
         </div>
 
@@ -1446,7 +1446,7 @@ export function TeacherSupportClient({
             <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-600 text-white shadow-xs">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Đề xuất Học sinh cần Hỗ trợ học tập
+                Đề xuất HS Theo dõi
               </h2>
               <button 
                 onClick={() => setIsProposeModalOpen(false)}
