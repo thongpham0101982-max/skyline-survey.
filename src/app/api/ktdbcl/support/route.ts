@@ -427,27 +427,64 @@ export async function POST(req: Request) {
       if (!Array.isArray(targetIds)) return NextResponse.json({ error: "targetIds must be an array" }, { status: 400 })
 
       if (approve) {
-        // Fetch all targets to check their createdById
+        // Fetch all targets to check their createdById (include student to find classId)
         const targets = await prisma.learningSupportTarget.findMany({
-          where: { id: { in: targetIds } }
+          where: { id: { in: targetIds } },
+          include: { student: true }
         })
 
-                const existingAssigns = await prisma.learningSupportAssignment.findMany({
+        const existingAssigns = await prisma.learningSupportAssignment.findMany({
           where: { targetId: { in: targetIds } }
         });
         const existingAssignMap = new Set(existingAssigns.map(a => a.targetId));
         
+        // Find psychology subject
+        const psychSubject = await prisma.subject.findFirst({
+          where: {
+            OR: [
+              { subjectName: { contains: "Tâm lý" } },
+              { subjectName: { contains: "Tâm Lý" } },
+              { subjectName: { contains: "tâm lý" } }
+            ]
+          }
+        });
+
         const txOperations = [];
         for (const target of targets) {
-          if (!existingAssignMap.has(target.id) && target.createdById && target.supportType !== "PSYCHOLOGICAL") {
-            txOperations.push(prisma.learningSupportAssignment.create({
-              data: {
-                teacherId: target.createdById,
-                targetId: target.id,
-                academicYearId: target.academicYearId,
-                notes: "Tự động phân công cho giáo viên đề xuất"
+          if (!existingAssignMap.has(target.id)) {
+            if (target.supportType === "PSYCHOLOGICAL") {
+              // Auto-assign to the psychology subject teacher (GVBM) of the student's class
+              if (target.student?.classId && psychSubject) {
+                const psychAssignment = await prisma.teachingAssignment.findFirst({
+                  where: {
+                    classId: target.student.classId,
+                    subjectId: psychSubject.id,
+                    academicYearId: target.academicYearId
+                  }
+                });
+
+                if (psychAssignment) {
+                  txOperations.push(prisma.learningSupportAssignment.create({
+                    data: {
+                      teacherId: psychAssignment.teacherId,
+                      targetId: target.id,
+                      academicYearId: target.academicYearId,
+                      notes: "Tự động phân công cho GVBM giảng dạy môn Tâm lý của lớp"
+                    }
+                  }));
+                }
               }
-            }));
+            } else if (target.createdById) {
+              // Academic support: auto-assign to proposing teacher
+              txOperations.push(prisma.learningSupportAssignment.create({
+                data: {
+                  teacherId: target.createdById,
+                  targetId: target.id,
+                  academicYearId: target.academicYearId,
+                  notes: "Tự động phân công cho giáo viên đề xuất"
+                }
+              }));
+            }
           }
           
           txOperations.push(prisma.learningSupportTarget.update({
