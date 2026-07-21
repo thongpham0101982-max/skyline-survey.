@@ -15,6 +15,35 @@ interface Props {
   subjects: any[]
 }
 
+const getCompactScore = (val: any) => {
+  if (val == null) return "Chưa có";
+  if (Array.isArray(val)) {
+    const sum = val.reduce((a: number, b: number) => a + Number(b || 0), 0);
+    return `${sum} (Tổng)`;
+  }
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) {
+        const sum = parsed.reduce((a: number, b: number) => a + Number(b || 0), 0);
+        return `${sum} (Tổng)`;
+      }
+    } catch (e) {
+      // Not a JSON array string
+    }
+    if (val.startsWith("[") && val.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(val.replace(/'/g, '"'));
+        if (Array.isArray(parsed)) {
+          const sum = parsed.reduce((a: number, b: number) => a + Number(b || 0), 0);
+          return `${sum} (Tổng)`;
+        }
+      } catch(e) {}
+    }
+  }
+  return String(val);
+}
+
 export function TeacherSupportClient({
   teacher,
   academicYears,
@@ -1162,7 +1191,7 @@ export function TeacherSupportClient({
                             }
                             return (
                               <span key={index} className="text-[11px] font-bold text-slate-600 block whitespace-nowrap">
-                                <span className="text-slate-400 font-normal">{sub}:</span> <span className="text-indigo-600 font-black">{scoreDisplay}</span>
+                                <span className="text-slate-400 font-normal">{sub}:</span> <span className="text-indigo-600 font-black">{getCompactScore(scoreDisplay)}</span>
                               </span>
                             )
                           })}
@@ -1247,7 +1276,7 @@ export function TeacherSupportClient({
                                     if (sc?.scores) scoreDisplay = `${sc.scores}`;
                                   }
                                 }
-                                return `${sub}: ${scoreDisplay}`;
+                                return `${sub}: ${getCompactScore(scoreDisplay)}`;
                               }).join(", ");
                               setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào. Điểm khảo sát: ${scoreDetails}`)
                               fetchClassStudents(s.classId)
