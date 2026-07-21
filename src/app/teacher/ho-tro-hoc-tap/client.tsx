@@ -55,7 +55,7 @@ export function TeacherSupportClient({
   const [proposeAcademic, setProposeAcademic] = useState(true)
   const [proposePsychological, setProposePsychological] = useState(false)
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
-  const [proposePsychReason, setProposePsychReason] = useState("Hỗ trợ Tâm lý")
+  const [proposePsychReason, setProposePsychReason] = useState("Tâm lý")
   const [proposeNotes, setProposeNotes] = useState("")
   const [commitmentCandidates, setCommitmentCandidates] = useState<any[]>([])
   const [studentSearchQuery, setStudentSearchQuery] = useState("")
@@ -302,8 +302,9 @@ export function TeacherSupportClient({
       );
       if (hasPsychCommitment) {
         setProposePsychological(true);
-        if (!proposePsychReason) {
-          setProposePsychReason("Môn Tâm lý");
+        setProposeAcademic(false);
+        if (!proposePsychReason || proposePsychReason === "Hỗ trợ Tâm lý" || proposePsychReason === "Môn Tâm lý") {
+          setProposePsychReason("Tâm lý");
         }
       }
     }
@@ -395,7 +396,7 @@ export function TeacherSupportClient({
                 studentId,
                 supportType: "PSYCHOLOGICAL",
                 sourceType: "TAM_LY",
-                reason: proposePsychReason || "Môn Tâm lý",
+                reason: proposePsychReason || "Tâm lý",
                 notes: proposeNotes,
                 status: "TIẾP TỤC THEO TUẦN"
               })
@@ -781,7 +782,7 @@ export function TeacherSupportClient({
               setClassStudents([])
               setSelectedStudentIds([])
               setSelectedSubjects([])
-              setProposePsychReason("Hỗ trợ Tâm lý")
+              setProposePsychReason("Tâm lý")
               setProposeNotes("")
               setIsProposeModalOpen(true)
               fetchAssignedClasses()
@@ -1674,7 +1675,11 @@ export function TeacherSupportClient({
                           type="checkbox"
                           checked={proposeAcademic}
                           disabled={!proposeClassId || assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom}
-                          onChange={e => setProposeAcademic(e.target.checked)}
+                          onChange={e => {
+                            const val = e.target.checked;
+                            setProposeAcademic(val);
+                            if (val) setProposePsychological(false);
+                          }}
                           className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                         />
                         Bồi dưỡng Văn hóa
@@ -1688,7 +1693,11 @@ export function TeacherSupportClient({
                           type="checkbox"
                           checked={proposePsychological}
                           disabled={!proposeClassId || !assignedClasses.find((c: any) => c.id === proposeClassId)?.isHomeroom}
-                          onChange={e => setProposePsychological(e.target.checked)}
+                          onChange={e => {
+                            const val = e.target.checked;
+                            setProposePsychological(val);
+                            if (val) setProposeAcademic(false);
+                          }}
                           className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                         />
                         Hỗ trợ Tâm lý
