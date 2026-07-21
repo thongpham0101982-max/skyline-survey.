@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
 import { PreschoolMoveToBatchModal } from "@/app/admin/student-info/PreschoolMoveToBatchModal";
 
-import { getSurveyFormAgeGroup } from "@/lib/preschool";
+import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
@@ -2223,7 +2223,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     const printProbationaryAssessment = async (student: any) => {
     notify("Đang chuẩn bị phiếu in...", "info");
     try {
-      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
+      const ageGroup = getProbationAgeGroup(student.grade);
       const areasRes = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
       let loadedAreas: any[] = [];
       if (areasRes.ok) {
@@ -2433,7 +2433,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setProbModal(true);
     setDevLoading(true);
     try {
-      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
+      const ageGroup = getProbationAgeGroup(student.grade);
       const areasRes = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
       if (areasRes.ok) {
         setDevAreas(await areasRes.json());
@@ -4658,6 +4658,54 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </button>
                 ))}
               </div>
+
+              {devType === "PROBATION" && (() => {
+                let mappingText = "";
+                let targetGrades = "";
+                switch (ageGroupFilter) {
+                  case "12 đến 18 tháng":
+                    mappingText = "Mẫu phiếu học thử 12_18 / 12 đến 18 tháng";
+                    targetGrades = "Nhà trẻ 12-18 tháng";
+                    break;
+                  case "18 đến 24 tháng":
+                    mappingText = "Mẫu phiếu học thử 18 đến 24 tháng";
+                    targetGrades = "Nhà trẻ 18-24 tháng";
+                    break;
+                  case "24 đến 36 tháng":
+                    mappingText = "Mẫu phiếu học thử 24 đến 36";
+                    targetGrades = "Nhà trẻ 24-36 tháng";
+                    break;
+                  case "3 đến 4 tuổi":
+                    mappingText = "Mẫu phiếu 3 đến 4 tuổi";
+                    targetGrades = "Mẫu giáo bé";
+                    break;
+                  case "4 đến 5 tuổi":
+                    mappingText = "Mẫu phiếu 4 đến 5 tuổi";
+                    targetGrades = "Mẫu giáo nhỡ";
+                    break;
+                  case "5 đến 6 tuổi":
+                    mappingText = "Mẫu phiếu 5 đến 6 tuổi";
+                    targetGrades = "Mẫu giáo lớn";
+                    break;
+                }
+                if (!mappingText) return null;
+
+                return (
+                  <div className="bg-slate-50 rounded-none border border-slate-300 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-none bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white font-extrabold shadow-none shrink-0">
+                        <Calendar className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <h5 className="font-black text-slate-800 text-sm tracking-tight">Ánh xạ Mẫu Phiếu Học Thử: {mappingText}</h5>
+                        <p className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider mt-0.5">
+                          Áp dụng cho Khối/Nhóm tuổi: <strong className="text-emerald-700 font-black">{targetGrades}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {devType === "INPUT" && (() => {
                 let gd1 = "";

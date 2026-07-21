@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { getSurveyFormAgeGroup } from "@/lib/preschool"
+import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool"
 import { Baby, X, CheckCircle, AlertCircle, Save, Sparkles, Heart, ClipboardList } from "lucide-react"
 
 const isPreschoolCampusMatch = (effCampus: string | null | undefined, cCode: string | null | undefined, cName: string | null | undefined): boolean => {
@@ -119,7 +119,9 @@ export default function PreschoolEvaluationForm({
 
         if (!ageGroup) {
           const surveyDate = new Date()
-          ageGroup = getSurveyFormAgeGroup(student.grade, surveyDate)
+          ageGroup = student.isPreschoolProbation 
+            ? getProbationAgeGroup(student.grade)
+            : getSurveyFormAgeGroup(student.grade, surveyDate)
         }
         
         const typeParam = student.isPreschoolProbation ? "PROBATION" : "INPUT";

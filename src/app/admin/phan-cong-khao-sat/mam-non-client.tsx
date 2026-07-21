@@ -201,31 +201,38 @@ export function PhanCongMamNonClient({
     "24 đến 36 tháng",
     "3 đến 4 tuổi",
     "4 đến 5 tuổi",
-    "5 đến 6 tuổi"
+    "5 đến 6 tuổi",
+    "Mẫu phiếu học thử"
   ]
 
   // Map Selected Grade and Stage to Survey Form
   useEffect(() => {
     const grade = aGrades[0]
-    if (grade && uiStage) {
-      let targetForm = ""
-      if (uiStage === "STAGE_2") {
-        if (grade === "Nhà trẻ 12-18 tháng") targetForm = "12 đến 18 tháng"
-        else if (grade === "Nhà trẻ 18-24 tháng") targetForm = "18 đến 24 tháng"
-        else if (grade === "Nhà trẻ 24-36 tháng") targetForm = "24 đến 36 tháng"
-        else if (grade === "Mẫu giáo bé") targetForm = "3 đến 4 tuổi"
-        else if (grade === "Mẫu giáo nhỡ") targetForm = "4 đến 5 tuổi"
-        else if (grade === "Mẫu giáo lớn") targetForm = "5 đến 6 tuổi"
-      } else {
-        if (grade === "Nhà trẻ 12-18 tháng") targetForm = "12 đến 18 tháng"
-        else if (grade === "Nhà trẻ 18-24 tháng") targetForm = "18 đến 24 tháng"
-        else if (grade === "Nhà trẻ 24-36 tháng") targetForm = "18 đến 24 tháng"
-        else if (grade === "Mẫu giáo bé") targetForm = "24 đến 36 tháng"
-        else if (grade === "Mẫu giáo nhỡ") targetForm = "3 đến 4 tuổi"
-        else if (grade === "Mẫu giáo lớn") targetForm = "4 đến 5 tuổi"
+    if (grade) {
+      if (grade === "Mẫu phiếu học thử") {
+        setUiForm("Mẫu phiếu học thử")
+        return
       }
-      if (targetForm && targetForm !== uiForm) {
-        setUiForm(targetForm)
+      if (uiStage) {
+        let targetForm = ""
+        if (uiStage === "STAGE_2") {
+          if (grade === "Nhà trẻ 12-18 tháng") targetForm = "12 đến 18 tháng"
+          else if (grade === "Nhà trẻ 18-24 tháng") targetForm = "18 đến 24 tháng"
+          else if (grade === "Nhà trẻ 24-36 tháng") targetForm = "24 đến 36 tháng"
+          else if (grade === "Mẫu giáo bé") targetForm = "3 đến 4 tuổi"
+          else if (grade === "Mẫu giáo nhỡ") targetForm = "4 đến 5 tuổi"
+          else if (grade === "Mẫu giáo lớn") targetForm = "5 đến 6 tuổi"
+        } else {
+          if (grade === "Nhà trẻ 12-18 tháng") targetForm = "12 đến 18 tháng"
+          else if (grade === "Nhà trẻ 18-24 tháng") targetForm = "18 đến 24 tháng"
+          else if (grade === "Nhà trẻ 24-36 tháng") targetForm = "18 đến 24 tháng"
+          else if (grade === "Mẫu giáo bé") targetForm = "24 đến 36 tháng"
+          else if (grade === "Mẫu giáo nhỡ") targetForm = "3 đến 4 tuổi"
+          else if (grade === "Mẫu giáo lớn") targetForm = "4 đến 5 tuổi"
+        }
+        if (targetForm && targetForm !== uiForm) {
+          setUiForm(targetForm)
+        }
       }
     } else if (!grade) {
       setUiForm("")

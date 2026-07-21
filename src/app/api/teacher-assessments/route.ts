@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 ﻿import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
-import { getSurveyFormAgeGroup } from "@/lib/preschool"
+import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool"
 
 function matchesPreschoolGrade(stGradeOrAgeGroup, taGrade) {
     const st = (stGradeOrAgeGroup || "").toLowerCase().trim();
@@ -243,13 +243,17 @@ export async function GET(req: any) {
         const preschoolPeriodIds = Array.from(new Set(preschoolAssignments.map((a: any) => a.periodId).filter(Boolean)));
         const preschoolStudents = preschoolPeriodIds.length > 0 ? await (prisma as any).preschoolInputAssessmentStudent.findMany({
             where: { periodId: { in: preschoolPeriodIds } },
-            select: { id: true, periodId: true, batchId: true, grade: true, probationaryTeacher: true }
+            select: { id: true, periodId: true, batchId: true, grade: true, probationaryTeacher: true, admissionResult: true }
         }) : [];
 
         const mappedPreschool = preschoolAssignments.map((a: any) => {
+            const isProbation = a.grade === "Mẫu phiếu học thử" || a.grade === "Học thử";
             const studentCount = preschoolStudents.filter((st: any) => {
                 if (st.periodId !== a.periodId) return false;
                 if (a.batchId && st.batchId !== a.batchId) return false;
+                if (isProbation) {
+                    return st.admissionResult === "Học thử" || st.probationaryTeacher === currentTeacherForAss?.teacherName;
+                }
                 return matchesPreschoolGrade(st.grade || "", a.grade);
             }).length;
 
@@ -258,14 +262,15 @@ export async function GET(req: any) {
                 periodId: a.periodId,
                 batchId: a.batchId,
                 userId: a.userId,
-                subjectId: "preschool",
-                grade: a.grade,
+                subjectId: isProbation ? "preschool-probation" : "preschool",
+                grade: isProbation ? "Học thử" : a.grade,
                 isPreschool: true,
+                isPreschoolProbation: isProbation ? true : undefined,
                 studentCount,
                 subject: {
-                    id: "preschool",
-                    name: "Đánh giá Mầm non",
-                    code: "PRESCHOOL",
+                    id: isProbation ? "preschool-probation" : "preschool",
+                    name: isProbation ? "Đánh giá Học thử (Mầm non)" : "Đánh giá Mầm non",
+                    code: isProbation ? "PRESCHOOL_PROBATION" : "PRESCHOOL",
                     scoreColumns: 1,
                     commentColumns: 1,
                 },
@@ -519,17 +524,38 @@ export async function GET(req: any) {
                 if (!currentTeacher) {
                     return NextResponse.json([]);
                 }
-                const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                
+                // Check if teacher has an assignment for "Mẫu phiếu học thử"
+                const hasProbationAssignment = await (prisma as any).preschoolInputAssessmentTeacherAssignment.findFirst({
                     where: {
                         periodId: periodId,
-                        probationaryTeacher: currentTeacher.teacherName,
-                        ...(batchId && batchId !== "all" && batchId !== "null" ? {
-                            OR: [
-                                { batchId: batchId },
-                                { batchId: null }
-                            ]
-                        } : {})
-                    },
+                        userId: session.user.id,
+                        grade: "Mẫu phiếu học thử",
+                        ...(batchId && batchId !== "all" && batchId !== "null" ? { batchId } : {})
+                    }
+                });
+
+                const whereClause: any = {
+                    periodId: periodId,
+                    ...(batchId && batchId !== "all" && batchId !== "null" ? {
+                        OR: [
+                            { batchId: batchId },
+                            { batchId: null }
+                        ]
+                    } : {})
+                };
+
+                if (hasProbationAssignment) {
+                    whereClause.OR = [
+                        { admissionResult: "Học thử" },
+                        { probationaryTeacher: currentTeacher.teacherName }
+                    ];
+                } else {
+                    whereClause.probationaryTeacher = currentTeacher.teacherName;
+                }
+
+                const students = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                    where: whereClause,
                     select: {
                         id: true,
                         studentCode: true,
@@ -586,7 +612,7 @@ export async function GET(req: any) {
                         console.error("Error parsing probationaryScoreText", e);
                     }
 
-                    const resolvedAgeGroup = s.grade || "Mầm non";
+                    const resolvedAgeGroup = getProbationAgeGroup(s.grade);
                     const totalCriteria = criteriaMap[resolvedAgeGroup] || 0;
 
                     return {

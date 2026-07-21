@@ -20,7 +20,7 @@ export default async function PhanCongKhaoSatPage() {
   let subjects: any[] = [];
   let eduSystems: any[] = [];
   let k12Grades: string[] = ["1","2","3","4","5","6","7","8","9","10","11","12"];
-  let preschoolGrades: string[] = ["Nhà trẻ 12-18 tháng", "Nhà trẻ 18-24 tháng", "Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+  let preschoolGrades: string[] = ["Nhà trẻ 12-18 tháng", "Nhà trẻ 18-24 tháng", "Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn", "Mẫu phiếu học thử"];
   let campuses: any[] = [];
   let giaoVuCSUsers: any[] = [];
 
