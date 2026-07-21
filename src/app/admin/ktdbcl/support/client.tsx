@@ -533,7 +533,8 @@ export function SupportClient({
   const filteredTargets = targets.filter(t => {
     const matchesType = targetTypeFilter === "ALL" || t.supportType === targetTypeFilter
     const matchesSource = targetSourceFilter === "ALL" || 
-      (targetSourceFilter === "TEACHER_ALL" && (t.sourceType === "GVCN" || t.sourceType === "GVBM")) ||
+      (targetSourceFilter === "TEACHER_ALL" && (t.sourceType === "GVCN" || t.sourceType === "GVBM" || t.sourceType === "TAM_LY")) ||
+      (targetSourceFilter === "GVCN" && (t.sourceType === "GVCN" || t.sourceType === "TAM_LY")) ||
       t.sourceType === targetSourceFilter
     const matchesStatus = targetStatusFilter === "ALL" || 
       (targetStatusFilter === "TERMINATED" && t.terminationStatus === "TERMINATED") ||
