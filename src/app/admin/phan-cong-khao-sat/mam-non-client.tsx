@@ -202,8 +202,7 @@ export function PhanCongMamNonClient({
     "24 đến 36 tháng",
     "3 đến 4 tuổi",
     "4 đến 5 tuổi",
-    "5 đến 6 tuổi",
-    "Mẫu phiếu học thử"
+    "5 đến 6 tuổi"
   ]
 
   // Map Selected Grade and Stage to Survey Form
