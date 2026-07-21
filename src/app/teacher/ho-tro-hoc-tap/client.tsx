@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { 
   FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, 
-  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award
+  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -670,7 +670,7 @@ export function TeacherSupportClient({
             Phụ đạo, bồi dưỡng Học sinh
           </h1>
           <p className="text-slate-500 mt-1">
-            Đề xuất học sinh cần bồi dưỡng, ghi nhận đánh giá tuần/tháng và đề xuất kết thúc
+            Giao diện hỗ trợ, theo dõi mức độ tiến bộ và cập nhật đánh giá của học sinh.
           </p>
         </div>
 
@@ -692,6 +692,68 @@ export function TeacherSupportClient({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* Introduction Card */}
+      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 shadow-3xs space-y-4">
+        <div className="flex items-start gap-3">
+          <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600 mt-0.5">
+            <Info className="h-5 w-5" />
+          </div>
+          <div className="space-y-4 w-full">
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">Giới thiệu chức năng Phụ đạo, bồi dưỡng Học sinh</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Hướng dẫn quy trình đề xuất và tổ chức hỗ trợ học tập, tâm lý cho học sinh</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-1">
+              {/* Cột 1: Hỗ trợ Tâm lý */}
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-3xs space-y-2">
+                <h4 className="text-xs font-black text-indigo-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                  Đề xuất Hỗ trợ Tâm lý
+                </h4>
+                <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4 leading-relaxed">
+                  <li>GVCN và Giáo viên Tâm lý được đề xuất học sinh cần hỗ trợ hoặc tiếp tục theo dõi tâm lý.</li>
+                  <li>Giáo viên Tâm lý thực hiện hỗ trợ, cập nhật diễn biến và đánh giá kết quả định kỳ hằng tuần.</li>
+                </ul>
+              </div>
+              
+              {/* Cột 2: Hỗ trợ Học tập */}
+              <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-3xs space-y-2">
+                <h4 className="text-xs font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                  Đề xuất Hỗ trợ Học tập (Bồi dưỡng Văn hóa)
+                </h4>
+                <ul className="text-xs text-slate-600 space-y-1.5 list-disc pl-4 leading-relaxed">
+                  <li>GVBM được đề xuất học sinh cần hỗ trợ học tập theo từng môn học.</li>
+                  <li>GVBM xây dựng nội dung hỗ trợ, theo dõi mức độ tiến bộ và đánh giá kết quả định kỳ hằng tháng.</li>
+                </ul>
+              </div>
+            </div>
+            
+            {/* Quy trình quản lý chung */}
+            <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-3xs space-y-2">
+              <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
+                Quy trình quản lý chung
+              </h4>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 font-semibold pt-1">
+                <span className="px-2.5 py-1 bg-slate-50 border rounded-lg text-slate-700">Đề xuất</span>
+                <span className="text-slate-400 font-bold">→</span>
+                <span className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 rounded-lg text-indigo-700">Xác nhận nhu cầu</span>
+                <span className="text-slate-400 font-bold">→</span>
+                <span className="px-2.5 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-700">Phân công hỗ trợ</span>
+                <span className="text-slate-400 font-bold">→</span>
+                <span className="px-2.5 py-1 bg-amber-50 border border-amber-100 rounded-lg text-amber-700">Theo dõi định kỳ</span>
+                <span className="text-slate-400 font-bold">→</span>
+                <span className="px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-lg text-blue-700">Đánh giá tiến bộ</span>
+                <span className="text-slate-400 font-bold">→</span>
+                <span className="px-2.5 py-1 bg-slate-900 border border-slate-900 rounded-lg text-white">Tiếp tục hoặc kết thúc hỗ trợ</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
