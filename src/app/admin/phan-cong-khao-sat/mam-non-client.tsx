@@ -277,22 +277,22 @@ export function PhanCongMamNonClient({
   const isStatsGroupSelected = (g: string) => {
     const norm = (g || "").trim();
     if (norm === "12 đến 18 tháng") {
-      return aGrades.includes("Nhà trẻ 12-18 tháng") && uiForm === "12 đến 18 tháng";
+      return aGrades.includes("Nhà trẻ 12-18 tháng");
     }
     if (norm === "18 đến 24 tháng") {
-      return aGrades.includes("Nhà trẻ 18-24 tháng") && uiForm === "18 đến 24 tháng";
+      return aGrades.includes("Nhà trẻ 18-24 tháng");
     }
     if (norm === "24 đến 36 tháng") {
-      return (aGrades.includes("Nhà trẻ 24-36 tháng") && ((uiStage === "STAGE_1" && uiForm === "18 đến 24 tháng") || (uiStage === "STAGE_2" && uiForm === "24 đến 36 tháng"))) || (aGrades.includes("Mẫu giáo bé") && uiStage === "STAGE_1");
+      return aGrades.includes("Nhà trẻ 24-36 tháng");
     }
     if (norm === "3 đến 4 tuổi") {
-      return (aGrades.includes("Mẫu giáo bé") && uiStage === "STAGE_2") || (aGrades.includes("Mẫu giáo nhỡ") && uiStage === "STAGE_1");
+      return aGrades.includes("Mẫu giáo bé");
     }
     if (norm === "4 đến 5 tuổi") {
-      return (aGrades.includes("Mẫu giáo nhỡ") && uiStage === "STAGE_2") || (aGrades.includes("Mẫu giáo lớn") && uiStage === "STAGE_1");
+      return aGrades.includes("Mẫu giáo nhỡ");
     }
     if (norm === "5 đến 6 tuổi") {
-      return aGrades.includes("Mẫu giáo lớn") && uiStage === "STAGE_2";
+      return aGrades.includes("Mẫu giáo lớn");
     }
     return false;
   }
