@@ -2167,7 +2167,7 @@ export function TeacherSupportClient({
                                 {(() => {
                                   const parseCommittedSubjects = (note) => {
                                     if (!note) return []
-                                    const match = note.match(/Môn cam kết:\\s*\\[([^\\]]+)\\]/i)
+                                    const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
                                     if (match && match[1]) {
                                       return match[1].split(",").map((s) => s.trim())
                                     }
