@@ -242,6 +242,7 @@ export async function GET(req: NextRequest) {
         campusName,
         classCode,
         className,
+        class: s.class, // Add raw class relation for local filtering
         studentCode,
         studentName,
         gender,
