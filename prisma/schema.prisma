@@ -52,28 +52,28 @@ model Parent {
 }
 
 model Teacher {
-  id                    String                    @id @default(cuid())
-  proposedSupportTargets LearningSupportTarget[] @relation(name: "ProposerRelation")
-  userId                String                    @unique
-  teacherCode           String                    @unique
-  teacherName           String
-  email                 String?
-  phone                 String?
-  homeroomClass         String?
-  campusId              String
-  status                String                    @default("ACTIVE")
-  position              String                    @default("GV")
-  dateOfBirth           DateTime?
-  departmentId          String?
-  mainSubjectId         String?
-  mainSubjectRel        Subject?                  @relation("teacherMainSubject", fields: [mainSubjectId], references: [id])
-  departmentRel         Department?               @relation(fields: [departmentId], references: [id])
-  user                  User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  campus                Campus                    @relation(fields: [campusId], references: [id])
-  classes               TeacherClassAssignment[]
-  TeachingAssignment    TeachingAssignment[]
-  hostObservationSlots  ObservationSlot[]         @relation("HostTeacher")
-  observerRegistrations ObservationRegistration[] @relation("ObserverTeacher")
+  id                     String                    @id @default(cuid())
+  proposedSupportTargets LearningSupportTarget[]   @relation(name: "ProposerRelation")
+  userId                 String                    @unique
+  teacherCode            String                    @unique
+  teacherName            String
+  email                  String?
+  phone                  String?
+  homeroomClass          String?
+  campusId               String
+  status                 String                    @default("ACTIVE")
+  position               String                    @default("GV")
+  dateOfBirth            DateTime?
+  departmentId           String?
+  mainSubjectId          String?
+  mainSubjectRel         Subject?                  @relation("teacherMainSubject", fields: [mainSubjectId], references: [id])
+  departmentRel          Department?               @relation(fields: [departmentId], references: [id])
+  user                   User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campus                 Campus                    @relation(fields: [campusId], references: [id])
+  classes                TeacherClassAssignment[]
+  TeachingAssignment     TeachingAssignment[]
+  hostObservationSlots   ObservationSlot[]         @relation("HostTeacher")
+  observerRegistrations  ObservationRegistration[] @relation("ObserverTeacher")
 
   academicYearTargets        TeacherAcademicYearTarget[]
   achievements               Achievement[]
@@ -178,31 +178,31 @@ model TeacherClassAssignment {
 }
 
 model Student {
-  id                         String                      @id @default(cuid())
-  studentCode                String
-  studentName                String
+  id                     String                      @id @default(cuid())
+  studentCode            String
+  studentName            String
   //  userId         String?             @unique
-  classId                    String
-  campusId                   String
-  academicYearId             String
-  status                     String                      @default("ACTIVE")
-  dateOfBirth                DateTime?
-  gender                     String?
-  parents                    ParentStudentLink[]
-  academicYear               AcademicYear                @relation(fields: [academicYearId], references: [id])
-  campus                     Campus                      @relation(fields: [campusId], references: [id])
-  class                      Class                       @relation(fields: [classId], references: [id])
-  surveyForms                SurveyForm[]
-  studentTransfers           StudentTransfer[]
+  classId                String
+  campusId               String
+  academicYearId         String
+  status                 String                      @default("ACTIVE")
+  dateOfBirth            DateTime?
+  gender                 String?
+  parents                ParentStudentLink[]
+  academicYear           AcademicYear                @relation(fields: [academicYearId], references: [id])
+  campus                 Campus                      @relation(fields: [campusId], references: [id])
+  class                  Class                       @relation(fields: [classId], references: [id])
+  surveyForms            SurveyForm[]
+  studentTransfers       StudentTransfer[]
   //  user           User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
-  exams                      ExamStudent[]
-  achievements               StudentAchievement[]
-  careerOrientations         StudentCareerOrientation[]
-  projectExperiences         StudentProjectExperience[]
-  learningCommitments        StudentLearningCommitment[]
-  highlightComments          StudentHighlightComment[]
-  activityParticipants       ActivityParticipant[]
-  learningSupportTargets     LearningSupportTarget[]
+  exams                  ExamStudent[]
+  achievements           StudentAchievement[]
+  careerOrientations     StudentCareerOrientation[]
+  projectExperiences     StudentProjectExperience[]
+  learningCommitments    StudentLearningCommitment[]
+  highlightComments      StudentHighlightComment[]
+  activityParticipants   ActivityParticipant[]
+  learningSupportTargets LearningSupportTarget[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -392,23 +392,23 @@ model Notification {
 }
 
 model Subject {
-  id                         String                      @id @default(cuid())
-  subjectCode                String                      @unique
-  subjectName                String
-  studyPrograms              String?                     @default("")
-  level                      String?                     @default("ALL")
-  description                String?
-  status                     String                      @default("ACTIVE")
-  createdAt                  DateTime                    @default(now())
-  updatedAt                  DateTime                    @updatedAt
+  id            String   @id @default(cuid())
+  subjectCode   String   @unique
+  subjectName   String
+  studyPrograms String?  @default("")
+  level         String?  @default("ALL")
+  description   String?
+  status        String   @default("ACTIVE")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   // Relationships for Parent-Child subjects
-  parentId                   String?
-  parentSubject              Subject?                    @relation("SubSubjects", fields: [parentId], references: [id], onDelete: SetNull)
-  subSubjects                Subject[]                   @relation("SubSubjects")
+  parentId      String?
+  parentSubject Subject?  @relation("SubSubjects", fields: [parentId], references: [id], onDelete: SetNull)
+  subSubjects   Subject[] @relation("SubSubjects")
 
   // Subject category: MOET, SKL, INTERNATIONAL
-  category                   String?                     @default("MOET")
+  category String? @default("MOET")
 
   quotas                     SubjectQuota[]
   mainTeachers               Teacher[]                   @relation("teacherMainSubject")

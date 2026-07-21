@@ -7,7 +7,7 @@ import { getWeeklyReport, getAllWeeklyReports, saveWeeklyReport, addManagerComme
 function getWeeksOfMonth(month: number, year: number) {
   const weeks: { weekNum: number; start: string; end: string; label: string }[] = []
   const lastDay = new Date(year, month, 0)
-  let current = new Date(year, month - 1, 1)
+  const current = new Date(year, month - 1, 1)
   while (current.getDay() !== 1 && current <= lastDay) current.setDate(current.getDate() + 1)
   let weekNum = 1
   while (current <= lastDay) {

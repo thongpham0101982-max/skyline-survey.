@@ -1,7 +1,8 @@
 // @ts-nocheck
 ﻿import { prisma } from "@/lib/db"
+import { unstable_cache } from "next/cache"
 
-export async function getAdminMetrics(academicYearId?: string, allowedCampusIds: string[] = []) {
+async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: string[] = []) {
   const isFullAccess = allowedCampusIds.length === 0
 
   let targetYearId = academicYearId
@@ -197,7 +198,7 @@ export async function getAdminMetrics(academicYearId?: string, allowedCampusIds:
     const end = new Date(academicYear.endDate)
 
     const months: { year: number; month: number }[] = []
-    let curr = new Date(start.getFullYear(), start.getMonth(), 1)
+    const curr = new Date(start.getFullYear(), start.getMonth(), 1)
     const last = new Date(end.getFullYear(), end.getMonth(), 1)
 
     let limit = 0
@@ -387,3 +388,18 @@ export async function getParentChildren(userId: string) {
   })
   return parent?.students.map(s => s.student) || []
 }
+
+export const getAdminMetrics = async (academicYearId?: string, allowedCampusIds: string[] = []) => {
+  const yearKey = academicYearId || 'current';
+  const campusKey = allowedCampusIds.length > 0 ? allowedCampusIds.sort().join(',') : 'all';
+  
+  const getCached = unstable_cache(
+    async () => {
+      return await _getAdminMetrics(academicYearId, allowedCampusIds);
+    },
+    ['admin-metrics', yearKey, campusKey],
+    { revalidate: 300 } // 5 minutes cache
+  );
+  
+  return getCached();
+};

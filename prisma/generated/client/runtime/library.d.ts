@@ -2557,7 +2557,7 @@ declare type QueryEngineLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error'
 
 declare type QueryEngineRequest = {
     query: string;
-    variables: Object;
+    variables: object;
 };
 
 declare type QueryEngineResult<T> = {
@@ -2566,7 +2566,7 @@ declare type QueryEngineResult<T> = {
 };
 
 declare type QueryEngineTelemetry = {
-    enabled: Boolean;
+    enabled: boolean;
     endpoint: string;
 };
 

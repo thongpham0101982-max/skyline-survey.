@@ -19,7 +19,7 @@ async function getClientIp() {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: "skyline-survey-super-secret-key-change-in-production", // FORCE exact secret
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   providers: [
     CredentialsProvider({
@@ -31,29 +31,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        let identifier = credentials.email as string
+        const identifier = credentials.email as string
         const password = credentials.password as string
         let user: any = null
 
-        // SUPER ADMIN OVERRIDE TO GUARANTEE LOGIN
-        if (identifier === 'admin@skyline.edu' && password === 'Pnt@01011982!') {
-            console.log('[AUTH] Super Admin override engaged!');
-            const realUser = await prisma.user.findUnique({ where: { email: identifier }, include: { campusAssignments: true } }).catch(() => null);
-            return {
-                id: realUser?.id || 'admin_override_id',
-                email: 'admin@skyline.edu',
-                name: realUser?.fullName || 'System Admin',
-                role: 'ADMIN',
-                campusIds: realUser?.campusAssignments?.map((a: any) => a.campusId) || []
-            };
-        }
-
-        console.log('[AUTH] Attempting login for:', identifier)
-        // 1. Direct User table match (Admin / Staff)
-        user = await prisma.user.findUnique({ where: { email: identifier }, include: { campusAssignments: true } })
-        console.log('[AUTH] User found in User table:', user ? 'YES' : 'NO')
-
-        // 2. Teacher Code Match
         if (!user) {
           const teacher = await prisma.teacher.findUnique({
             where: { teacherCode: identifier },

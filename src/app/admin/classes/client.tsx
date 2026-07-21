@@ -333,7 +333,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
 
         const payload = data.map((row: any) => {
           const excelCampusStr = (row["Cơ sở"] || row["Co so"] || "").toString().trim().toLowerCase()
-          let matchedCampus = campuses.find((c: any) => {
+          const matchedCampus = campuses.find((c: any) => {
              const cName = c.campusName.trim().toLowerCase()
              return cName === excelCampusStr || cName.includes(excelCampusStr) || excelCampusStr.includes(cName)
           })

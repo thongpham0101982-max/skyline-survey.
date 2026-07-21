@@ -78,7 +78,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     }
   }, [role])
 
-  let title = ""
+  const title = ""
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false

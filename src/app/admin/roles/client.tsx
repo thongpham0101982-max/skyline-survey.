@@ -47,7 +47,7 @@ export function RolesClient({ initialRoles }: any) {
       
       let nextPerms = prev.map(p => {
         if (p.module !== moduleCode) return p;
-        let newP = { ...p, [field]: !p[field] };
+        const newP = { ...p, [field]: !p[field] };
         if ((field === "canCreate" || field === "canUpdate" || field === "canDelete") && newP[field])
           newP.canRead = true;
         if (field === "canRead" && !newP.canRead)
@@ -62,7 +62,7 @@ export function RolesClient({ initialRoles }: any) {
           const subCodes = targetMod.subModules.map(sm => sm.code);
           nextPerms = nextPerms.map(p => {
             if (!subCodes.includes(p.module)) return p;
-            let newP = { ...p, [field]: newVal };
+            const newP = { ...p, [field]: newVal };
             if ((field === "canCreate" || field === "canUpdate" || field === "canDelete") && newP[field])
               newP.canRead = true;
             if (field === "canRead" && !newP.canRead)

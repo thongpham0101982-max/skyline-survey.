@@ -39,6 +39,9 @@ export default function TeacherCommitmentPage() {
   const [loadingRecord, setLoadingRecord] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  
+  const selectedClass = classes.find(c => c.id === selectedClassId)
+  const isHngOrSb = selectedClass?.educationSystem === "HNG" || selectedClass?.educationSystem === "SB"
 
   useEffect(() => {
     if (!yearId) return
@@ -115,7 +118,9 @@ export default function TeacherCommitmentPage() {
             setStatus(data.commitment.status || "ACTIVE")
           } else {
             // Set default template
-            const defaultContent = `BẢN CAM KẾT HỌC TẬP & RÈN LUYỆN\n\nHọc sinh: ${activeStudent?.studentName || ""}\nLớp: ${activeStudent?.className || activeStudent?.class?.className || ""}\n\nHọc sinh và gia đình cam kết thực hiện nghiêm túc các điều khoản rèn luyện:\n1. Đi học đúng giờ, chuyên cần học tập.\n2. Tích cực tham gia các hoạt động học tập nhóm và hoạt động trải nghiệm.\n3. Phối hợp với thầy cô giáo bộ môn để hoàn thành đầy đủ nhiệm vụ học tập.\n4. Rèn luyện đạo đức, tác phong chuẩn mực của học sinh trường Sky-Line.`
+            const defaultContent = (selectedClass?.educationSystem === "HNG" || selectedClass?.educationSystem === "SB")
+              ? `KẾT QUẢ HỌC TẬP VÀ RÈN LUYỆN: CHƯƠNG TRÌNH BỘ VÀ CHƯƠNG TRÌNH HỌC SONG NGỮ\n\nHọc sinh: ${activeStudent?.studentName || ""}\nLớp: ${activeStudent?.className || activeStudent?.class?.className || ""}\n\n1. Kết quả Học tập Chương trình Bộ:\n- Ưu điểm:\n- Hạn chế:\n\n2. Kết quả Học tập Chương trình Song Ngữ:\n- Ưu điểm:\n- Hạn chế:\n\n3. Kết quả Rèn luyện, Đạo đức, Tác phong:\n- Ưu điểm:\n- Hạn chế:`
+              : `BẢN CAM KẾT HỌC TẬP & RÈN LUYỆN\n\nHọc sinh: ${activeStudent?.studentName || ""}\nLớp: ${activeStudent?.className || activeStudent?.class?.className || ""}\n\nHọc sinh và gia đình cam kết thực hiện nghiêm túc các điều khoản rèn luyện:\n1. Đi học đúng giờ, chuyên cần học tập.\n2. Tích cực tham gia các hoạt động học tập nhóm và hoạt động trải nghiệm.\n3. Phối hợp với thầy cô giáo bộ môn để hoàn thành đầy đủ nhiệm vụ học tập.\n4. Rèn luyện đạo đức, tác phong chuẩn mực của học sinh trường Sky-Line.`
             setContent(defaultContent)
             setStatus("ACTIVE")
             if (data.hasPrevious) {
@@ -191,7 +196,12 @@ export default function TeacherCommitmentPage() {
       })
 
       if (res.ok) {
-        setMessage({ type: "success", text: "Đã lưu cam kết học tập thành công!" })
+        setMessage({ 
+          type: "success", 
+          text: (selectedClass?.educationSystem === "HNG" || selectedClass?.educationSystem === "SB")
+            ? "Đã lưu kết quả học tập và rèn luyện thành công!"
+            : "Đã lưu cam kết học tập thành công!" 
+        })
       } else {
         const errData = await res.json()
         setMessage({ type: "error", text: errData.error || "Có lỗi xảy ra khi lưu." })
@@ -222,8 +232,12 @@ export default function TeacherCommitmentPage() {
             <FileText className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Cam kết học tập</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Xem và biên tập bản cam kết học tập rèn luyện của học sinh</p>
+            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">
+              {isHngOrSb ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ" : "Cam kết học tập"}
+            </h1>
+            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">
+              {isHngOrSb ? "Xem và biên tập kết quả học tập và rèn luyện của học sinh" : "Xem và biên tập bản cam kết học tập rèn luyện của học sinh"}
+            </p>
           </div>
         </div>
       </div>
@@ -311,7 +325,9 @@ export default function TeacherCommitmentPage() {
                   )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
-                    <label className="block text-xs font-black text-slate-700 sm:col-span-1">Trạng thái cam kết</label>
+                    <label className="block text-xs font-black text-slate-700 sm:col-span-1">
+                      {isHngOrSb ? "Trạng thái" : "Trạng thái cam kết"}
+                    </label>
                     <select
                       value={status}
                       onChange={e => setStatus(e.target.value)}
@@ -324,13 +340,15 @@ export default function TeacherCommitmentPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1.5">Nội dung Bản cam kết học tập</label>
+                    <label className="block text-xs font-black text-slate-700 mb-1.5">
+                      {isHngOrSb ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ" : "Nội dung Bản cam kết học tập"}
+                    </label>
                     <textarea
                       rows={10}
                       value={content}
                       onChange={e => setContent(e.target.value)}
                       required
-                      placeholder="Nhập nội dung cam kết rèn luyện và học tập..."
+                      placeholder={isHngOrSb ? "Nhập kết quả học tập và rèn luyện tại đây..." : "Nhập nội dung cam kết rèn luyện và học tập..."}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#00A99D] transition-all resize-none"
                     />
                   </div>
@@ -338,7 +356,9 @@ export default function TeacherCommitmentPage() {
                   {hasPrevious && (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs font-semibold space-y-2 mb-4">
                       <p className="text-amber-800">
-                        Học sinh này chưa có cam kết học tập cho năm học hiện tại, nhưng đã có cam kết ở năm học trước. Bạn có muốn kế thừa nội dung cam kết cũ?
+                        {isHngOrSb 
+                          ? "Học sinh này chưa có kết quả học tập và rèn luyện cho năm học hiện tại, nhưng đã có kết quả ở năm học trước. Bạn có muốn kế thừa nội dung cũ?"
+                          : "Học sinh này chưa có cam kết học tập cho năm học hiện tại, nhưng đã có cam kết ở năm học trước. Bạn có muốn kế thừa nội dung cam kết cũ?"}
                       </p>
                       <button
                         type="button"
@@ -346,7 +366,7 @@ export default function TeacherCommitmentPage() {
                         disabled={inheriting}
                         className="bg-amber-600 hover:bg-amber-700 text-white font-bold py-1.5 px-3 rounded-lg transition-colors text-[10px]"
                       >
-                        {inheriting ? "Đang kế thừa..." : "Kế thừa cam kết từ năm học trước"}
+                        {inheriting ? "Đang kế thừa..." : (isHngOrSb ? "Kế thừa kết quả từ năm học trước" : "Kế thừa cam kết từ năm học trước")}
                       </button>
                     </div>
                   )}
@@ -362,7 +382,7 @@ export default function TeacherCommitmentPage() {
                       ) : (
                         <Save className="w-4 h-4" />
                       )}
-                      Lưu cam kết
+                      {isHngOrSb ? "Lưu kết quả" : "Lưu cam kết"}
                     </button>
                   </div>
                 </form>
@@ -372,7 +392,11 @@ export default function TeacherCommitmentPage() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
               <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <h3 className="text-base font-bold text-slate-800">Chọn học sinh</h3>
-              <p className="text-slate-400 text-xs mt-1">Chọn học sinh ở cột bên trái để biên tập bản cam kết học tập.</p>
+              <p className="text-slate-400 text-xs mt-1">
+                {isHngOrSb 
+                  ? "Chọn học sinh ở cột bên trái để biên tập kết quả học tập và rèn luyện." 
+                  : "Chọn học sinh ở cột bên trái để biên tập bản cam kết học tập."}
+              </p>
             </div>
           )}
         </div>

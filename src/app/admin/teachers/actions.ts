@@ -333,7 +333,7 @@ export async function importTeachersAction(rows: any[], academicYearId?: string)
       const mainSubjectId = row.mainSubject ? (subMap.get(row.mainSubject) || null) : null
       
       let campusId = defaultCampusId;
-      let additionalCampusIds = [];
+      const additionalCampusIds = [];
 
       if (row.campus) {
         const campusParts = typeof row.campus === "string"

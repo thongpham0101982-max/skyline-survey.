@@ -227,7 +227,7 @@ export function TeacherManagerClient({
       const result = await importTeachersAction(parsed.data, defaultYearId)
       setImportResult(result)
       if (result.success) {
-        let msg = `Import thành công: ${result.created} giáo viên. Bỏ qua: ${result.skipped}.`
+        const msg = `Import thành công: ${result.created} giáo viên. Bỏ qua: ${result.skipped}.`
         if (result.warnings && result.warnings.length > 0) {
           setErrorMsg(`Cảnh báo nhập trùng:\n` + result.warnings.join("\n"))
         }

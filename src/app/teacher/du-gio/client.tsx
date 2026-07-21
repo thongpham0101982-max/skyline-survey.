@@ -759,7 +759,7 @@ export function ObservationClient(props: ObservationClientProps) {
     if (!evalModal) return
     const isK12 = evalModal.slot.level !== "Mầm non"
     
-    let payload: any = {
+    const payload: any = {
       registrationId: evalModal.registration.id,
       slotId: evalModal.slot.id,
       strengths: evalStrengths,

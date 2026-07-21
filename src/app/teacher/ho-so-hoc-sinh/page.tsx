@@ -307,12 +307,18 @@ export default function TeacherStudentProfilePage() {
   }
 
   const tabs = [
-    { id: "cv", label: "Hồ sơ CV Quốc tế", icon: User },
+    { id: "cv", label: "Xem chi tiết HSHS", icon: User },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
     { id: "announcements", label: "Bản tin & Thông báo", icon: Bell },
     { id: "achievements", label: "Thành tích", icon: Award },
     { id: "orientation", label: "Hướng nghiệp", icon: Compass },
-    { id: "commitment", label: "Cam kết học tập", icon: FileText },
+    { 
+      id: "commitment", 
+      label: (profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+        ? "Kết quả Học tập & Rèn luyện: Chương trình Bộ & Chương trình Học Song Ngữ"
+        : "Cam kết học tập", 
+      icon: FileText 
+    },
     { id: "projects", label: "Dự án & Trải nghiệm", icon: BookOpen },
     { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare },
     { id: "support", label: "Hỗ trợ học tập", icon: GraduationCap }
@@ -416,6 +422,15 @@ export default function TeacherStudentProfilePage() {
                   className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D] transition-all"
                 />
               </div>
+              {students.length > 0 && (
+                <button
+                  onClick={() => window.open(`/teacher/ho-so-hoc-sinh/print?type=class&classId=${students[0]?.classId || selectedStudent?.classId}&academicYearId=${yearId}`, "_blank")}
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer border border-[#00A99D]/20"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>In HSHS Cả lớp</span>
+                </button>
+              )}
             </div>
             <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
               {filteredStudents.length === 0 ? (
@@ -549,7 +564,7 @@ export default function TeacherStudentProfilePage() {
                             <p className="text-slate-400 text-[10px] font-semibold mt-0.5">Bản tổng hợp hồ sơ năng lực học tập và rèn luyện của học sinh</p>
                           </div>
                           <button
-                            onClick={() => window.print()}
+                            onClick={() => window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${yearId}`, "_blank")}
                             className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
                           >
                             <Printer className="w-4 h-4" />
@@ -656,7 +671,9 @@ export default function TeacherStudentProfilePage() {
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
                                   <FileText className="w-4 h-4 text-[#00A99D]" />
-                                  Cam kết rèn luyện
+                                  {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                                    ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ"
+                                    : "Cam kết rèn luyện"}
                                 </h4>
                                 {profileData.commitment ? (
                                   <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-3">
@@ -677,7 +694,11 @@ export default function TeacherStudentProfilePage() {
                                     </div>
                                   </div>
                                 ) : (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Chưa thiết lập cam kết.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">
+                                    {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                                      ? "Chưa thiết lập kết quả học tập và rèn luyện."
+                                      : "Chưa thiết lập cam kết."}
+                                  </p>
                                 )}
                               </div>
 
@@ -765,12 +786,12 @@ export default function TeacherStudentProfilePage() {
                                           </div>
                                           <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl text-center transition-all hover:bg-slate-50">
                                             <div className="text-[9px] text-sky-500 font-black uppercase tracking-wider">Anh viết</div>
-                                            <div className="text-xl font-black text-slate-800 mt-1">{writtenVal !== null && writtenVal !== undefined ? (isGrade1 ? writtenVal : `sub{${writtenVal}}/70`) : "—"}</div>
+                                            <div className="text-xl font-black text-slate-800 mt-1">{writtenVal !== null && writtenVal !== undefined ? (isGrade1 ? writtenVal : `${writtenVal}/70`) : "—"}</div>
                                             <div className="text-[8px] text-slate-400 font-bold mt-0.5">{isGrade1 ? "Thang 10" : "Thang 70"}</div>
                                           </div>
                                           <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl text-center transition-all hover:bg-slate-50">
                                             <div className="text-[9px] text-sky-500 font-black uppercase tracking-wider">Anh nói</div>
-                                            <div className="text-xl font-black text-slate-800 mt-1">{oralVal !== null && oralVal !== undefined ? (isGrade1 ? oralVal : `sub{${oralVal}}/30`) : "—"}</div>
+                                            <div className="text-xl font-black text-slate-800 mt-1">{oralVal !== null && oralVal !== undefined ? (isGrade1 ? oralVal : `${oralVal}/30`) : "—"}</div>
                                             <div className="text-[8px] text-slate-400 font-bold mt-0.5">{isGrade1 ? "Thang 10" : "Thang 30"}</div>
                                           </div>
                                         </div>
@@ -1493,7 +1514,11 @@ export default function TeacherStudentProfilePage() {
                     {/* TAB: COMMITMENT */}
                     {activeTab === "commitment" && (
                       <div className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Bản cam kết học tập & Rèn luyện</h4>
+                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">
+                          {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                            ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ"
+                            : "Bản cam kết học tập & Rèn luyện"}
+                        </h4>
                         {profileData.commitment ? (
                           <div className="bg-slate-50/50 border-2 border-slate-200/60 rounded-3xl p-6 space-y-5 shadow-xs relative overflow-hidden">
                             {/* Decorative Seal design */}
@@ -1503,7 +1528,11 @@ export default function TeacherStudentProfilePage() {
 
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
                               <div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mã cam kết: LSC-{profileData.commitment.id.substring(0, 5).toUpperCase()}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                  {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                                    ? `Mã kết quả: LSC-${profileData.commitment.id.substring(0, 5).toUpperCase()}`
+                                    : `Mã cam kết: LSC-${profileData.commitment.id.substring(0, 5).toUpperCase()}`}
+                                </span>
                               </div>
                               <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${
                                 profileData.commitment.status === "COMPLETED"
@@ -1525,7 +1554,11 @@ export default function TeacherStudentProfilePage() {
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa thiết lập bản cam kết học tập & rèn luyện cho học sinh này.</div>
+                          <div className="text-xs text-slate-400 italic text-center py-12">
+                            {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                              ? "Chưa thiết lập kết quả học tập và rèn luyện: chương trình bộ và chương trình học song ngữ cho học sinh này."
+                              : "Chưa thiết lập bản cam kết học tập & rèn luyện cho học sinh này."}
+                          </div>
                         )}
                       </div>
                     )}

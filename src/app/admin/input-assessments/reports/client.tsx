@@ -1712,7 +1712,7 @@ export function ReportsClient({
         });
         
         let currentPdfCount = 0;
-        let totalPdfs = eligibleStudents.length;
+        const totalPdfs = eligibleStudents.length;
 
         for (const s of targetStudents) {
           const r = s.admissionResult || s.devAssessmentResult || "";
@@ -1977,7 +1977,7 @@ export function ReportsClient({
       activePeriod?.academicYear?.name
     );
     // Split the paragraph if "Kính mong Phụ huynh..." is in the middle of a paragraph
-    let paragraphs: string[] = [];
+    const paragraphs: string[] = [];
     fullContent.replace(/\u00a0/g, ' ').split('\n').filter(Boolean).forEach(p => {
       const pNorm = p.normalize('NFC');
       const regex = /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i;
@@ -1996,8 +1996,8 @@ export function ReportsClient({
     }) : -1;
     const isSplit = isCommitmentReport && splitIndex !== -1;
 
-    let page1Paragraphs = isSplit ? paragraphs.slice(0, splitIndex) : paragraphs;
-    let page2Paragraphs = isSplit ? paragraphs.slice(splitIndex) : [];
+    const page1Paragraphs = isSplit ? paragraphs.slice(0, splitIndex) : paragraphs;
+    const page2Paragraphs = isSplit ? paragraphs.slice(splitIndex) : [];
 
     const buildParagraphElement = (paras: string[]) => {
       return paras.map((para, idx) => {
@@ -2572,7 +2572,7 @@ export function ReportsClient({
               }
             );
             
-            let tempParagraphs: string[] = [];
+            const tempParagraphs: string[] = [];
             tempFullText.replace(/\u00a0/g, ' ').split('\n').filter(Boolean).forEach(p => {
               const pNorm = p.normalize('NFC');
               const regex = /kính\s+mong\s+phụ\s+huynh\s+đồng\s+hành/i;
@@ -2591,8 +2591,8 @@ export function ReportsClient({
             }) : -1;
             const isSplitTemp = isTempCommitment && splitIndexTemp !== -1;
 
-            let page1ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(0, splitIndexTemp) : tempParagraphs;
-            let page2ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(splitIndexTemp) : [];
+            const page1ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(0, splitIndexTemp) : tempParagraphs;
+            const page2ParagraphsTemp = isSplitTemp ? tempParagraphs.slice(splitIndexTemp) : [];
 
             return (
               <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">

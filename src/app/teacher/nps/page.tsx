@@ -47,7 +47,7 @@ export default async function TeacherNpsPage() {
   let promoters = 0;
   let detractors = 0;
   let passive = 0;
-  let classNps: Record<string, {p: number, d: number, pa: number, name: string}> = {};
+  const classNps: Record<string, {p: number, d: number, pa: number, name: string}> = {};
 
   classes.forEach(c => {
      classNps[c.id] = { p: 0, d: 0, pa: 0, name: c.className };

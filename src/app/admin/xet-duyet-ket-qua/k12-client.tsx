@@ -1800,7 +1800,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
 
   const handleCheckboxChange = (group: 'tuvan' | 'giaovu' | 'gdcs' | 'cc', cs?: string) => {
     setCheckedEmails(prev => {
-      let nextChecked = { ...prev };
+      const nextChecked = { ...prev };
       if (group === 'cc') {
         nextChecked.cc = !prev.cc;
       } else if (cs) {
@@ -2040,7 +2040,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         
         const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
         let currentPdfCount = 0;
-        let totalPdfs = eligibleStudents.length;
+        const totalPdfs = eligibleStudents.length;
 
         for (const s of emailStudents) {
           if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
@@ -2125,7 +2125,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
       const html2pdf = await getHtml2Pdf();
       
       let count = 0;
-      let totalPdfs = eligibleStudents.length;
+      const totalPdfs = eligibleStudents.length;
 
       for (const s of emailStudents) {
         if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {

@@ -60,7 +60,7 @@ export async function dispatchSurveyAction(surveyPeriodId: string, classIds: str
     const existingStudentIds = new Set(existingForms.filter(f => !f.parentId).map(f => f.studentId))
 
     let createdCount = 0
-    let samples: any[] = []
+    const samples: any[] = []
 
     for (const cls of classes) {
       for (const student of cls.students) {

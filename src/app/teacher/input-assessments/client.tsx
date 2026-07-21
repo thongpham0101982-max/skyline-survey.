@@ -91,7 +91,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             
-            let activeBatch = allBatches.find((b: any) => {
+            const activeBatch = allBatches.find((b: any) => {
                 if (!b.startDate || !b.endDate) return false;
                 const start = new Date(b.startDate);
                 const end = new Date(b.endDate);
@@ -344,7 +344,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             today.setHours(0, 0, 0, 0);
             
             // Try to find active batch first
-            let activeBatch = periodBatches.find((b: any) => {
+            const activeBatch = periodBatches.find((b: any) => {
                 if (!b.startDate || !b.endDate) return false;
                 const start = new Date(b.startDate);
                 const end = new Date(b.endDate);
@@ -382,7 +382,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
     }, [selectedAssignmentId, selectedBatchId, selectedGrade, selectedSystemCode]);
 
     // Reset/auto-select grade khi doi mon hoac dot
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     useEffect(() => {
         // Nếu chỉ có 1 khối/hệ được phân công -> tự động chọn
         if (availableGradeOptions.length === 1) {
@@ -1471,7 +1471,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     const pages = [];
                                     const maxVisible = 5;
                                     let start = Math.max(1, safeCurrentPage - Math.floor(maxVisible / 2));
-                                    let end = Math.min(totalPages, start + maxVisible - 1);
+                                    const end = Math.min(totalPages, start + maxVisible - 1);
                                     if (end - start + 1 < maxVisible) {
                                         start = Math.max(1, end - maxVisible + 1);
                                     }

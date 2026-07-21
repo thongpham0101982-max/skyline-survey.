@@ -375,29 +375,30 @@ export async function POST(req: Request) {
           where: { id: { in: targetIds } }
         })
 
+                const existingAssigns = await prisma.learningSupportAssignment.findMany({
+          where: { targetId: { in: targetIds } }
+        });
+        const existingAssignMap = new Set(existingAssigns.map(a => a.targetId));
+        
+        const txOperations = [];
         for (const target of targets) {
-          // If it doesn't have an assignment, and it has a createdById, create an assignment automatically
-          const existingAssign = await prisma.learningSupportAssignment.findFirst({
-            where: { targetId: target.id }
-          })
-          
-          if (!existingAssign && target.createdById) {
-            await prisma.learningSupportAssignment.create({
+          if (!existingAssignMap.has(target.id) && target.createdById) {
+            txOperations.push(prisma.learningSupportAssignment.create({
               data: {
                 teacherId: target.createdById,
                 targetId: target.id,
                 academicYearId: target.academicYearId,
                 notes: "Tự động phân công cho giáo viên đề xuất"
               }
-            })
+            }));
           }
-
-          // Mark as APPROVED in status
-          await prisma.learningSupportTarget.update({
+          
+          txOperations.push(prisma.learningSupportTarget.update({
             where: { id: target.id },
             data: { status: "ĐÃ DUYỆT" }
-          })
+          }));
         }
+        await prisma.$transaction(txOperations);
       } else {
         // Reject - update status
         await prisma.learningSupportTarget.updateMany({

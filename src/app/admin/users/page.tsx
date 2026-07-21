@@ -37,7 +37,7 @@ export default async function UsersPage() {
 
   // Map users and filter list for restricted admins
   const mappedUsers = users.map((u: any) => {
-    let campusIds: string[] = u.campusAssignments.map((a: any) => a.campusId);
+    const campusIds: string[] = u.campusAssignments.map((a: any) => a.campusId);
     if (u.teacher && u.teacher.campusId) campusIds.push(u.teacher.campusId);
     if (u.parent) {
       u.parent.students.forEach((link: any) => {

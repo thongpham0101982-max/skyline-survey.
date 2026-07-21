@@ -66,6 +66,7 @@ export async function GET(req: NextRequest) {
         learningCommitments: true,
         careerOrientations: true,
         highlightComments: true,
+        studentTransfers: true,
         achievements: {
           include: {
             achievement: true
@@ -242,34 +243,21 @@ export async function GET(req: NextRequest) {
         campusName,
         classCode,
         className,
-        class: s.class, // Add raw class relation for local filtering
+        class: s.class,
         studentCode,
         studentName,
         gender,
         dob,
         status,
-        orientation,
-        latestGvcnComment,
-        commitmentContent,
-        commitmentStatus,
-        supportReason,
-        supportTeacher,
-        admitted,
-        subjectNames,
-        mathScore,
-        literatureScore,
-        writtenEnglishScore,
-        oralEnglishScore,
-        directorNote,
-        devAssessment,
-        probationaryComment,
         
-        // Include raw structured child lists for portfolio details rendering
+        // Exact structure expected by teacher tabs (profileData)
+        student: s,
+        commitment: s.learningCommitments?.[0] || null,
+        orientation: s.careerOrientations?.[0] || null,
         achievements: s.achievements || [],
-        projectExperiences: s.projectExperiences || [],
-        learningCommitment: s.learningCommitments?.[0] || null,
+        projects: s.projectExperiences || [],
+        learningSupportTargets: s.learningSupportTargets || [],
         highlightComments: s.highlightComments || [],
-        learningSupportTarget: s.learningSupportTargets?.[0] || null,
         entranceSurvey: matchedSurvey ? {
           ...matchedSurvey,
           type: surveyType,
@@ -283,7 +271,8 @@ export async function GET(req: NextRequest) {
             result: s.result,
             note: s.note
           }))
-        } : null
+        } : null,
+        transfers: s.studentTransfers || []
       }
     })
 
@@ -300,8 +289,8 @@ export async function GET(req: NextRequest) {
         "Trạng thái",
         "Định hướng nghề nghiệp",
         "GVCN nhận xét định kỳ",
-        "Nội dung cam kết học tập",
-        "Trạng thái cam kết",
+        "Nội dung cam kết học tập / Kết quả học tập",
+        "Trạng thái cam kết / kết quả",
         "Diện nhận hỗ trợ học tập/tâm lý",
         "GV phụ trách hỗ trợ",
         "Trúng tuyển khảo sát đầu vào?",
@@ -327,21 +316,21 @@ export async function GET(req: NextRequest) {
           s.gender,
           s.dob,
           s.status,
-          s.orientation,
-          s.latestGvcnComment,
-          s.commitmentContent,
-          s.commitmentStatus,
-          s.supportReason,
-          s.supportTeacher,
-          s.admitted,
-          s.subjectNames,
-          s.mathScore,
-          s.literatureScore,
-          s.writtenEnglishScore,
-          s.oralEnglishScore,
-          s.directorNote,
-          s.devAssessment,
-          s.probationaryComment
+          s.orientation?.result || "",
+          s.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT")?.[0]?.comment || "",
+          s.commitment?.content || "",
+          s.commitment ? (s.commitment.status === "COMPLETED" ? "Hoàn thành" : s.commitment.status === "VIOLATED" ? "Vi phạm" : "Đang thực hiện") : "",
+          s.learningSupportTargets?.[0] ? `${s.learningSupportTargets[0].reason} (${s.learningSupportTargets[0].supportType === "ACADEMIC" ? "Học thuật" : "Tâm lý"})` : "",
+          s.learningSupportTargets?.[0]?.assignments?.[0]?.teacher?.teacherName || "",
+          s.entranceSurvey ? s.entranceSurvey.admissionResult || "Đã trúng tuyển" : "Không",
+          s.entranceSurvey?.type === "K12" ? (s.entranceSurvey.scores || []).map((sc: any) => sc.subjectName).filter(Boolean).join("; ") : "",
+          s.entranceSurvey?.mathScore || "",
+          s.entranceSurvey?.literatureScore || "",
+          s.entranceSurvey?.writtenEnglishScore || "",
+          s.entranceSurvey?.oralEnglishScore || "",
+          s.entranceSurvey?.directorNote || "",
+          s.entranceSurvey?.devAssessmentResult || "",
+          s.entranceSurvey?.probationaryComment || ""
         ].map(escapeCSV)
         rows.push(rowData.join(","))
       })

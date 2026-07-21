@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     const getEmailHtml = (studentGroup: any[], totalStudentsCount: number, passed: number, failed: number, committed: number, pending: number) => {
       const rowsHtml = studentGroup.map((s, idx) => {
         const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—";
-        let resultText = s.admissionResult || "Chưa xét duyệt";
+        const resultText = s.admissionResult || "Chưa xét duyệt";
         let resColor = "#4b5563", resBg = "#f3f4f6", resBorder = "#e5e7eb";
 
         if (isPreschool) {
@@ -355,7 +355,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Be Vietnam Pro', 'Segoe 
 
       for (const [campusId, group] of Object.entries(groupedStudents)) {
         let currentGdcsEmail = null;
-        let campusObj = campuses.find(c => c.id === campusId);
+        const campusObj = campuses.find(c => c.id === campusId);
         
         if (campusObj) {
           const managerEmail = campusObj.manager?.teacher?.email || campusObj.manager?.email;

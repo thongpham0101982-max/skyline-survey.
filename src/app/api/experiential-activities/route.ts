@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       }
     });
 
-    let selectedStudentIds = new Set<string>();
+    const selectedStudentIds = new Set<string>();
     if (target) {
       if (target.classes && target.classes.length > 0) {
         const studentsInClasses = await prisma.student.findMany({

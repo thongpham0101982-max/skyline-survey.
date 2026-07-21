@@ -201,12 +201,18 @@ export function StudentProfilesAdminClient({
   const filteredStudentsList = students
 
   const tabs = [
-    { id: "cv", label: "Hồ sơ CV Quốc tế", icon: User },
+    { id: "cv", label: "Xem chi tiết HSHS", icon: User },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
     { id: "announcements", label: "Bản tin & Thông báo", icon: Bell },
     { id: "achievements", label: "Thành tích", icon: Award },
     { id: "orientation", label: "Hướng nghiệp", icon: Compass },
-    { id: "commitment", label: "Cam kết học tập", icon: FileText },
+    { 
+      id: "commitment", 
+      label: (selectedStudent?.class?.educationSystem === "HNG" || selectedStudent?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+        ? "Kết quả Học tập & Rèn luyện: Chương trình Bộ & Chương trình Học Song Ngữ"
+        : "Cam kết học tập", 
+      icon: FileText 
+    },
     { id: "projects", label: "Dự án & Trải nghiệm", icon: BookOpen },
     { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare },
     { id: "support", label: "Hỗ trợ học tập", icon: GraduationCap }
@@ -582,7 +588,9 @@ export function StudentProfilesAdminClient({
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
                                   <FileText className="w-4 h-4 text-[#00A99D]" />
-                                  Cam kết rèn luyện
+                                  {(selectedStudent?.class?.educationSystem === "HNG" || selectedStudent?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                                    ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ"
+                                    : "Cam kết rèn luyện"}
                                 </h4>
                                 {selectedStudent.commitmentContent ? (
                                   <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
@@ -595,7 +603,11 @@ export function StudentProfilesAdminClient({
                                     </div>
                                   </div>
                                 ) : (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Chưa thiết lập cam kết.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">
+                                    {(selectedStudent?.class?.educationSystem === "HNG" || selectedStudent?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                                      ? "Chưa thiết lập kết quả học tập và rèn luyện."
+                                      : "Chưa thiết lập cam kết."}
+                                  </p>
                                 )}
                               </div>
 
@@ -1264,7 +1276,11 @@ export function StudentProfilesAdminClient({
 
                     {activeTab === "commitment" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Bản cam kết học tập & Rèn luyện</h4>
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">
+                          {(selectedStudent?.class?.educationSystem === "HNG" || selectedStudent?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                            ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ"
+                            : "Bản cam kết học tập & Rèn luyện"}
+                        </h4>
                         {selectedStudent.commitment ? (
                           <div className="bg-slate-50/50 border-2 border-slate-200/60 rounded-3xl p-6 space-y-5 shadow-xs relative overflow-hidden">
                             <div className="absolute top-4 right-4 w-16 h-16 rounded-full border-4 border-slate-200/50 flex items-center justify-center select-none pointer-events-none">
@@ -1273,7 +1289,11 @@ export function StudentProfilesAdminClient({
 
                             <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
                               <div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mã cam kết: LSC-{selectedStudent.commitment.id.substring(0, 5).toUpperCase()}</span>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                  {(selectedStudent?.class?.educationSystem === "HNG" || selectedStudent?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                                    ? `Mã kết quả: LSC-${selectedStudent.commitment.id.substring(0, 5).toUpperCase()}`
+                                    : `Mã cam kết: LSC-${selectedStudent.commitment.id.substring(0, 5).toUpperCase()}`}
+                                </span>
                               </div>
                               <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${
                                 selectedStudent.commitment.status === "COMPLETED"
@@ -1295,7 +1315,11 @@ export function StudentProfilesAdminClient({
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa thiết lập bản cam kết học tập & rèn luyện cho học sinh này.</div>
+                          <div className="text-xs text-slate-400 italic text-center py-12">
+                            {(selectedStudent?.class?.educationSystem === "HNG" || selectedStudent?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
+                              ? "Chưa thiết lập kết quả học tập và rèn luyện: chương trình bộ và chương trình học song ngữ cho học sinh này."
+                              : "Chưa thiết lập bản cam kết học tập & rèn luyện cho học sinh này."}
+                          </div>
                         )}
                       </div>
                     )}

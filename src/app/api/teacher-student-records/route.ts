@@ -41,7 +41,8 @@ export async function GET(req: Request) {
       const students = classes.flatMap(c => c.students.map(s => ({
         ...s,
         className: c.className,
-        classCode: c.classCode
+        classCode: c.classCode,
+        educationSystem: c.educationSystem
       })))
 
       // Batch query to find if students were admitted via entrance survey
@@ -175,6 +176,7 @@ export async function GET(req: Request) {
           id: c.id,
           className: c.className,
           isHomeroom,
+          educationSystem: c.educationSystem || "",
           subjects: classAssignments.map(a => a.subject)
         }
       })
@@ -716,6 +718,288 @@ export async function GET(req: Request) {
         entranceSurvey,
         transfers,
         learningSupportTargets
+      })
+    }
+
+    if (action === "getProfiles") {
+      const studentId = searchParams.get("studentId")
+      const classId = searchParams.get("classId")
+      const academicYearId = searchParams.get("academicYearId")
+
+      // Find all homeroom and assigned classes for the teacher in this year
+      const homeroomClasses = await prisma.class.findMany({
+        where: {
+          OR: [
+            { homeroomTeacherId: teacher.id },
+            { homeroomTeacherId: { contains: teacher.id } }
+          ],
+          ...(academicYearId ? { academicYearId } : {})
+        },
+        select: { id: true }
+      })
+
+      const assignments = await prisma.teachingAssignment.findMany({
+        where: {
+          teacherId: teacher.id,
+          ...(academicYearId ? { academicYearId } : {})
+        },
+        select: { classId: true }
+      })
+
+      const assignedClassIds = Array.from(new Set([
+        ...homeroomClasses.map(c => c.id),
+        ...assignments.map(a => a.classId)
+      ]))
+
+      const where: any = {}
+      if (studentId) {
+        where.id = studentId
+        where.classId = { in: assignedClassIds }
+      } else if (classId) {
+        if (!assignedClassIds.includes(classId)) {
+          return NextResponse.json({ error: "Forbidden: Access denied to this class" }, { status: 403 })
+        }
+        where.classId = classId
+      } else {
+        where.classId = { in: assignedClassIds }
+      }
+
+      if (academicYearId) where.academicYearId = academicYearId
+
+      // Fetch students using same structure as admin student profiles endpoint
+      const students = await prisma.student.findMany({
+        where,
+        include: {
+          class: true,
+          campus: true,
+          academicYear: true,
+          learningCommitments: true,
+          careerOrientations: true,
+          highlightComments: true,
+          studentTransfers: true,
+          achievements: {
+            include: {
+              achievement: true
+            }
+          },
+          projectExperiences: true,
+          learningSupportTargets: {
+            include: {
+              assignments: {
+                include: {
+                  teacher: true,
+                  subject: true
+                }
+              },
+              evaluations: {
+                orderBy: { createdAt: "desc" }
+              }
+            }
+          }
+        },
+        orderBy: [
+          { academicYear: { name: "desc" } },
+          { campus: { campusName: "asc" } },
+          { class: { className: "asc" } },
+          { studentName: "asc" }
+        ]
+      })
+
+      // Fetch K12 and Preschool entrance surveys to match
+      const k12Surveys = await prisma.inputAssessmentStudent.findMany({
+        include: {
+          scores: {
+            include: { subject: true }
+          }
+        }
+      })
+
+      const pAny = prisma as any
+      const preschoolSurveys = pAny.preschoolInputAssessmentStudent 
+        ? await pAny.preschoolInputAssessmentStudent.findMany() 
+        : []
+      const preschoolScores = pAny.preschoolDevScore 
+        ? await pAny.preschoolDevScore.findMany({
+            include: {
+              criteria: {
+                include: { area: true }
+              }
+            }
+          }) 
+        : []
+
+      // Group preschool scores by studentId
+      const preschoolScoresMap = new Map()
+      preschoolScores.forEach((score) => {
+        if (!preschoolScoresMap.has(score.studentId)) {
+          preschoolScoresMap.set(score.studentId, [])
+        }
+        preschoolScoresMap.get(score.studentId).push(score)
+      })
+
+      const localNormName = (n) => n ? n.trim().toLowerCase().replace(/\s+/g, " ") : ""
+      const localSameTime = (a, b) => {
+        if (!a || !b) return false
+        return new Date(a).toDateString() === new Date(b).toDateString()
+      }
+
+      // Helper to process student record
+      const processedStudents = students.map((s) => {
+        // 1. Basic Info
+        const yearName = s.academicYear?.name || ""
+        const campusName = s.campus?.campusName || ""
+        const classCode = s.class?.classCode || ""
+        const className = s.class?.className || ""
+        const studentCode = s.studentCode || ""
+        const studentName = s.studentName || ""
+        const gender = s.gender || ""
+        const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : ""
+        const status = s.status || ""
+
+        // 2. Career Orientation
+        const orientation = s.careerOrientations?.[0]?.result || ""
+
+        // 3. GVCN Comment
+        const latestGvcnCommentObj = s.highlightComments
+          ?.filter((c) => c.category !== "ANNOUNCEMENT")
+          ?.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())?.[0]
+        const latestGvcnComment = latestGvcnCommentObj ? `${latestGvcnCommentObj.comment} (Bởi ${latestGvcnCommentObj.teacherName})` : ""
+
+        // 4. Learning Commitment
+        const commitment = s.learningCommitments?.[0]
+        const commitmentContent = commitment ? commitment.content : ""
+        const commitmentStatus = commitment ? (commitment.status === "COMPLETED" ? "Hoàn thành" : commitment.status === "VIOLATED" ? "Vi phạm" : "Đang thực hiện") : ""
+
+        // 5. Learning Support Target
+        const supportObj = s.learningSupportTargets?.[0]
+        const supportReason = supportObj ? `${supportObj.reason} (${supportObj.supportType === "ACADEMIC" ? "Học thuật" : "Tâm lý"})` : ""
+        const supportTeacher = supportObj?.assignments?.[0]?.teacher?.teacherName || ""
+
+        // 6. Match Entrance Survey
+        let matchedSurvey = null
+        let surveyType = ""
+        
+        matchedSurvey = k12Surveys.find((x) => x.studentCode === s.studentCode || x.enrollmentCode === s.studentCode)
+        if (matchedSurvey) {
+          surveyType = "K12"
+        } else {
+          matchedSurvey = preschoolSurveys.find((x) => x.studentCode === s.studentCode || x.enrollmentCode === s.studentCode)
+          if (matchedSurvey) {
+            surveyType = "PRESCHOOL"
+          } else {
+            matchedSurvey = k12Surveys.find((x) => localNormName(x.fullName) === localNormName(s.studentName) && localSameTime(x.dateOfBirth, s.dateOfBirth))
+            if (matchedSurvey) {
+              surveyType = "K12"
+            } else {
+              matchedSurvey = preschoolSurveys.find((x) => localNormName(x.fullName) === localNormName(s.studentName) && localSameTime(x.dateOfBirth, s.dateOfBirth))
+              if (matchedSurvey) {
+                surveyType = "PRESCHOOL"
+              }
+            }
+          }
+        }
+
+        let admitted = "Không"
+        let devAssessment = ""
+        let probationaryComment = ""
+        let mathScore = ""
+        let literatureScore = ""
+        let writtenEnglishScore = ""
+        let oralEnglishScore = ""
+
+        if (matchedSurvey) {
+          admitted = matchedSurvey.admissionResult || "Đã trúng tuyển"
+
+          if (surveyType === "K12") {
+            const scores = matchedSurvey.scores || []
+            let math = matchedSurvey.mathScore
+            let lit = matchedSurvey.literatureScore
+            let wEng = matchedSurvey.writtenEnglishScore
+            let oEng = matchedSurvey.oralEnglishScore
+            
+            scores.forEach((sc) => {
+              const sName = localNormName(sc.subject?.name)
+              const scArr = sc.scores ? JSON.parse(sc.scores) : []
+              const scVal = Array.isArray(scArr) ? scArr.find((v) => v !== null && v !== undefined) : null
+              if (sName.includes("toán") || sName.includes("math")) {
+                if (scVal !== null) math = scVal
+              } else if (sName.includes("tiếng việt") || sName.includes("ngữ văn") || sName.includes("literature")) {
+                if (scVal !== null) lit = scVal
+              } else if (sName.includes("tiếng anh")) {
+                if (sName.includes("viết") || sName.includes("written")) {
+                  if (scVal !== null) wEng = scVal
+                } else if (sName.includes("vấn đáp") || sName.includes("nói") || sName.includes("oral")) {
+                  if (scVal !== null) oEng = scVal
+                }
+              }
+            })
+
+            mathScore = math !== null && math !== undefined ? math : ""
+            literatureScore = lit !== null && lit !== undefined ? lit : ""
+            writtenEnglishScore = wEng !== null && wEng !== undefined ? wEng : ""
+            oralEnglishScore = oEng !== null && oEng !== undefined ? oEng : ""
+          } else if (surveyType === "PRESCHOOL") {
+            probationaryComment = matchedSurvey.probationaryComment || ""
+            const scores = preschoolScoresMap.get(matchedSurvey.id) || []
+            devAssessment = scores.map((sc) => `${sc.criteria?.area?.name} - dots: ${sc.result}`).join("; ")
+            if (!devAssessment) {
+              devAssessment = matchedSurvey.devAssessmentResult || ""
+            }
+          }
+        }
+
+        return {
+          id: s.id,
+          yearName,
+          campusName,
+          classCode,
+          className,
+          class: s.class,
+          studentCode,
+          studentName,
+          gender,
+          dob,
+          status,
+          student: s,
+          commitment: s.learningCommitments?.[0] || null,
+          commitmentContent,
+          commitmentStatus,
+          orientation: s.careerOrientations?.[0] || null,
+          achievements: s.achievements || [],
+          projects: s.projectExperiences || [],
+          learningSupportTargets: s.learningSupportTargets || [],
+          highlightComments: s.highlightComments || [],
+          entranceSurvey: matchedSurvey ? {
+            ...matchedSurvey,
+            type: surveyType,
+            scores: surveyType === "K12" ? (matchedSurvey.scores || []).map((sc) => ({
+              subjectName: sc.subject?.name,
+              scores: sc.scores ? JSON.parse(sc.scores) : {},
+              comments: sc.comments ? JSON.parse(sc.comments) : {}
+            })) : (preschoolScoresMap.get(matchedSurvey.id) || []).map((s) => ({
+              areaName: s.criteria?.area?.name,
+              criterionName: s.criteria?.name,
+              result: s.result,
+              note: s.note
+            }))
+          } : null,
+          transfers: s.studentTransfers || [],
+          supportReason,
+          supportTeacher,
+          admitted,
+          mathScore,
+          literatureScore,
+          writtenEnglishScore,
+          oralEnglishScore,
+          devAssessment,
+          probationaryComment
+        }
+      })
+
+      return NextResponse.json({
+        success: true,
+        count: processedStudents.length,
+        data: processedStudents
       })
     }
 

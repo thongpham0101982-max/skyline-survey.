@@ -231,7 +231,9 @@ export default function AdminStudentProfilesPrintPage() {
                 <div className="space-y-3">
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
                     <FileText className="w-4 h-4 text-[#00A99D]" />
-                    Cam kết rèn luyện
+                    {(student.class?.educationSystem === "HNG" || student.class?.educationSystem === "SB" || student.educationSystem === "HNG" || student.educationSystem === "SB")
+                      ? "Kết quả Học tập & Rèn luyện: Chương trình Bộ & Chương trình Học Song Ngữ"
+                      : "Cam kết rèn luyện"}
                   </h4>
                   {student.commitmentContent ? (
                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
@@ -244,7 +246,11 @@ export default function AdminStudentProfilesPrintPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">Chưa thiết lập cam kết.</p>
+                    <p className="text-[10px] text-slate-400 italic font-semibold">
+                      {(student.class?.educationSystem === "HNG" || student.class?.educationSystem === "SB" || student.educationSystem === "HNG" || student.educationSystem === "SB")
+                        ? "Chưa thiết lập kết quả học tập & rèn luyện."
+                        : "Chưa thiết lập cam kết."}
+                    </p>
                   )}
                 </div>
 

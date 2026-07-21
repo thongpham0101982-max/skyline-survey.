@@ -10,7 +10,7 @@ export async function getWeeksOfMonth(month: number, year: number) {
   const lastDay = new Date(year, month, 0)
   
   // Find first Monday
-  let current = new Date(firstDay)
+  const current = new Date(firstDay)
   while (current.getDay() !== 1 && current <= lastDay) {
     current.setDate(current.getDate() + 1)
   }

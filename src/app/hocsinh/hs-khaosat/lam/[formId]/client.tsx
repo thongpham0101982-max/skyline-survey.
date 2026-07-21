@@ -267,7 +267,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                   })()}
 
                   {['MC_GRID', 'CB_GRID', 'GRID'].includes(type) && (() => {
-                    let gridOpts = { rows: [], columns: [] }
+                    const gridOpts = { rows: [], columns: [] }
                     try {
                       const parsed = JSON.parse(q.options || '{}')
                       if (parsed && typeof parsed === 'object') {

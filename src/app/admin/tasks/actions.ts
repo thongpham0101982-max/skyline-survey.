@@ -121,8 +121,8 @@ export async function createTask(data: any) {
     }
 
     // Send notifications and emails
-    let sentCount = 0
-    let emailSentCount = 0
+    const sentCount = 0
+    const emailSentCount = 0
     for (const u of targets) {
       await prisma.notification.create({
         data: {

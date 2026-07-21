@@ -171,7 +171,7 @@ export async function POST(req: Request) {
     });
 
     // Đảm bảo tin nhắn đầu tiên trong lịch sử gửi lên Gemini bắt đầu bằng vai trò 'user'
-    let cleanHistory = Array.isArray(history) ? [...history] : [];
+    const cleanHistory = Array.isArray(history) ? [...history] : [];
     while (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
       cleanHistory.shift();
     }

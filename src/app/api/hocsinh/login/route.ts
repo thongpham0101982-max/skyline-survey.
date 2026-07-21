@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       orderBy: { endDate: 'desc' }
     })
 
-    let formId = null;
+    const formId = null;
     
     const token = signStudentToken({
       studentId: student.id, 
