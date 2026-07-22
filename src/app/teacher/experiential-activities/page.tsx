@@ -1,7 +1,10 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Search, Calendar, Users, ChevronRight, Activity, Trash2, Edit3, Tag, CheckCircle2, Clock } from 'lucide-react';
+import { 
+  Plus, Search, Calendar, Users, ChevronRight, Activity, Trash2, Edit3, 
+  Tag, CheckCircle2, Clock, Info, CheckSquare, Award, AlertCircle, RefreshCw
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function ExperientialActivitiesList() {
@@ -42,7 +45,8 @@ export default function ExperientialActivitiesList() {
     return () => window.removeEventListener("academicYearChanged", handleYearChange);
   }, []);
 
-  useEffect(() => {
+  const fetchActivities = () => {
+    setLoading(true);
     fetch('/api/experiential-activities')
       .then(res => res.json())
       .then(data => {
@@ -50,6 +54,10 @@ export default function ExperientialActivitiesList() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchActivities();
   }, []);
 
   const filtered = activities.filter(a => {
@@ -61,130 +69,210 @@ export default function ExperientialActivitiesList() {
   });
 
   const getStatusBadge = (status: string) => {
-    if (status === 'SUBMITTED') return { label: 'Đã nhập kết quả', cls: 'bg-emerald-50 text-emerald-600 border border-emerald-200' };
-    return { label: 'Nháp', cls: 'bg-amber-50 text-amber-600 border border-amber-200' };
+    if (status === 'SUBMITTED' || status === 'APPROVED') {
+      return { 
+        label: 'Đã xác nhận kết quả', 
+        cls: 'bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold', 
+        dot: 'bg-emerald-500' 
+      };
+    }
+    return { 
+      label: 'Bản nháp', 
+      cls: 'bg-amber-50 text-amber-700 border border-amber-200/60 font-bold', 
+      dot: 'bg-amber-500' 
+    };
   };
 
+  // Stats calculation
+  const totalCount = filtered.length;
+  const draftCount = filtered.filter(a => a.status === 'DRAFT').length;
+  const confirmedCount = filtered.filter(a => a.status === 'SUBMITTED' || a.status === 'APPROVED').length;
+  const totalStudentsCount = filtered.reduce((acc, a) => acc + (a.participants || 0), 0);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/20 py-8 px-4 font-sans">
+    <div className="min-h-screen bg-slate-50/50 py-8 px-4 font-sans antialiased text-slate-600">
       <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-          <div className="h-1 w-full bg-gradient-to-r from-[#00A99D] via-[#20C997] to-[#00BFB3]" />
-          <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Dashboard Header */}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/50 overflow-hidden relative">
+          <div className="h-1.5 w-full bg-gradient-to-r from-teal-500 via-emerald-400 to-indigo-500" />
+          <div className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#00A99D]/20 to-teal-100 rounded-2xl flex items-center justify-center">
-                <Activity className="w-6 h-6 text-[#00A99D]" />
+              <div className="w-14 h-14 bg-gradient-to-br from-teal-500/10 to-teal-500/20 rounded-2xl flex items-center justify-center border border-teal-500/20 shadow-2xs">
+                <Activity className="w-7 h-7 text-teal-600" />
               </div>
-              <div>
-                <h1 className="text-2xl font-black text-slate-800">Hoạt động trải nghiệm</h1>
-                <p className="text-slate-500 font-medium text-sm">Quản lý và nhập kết quả đánh giá học sinh</p>
+              <div className="space-y-1">
+                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Dự án & Hoạt động Trải nghiệm</h1>
+                <p className="text-slate-400 font-medium text-xs md:text-sm">Đăng ký kế hoạch, phân công nhiệm vụ và cập nhật kết quả đánh giá năng lực học sinh.</p>
               </div>
             </div>
-            <button
-              onClick={() => router.push('/teacher/experiential-activities/create')}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#00A99D] to-[#20C997] hover:shadow-lg hover:shadow-[#00A99D]/25 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2 w-fit"
-            >
-              <Plus className="w-4 h-4" /> Tạo hoạt động mới
-            </button>
+            
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchActivities}
+                className="p-3 text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-all border border-slate-200/50 shadow-3xs"
+                title="Làm mới"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => router.push('/teacher/experiential-activities/create')}
+                className="px-6 py-3 bg-gradient-to-r from-teal-600 to-emerald-500 hover:from-teal-700 hover:to-emerald-600 hover:shadow-md hover:shadow-teal-500/10 text-white text-xs font-black rounded-xl transition-all flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" /> Tạo hoạt động mới
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Tìm theo tên, mã hoạt động..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all shadow-sm"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        {/* Dashboard Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-3xs flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600">
+              <CheckSquare className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-lg font-black text-slate-800">{totalCount}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng số hoạt động</div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-3xs flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-lg font-black text-slate-800">{draftCount}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hoạt động nháp</div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-3xs flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-lg font-black text-slate-800">{confirmedCount}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Đã xác nhận</div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/60 shadow-3xs flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+              <Users className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-lg font-black text-slate-800">{totalStudentsCount}</div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tổng lượt HS tham gia</div>
+            </div>
+          </div>
         </div>
 
-        {/* List */}
+        {/* Search Bar & Filter Summary */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên hoặc mã hoạt động..."
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/80 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 outline-none transition-all shadow-3xs text-slate-700"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* List Content */}
         {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-4 border-[#00A99D] border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center py-24 bg-white border border-slate-200/50 rounded-3xl shadow-3xs">
+            <div className="w-10 h-10 border-4 border-teal-500 border-t-transparent rounded-full animate-spin mb-4" />
+            <span className="text-xs font-bold text-slate-400">Đang tải danh sách hoạt động...</span>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl py-20 text-center border border-slate-200/60 shadow-sm">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl mx-auto flex items-center justify-center mb-4">
+          <div className="bg-white rounded-3xl py-20 text-center border border-slate-200/60 shadow-3xs">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl mx-auto flex items-center justify-center mb-4 border border-slate-100">
               <Activity className="w-8 h-8 text-slate-300" />
             </div>
-            <h3 className="text-lg font-bold text-slate-700">{search ? 'Không tìm thấy kết quả' : 'Chưa có hoạt động nào'}</h3>
-            <p className="text-slate-400 mt-1 text-sm font-medium">
+            <h3 className="text-base font-black text-slate-700">{search ? 'Không tìm thấy kết quả' : 'Chưa có hoạt động nào'}</h3>
+            <p className="text-slate-400 mt-1 text-xs font-semibold">
               {search ? `Không có hoạt động nào khớp với "${search}"` : 'Bắt đầu bằng cách tạo hoạt động mới.'}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filtered.map((act) => {
               const badge = getStatusBadge(act.status);
+              const isConfirmed = act.status === 'SUBMITTED' || act.status === 'APPROVED';
+
               return (
                 <div
                   key={act.id}
-                  className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-[#00A99D]/30 transition-all cursor-pointer group flex flex-col overflow-hidden"
+                  className="bg-white rounded-2xl border border-slate-200/80 shadow-3xs hover:shadow-xs hover:border-teal-500/30 transition-all cursor-pointer group flex flex-col overflow-hidden relative"
                   onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
                 >
-                  {/* Card top color bar */}
-                  <div className="h-1 w-full bg-gradient-to-r from-[#00A99D]/60 to-teal-300/60 group-hover:from-[#00A99D] group-hover:to-[#20C997] transition-all" />
+                  {/* Decorative Left bar */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isConfirmed ? 'bg-emerald-500' : 'bg-amber-500'}`} />
 
-                  <div className="p-5 flex flex-col flex-1">
-                    {/* Header row */}
-                    <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="p-6 flex flex-col flex-1 pl-7">
+                    {/* Header */}
+                    <div className="flex items-start justify-between gap-3 mb-3">
                       <div className="flex-1 min-w-0">
                         {act.code && (
-                          <span className="inline-block text-xs font-black text-[#00A99D] bg-[#00A99D]/10 px-2 py-0.5 rounded-md mb-1.5 tracking-wide">
+                          <span className="inline-block text-[10px] font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md mb-2 tracking-wide border border-teal-100/50">
                             {act.code}
                           </span>
                         )}
-                        <h3 className="text-sm font-black text-slate-800 leading-snug line-clamp-2">{act.name}</h3>
+                        <h3 className="text-sm font-black text-slate-800 leading-snug line-clamp-2 group-hover:text-teal-600 transition-colors">
+                          {act.name}
+                        </h3>
                         {act.catalogName && act.catalogName !== act.name && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <Tag className="w-3 h-3 text-slate-400" />
-                            <span className="text-xs text-slate-400 font-medium truncate">{act.catalogName}</span>
+                          <div className="flex items-center gap-1.5 mt-2">
+                            <Tag className="w-3.5 h-3.5 text-slate-400" />
+                            <span className="text-xs text-slate-400 font-bold truncate">{act.catalogName}</span>
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                    </div>
+
+                    {/* Meta stats */}
+                    <div className="mt-auto pt-4 border-t border-slate-100/80 space-y-2.5">
+                      <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
+                        <Calendar className="w-3.5 h-3.5 text-teal-600/70 flex-shrink-0" />
+                        <span>Thời gian: {act.date ? new Date(act.date).toLocaleDateString('vi-VN') : 'Chưa định ngày'}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-xs text-slate-500 font-bold">
+                          <Users className="w-3.5 h-3.5 text-teal-600/70 flex-shrink-0" />
+                          <span><strong className="text-slate-800">{act.participants || 0}</strong> học sinh</span>
+                        </div>
+
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 ${badge.cls}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${badge.dot} ${isConfirmed ? 'animate-pulse' : ''}`} />
+                          {badge.label}
+                        </span>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center justify-end gap-2 pt-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); router.push(`/teacher/experiential-activities/${act.id}`); }}
-                          className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-[#00A99D]/10 text-slate-400 hover:text-[#00A99D] transition-colors"
-                          title="Mở chi tiết"
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            router.push(`/teacher/experiential-activities/${act.id}`); 
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-teal-50 text-xs font-bold text-slate-500 hover:text-teal-700 border border-slate-200/50 hover:border-teal-200/50 flex items-center gap-1.5 transition-all"
+                          title="Đánh giá"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
+                          <span>Đánh giá</span>
                         </button>
                         <button
                           onClick={(e) => handleDelete(e, act.id)}
-                          className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200/50 hover:border-rose-200/50 transition-all"
                           title="Xóa hoạt động"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                        <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#00A99D] transition-colors ml-1" />
-                      </div>
-                    </div>
-
-                    {/* Info grid */}
-                    <div className="mt-auto pt-3 border-t border-slate-100 space-y-2">
-                      <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                        <Calendar className="w-3.5 h-3.5 text-[#00A99D]/70 flex-shrink-0" />
-                        <span>{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : act.date}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                          <Users className="w-3.5 h-3.5 text-[#00A99D]/70 flex-shrink-0" />
-                          <span><strong className="text-slate-700">{act.participants || 0}</strong> học sinh tham gia</span>
-                        </div>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badge.cls}`}>
-                          {act.status === 'SUBMITTED'
-                            ? <CheckCircle2 className="w-3 h-3" />
-                            : <Clock className="w-3 h-3" />
-                          }
-                          {badge.label}
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -196,7 +284,7 @@ export default function ExperientialActivitiesList() {
 
         {/* Stats footer */}
         {!loading && activities.length > 0 && (
-          <div className="text-center text-xs text-slate-400 font-medium py-2">
+          <div className="text-center text-xs text-slate-400 font-bold py-4">
             Hiển thị {filtered.length}/{activities.length} hoạt động
           </div>
         )}

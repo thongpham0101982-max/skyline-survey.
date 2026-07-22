@@ -84,6 +84,10 @@ export async function POST(req: Request) {
         teacherId: teacher.id,
         locationId: info.location || null,
         status: isDraft ? 'DRAFT' : 'SUBMITTED',
+        objectives: info.objectives || null,
+        tasks: info.tasks || null,
+        criteria: info.criteria || null,
+        coTeachers: info.coTeachers || null,
       }
     });
 
