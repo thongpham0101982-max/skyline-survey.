@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import {
   Users, BookOpen, Brain,
   AlertCircle, GraduationCap,
-  Building2, Sparkles, TrendingUp
+  Building2, Sparkles, TrendingUp, Clock
 } from "lucide-react"
 import {
   ResponsiveContainer,
@@ -45,6 +45,10 @@ export function OverviewDashboard({
   // Chart Modes for Academic and Psychology
   const [academicChartMode, setAcademicChartMode] = useState<"percentage" | "count">("percentage")
   const [psychologyChartMode, setPsychologyChartMode] = useState<"percentage" | "count">("percentage")
+
+  // State for proposed termination filters
+  const [selectedProposalMonth, setSelectedProposalMonth] = useState<string>("all")
+  const [selectedProposalStatus, setSelectedProposalStatus] = useState<string>("all")
 
   // ===== KPI: Tổng số học sinh theo dõi (unique) =====
   const uniqueStudentIds = useMemo(() => new Set(targets.map(t => t.studentId)), [targets])
@@ -286,6 +290,46 @@ export function OverviewDashboard({
       .map(v => ({ ...v, total: v.students.size, subjectList: Array.from(v.subjects).join(", ") }))
       .sort((a, b) => b.total - a.total)
   }, [targets])
+
+  // ===== GET TERMINATION PROPOSALS GROUPED BY MONTH =====
+  const terminationProposals = useMemo(() => {
+    const filtered = targets.filter(t => 
+      t.terminationStatus === "PENDING_TERMINATION" || 
+      t.terminationStatus === "TERMINATED"
+    )
+
+    return filtered.map(t => {
+      const date = new Date(t.updatedAt)
+      const monthStr = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
+      return {
+        ...t,
+        proposalMonth: monthStr,
+        proposalDate: date,
+      }
+    }).sort((a, b) => b.proposalDate.getTime() - a.proposalDate.getTime())
+  }, [targets])
+
+  // Extract unique months for dropdown filter
+  const uniqueProposalMonths = useMemo(() => {
+    const months = new Set<string>()
+    terminationProposals.forEach(p => {
+      months.add(p.proposalMonth)
+    })
+    return Array.from(months).sort((a, b) => {
+      const [mA, yA] = a.split("/").map(Number)
+      const [mB, yB] = b.split("/").map(Number)
+      return yA !== yB ? yB - yA : mB - mA // Descending order
+    })
+  }, [terminationProposals])
+
+  // Filtered proposals based on state
+  const filteredProposals = useMemo(() => {
+    return terminationProposals.filter(p => {
+      const matchMonth = selectedProposalMonth === "all" || p.proposalMonth === selectedProposalMonth
+      const matchStatus = selectedProposalStatus === "all" || p.terminationStatus === selectedProposalStatus
+      return matchMonth && matchStatus
+    })
+  }, [terminationProposals, selectedProposalMonth, selectedProposalStatus])
 
   const hasNoData = targets.length === 0
 
@@ -979,6 +1023,128 @@ export function OverviewDashboard({
           )}
         </div>
 
+      </div>
+
+      {/* ===== HÀNG 5: DANH SÁCH ĐỀ XUẤT CHẤM DỨT THEO THÁNG ===== */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl p-5 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-indigo-500" />
+              Danh sách Học sinh Đề xuất Chấm dứt Hỗ trợ
+            </h2>
+            <p className="text-[10px] text-slate-400 mt-0.5">Danh sách học sinh chờ duyệt hoặc đã duyệt kết thúc bồi dưỡng theo từng tháng</p>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Tháng đề xuất:</label>
+              <select
+                value={selectedProposalMonth}
+                onChange={(e) => setSelectedProposalMonth(e.target.value)}
+                className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
+              >
+                <option value="all">Tất cả các tháng</option>
+                {uniqueProposalMonths.map(m => (
+                  <option key={m} value={m}>Tháng {m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-[10px] font-bold text-slate-500 uppercase">Trạng thái:</label>
+              <select
+                value={selectedProposalStatus}
+                onChange={(e) => setSelectedProposalStatus(e.target.value)}
+                className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
+              >
+                <option value="all">Tất cả trạng thái</option>
+                <option value="PENDING_TERMINATION">Chờ duyệt chấm dứt</option>
+                <option value="TERMINATED">Đã duyệt chấm dứt</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {filteredProposals.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
+            <Users className="h-7 w-7 mb-2 text-slate-300" />
+            <span className="text-xs font-bold">Không tìm thấy đề xuất chấm dứt hỗ trợ nào phù hợp</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto border border-slate-100 rounded-xl shadow-xxs">
+            <table className="min-w-full divide-y divide-slate-100 text-xs">
+              <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+                <tr>
+                  <th className="px-4 py-3 text-left">Học sinh</th>
+                  <th className="px-4 py-3 text-left">Lớp / Cơ sở</th>
+                  <th className="px-4 py-3 text-center">Loại hỗ trợ</th>
+                  <th className="px-4 py-3 text-left">Người đề xuất</th>
+                  <th className="px-4 py-3 text-center">Ngày đề xuất</th>
+                  <th className="px-4 py-3 text-left">Đánh giá kết quả</th>
+                  <th className="px-4 py-3 text-center">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
+                {filteredProposals.map((row, idx) => {
+                  const sName = row.student?.studentName || "Không rõ";
+                  const sCode = row.student?.studentCode || "Không rõ";
+                  const className = row.student?.class?.className.split(/[_-]/)[0] || "Chưa xếp lớp";
+                  const campusName = row.student?.class?.campus?.campusName || "Không rõ";
+                  const proposerName = row.createdBy?.teacherName || "Giáo viên phụ trách";
+                  
+                  const propDate = row.proposalDate.toLocaleDateString("vi-VN", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric"
+                  });
+
+                  return (
+                    <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="font-bold text-slate-800">{sName}</div>
+                        <div className="text-[9px] text-slate-400 font-semibold mt-0.5">{sCode}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-bold text-slate-700">Lớp {className}</div>
+                        <div className="text-[9px] text-slate-400 font-semibold mt-0.5">{campusName}</div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {row.supportType === "ACADEMIC" ? (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100/40 font-bold text-[10px] inline-flex items-center gap-1">
+                            <BookOpen className="w-3 h-3" /> Học tập
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-100/40 font-bold text-[10px] inline-flex items-center gap-1">
+                            <Brain className="w-3 h-3" /> Tâm lý
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-slate-700">{proposerName}</td>
+                      <td className="px-4 py-3 text-center text-slate-500 font-medium">{propDate}</td>
+                      <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate" title={row.outcome || row.notes || "Hoàn thành bồi dưỡng"}>
+                        {row.outcome || row.notes || "Hoàn thành bồi dưỡng"}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {row.terminationStatus === "PENDING_TERMINATION" ? (
+                          <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 font-bold text-[10px] inline-flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            Chờ duyệt
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px] inline-flex items-center gap-1">
+                            Đã duyệt kết thúc
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ===== BẢNG THỐNG KÊ CHI TIẾT THEO CƠ SỞ & KHỐI ===== */}
