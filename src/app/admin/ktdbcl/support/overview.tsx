@@ -2,11 +2,19 @@
 
 import { useMemo, useState } from "react"
 import {
-  Users, BookOpen, Brain, AlertTriangle,
-  Clock, AlertCircle, UserCheck, BookOpenCheck, Bell,
-  LayoutDashboard, TrendingUp, Shield, GraduationCap,
-  Building2, Sparkles, BarChart3, ListCollapse, ChevronRight
+  Users, BookOpen, Brain,
+  AlertCircle, GraduationCap,
+  Building2, Sparkles, TrendingUp
 } from "lucide-react"
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip
+} from "recharts"
 
 interface OverviewDashboardProps {
   targets: any[]
@@ -30,7 +38,11 @@ export function OverviewDashboard({
     campuses[0]?.id || ""
   )
 
-  // Chart Modes for Academic and Psychology (separate states)
+  // Chart view and type states (separate for each row)
+  const [academicViewMode, setAcademicViewMode] = useState<"chart" | "table">("chart")
+  const [psychologyViewMode, setPsychologyViewMode] = useState<"chart" | "table">("chart")
+  
+  // Chart Modes for Academic and Psychology
   const [academicChartMode, setAcademicChartMode] = useState<"percentage" | "count">("percentage")
   const [psychologyChartMode, setPsychologyChartMode] = useState<"percentage" | "count">("percentage")
 
@@ -41,12 +53,6 @@ export function OverviewDashboard({
   // ===== KPI: Phân loại theo supportType =====
   const academicTargets = useMemo(() => targets.filter(t => t.supportType === "ACADEMIC"), [targets])
   const psychologyTargets = useMemo(() => targets.filter(t => t.supportType === "PSYCHOLOGICAL"), [targets])
-
-  // ===== KPI: Học sinh có cả hai loại hỗ trợ =====
-  const dualSupportCount = useMemo(() => {
-    const acadIds = new Set(academicTargets.map(t => t.studentId))
-    return psychologyTargets.filter(t => acadIds.has(t.studentId)).length
-  }, [academicTargets, psychologyTargets])
 
   // ===== KPI: Tình trạng theo dõi =====
   const activeCount = useMemo(() => targets.filter(t => t.terminationStatus === "ACTIVE" && t.assignments && t.assignments.length > 0).length, [targets])
@@ -210,39 +216,32 @@ export function OverviewDashboard({
     })
   }, [targets])
 
-  // Helper function to calculate SVG coordinates and paths
-  const getChartPlot = (data: Array<{ month: string; total: number; good: number }>, mode: "percentage" | "count") => {
-    if (data.length === 0) return null
-
-    const width = 410
-    const height = 110
-    const paddingLeft = 40
-    const paddingTop = 15
-
-    const maxVal = mode === "percentage" ? 100 : Math.max(...data.map(d => d.total), 5)
-
-    const points = data.map((d, i) => {
-      const x = data.length === 1
-        ? paddingLeft + width / 2
-        : paddingLeft + i * (width / (data.length - 1))
-
-      const val = mode === "percentage"
-        ? (d.total > 0 ? (d.good / d.total) * 100 : 0)
-        : d.total
-
-      const y = paddingTop + height - (val / maxVal) * height
-      return { x, y, val: Math.round(val), raw: d }
+  // Map data to Recharts format
+  const formattedAcademicData = useMemo(() => {
+    return academicMonthlyStats.map(d => {
+      const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
+      return {
+        name: `Th ${d.month.split("/")[0]}`,
+        month: d.month,
+        total: d.total,
+        good: d.good,
+        rate: rate,
+      }
     })
+  }, [academicMonthlyStats])
 
-    const path = "M " + points.map(p => `${p.x} ${p.y}`).join(" L ")
-    const area = path + ` L ${points[points.length - 1].x} ${paddingTop + height} L ${points[0].x} ${paddingTop + height} Z`
-
-    return { points, path, area, height, width, paddingLeft, paddingTop, maxVal }
-  }
-
-  // Generate plot parameters for both charts
-  const academicPlot = useMemo(() => getChartPlot(academicMonthlyStats, academicChartMode), [academicMonthlyStats, academicChartMode])
-  const psychologyPlot = useMemo(() => getChartPlot(psychologyMonthlyStats, psychologyChartMode), [psychologyMonthlyStats, psychologyChartMode])
+  const formattedPsychologyData = useMemo(() => {
+    return psychologyMonthlyStats.map(d => {
+      const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
+      return {
+        name: `Th ${d.month.split("/")[0]}`,
+        month: d.month,
+        total: d.total,
+        good: d.good,
+        rate: rate,
+      }
+    })
+  }, [psychologyMonthlyStats])
 
   // ===== SUBJECT STATS: Môn học là Môn hỗ trợ =====
   const subjectStats = useMemo(() => {
@@ -290,696 +289,724 @@ export function OverviewDashboard({
 
   const hasNoData = targets.length === 0
 
+  // Custom chart tooltip
+  const CustomTooltip = ({ active, payload, colorTheme }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-slate-900/95 text-white p-3.5 rounded-xl shadow-xl border border-slate-800 text-[11px] backdrop-blur-xs">
+          <p className="font-extrabold text-slate-200 mb-1.5">{data.month}</p>
+          <div className="space-y-1">
+            <p className="flex justify-between gap-4">
+              <span className="text-slate-400">Tổng số đánh giá:</span>
+              <span className="font-bold">{data.total}</span>
+            </p>
+            <p className="flex justify-between gap-4">
+              <span className="text-slate-400">Đạt & Tiến bộ:</span>
+              <span className="font-bold text-emerald-400">{data.good}</span>
+            </p>
+            <p className="flex justify-between gap-4 border-t border-slate-800 pt-1 mt-1">
+              <span className="text-slate-400">Tỷ lệ tiến bộ:</span>
+              <span className="font-bold" style={{ color: colorTheme }}>{data.rate}%</span>
+            </p>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
-    <div className="space-y-4 text-slate-800">
+    <div className="space-y-6 text-slate-800 animate-fade-in">
 
       {/* ===== NO DATA BANNER ===== */}
       {hasNoData && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-3 text-xs text-amber-800">
+        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 flex items-center gap-3 text-xs text-amber-800 shadow-xs">
           <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-500" />
           <span>Chưa có dữ liệu bồi dưỡng cho năm học này. Chọn năm học khác hoặc thêm học sinh vào danh sách theo dõi.</span>
         </div>
       )}
 
       {/* ===== COMPACT HEADER: KPI CARDS & STATUS INTEGRATION ===== */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          {/* Main Info */}
-          <div>
-            <h1 className="text-base font-black text-slate-800 flex items-center gap-2">
-              <Sparkles className="h-4.5 w-4.5 text-indigo-500" />
+      <div className="bg-gradient-to-r from-[#003B3A] to-[#005650] rounded-2xl p-5 md:p-6 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+        {/* Decorative background vectors */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-2xl pointer-events-none" />
+        
+        {/* Main Info */}
+        <div className="space-y-1.5 z-10">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-[#00A99D] animate-pulse" />
+            <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">
               Báo cáo Tổng hợp Môn Hỗ trợ
             </h1>
-            <p className="text-[11px] text-slate-400">Hệ thống giám sát chỉ số học thuật và tâm sinh lý học đường</p>
           </div>
+          <p className="text-xs text-slate-300 font-medium">Hệ thống giám sát chỉ số học thuật và tâm sinh lý học đường</p>
+        </div>
 
-          {/* Compact Status Badges */}
-          <div className="flex flex-wrap items-center gap-2 text-[10px]">
-            <span className="font-bold text-slate-400 mr-1">Trạng thái:</span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold border border-indigo-100">
-              <span className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
-              Đang hỗ trợ: {activeCount}
-            </span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-orange-50 text-orange-700 font-bold border border-orange-100">
-              Cần can thiệp: {pendingApprovalCount}
-            </span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-700 font-bold border border-amber-100">
-              Hoàn thành: {pendingTermCount}
-            </span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-100">
-              Đã kết thúc: {terminatedCount}
-            </span>
+        {/* Compact Status Badges */}
+        <div className="flex flex-wrap items-center gap-2 z-10">
+          <span className="text-xs font-bold text-slate-300 mr-1">Trạng thái:</span>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-200 font-bold border border-indigo-500/20 text-[11px] backdrop-blur-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
+            Đang hỗ trợ: {activeCount}
+          </span>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-orange-200 font-bold border border-orange-500/20 text-[11px] backdrop-blur-xs">
+            Cần can thiệp: {pendingApprovalCount}
+          </span>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-200 font-bold border border-amber-500/20 text-[11px] backdrop-blur-xs">
+            Hoàn thành: {pendingTermCount}
+          </span>
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-200 font-bold border border-emerald-500/20 text-[11px] backdrop-blur-xs">
+            Đã kết thúc: {terminatedCount}
+          </span>
+        </div>
+      </div>
+
+      {/* Micro KPI Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total students */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group">
+          <div className="absolute right-0 bottom-0 w-16 h-16 bg-[#E6F6F5]/40 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform duration-300" />
+          <div className="p-3 bg-[#E6F6F5] text-[#00A99D] rounded-xl z-10">
+            <Users className="h-5 w-5" />
+          </div>
+          <div className="z-10">
+            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight">{totalStudents}</div>
+            <div className="text-[11px] text-slate-400 font-semibold mt-1 tracking-wider uppercase">HS Đang theo dõi</div>
           </div>
         </div>
 
-        {/* Micro KPI Cards Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-100">
-          {/* Total students */}
-          <div className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors">
-            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-              <Users className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <div className="text-base font-black text-slate-800 leading-none">{totalStudents}</div>
-              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">HS Đang theo dõi</div>
-            </div>
+        {/* Academic */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group">
+          <div className="absolute right-0 bottom-0 w-16 h-16 bg-blue-50/40 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform duration-300" />
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl z-10">
+            <BookOpen className="h-5 w-5" />
           </div>
-
-          {/* Academic */}
-          <div className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors">
-            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
-              <BookOpen className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <div className="text-base font-black text-slate-800 leading-none">{academicTargets.length}</div>
-              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">Phụ đạo học tập</div>
-            </div>
+          <div className="z-10">
+            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight">{academicTargets.length}</div>
+            <div className="text-[11px] text-slate-400 font-semibold mt-1 tracking-wider uppercase">Phụ đạo học tập</div>
           </div>
+        </div>
 
-          {/* Psychology */}
-          <div className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors">
-            <div className="p-1.5 bg-purple-50 text-purple-600 rounded-lg">
-              <Brain className="h-4.5 w-4.5" />
-            </div>
-            <div>
-              <div className="text-base font-black text-slate-800 leading-none">{psychologyTargets.length}</div>
-              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">Hỗ trợ tâm lý</div>
-            </div>
+        {/* Psychology */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group">
+          <div className="absolute right-0 bottom-0 w-16 h-16 bg-violet-50/40 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform duration-300" />
+          <div className="p-3 bg-violet-50 text-violet-600 rounded-xl z-10">
+            <Brain className="h-5 w-5" />
           </div>
+          <div className="z-10">
+            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight">{psychologyTargets.length}</div>
+            <div className="text-[11px] text-slate-400 font-semibold mt-1 tracking-wider uppercase">Hỗ trợ tâm lý</div>
+          </div>
+        </div>
 
-          {/* Combined Progress */}
-          <div className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-50 transition-colors">
-            <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
-              <TrendingUp className="h-4.5 w-4.5" />
+        {/* Combined Progress */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group">
+          <div className="absolute right-0 bottom-0 w-16 h-16 bg-emerald-50/40 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform duration-300" />
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl z-10">
+            <TrendingUp className="h-5 w-5" />
+          </div>
+          <div className="z-10">
+            <div className="text-2xl font-black text-slate-800 leading-none tracking-tight">
+              {progressData ? `${progressData.good}%` : "–"}
             </div>
-            <div>
-              <div className="text-base font-black text-slate-800 leading-none">
-                {progressData ? `${progressData.good}%` : "–"}
-              </div>
-              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">Tỷ lệ tiến bộ chung</div>
-            </div>
+            <div className="text-[11px] text-slate-400 font-semibold mt-1 tracking-wider uppercase">Tỷ lệ tiến bộ chung</div>
           </div>
         </div>
       </div>
 
-      {/* ===== MAIN GRID: 2/3 LEFT - 1/3 RIGHT BỐ CỤC CÂN ĐỐI ===== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* ===== HÀNG 1: BIỂU ĐỒ PHỤ ĐẠO HỌC TẬP (HÀNG RIÊNG BIỆT) ===== */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="text-xs font-black text-slate-800 flex items-center gap-2">
+              <BookOpen className="h-4.5 w-4.5 text-blue-500" />
+              Tiến độ Hỗ trợ Phụ đạo Học tập theo Tháng
+            </h2>
+            <p className="text-[10px] text-slate-400 mt-0.5">Xu hướng tỉ lệ tiến bộ và số lượng đánh giá thực tế của Phụ đạo</p>
+          </div>
 
-        {/* LEFT COLUMN: Biểu đồ Tiến độ, Môn học, Giáo viên (Col-span 2) */}
-        <div className="lg:col-span-2 space-y-4">
+          {/* View & Unit Toggles */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
+              <button
+                onClick={() => setAcademicViewMode("chart")}
+                className={`px-2.5 py-1 text-[9px] font-extrabold rounded-md transition-all ${
+                  academicViewMode === "chart"
+                    ? "bg-white text-slate-800 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Biểu đồ
+              </button>
+              <button
+                onClick={() => setAcademicViewMode("table")}
+                className={`px-2.5 py-1 text-[9px] font-extrabold rounded-md transition-all ${
+                  academicViewMode === "table"
+                    ? "bg-white text-slate-800 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Bảng số liệu
+              </button>
+            </div>
 
-          {/* 1. CHART & TABLE: PHỤ ĐẠO HỌC TẬP THEO THÁNG */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                  <BookOpen className="h-4 w-4 text-blue-500" />
-                  Tiến độ Hỗ trợ Phụ đạo Học tập theo Tháng
-                </h2>
-                <p className="text-[10px] text-slate-400">Xu hướng tỉ lệ tiến bộ và số lượng đánh giá thực tế của Phụ đạo</p>
-              </div>
-
-              {/* Mode Toggle Switcher */}
-              <div className="flex bg-slate-100 p-0.5 rounded-lg w-fit self-end sm:self-auto">
+            {academicViewMode === "chart" && academicMonthlyStats.length > 0 && (
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
                 <button
                   onClick={() => setAcademicChartMode("percentage")}
                   className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
                     academicChartMode === "percentage"
-                      ? "bg-white text-blue-700 shadow-xs"
+                      ? "bg-white text-slate-800 shadow-xs font-extrabold"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  Tỷ lệ tiến bộ (%)
+                  Tỷ lệ (%)
                 </button>
                 <button
                   onClick={() => setAcademicChartMode("count")}
                   className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
                     academicChartMode === "count"
-                      ? "bg-white text-blue-700 shadow-xs"
+                      ? "bg-white text-slate-800 shadow-xs font-extrabold"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  Số lượng đánh giá
+                  Số lượng
                 </button>
-              </div>
-            </div>
-
-            {academicMonthlyStats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
-                <BookOpen className="h-6 w-6 mb-1 text-slate-300" />
-                <span className="text-[10px]">Chưa ghi nhận dữ liệu đánh giá Phụ đạo Học tập theo Tháng</span>
-              </div>
-            ) : academicPlot && (
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                {/* SVG Line Chart */}
-                <div className="md:col-span-3">
-                  <div className="relative w-full overflow-hidden">
-                    <svg viewBox="0 0 490 170" className="w-full h-auto">
-                      <defs>
-                        <linearGradient id="gradAcad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.2" />
-                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Horizontal Grid lines */}
-                      {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
-                        const y = academicPlot.paddingTop + r * academicPlot.height
-                        const isBase = idx === 4
-                        return (
-                          <g key={idx}>
-                            <line
-                              x1={academicPlot.paddingLeft}
-                              y1={y}
-                              x2={academicPlot.paddingLeft + academicPlot.width}
-                              y2={y}
-                              stroke={isBase ? "#cbd5e1" : "#f1f5f9"}
-                              strokeWidth={isBase ? 1.5 : 1}
-                            />
-                            <text
-                              x={academicPlot.paddingLeft - 8}
-                              y={y + 3.5}
-                              textAnchor="end"
-                              className="text-[8px] fill-slate-400 font-bold"
-                            >
-                              {academicChartMode === "percentage"
-                                ? `${100 - r * 100}%`
-                                : `${Math.round(academicPlot.maxVal - r * academicPlot.maxVal)}`}
-                            </text>
-                          </g>
-                        )
-                      })}
-
-                      <path d={academicPlot.area} fill="url(#gradAcad)" />
-                      <path d={academicPlot.path} fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" />
-
-                      {academicPlot.points.map((p, i) => (
-                        <g key={`acad-${i}`}>
-                          <circle cx={p.x} cy={p.y} r="4" fill="#3b82f6" stroke="#ffffff" strokeWidth="1.5" />
-                          <rect x={p.x - 12} y={p.y - 15} width="24" height="10" rx="2" fill="#1e293b" opacity="0.85" />
-                          <text x={p.x} y={p.y - 7} textAnchor="middle" className="text-[7px] font-bold fill-white">
-                            {academicChartMode === "percentage" ? `${p.val}%` : p.val}
-                          </text>
-                          <text x={p.x} y={academicPlot.paddingTop + academicPlot.height + 15} textAnchor="middle" className="text-[9px] fill-slate-400 font-bold">
-                            Th{p.raw.month.split("/")[0]}
-                          </text>
-                        </g>
-                      ))}
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Table Data */}
-                <div className="md:col-span-2 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Số liệu Phụ đạo</span>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-[10px] text-slate-600">
-                      <thead>
-                        <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
-                          <th className="py-1 px-1 text-left">Tháng</th>
-                          <th className="py-1 px-1 text-center">Tổng số đánh giá</th>
-                          <th className="py-1 px-1 text-center">Đạt & tiến bộ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {academicMonthlyStats.map((d, i) => {
-                          const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
-                          return (
-                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-1 px-1 font-bold text-slate-700">{d.month}</td>
-                              <td className="py-1 px-1 text-center">{d.total}</td>
-                              <td className="py-1 px-1 text-center">
-                                <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold">{d.good} ({rate}%)</span>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </div>
             )}
           </div>
+        </div>
 
-          {/* 2. CHART & TABLE: HỖ TRỢ TÂM LÝ THEO THÁNG */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div>
-                <h2 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                  <Brain className="h-4 w-4 text-purple-500" />
-                  Tiến độ Hỗ trợ Tâm lý theo Tháng
-                </h2>
-                <p className="text-[10px] text-slate-400">Xu hướng tỉ lệ tiến bộ và số lượng đánh giá thực tế của Tâm lý</p>
-              </div>
+        {/* Content area */}
+        {academicMonthlyStats.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
+            <BookOpen className="h-6 w-6 mb-2 text-slate-300" />
+            <span className="text-[10px] font-bold">Chưa ghi nhận dữ liệu đánh giá Phụ đạo Học tập</span>
+          </div>
+        ) : academicViewMode === "chart" ? (
+          <div className="w-full pl-0">
+            <ResponsiveContainer width="100%" height={160}>
+              <AreaChart data={formattedAcademicData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradAcad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity="0.25" />
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 700 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 700 }}
+                  domain={[0, academicChartMode === "percentage" ? 100 : "auto"]}
+                />
+                <Tooltip content={<CustomTooltip colorTheme="#3b82f6" />} />
+                <Area
+                  type="monotone"
+                  dataKey={academicChartMode === "percentage" ? "rate" : "total"}
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#gradAcad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="overflow-x-auto border border-slate-100 rounded-xl">
+            <table className="min-w-full text-xs text-slate-600">
+              <thead>
+                <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100 text-[9px]">
+                  <th className="py-2 px-3 text-left">Tháng</th>
+                  <th className="py-2 px-3 text-center">Tổng số đánh giá</th>
+                  <th className="py-2 px-3 text-center">Đạt & tiến bộ</th>
+                  <th className="py-2 px-3 text-center">Tỷ lệ tiến bộ (%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-[10px]">
+                {academicMonthlyStats.map((d, i) => {
+                  const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
+                  return (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-2 px-3 font-bold text-slate-700">{d.month}</td>
+                      <td className="py-2 px-3 text-center">{d.total}</td>
+                      <td className="py-2 px-3 text-center">
+                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100">{d.good}</span>
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 font-bold">{rate}%</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-              {/* Mode Toggle Switcher */}
-              <div className="flex bg-slate-100 p-0.5 rounded-lg w-fit self-end sm:self-auto">
+      {/* ===== HÀNG 2: BIỂU ĐỒ HỖ TRỢ TÂM LÝ (HÀNG RIÊNG BIỆT) ===== */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="text-xs font-black text-slate-800 flex items-center gap-2">
+              <Brain className="h-4.5 w-4.5 text-violet-500" />
+              Tiến độ Hỗ trợ Tâm lý theo Tháng
+            </h2>
+            <p className="text-[10px] text-slate-400 mt-0.5">Xu hướng tỉ lệ tiến bộ và số lượng đánh giá thực tế của Tâm lý</p>
+          </div>
+
+          {/* View & Unit Toggles */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
+              <button
+                onClick={() => setPsychologyViewMode("chart")}
+                className={`px-2.5 py-1 text-[9px] font-extrabold rounded-md transition-all ${
+                  psychologyViewMode === "chart"
+                    ? "bg-white text-slate-800 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Biểu đồ
+              </button>
+              <button
+                onClick={() => setPsychologyViewMode("table")}
+                className={`px-2.5 py-1 text-[9px] font-extrabold rounded-md transition-all ${
+                  psychologyViewMode === "table"
+                    ? "bg-white text-slate-800 shadow-xs"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Bảng số liệu
+              </button>
+            </div>
+
+            {psychologyViewMode === "chart" && psychologyMonthlyStats.length > 0 && (
+              <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
                 <button
                   onClick={() => setPsychologyChartMode("percentage")}
                   className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
                     psychologyChartMode === "percentage"
-                      ? "bg-white text-purple-700 shadow-xs"
+                      ? "bg-white text-slate-800 shadow-xs font-extrabold"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  Tỷ lệ tiến bộ (%)
+                  Tỷ lệ (%)
                 </button>
                 <button
                   onClick={() => setPsychologyChartMode("count")}
                   className={`px-2.5 py-1 text-[9px] font-bold rounded-md transition-all ${
                     psychologyChartMode === "count"
-                      ? "bg-white text-purple-700 shadow-xs"
+                      ? "bg-white text-slate-800 shadow-xs font-extrabold"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
                 >
-                  Số lượng đánh giá
+                  Số lượng
                 </button>
-              </div>
-            </div>
-
-            {psychologyMonthlyStats.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
-                <Brain className="h-6 w-6 mb-1 text-slate-300" />
-                <span className="text-[10px]">Chưa ghi nhận dữ liệu đánh giá Hỗ trợ Tâm lý theo Tháng</span>
-              </div>
-            ) : psychologyPlot && (
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                {/* SVG Line Chart */}
-                <div className="md:col-span-3">
-                  <div className="relative w-full overflow-hidden">
-                    <svg viewBox="0 0 490 170" className="w-full h-auto">
-                      <defs>
-                        <linearGradient id="gradPsych" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.2" />
-                          <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Horizontal Grid lines */}
-                      {[0, 0.25, 0.5, 0.75, 1].map((r, idx) => {
-                        const y = psychologyPlot.paddingTop + r * psychologyPlot.height
-                        const isBase = idx === 4
-                        return (
-                          <g key={idx}>
-                            <line
-                              x1={psychologyPlot.paddingLeft}
-                              y1={y}
-                              x2={psychologyPlot.paddingLeft + psychologyPlot.width}
-                              y2={y}
-                              stroke={isBase ? "#cbd5e1" : "#f1f5f9"}
-                              strokeWidth={isBase ? 1.5 : 1}
-                            />
-                            <text
-                              x={psychologyPlot.paddingLeft - 8}
-                              y={y + 3.5}
-                              textAnchor="end"
-                              className="text-[8px] fill-slate-400 font-bold"
-                            >
-                              {psychologyChartMode === "percentage"
-                                ? `${100 - r * 100}%`
-                                : `${Math.round(psychologyPlot.maxVal - r * psychologyPlot.maxVal)}`}
-                            </text>
-                          </g>
-                        )
-                      })}
-
-                      <path d={psychologyPlot.area} fill="url(#gradPsych)" />
-                      <path d={psychologyPlot.path} fill="none" stroke="#8b5cf6" strokeWidth="2.5" strokeLinecap="round" />
-
-                      {psychologyPlot.points.map((p, i) => (
-                        <g key={`psych-${i}`}>
-                          <circle cx={p.x} cy={p.y} r="4" fill="#8b5cf6" stroke="#ffffff" strokeWidth="1.5" />
-                          <rect x={p.x - 12} y={p.y - 15} width="24" height="10" rx="2" fill="#1e293b" opacity="0.85" />
-                          <text x={p.x} y={p.y - 7} textAnchor="middle" className="text-[7px] font-bold fill-white">
-                            {psychologyChartMode === "percentage" ? `${p.val}%` : p.val}
-                          </text>
-                          <text x={p.x} y={psychologyPlot.paddingTop + psychologyPlot.height + 15} textAnchor="middle" className="text-[9px] fill-slate-400 font-bold">
-                            Th{p.raw.month.split("/")[0]}
-                          </text>
-                        </g>
-                      ))}
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Table Data */}
-                <div className="md:col-span-2 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Số liệu Tâm lý</span>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-[10px] text-slate-600">
-                      <thead>
-                        <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
-                          <th className="py-1 px-1 text-left">Tháng</th>
-                          <th className="py-1 px-1 text-center">Tổng số đánh giá</th>
-                          <th className="py-1 px-1 text-center">Đạt & tiến bộ</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
-                        {psychologyMonthlyStats.map((d, i) => {
-                          const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
-                          return (
-                            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-1 px-1 font-bold text-slate-700">{d.month}</td>
-                              <td className="py-1 px-1 text-center">{d.total}</td>
-                              <td className="py-1 px-1 text-center">
-                                <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold">{d.good} ({rate}%)</span>
-                              </td>
-                            </tr>
-                          )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
               </div>
             )}
           </div>
-
-          {/* 3. LƯỚI BÁO CÁO: MÔN HỌC & GIÁO VIÊN ĐỒNG BỘ MÔN HỖ TRỢ */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            {/* Bảng Môn học */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs flex flex-col">
-              <div className="px-4 py-2.5 border-b bg-gradient-to-r from-blue-50/50 to-indigo-50/50 flex items-center gap-2">
-                <div className="p-1 bg-blue-50 text-blue-600 rounded-md">
-                  <BookOpen className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-slate-800">Thống kê theo Môn học</h3>
-                  <p className="text-[9px] text-slate-400">Phân bổ học sinh hỗ trợ theo từng bộ môn</p>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-x-auto">
-                <table className="min-w-full text-[10px]">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
-                      <th className="px-3 py-1.5 text-left">Môn học</th>
-                      <th className="px-2 py-1.5 text-center">Phụ đạo</th>
-                      <th className="px-2 py-1.5 text-center">Tâm lý</th>
-                      <th className="px-2 py-1.5 text-center">Đang TĐ</th>
-                      <th className="px-2 py-1.5 text-center">Đã kết thúc</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
-                    {subjectStats.map((s, i) => (
-                      <tr key={i} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-3 py-2">
-                          <span className="font-bold text-slate-800">{s.name}</span>
-                          <div className="mt-1 h-1 w-20 rounded-full bg-slate-100 overflow-hidden">
-                            <div className="h-full bg-blue-500 rounded-full" style={{ width: "100%" }} />
-                          </div>
-                        </td>
-                        <td className="px-2 py-2 text-center">
-                          <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-black">{s.academic}</span>
-                        </td>
-                        <td className="px-2 py-2 text-center">
-                          {s.psychology > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-black">{s.psychology}</span>
-                          ) : (
-                            <span className="text-slate-300">–</span>
-                          )}
-                        </td>
-                        <td className="px-2 py-2 text-center font-bold text-indigo-600">{s.active}</td>
-                        <td className="px-2 py-2 text-center">
-                          {s.terminated > 0 ? (
-                            <span className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold">{s.terminated}</span>
-                          ) : (
-                            <span className="text-slate-300">–</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Bảng Giáo viên */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs flex flex-col">
-              <div className="px-4 py-2.5 border-b bg-gradient-to-r from-emerald-50/50 to-teal-50/50 flex items-center gap-2">
-                <div className="p-1 bg-emerald-50 text-emerald-600 rounded-md">
-                  <GraduationCap className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-slate-800">Thống kê theo Giáo viên</h3>
-                  <p className="text-[9px] text-slate-400">Học sinh được phân công theo giáo viên</p>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-x-auto">
-                <table className="min-w-full text-[10px]">
-                  <thead>
-                    <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
-                      <th className="px-3 py-1.5 text-left">Giáo viên</th>
-                      <th className="px-2 py-1.5 text-left">Môn phụ trách</th>
-                      <th className="px-2 py-1.5 text-center">Phụ đạo</th>
-                      <th className="px-2 py-1.5 text-center">Tâm lý</th>
-                      <th className="px-2 py-1.5 text-center">Đang TĐ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
-                    {teacherStats.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="py-3 text-center text-slate-400">Chưa có phân công giáo viên nào</td>
-                      </tr>
-                    ) : (
-                      teacherStats.map((t, i) => (
-                        <tr key={i} className="hover:bg-slate-50 transition-colors">
-                          <td className="px-3 py-2 font-bold text-slate-800">{t.name}</td>
-                          <td className="px-2 py-2">
-                            {t.subjectList && t.subjectList.trim() !== "" ? (
-                              <span className="text-slate-500">{t.subjectList}</span>
-                            ) : (
-                              <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-bold">Môn hỗ trợ</span>
-                            )}
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-black">{t.academic}</span>
-                          </td>
-                          <td className="px-2 py-2 text-center">
-                            {t.psychology > 0 ? (
-                              <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-black">{t.psychology}</span>
-                            ) : (
-                              <span className="text-slate-300">–</span>
-                            )}
-                          </td>
-                          <td className="px-2 py-2 text-center font-bold text-indigo-600">{t.active}</td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-          </div>
-
         </div>
 
-        {/* RIGHT COLUMN: Thống kê Khối, Tiến độ Donut, Thống kê Lớp tại Cơ sở (Col-span 1) */}
-        <div className="space-y-4">
+        {/* Content area */}
+        {psychologyMonthlyStats.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
+            <Brain className="h-6 w-6 mb-2 text-slate-300" />
+            <span className="text-[10px] font-bold">Chưa ghi nhận dữ liệu đánh giá Hỗ trợ Tâm lý</span>
+          </div>
+        ) : psychologyViewMode === "chart" ? (
+          <div className="w-full pl-0">
+            <ResponsiveContainer width="100%" height={160}>
+              <AreaChart data={formattedPsychologyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="gradPsych" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity="0.25" />
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 700 }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 700 }}
+                  domain={[0, psychologyChartMode === "percentage" ? 100 : "auto"]}
+                />
+                <Tooltip content={<CustomTooltip colorTheme="#8b5cf6" />} />
+                <Area
+                  type="monotone"
+                  dataKey={psychologyChartMode === "percentage" ? "rate" : "total"}
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#gradPsych)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="overflow-x-auto border border-slate-100 rounded-xl">
+            <table className="min-w-full text-xs text-slate-600">
+              <thead>
+                <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100 text-[9px]">
+                  <th className="py-2 px-3 text-left">Tháng</th>
+                  <th className="py-2 px-3 text-center">Tổng số đánh giá</th>
+                  <th className="py-2 px-3 text-center">Đạt & tiến bộ</th>
+                  <th className="py-2 px-3 text-center">Tỷ lệ tiến bộ (%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-[10px]">
+                {psychologyMonthlyStats.map((d, i) => {
+                  const rate = d.total > 0 ? Math.round((d.good / d.total) * 100) : 0
+                  return (
+                    <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-2 px-3 font-bold text-slate-700">{d.month}</td>
+                      <td className="py-2 px-3 text-center">{d.total}</td>
+                      <td className="py-2 px-3 text-center">
+                        <span className="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 font-bold border border-violet-100">{d.good}</span>
+                      </td>
+                      <td className="py-2 px-3 text-center">
+                        <span className="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-100 font-bold">{rate}%</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
-          {/* 1. THỐNG KÊ LỚP TẠI CƠ SỞ (TABS) */}
-          <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-            <h2 className="text-xs font-black text-slate-800 flex items-center gap-1.5 mb-0.5">
-              <Building2 className="h-4 w-4 text-indigo-500" />
+      {/* ===== HÀNG 3: THỐNG KÊ LỚP TẠI CƠ SỞ (HÀNG RIÊNG BIỆT) ===== */}
+      <div className="bg-white border border-slate-200/60 rounded-2xl p-5 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
+          <div>
+            <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-[#00A99D]" />
               Thống kê theo Lớp tại Cơ sở
             </h2>
-            <p className="text-[10px] text-slate-400 mb-2.5">Số học sinh cần hỗ trợ phân bổ theo từng lớp</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Số lượng học sinh cần hỗ trợ và phân bổ chi tiết theo từng lớp học</p>
+          </div>
 
-            {/* Campus Tabs Selectors */}
-            <div className="flex bg-slate-100 p-0.5 rounded-lg mb-2.5">
-              {campuses.map(c => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedCampusTabId(c.id)}
-                  className={`flex-1 py-1 text-[9px] font-bold rounded-md transition-all ${
-                    selectedCampusTabId === c.id
-                      ? "bg-white text-indigo-700 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  {c.campusName}
-                </button>
+          {/* Campus Tabs Selectors */}
+          <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 overflow-x-auto self-start sm:self-auto">
+            {campuses.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCampusTabId(c.id)}
+                className={`py-1 px-3.5 text-[10px] font-bold rounded-lg transition-all whitespace-nowrap ${
+                  selectedCampusTabId === c.id
+                    ? "bg-white text-[#00A99D] shadow-xs font-black"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                {c.campusName}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Classes List in a beautiful Grid layout */}
+        {(!classCampusStats[selectedCampusTabId] || classCampusStats[selectedCampusTabId].length === 0) ? (
+          <div className="text-center py-10 text-slate-400 text-[11px] font-bold bg-slate-50/50 border border-dashed rounded-2xl">
+            Cơ sở này hiện chưa có học sinh theo dõi bồi dưỡng
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {classCampusStats[selectedCampusTabId].map((classItem, idx) => {
+              const cleanClassName = classItem.className.split(/[_-]/)[0];
+              return (
+                <div key={idx} className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 hover:bg-slate-100/50 border border-slate-100/60 transition-all duration-200 group">
+                  <div className="flex items-center gap-2.5">
+                    <div className="px-2.5 py-1 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-100/60 flex items-center justify-center text-[10px] font-black w-auto min-w-[38px] h-7 shadow-2xs">
+                      {cleanClassName}
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-slate-700 block leading-tight">Lớp {cleanClassName}</span>
+                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Khối {classItem.className.match(/^\d+/)?.[0] || "–"}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-100/40 flex items-center gap-1">
+                      <BookOpen className="w-2.5 h-2.5" />
+                      {classItem.academic}
+                    </span>
+                    {classItem.psychology > 0 && (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 font-bold border border-violet-100/40 flex items-center gap-1">
+                        <Brain className="w-2.5 h-2.5" />
+                        {classItem.psychology}
+                      </span>
+                    )}
+                    <span className="text-[10px] font-extrabold text-slate-800 w-5.5 h-5.5 bg-slate-200/50 px-1 py-0.5 rounded-lg border border-slate-300/30 flex items-center justify-center">
+                      {classItem.total}
+                    </span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ===== HÀNG 4: THỐNG KÊ PHỤ TRỢ (MÔN HỌC, GIÁO VIÊN, KHỐI, TIẾN ĐỘ CHUNG) - CHUNG 1 HÀNG ===== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+
+        {/* 1. Thống kê Môn học */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 flex flex-col min-h-[220px]">
+          <div className="px-4 py-3 border-b bg-gradient-to-r from-blue-50/50 to-indigo-50/50 flex items-center gap-2">
+            <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg">
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-slate-800">Thống kê theo Môn học</h3>
+              <p className="text-[9px] text-slate-400">Học sinh hỗ trợ theo từng bộ môn</p>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-x-auto">
+            <table className="min-w-full text-[10px]">
+              <thead>
+                <tr className="bg-slate-50 text-slate-400 font-bold border-b border-slate-100">
+                  <th className="px-4 py-2 text-left">Môn học</th>
+                  <th className="px-2 py-2 text-center">Phụ đạo</th>
+                  <th className="px-2 py-2 text-center">Tâm lý</th>
+                  <th className="px-2 py-2 text-center">Đang TĐ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                {subjectStats.map((s, i) => (
+                  <tr key={i} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <span className="font-bold text-slate-800">{s.name}</span>
+                      <div className="mt-1.5 h-1 w-16 rounded-full bg-slate-100 overflow-hidden">
+                        <div className="h-full bg-blue-500 rounded-full" style={{ width: "100%" }} />
+                      </div>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-black">{s.academic}</span>
+                    </td>
+                    <td className="px-2 py-3 text-center">
+                      {s.psychology > 0 ? (
+                        <span className="px-1.5 py-0.5 rounded bg-violet-50 text-violet-700 font-black">{s.psychology}</span>
+                      ) : (
+                        <span className="text-slate-300">–</span>
+                      )}
+                    </td>
+                    <td className="px-2 py-3 text-center font-bold text-indigo-600">{s.active}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 2. Thống kê Giáo viên */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 flex flex-col min-h-[220px]">
+          <div className="px-4 py-3 border-b bg-gradient-to-r from-emerald-50/50 to-teal-50/50 flex items-center gap-2">
+            <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg">
+              <GraduationCap className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="text-xs font-black text-slate-800">Thống kê theo Giáo viên</h3>
+              <p className="text-[9px] text-slate-400">Học sinh được phân công theo giáo viên</p>
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto max-h-[170px]">
+            <table className="min-w-full text-[10px]">
+              <thead className="sticky top-0 bg-white z-10 border-b border-slate-100 shadow-xxs">
+                <tr className="bg-slate-50 text-slate-400 font-bold">
+                  <th className="px-3 py-2 text-left">Giáo viên</th>
+                  <th className="px-2 py-2 text-center">P.Đạo</th>
+                  <th className="px-2 py-2 text-center">T.Lý</th>
+                  <th className="px-2 py-2 text-center">Đang TĐ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+                {teacherStats.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-4 text-center text-slate-400">Chưa có phân công</td>
+                  </tr>
+                ) : (
+                  teacherStats.map((t, i) => (
+                    <tr key={i} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-3 py-2.5">
+                        <span className="font-bold text-slate-800 block max-w-[80px] truncate" title={t.name}>{t.name}</span>
+                      </td>
+                      <td className="px-2 py-2.5 text-center">
+                        <span className="px-1 py-0.5 rounded bg-blue-50 text-blue-700 font-bold">{t.academic}</span>
+                      </td>
+                      <td className="px-2 py-2.5 text-center">
+                        {t.psychology > 0 ? (
+                          <span className="px-1 py-0.5 rounded bg-violet-50 text-violet-700 font-bold">{t.psychology}</span>
+                        ) : (
+                          <span className="text-slate-300">–</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2.5 text-center font-bold text-indigo-600">{t.active}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 3. Thống kê theo Khối */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 flex flex-col min-h-[220px]">
+          <div className="border-b pb-2 mb-3">
+            <h3 className="text-xs font-black text-slate-800">Thống kê theo khối</h3>
+            <p className="text-[9px] text-slate-400">Phân bổ học sinh hỗ trợ theo khối lớp</p>
+          </div>
+
+          {gradeBarData.length === 0 ? (
+            <div className="text-center py-6 text-slate-400 text-[10px] font-bold bg-slate-50/50 border border-dashed rounded-xl">Chưa có dữ liệu</div>
+          ) : (
+            <div className="space-y-2.5 overflow-y-auto max-h-[145px] pr-1">
+              {gradeBarData.map((item, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between items-center text-[9px] font-bold text-slate-500">
+                    <span>{item.name}</span>
+                    <span className="text-slate-800 font-extrabold flex items-center gap-1">
+                      <span>{item.total} HS</span>
+                      <span className="text-blue-600">({item.academic} PĐ</span>
+                      {item.psychology > 0 && <span className="text-violet-600">, {item.psychology} TL</span>}
+                      <span>)</span>
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-slate-100 flex overflow-hidden">
+                    {item.academic > 0 && (
+                      <div
+                        style={{ width: `${(item.academic / item.total) * (item.total / maxBar) * 100}%` }}
+                        className="bg-gradient-to-r from-blue-400 to-blue-500 h-full rounded-l-full"
+                      />
+                    )}
+                    {item.psychology > 0 && (
+                      <div
+                        style={{ width: `${(item.psychology / item.total) * (item.total / maxBar) * 100}%` }}
+                        className="bg-gradient-to-r from-violet-400 to-violet-500 h-full rounded-r-full"
+                      />
+                    )}
+                  </div>
+                </div>
               ))}
             </div>
+          )}
+        </div>
 
-            {/* Classes List */}
-            {(!classCampusStats[selectedCampusTabId] || classCampusStats[selectedCampusTabId].length === 0) ? (
-              <div className="text-center py-4 text-slate-400 text-[10px]">
-                Cơ sở này hiện chưa có học sinh theo dõi
-              </div>
-            ) : (
-              <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                {classCampusStats[selectedCampusTabId].map((classItem, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/60 border border-slate-100 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6.5 h-6.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100 flex items-center justify-center text-[10px] font-black">
-                        {classItem.className}
-                      </div>
-                      <div>
-                        <span className="text-[11px] font-bold text-slate-700 block leading-tight">Lớp {classItem.className}</span>
-                        <span className="text-[8px] text-slate-400 font-medium">Khối {classItem.className.match(/^\d+/)?.[0] || "–"}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1">
-                      <span className="text-[8px] px-1 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-100">
-                        {classItem.academic} Phụ đạo
-                      </span>
-                      {classItem.psychology > 0 && (
-                        <span className="text-[8px] px-1 py-0.5 rounded bg-purple-50 text-purple-700 font-bold border border-purple-100">
-                          {classItem.psychology} Tâm lý
-                        </span>
-                      )}
-                      <span className="text-[10px] font-black text-slate-800 w-4 text-right">{classItem.total}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* 4. Tỷ lệ tiến bộ chung */}
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300 flex flex-col min-h-[220px]">
+          <div className="border-b pb-2 mb-3">
+            <h3 className="text-xs font-black text-slate-800">Tỷ lệ tiến bộ chung</h3>
+            <p className="text-[9px] text-slate-400">Kết quả các đợt đánh giá định kỳ</p>
           </div>
 
-          {/* 2. THỐNG KÊ THEO KHỐI & TIẾN ĐỘ DONUT (GỘP BỐ CỤC CÂN ĐỐI) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-
-            {/* Thống kê khối */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-              <h2 className="text-xs font-black text-slate-800 mb-0.5">Thống kê theo khối</h2>
-              <p className="text-[9px] text-slate-400 mb-2">Phân bổ học sinh hỗ trợ theo khối lớp</p>
-
-              {gradeBarData.length === 0 ? (
-                <div className="text-center py-4 text-slate-400 text-[10px]">Chưa có dữ liệu theo khối</div>
-              ) : (
-                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                  {gradeBarData.map((item, idx) => (
-                    <div key={idx} className="space-y-0.5">
-                      <div className="flex justify-between items-center text-[9px]">
-                        <span className="font-bold text-slate-500">{item.name}</span>
-                        <span className="font-black text-slate-800">{item.total} HS</span>
-                      </div>
-                      <div className="h-3 w-full rounded-md overflow-hidden bg-slate-100 flex">
-                        {item.academic > 0 && (
-                          <div
-                            style={{ width: `${(item.academic / maxBar) * 100}%` }}
-                            className="bg-blue-500 h-full flex items-center justify-end transition-all duration-700"
-                          >
-                            {item.academic > 0 && <span className="text-[7px] font-bold text-white pr-1 leading-none">{item.academic}</span>}
-                          </div>
-                        )}
-                        {item.psychology > 0 && (
-                          <div
-                            style={{ width: `${(item.psychology / maxBar) * 100}%` }}
-                            className="bg-purple-500 h-full flex items-center justify-end transition-all duration-700"
-                          >
-                            {item.psychology > 0 && <span className="text-[7px] font-bold text-white pr-1 leading-none">{item.psychology}</span>}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {!progressData ? (
+            <div className="flex flex-col items-center justify-center py-6 text-slate-400 bg-slate-50/50 border border-dashed rounded-xl flex-1">
+              <TrendingUp className="h-5 w-7 mb-1 opacity-30 text-emerald-500" />
+              <span className="text-[9px] font-bold">Chưa có đánh giá</span>
             </div>
-
-            {/* Tiến độ Donut */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs">
-              <h2 className="text-xs font-black text-slate-800 mb-0.5">Tỷ lệ tiến bộ chung</h2>
-              <p className="text-[9px] text-slate-400 mb-2">Kết quả các đợt đánh giá định kỳ</p>
-
-              {!progressData ? (
-                <div className="flex flex-col items-center justify-center py-6 text-slate-400">
-                  <TrendingUp className="h-5 w-7 mb-0.5 opacity-30 text-emerald-500" />
-                  <span className="text-[9px] text-center">Chưa ghi nhận đánh giá định kỳ</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="relative flex-shrink-0 w-16 h-16">
-                    <svg viewBox="0 0 120 120" className="w-16 h-16 -rotate-90">
-                      <circle cx="60" cy="60" r="46" fill="none" stroke="#f1f5f9" strokeWidth="14" />
-                      <circle cx="60" cy="60" r="46" fill="none" stroke="#10b981"
-                        strokeWidth="14"
-                        strokeDasharray={`${progressData.good * 2.89} ${(100 - progressData.good) * 2.89}`}
-                        strokeDashoffset="0"
-                      />
-                      <circle cx="60" cy="60" r="46" fill="none" stroke="#8b5cf6"
-                        strokeWidth="14"
-                        strokeDasharray={`${progressData.improving * 2.89} ${(100 - progressData.improving) * 2.89}`}
-                        strokeDashoffset={`${-progressData.good * 2.89}`}
-                      />
-                      <circle cx="60" cy="60" r="46" fill="none" stroke="#f59e0b"
-                        strokeWidth="14"
-                        strokeDasharray={`${progressData.poor * 2.89} ${(100 - progressData.poor) * 2.89}`}
-                        strokeDashoffset={`${-(progressData.good + progressData.improving) * 2.89}`}
-                      />
-                      <circle cx="60" cy="60" r="46" fill="none" stroke="#f43f5e"
-                        strokeWidth="14"
-                        strokeDasharray={`${progressData.inactive * 2.89} ${(100 - progressData.inactive) * 2.89}`}
-                        strokeDashoffset={`${-(progressData.good + progressData.improving + progressData.poor) * 2.89}`}
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-sm font-black text-slate-800 leading-none">{progressData.good}%</span>
-                      <span className="text-[7px] text-slate-400 font-bold mt-0.5">Tiến bộ</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 flex-1 text-[9px] text-slate-500 font-semibold">
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                      <span>Tốt: {progressData.good}%</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-violet-500" />
-                      <span>Khá: {progressData.improving}%</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                      <span>TB: {progressData.poor}%</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                      <span>Yếu: {progressData.inactive}%</span>
-                    </div>
+          ) : (
+            <div className="flex flex-col justify-between flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <div className="relative flex-shrink-0 w-14 h-14">
+                  <svg viewBox="0 0 120 120" className="w-14 h-14 -rotate-90">
+                    <circle cx="60" cy="60" r="46" fill="none" stroke="#f1f5f9" strokeWidth="13" />
+                    <circle cx="60" cy="60" r="46" fill="none" stroke="#10b981"
+                      strokeWidth="13"
+                      strokeDasharray={`${progressData.good * 2.89} ${(100 - progressData.good) * 2.89}`}
+                      strokeDashoffset="0"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="60" cy="60" r="46" fill="none" stroke="#8b5cf6"
+                      strokeWidth="13"
+                      strokeDasharray={`${progressData.improving * 2.89} ${(100 - progressData.improving) * 2.89}`}
+                      strokeDashoffset={`${-progressData.good * 2.89}`}
+                      strokeLinecap="round"
+                    />
+                    <circle cx="60" cy="60" r="46" fill="none" stroke="#f59e0b"
+                      strokeWidth="13"
+                      strokeDasharray={`${progressData.poor * 2.89} ${(100 - progressData.poor) * 2.89}`}
+                      strokeDashoffset={`${-(progressData.good + progressData.improving) * 2.89}`}
+                      strokeLinecap="round"
+                    />
+                    <circle cx="60" cy="60" r="46" fill="none" stroke="#f43f5e"
+                      strokeWidth="13"
+                      strokeDasharray={`${progressData.inactive * 2.89} ${(100 - progressData.inactive) * 2.89}`}
+                      strokeDashoffset={`${-(progressData.good + progressData.improving + progressData.poor) * 2.89}`}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-[11px] font-black text-slate-800 leading-none">{progressData.good}%</span>
+                    <span className="text-[7px] text-slate-400 font-bold mt-0.5">Tiến bộ</span>
                   </div>
                 </div>
-              )}
+
+                <div className="space-y-0.5 flex-1 text-[9px] text-slate-500 font-bold ml-1">
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-0.5">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Tốt:</span>
+                    <span className="text-slate-800 font-extrabold">{progressData.good}%</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-0.5">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]" /> Khá:</span>
+                    <span className="text-slate-800 font-extrabold">{progressData.improving}%</span>
+                  </div>
+                  <div className="flex items-center justify-between border-b border-slate-50 pb-0.5">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> TB:</span>
+                    <span className="text-slate-800 font-extrabold">{progressData.poor}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" /> Yếu:</span>
+                    <span className="text-slate-800 font-extrabold">{progressData.inactive}%</span>
+                  </div>
+                </div>
+              </div>
             </div>
-
-          </div>
-
+          )}
         </div>
 
       </div>
 
       {/* ===== BẢNG THỐNG KÊ CHI TIẾT THEO CƠ SỞ & KHỐI ===== */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-        <div className="flex items-center justify-between mb-3">
+      <div className="bg-white border border-slate-200/60 rounded-2xl p-5 md:p-6 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.04)] transition-all duration-300">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-              <Building2 className="h-4.5 w-4.5 text-indigo-500" />
+            <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
+              <Building2 className="h-4.5 w-4.5 text-[#00A99D]" />
               Thống kê Chi tiết theo Cơ sở & Khối lớp
             </h2>
-            <p className="text-[10px] text-slate-400">Số liệu chi tiết phân bổ học sinh theo dõi bồi dưỡng và phân công giảng dạy</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">Số liệu chi tiết phân bổ học sinh theo dõi bồi dưỡng và phân công giảng dạy</p>
           </div>
         </div>
 
-        <div className="overflow-x-auto border border-slate-100 rounded-xl">
+        <div className="overflow-x-auto border border-slate-100 rounded-xl shadow-xxs">
           <table className="min-w-full divide-y divide-slate-100 text-xs">
-            <thead className="bg-slate-50 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+            <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
               <tr>
-                <th className="px-4 py-3 text-left">Cơ sở</th>
-                <th className="px-4 py-3 text-left">Khối</th>
-                <th className="px-4 py-3 text-center">Tổng số HS</th>
-                <th className="px-4 py-3 text-center">Phụ đạo học tập</th>
-                <th className="px-4 py-3 text-center">Hỗ trợ tâm lý</th>
-                <th className="px-4 py-3 text-center">Đã phân công GV</th>
-                <th className="px-4 py-3 text-center">Chưa phân công GV</th>
+                <th className="px-5 py-3 text-left">Cơ sở</th>
+                <th className="px-5 py-3 text-left">Khối</th>
+                <th className="px-5 py-3 text-center">Tổng số HS</th>
+                <th className="px-5 py-3 text-center">Phụ đạo học tập</th>
+                <th className="px-5 py-3 text-center">Hỗ trợ tâm lý</th>
+                <th className="px-5 py-3 text-center">Đã phân công GV</th>
+                <th className="px-5 py-3 text-center">Chưa phân công GV</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 font-medium text-slate-600">
+            <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
               {(() => {
                 const statsMap = {};
 
@@ -1017,7 +1044,7 @@ export function OverviewDashboard({
                   }
                 });
 
-                const statsList = Object.values(statsMap).sort((a, b) => {
+                const statsList = Object.values(statsMap).sort((a: any, b: any) => {
                   if (a.campusName !== b.campusName) return a.campusName.localeCompare(b.campusName);
                   return a.gradeName.localeCompare(b.gradeName);
                 });
@@ -1025,20 +1052,32 @@ export function OverviewDashboard({
                 if (statsList.length === 0) {
                   return (
                     <tr>
-                      <td colSpan={7} className="text-center py-6 text-slate-400">Không có dữ liệu thống kê</td>
+                      <td colSpan={7} className="text-center py-8 text-slate-400 font-bold">Không có dữ liệu thống kê</td>
                     </tr>
                   );
                 }
 
-                return statsList.map((row, idx) => (
+                return statsList.map((row: any, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-slate-800">{row.campusName}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-800">{row.gradeName}</td>
-                    <td className="px-4 py-3 text-center font-bold text-indigo-700">{row.total}</td>
-                    <td className="px-4 py-3 text-center text-blue-700 font-semibold">{row.academic}</td>
-                    <td className="px-4 py-3 text-center text-purple-700 font-semibold">{row.psychology}</td>
-                    <td className="px-4 py-3 text-center text-emerald-700 font-semibold">{row.assigned}</td>
-                    <td className="px-4 py-3 text-center text-orange-700 font-semibold">{row.unassigned}</td>
+                    <td className="px-5 py-3.5 font-bold text-slate-800">{row.campusName}</td>
+                    <td className="px-5 py-3.5 font-bold text-slate-800">{row.gradeName}</td>
+                    <td className="px-5 py-3.5 text-center font-extrabold text-indigo-700 text-sm">{row.total}</td>
+                    <td className="px-5 py-3.5 text-center text-blue-600 font-bold">{row.academic}</td>
+                    <td className="px-5 py-3.5 text-center text-violet-600 font-bold">{row.psychology}</td>
+                    <td className="px-5 py-3.5 text-center">
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[10px]">
+                        {row.assigned}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-center">
+                      {row.unassigned > 0 ? (
+                        <span className="px-2.5 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-100 font-bold text-[10px]">
+                          {row.unassigned}
+                        </span>
+                      ) : (
+                        <span className="text-slate-300">-</span>
+                      )}
+                    </td>
                   </tr>
                 ));
               })()}
