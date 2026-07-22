@@ -18,7 +18,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (activity.teacherId !== teacher.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const data = await req.json();
-    const { students, isConfirm } = data;
+    const { students } = data;
 
     if (!Array.isArray(students)) {
       return NextResponse.json({ error: 'Invalid data format' }, { status: 400 });
@@ -39,7 +39,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     await prisma.$transaction(updatePromises);
 
-    if (isConfirm) {
+    if (activity.status === 'DRAFT') {
       await prisma.activityRecord.update({
         where: { id: id },
         data: { status: 'SUBMITTED' }

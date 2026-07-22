@@ -84,10 +84,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         formatId: data.formatId !== undefined ? data.formatId : activity.formatId,
         levelId: data.levelId !== undefined ? data.levelId : activity.levelId,
         organizerId: data.organizerId !== undefined ? data.organizerId : activity.organizerId,
-        objectives: data.objectives !== undefined ? data.objectives : activity.objectives,
-        tasks: data.tasks !== undefined ? data.tasks : activity.tasks,
-        criteria: data.criteria !== undefined ? data.criteria : activity.criteria,
-        coTeachers: data.coTeachers !== undefined ? data.coTeachers : activity.coTeachers,
       }
     });
 
