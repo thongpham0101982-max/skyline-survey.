@@ -90,7 +90,7 @@ export default function ExperientialActivitiesList() {
   const totalStudentsCount = filtered.reduce((acc, a) => acc + (a.participants || 0), 0);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 py-8 px-4 font-sans antialiased text-slate-600">
+    <div className="w-full font-sans antialiased text-slate-600 pb-12">
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Dashboard Header */}

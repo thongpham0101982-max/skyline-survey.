@@ -279,7 +279,7 @@ export default function ActivityResultInput() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 py-6 px-4 font-sans text-slate-600 antialiased">
+    <div className="w-full font-sans text-slate-600 antialiased pb-12">
       <div className="max-w-[1500px] mx-auto space-y-6">
 
         {/* HEADER */}

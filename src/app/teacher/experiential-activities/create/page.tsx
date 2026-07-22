@@ -395,7 +395,7 @@ export default function CreateActivityWizard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 py-8 px-4 font-sans antialiased text-slate-600">
+    <div className="w-full font-sans antialiased text-slate-600 pb-12">
       <div className="max-w-5xl mx-auto space-y-6">
         
         {/* HEADER */}
