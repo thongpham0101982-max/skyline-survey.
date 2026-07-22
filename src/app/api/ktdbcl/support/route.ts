@@ -131,16 +131,16 @@ export async function GET(req: Request) {
         }
       });
 
-      const parseCommittedSubjects = (note) => {
+      const parseCommittedSubjects = (note: any) => {
         if (!note) return []
         const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
-          return match[1].split(",").map((s) => s.trim())
+          return match[1].split(",").map((s: any) => s.trim())
         }
         return []
       }
 
-      const cleanString = (str) => {
+      const cleanString = (str: any) => {
         if (!str) return ""
         return str.toLowerCase()
           .normalize("NFD")
@@ -204,16 +204,16 @@ export async function GET(req: Request) {
       })
 
       // Fetch input assessments for these students
-      const studentIds = students.map(s => s.id)
+      const studentCodes = students.map(s => s.studentCode)
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
-          studentId: { in: studentIds }
+          studentCode: { in: studentCodes }
         }
       })
 
       // Map candidates
       const candidates = students.map(s => {
-        const assessment = inputAssessments.find(a => a.studentId === s.id)
+        const assessment = inputAssessments.find(a => a.studentCode === s.studentCode)
         return {
           id: s.id,
           studentName: s.studentName,
@@ -231,6 +231,72 @@ export async function GET(req: Request) {
       }).filter(c => c.mathTarget || c.literatureTarget || c.englishTarget || c.psychologyTarget)
 
       return NextResponse.json(candidates)
+    }
+
+    // 4.5. Action: getCommitmentCandidates
+    if (action === "getCommitmentCandidates") {
+      const periods = await prisma.inputAssessmentPeriod.findMany({
+        where: { academicYearId },
+        select: { id: true }
+      })
+      const periodIds = periods.map(p => p.id)
+
+      const inputStudents = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          periodId: { in: periodIds },
+          OR: [
+            { admissionResult: "Đạt cam kết" },
+            { admissionResult: "Đạt - Cam kết" },
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } }
+          ]
+        }
+      })
+
+      const studentCodes = inputStudents.map(s => s.studentCode)
+      const systemStudents = await prisma.student.findMany({
+        where: {
+          studentCode: { in: studentCodes },
+          academicYearId
+        },
+        include: {
+          class: true
+        }
+      })
+
+      const result = inputStudents.map(is => {
+        const matchingStudent = systemStudents.find(ss => ss.studentCode === is.studentCode)
+        
+        const parseCommittedSubjects = (note: string) => {
+          if (!note) return []
+          const match = note.match(/(?:Môn cam kết|Mon cam ket):\s*\[([^\]]+)\]/i)
+          if (match && match[1]) {
+            return match[1].split(',').map((s) => s.trim())
+          }
+          return []
+        }
+        
+        const committedSubjects = parseCommittedSubjects(is.directorNote || "")
+
+        return {
+          id: is.id,
+          studentCode: is.studentCode,
+          fullName: is.fullName,
+          gender: is.gender,
+          admissionResult: is.admissionResult,
+          directorNote: is.directorNote,
+          systemStudentId: matchingStudent?.id || null,
+          className: matchingStudent?.class?.className || is.className || "Chưa xếp lớp",
+          committedSubjects,
+          mathScore: is.mathScore,
+          literatureScore: is.literatureScore,
+          writtenEnglishScore: is.writtenEnglishScore,
+          oralEnglishScore: is.oralEnglishScore,
+          psychologyScore: is.psychologyScore
+        }
+      })
+
+      return NextResponse.json(result)
     }
 
     // 5. Action: getCommitment

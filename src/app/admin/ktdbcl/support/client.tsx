@@ -45,7 +45,7 @@ export function SupportClient({
   )
 
   // Tabs state
-  const [activeTab, setActiveTab] = useState<"overview" | "academic" | "psychology" | "configs" | "reports">(
+  const [activeTab, setActiveTab] = useState<"overview" | "academic" | "psychology" | "configs" | "reports" | "assignments" | "commitments">(
     "overview"
   )
 
@@ -56,6 +56,12 @@ export function SupportClient({
 
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
+  // Commitment candidates states
+  const [commitmentCandidates, setCommitmentCandidates] = useState<any[]>([])
+  const [commitmentLoading, setCommitmentLoading] = useState(false)
+  const [commitmentSearch, setCommitmentSearch] = useState("")
+  const [commitmentCampusFilter, setCommitmentCampusFilter] = useState("ALL")
+  const [commitmentStatusFilter, setCommitmentStatusFilter] = useState("ALL")
   const [targets, setTargets] = useState<any[]>([])
   const [assignments, setAssignments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -154,6 +160,32 @@ export function SupportClient({
       setLoading(false)
     }
   }
+
+  const fetchCommitmentCandidates = async () => {
+    if (!selectedYearId) return
+    setCommitmentLoading(true)
+    try {
+      const res = await fetch(
+        `/api/ktdbcl/support?action=getCommitmentCandidates&academicYearId=${selectedYearId}&_=${Date.now()}`
+      )
+      const data = await res.json()
+      if (data && !data.error) {
+        setCommitmentCandidates(data)
+      } else {
+        toast.error("Không thể tải danh sách học sinh cam kết: " + (data.error || "Lỗi không xác định"))
+      }
+    } catch (e: any) {
+      toast.error("Lỗi mạng: " + e.message)
+    } finally {
+      setCommitmentLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "commitments") {
+      fetchCommitmentCandidates()
+    }
+  }, [activeTab, selectedYearId])
 
   useEffect(() => {
     fetchAllData()
@@ -797,6 +829,18 @@ export function SupportClient({
           Hỗ trợ Tâm lý
         </button>
 
+        <button
+          onClick={() => setActiveTab("commitments")}
+          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
+            activeTab === "commitments"
+              ? "border-indigo-600 text-indigo-600 font-bold"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <UserCheck className="h-4 w-4" />
+          Số HS Cam kết/Theo dõi
+        </button>
+
 
 
       </div>
@@ -812,6 +856,241 @@ export function SupportClient({
           academicYears={academicYears}
           selectedYearId={selectedYearId}
         />
+      )}
+
+      {/* Tab 4.5: Số HS Cam kết/Theo dõi */}
+      {activeTab === "commitments" && (
+        <div className="space-y-6">
+          {/* Header & Overview Stats */}
+          <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-200/50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
+                <UserCheck className="h-5 w-5 text-amber-500" />
+                Học sinh Cam kết & Theo dõi khảo sát đầu vào
+              </h2>
+              <p className="text-xs text-slate-500 font-medium">Danh sách các học sinh thuộc diện cam kết bồi dưỡng, đối chiếu với tình trạng lập kế hoạch hỗ trợ.</p>
+            </div>
+            
+            {/* KPI summary */}
+            <div className="flex flex-wrap items-center gap-4 bg-white/80 border border-slate-200/60 p-3 rounded-xl shadow-2xs">
+              <div className="text-center px-4 border-r border-slate-100">
+                <div className="text-sm font-black text-slate-800">{commitmentCandidates.length}</div>
+                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tổng số HS cam kết</div>
+              </div>
+              <div className="text-center px-4 border-r border-slate-100">
+                <div className="text-sm font-black text-emerald-600">
+                  {commitmentCandidates.filter(c => {
+                    return targets.some(t => t.studentId === c.systemStudentId)
+                  }).length}
+                </div>
+                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Đã đề xuất</div>
+              </div>
+              <div className="text-center px-4">
+                <div className="text-sm font-black text-rose-500">
+                  {commitmentCandidates.filter(c => {
+                    return !targets.some(t => t.studentId === c.systemStudentId)
+                  }).length}
+                </div>
+                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Chưa đề xuất</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xxs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm theo mã học sinh hoặc họ tên..."
+                value={commitmentSearch}
+                onChange={(e) => setCommitmentSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+              />
+            </div>
+
+            {/* Select filters */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Campus filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Cơ sở:</label>
+                <select
+                  value={commitmentCampusFilter}
+                  onChange={(e) => setCommitmentCampusFilter(e.target.value)}
+                  className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
+                >
+                  <option value="ALL">Tất cả Cơ sở</option>
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.campusName}>{c.campusName}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Tình trạng:</label>
+                <select
+                  value={commitmentStatusFilter}
+                  onChange={(e) => setCommitmentStatusFilter(e.target.value)}
+                  className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
+                >
+                  <option value="ALL">Tất cả tình trạng</option>
+                  <option value="PROPOSED">Đã đề xuất xét duyệt</option>
+                  <option value="NOT_PROPOSED">Chưa đề xuất</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Data Table */}
+          {commitmentLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/60 rounded-2xl">
+              <RefreshCw className="h-8 w-8 text-indigo-500 animate-spin mb-3" />
+              <span className="text-xs font-bold text-slate-400">Đang tải danh sách học sinh cam kết...</span>
+            </div>
+          ) : (() => {
+            // Apply client side search and filters
+            const filteredCandidates = commitmentCandidates.filter(c => {
+              // Search text match
+              const searchLower = commitmentSearch.toLowerCase().trim()
+              const matchesSearch = !searchLower || 
+                c.studentCode.toLowerCase().includes(searchLower) ||
+                c.fullName.toLowerCase().includes(searchLower)
+
+              // Campus match
+              const matchesCampus = commitmentCampusFilter === "ALL" || 
+                c.className.includes(commitmentCampusFilter) || 
+                (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
+                (c.directorNote || "").includes(commitmentCampusFilter) ||
+                (c.admissionResult || "").includes(commitmentCampusFilter)
+
+              // Tình trạng đề xuất match
+              const isProposed = targets.some(t => t.studentId === c.systemStudentId)
+              const matchesStatus = commitmentStatusFilter === "ALL" || 
+                (commitmentStatusFilter === "PROPOSED" && isProposed) ||
+                (commitmentStatusFilter === "NOT_PROPOSED" && !isProposed)
+
+              return matchesSearch && matchesCampus && matchesStatus
+            })
+
+            if (filteredCandidates.length === 0) {
+              return (
+                <div className="flex flex-col items-center justify-center py-16 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
+                  <Users className="h-8 w-8 mb-2 text-slate-300" />
+                  <span className="text-xs font-bold">Không tìm thấy học sinh cam kết nào phù hợp bộ lọc</span>
+                </div>
+              )
+            }
+
+            return (
+              <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-xxs">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-100 text-xs">
+                    <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+                      <tr>
+                        <th className="px-5 py-3 text-center w-12">STT</th>
+                        <th className="px-5 py-3 text-left">Họ tên / Mã HS</th>
+                        <th className="px-5 py-3 text-left">Lớp / Cơ sở</th>
+                        <th className="px-5 py-3 text-left">Môn Cam kết</th>
+                        <th className="px-5 py-3 text-center">Tình trạng đề xuất</th>
+                        <th className="px-5 py-3 text-left">Kết quả Khảo sát & Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
+                      {filteredCandidates.map((row, idx) => {
+                        const isProposed = targets.some(t => t.studentId === row.systemStudentId)
+                        const studentTargets = targets.filter(t => t.studentId === row.systemStudentId)
+
+                        // Render scores if available
+                        const scoreTexts = []
+                        if (row.mathScore !== null) scoreTexts.push(`Toán: ${row.mathScore}`)
+                        if (row.literatureScore !== null) scoreTexts.push(`Văn: ${row.literatureScore}`)
+                        if (row.writtenEnglishScore !== null) {
+                          const eng = row.oralEnglishScore !== null 
+                            ? (row.writtenEnglishScore + row.oralEnglishScore) / 2 
+                            : row.writtenEnglishScore
+                          scoreTexts.push(`Anh: ${eng}`)
+                        }
+                        if (row.psychologyScore !== null) scoreTexts.push(`Tâm lý: ${row.psychologyScore}`)
+
+                        return (
+                          <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-5 py-4 text-center text-slate-400 font-medium">{idx + 1}</td>
+                            <td className="px-5 py-4">
+                              <div className="font-bold text-slate-800">{row.fullName}</div>
+                              <div className="text-[10px] text-slate-400 font-bold mt-0.5 flex items-center gap-1.5">
+                                <span>{row.studentCode}</span>
+                                {row.gender && (
+                                  <>
+                                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                    <span>{row.gender}</span>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4">
+                              <div className="font-bold text-slate-700">Lớp {row.className.split(/[_-]/)[0]}</div>
+                              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                {row.className.includes("CS") ? `Cơ sở ${row.className.split("CS")[1].split(/[_-]/)[0]}` : "Cơ sở 1"}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4">
+                              {row.committedSubjects && row.committedSubjects.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {row.committedSubjects.map((sub, sIdx) => (
+                                    <span
+                                      key={sIdx}
+                                      className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100 font-black text-[9px] uppercase tracking-wider"
+                                    >
+                                      {sub}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-center">
+                              {isProposed ? (
+                                <div className="space-y-1.5">
+                                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[9px] uppercase tracking-wider inline-flex items-center gap-1 shadow-3xs">
+                                    <Check className="w-3 h-3" /> Đã đề xuất
+                                  </span>
+                                  {studentTargets.map((st, stIdx) => (
+                                    <div key={stIdx} className="text-[9px] font-bold text-indigo-500">
+                                      {st.supportType === "ACADEMIC" ? "📖 Phụ đạo" : "🧠 Tâm lý"} ({st.status})
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200/50 font-bold text-[9px] uppercase tracking-wider inline-flex items-center gap-1">
+                                  Chưa đề xuất
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-5 py-4">
+                              {scoreTexts.length > 0 && (
+                                <div className="text-[10px] text-slate-500 font-bold mb-1 flex flex-wrap gap-x-2 gap-y-0.5">
+                                  {scoreTexts.map((stText, stIdx) => (
+                                    <span key={stIdx} className="bg-slate-100 px-1.5 py-0.5 rounded-md text-slate-600">{stText}</span>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="text-[10px] text-slate-400 font-medium max-w-sm line-clamp-2" title={row.directorNote || ""}>
+                                {row.directorNote || <span className="italic text-slate-300">Không có ghi chú khảo sát</span>}
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
+          })()}
+        </div>
       )}
 
       {/* Loading state indicator */}
