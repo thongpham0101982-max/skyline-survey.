@@ -168,6 +168,24 @@ export default function ExperientialActivitiesList() {
           </div>
         </div>
 
+        {/* Regulation Notice Box */}
+        <div className="bg-amber-50/50 border border-amber-200/60 rounded-3xl p-5 md:p-6 shadow-3xs relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/10 rounded-full -translate-y-1/3 translate-x-1/3 blur-xl pointer-events-none" />
+          <div className="relative z-10 space-y-3">
+            <h3 className="text-xs font-black text-amber-850 uppercase tracking-wider flex items-center gap-2">
+              <AlertCircle className="w-4.5 h-4.5 text-amber-600" />
+              Quy định thực hiện trên Hệ thống
+            </h3>
+            <ul className="text-xs text-amber-900/80 font-semibold space-y-2 list-disc pl-5 leading-relaxed">
+              <li>GVCN/GVBM được tạo hoạt động trải nghiệm hoặc dự án học tập cho một hay nhiều lớp.</li>
+              <li>Giáo viên khai báo mục tiêu, thời gian, lớp tham gia, nhiệm vụ, tiêu chí đánh giá và giáo viên phối hợp.</li>
+              <li>Trong và sau hoạt động, giáo viên phụ trách cập nhật mức độ hoàn thành, quá trình, vai trò, nhận xét và minh chứng của từng học sinh.</li>
+              <li>Với hoạt động có nhiều giáo viên, giáo viên phụ trách chính chịu trách nhiệm hoàn tất và xác nhận kết quả.</li>
+              <li>Kết quả sau khi xác nhận được cập nhật vào Hồ sơ học sinh và tổng hợp gửi PHHS định kỳ theo học kỳ, năm học.</li>
+            </ul>
+          </div>
+        </div>
+
         {/* Search Bar & Filter Summary */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md">
