@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { 
   FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
@@ -62,6 +62,12 @@ export function SupportClient({
   const [commitmentSearch, setCommitmentSearch] = useState("")
   const [commitmentCampusFilter, setCommitmentCampusFilter] = useState("ALL")
   const [commitmentStatusFilter, setCommitmentStatusFilter] = useState("ALL")
+  const [commitmentPage, setCommitmentPage] = useState(1)
+  const commitmentPageSize = 10
+
+  useEffect(() => {
+    setCommitmentPage(1)
+  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter])
   const [targets, setTargets] = useState<any[]>([])
   const [assignments, setAssignments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -748,6 +754,86 @@ export function SupportClient({
     { month: "Tháng 05/2026", good: 14, average: 4, weak: 2, total: 20 },
     { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
   ]
+  // Paginated commitments logic
+  const filteredCommitments = useMemo(() => {
+    return commitmentCandidates.filter(c => {
+      const searchLower = commitmentSearch.toLowerCase().trim()
+      const matchesSearch = !searchLower || 
+        c.studentCode.toLowerCase().includes(searchLower) ||
+        c.fullName.toLowerCase().includes(searchLower)
+
+      const matchesCampus = commitmentCampusFilter === "ALL" || 
+        c.className.includes(commitmentCampusFilter) || 
+        (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
+        (c.directorNote || "").includes(commitmentCampusFilter) ||
+        (c.admissionResult || "").includes(commitmentCampusFilter)
+
+      const isProposed = targets.some(t => t.studentId === c.systemStudentId)
+      const matchesStatus = commitmentStatusFilter === "ALL" || 
+        (commitmentStatusFilter === "PROPOSED" && isProposed) ||
+        (commitmentStatusFilter === "NOT_PROPOSED" && !isProposed)
+
+      return matchesSearch && matchesCampus && matchesStatus
+    })
+  }, [commitmentCandidates, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
+
+  const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
+
+  const paginatedCommitments = useMemo(() => {
+    const startIndex = (commitmentPage - 1) * commitmentPageSize
+    return filteredCommitments.slice(startIndex, startIndex + commitmentPageSize)
+  }, [filteredCommitments, commitmentPage])
+
+  const getSubjectBadge = (subName: string) => {
+    const nameLower = subName.toLowerCase()
+    if (nameLower.includes("toán") || nameLower.includes("math")) {
+      return (
+        <span className="px-2.5 py-1 rounded-lg bg-orange-55 text-orange-700 border border-orange-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
+          📐 Toán
+        </span>
+      )
+    }
+    if (nameLower.includes("văn") || nameLower.includes("việt") || nameLower.includes("literature") || nameLower.includes("ngữ văn")) {
+      return (
+        <span className="px-2.5 py-1 rounded-lg bg-emerald-55 text-emerald-700 border border-emerald-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
+          📖 Tiếng Việt
+        </span>
+      )
+    }
+    if (nameLower.includes("anh") || nameLower.includes("english")) {
+      return (
+        <span className="px-2.5 py-1 rounded-lg bg-blue-55 text-blue-700 border border-blue-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
+          🇬🇧 Tiếng Anh
+        </span>
+      )
+    }
+    if (nameLower.includes("lý") || nameLower.includes("tâm") || nameLower.includes("psychology")) {
+      return (
+        <span className="px-2.5 py-1 rounded-lg bg-violet-55 text-violet-700 border border-violet-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
+          🧠 Tâm lý
+        </span>
+      )
+    }
+    return (
+      <span className="px-2.5 py-1 rounded-lg bg-slate-55 text-slate-700 border border-slate-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs">
+        {subName}
+      </span>
+    )
+  }
+
+  const getScoreTag = (label: string, val: number | null) => {
+    if (val === null) return null
+    let colorClass = "bg-slate-55 text-slate-600 border-slate-200"
+    if (val >= 8) colorClass = "bg-emerald-55 text-emerald-700 border-emerald-200/60"
+    else if (val >= 5) colorClass = "bg-blue-55 text-blue-700 border-blue-200/60"
+    else colorClass = "bg-rose-55 text-rose-700 border-rose-200/60"
+    
+    return (
+      <span className={`px-2 py-0.5 rounded-md border font-black text-[9px] ${colorClass}`}>
+        {label}: {val}
+      </span>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -862,17 +948,17 @@ export function SupportClient({
       {activeTab === "commitments" && (
         <div className="space-y-6">
           {/* Header & Overview Stats */}
-          <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-200/50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+          <div className="bg-gradient-to-r from-amber-500/10 via-orange-500/5 to-transparent border border-amber-200/50 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-[0_2px_8px_rgba(0,0,0,0.01)]">
             <div className="space-y-1">
               <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-amber-500" />
                 Học sinh Cam kết & Theo dõi khảo sát đầu vào
               </h2>
-              <p className="text-xs text-slate-500 font-medium">Danh sách các học sinh thuộc diện cam kết bồi dưỡng, đối chiếu với tình trạng lập kế hoạch hỗ trợ.</p>
+              <p className="text-xs text-slate-500 font-medium font-sans">Danh sách học sinh thuộc diện cam kết bồi dưỡng, đối chiếu với tình trạng lập kế hoạch hỗ trợ.</p>
             </div>
             
             {/* KPI summary */}
-            <div className="flex flex-wrap items-center gap-4 bg-white/80 border border-slate-200/60 p-3 rounded-xl shadow-2xs">
+            <div className="flex flex-wrap items-center gap-4 bg-white/80 border border-slate-200/60 p-3 rounded-xl shadow-2xs backdrop-blur-xs">
               <div className="text-center px-4 border-r border-slate-100">
                 <div className="text-sm font-black text-slate-800">{commitmentCandidates.length}</div>
                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tổng số HS cam kết</div>
@@ -950,31 +1036,7 @@ export function SupportClient({
               <span className="text-xs font-bold text-slate-400">Đang tải danh sách học sinh cam kết...</span>
             </div>
           ) : (() => {
-            // Apply client side search and filters
-            const filteredCandidates = commitmentCandidates.filter(c => {
-              // Search text match
-              const searchLower = commitmentSearch.toLowerCase().trim()
-              const matchesSearch = !searchLower || 
-                c.studentCode.toLowerCase().includes(searchLower) ||
-                c.fullName.toLowerCase().includes(searchLower)
-
-              // Campus match
-              const matchesCampus = commitmentCampusFilter === "ALL" || 
-                c.className.includes(commitmentCampusFilter) || 
-                (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
-                (c.directorNote || "").includes(commitmentCampusFilter) ||
-                (c.admissionResult || "").includes(commitmentCampusFilter)
-
-              // Tình trạng đề xuất match
-              const isProposed = targets.some(t => t.studentId === c.systemStudentId)
-              const matchesStatus = commitmentStatusFilter === "ALL" || 
-                (commitmentStatusFilter === "PROPOSED" && isProposed) ||
-                (commitmentStatusFilter === "NOT_PROPOSED" && !isProposed)
-
-              return matchesSearch && matchesCampus && matchesStatus
-            })
-
-            if (filteredCandidates.length === 0) {
+            if (filteredCommitments.length === 0) {
               return (
                 <div className="flex flex-col items-center justify-center py-16 bg-slate-50/50 border border-dashed border-slate-200 rounded-2xl text-slate-400">
                   <Users className="h-8 w-8 mb-2 text-slate-300" />
@@ -984,7 +1046,7 @@ export function SupportClient({
             }
 
             return (
-              <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-xxs">
+              <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-xxs flex flex-col justify-between min-h-[300px]">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-100 text-xs">
                     <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
@@ -998,53 +1060,39 @@ export function SupportClient({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
-                      {filteredCandidates.map((row, idx) => {
+                      {paginatedCommitments.map((row, idx) => {
                         const isProposed = targets.some(t => t.studentId === row.systemStudentId)
                         const studentTargets = targets.filter(t => t.studentId === row.systemStudentId)
-
-                        // Render scores if available
-                        const scoreTexts = []
-                        if (row.mathScore !== null) scoreTexts.push(`Toán: ${row.mathScore}`)
-                        if (row.literatureScore !== null) scoreTexts.push(`Văn: ${row.literatureScore}`)
-                        if (row.writtenEnglishScore !== null) {
-                          const eng = row.oralEnglishScore !== null 
-                            ? (row.writtenEnglishScore + row.oralEnglishScore) / 2 
-                            : row.writtenEnglishScore
-                          scoreTexts.push(`Anh: ${eng}`)
-                        }
-                        if (row.psychologyScore !== null) scoreTexts.push(`Tâm lý: ${row.psychologyScore}`)
+                        const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
 
                         return (
                           <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-5 py-4 text-center text-slate-400 font-medium">{idx + 1}</td>
+                            <td className="px-5 py-4 text-center text-slate-400 font-bold">{sttNumber}</td>
                             <td className="px-5 py-4">
-                              <div className="font-bold text-slate-800">{row.fullName}</div>
+                              <div className="font-extrabold text-slate-800 text-[12px]">{row.fullName}</div>
                               <div className="text-[10px] text-slate-400 font-bold mt-0.5 flex items-center gap-1.5">
                                 <span>{row.studentCode}</span>
                                 {row.gender && (
                                   <>
-                                    <span className="w-1 h-1 rounded-full bg-slate-300" />
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
                                     <span>{row.gender}</span>
                                   </>
                                 )}
                               </div>
                             </td>
                             <td className="px-5 py-4">
-                              <div className="font-bold text-slate-700">Lớp {row.className.split(/[_-]/)[0]}</div>
-                              <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                              <div className="font-extrabold text-slate-700">Lớp {row.className.split(/[_-]/)[0]}</div>
+                              <div className="text-[10px] text-indigo-500/80 font-bold mt-0.5">
                                 {row.className.includes("CS") ? `Cơ sở ${row.className.split("CS")[1].split(/[_-]/)[0]}` : "Cơ sở 1"}
                               </div>
                             </td>
                             <td className="px-5 py-4">
                               {row.committedSubjects && row.committedSubjects.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
+                                <div className="flex flex-wrap gap-1.5">
                                   {row.committedSubjects.map((sub, sIdx) => (
-                                    <span
-                                      key={sIdx}
-                                      className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-100 font-black text-[9px] uppercase tracking-wider"
-                                    >
-                                      {sub}
-                                    </span>
+                                    <div key={sIdx}>
+                                      {getSubjectBadge(sub)}
+                                    </div>
                                   ))}
                                 </div>
                               ) : (
@@ -1053,30 +1101,32 @@ export function SupportClient({
                             </td>
                             <td className="px-5 py-4 text-center">
                               {isProposed ? (
-                                <div className="space-y-1.5">
-                                  <span className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 font-bold text-[9px] uppercase tracking-wider inline-flex items-center gap-1 shadow-3xs">
-                                    <Check className="w-3 h-3" /> Đã đề xuất
+                                <div className="space-y-1.5 flex flex-col items-center">
+                                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-black text-[10px] uppercase tracking-wider inline-flex items-center gap-1.5 shadow-3xs">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    Đã đề xuất
                                   </span>
                                   {studentTargets.map((st, stIdx) => (
-                                    <div key={stIdx} className="text-[9px] font-bold text-indigo-500">
+                                    <div key={stIdx} className="text-[9px] font-bold text-indigo-500 bg-indigo-50/60 px-1.5 py-0.5 rounded border border-indigo-100/50">
                                       {st.supportType === "ACADEMIC" ? "📖 Phụ đạo" : "🧠 Tâm lý"} ({st.status})
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-400 border border-slate-200/50 font-bold text-[9px] uppercase tracking-wider inline-flex items-center gap-1">
+                                <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200/80 font-black text-[10px] uppercase tracking-wider inline-flex items-center gap-1.5 shadow-3xs">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                                   Chưa đề xuất
                                 </span>
                               )}
                             </td>
                             <td className="px-5 py-4">
-                              {scoreTexts.length > 0 && (
-                                <div className="text-[10px] text-slate-500 font-bold mb-1 flex flex-wrap gap-x-2 gap-y-0.5">
-                                  {scoreTexts.map((stText, stIdx) => (
-                                    <span key={stIdx} className="bg-slate-100 px-1.5 py-0.5 rounded-md text-slate-600">{stText}</span>
-                                  ))}
-                                </div>
-                              )}
+                              <div className="text-[10px] text-slate-500 font-bold mb-1.5 flex flex-wrap gap-x-2 gap-y-1">
+                                {getScoreTag("Toán", row.mathScore)}
+                                {getScoreTag("Văn", row.literatureScore)}
+                                {getScoreTag("Anh viết", row.writtenEnglishScore)}
+                                {getScoreTag("Anh nói", row.oralEnglishScore)}
+                                {getScoreTag("Tâm lý", row.psychologyScore)}
+                              </div>
                               <div className="text-[10px] text-slate-400 font-medium max-w-sm line-clamp-2" title={row.directorNote || ""}>
                                 {row.directorNote || <span className="italic text-slate-300">Không có ghi chú khảo sát</span>}
                               </div>
@@ -1087,13 +1137,49 @@ export function SupportClient({
                     </tbody>
                   </table>
                 </div>
+
+                {/* Pagination Controls */}
+                <div className="bg-slate-50/75 border-t border-slate-100 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-500">
+                  <div>
+                    Hiển thị từ <span className="font-extrabold text-slate-700">{Math.min((commitmentPage - 1) * commitmentPageSize + 1, filteredCommitments.length)}</span> đến <span className="font-extrabold text-slate-700">{Math.min(commitmentPage * commitmentPageSize, filteredCommitments.length)}</span> trong tổng số <span className="font-extrabold text-slate-700">{filteredCommitments.length}</span> học sinh
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      disabled={commitmentPage === 1}
+                      onClick={() => setCommitmentPage(p => Math.max(p - 1, 1))}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      Trước
+                    </button>
+                    
+                    {Array.from({ length: totalCommitmentPages }, (_, i) => i + 1).map(pageNum => (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCommitmentPage(pageNum)}
+                        className={`w-8 h-8 rounded-lg border flex items-center justify-center transition-all ${
+                          commitmentPage === pageNum
+                            ? "bg-indigo-600 border-indigo-600 text-white font-extrabold shadow-sm"
+                            : "border-slate-200 bg-white hover:bg-slate-50 text-slate-600"
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                    
+                    <button
+                      disabled={commitmentPage === totalCommitmentPages}
+                      onClick={() => setCommitmentPage(p => Math.min(p + 1, totalCommitmentPages))}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                </div>
               </div>
             )
           })()}
         </div>
-      )}
-
-      {/* Loading state indicator */}
+      )}      {/* Loading state indicator */}
       {loading && (
         <div className="flex items-center justify-center py-20">
           <RefreshCw className="h-8 w-8 text-indigo-600 animate-spin" />
