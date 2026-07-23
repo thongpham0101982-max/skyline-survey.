@@ -35,12 +35,31 @@ function getDefaultAcademicYearClient(years: any[]) {
   return years.find(y => y.status === 'ACTIVE' && !y.isOff) || years.find(y => !y.isOff) || years[0];
 }
 
+function getAbbreviation(str: string) {
+  if (!str) return '';
+  const noAccents = str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+  const capitalized = noAccents
+    .split(/\s+/)
+    .map(word => {
+      if (!word) return '';
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(' ');
+  return capitalized.replace(/[^A-Z]/g, '');
+}
+
 export default function CreateActivityWizard() {
   const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [allClasses, setAllClasses] = useState<any[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentsData, setSelectedStudentsData] = useState<any[]>([]);
+
 
 
   const router = useRouter();
@@ -205,6 +224,46 @@ export default function CreateActivityWizard() {
     }
   }, [info.academicYear]);
 
+  const infoName = info.name;
+  const infoGrou = info.GROU;
+  useEffect(() => {
+    if (infoName && infoGrou && categories.length > 0) {
+      const abbr = getAbbreviation(infoName);
+      const grouCat = categories.find((c: any) => c.type === 'GROU' && c.code === infoGrou);
+      if (grouCat) {
+        const groupCat = categories.find((c: any) => c.type === 'GROUP' && c.name.trim().toLowerCase() === grouCat.name.trim().toLowerCase());
+        const groupCode = groupCat ? groupCat.code : grouCat.code;
+        const groupId = groupCat ? groupCat.id : null;
+        
+        if (groupId) {
+          const countInGroup = catalogs.filter((cat: any) => cat.groupId === groupId).length;
+          const stt = String(countInGroup + 1).padStart(2, '0');
+          const code = `${abbr}-${groupCode}-${stt}`;
+          setGeneratedCode(code);
+          setInfo(prev => {
+            if (prev.code === code) return prev;
+            return { ...prev, code };
+          });
+        } else {
+          const code = `${abbr}-${groupCode}-01`;
+          setGeneratedCode(code);
+          setInfo(prev => {
+            if (prev.code === code) return prev;
+            return { ...prev, code };
+          });
+        }
+      }
+    } else {
+      setGeneratedCode('');
+      setInfo(prev => {
+        if (!prev.code) return prev;
+        const { code, ...rest } = prev;
+        return rest;
+      });
+    }
+  }, [infoName, infoGrou, categories, catalogs]);
+
+
   useEffect(() => {
     Promise.all([
       fetch('/api/activities/catalog').then(r => r.json()),
@@ -243,11 +302,29 @@ export default function CreateActivityWizard() {
   }, []);
 
   const handleSubmit = async (isDraft: boolean) => {
-    const payload = { info, target, defaults, studentResults, exceptions, evidence, isDraft };
-    console.log('Submitting data: ', payload);
-    alert('Đã lưu dữ liệu thành công! (Mock Submit)');
-    router.push('/teacher');
+    setIsSubmitting(true);
+    try {
+      const payload = { info, target, defaults, studentResults, exceptions, evidence, isDraft };
+      const res = await fetch('/api/experiential-activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        alert('Đã lưu dữ liệu thành công!');
+        router.push('/teacher/experiential-activities');
+      } else {
+        alert('Có lỗi xảy ra: ' + (data.error || 'Unknown error'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Có lỗi xảy ra khi gửi dữ liệu!');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
 
   const steps = [
     { id: 1, title: 'Thông tin chung', icon: Info, desc: 'Kế hoạch & phân loại' },
@@ -356,13 +433,16 @@ export default function CreateActivityWizard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-1.5 md:col-span-2">
                     <label className="text-sm font-bold text-slate-700">Nhóm hoạt động <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="text"
-                      placeholder="Nhập nhóm hoạt động (tạo mới hoặc tự động map)..."
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.name} 
-                      onChange={e => setInfo({...info, name: e.target.value})}
-                    />
+                    <select 
+                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                      value={info.GROU || ''} 
+                      onChange={e => setInfo({...info, GROU: e.target.value})}
+                    >
+                      <option value="">-- Chọn nhóm hoạt động --</option>
+                      {getOptionsForType('GROU').map((opt: any) => (
+                        <option key={opt.id} value={opt.code}>{opt.name}</option>
+                      ))}
+                    </select>
                   </div>
                   
                   <div className="space-y-1.5 md:col-span-2">
@@ -371,8 +451,8 @@ export default function CreateActivityWizard() {
                       type="text"
                       placeholder="Nhập tên hoạt động cụ thể..."
                       className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.activityName || ''} 
-                      onChange={e => setInfo({...info, activityName: e.target.value})}
+                      value={info.name || ''} 
+                      onChange={e => setInfo({...info, name: e.target.value})}
                     />
                   </div>
 
@@ -425,8 +505,9 @@ export default function CreateActivityWizard() {
 
                   {/* DYNAMIC FIELDS cho Step 1 */}
                   {systemTypes
-                    .filter((sys: any) => !IGNORED_TYPES.includes(sys.code) && !STEP3_TYPES.includes(sys.code) && !STEP5_TYPES.includes(sys.code))
+                    .filter((sys: any) => !IGNORED_TYPES.includes(sys.code) && !STEP3_TYPES.includes(sys.code) && !STEP5_TYPES.includes(sys.code) && sys.code !== 'GROU')
                     .map((sys: any) => renderDynamicField(sys, info[sys.code], (val) => setInfo({...info, [sys.code]: val})))}
+
                 </div>
               </div>
             )}

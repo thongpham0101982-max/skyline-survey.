@@ -56,23 +56,59 @@ export async function POST(req: Request) {
 
     let catalog = await prisma.activityCatalog.findFirst({ where: { name: info.name } });
     if (!catalog) {
+      // Find the correct group using GROU name matching GROUP name
+      const grouCat = await prisma.activityCategory.findFirst({
+        where: { type: 'GROU', code: info.GROU }
+      });
+      let groupCategory = null;
+      if (grouCat) {
+        groupCategory = await prisma.activityCategory.findFirst({
+          where: { type: 'GROUP', name: grouCat.name }
+        });
+      }
+      const groupId = groupCategory?.id || fallbackCategory.id;
+
+      // Find the correct type
+      const typeCategory = await prisma.activityCategory.findFirst({
+        where: { type: 'TYPE', status: 'ACTIVE' }
+      });
+      const typeId = typeCategory?.id || fallbackCategory.id;
+
       catalog = await prisma.activityCatalog.create({
         data: {
-          code: 'ACT' + Date.now().toString(),
+          code: info.code || 'ACT' + Date.now().toString(),
           name: info.name,
-          groupId: info.ROLE || fallbackCategory.id,
-          typeId: info.FORMAT || fallbackCategory.id,
+          groupId: groupId,
+          typeId: typeId,
           level: info.LEVEL || null,
         }
       });
     }
 
-    const count = await prisma.activityRecord.count();
-    const generatedCode = `HĐ-${String(count + 1).padStart(3, '0')}`;
+    // Generate or use unique code for the ActivityRecord based on the catalog code
+    const baseCode = catalog.code;
+    let recordCode = baseCode;
+    
+    // Check if this record code already exists
+    const existingRecord = await prisma.activityRecord.findUnique({
+      where: { code: baseCode }
+    });
+    
+    if (existingRecord) {
+      // If it exists, append a suffix based on the count of records starting with this baseCode
+      const suffixCount = await prisma.activityRecord.count({
+        where: {
+          code: {
+            startsWith: `${baseCode}-`
+          }
+        }
+      });
+      recordCode = `${baseCode}-${suffixCount + 1}`;
+    }
 
     const activityRecord = await prisma.activityRecord.create({
       data: {
-        code: generatedCode,
+        code: recordCode,
         name: info.activityName || catalog.name,
         catalogId: catalog.id,
         date: info.date ? new Date(info.date) : new Date(),
@@ -86,6 +122,7 @@ export async function POST(req: Request) {
         status: isDraft ? 'DRAFT' : 'SUBMITTED',
       }
     });
+
 
     const selectedStudentIds = new Set<string>();
     if (target) {
