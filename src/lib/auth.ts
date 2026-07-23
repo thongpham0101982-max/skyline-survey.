@@ -35,6 +35,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials.password as string
         let user: any = null
 
+        // 1. Direct Email Lookup in User table
+        if (!user) {
+          user = await prisma.user.findUnique({
+            where: { email: identifier }
+          })
+          if (user) {
+            console.log('[AUTH] User found via Email:', identifier)
+          }
+        }
+
+        // 2. Teacher Code Match
         if (!user) {
           const teacher = await prisma.teacher.findUnique({
             where: { teacherCode: identifier },
@@ -45,6 +56,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             console.log('[AUTH] User found via Teacher Code:', identifier)
           }
         }
+
 
         // 3. Parent Code Match (P + Mã HS)
         if (!user) {
