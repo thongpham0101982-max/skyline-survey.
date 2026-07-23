@@ -301,7 +301,38 @@ export default function CreateActivityWizard() {
     });
   }, []);
 
+  const handleNext = () => {
+    if (step === 1) {
+      if (!info.GROU) {
+        alert('Vui lòng chọn Nhóm hoạt động!');
+        return;
+      }
+      if (!info.name || !info.name.trim()) {
+        alert('Vui lòng nhập Tên hoạt động!');
+        return;
+      }
+      if (!info.academicYear) {
+        alert('Vui lòng chọn Năm học!');
+        return;
+      }
+    } else if (step === 2) {
+      if (targetMode === 'class') {
+        if (!target.classes || target.classes.length === 0) {
+          alert('Vui lòng chọn ít nhất một lớp học!');
+          return;
+        }
+      } else if (targetMode === 'student') {
+        if (!target.specificStudents || target.specificStudents.length === 0) {
+          alert('Vui lòng chọn ít nhất một học sinh!');
+          return;
+        }
+      }
+    }
+    setStep(step + 1);
+  };
+
   const handleSubmit = async (isDraft: boolean) => {
+
     setIsSubmitting(true);
     try {
       const payload = { info, target, defaults, studentResults, exceptions, evidence, isDraft };
@@ -934,11 +965,12 @@ export default function CreateActivityWizard() {
                 </>
               ) : (
                 <button 
-                  onClick={() => setStep(step + 1)} 
+                  onClick={handleNext} 
                   className="px-8 py-2.5 text-sm font-bold text-white bg-slate-800 hover:bg-slate-900 shadow-sm rounded-xl transition-all flex items-center gap-2"
                 >
                   Tiếp tục <ChevronRight className="w-4 h-4" />
                 </button>
+
               )}
             </div>
           </div>
