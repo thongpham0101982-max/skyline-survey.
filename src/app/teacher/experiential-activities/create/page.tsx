@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Info, Users, Settings, UserMinus, CheckSquare, 
   ChevronRight, ChevronLeft, Save, Send, UploadCloud, 
-  Link as LinkIcon, Plus, X, Search 
+  Link as LinkIcon, Plus, X, Search, Trash2, CheckCircle2
 } from 'lucide-react';
 
 // Định nghĩa mapping cho các loại danh mục
@@ -114,6 +114,16 @@ export default function CreateActivityWizard() {
 
   const saveStudentResult = () => {
     if (selectedResultStudent) {
+      const step3Fields = systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code));
+      for (const sys of step3Fields) {
+        const options = getOptionsForType(sys.code);
+        if (options && options.length > 0) {
+          if (!currentStudentResult[sys.code]) {
+            alert(`Vui lòng chọn ${sys.name} cho học sinh!`);
+            return;
+          }
+        }
+      }
       setStudentResults({
         ...studentResults,
         [selectedResultStudent.id]: {
@@ -127,6 +137,7 @@ export default function CreateActivityWizard() {
       setStudentResultSearch('');
     }
   };
+
 
   const [evidence, setEvidence] = useState<Record<string, any>>({ 
     photos: '', pdfs: '', oneDrive: '', gDrive: '', youtube: '', desc: '' 
@@ -327,11 +338,68 @@ export default function CreateActivityWizard() {
           return;
         }
       }
+    } else if (step === 3) {
+      if (defaults.allParticipate) {
+        const step3Fields = systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code));
+        for (const sys of step3Fields) {
+          const options = getOptionsForType(sys.code);
+          if (options && options.length > 0) {
+            if (!defaults[sys.code]) {
+              alert(`Vui lòng chọn ${sys.name} mặc định!`);
+              return;
+            }
+          }
+        }
+      }
     }
     setStep(step + 1);
   };
 
+
   const handleSubmit = async (isDraft: boolean) => {
+    if (!info.GROU) {
+      alert('Vui lòng chọn Nhóm hoạt động!');
+      setStep(1);
+      return;
+    }
+    if (!info.name || !info.name.trim()) {
+      alert('Vui lòng nhập Tên hoạt động!');
+      setStep(1);
+      return;
+    }
+    if (!info.academicYear) {
+      alert('Vui lòng chọn Năm học!');
+      setStep(1);
+      return;
+    }
+
+    if (targetMode === 'class') {
+      if (!target.classes || target.classes.length === 0) {
+        alert('Vui lòng chọn ít nhất một lớp học ở bước đối tượng!');
+        setStep(2);
+        return;
+      }
+    } else if (targetMode === 'student') {
+      if (!target.specificStudents || target.specificStudents.length === 0) {
+        alert('Vui lòng chọn ít nhất một học sinh ở bước đối tượng!');
+        setStep(2);
+        return;
+      }
+    }
+
+    if (defaults.allParticipate) {
+      const step3Fields = systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code));
+      for (const sys of step3Fields) {
+        const options = getOptionsForType(sys.code);
+        if (options && options.length > 0) {
+          if (!defaults[sys.code]) {
+            alert(`Vui lòng chọn ${sys.name} mặc định ở bước thiết lập!`);
+            setStep(3);
+            return;
+          }
+        }
+      }
+    }
 
     setIsSubmitting(true);
     try {
@@ -355,6 +423,7 @@ export default function CreateActivityWizard() {
       setIsSubmitting(false);
     }
   };
+
 
 
   const steps = [
