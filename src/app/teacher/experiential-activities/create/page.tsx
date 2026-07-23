@@ -326,6 +326,23 @@ export default function CreateActivityWizard() {
         alert('Vui lòng chọn Năm học!');
         return;
       }
+      if (!info.date) {
+        alert('Vui lòng chọn Ngày tổ chức!');
+        return;
+      }
+
+      const step1Fields = systemTypes.filter(
+        (sys: any) => !IGNORED_TYPES.includes(sys.code) && !STEP3_TYPES.includes(sys.code) && !STEP5_TYPES.includes(sys.code) && sys.code !== 'GROU'
+      );
+      for (const sys of step1Fields) {
+        const options = getOptionsForType(sys.code);
+        if (options && options.length > 0) {
+          if (!info[sys.code]) {
+            alert(`Vui lòng chọn ${sys.name}!`);
+            return;
+          }
+        }
+      }
     } else if (step === 2) {
       if (targetMode === 'class') {
         if (!target.classes || target.classes.length === 0) {
@@ -371,6 +388,25 @@ export default function CreateActivityWizard() {
       alert('Vui lòng chọn Năm học!');
       setStep(1);
       return;
+    }
+    if (!info.date) {
+      alert('Vui lòng chọn Ngày tổ chức!');
+      setStep(1);
+      return;
+    }
+
+    const step1Fields = systemTypes.filter(
+      (sys: any) => !IGNORED_TYPES.includes(sys.code) && !STEP3_TYPES.includes(sys.code) && !STEP5_TYPES.includes(sys.code) && sys.code !== 'GROU'
+    );
+    for (const sys of step1Fields) {
+      const options = getOptionsForType(sys.code);
+      if (options && options.length > 0) {
+        if (!info[sys.code]) {
+          alert(`Vui lòng chọn ${sys.name}!`);
+          setStep(1);
+          return;
+        }
+      }
     }
 
     if (targetMode === 'class') {
@@ -443,7 +479,7 @@ export default function CreateActivityWizard() {
     const options = getOptionsForType(sys.code) as any[];
     return (
       <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
-        <label className="text-sm font-bold text-slate-700">{sys.name}</label>
+        <label className="text-sm font-bold text-slate-700">{sys.name} <span className="text-rose-500">*</span></label>
         <select 
           className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
           value={stateValue || ''} 
@@ -457,6 +493,7 @@ export default function CreateActivityWizard() {
       </div>
     );
   };
+
 
   if (loading) {
     return (
@@ -581,7 +618,7 @@ export default function CreateActivityWizard() {
                   </div>
                   
                   <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700">Ngày tổ chức</label>
+                    <label className="text-sm font-bold text-slate-700">Ngày tổ chức <span className="text-rose-500">*</span></label>
                     <input 
                       type="date" 
                       className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
@@ -589,6 +626,7 @@ export default function CreateActivityWizard() {
                       onChange={e => setInfo({...info, date: e.target.value})} 
                     />
                   </div>
+
                   
                   <div className="space-y-1.5">
                     <label className="text-sm font-bold text-slate-700">Học kỳ</label>
