@@ -1327,36 +1327,65 @@ export function StudentProfilesAdminClient({
                     {activeTab === "projects" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
                         <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">HOẠT ĐỘNG TRẢI NGHIỆM</h4>
-                        {(!selectedStudent.projects || selectedStudent.projects.length === 0) ? (
+                        {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) && (!selectedStudent.projects || selectedStudent.projects.length === 0) ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia hoạt động trải nghiệm nào.</div>
                         ) : (
-                          <div className="grid grid-cols-1 gap-3">
-                            {selectedStudent.projects.map((p) => (
-                              <div key={p.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 hover:shadow-2xs transition-all animate-in fade-in duration-200">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div>
-                                    <h4 className="font-extrabold text-sm text-slate-850">{p.projectName}</h4>
-                                    <div className="flex gap-2 mt-1.5">
-                                      <span className="text-[9px] bg-[#00A99D]/15 text-[#00A99D] border border-[#00A99D]/20 px-2 py-0.5 rounded font-black uppercase">
-                                        Vai trò: {p.role || "N/A"}
+                          <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
+                            <table className="w-full text-xs text-left border-collapse">
+                              <thead>
+                                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                                  <th className="py-3.5 px-4 text-center w-14">STT</th>
+                                  <th className="py-3.5 px-4">Tên hoạt động</th>
+                                  <th className="py-3.5 px-4">Nhóm lĩnh vực</th>
+                                  <th className="py-3.5 px-4 text-center">Vai trò</th>
+                                  <th className="py-3.5 px-4 text-center">Mức đánh giá</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                {(selectedStudent.experientialActivities || []).map((act: any, idx: number) => (
+                                  <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-all">
+                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
+                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{act.activityName}</td>
+                                    <td className="py-3.5 px-4">
+                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
+                                        {act.groupName}
                                       </span>
-                                      <span className="text-[9px] bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded font-black uppercase">
-                                        Kết quả: {p.result}
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {act.role}
                                       </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                {p.notes && (
-                                  <div className="text-xs text-slate-600 bg-white border border-slate-200 p-3 rounded-lg mt-3 font-semibold italic">
-                                    "${p.notes}"
-                                  </div>
-                                )}
-                                <div className="text-[9px] text-slate-400 font-bold border-t border-slate-100 pt-2 mt-3 flex justify-between">
-                                  <span>Đánh giá bởi: {p.teacherName}</span>
-                                  <span>{new Date(p.updatedAt).toLocaleDateString('vi-VN')}</span>
-                                </div>
-                              </div>
-                            ))}
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {act.evalLevel}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {(selectedStudent.projects || []).map((p: any, idx: number) => (
+                                  <tr key={p.id || idx} className="hover:bg-slate-50/80 transition-all">
+                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{(selectedStudent.experientialActivities?.length || 0) + idx + 1}</td>
+                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{p.projectName}</td>
+                                    <td className="py-3.5 px-4">
+                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
+                                        Dự án học tập
+                                      </span>
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {p.role || "Thành viên"}
+                                      </span>
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {p.result || "Đạt"}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         )}
                       </div>

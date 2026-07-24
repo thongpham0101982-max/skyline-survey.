@@ -924,6 +924,50 @@ export async function GET(req: Request) {
         preschoolScoresMap.get(score.studentId).push(score)
       })
 
+      // Fetch all activity participants for these students
+      const studentIds = students.map(s => s.id)
+      const studentCodes = students.map(s => s.studentCode).filter(Boolean)
+
+      const allParticipants = await prisma.activityParticipant.findMany({
+        where: {
+          OR: [
+            { studentId: { in: studentIds } },
+            { student: { studentCode: { in: studentCodes } } }
+          ]
+        },
+        include: {
+          record: {
+            include: {
+              catalog: {
+                include: { group: true }
+              }
+            }
+          },
+          student: true
+        },
+        orderBy: { createdAt: "desc" }
+      })
+
+      const categories = await prisma.activityCategory.findMany()
+
+      const roleDict: Record<string, string> = {
+        TGIA: "Tham gia",
+        TV: "Thành viên",
+        NT: "Nhóm trưởng",
+        PNT: "Phó nhóm trưởng",
+        BTC: "Ban tổ chức"
+      }
+
+      const evalDict: Record<string, string> = {
+        XS: "Xuất sắc",
+        TO: "Tốt",
+        DA: "Đạt",
+        KDA: "Chưa đạt",
+        EXCELLENT: "Xuất sắc",
+        GOOD: "Tốt",
+        SATISFACTORY: "Đạt"
+      }
+
       const localNormName = (n) => n ? n.trim().toLowerCase().replace(/\s+/g, " ") : ""
       const localSameTime = (a, b) => {
         if (!a || !b) return false
@@ -1054,6 +1098,33 @@ export async function GET(req: Request) {
           orientation: s.careerOrientations?.[0] || null,
           achievements: s.achievements || [],
           projects: s.projectExperiences || [],
+          experientialActivities: (() => {
+            const studentP = allParticipants.filter((p) => {
+              if (!p.student) return false
+              return p.studentId === s.id || p.student.studentCode === s.studentCode || localNormName(p.student.studentName) === localNormName(s.studentName)
+            })
+
+            return studentP.map((p, idx) => {
+              const roleCat = categories.find(c => c.id === p.roleId || c.code === p.roleId)
+              const evalCat = categories.find(c => c.id === p.evalLevelId || c.code === p.evalLevelId)
+              const groupCat = categories.find(c => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId)
+
+              const resolvedRole = roleCat?.name || (p.roleId ? roleDict[p.roleId] || p.roleId : "Tham gia")
+              const resolvedEval = evalCat?.name || (p.evalLevelId ? evalDict[p.evalLevelId] || p.evalLevelId : "Đạt")
+              const resolvedGroup = groupCat?.name || p.record?.catalog?.group?.name || "Hoạt động trải nghiệm"
+              const resolvedName = p.record?.name || p.record?.catalog?.name || "Hoạt động trải nghiệm"
+
+              return {
+                id: p.id,
+                stt: idx + 1,
+                activityName: resolvedName.trim(),
+                groupName: resolvedGroup.trim(),
+                role: resolvedRole.trim(),
+                evalLevel: resolvedEval.trim(),
+                date: p.record?.date ? p.record.date.toISOString().split('T')[0] : ''
+              }
+            })
+          })(),
           learningSupportTargets: s.learningSupportTargets || [],
           highlightComments: s.highlightComments || [],
           entranceSurvey: matchedSurvey ? {
