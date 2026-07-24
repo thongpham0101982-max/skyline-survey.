@@ -6,19 +6,27 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get('academicYearId');
 
-    const where: any = {};
+    let classes: any[] = [];
     if (academicYearId) {
-      where.academicYearId = academicYearId;
+      classes = await prisma.class.findMany({
+        where: { academicYearId },
+        orderBy: [
+          { level: 'asc' },
+          { grade: 'asc' },
+          { className: 'asc' }
+        ]
+      });
     }
 
-    const classes = await prisma.class.findMany({
-      where,
-      orderBy: [
-        { level: 'asc' },
-        { grade: 'asc' },
-        { className: 'asc' }
-      ]
-    });
+    if (!classes || classes.length === 0) {
+      classes = await prisma.class.findMany({
+        orderBy: [
+          { level: 'asc' },
+          { grade: 'asc' },
+          { className: 'asc' }
+        ]
+      });
+    }
 
     return NextResponse.json(classes);
   } catch (error) {

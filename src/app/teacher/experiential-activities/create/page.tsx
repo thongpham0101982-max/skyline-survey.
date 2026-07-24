@@ -106,7 +106,14 @@ export default function CreateActivityWizard() {
     if (info.academicYear) {
       fetch(`/api/classes?academicYearId=${info.academicYear}`)
         .then(res => res.json())
-        .then(data => setAllClasses(Array.isArray(data) ? data : []))
+        .then(data => {
+          const list = Array.isArray(data) ? data : [];
+          setAllClasses(list);
+          if (list.length > 0) {
+            const allOriginalLevels = Array.from(new Set(list.map(c => c?.level).filter(Boolean)));
+            setTarget(prev => ({ ...prev, levels: allOriginalLevels }));
+          }
+        })
         .catch(console.error);
     }
   }, [info.academicYear]);
