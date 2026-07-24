@@ -459,13 +459,7 @@ export default function CreateActivityWizard() {
               <span>3. Thiết lập kết quả</span>
             </button>
 
-            <button 
-              onClick={() => scrollToSection('section-4')}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-[#00A99D] transition-all flex items-center gap-2"
-            >
-              <CheckSquare className="w-4 h-4 text-[#00A99D]" />
-              <span>4. Kết quả cá nhân</span>
-            </button>
+            
           </div>
 
           <div className="flex items-center gap-2 ml-auto sm:hidden">
@@ -846,7 +840,7 @@ export default function CreateActivityWizard() {
               />
               <div>
                 <span className="text-sm font-bold text-slate-800 block">Áp dụng mặc định cho tất cả học sinh</span>
-                <span className="text-xs text-slate-500 font-medium">Chỉ cần nhập những em có kết quả khác biệt ở Mục 4</span>
+                <span className="text-xs text-slate-500 font-medium">Tất cả học sinh thuộc đối tượng tham gia sẽ được áp dụng các kết quả này</span>
               </div>
             </label>
           </div>
@@ -857,167 +851,6 @@ export default function CreateActivityWizard() {
               {systemTypes
                 .filter((sys: any) => STEP3_TYPES.includes(sys?.code))
                 .map((sys: any) => renderDynamicField(sys, defaults[sys.code], (val) => setDefaults({...defaults, [sys.code]: val})))}
-            </div>
-          )}
-        </div>
-
-        {/* SECTION 4: Kết quả cá nhân */}
-        <div id="section-4" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
-          <div className="border-b border-slate-100 pb-4">
-            <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <span className="w-7 h-7 bg-[#00A99D]/10 text-[#00A99D] rounded-lg flex items-center justify-center text-sm font-black">4</span>
-              <span>Kết quả cá nhân <span className="text-xs text-slate-400 font-normal ml-1">(Không bắt buộc)</span></span>
-            </h2>
-            <p className="text-sm text-slate-500 font-medium ml-9">Ghi nhận học sinh có kết quả khác biệt so với mặc định</p>
-          </div>
-          
-          {!isAddingResult ? (
-            <>
-              {Object.keys(studentResults).length === 0 ? (
-                <div className="bg-slate-50/80 p-8 rounded-2xl border border-slate-200 border-dashed flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="w-16 h-16 bg-white shadow-sm rounded-full flex items-center justify-center">
-                    <Users className="w-8 h-8 text-slate-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700">Chưa có kết quả cá nhân nào</h3>
-                    <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                      Bạn có thể chọn từng học sinh để thay đổi đánh giá cá nhân.
-                    </p>
-                  </div>
-                  <div className="flex gap-3 mt-2">
-                    <button onClick={() => setIsAddingResult(true)} className="px-4 py-2 bg-white ring-1 ring-slate-200 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100 transition-all shadow-sm">
-                      + Thêm kết quả cá nhân
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-end">
-                    <button onClick={() => setIsAddingResult(true)} className="px-4 py-2 bg-white ring-1 ring-slate-200 text-slate-700 font-bold text-xs rounded-lg hover:bg-slate-100 transition-all shadow-sm">
-                      + Thêm kết quả cá nhân
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-1 gap-3">
-                    {Object.values(studentResults).map((item: any) => (
-                      <div key={item.student.id} className="p-4 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
-                        <div>
-                          <div className="font-bold text-slate-700">{item.student.name} <span className="text-xs text-slate-400 font-normal">({item.student.code})</span></div>
-                          <div className="text-xs text-slate-500 mt-1 flex gap-2">
-                            {Object.entries(item.results).map(([key, val]) => {
-                              const sys = systemTypes.find((s: any) => s?.code === key);
-                              const optName = getOptionsForType(key).find((o: any) => o?.code === val)?.name || val;
-                              return (
-                                <span key={key} className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">
-                                  {sys?.name}: <strong className="text-slate-800">{optName}</strong>
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => {
-                            const updated = { ...studentResults };
-                            delete updated[item.student.id];
-                            setStudentResults(updated);
-                          }}
-                          className="p-2 text-slate-400 hover:text-rose-500 transition-all"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="space-y-6 bg-slate-50/50 p-6 rounded-2xl border border-slate-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800">Thêm kết quả cá nhân</h3>
-                <button onClick={() => setIsAddingResult(false)} className="text-slate-400 hover:text-slate-600">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1.5">1. Chọn học sinh</label>
-                  <select 
-                    className="w-full bg-white border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                    value={selectedStudentForResult?.id || ''}
-                    onChange={e => {
-                      const st = selectedStudentsData.find(s => s.id === e.target.value);
-                      setSelectedStudentForResult(st || null);
-                    }}
-                  >
-                    <option value="">-- Chọn học sinh từ danh sách đối tượng --</option>
-                    {selectedStudentsData.map(st => (
-                      <option key={st.id} value={st.id}>{st.fullName} ({st.studentCode} - Lớp {st.className})</option>
-                    ))}
-                  </select>
-                </div>
-
-                {selectedStudentForResult && (
-                  <div className="space-y-4 pt-4 border-t border-slate-200">
-                    <label className="text-xs font-bold text-slate-700 block">2. Đánh giá riêng cho {selectedStudentForResult.fullName}</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {systemTypes
-                        .filter((sys: any) => STEP3_TYPES.includes(sys?.code))
-                        .map((sys: any) => (
-                          <div key={sys.code} className="space-y-1">
-                            <label className="text-xs font-bold text-slate-600">{sys.name}</label>
-                            <select 
-                              className="w-full bg-white border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
-                              value={tempIndividualResults[sys.code] || defaults[sys.code] || ''}
-                              onChange={e => setTempIndividualResults({ ...tempIndividualResults, [sys.code]: e.target.value })}
-                            >
-                              <option value="">-- Chọn {(sys.name || sys.code).toLowerCase()} --</option>
-                              {getOptionsForType(sys.code).map((opt: any) => (
-                                <option key={opt.id} value={opt.code}>{opt.name}</option>
-                              ))}
-                            </select>
-                          </div>
-                        ))}
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-4">
-                      <button 
-                        onClick={() => {
-                          setIsAddingResult(false);
-                          setSelectedStudentForResult(null);
-                          setTempIndividualResults({});
-                        }}
-                        className="px-4 py-2 text-xs font-bold text-slate-600 bg-white ring-1 ring-slate-200 rounded-lg hover:bg-slate-50"
-                      >
-                        Hủy
-                      </button>
-                      <button 
-                        onClick={() => {
-                          if (!selectedStudentForResult) return;
-                          setStudentResults({
-                            ...studentResults,
-                            [selectedStudentForResult.id]: {
-                              student: {
-                                id: selectedStudentForResult.id,
-                                name: selectedStudentForResult.fullName,
-                                code: selectedStudentForResult.studentCode,
-                                className: selectedStudentForResult.className
-                              },
-                              results: tempIndividualResults
-                            }
-                          });
-                          setIsAddingResult(false);
-                          setSelectedStudentForResult(null);
-                          setTempIndividualResults({});
-                        }}
-                        className="px-5 py-2 text-xs font-bold text-white bg-[#00A99D] rounded-lg hover:bg-[#009085]"
-                      >
-                        Lưu kết quả học sinh này
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
           )}
         </div>
