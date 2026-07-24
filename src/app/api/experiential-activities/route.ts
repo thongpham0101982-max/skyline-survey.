@@ -172,32 +172,12 @@ export async function POST(req: Request) {
     });
 
     if (participantsData.length > 0) {
-      await Promise.all(
-        participantsData.map(p => 
-          prisma.activityParticipant.upsert({
-            where: {
-              recordId_studentId: {
-                recordId: p.recordId,
-                studentId: p.studentId
-              }
-            },
-            update: {
-              roleId: p.roleId,
-              evalLevelId: p.evalLevelId,
-              achievementId: p.achievementId,
-              absenceReasonId: p.absenceReasonId,
-              updatedAt: new Date()
-            },
-            create: {
-              ...p,
-              updatedAt: new Date()
-            }
-          }).catch(err => {
-            console.error(`Error upserting participant ${p.studentId}:`, err);
-            return null;
-          })
-        )
-      );
+      await prisma.activityParticipant.deleteMany({
+        where: { recordId: activityRecord.id }
+      });
+      await prisma.activityParticipant.createMany({ 
+        data: participantsData
+      });
     }
 
     return NextResponse.json({ success: true, activityId: activityRecord.id });
