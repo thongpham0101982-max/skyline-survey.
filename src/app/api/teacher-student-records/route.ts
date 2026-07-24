@@ -570,10 +570,12 @@ export async function GET(req: Request) {
       })
 
       // Fetch experiential activities
-      const activityParticipants = await prisma.activityParticipant.findMany({
+      const cleanStudentName = student.studentName.trim().toLowerCase().replace(/\s+/g, ' ');
+
+      let activityParticipants = await prisma.activityParticipant.findMany({
         where: {
           OR: [
-            { studentId },
+            { studentId: student.id },
             { student: { studentCode: student.studentCode } }
           ]
         },
@@ -584,10 +586,33 @@ export async function GET(req: Request) {
                 include: { group: true }
               }
             }
-          }
+          },
+          student: true
         },
         orderBy: { createdAt: "desc" }
       });
+
+      if (activityParticipants.length === 0) {
+        const allParticipants = await prisma.activityParticipant.findMany({
+          include: {
+            record: {
+              include: {
+                catalog: {
+                  include: { group: true }
+                }
+              }
+            },
+            student: true
+          },
+          orderBy: { createdAt: "desc" }
+        });
+
+        activityParticipants = allParticipants.filter(p => {
+          if (!p.student) return false;
+          const pName = (p.student.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ');
+          return pName === cleanStudentName || p.student.studentCode === student.studentCode;
+        });
+      }
 
       const categories = await prisma.activityCategory.findMany();
 
