@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 import { 
-  Info, Users, Settings, UserMinus, CheckSquare, 
-  ChevronRight, ChevronLeft, Save, Send, UploadCloud, 
-  Link as LinkIcon, Plus, X, Search, Trash2, CheckCircle2
+  Info, Users, Settings, CheckSquare, 
+  ArrowLeft, Save, Send, Plus, X, Search, Loader2
 } from 'lucide-react';
 
 // Định nghĩa mapping cho các loại danh mục
@@ -13,26 +13,16 @@ const STEP3_TYPES = ['ROLE', 'EVAL_LEVEL', 'ACHIEVEMENT'];
 const STEP5_TYPES = ['EVIDENCE_TYPE'];
 const IGNORED_TYPES = ['SYSTEM_CATEGORY_TYPE', 'GROUP', 'TYPE', 'THEME', 'ABSENCE_REASON'];
 
-
-
-
-
-
-
-
-
-
-
 function getDefaultAcademicYearClient(years: any[]) {
-  if (!years || years.length === 0) return null;
+  if (!Array.isArray(years) || years.length === 0) return null;
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("selectedAcademicYear");
     if (stored) {
-      const year = years.find(y => y.id === stored);
+      const year = years.find(y => y?.id === stored);
       if (year) return year;
     }
   }
-  return years.find(y => y.status === 'ACTIVE' && !y.isOff) || years.find(y => !y.isOff) || years[0];
+  return years.find(y => y?.status === 'ACTIVE' && !y?.isOff) || years.find(y => !y?.isOff) || years[0];
 }
 
 function getAbbreviation(str: string) {
@@ -53,6 +43,7 @@ function getAbbreviation(str: string) {
 }
 
 export default function CreateActivityWizard() {
+  const router = useRouter();
   const [academicYears, setAcademicYears] = useState<any[]>([]);
   const [allClasses, setAllClasses] = useState<any[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -60,13 +51,9 @@ export default function CreateActivityWizard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedStudentsData, setSelectedStudentsData] = useState<any[]>([]);
 
-
-
-  const router = useRouter();
-  const [step, setStep] = useState(1);
-  const [catalogs, setCatalogs] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [systemTypes, setSystemTypes] = useState([]);
+  const [catalogs, setCatalogs] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [systemTypes, setSystemTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Dynamic form states
@@ -90,54 +77,8 @@ export default function CreateActivityWizard() {
   const [exceptions, setExceptions] = useState({ outstanding: [], absent: [], achievements: [] });
   const [studentResults, setStudentResults] = useState<Record<string, Record<string, any>>>({});
   const [isAddingResult, setIsAddingResult] = useState(false);
-  const [selectedResultStudent, setSelectedResultStudent] = useState<any>(null);
-  const [currentStudentResult, setCurrentStudentResult] = useState<Record<string, any>>({});
-  const [studentResultSearch, setStudentResultSearch] = useState('');
-  const [resultSearchResults, setResultSearchResults] = useState<any[]>([]);
-  const [isSearchingResult, setIsSearchingResult] = useState(false);
-
-  useEffect(() => {
-    if (studentResultSearch.length < 2 || !info.academicYear) {
-      setResultSearchResults([]);
-      return;
-    }
-    const timer = setTimeout(() => {
-      setIsSearchingResult(true);
-      fetch(`/api/students/search?academicYearId=${info.academicYear}&q=${encodeURIComponent(studentResultSearch)}`)
-        .then(res => res.json())
-        .then(data => setResultSearchResults(data || []))
-        .catch(console.error)
-        .finally(() => setIsSearchingResult(false));
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [studentResultSearch, info.academicYear]);
-
-  const saveStudentResult = () => {
-    if (selectedResultStudent) {
-      const step3Fields = systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code));
-      for (const sys of step3Fields) {
-        const options = getOptionsForType(sys.code);
-        if (options && options.length > 0) {
-          if (!currentStudentResult[sys.code]) {
-            alert(`Vui lòng chọn ${sys.name} cho học sinh!`);
-            return;
-          }
-        }
-      }
-      setStudentResults({
-        ...studentResults,
-        [selectedResultStudent.id]: {
-          student: selectedResultStudent,
-          result: currentStudentResult
-        }
-      });
-      setIsAddingResult(false);
-      setSelectedResultStudent(null);
-      setCurrentStudentResult({});
-      setStudentResultSearch('');
-    }
-  };
-
+  const [selectedStudentForResult, setSelectedStudentForResult] = useState<any>(null);
+  const [tempIndividualResults, setTempIndividualResults] = useState<Record<string, any>>({});
 
   const [evidence, setEvidence] = useState<Record<string, any>>({ 
     photos: '', pdfs: '', oneDrive: '', gDrive: '', youtube: '', desc: '' 
@@ -145,28 +86,32 @@ export default function CreateActivityWizard() {
 
   const [generatedCode, setGeneratedCode] = useState('');
 
+  // 1. Load Academic Years
   useEffect(() => {
     fetch('/api/academic-years')
       .then(res => res.json())
       .then(data => {
-        setAcademicYears(data || []);
-        if (data && data.length > 0) {
-          const defaultYear = getDefaultAcademicYearClient(data);
-          setInfo(prev => ({ ...prev, academicYear: defaultYear ? defaultYear.id : data[0].id }));
+        const yearList = Array.isArray(data) ? data : [];
+        setAcademicYears(yearList);
+        if (yearList.length > 0) {
+          const defaultYear = getDefaultAcademicYearClient(yearList);
+          setInfo(prev => ({ ...prev, academicYear: defaultYear ? defaultYear.id : yearList[0].id }));
         }
       })
       .catch(console.error);
   }, []);
 
+  // 2. Load Classes when academic year changes
   useEffect(() => {
     if (info.academicYear) {
       fetch(`/api/classes?academicYearId=${info.academicYear}`)
         .then(res => res.json())
-        .then(data => setAllClasses(data || []))
+        .then(data => setAllClasses(Array.isArray(data) ? data : []))
         .catch(console.error);
     }
   }, [info.academicYear]);
 
+  // 3. Search students by text query
   useEffect(() => {
     if (!studentSearch || studentSearch.length < 2 || !info.academicYear) {
       setSearchResults([]);
@@ -176,29 +121,31 @@ export default function CreateActivityWizard() {
       setIsSearching(true);
       fetch(`/api/students/search?academicYearId=${info.academicYear}&q=${encodeURIComponent(studentSearch)}`)
         .then(res => res.json())
-        .then(data => setSearchResults(data || []))
+        .then(data => setSearchResults(Array.isArray(data) ? data : []))
         .catch(console.error)
         .finally(() => setIsSearching(false));
-    }, 500);
+    }, 400);
     return () => clearTimeout(timer);
   }, [studentSearch, info.academicYear]);
 
-  
-
-
-
+  // 4. Fetch class students when class dropdown is selected
   useEffect(() => {
     if (studentFilterClass && info.academicYear) {
       fetch(`/api/students/search?academicYearId=${info.academicYear}&classId=${studentFilterClass}`)
         .then(res => res.json())
-        .then(data => setClassStudents(data || []))
+        .then(data => setClassStudents(Array.isArray(data) ? data : []))
         .catch(console.error);
     } else {
       setClassStudents([]);
     }
   }, [studentFilterClass, info.academicYear]);
 
-  const uniqueLevels = Array.from(new Set(allClasses.map(c => c.level)));
+  // Safe data wrappers
+  const safeClasses = Array.isArray(allClasses) ? allClasses : [];
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeCatalogs = Array.isArray(catalogs) ? catalogs : [];
+
+  const uniqueLevels = Array.from(new Set(safeClasses.map(c => c?.level).filter(Boolean)));
   const mappedLevelsMap = new Map();
   uniqueLevels.forEach(level => {
     let name = level || 'Chưa phân loại';
@@ -210,7 +157,7 @@ export default function CreateActivityWizard() {
       name = 'Bậc THCS';
     } else if (level === 'THPT') {
       name = 'Bậc THPT';
-    } else if (level && level.toLowerCase().includes('mầm non')) {
+    } else if (level && String(level).toLowerCase().includes('mầm non')) {
       name = 'Mầm non';
       id = 'Mam-non-group';
     }
@@ -222,34 +169,26 @@ export default function CreateActivityWizard() {
   });
   const availableLevels = Array.from(mappedLevelsMap.values());
 
-  const availableGrades = Array.from(new Set(allClasses.filter(c => target.levels.includes(c.level)).map(c => c.grade))).sort((a,b) => parseInt(a) - parseInt(b));
-  const availableClasses = allClasses.filter(c => target.grades.includes(c.grade)).sort((a,b) => a.className.localeCompare(b.className));
+  const availableGrades = Array.from(new Set(safeClasses.filter(c => target.levels.includes(c?.level)).map(c => c?.grade).filter(Boolean))).sort((a,b) => parseInt(a) - parseInt(b));
+  const availableClasses = safeClasses.filter(c => target.grades.includes(c?.grade)).sort((a,b) => (a?.className || '').localeCompare(b?.className || ''));
 
   const displayedStudents = studentSearch.trim().length >= 2 ? searchResults : (studentFilterClass ? classStudents : []);
 
-  useEffect(() => {
-    if (info.academicYear) {
-      const yearParts = info.academicYear.split('-');
-      if (yearParts.length === 2) {
-        const endYear = yearParts[1].slice(-2);
-        // Auto-generated by server
-      }
-    }
-  }, [info.academicYear]);
-
+  // 5. Code auto generation
   const infoName = info.name;
   const infoGrou = info.GROU;
   useEffect(() => {
-    if (infoName && infoGrou && categories.length > 0) {
+    if (infoName && infoGrou && safeCategories.length > 0) {
       const abbr = getAbbreviation(infoName);
-      const grouCat = categories.find((c: any) => c.type === 'GROU' && c.code === infoGrou);
+      const grouCat = safeCategories.find((c: any) => c?.type === 'GROU' && c?.code === infoGrou);
       if (grouCat) {
-        const groupCat = categories.find((c: any) => c.type === 'GROUP' && c.name.trim().toLowerCase() === grouCat.name.trim().toLowerCase());
+        const grouName = (grouCat.name || '').trim().toLowerCase();
+        const groupCat = safeCategories.find((c: any) => c?.type === 'GROUP' && (c?.name || '').trim().toLowerCase() === grouName);
         const groupCode = groupCat ? groupCat.code : grouCat.code;
         const groupId = groupCat ? groupCat.id : null;
         
         if (groupId) {
-          const countInGroup = catalogs.filter((cat: any) => cat.groupId === groupId).length;
+          const countInGroup = safeCatalogs.filter((cat: any) => cat?.groupId === groupId).length;
           const stt = String(countInGroup + 1).padStart(2, '0');
           const code = `${abbr}-${groupCode}-${stt}`;
           setGeneratedCode(code);
@@ -276,18 +215,18 @@ export default function CreateActivityWizard() {
     }
   }, [infoName, infoGrou, categories, catalogs]);
 
-
+  // 6. Load Catalogs & Categories
   useEffect(() => {
     Promise.all([
-      fetch('/api/activities/catalog').then(r => r.json()),
-      fetch('/api/activities/categories').then(r => r.json())
+      fetch('/api/activities/catalog').then(r => r.json()).catch(() => ({ success: false, data: [] })),
+      fetch('/api/activities/categories').then(r => r.json()).catch(() => ({ success: false, data: [] }))
     ]).then(([catRes, catesRes]) => {
-      if (catRes.success) setCatalogs(catRes.data);
-      if (catesRes.success) {
+      if (catRes?.success && Array.isArray(catRes.data)) setCatalogs(catRes.data);
+      if (catesRes?.success && Array.isArray(catesRes.data)) {
         setCategories(catesRes.data);
         const sysTypes = catesRes.data
-          .filter((c: any) => c.type === 'SYSTEM_CATEGORY_TYPE' && c.status === 'ACTIVE' && !c.name.toLowerCase().includes('mức độ') && !c.name.toLowerCase().includes('kết quả'))
-          .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+          .filter((c: any) => c?.type === 'SYSTEM_CATEGORY_TYPE' && c?.status === 'ACTIVE' && !(c?.name || '').toLowerCase().includes('mức độ') && !(c?.name || '').toLowerCase().includes('kết quả'))
+          .sort((a: any, b: any) => (a?.sortOrder || 0) - (b?.sortOrder || 0));
         setSystemTypes(sysTypes);
         
         // Initialize dynamic fields
@@ -296,7 +235,9 @@ export default function CreateActivityWizard() {
         const newEvidence = { ...evidence };
 
         sysTypes.forEach((sys: any) => {
-          if (IGNORED_TYPES.includes(sys.code) || sys.name.toLowerCase().includes('mức độ') || sys.name.toLowerCase().includes('kết quả')) return;
+          if (!sys?.code) return;
+          const sysName = (sys.name || '').toLowerCase();
+          if (IGNORED_TYPES.includes(sys.code) || sysName.includes('mức độ') || sysName.includes('kết quả')) return;
           if (STEP3_TYPES.includes(sys.code)) {
             newDefaults[sys.code] = '';
           } else if (STEP5_TYPES.includes(sys.code)) {
@@ -311,6 +252,9 @@ export default function CreateActivityWizard() {
         setEvidence(newEvidence);
       }
       setLoading(false);
+    }).catch(err => {
+      console.error(err);
+      setLoading(false);
     });
   }, []);
 
@@ -319,6 +263,33 @@ export default function CreateActivityWizard() {
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  const getOptionsForType = (typeCode: string) => {
+    if (!Array.isArray(categories)) return [];
+    return categories
+      .filter((c: any) => c?.type === typeCode && c?.status === 'ACTIVE')
+      .sort((a: any, b: any) => (a?.sortOrder || 0) - (b?.sortOrder || 0));
+  };
+
+  const renderDynamicField = (sys: any, stateValue: string, onChange: (val: string) => void) => {
+    if (!sys || !sys.code) return null;
+    const options = getOptionsForType(sys.code) as any[];
+    return (
+      <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
+        <label className="text-sm font-bold text-slate-700">{sys.name || sys.code} <span className="text-rose-500">*</span></label>
+        <select 
+          className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+          value={stateValue || ''} 
+          onChange={e => onChange(e.target.value)}
+        >
+          <option value="">-- Chọn {(sys.name || sys.code).toLowerCase()} --</option>
+          {options.map((opt: any) => (
+            <option key={opt.id} value={opt.code}>{opt.name}</option>
+          ))}
+        </select>
+      </div>
+    );
   };
 
   const handleSubmit = async (isDraft: boolean) => {
@@ -410,49 +381,59 @@ export default function CreateActivityWizard() {
     }
   };
 
-
-
-  const getOptionsForType = (typeCode: string) => {
-    return categories
-      .filter((c: any) => c.type === typeCode && c.status === 'ACTIVE')
-      .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
-  };
-
-  const renderDynamicField = (sys: any, stateValue: string, onChange: (val: string) => void) => {
-    const options = getOptionsForType(sys.code) as any[];
-    return (
-      <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
-        <label className="text-sm font-bold text-slate-700">{sys.name} <span className="text-rose-500">*</span></label>
-        <select 
-          className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-          value={stateValue || ''} 
-          onChange={e => onChange(e.target.value)}
-        >
-          <option value="">-- Chọn {sys.name.toLowerCase()} --</option>
-          {options.map((opt: any) => (
-            <option key={opt.id} value={opt.code}>{opt.name}</option>
-          ))}
-        </select>
-      </div>
-    );
-  };
-
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#00A99D]"></div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#00A99D]"></div>
+          <span className="text-xs font-bold text-slate-500">Đang tải dữ liệu biểu mẫu...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 py-8 px-4 font-sans">
+    <div className="min-h-screen bg-slate-50/60 py-8 px-4 font-sans">
+      
       {/* MAIN CONTAINER */}
       <div className="max-w-5xl mx-auto space-y-6">
         
+        {/* TOP HEADER */}
+        <div className="flex items-center justify-between bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+          <div>
+            <Link 
+              href="/teacher/experiential-activities" 
+              className="text-xs font-bold text-[#00A99D] hover:underline flex items-center gap-1.5 mb-1"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Trở về danh sách hoạt động</span>
+            </Link>
+            <h1 className="text-2xl font-black text-slate-800 tracking-tight">Tạo Hoạt động Trải nghiệm & Dự án</h1>
+            <p className="text-xs text-slate-500 font-medium">Khai báo đầy đủ thông tin kế hoạch, chọn đối tượng và thiết lập đánh giá</p>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-2">
+            <button 
+              onClick={() => handleSubmit(true)}
+              disabled={isSubmitting}
+              className="px-4 py-2.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center gap-1.5"
+            >
+              <Save className="w-4 h-4" />
+              <span>Lưu nháp</span>
+            </button>
+            <button 
+              onClick={() => handleSubmit(false)}
+              disabled={isSubmitting}
+              className="px-5 py-2.5 bg-[#00A99D] text-white text-xs font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md flex items-center gap-1.5"
+            >
+              {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <span>Hoàn tất & Lưu</span>
+            </button>
+          </div>
+        </div>
+
         {/* Sticky Section Quick Nav */}
-        <div className="sticky top-4 z-20 bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between flex-wrap gap-2">
+        <div className="sticky top-4 z-20 bg-white/95 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             <button 
               onClick={() => scrollToSection('section-1')}
@@ -487,28 +468,26 @@ export default function CreateActivityWizard() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-2 ml-auto sm:hidden">
             <button 
               onClick={() => handleSubmit(true)}
               disabled={isSubmitting}
-              className="px-3.5 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl"
             >
-              <Save className="w-3.5 h-3.5" />
-              <span>Lưu nháp</span>
+              Lưu nháp
             </button>
             <button 
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-[#00A99D] text-white text-xs font-bold rounded-xl hover:bg-[#009085] transition-all shadow-sm flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-[#00A99D] text-white text-xs font-bold rounded-xl"
             >
-              {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-              <span>Hoàn tất & Lưu</span>
+              Lưu
             </button>
           </div>
         </div>
 
         {/* SECTION 1: Thông tin chung */}
-        <div id="section-1" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-20">
+        <div id="section-1" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
               <span className="w-7 h-7 bg-[#00A99D]/10 text-[#00A99D] rounded-lg flex items-center justify-center text-sm font-black">1</span>
@@ -592,14 +571,14 @@ export default function CreateActivityWizard() {
 
             {/* DYNAMIC FIELDS cho Step 1 */}
             {systemTypes
-              .filter((sys: any) => !IGNORED_TYPES.includes(sys.code) && !STEP3_TYPES.includes(sys.code) && !STEP5_TYPES.includes(sys.code) && sys.code !== 'GROU')
+              .filter((sys: any) => !IGNORED_TYPES.includes(sys?.code) && !STEP3_TYPES.includes(sys?.code) && !STEP5_TYPES.includes(sys?.code) && sys?.code !== 'GROU')
               .map((sys: any) => renderDynamicField(sys, info[sys.code], (val) => setInfo({...info, [sys.code]: val})))}
 
           </div>
         </div>
 
         {/* SECTION 2: Đối tượng tham gia */}
-        <div id="section-2" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-20">
+        <div id="section-2" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
               <span className="w-7 h-7 bg-[#00A99D]/10 text-[#00A99D] rounded-lg flex items-center justify-center text-sm font-black">2</span>
@@ -733,7 +712,7 @@ export default function CreateActivityWizard() {
                       }}
                     >
                       <option value="">-- Tất cả Khối --</option>
-                      {Array.from(new Set(allClasses.map((c: any) => c.grade).filter(Boolean)))
+                      {Array.from(new Set(safeClasses.map((c: any) => c?.grade).filter(Boolean)))
                         .sort((a: any, b: any) => Number(a) - Number(b))
                         .map((grade: any) => (
                           <option key={grade} value={grade}>Khối {grade}</option>
@@ -746,8 +725,8 @@ export default function CreateActivityWizard() {
                       onChange={e => setStudentFilterClass(e.target.value)}
                     >
                       <option value="">-- Tất cả Lớp --</option>
-                      {allClasses
-                        .filter((c: any) => !studentFilterLevel || String(c.grade) === String(studentFilterLevel))
+                      {safeClasses
+                        .filter((c: any) => !studentFilterLevel || String(c?.grade) === String(studentFilterLevel))
                         .map((cls: any) => (
                           <option key={cls.id} value={cls.id}>{cls.className}</option>
                         ))}
@@ -848,7 +827,7 @@ export default function CreateActivityWizard() {
         </div>
 
         {/* SECTION 3: Thiết lập kết quả mặc định */}
-        <div id="section-3" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-20">
+        <div id="section-3" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
               <span className="w-7 h-7 bg-[#00A99D]/10 text-[#00A99D] rounded-lg flex items-center justify-center text-sm font-black">3</span>
@@ -876,14 +855,14 @@ export default function CreateActivityWizard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
               {/* DYNAMIC FIELDS cho Step 3 */}
               {systemTypes
-                .filter((sys: any) => STEP3_TYPES.includes(sys.code))
+                .filter((sys: any) => STEP3_TYPES.includes(sys?.code))
                 .map((sys: any) => renderDynamicField(sys, defaults[sys.code], (val) => setDefaults({...defaults, [sys.code]: val})))}
             </div>
           )}
         </div>
 
         {/* SECTION 4: Kết quả cá nhân */}
-        <div id="section-4" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-20">
+        <div id="section-4" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
               <span className="w-7 h-7 bg-[#00A99D]/10 text-[#00A99D] rounded-lg flex items-center justify-center text-sm font-black">4</span>
@@ -925,8 +904,8 @@ export default function CreateActivityWizard() {
                           <div className="font-bold text-slate-700">{item.student.name} <span className="text-xs text-slate-400 font-normal">({item.student.code})</span></div>
                           <div className="text-xs text-slate-500 mt-1 flex gap-2">
                             {Object.entries(item.results).map(([key, val]) => {
-                              const sys = systemTypes.find((s: any) => s.code === key);
-                              const optName = getOptionsForType(key).find((o: any) => o.code === val)?.name || val;
+                              const sys = systemTypes.find((s: any) => s?.code === key);
+                              const optName = getOptionsForType(key).find((o: any) => o?.code === val)?.name || val;
                               return (
                                 <span key={key} className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">
                                   {sys?.name}: <strong className="text-slate-800">{optName}</strong>
@@ -983,7 +962,7 @@ export default function CreateActivityWizard() {
                     <label className="text-xs font-bold text-slate-700 block">2. Đánh giá riêng cho {selectedStudentForResult.fullName}</label>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {systemTypes
-                        .filter((sys: any) => STEP3_TYPES.includes(sys.code))
+                        .filter((sys: any) => STEP3_TYPES.includes(sys?.code))
                         .map((sys: any) => (
                           <div key={sys.code} className="space-y-1">
                             <label className="text-xs font-bold text-slate-600">{sys.name}</label>
@@ -992,7 +971,7 @@ export default function CreateActivityWizard() {
                               value={tempIndividualResults[sys.code] || defaults[sys.code] || ''}
                               onChange={e => setTempIndividualResults({ ...tempIndividualResults, [sys.code]: e.target.value })}
                             >
-                              <option value="">-- Chọn {sys.name.toLowerCase()} --</option>
+                              <option value="">-- Chọn {(sys.name || sys.code).toLowerCase()} --</option>
                               {getOptionsForType(sys.code).map((opt: any) => (
                                 <option key={opt.id} value={opt.code}>{opt.name}</option>
                               ))}
@@ -1070,7 +1049,6 @@ export default function CreateActivityWizard() {
         </div>
 
       </div>
-
     </div>
   );
 }
