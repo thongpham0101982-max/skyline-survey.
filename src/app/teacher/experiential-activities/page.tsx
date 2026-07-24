@@ -52,11 +52,13 @@ export default function ExperientialActivitiesList() {
       .catch(() => setLoading(false));
   }, []);
 
+  const [showAllYears, setShowAllYears] = useState(false);
+
   const filtered = activities.filter(a => {
     const matchesSearch = (a.name || '').toLowerCase().includes(search.toLowerCase()) ||
       (a.code || '').toLowerCase().includes(search.toLowerCase()) ||
       (a.catalogName || '').toLowerCase().includes(search.toLowerCase());
-    const matchesYear = selectedYearId ? a.academicYearId === selectedYearId : true;
+    const matchesYear = (selectedYearId && !showAllYears) ? a.academicYearId === selectedYearId : true;
     return matchesSearch && matchesYear;
   });
 

@@ -18,11 +18,11 @@ function getDefaultAcademicYearClient(years: any[]) {
   if (typeof window !== "undefined") {
     const stored = localStorage.getItem("selectedAcademicYear");
     if (stored) {
-      const year = years.find(y => y?.id === stored);
+      const year = years.find(y => y?.id === stored || y?.name === stored);
       if (year) return year;
     }
   }
-  return years.find(y => y?.status === 'ACTIVE' && !y?.isOff) || years.find(y => !y?.isOff) || years[0];
+  return years.find(y => y?.status === 'ACTIVE') || years[0];
 }
 
 function getAbbreviation(str: string) {
