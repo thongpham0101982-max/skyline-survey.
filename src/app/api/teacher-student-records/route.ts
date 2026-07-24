@@ -591,18 +591,39 @@ export async function GET(req: Request) {
 
       const categories = await prisma.activityCategory.findMany();
 
+      const roleDict: Record<string, string> = {
+        TGIA: "Tham gia",
+        TV: "Thành viên",
+        NT: "Nhóm trưởng",
+        PNT: "Phó nhóm trưởng",
+        BTC: "Ban tổ chức"
+      };
+
+      const evalDict: Record<string, string> = {
+        XS: "Xuất sắc",
+        TO: "Tốt",
+        DA: "Đạt",
+        KDA: "Chưa đạt",
+        EXCELLENT: "Xuất sắc",
+        GOOD: "Tốt",
+        SATISFACTORY: "Đạt"
+      };
+
       const experientialActivities = activityParticipants.map((p, idx) => {
         const roleCat = categories.find(c => c.id === p.roleId || c.code === p.roleId);
         const evalCat = categories.find(c => c.id === p.evalLevelId || c.code === p.evalLevelId);
         const groupCat = categories.find(c => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId);
+
+        const resolvedRole = roleCat?.name || roleDict[p.roleId] || p.roleId || "Tham gia";
+        const resolvedEval = evalCat?.name || evalDict[p.evalLevelId] || p.evalLevelId || "Đạt";
 
         return {
           id: p.id,
           stt: idx + 1,
           activityName: p.record?.name || p.record?.catalog?.name || "Hoạt động trải nghiệm",
           groupName: groupCat?.name || p.record?.catalog?.group?.name || "Chưa phân loại",
-          role: roleCat?.name || p.roleId || "Tham gia",
-          evalLevel: evalCat?.name || p.evalLevelId || "Đạt",
+          role: resolvedRole,
+          evalLevel: resolvedEval,
           date: p.record?.date ? p.record.date.toISOString().split('T')[0] : ''
         };
       });
