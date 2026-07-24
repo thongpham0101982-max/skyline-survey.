@@ -58,7 +58,7 @@ export default function CreateActivityWizard() {
   
   // Dynamic form states
   const [info, setInfo] = useState<Record<string, any>>({ 
-    name: '', academicYear: '2025-2026', date: '', semester: '1' 
+    name: '', academicYear: '', date: '', semester: '1' 
   });
   const [targetMode, setTargetMode] = useState<'class' | 'student'>('class');
   const [studentSearch, setStudentSearch] = useState('');

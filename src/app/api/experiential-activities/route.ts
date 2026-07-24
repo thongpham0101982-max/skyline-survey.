@@ -59,6 +59,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Vui lòng điền Tên hoạt động và Năm học' }, { status: 400 });
     }
 
+    // Resolve valid AcademicYear ID to satisfy SQLite Foreign Key constraint
+    let yearRecord = await prisma.academicYear.findFirst({
+      where: { OR: [{ id: info.academicYear }, { name: info.academicYear }] }
+    });
+    if (!yearRecord) {
+      yearRecord = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
+    }
+    if (!yearRecord) {
+      return NextResponse.json({ error: 'Không tìm thấy dữ liệu Năm học hợp lệ' }, { status: 400 });
+    }
+    const validAcademicYearId = yearRecord.id;
+
     const fallbackCategory = await prisma.activityCategory.findFirst({ where: { status: 'ACTIVE' } });
     const fallbackCatId = fallbackCategory?.id || 'default-category';
 
@@ -115,7 +127,7 @@ export async function POST(req: Request) {
         catalogId: catalog.id,
         date: info.date ? new Date(info.date) : new Date(),
         semester: parseInt(info.semester) || 1,
-        academicYearId: info.academicYear,
+        academicYearId: validAcademicYearId,
         levelId: info.LEVEL || null,
         formatId: info.FORMAT || null,
         organizerId: info.ORGANIZER || null,
