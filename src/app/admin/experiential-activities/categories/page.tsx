@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Edit2, Trash2, Plus, Save, X, Search, CheckCircle2, ChevronRight, Settings, FolderTree, LayoutGrid } from 'lucide-react';
+import { ExperientialTabs } from '@/components/ExperientialTabs';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState([]);
@@ -119,6 +120,7 @@ export default function CategoriesPage() {
   return (
     <div className="min-h-screen bg-slate-50/50 p-4 lg:p-8 font-sans">
       <div className="max-w-7xl mx-auto space-y-6">
+        <ExperientialTabs activeTab="categories" />
         
         {/* HEADER */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
