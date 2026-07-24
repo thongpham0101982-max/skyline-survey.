@@ -225,6 +225,8 @@ export default function CreateActivityWizard() {
   const availableGrades = Array.from(new Set(allClasses.filter(c => target.levels.includes(c.level)).map(c => c.grade))).sort((a,b) => parseInt(a) - parseInt(b));
   const availableClasses = allClasses.filter(c => target.grades.includes(c.grade)).sort((a,b) => a.className.localeCompare(b.className));
 
+  const displayedStudents = studentSearch.trim().length >= 2 ? searchResults : (studentFilterClass ? classStudents : []);
+
   useEffect(() => {
     if (info.academicYear) {
       const yearParts = info.academicYear.split('-');
@@ -810,19 +812,19 @@ export default function CreateActivityWizard() {
                               type="text" 
                               placeholder="Gõ tên hoặc mã học sinh để tìm..." 
                               className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block pl-10 pr-4 py-3 transition-all"
-                              value={studentQuery}
-                              onChange={e => setStudentQuery(e.target.value)}
+                              value={studentSearch}
+                              onChange={e => setStudentSearch(e.target.value)}
                             />
                             {isSearching && <Loader2 className="w-4 h-4 absolute right-3.5 top-3.5 text-[#00A99D] animate-spin" />}
                           </div>
 
                           <div className="border border-slate-200 rounded-2xl max-h-60 overflow-y-auto divide-y divide-slate-100 bg-white">
-                            {searchResults.length === 0 ? (
+                            {displayedStudents.length === 0 ? (
                               <div className="p-4 text-center text-xs text-slate-400 italic">
-                                {studentQuery.trim().length > 0 ? (isSearching ? 'Đang tìm kiếm...' : 'Không tìm thấy học sinh nào') : 'Chọn Lớp hoặc nhập từ khóa để tìm học sinh'}
+                                {studentSearch.trim().length > 0 ? (isSearching ? 'Đang tìm kiếm...' : 'Không tìm thấy học sinh nào') : 'Chọn Lớp hoặc nhập từ khóa để tìm học sinh'}
                               </div>
                             ) : (
-                              searchResults.map(st => {
+                              displayedStudents.map(st => {
                                 const isAdded = (target.specificStudents || []).includes(st.id);
                                 return (
                                   <div key={st.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-all">
