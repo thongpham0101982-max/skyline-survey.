@@ -138,7 +138,7 @@ export default function ExperientialActivitiesList() {
                 className="px-4 py-2 bg-[#00A99D]/10 text-[#00A99D] font-bold text-xs rounded-xl hover:bg-[#00A99D]/20 transition-all inline-flex items-center gap-1.5"
               >
                 <Calendar className="w-4 h-4" />
-                <span>Xem tất cả năm học (${activities.length} hoạt động)</span>
+                <span>Xem tất cả năm học ({activities.length} hoạt động)</span>
               </button>
             )}
           </div>
