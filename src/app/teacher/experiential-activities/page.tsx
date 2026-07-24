@@ -93,16 +93,27 @@ export default function ExperientialActivitiesList() {
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative max-w-sm">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Tìm theo tên, mã hoạt động..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all shadow-sm"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="relative max-w-sm flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Tìm theo tên, mã hoạt động..."
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all shadow-sm"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={() => setShowAllYears(!showAllYears)}
+            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-2 " + 
+              (showAllYears ? "bg-[#00A99D] text-white border-[#00A99D]" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>{showAllYears ? 'Đang hiện tất cả năm học' : 'Lọc theo năm học chọn'}</span>
+          </button>
         </div>
 
         {/* List */}
@@ -111,14 +122,25 @@ export default function ExperientialActivitiesList() {
             <div className="w-8 h-8 border-4 border-[#00A99D] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-2xl py-20 text-center border border-slate-200/60 shadow-sm">
-            <div className="w-16 h-16 bg-slate-50 rounded-2xl mx-auto flex items-center justify-center mb-4">
+          <div className="bg-white rounded-2xl py-16 text-center border border-slate-200/60 shadow-sm space-y-4">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl mx-auto flex items-center justify-center">
               <Activity className="w-8 h-8 text-slate-300" />
             </div>
-            <h3 className="text-lg font-bold text-slate-700">{search ? 'Không tìm thấy kết quả' : 'Chưa có hoạt động nào'}</h3>
-            <p className="text-slate-400 mt-1 text-sm font-medium">
-              {search ? `Không có hoạt động nào khớp với "${search}"` : 'Bắt đầu bằng cách tạo hoạt động mới.'}
-            </p>
+            <div>
+              <h3 className="text-lg font-bold text-slate-700">{search ? 'Không tìm thấy kết quả' : 'Chưa có hoạt động nào trong năm học này'}</h3>
+              <p className="text-slate-400 mt-1 text-sm font-medium">
+                {search ? `Không có hoạt động nào khớp với "${search}"` : (activities.length > 0 ? `Có ${activities.length} hoạt động thuộc các năm học khác.` : 'Bắt đầu bằng cách tạo hoạt động mới.')}
+              </p>
+            </div>
+            {activities.length > 0 && !showAllYears && (
+              <button 
+                onClick={() => setShowAllYears(true)}
+                className="px-4 py-2 bg-[#00A99D]/10 text-[#00A99D] font-bold text-xs rounded-xl hover:bg-[#00A99D]/20 transition-all inline-flex items-center gap-1.5"
+              >
+                <Calendar className="w-4 h-4" />
+                <span>Xem tất cả năm học (${activities.length} hoạt động)</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

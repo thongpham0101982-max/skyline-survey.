@@ -94,8 +94,16 @@ export default function CreateActivityWizard() {
         const yearList = Array.isArray(data) ? data : [];
         setAcademicYears(yearList);
         if (yearList.length > 0) {
-          const defaultYear = getDefaultAcademicYearClient(yearList);
-          setInfo(prev => ({ ...prev, academicYear: defaultYear ? defaultYear.id : yearList[0].id }));
+          let selectedYear = getDefaultAcademicYearClient(yearList);
+          if (typeof window !== "undefined") {
+            const stored = localStorage.getItem("selectedAcademicYear");
+            if (stored) {
+              const matched = yearList.find((y: any) => y.id === stored || y.name === stored);
+              if (matched) selectedYear = matched;
+            }
+          }
+          const finalYearId = selectedYear ? selectedYear.id : yearList[0].id;
+          setInfo(prev => ({ ...prev, academicYear: finalYearId }));
         }
       })
       .catch(console.error);
