@@ -343,19 +343,19 @@ export default function CreateActivityWizard() {
           }
         }
       }
-    } else if (step === 2) {
+
       if (targetMode === 'class') {
         if (!target.classes || target.classes.length === 0) {
-          alert('Vui lòng chọn ít nhất một lớp học!');
+          alert('Vui lòng chọn ít nhất một lớp học ở phần Đối tượng tham gia!');
           return;
         }
       } else if (targetMode === 'student') {
         if (!target.specificStudents || target.specificStudents.length === 0) {
-          alert('Vui lòng chọn ít nhất một học sinh!');
+          alert('Vui lòng chọn ít nhất một học sinh ở phần Đối tượng tham gia!');
           return;
         }
       }
-    } else if (step === 3) {
+    } else if (step === 2) {
       if (defaults.allParticipate) {
         const step3Fields = systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code));
         for (const sys of step3Fields) {
@@ -411,14 +411,14 @@ export default function CreateActivityWizard() {
 
     if (targetMode === 'class') {
       if (!target.classes || target.classes.length === 0) {
-        alert('Vui lòng chọn ít nhất một lớp học ở bước đối tượng!');
-        setStep(2);
+        alert('Vui lòng chọn ít nhất một lớp học ở phần Đối tượng tham gia!');
+        setStep(1);
         return;
       }
     } else if (targetMode === 'student') {
       if (!target.specificStudents || target.specificStudents.length === 0) {
-        alert('Vui lòng chọn ít nhất một học sinh ở bước đối tượng!');
-        setStep(2);
+        alert('Vui lòng chọn ít nhất một học sinh ở phần Đối tượng tham gia!');
+        setStep(1);
         return;
       }
     }
@@ -430,7 +430,7 @@ export default function CreateActivityWizard() {
         if (options && options.length > 0) {
           if (!defaults[sys.code]) {
             alert(`Vui lòng chọn ${sys.name} mặc định ở bước thiết lập!`);
-            setStep(3);
+            setStep(2);
             return;
           }
         }
@@ -463,11 +463,11 @@ export default function CreateActivityWizard() {
 
 
   const steps = [
-    { id: 1, title: 'Thông tin chung', icon: Info, desc: 'Kế hoạch & phân loại' },
-    { id: 2, title: 'Đối tượng', icon: Users, desc: 'Phạm vi tham gia' },
-    { id: 3, title: 'Thiết lập', icon: Settings, desc: 'Đánh giá mặc định' },
-    { id: 4, title: 'Kết quả', icon: CheckSquare, desc: 'Kết quả cá nhân' },
-    ];
+    { id: 1, title: 'Thông tin & Đối tượng', icon: Info, desc: 'Kế hoạch & Phạm vi tham gia' },
+    { id: 2, title: 'Thiết lập', icon: Settings, desc: 'Đánh giá mặc định' },
+    { id: 3, title: 'Kết quả', icon: CheckSquare, desc: 'Kết quả cá nhân' },
+  ];
+
 
   const getOptionsForType = (typeCode: string) => {
     return categories
@@ -559,326 +559,353 @@ export default function CreateActivityWizard() {
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200/60 overflow-hidden relative min-h-[500px] flex flex-col">
           <div className="p-6 md:p-8 flex-1">
             
-            {/* Step 1: Info */}
+            {/* Step 1: Info & Target */}
             {step === 1 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="border-b border-slate-100 pb-4 mb-6">
-                  <h2 className="text-lg font-black text-slate-800">1. Thông tin chung</h2>
-                  <p className="text-sm text-slate-500 font-medium">Chọn hoạt động và các thuộc tính phân loại</p>
-                </div>
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-sm font-bold text-slate-700">Nhóm hoạt động <span className="text-rose-500">*</span></label>
-                    <select 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.GROU || ''} 
-                      onChange={e => setInfo({...info, GROU: e.target.value})}
-                    >
-                      <option value="">-- Chọn nhóm hoạt động --</option>
-                      {getOptionsForType('GROU').map((opt: any) => (
-                        <option key={opt.id} value={opt.code}>{opt.name}</option>
-                      ))}
-                    </select>
+                {/* SECTION 1: Thông tin chung */}
+                <div className="space-y-6">
+                  <div className="border-b border-slate-100 pb-4 mb-6">
+                    <h2 className="text-lg font-black text-slate-800">1. Thông tin chung</h2>
+                    <p className="text-sm text-slate-500 font-medium">Chọn hoạt động và các thuộc tính phân loại</p>
                   </div>
                   
-                  <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-sm font-bold text-slate-700">Tên hoạt động <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="text"
-                      placeholder="Nhập tên hoạt động cụ thể..."
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.name || ''} 
-                      onChange={e => setInfo({...info, name: e.target.value})}
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700">Năm học <span className="text-rose-500">*</span></label>
-                    <select 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.academicYear} 
-                      onChange={e => setInfo({...info, academicYear: e.target.value})}
-                    >
-                      {academicYears.length === 0 && <option value="">Đang tải...</option>}
-                      {academicYears.map(year => (
-                        <option key={year.id} value={year.id}>{year.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700">Mã hoạt động (Tự sinh)</label>
-                    <input 
-                      type="text" 
-                      readOnly
-                      className="w-full bg-slate-100 border-0 ring-1 ring-slate-200 text-[#00A99D] text-sm font-black rounded-xl block p-3.5 opacity-80 cursor-not-allowed"
-                      value={generatedCode} 
-                    />
-                  </div>
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700">Ngày tổ chức <span className="text-rose-500">*</span></label>
-                    <input 
-                      type="date" 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.date} 
-                      onChange={e => setInfo({...info, date: e.target.value})} 
-                    />
-                  </div>
-
-                  
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-bold text-slate-700">Học kỳ</label>
-                    <select 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                      value={info.semester} 
-                      onChange={e => setInfo({...info, semester: e.target.value})}
-                    >
-                      <option value="1">Học kỳ 1</option>
-                      <option value="2">Học kỳ 2</option>
-                      <option value="3">Học kỳ Hè</option>
-                    </select>
-                  </div>
-
-                  {/* DYNAMIC FIELDS cho Step 1 */}
-                  {systemTypes
-                    .filter((sys: any) => !IGNORED_TYPES.includes(sys.code) && !STEP3_TYPES.includes(sys.code) && !STEP5_TYPES.includes(sys.code) && sys.code !== 'GROU')
-                    .map((sys: any) => renderDynamicField(sys, info[sys.code], (val) => setInfo({...info, [sys.code]: val})))}
-
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Target */}
-            {step === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                <div className="border-b border-slate-100 pb-4 mb-6">
-                  <h2 className="text-lg font-black text-slate-800">2. Đối tượng tham gia</h2>
-                  <p className="text-sm text-slate-500 font-medium">Phạm vi học sinh tham gia hoạt động này</p>
-                </div>
-                
-                {/* Tabs */}
-                <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full max-w-sm mb-6">
-                  <button
-                    onClick={() => setTargetMode('class')}
-                    className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'class' ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                  >
-                    Theo Khối/Lớp
-                  </button>
-                  <button
-                    onClick={() => setTargetMode('student')}
-                    className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'student' ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-700")}
-                  >
-                    Theo Học sinh lẻ
-                  </button>
-                </div>
-
-                {targetMode === 'class' && (
-                  <div className="space-y-6 max-w-2xl animate-in fade-in duration-300">
-                    {/* Bậc học */}
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700">1. Chọn Bậc học</label>
-                      <div className="flex flex-wrap gap-2">
-                        {availableLevels.map(lvl => (
-                          <button
-                            key={lvl.id}
-                            onClick={() => {
-                              const isSelected = lvl.originalLevels.some((l: any) => target.levels.includes(l));
-                              const newLevels = isSelected
-                                ? target.levels.filter((l: any) => !lvl.originalLevels.includes(l))
-                                : [...target.levels, ...lvl.originalLevels];
-                              setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
-                            }}
-                            className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (lvl.originalLevels.some((l: any) => target.levels.includes(l)) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
-                          >
-                            {lvl.name}
-                          </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-sm font-bold text-slate-700">Nhóm hoạt động <span className="text-rose-500">*</span></label>
+                      <select 
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                        value={info.GROU || ''} 
+                        onChange={e => setInfo({...info, GROU: e.target.value})}
+                      >
+                        <option value="">-- Chọn nhóm hoạt động --</option>
+                        {getOptionsForType('GROU').map((opt: any) => (
+                          <option key={opt.id} value={opt.code}>{opt.name}</option>
                         ))}
-                      </div>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-1.5 md:col-span-2">
+                      <label className="text-sm font-bold text-slate-700">Tên hoạt động <span className="text-rose-500">*</span></label>
+                      <input 
+                        type="text"
+                        placeholder="Nhập tên hoạt động cụ thể..."
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                        value={info.name || ''} 
+                        onChange={e => setInfo({...info, name: e.target.value})}
+                      />
                     </div>
 
-                    {/* Khối */}
-                    <div className={"space-y-2 transition-all duration-300 " + (target.levels.length === 0 ? 'opacity-50 grayscale pointer-events-none' : '')}>
-                      <label className="text-sm font-bold text-slate-700">2. Chọn Khối</label>
-                      {target.levels.length === 0 ? (
-                        <div className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100">Vui lòng chọn Bậc học để xem danh sách Khối.</div>
-                      ) : (
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700">Năm học <span className="text-rose-500">*</span></label>
+                      <select 
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                        value={info.academicYear} 
+                        onChange={e => setInfo({...info, academicYear: e.target.value})}
+                      >
+                        {academicYears.length === 0 && <option value="">Đang tải...</option>}
+                        {academicYears.map(year => (
+                          <option key={year.id} value={year.id}>{year.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700">Mã hoạt động (Tự sinh)</label>
+                      <input 
+                        type="text" 
+                        readOnly
+                        className="w-full bg-slate-100 border-0 ring-1 ring-slate-200 text-[#00A99D] text-sm font-black rounded-xl block p-3.5 opacity-80 cursor-not-allowed"
+                        value={generatedCode} 
+                      />
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700">Ngày tổ chức <span className="text-rose-500">*</span></label>
+                      <input 
+                        type="date" 
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                        value={info.date} 
+                        onChange={e => setInfo({...info, date: e.target.value})} 
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-slate-700">Học kỳ</label>
+                      <select 
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                        value={info.semester} 
+                        onChange={e => setInfo({...info, semester: e.target.value})}
+                      >
+                        <option value="1">Học kỳ 1</option>
+                        <option value="2">Học kỳ 2</option>
+                        <option value="3">Học kỳ Hè</option>
+                      </select>
+                    </div>
+
+                    {/* DYNAMIC FIELDS cho Step 1 */}
+                    {systemTypes
+                      .filter((sys: any) => !IGNORED_TYPES.includes(sys.code) && !STEP3_TYPES.includes(sys.code) && !STEP5_TYPES.includes(sys.code) && sys.code !== 'GROU')
+                      .map((sys: any) => renderDynamicField(sys, info[sys.code], (val) => setInfo({...info, [sys.code]: val})))}
+
+                  </div>
+                </div>
+
+                {/* SECTION 2: Đối tượng tham gia */}
+                <div className="space-y-6 pt-4 border-t border-slate-200/80">
+                  <div className="border-b border-slate-100 pb-4 mb-6">
+                    <h2 className="text-lg font-black text-slate-800">2. Đối tượng tham gia <span className="text-rose-500">*</span></h2>
+                    <p className="text-sm text-slate-500 font-medium">Phạm vi học sinh tham gia hoạt động này</p>
+                  </div>
+                  
+                  {/* Tabs */}
+                  <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full max-w-sm mb-6">
+                    <button
+                      onClick={() => setTargetMode('class')}
+                      className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'class' ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                    >
+                      Theo Khối/Lớp
+                    </button>
+                    <button
+                      onClick={() => setTargetMode('student')}
+                      className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'student' ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                    >
+                      Theo Học sinh lẻ
+                    </button>
+                  </div>
+
+                  {targetMode === 'class' && (
+                    <div className="space-y-6 max-w-2xl animate-in fade-in duration-300">
+                      {/* Bậc học */}
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700">1. Chọn Bậc học</label>
                         <div className="flex flex-wrap gap-2">
-                          {availableGrades.map(grade => (
+                          {availableLevels.map(lvl => (
                             <button
-                              key={grade}
+                              key={lvl.id}
                               onClick={() => {
-                                const newGrades = target.grades.includes(grade)
-                                  ? target.grades.filter((g: any) => g !== grade)
-                                  : [...target.grades, grade];
-                                setTarget({ ...target, grades: newGrades, classes: [] });
+                                const isSelected = lvl.originalLevels.some((l: any) => target.levels.includes(l));
+                                const newLevels = isSelected
+                                  ? target.levels.filter((l: any) => !lvl.originalLevels.includes(l))
+                                  : [...target.levels, ...lvl.originalLevels];
+                                setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
                               }}
-                              className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (target.grades.includes(grade) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                              className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (lvl.originalLevels.some((l: any) => target.levels.includes(l)) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                             >
-                              Khối {grade}
+                              {lvl.name}
                             </button>
                           ))}
                         </div>
-                      )}
-                    </div>
-
-                    {/* Lớp */}
-                    <div className={"space-y-2 transition-all duration-300 " + (target.grades.length === 0 ? 'opacity-50 grayscale pointer-events-none' : '')}>
-                      <label className="text-sm font-bold text-slate-700 flex justify-between">
-                        <span>3. Chọn Lớp</span>
-                        {target.grades.length > 0 && (
-                          <button 
-                            className="text-[#00A99D] text-xs font-semibold hover:underline"
-                            onClick={() => {
-                              const allClasses = availableClasses.map(c => c.id);
-                              setTarget({ ...target, classes: allClasses });
-                            }}
-                          >
-                            Chọn tất cả lớp
-                          </button>
-                        )}
-                      </label>
-                      {target.grades.length === 0 ? (
-                        <div className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100">Vui lòng chọn Khối để xem danh sách Lớp.</div>
-                      ) : (
-                        <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                          {availableClasses.map(cls => (
-                            <button
-                              key={cls.id}
-                              onClick={() => {
-                                const newClasses = target.classes.includes(cls.id)
-                                  ? target.classes.filter((c: any) => c !== cls.id)
-                                  : [...target.classes, cls.id];
-                                setTarget({ ...target, classes: newClasses });
-                              }}
-                              className={"px-3 py-1.5 rounded-lg border text-sm font-bold transition-all " + (target.classes.includes(cls.id) ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
-                            >{cls.className}</button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {targetMode === 'student' && (
-                  <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
-                    <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex gap-3">
-                      <Info className="w-5 h-5 text-blue-500 shrink-0" />
-                      <p className="text-sm text-blue-800 font-medium">Chế độ này cho phép bạn chọn đích danh học sinh tham gia từ bất kỳ lớp nào (thường dùng cho CLB, đội tuyển, ...). Học sinh được chọn ở đây sẽ ghi đè lên thiết lập Khối/Lớp bên tab kia.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      {/* Cột trái: Tìm kiếm */}
-                      <div className="space-y-3">
-
-                        {/* Chọn Khối / Lớp */}
-                        <div className="flex gap-2 mb-2">
-                          <select 
-                            className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
-                            value={studentFilterLevel}
-                            onChange={e => {
-                              setStudentFilterLevel(e.target.value);
-                              setStudentFilterClass('');
-                            }}
-                          >
-                            <option value="">-- Chọn Khối --</option>
-                            {availableLevels.map((lvl: any) => (
-                              <option key={lvl.id} value={lvl.id}>{lvl.name}</option>
-                            ))}
-                          </select>
-                          <select 
-                            className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
-                            value={studentFilterClass}
-                            onChange={e => setStudentFilterClass(e.target.value)}
-                            disabled={!studentFilterLevel}
-                          >
-                            <option value="">-- Chọn Lớp --</option>
-                            {allClasses
-                              .filter(c => {
-                                const levelDef = availableLevels.find((l: any) => l.id === studentFilterLevel);
-                                return levelDef && levelDef.originalLevels.includes(c.level);
-                              })
-                              .map(c => (
-                                <option key={c.id} value={c.id}>{c.className}</option>
-                              ))}
-                          </select>
-                        </div>
-                        <label className="text-sm font-bold text-slate-700">Tìm và thêm học sinh</label>
-                        <div className="relative">
-                          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
-                          <input 
-                            type="text"
-                            placeholder="Gõ tên hoặc mã HS..."
-                            className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 pl-11 transition-all"
-                            value={studentSearch}
-                            onChange={e => setStudentSearch(e.target.value)}
-                          />
-                        </div>
-                        
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden max-h-[300px] overflow-y-auto">
-                          {(studentFilterClass ? classStudents : searchResults).map(student => (
-                            <div key={student.id} className="flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 transition-colors last:border-0">
-                              <div>
-                                <div className="text-sm font-bold text-slate-800">{student.name}</div>
-                                <div className="text-xs font-medium text-slate-500">{student.code} • {student.class?.className}</div>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  if (!target.specificStudents.includes(student.id)) {
-                                    setTarget({...target, specificStudents: [...target.specificStudents, student.id]}); if (!selectedStudentsData.find(s => s.id === student.id)) setSelectedStudentsData([...selectedStudentsData, student]);
-                                  }
-                                }}
-                                disabled={target.specificStudents.includes(student.id)}
-                                className={"px-3 py-1.5 text-xs font-bold rounded-lg transition-all " + (target.specificStudents.includes(student.id) ? "bg-slate-100 text-slate-400" : "bg-[#00A99D]/10 text-[#00A99D] hover:bg-[#00A99D]/20")}
-                              >
-                                {target.specificStudents.includes(student.id) ? 'Đã thêm' : 'Thêm'}
-                              </button>
-                            </div>
-                          ))}
-                        </div>
                       </div>
 
-                      {/* Cột phải: Danh sách đã chọn */}
-                      <div className="space-y-3">
-                        <label className="text-sm font-bold text-slate-700 flex justify-between items-center">
-                          <span>Danh sách đã chọn ({target.specificStudents.length})</span>
-                          {target.specificStudents.length > 0 && (
-                            <button onClick={() => { setTarget({...target, specificStudents: []}); setSelectedStudentsData([]); }} className="text-xs text-rose-500 hover:underline">Xóa tất cả</button>
+                      {/* Khối */}
+                      <div className={"space-y-2 transition-all duration-300 " + (target.levels.length === 0 ? 'opacity-50 grayscale pointer-events-none' : '')}>
+                        <label className="text-sm font-bold text-slate-700">2. Chọn Khối</label>
+                        {target.levels.length === 0 ? (
+                          <div className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100">Vui lòng chọn Bậc học để xem danh sách Khối.</div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {availableGrades.map(grade => (
+                              <button
+                                key={grade}
+                                onClick={() => {
+                                  const newGrades = target.grades.includes(grade)
+                                    ? target.grades.filter((g: any) => g !== grade)
+                                    : [...target.grades, grade];
+                                  setTarget({ ...target, grades: newGrades, classes: [] });
+                                }}
+                                className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (target.grades.includes(grade) ? "bg-[#00A99D]/10 border-[#00A99D] text-[#00A99D] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                              >
+                                Khối {grade}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Lớp */}
+                      <div className={"space-y-2 transition-all duration-300 " + (target.grades.length === 0 ? 'opacity-50 grayscale pointer-events-none' : '')}>
+                        <label className="text-sm font-bold text-slate-700 flex justify-between">
+                          <span>3. Chọn Lớp</span>
+                          {target.grades.length > 0 && (
+                            <button 
+                              className="text-[#00A99D] text-xs font-semibold hover:underline"
+                              onClick={() => {
+                                const allClasses = availableClasses.map(c => c.id);
+                                setTarget({ ...target, classes: allClasses });
+                              }}
+                            >
+                              Chọn tất cả lớp
+                            </button>
                           )}
                         </label>
-                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-2 min-h-[300px] flex flex-col gap-2">
-                          {target.specificStudents.length === 0 ? (
-                            <div className="flex-1 flex items-center justify-center text-sm font-medium text-slate-400 italic">Chưa có học sinh nào</div>
-                          ) : (
-                            target.specificStudents.map(id => {
-                              const s = selectedStudentsData.find(x => x.id === id);
-                              if (!s) return null;
-                              return (
-                                <div key={s.id} className="flex items-center justify-between p-2 bg-white rounded-lg border border-slate-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
-                                  <div>
-                                    <div className="text-sm font-bold text-slate-700">{s.name}</div>
-                                    <div className="text-xs font-medium text-slate-500">{s.code} • {s.class?.className || (typeof s.class === "string" ? s.class : "")}</div>
+                        {target.grades.length === 0 ? (
+                          <div className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-100">Vui lòng chọn Khối để xem danh sách Lớp.</div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                            {availableClasses.map(cls => (
+                              <button
+                                key={cls.id}
+                                onClick={() => {
+                                  const newClasses = target.classes.includes(cls.id)
+                                    ? target.classes.filter((c: any) => c !== cls.id)
+                                    : [...target.classes, cls.id];
+                                  setTarget({ ...target, classes: newClasses });
+                                }}
+                                className={"px-3 py-1.5 rounded-lg border text-sm font-bold transition-all " + (target.classes.includes(cls.id) ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                              >{cls.className}</button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {targetMode === 'student' && (
+                    <div className="space-y-6 animate-in fade-in slide-in-from-left-4 duration-300">
+                      <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 flex gap-3">
+                        <Info className="w-5 h-5 text-blue-500 shrink-0" />
+                        <p className="text-sm text-blue-800 font-medium">Chế độ này cho phép bạn chọn đích danh học sinh tham gia từ bất kỳ lớp nào (thường dùng cho CLB, đội tuyển, ...). Học sinh được chọn ở đây sẽ ghi đè lên thiết lập Khối/Lớp bên tab kia.</p>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Cột trái: Tìm kiếm */}
+                        <div className="space-y-3">
+
+                          {/* Chọn Khối / Lớp */}
+                          <div className="flex gap-2 mb-2">
+                            <select 
+                              className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
+                              value={studentFilterLevel}
+                              onChange={e => {
+                                setStudentFilterLevel(e.target.value);
+                                setStudentFilterClass('');
+                              }}
+                            >
+                              <option value="">-- Tất cả Khối --</option>
+                              {Array.from(new Set(allClasses.map((c: any) => c.grade).filter(Boolean)))
+                                .sort((a: any, b: any) => Number(a) - Number(b))
+                                .map((grade: any) => (
+                                  <option key={grade} value={grade}>Khối {grade}</option>
+                                ))}
+                            </select>
+
+                            <select 
+                              className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
+                              value={studentFilterClass}
+                              onChange={e => setStudentFilterClass(e.target.value)}
+                            >
+                              <option value="">-- Tất cả Lớp --</option>
+                              {allClasses
+                                .filter((c: any) => !studentFilterLevel || String(c.grade) === String(studentFilterLevel))
+                                .map((cls: any) => (
+                                  <option key={cls.id} value={cls.id}>{cls.className}</option>
+                                ))}
+                            </select>
+                          </div>
+
+                          <div className="relative">
+                            <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+                            <input 
+                              type="text" 
+                              placeholder="Gõ tên hoặc mã học sinh để tìm..." 
+                              className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block pl-10 pr-4 py-3 transition-all"
+                              value={studentQuery}
+                              onChange={e => setStudentQuery(e.target.value)}
+                            />
+                            {isSearching && <Loader2 className="w-4 h-4 absolute right-3.5 top-3.5 text-[#00A99D] animate-spin" />}
+                          </div>
+
+                          <div className="border border-slate-200 rounded-2xl max-h-60 overflow-y-auto divide-y divide-slate-100 bg-white">
+                            {searchResults.length === 0 ? (
+                              <div className="p-4 text-center text-xs text-slate-400 italic">
+                                {studentQuery.trim().length > 0 ? (isSearching ? 'Đang tìm kiếm...' : 'Không tìm thấy học sinh nào') : 'Chọn Lớp hoặc nhập từ khóa để tìm học sinh'}
+                              </div>
+                            ) : (
+                              searchResults.map(st => {
+                                const isAdded = (target.specificStudents || []).includes(st.id);
+                                return (
+                                  <div key={st.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-all">
+                                    <div>
+                                      <div className="text-sm font-bold text-slate-700">{st.fullName}</div>
+                                      <div className="text-xs text-slate-400">{st.studentCode} • Lớp {st.className}</div>
+                                    </div>
+                                    <button 
+                                      onClick={() => {
+                                        if (isAdded) {
+                                          setTarget({ ...target, specificStudents: target.specificStudents.filter((id: string) => id !== st.id) });
+                                          setSelectedStudentsData(prev => prev.filter(s => s.id !== st.id));
+                                        } else {
+                                          setTarget({ ...target, specificStudents: [...(target.specificStudents || []), st.id] });
+                                          setSelectedStudentsData(prev => [...prev, st]);
+                                        }
+                                      }}
+                                      className={"px-3 py-1 rounded-lg text-xs font-bold transition-all " + (isAdded ? "bg-rose-50 text-rose-600 hover:bg-rose-100" : "bg-[#00A99D]/10 text-[#00A99D] hover:bg-[#00A99D]/20")}
+                                    >
+                                      {isAdded ? 'Bỏ chọn' : '+ Chọn'}
+                                    </button>
                                   </div>
-                                  <button onClick={() => { setTarget({...target, specificStudents: target.specificStudents.filter(x => x !== s.id)}); setSelectedStudentsData(selectedStudentsData.filter(x => x.id !== s.id)); }} className="p-1.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-md transition-colors">
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Cột phải: Đã chọn */}
+                        <div className="space-y-3">
+                          <label className="text-sm font-bold text-slate-700 flex justify-between items-center">
+                            <span>Đã chọn ({selectedStudentsData.length} học sinh)</span>
+                            {selectedStudentsData.length > 0 && (
+                              <button 
+                                onClick={() => {
+                                  setTarget({ ...target, specificStudents: [] });
+                                  setSelectedStudentsData([]);
+                                }} 
+                                className="text-xs text-rose-500 hover:underline font-semibold"
+                              >
+                                Xóa tất cả
+                              </button>
+                            )}
+                          </label>
+
+                          <div className="border border-slate-200 rounded-2xl max-h-72 overflow-y-auto divide-y divide-slate-100 bg-white">
+                            {selectedStudentsData.length === 0 ? (
+                              <div className="p-8 text-center text-xs text-slate-400 italic">Chưa có học sinh nào được chọn.</div>
+                            ) : (
+                              selectedStudentsData.map(st => (
+                                <div key={st.id} className="p-3 flex items-center justify-between hover:bg-slate-50 transition-all">
+                                  <div>
+                                    <div className="text-sm font-bold text-slate-700">{st.fullName}</div>
+                                    <div className="text-xs text-slate-400">{st.studentCode} • Lớp {st.className}</div>
+                                  </div>
+                                  <button 
+                                    onClick={() => {
+                                      setTarget({ ...target, specificStudents: target.specificStudents.filter((id: string) => id !== st.id) });
+                                      setSelectedStudentsData(prev => prev.filter(s => s.id !== st.id));
+                                    }}
+                                    className="p-1 text-slate-400 hover:text-rose-500 transition-all"
+                                  >
                                     <X className="w-4 h-4" />
                                   </button>
                                 </div>
-                              );
-                            })
-                          )}
+                              ))
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
               </div>
             )}
-{/* Step 3: Defaults */}
-            {step === 3 && (
+
+
+            {/* Step 2: Defaults */}
+            {step === 2 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="border-b border-slate-100 pb-4 mb-6">
-                  <h2 className="text-lg font-black text-slate-800">3. Thiết lập kết quả mặc định</h2>
+                  <h2 className="text-lg font-black text-slate-800">2. Thiết lập kết quả mặc định</h2>
                   <p className="text-sm text-slate-500 font-medium">Gán kết quả tự động cho tất cả học sinh trong danh sách</p>
                 </div>
                 
@@ -892,14 +919,14 @@ export default function CreateActivityWizard() {
                     />
                     <div>
                       <span className="text-sm font-bold text-slate-800 block">Áp dụng mặc định cho tất cả</span>
-                      <span className="text-xs text-slate-500 font-medium">Chỉ cần nhập những em có kết quả khác biệt ở Bước 4</span>
+                      <span className="text-xs text-slate-500 font-medium">Chỉ cần nhập những em có kết quả khác biệt ở Bước 3</span>
                     </div>
                   </label>
                 </div>
 
                 {defaults.allParticipate && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-slate-50/50 rounded-2xl border border-slate-100">
-                    {/* DYNAMIC FIELDS cho Step 3 */}
+                    {/* DYNAMIC FIELDS cho Step 2 */}
                     {systemTypes
                       .filter((sys: any) => STEP3_TYPES.includes(sys.code))
                       .map((sys: any) => renderDynamicField(sys, defaults[sys.code], (val) => setDefaults({...defaults, [sys.code]: val})))}
@@ -908,11 +935,12 @@ export default function CreateActivityWizard() {
               </div>
             )}
 
-            {/* Step 4: Exceptions */}
-            {step === 4 && (
+
+            {/* Step 3: Exceptions & Results */}
+            {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
                 <div className="border-b border-slate-100 pb-4 mb-6">
-                  <h2 className="text-lg font-black text-slate-800">4. Kết quả cá nhân</h2>
+                  <h2 className="text-lg font-black text-slate-800">3. Kết quả cá nhân</h2>
                   <p className="text-sm text-slate-500 font-medium">Ghi nhận học sinh có kết quả khác biệt so với mặc định</p>
                 </div>
                 
@@ -948,21 +976,26 @@ export default function CreateActivityWizard() {
                               <div>
                                 <div className="font-bold text-slate-700">{item.student.name} <span className="text-xs text-slate-400 font-normal">({item.student.code})</span></div>
                                 <div className="text-xs text-slate-500 mt-1 flex gap-2">
-                                  {systemTypes.filter((sys: any) => STEP3_TYPES.includes(sys.code)).map((sys: any) => {
-                                    const val = item.result[sys.code];
-                                    if (!val) return null;
-                                    const options = getOptionsForType(sys.code) as any[];
-                                    const optName = options.find((o: any) => o.code === val)?.name || val;
-                                    return <span key={sys.code} className="bg-slate-100 px-2 py-0.5 rounded text-slate-600">{sys.name}: {optName}</span>;
+                                  {Object.entries(item.results).map(([key, val]) => {
+                                    const sys = systemTypes.find((s: any) => s.code === key);
+                                    const optName = getOptionsForType(key).find((o: any) => o.code === val)?.name || val;
+                                    return (
+                                      <span key={key} className="bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">
+                                        {sys?.name}: <strong className="text-slate-800">{optName}</strong>
+                                      </span>
+                                    );
                                   })}
                                 </div>
                               </div>
-                              <button onClick={() => {
-                                const newResults = {...studentResults};
-                                delete newResults[item.student.id];
-                                setStudentResults(newResults);
-                              }} className="p-2 text-slate-400 hover:text-rose-500 bg-slate-50 rounded-lg">
-                                <Trash2 className="w-4 h-4" />
+                              <button 
+                                onClick={() => {
+                                  const updated = { ...studentResults };
+                                  delete updated[item.student.id];
+                                  setStudentResults(updated);
+                                }}
+                                className="p-2 text-slate-400 hover:text-rose-500 transition-all"
+                              >
+                                <X className="w-4 h-4" />
                               </button>
                             </div>
                           ))}
@@ -971,82 +1004,99 @@ export default function CreateActivityWizard() {
                     )}
                   </>
                 ) : (
-                  <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm space-y-6">
-                    <div className="flex justify-between items-center border-b border-slate-100 pb-4">
-                      <h3 className="font-bold text-slate-800">Thêm kết quả cá nhân</h3>
-                      <button onClick={() => { setIsAddingResult(false); setSelectedResultStudent(null); }} className="text-slate-400 hover:text-slate-700"><X className="w-5 h-5"/></button>
+                  <div className="space-y-6 bg-slate-50/50 p-6 rounded-2xl border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-bold text-slate-800">Thêm kết quả cá nhân</h3>
+                      <button onClick={() => setIsAddingResult(false)} className="text-slate-400 hover:text-slate-600">
+                        <X className="w-5 h-5" />
+                      </button>
                     </div>
-                    
-                    {!selectedResultStudent ? (
-                      <div className="space-y-4">
-                        <div className="relative">
-                          <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
-                          <input 
-                            type="text"
-                            placeholder="Gõ tên hoặc mã học sinh..."
-                            className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 pl-11"
-                            value={studentResultSearch}
-                            onChange={e => setStudentResultSearch(e.target.value)}
-                          />
-                        </div>
-                        {resultSearchResults.length > 0 && (
-                          <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden max-h-[250px] overflow-y-auto">
-                            {resultSearchResults.map((student: any) => (
-                              <div key={student.id} onClick={() => { setSelectedResultStudent(student); setCurrentStudentResult(defaults); }} className="p-3 border-b border-slate-100 hover:bg-slate-100 cursor-pointer flex justify-between items-center last:border-0">
-                                <div>
-                                  <div className="font-bold text-slate-700">{student.name}</div>
-                                  <div className="text-xs text-slate-500">{student.code}</div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-slate-400" />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-3 p-3 bg-[#00A99D]/10 text-[#00A99D] rounded-xl">
-                          <CheckCircle2 className="w-5 h-5" />
-                          <div>
-                            <div className="font-bold">{selectedResultStudent.name}</div>
-                            <div className="text-xs opacity-80">{selectedResultStudent.code}</div>
-                          </div>
-                          <button onClick={() => setSelectedResultStudent(null)} className="ml-auto text-xs underline">Đổi HS</button>
-                        </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {systemTypes
-                            .filter((sys: any) => STEP3_TYPES.includes(sys.code))
-                            .map((sys: any) => {
-                              const options = getOptionsForType(sys.code) as any[];
-                              return (
-                                <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
-                                  <label className="text-sm font-bold text-slate-700">{sys.name}</label>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-xs font-bold text-slate-700 block mb-1.5">1. Chọn học sinh</label>
+                        <select 
+                          className="w-full bg-white border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
+                          value={selectedStudentForResult?.id || ''}
+                          onChange={e => {
+                            const st = selectedStudentsData.find(s => s.id === e.target.value);
+                            setSelectedStudentForResult(st || null);
+                          }}
+                        >
+                          <option value="">-- Chọn học sinh từ danh sách đối tượng --</option>
+                          {selectedStudentsData.map(st => (
+                            <option key={st.id} value={st.id}>{st.fullName} ({st.studentCode} - Lớp {st.className})</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {selectedStudentForResult && (
+                        <div className="space-y-4 pt-4 border-t border-slate-200">
+                          <label className="text-xs font-bold text-slate-700 block">2. Đánh giá riêng cho {selectedStudentForResult.fullName}</label>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {systemTypes
+                              .filter((sys: any) => STEP3_TYPES.includes(sys.code))
+                              .map((sys: any) => (
+                                <div key={sys.code} className="space-y-1">
+                                  <label className="text-xs font-bold text-slate-600">{sys.name}</label>
                                   <select 
-                                    className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3.5 transition-all"
-                                    value={currentStudentResult[sys.code] || ''} 
-                                    onChange={e => setCurrentStudentResult({...currentStudentResult, [sys.code]: e.target.value})}
+                                    className="w-full bg-white border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] block p-3 transition-all"
+                                    value={tempIndividualResults[sys.code] || defaults[sys.code] || ''}
+                                    onChange={e => setTempIndividualResults({ ...tempIndividualResults, [sys.code]: e.target.value })}
                                   >
                                     <option value="">-- Chọn {sys.name.toLowerCase()} --</option>
-                                    {options.map((opt: any) => (
+                                    {getOptionsForType(sys.code).map((opt: any) => (
                                       <option key={opt.id} value={opt.code}>{opt.name}</option>
                                     ))}
                                   </select>
                                 </div>
-                              );
-                            })}
+                              ))}
+                          </div>
+
+                          <div className="flex justify-end gap-3 pt-4">
+                            <button 
+                              onClick={() => {
+                                setIsAddingResult(false);
+                                setSelectedStudentForResult(null);
+                                setTempIndividualResults({});
+                              }}
+                              className="px-4 py-2 text-xs font-bold text-slate-600 bg-white ring-1 ring-slate-200 rounded-lg hover:bg-slate-50"
+                            >
+                              Hủy
+                            </button>
+                            <button 
+                              onClick={() => {
+                                if (!selectedStudentForResult) return;
+                                setStudentResults({
+                                  ...studentResults,
+                                  [selectedStudentForResult.id]: {
+                                    student: {
+                                      id: selectedStudentForResult.id,
+                                      name: selectedStudentForResult.fullName,
+                                      code: selectedStudentForResult.studentCode,
+                                      className: selectedStudentForResult.className
+                                    },
+                                    results: tempIndividualResults
+                                  }
+                                });
+                                setIsAddingResult(false);
+                                setSelectedStudentForResult(null);
+                                setTempIndividualResults({});
+                              }}
+                              className="px-5 py-2 text-xs font-bold text-white bg-[#00A99D] rounded-lg hover:bg-[#009085]"
+                            >
+                              Lưu kết quả học sinh này
+                            </button>
+                          </div>
                         </div>
-                        
-                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
-                          <button onClick={() => { setIsAddingResult(false); setSelectedResultStudent(null); }} className="px-5 py-2.5 text-sm font-bold text-slate-600 bg-white ring-1 ring-slate-200 rounded-xl hover:bg-slate-50 transition-all">Hủy</button>
-                          <button onClick={saveStudentResult} className="px-5 py-2.5 text-sm font-bold text-white bg-[#00A99D] rounded-xl hover:bg-[#009085] transition-all flex items-center gap-2">Lưu kết quả</button>
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             )}
+
+
 
           </div>
             {/* FOOTER ACTIONS */}
