@@ -1557,9 +1557,9 @@ export default function TeacherStudentProfilePage() {
                               <thead>
                                 <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                                   <th className="py-3.5 px-4 text-center w-14">STT</th>
-                                  <th className="py-3.5 px-4">Tên Hoạt động</th>
+                                  <th className="py-3.5 px-4">Tên hoạt động</th>
                                   <th className="py-3.5 px-4">Nhóm lĩnh vực</th>
-                                  <th className="py-3.5 px-4 text-center">Vai trò tham gia</th>
+                                  <th className="py-3.5 px-4 text-center">Vai trò</th>
                                   <th className="py-3.5 px-4 text-center">Mức đánh giá</th>
                                 </tr>
                               </thead>

@@ -639,16 +639,18 @@ export async function GET(req: Request) {
         const evalCat = categories.find(c => c.id === p.evalLevelId || c.code === p.evalLevelId);
         const groupCat = categories.find(c => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId);
 
-        const resolvedRole = roleCat?.name || roleDict[p.roleId] || p.roleId || "Tham gia";
-        const resolvedEval = evalCat?.name || evalDict[p.evalLevelId] || p.evalLevelId || "Đạt";
+        const resolvedRole = roleCat?.name || (p.roleId ? roleDict[p.roleId] || p.roleId : "Tham gia");
+        const resolvedEval = evalCat?.name || (p.evalLevelId ? evalDict[p.evalLevelId] || p.evalLevelId : "Đạt");
+        const resolvedGroup = groupCat?.name || p.record?.catalog?.group?.name || "Hoạt động trải nghiệm";
+        const resolvedName = p.record?.name || p.record?.catalog?.name || "Hoạt động trải nghiệm";
 
         return {
           id: p.id,
           stt: idx + 1,
-          activityName: p.record?.name || p.record?.catalog?.name || "Hoạt động trải nghiệm",
-          groupName: groupCat?.name || p.record?.catalog?.group?.name || "Chưa phân loại",
-          role: resolvedRole,
-          evalLevel: resolvedEval,
+          activityName: resolvedName.trim(),
+          groupName: resolvedGroup.trim(),
+          role: resolvedRole.trim(),
+          evalLevel: resolvedEval.trim(),
           date: p.record?.date ? p.record.date.toISOString().split('T')[0] : ''
         };
       });
