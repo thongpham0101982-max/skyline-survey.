@@ -75,7 +75,8 @@ export const APP_CATEGORIES = [
         subModules: [
           { code: "EXP_ACT_CONFIG", name: "Cấu hình", href: "/admin/experiential-activities/config" },
           { code: "EXP_ACT_CATEGORIES", name: "Danh mục", href: "/admin/experiential-activities/categories" },
-          { code: "EXP_ACT_CATALOG", name: "Hoạt động mẫu", href: "/admin/experiential-activities/catalog" }
+          { code: "EXP_ACT_CATALOG", name: "Hoạt động mẫu", href: "/admin/experiential-activities/catalog" },
+          { code: "EXP_ACT_REPORTS", name: "Thống kê", href: "/admin/experiential-activities/reports" }
         ]
       }
     ]

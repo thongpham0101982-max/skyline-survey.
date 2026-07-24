@@ -1,15 +1,17 @@
-﻿"use client"
+"use client"
 import Link from 'next/link'
 import { Layers, ClipboardList, Settings, Award } from 'lucide-react'
 
 interface ExperientialTabsProps {
-  activeTab: 'catalog' | 'categories' | 'config'
+  activeTab: 'catalog' | 'categories' | 'config' | 'reports'
 }
 
 export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
   const tabs = [
     { id: 'categories', label: 'Danh mục', href: '/admin/experiential-activities/categories', icon: Layers },
-    
+    { id: 'catalog', label: 'Hoạt động mẫu', href: '/admin/experiential-activities/catalog', icon: Award },
+    { id: 'config', label: 'Cấu hình', href: '/admin/experiential-activities/config', icon: Settings },
+    { id: 'reports', label: 'Thống kê', href: '/admin/experiential-activities/reports', icon: ClipboardList }
   ]
 
   return (
@@ -39,4 +41,3 @@ export function ExperientialTabs({ activeTab }: ExperientialTabsProps) {
     </div>
   )
 }
-
