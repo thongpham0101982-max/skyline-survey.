@@ -679,19 +679,45 @@ export function StudentProfilesAdminClient({
                                   <BookOpen className="w-4 h-4 text-[#00A99D]" />
                                   Hoạt động trải nghiệm
                                 </h4>
-                                {(!selectedStudent.projectExperiences || selectedStudent.projectExperiences.length === 0) ? (
+                                {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) && (!selectedStudent.projectExperiences || selectedStudent.projectExperiences.length === 0) ? (
                                   <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia hoạt động trải nghiệm nào.</p>
                                 ) : (
                                   <div className="space-y-2">
-                                    {selectedStudent.projectExperiences.slice(0, 2).map((p: any) => (
-                                      <div key={p.id} className="bg-slate-50/50 border border-slate-100 p-3 rounded-lg text-xs">
+                                    {(selectedStudent.experientialActivities || []).slice(0, 3).map((act: any) => (
+                                      <div key={act.id} className="bg-slate-50/50 border border-slate-100 p-2.5 rounded-lg text-xs">
                                         <div className="flex justify-between items-start">
-                                          <div className="font-bold text-slate-805">{p.projectName}</div>
-                                          <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
-                                            {p.role || "Thành viên"}
-                                          </span>
+                                          <div>
+                                            <div className="font-bold text-slate-805">{act.activityName}</div>
+                                            <div className="text-[9px] text-slate-400 mt-0.5">{act.groupName}</div>
+                                          </div>
+                                          <div className="flex gap-1.5 items-center">
+                                            <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
+                                              {act.role}
+                                            </span>
+                                            <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
+                                              {act.evalLevel}
+                                            </span>
+                                          </div>
                                         </div>
-                                        {p.notes && <p className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">"{p.notes}"</p>}
+                                      </div>
+                                    ))}
+                                    {(selectedStudent.projectExperiences || []).slice(0, 3).map((p: any) => (
+                                      <div key={p.id} className="bg-slate-50/50 border border-slate-100 p-2.5 rounded-lg text-xs">
+                                        <div className="flex justify-between items-start">
+                                          <div>
+                                            <div className="font-bold text-slate-805">{p.projectName}</div>
+                                            <div className="text-[9px] text-slate-400 mt-0.5">Dự án học tập</div>
+                                          </div>
+                                          <div className="flex gap-1.5 items-center">
+                                            <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
+                                              {p.role || "Thành viên"}
+                                            </span>
+                                            <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
+                                              {p.result || "Đạt"}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        {p.notes && <p className="text-[9px] text-slate-500 mt-1 line-clamp-1 leading-relaxed">"${p.notes}"</p>}
                                       </div>
                                     ))}
                                   </div>

@@ -810,17 +810,43 @@ export default function TeacherStudentProfilePage() {
                                   <BookOpen className="w-4 h-4 text-[#00A99D]" />
                                   Hoạt động trải nghiệm
                                 </h4>
-                                {profileData.projects?.length === 0 ? (
+                                {(!profileData.experientialActivities || profileData.experientialActivities.length === 0) && (!profileData.projects || profileData.projects.length === 0) ? (
                                   <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Học sinh chưa tham gia hoạt động trải nghiệm nào.</p>
                                 ) : (
                                   <div className="space-y-3">
-                                    {profileData.projects?.slice(0, 2).map((p: any) => (
+                                    {(profileData.experientialActivities || []).slice(0, 3).map((act: any) => (
+                                      <div key={act.id} className="bg-slate-50/40 border border-slate-100 p-3.5 rounded-2xl text-xs space-y-1.5 transition-all hover:bg-slate-50">
+                                        <div className="flex justify-between items-start">
+                                          <div>
+                                            <div className="font-extrabold text-slate-800">{act.activityName}</div>
+                                            <div className="text-[9px] text-slate-400 mt-0.5">{act.groupName}</div>
+                                          </div>
+                                          <div className="flex gap-1.5 items-center">
+                                            <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
+                                              {act.role}
+                                            </span>
+                                            <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
+                                              {act.evalLevel}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                    {(profileData.projects || []).slice(0, 3).map((p: any) => (
                                       <div key={p.id} className="bg-slate-50/40 border border-slate-100 p-3.5 rounded-2xl text-xs space-y-1.5 transition-all hover:bg-slate-50">
                                         <div className="flex justify-between items-start">
-                                          <div className="font-extrabold text-slate-800">{p.projectName}</div>
-                                          <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
-                                            {p.role || "Thành viên"}
-                                          </span>
+                                          <div>
+                                            <div className="font-extrabold text-slate-800">{p.projectName}</div>
+                                            <div className="text-[9px] text-slate-400 mt-0.5">Dự án học tập</div>
+                                          </div>
+                                          <div className="flex gap-1.5 items-center">
+                                            <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
+                                              {p.role || "Thành viên"}
+                                            </span>
+                                            <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
+                                              {p.result || "Đạt"}
+                                            </span>
+                                          </div>
                                         </div>
                                         {p.notes && <p className="text-[10px] text-slate-500 leading-relaxed">"{p.notes}"</p>}
                                       </div>
