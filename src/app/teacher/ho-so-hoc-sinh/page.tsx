@@ -73,7 +73,7 @@ export default function TeacherStudentProfilePage() {
     async function loadHomeroomStudents() {
       try {
         setLoadingStudents(true)
-        const res = await fetch(`/api/teacher-student-records?action=getHomeroomStudents&academicYearId=${yearId}`)
+        const res = await fetch(`/api/teacher-student-records?action=getHomeroomStudents&academicYearId=${yearId}&_t=${Date.now()}`)
         if (res.ok) {
           const data = await res.json()
           setStudents(data)
@@ -161,7 +161,7 @@ export default function TeacherStudentProfilePage() {
       if (res.ok) {
         setNewPostText("")
         // Refresh profile data
-        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
         if (profileRes.ok) {
           const data = await profileRes.json()
           setProfileData(data)
@@ -193,7 +193,7 @@ export default function TeacherStudentProfilePage() {
       if (res.ok) {
         setNewCommentText("")
         // Refresh profile data
-        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+        const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
         if (profileRes.ok) {
           const data = await profileRes.json()
           setProfileData(data)
@@ -263,7 +263,7 @@ export default function TeacherStudentProfilePage() {
         const activeStudent = students.find(s => s.id === selectedStudentId)
         setSelectedStudent(activeStudent)
 
-        const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+        const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
         if (res.ok) {
           const data = await res.json()
           setProfileData(data)
@@ -1353,7 +1353,7 @@ export default function TeacherStudentProfilePage() {
                                             })
                                             if (deleteRes.ok) {
                                               // Refresh profile data
-                                              const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+                                              const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
                                               if (profileRes.ok) {
                                                 const data = await profileRes.json()
                                                 setProfileData(data)
@@ -1687,7 +1687,7 @@ export default function TeacherStudentProfilePage() {
                                           })
                                           if (deleteRes.ok) {
                                             // Refresh profile data
-                                            const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}`)
+                                            const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
                                             if (profileRes.ok) {
                                               const data = await profileRes.json()
                                               setProfileData(data)
