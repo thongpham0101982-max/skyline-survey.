@@ -15,14 +15,7 @@ const IGNORED_TYPES = ['SYSTEM_CATEGORY_TYPE', 'GROUP', 'TYPE', 'THEME', 'ABSENC
 
 function getDefaultAcademicYearClient(years: any[]) {
   if (!Array.isArray(years) || years.length === 0) return null;
-  if (typeof window !== "undefined") {
-    const stored = localStorage.getItem("selectedAcademicYear");
-    if (stored) {
-      const year = years.find(y => y?.id === stored || y?.name === stored);
-      if (year) return year;
-    }
-  }
-  return years.find(y => y?.status === 'ACTIVE') || years[0];
+  return years.find(y => y?.status === 'ACTIVE' && !y?.isOff) || years.find(y => y?.status === 'ACTIVE') || years.find(y => !y?.isOff) || years[0];
 }
 
 function getAbbreviation(str: string) {
@@ -94,15 +87,8 @@ export default function CreateActivityWizard() {
         const yearList = Array.isArray(data) ? data : [];
         setAcademicYears(yearList);
         if (yearList.length > 0) {
-          let selectedYear = getDefaultAcademicYearClient(yearList);
-          if (typeof window !== "undefined") {
-            const stored = localStorage.getItem("selectedAcademicYear");
-            if (stored) {
-              const matched = yearList.find((y: any) => y.id === stored || y.name === stored);
-              if (matched) selectedYear = matched;
-            }
-          }
-          const finalYearId = selectedYear ? selectedYear.id : yearList[0].id;
+          const defaultActiveYear = getDefaultAcademicYearClient(yearList);
+          const finalYearId = defaultActiveYear ? defaultActiveYear.id : yearList[0].id;
           setInfo(prev => ({ ...prev, academicYear: finalYearId }));
         }
       })
