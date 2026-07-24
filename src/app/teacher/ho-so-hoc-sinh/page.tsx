@@ -62,6 +62,7 @@ export default function TeacherStudentProfilePage() {
     achievements: any[]
     orientation: any
     projects: any[]
+    experientialActivities?: any[]
     commitment: any
     highlightComments: any[]
     entranceSurvey: any
