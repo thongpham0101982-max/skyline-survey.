@@ -569,6 +569,44 @@ export async function GET(req: Request) {
         orderBy: { createdAt: "desc" }
       })
 
+      // Fetch experiential activities
+      const activityParticipants = await prisma.activityParticipant.findMany({
+        where: {
+          OR: [
+            { studentId },
+            { student: { studentCode: student.studentCode } }
+          ]
+        },
+        include: {
+          record: {
+            include: {
+              catalog: {
+                include: { group: true }
+              }
+            }
+          }
+        },
+        orderBy: { createdAt: "desc" }
+      });
+
+      const categories = await prisma.activityCategory.findMany();
+
+      const experientialActivities = activityParticipants.map((p, idx) => {
+        const roleCat = categories.find(c => c.id === p.roleId || c.code === p.roleId);
+        const evalCat = categories.find(c => c.id === p.evalLevelId || c.code === p.evalLevelId);
+        const groupCat = categories.find(c => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId);
+
+        return {
+          id: p.id,
+          stt: idx + 1,
+          activityName: p.record?.name || p.record?.catalog?.name || "Hoạt động trải nghiệm",
+          groupName: groupCat?.name || p.record?.catalog?.group?.name || "Chưa phân loại",
+          role: roleCat?.name || p.roleId || "Tham gia",
+          evalLevel: evalCat?.name || p.evalLevelId || "Đạt",
+          date: p.record?.date ? p.record.date.toISOString().split('T')[0] : ''
+        };
+      });
+
       // Fetch commitment
       const commitment = await prisma.studentLearningCommitment.findFirst({
         where: { studentId, ...(academicYearId ? { academicYearId } : {}) }

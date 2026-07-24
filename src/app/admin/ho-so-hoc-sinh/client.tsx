@@ -213,7 +213,7 @@ export function StudentProfilesAdminClient({
         : "Cam kết học tập", 
       icon: FileText 
     },
-    { id: "projects", label: "Dự án & Trải nghiệm", icon: BookOpen },
+    { id: "projects", label: "Hoạt động trải nghiệm", icon: BookOpen },
     { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare },
     { id: "support", label: "Hỗ trợ học tập", icon: GraduationCap }
   ]
