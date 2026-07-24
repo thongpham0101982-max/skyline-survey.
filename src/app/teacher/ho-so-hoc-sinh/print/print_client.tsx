@@ -337,10 +337,10 @@ export default function TeacherStudentProfilesPrintPage() {
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
                       <BookOpen className="w-4 h-4 text-[#00A99D]" />
-                      Dự án học tập & Hoạt động trải nghiệm
+                      Hoạt động trải nghiệm
                     </h4>
                     {(!student.projectExperiences || student.projectExperiences.length === 0) ? (
-                      <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia dự án học tập nào.</p>
+                      <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia hoạt động trải nghiệm nào.</p>
                     ) : (
                       <div className="space-y-2">
                         {student.projectExperiences.slice(0, 2).map((p: any) => (

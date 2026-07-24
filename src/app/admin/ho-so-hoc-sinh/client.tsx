@@ -677,10 +677,10 @@ export function StudentProfilesAdminClient({
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
                                   <BookOpen className="w-4 h-4 text-[#00A99D]" />
-                                  Dự án học tập & Hoạt động trải nghiệm
+                                  Hoạt động trải nghiệm
                                 </h4>
                                 {(!selectedStudent.projectExperiences || selectedStudent.projectExperiences.length === 0) ? (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia dự án học tập nào.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia hoạt động trải nghiệm nào.</p>
                                 ) : (
                                   <div className="space-y-2">
                                     {selectedStudent.projectExperiences.slice(0, 2).map((p: any) => (
@@ -1326,9 +1326,9 @@ export function StudentProfilesAdminClient({
 
                     {activeTab === "projects" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Dự án khoa học & Hoạt động trải nghiệm</h4>
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">HOẠT ĐỘNG TRẢI NGHIỆM</h4>
                         {(!selectedStudent.projects || selectedStudent.projects.length === 0) ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia dự án học tập nào.</div>
+                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia hoạt động trải nghiệm nào.</div>
                         ) : (
                           <div className="grid grid-cols-1 gap-3">
                             {selectedStudent.projects.map((p) => (

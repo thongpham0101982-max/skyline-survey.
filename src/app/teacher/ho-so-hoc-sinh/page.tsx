@@ -810,7 +810,7 @@ export default function TeacherStudentProfilePage() {
                                   Hoạt động trải nghiệm
                                 </h4>
                                 {profileData.projects?.length === 0 ? (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Học sinh chưa tham gia dự án học tập nào.</p>
+                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Học sinh chưa tham gia hoạt động trải nghiệm nào.</p>
                                 ) : (
                                   <div className="space-y-3">
                                     {profileData.projects?.slice(0, 2).map((p: any) => (
