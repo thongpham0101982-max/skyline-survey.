@@ -82,6 +82,11 @@ export function StudentTransfersClient() {
   const [showOutStats, setShowOutStats] = useState(true)
   const [globalSearch, setGlobalSearch] = useState("")
   const [historyFilterClass, setHistoryFilterClass] = useState("")
+  const [filterOutClass, setFilterOutClass] = useState("")
+  const [filterOutCampus, setFilterOutCampus] = useState("")
+  const [filterOutType, setFilterOutType] = useState("")
+  const [filterOutCategory, setFilterOutCategory] = useState("")
+  const [filterOutProvince, setFilterOutProvince] = useState("")
   const [historyPage, setHistoryPage] = useState(1)
   const [pendingPage, setPendingPage] = useState(1)
 
@@ -301,11 +306,39 @@ export function StudentTransfersClient() {
     return activeSubTab === "preschool" ? isPreschool : !isPreschool;
   });
 
-  const outTransfers = filteredTransfers.filter(t => t.type === "OUT" && (
-    !globalSearch || 
-    (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
-    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase())
-  ))
+  const outTransfers = filteredTransfers.filter(t => {
+    if (t.type !== "OUT") return false;
+
+    // Search filter
+    if (globalSearch) {
+      const sMatch = 
+        (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
+        (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase());
+      if (!sMatch) return false;
+    }
+
+    // Class filter
+    if (filterOutClass && t.student?.classId !== filterOutClass) return false;
+
+    // Campus filter
+    if (filterOutCampus && t.student?.class?.campusId !== filterOutCampus) return false;
+
+    // School type filter
+    if (filterOutType && t.destinationType !== filterOutType) return false;
+
+    // Category filter
+    if (filterOutCategory && t.transferCategory !== filterOutCategory) return false;
+
+    // Province filter
+    if (filterOutProvince && t.destinationProvince !== filterOutProvince) return false;
+
+    return true;
+  });
+
+  const outListForFilters = filteredTransfers.filter(t => t.type === "OUT");
+  const uniqueClasses = Array.from(new Set(outListForFilters.filter(t => t.student?.class).map(t => JSON.stringify({ id: t.student.class.id, name: t.student.class.className })))).map(s => JSON.parse(s));
+  const uniqueCampuses = Array.from(new Set(outListForFilters.filter(t => t.student?.class?.campus).map(t => JSON.stringify({ id: t.student.class.campus.id, name: t.student.class.campus.campusName })))).map(s => JSON.parse(s));
+  const uniqueProvinces = Array.from(new Set(outListForFilters.map(t => t.destinationProvince).filter(Boolean))).sort();
   const changeTransfers = filteredTransfers.filter(t => t.type === "CHANGE_CLASS" && (
     !globalSearch || 
     (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
@@ -972,8 +1005,9 @@ export function StudentTransfersClient() {
         </div>
 
       <div className="p-8">
-        <div className="flex items-center justify-between mb-6">
-           <div className="relative w-72">
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex items-center justify-between">
+             <div className="relative w-72">
              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450" />
              <input 
                type="text" 
@@ -1019,6 +1053,84 @@ export function StudentTransfersClient() {
                 </button>
               </div>
             )}
+         </div>
+
+         {activeTab === "OUT" && (
+           <div className="flex flex-wrap items-center gap-2 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-205/45 animate-in fade-in duration-200">
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-2">Bộ lọc:</span>
+             
+             {/* Lớp */}
+             <select 
+               value={filterOutClass} 
+               onChange={e => setFilterOutClass(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Lớp ({uniqueClasses.length})</option>
+               {uniqueClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+             </select>
+
+             {/* Cơ sở */}
+             <select 
+               value={filterOutCampus} 
+               onChange={e => setFilterOutCampus(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Cơ sở ({uniqueCampuses.length})</option>
+               {uniqueCampuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+             </select>
+
+             {/* Diện chuyển */}
+             <select 
+               value={filterOutCategory} 
+               onChange={e => setFilterOutCategory(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Diện chuyển</option>
+               <option value="DOMESTIC">Chuyển trường VN</option>
+               <option value="ABROAD">Du học</option>
+               <option value="RESERVE">Bảo lưu</option>
+               <option value="GRADUATED">Tốt nghiệp THPT</option>
+             </select>
+
+             {/* Loại hình */}
+             <select 
+               value={filterOutType} 
+               onChange={e => setFilterOutType(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Loại hình</option>
+               <option value="PRIVATE">Tư thục</option>
+               <option value="PUBLIC">Công lập</option>
+               <option value="OTHER">Khác</option>
+             </select>
+
+             {/* Tỉnh/TP */}
+             <select 
+               value={filterOutProvince} 
+               onChange={e => setFilterOutProvince(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Tỉnh/TP ({uniqueProvinces.length})</option>
+               {uniqueProvinces.map(p => <option key={p} value={p}>{p}</option>)}
+             </select>
+
+             {/* Reset button */}
+             {(filterOutClass || filterOutCampus || filterOutType || filterOutCategory || filterOutProvince) && (
+               <button 
+                 onClick={() => {
+                   setFilterOutClass("")
+                   setFilterOutCampus("")
+                   setFilterOutType("")
+                   setFilterOutCategory("")
+                   setFilterOutProvince("")
+                 }}
+                 className="text-xs font-bold text-rose-600 hover:text-rose-700 px-3 py-1.5 rounded-xl hover:bg-rose-50 transition-colors ml-auto cursor-pointer"
+               >
+                 Xóa bộ lọc
+               </button>
+             )}
+           </div>
+         )}
 
            {activeTab === "CHANGE_CLASS" && (
              <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20">
