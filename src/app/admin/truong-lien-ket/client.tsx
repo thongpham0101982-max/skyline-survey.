@@ -24,6 +24,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
   const [schools, setSchools] = useState<any[]>(initialSchools)
   const [search, setSearch] = useState("")
   const [levelFilter, setLevelFilter] = useState<"ALL" | "PHO_THONG" | "MAM_NON">("ALL")
+  const [typeFilter, setTypeFilter] = useState<"ALL" | "PUBLIC" | "PRIVATE">("ALL")
   const [isPending, startTransition] = useTransition()
   
   // Modal states
@@ -33,7 +34,8 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
   const [form, setForm] = useState({
     name: "",
     code: "",
-    level: "PHO_THONG"
+    level: "PHO_THONG",
+    schoolType: "PRIVATE"
   })
 
   const loadSchools = async () => {
@@ -46,7 +48,8 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
     setForm({
       name: "",
       code: "",
-      level: "PHO_THONG"
+      level: "PHO_THONG",
+      schoolType: "PRIVATE"
     })
     setShowModal(true)
   }
@@ -56,7 +59,8 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
     setForm({
       name: school.name,
       code: school.code,
-      level: school.level
+      level: school.level,
+      schoolType: school.schoolType || "PRIVATE"
     })
     setShowModal(true)
   }
@@ -106,7 +110,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
     startTransition(async () => {
       const res = await seedDestinationSchoolsAction()
       if (res.success) {
-        alert(`Đã khởi tạo thành công ${res.count} trường mẫu!`)
+        alert("Đã khởi tạo và đồng bộ loại hình trường thành công!")
         loadSchools()
       } else {
         alert("Lỗi: " + res.error)
@@ -121,82 +125,120 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
       s.code.toLowerCase().includes(search.toLowerCase());
     
     const matchesLevel = levelFilter === "ALL" || s.level === levelFilter;
-    return matchesSearch && matchesLevel;
+    const matchesType = typeFilter === "ALL" || s.schoolType === typeFilter;
+    return matchesSearch && matchesLevel && matchesType;
   })
 
   return (
     <div className="space-y-6">
       {/* Controls Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col gap-4 bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
         
-        {/* Left: Cấp học Filter Tabs */}
-        <div className="flex gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl w-fit">
-          <button 
-            onClick={() => setLevelFilter("ALL")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              levelFilter === "ALL" 
-                ? "bg-white text-slate-800 shadow-sm" 
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Tất cả ({schools.length})
-          </button>
-          <button 
-            onClick={() => setLevelFilter("PHO_THONG")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              levelFilter === "PHO_THONG" 
-                ? "bg-[#00A99D]/10 text-[#00A99D] shadow-xs" 
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <GraduationCap className="w-4 h-4" />
-            Phổ thông ({schools.filter(s => s.level === "PHO_THONG").length})
-          </button>
-          <button 
-            onClick={() => setLevelFilter("MAM_NON")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              levelFilter === "MAM_NON" 
-                ? "bg-emerald-100 text-emerald-700 shadow-xs" 
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Baby className="w-4 h-4" />
-            Mầm non ({schools.filter(s => s.level === "MAM_NON").length})
-          </button>
-        </div>
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Filters Group */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Cấp học Filter Tabs */}
+            <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
+              <button 
+                onClick={() => setLevelFilter("ALL")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  levelFilter === "ALL" 
+                    ? "bg-white text-slate-800 shadow-sm" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Tất cả Cấp học
+              </button>
+              <button 
+                onClick={() => setLevelFilter("PHO_THONG")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  levelFilter === "PHO_THONG" 
+                    ? "bg-[#00A99D]/10 text-[#00A99D]" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <GraduationCap className="w-4 h-4" />
+                Phổ thông
+              </button>
+              <button 
+                onClick={() => setLevelFilter("MAM_NON")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  levelFilter === "MAM_NON" 
+                    ? "bg-emerald-100 text-emerald-700" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Baby className="w-4 h-4" />
+                Mầm non
+              </button>
+            </div>
 
-        {/* Right: Search & Action buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <div className="relative flex-1 sm:w-64">
-            <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Tìm tên hoặc mã trường..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl font-medium outline-none transition-all text-xs text-slate-800" 
-            />
+            {/* Loại hình Filter Tabs */}
+            <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl w-fit">
+              <button 
+                onClick={() => setTypeFilter("ALL")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  typeFilter === "ALL" 
+                    ? "bg-white text-slate-800 shadow-sm" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Tất cả Loại hình
+              </button>
+              <button 
+                onClick={() => setTypeFilter("PUBLIC")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  typeFilter === "PUBLIC" 
+                    ? "bg-amber-100 text-amber-800" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Công lập
+              </button>
+              <button 
+                onClick={() => setTypeFilter("PRIVATE")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  typeFilter === "PRIVATE" 
+                    ? "bg-sky-100 text-sky-800" 
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                Tư thục
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            {schools.length === 0 && (
+          {/* Right: Search & Action buttons */}
+          <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Tìm tên hoặc mã trường..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl font-medium outline-none transition-all text-xs text-slate-800" 
+              />
+            </div>
+
+            <div className="flex gap-2">
               <button 
                 onClick={handleSeedData}
                 disabled={isPending}
                 className="px-4 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center gap-1.5 shadow-sm text-xs cursor-pointer disabled:opacity-55"
               >
                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                Khởi tạo Trường mẫu
+                Đồng bộ Trường mẫu
               </button>
-            )}
 
-            <button 
-              onClick={handleOpenAdd}
-              className="px-4 py-2.5 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              Thêm trường mới
-            </button>
+              <button 
+                onClick={handleOpenAdd}
+                className="px-4 py-2.5 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Thêm trường mới
+              </button>
+            </div>
           </div>
         </div>
 
@@ -212,7 +254,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                   <th className="px-6 py-4 font-black w-12 text-center">STT</th>
                   <th className="px-6 py-4 font-black">Mã trường</th>
                   <th className="px-6 py-4 font-black">Tên đơn vị trường</th>
-                  <th className="px-6 py-4 font-black">Phân loại cấp</th>
+                  <th className="px-6 py-4 font-black">Phân loại / Loại hình</th>
                   <th className="px-6 py-4 text-right font-black">Thao tác</th>
                 </tr>
               </thead>
@@ -227,17 +269,28 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                     </td>
                     <td className="px-6 py-4 font-bold text-slate-800 text-sm">{s.name}</td>
                     <td className="px-6 py-4">
-                      {s.level === "PHO_THONG" ? (
-                        <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1">
-                          <GraduationCap className="w-3.5 h-3.5" />
-                          PHỔ THÔNG
-                        </span>
-                      ) : (
-                        <span className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1">
-                          <Baby className="w-3.5 h-3.5" />
-                          MẦM NON
-                        </span>
-                      )}
+                      <div className="flex gap-2">
+                        {s.level === "PHO_THONG" ? (
+                          <span className="bg-indigo-50 border border-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1">
+                            <GraduationCap className="w-3.5 h-3.5" />
+                            PHỔ THÔNG
+                          </span>
+                        ) : (
+                          <span className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1">
+                            <Baby className="w-3.5 h-3.5" />
+                            MẦM NON
+                          </span>
+                        )}
+                        {s.schoolType === "PUBLIC" ? (
+                          <span className="bg-amber-50 border border-amber-100 text-amber-700 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center">
+                            CÔNG LẬP
+                          </span>
+                        ) : (
+                          <span className="bg-sky-50 border border-sky-100 text-sky-700 px-3 py-1 rounded-full text-[10px] font-black inline-flex items-center">
+                            TƯ THỤC
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                       <button 
@@ -302,7 +355,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                   placeholder="Ví dụ: THPT Quang Trung"
                   value={form.name}
                   onChange={e => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl font-medium outline-none transition-all text-xs text-slate-850 font-semibold"
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl font-medium outline-none transition-all text-xs text-slate-855 font-semibold"
                 />
               </div>
 
@@ -356,6 +409,46 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                     />
                     <Baby className="w-4 h-4" />
                     <span>Mầm non</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Loại hình trường</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <label 
+                    className={`flex items-center justify-center gap-2 border p-3.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      form.schoolType === "PUBLIC"
+                        ? "border-amber-500 bg-amber-55/65 text-amber-700 shadow-xs"
+                        : "border-slate-250 hover:bg-slate-50 text-slate-600"
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="schoolType"
+                      value="PUBLIC"
+                      checked={form.schoolType === "PUBLIC"}
+                      onChange={() => setForm({...form, schoolType: "PUBLIC"})}
+                      className="hidden"
+                    />
+                    <span>Công lập</span>
+                  </label>
+                  <label 
+                    className={`flex items-center justify-center gap-2 border p-3.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
+                      form.schoolType === "PRIVATE"
+                        ? "border-[#00A99D] bg-[#00A99D]/5 text-[#00A99D] shadow-xs"
+                        : "border-slate-250 hover:bg-slate-50 text-slate-600"
+                    }`}
+                  >
+                    <input 
+                      type="radio" 
+                      name="schoolType"
+                      value="PRIVATE"
+                      checked={form.schoolType === "PRIVATE"}
+                      onChange={() => setForm({...form, schoolType: "PRIVATE"})}
+                      className="hidden"
+                    />
+                    <span>Tư thục</span>
                   </label>
                 </div>
               </div>

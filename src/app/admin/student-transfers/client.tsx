@@ -1855,7 +1855,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                         setForm(f => ({
                           ...f,
                           destinationSchool: val,
-                          destinationType: matched.level === "MAM_NON" ? "OTHER" : "PRIVATE"
+                          destinationType: matched.schoolType || "PRIVATE"
                         }));
                       } else {
                         setForm(f => ({ ...f, destinationSchool: val }));
