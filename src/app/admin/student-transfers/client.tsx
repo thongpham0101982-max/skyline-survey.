@@ -4,6 +4,7 @@ import { useRef } from "react"
 import { useState, useEffect } from "react" 
 // import useRef added above
 import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, RotateCcw, BarChart3, ChevronDown, ChevronUp, Eye, EyeOff, Building2, Layers, BookOpen, MapPin, School, Activity } from "lucide-react"
+import { getDestinationSchoolsAction } from "../truong-lien-ket/actions"
 import { 
   getTransferFormOptionsAction, 
   getClassesByCampusAndYearAction, 
@@ -1548,6 +1549,17 @@ export function StudentTransfersClient() {
 function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { activeSubTab: "general" | "preschool", initialData?: any, onClose: () => void, onSaved: () => void }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [registeredSchools, setRegisteredSchools] = useState<any[]>([])
+
+  useEffect(() => {
+    getDestinationSchoolsAction().then(data => {
+      const filtered = data.filter((s: any) => {
+        if (activeSubTab === "preschool") return s.level === "MAM_NON";
+        return s.level === "PHO_THONG";
+      });
+      setRegisteredSchools(filtered);
+    });
+  }, [activeSubTab]);
   
   const [options, setOptions] = useState({ years: [] as any[], campuses: [] as any[] })
   const [classes, setClasses] = useState<any[]>([])
@@ -1830,7 +1842,29 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/55 p-5 rounded-2xl border border-slate-200">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Trường chuyển đến</label>
-                  <input type="text" placeholder="Tên trường" className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.destinationSchool} onChange={e => setForm({...form, destinationSchool: e.target.value})} />
+                  <input 
+                    type="text" 
+                    list="destination-schools-list" 
+                    placeholder="Tên trường" 
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" 
+                    value={form.destinationSchool} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      const matched = registeredSchools.find(s => s.name === val);
+                      if (matched) {
+                        setForm(f => ({
+                          ...f,
+                          destinationSchool: val,
+                          destinationType: matched.level === "MAM_NON" ? "OTHER" : "PRIVATE"
+                        }));
+                      } else {
+                        setForm(f => ({ ...f, destinationSchool: val }));
+                      }
+                    }} 
+                  />
+                  <datalist id="destination-schools-list">
+                    {registeredSchools.map(s => <option key={s.id} value={s.name} />)}
+                  </datalist>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Loại hình</label>
