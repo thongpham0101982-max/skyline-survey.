@@ -65,6 +65,10 @@ export function StudentTransfersClient() {
     window.addEventListener("academicYearChanged", handleYearChange);
     return () => window.removeEventListener("academicYearChanged", handleYearChange);
   }, [yearId]);
+
+  useEffect(() => {
+    setSelectedOutTransferIds([]);
+  }, [activeTab, activeSubTab, yearId]);
   const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
@@ -87,6 +91,7 @@ export function StudentTransfersClient() {
   const [filterCampus, setFilterCampus] = useState("")
   const [filterGrade, setFilterGrade] = useState("")
   const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([])
+  const [selectedOutTransferIds, setSelectedOutTransferIds] = useState<string[]>([])
   const [selectedRequests, setSelectedRequests] = useState<any[] | null>(null)
 
   useEffect(() => {
@@ -243,6 +248,38 @@ export function StudentTransfersClient() {
         await loadTransfers()
       } else {
         alert("Lỗi: " + res.error)
+      }
+    } catch (e: any) {
+      alert("Đã xảy ra lỗi: " + e.message)
+    } finally {
+      setLoadingList(false)
+    }
+  }
+
+  const handleBatchRevert = async () => {
+    if (selectedOutTransferIds.length === 0) return;
+    if (!confirm(`Bạn có chắc chắn muốn hoàn trả ${selectedOutTransferIds.length} học sinh và xóa các phiếu chuyển đi tương ứng?`)) {
+      return;
+    }
+    setLoadingList(true)
+    try {
+      let successCount = 0;
+      let errorMsgs = [];
+      for (const id of selectedOutTransferIds) {
+        const res = await revertTransferAction(id);
+        if (res.success) {
+          successCount++;
+        } else {
+          errorMsgs.push(res.error);
+        }
+      }
+      if (successCount > 0) {
+        alert(`Đã hoàn trả thành công ${successCount} học sinh!`);
+        setSelectedOutTransferIds([]);
+        await loadTransfers();
+      }
+      if (errorMsgs.length > 0) {
+        alert(`Có lỗi xảy ra khi hoàn trả một số học sinh: \n` + errorMsgs.join('\n'));
       }
     } catch (e: any) {
       alert("Đã xảy ra lỗi: " + e.message)
@@ -945,9 +982,17 @@ export function StudentTransfersClient() {
            </div>
            
            {activeTab === "OUT" && (
-              <div className="flex gap-2">
-                <button 
-                  onClick={handleDownloadTemplate} 
+               <div className="flex gap-2 items-center">
+                 {selectedOutTransferIds.length > 0 && (
+                   <button 
+                     onClick={handleBatchRevert}
+                     className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200"
+                   >
+                     <RotateCcw className="w-4 h-4 mr-1.5" /> Hoàn trả hàng loạt ({selectedOutTransferIds.length})
+                   </button>
+                 )}
+                 <button 
+                   onClick={handleDownloadTemplate} 
                   className="px-4 py-2 bg-white text-slate-700 font-bold border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all flex items-center shadow-sm text-xs"
                 >
                   Tải File Mẫu
@@ -993,6 +1038,20 @@ export function StudentTransfersClient() {
               <table className="w-full text-left text-sm border-collapse bg-white">
                 <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
                   <tr>
+                    <th className="px-4 py-3 text-center w-10">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-[#00A99D] border-slate-355 rounded focus:ring-[#00A99D] cursor-pointer"
+                        checked={outTransfers.length > 0 && outTransfers.every(t => selectedOutTransferIds.includes(t.id))}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedOutTransferIds(outTransfers.map(t => t.id));
+                          } else {
+                            setSelectedOutTransferIds([]);
+                          }
+                        }}
+                      />
+                    </th>
                     <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
                     <th className="px-4 py-3 font-extrabold">Học sinh</th>
                     <th className="px-4 py-3 font-extrabold">Lớp / Cơ sở cũ</th>
@@ -1003,7 +1062,21 @@ export function StudentTransfersClient() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {outTransfers.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
+                    <tr key={t.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedOutTransferIds.includes(t.id) ? 'bg-[#00A99D]/5 hover:bg-[#00A99D]/10' : ''}`}>
+                      <td className="px-4 py-3.5 text-center">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-[#00A99D] border-slate-355 rounded focus:ring-[#00A99D] cursor-pointer"
+                          checked={selectedOutTransferIds.includes(t.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedOutTransferIds(prev => [...prev, t.id]);
+                            } else {
+                              setSelectedOutTransferIds(prev => prev.filter(id => id !== t.id));
+                            }
+                          }}
+                        />
+                      </td>
                       <td className="px-4 py-3.5 font-medium text-slate-700">
                         {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
                         <br/>
