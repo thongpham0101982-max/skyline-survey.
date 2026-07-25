@@ -1,7 +1,8 @@
 ﻿"use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Trash2, ArrowUp, ArrowDown, GripVertical, Eye, Save, CloudUpload, X, Tag, ListPlus, LayoutGrid, CheckSquare, Settings2, CheckCircle2 } from "lucide-react"
+import { Plus, Trash2, ArrowUp, ArrowDown, GripVertical, Eye, Save, CloudUpload, X, Tag, ListPlus, LayoutGrid, CheckSquare, Settings2, CheckCircle2, FileDown, Upload } from "lucide-react"
+import * as xlsx from "xlsx"
 import { saveSurveyQuestionsAction } from "./actions"
 import Link from "next/link"
 
@@ -52,6 +53,116 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
   const [activeTab, setActiveTab ] = useState("editor")
   const [saving, setSaving] = useState(false)
   const router = useRouter()
+
+  const downloadTemplate = () => {
+    const headers = [
+      ["STT", "Nội dung câu hỏi", "Loại câu hỏi", "Danh mục", "Bắt buộc", "Trọng số", "Danh sách lựa chọn (nếu có)"],
+      ["1", "Tôi thích tìm hiểu khoa học và công nghệ", "SCALE_0_4", "Realistic", "Có", "1", ""],
+      ["2", "Bạn đánh giá thế nào về cơ sở vật chất của Sky-line?", "MULTIPLE_CHOICE", "", "Có", "1", "Rất tệ, Bình thường, Rất tốt"],
+      ["3", "Ý kiến phản hồi tự luận", "TEXT", "", "Không", "1", ""],
+      ["4", "Đánh giá theo các tiêu chuẩn kỹ năng", "MC_GRID", "", "Có", "1", "Kỹ năng lập kế hoạch, Kỹ năng làm việc nhóm | Kém, Khá, Tốt"]
+    ]
+    const ws = xlsx.utils.aoa_to_sheet(headers)
+    const wb = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(wb, ws, "Mau_Cau_Hoi")
+    xlsx.writeFile(wb, "Mau_Import_Cau_Hoi.xlsx")
+  }
+
+  const handleImportExcel = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = xlsx.read(bstr, { type: "binary" })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const rawRows = xlsx.utils.sheet_to_json(ws, { header: 1 })
+        
+        if (rawRows.length <= 1) {
+          return alert("File Excel rỗng hoặc không đúng định dạng!")
+        }
+        
+        const newQuestionsFromExcel = []
+        
+        for (let i = 1; i < rawRows.length; i++) {
+          const row = rawRows[i]
+          if (!row || !row[1]) continue
+          
+          const text = row[1]?.toString().trim()
+          let type = row[2]?.toString().trim().toUpperCase() || "SCALE_0_4"
+          
+          if (type === "TRẮC NGHIỆM" || type === "RADIO" || type === "MULTIPLE_CHOICE") type = "MULTIPLE_CHOICE"
+          else if (type === "CHECKBOX" || type === "HỘP KIỂM") type = "CHECKBOX"
+          else if (type === "TỰ LUẬN" || type === "TEXT" || type === "PARAGRAPH") type = "TEXT"
+          else if (type === "NPS" || type === "KHẢO SÁT NPS") type = "NPS"
+          else if (type === "ĐÁNH GIÁ SAO" || type === "RATING" || type === "STAR") type = "RATING"
+          else if (type === "LƯỚI RADIO" || type === "MC_GRID") type = "MC_GRID"
+          else if (type === "LƯỚI CHECK" || type === "CB_GRID") type = "CB_GRID"
+          else if (type === "KHẢO SÁT (0-4)" || type === "0-4" || type === "SCALE_0_4") type = "SCALE_0_4"
+          else type = "SCALE_0_4"
+          
+          const catName = row[3]?.toString().trim()
+          let matchedSectionId = ""
+          if (catName) {
+            const cleanCatName = catName.replace(/^└─\s*/, "").toLowerCase()
+            const foundCat = categories.find((c) => c.name.toLowerCase() === cleanCatName)
+            if (foundCat) matchedSectionId = foundCat.id
+          }
+          
+          const isReqStr = row[4]?.toString().trim().toLowerCase()
+          const isRequired = isReqStr === "không" || isReqStr === "false" || isReqStr === "0" ? false : true
+          
+          const wVal = parseFloat(row[5])
+          const weight = isNaN(wVal) ? 1 : wVal
+          
+          let initialOptions = []
+          if (type === "MULTIPLE_CHOICE" || type === "CHECKBOX" || type === "DROPDOWN") {
+            const optsStr = row[6]?.toString().trim()
+            const choices = optsStr ? optsStr.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean) : ["Tùy chọn 1"]
+            initialOptions = { choices, hasOther: false }
+          } else if (type === "MC_GRID" || type === "CB_GRID") {
+            const optsStr = row[6]?.toString().trim()
+            let rows = ["Tiêu chí 1", "Tiêu chí 2"]
+            let columns = ["Kém", "Trung bình", "Khá", "Tốt", "Xuất sắc"]
+            if (optsStr && optsStr.includes("|")) {
+              const [rPart, cPart] = optsStr.split("|")
+              if (rPart) rows = rPart.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean)
+              if (cPart) columns = cPart.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean)
+            }
+            initialOptions = { rows, columns }
+          }
+          
+          newQuestionsFromExcel.push({
+            id: `new_import_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 5)}`,
+            code: `Q-${Date.now()}-${i}`,
+            questionText: text,
+            questionType: type,
+            isRequired,
+            options: initialOptions,
+            ratingScaleMin: type === "SCALE_0_4" ? 0 : (type === "NPS" ? 0 : 1),
+            ratingScaleMax: type === "SCALE_0_4" ? 4 : (type === "NPS" ? 10 : 5),
+            weight,
+            sectionId: matchedSectionId
+          })
+        }
+        
+        if (newQuestionsFromExcel.length === 0) {
+          return alert("Không đọc được câu hỏi nào hợp lệ từ file Excel!")
+        }
+        
+        setQuestions(prev => [...prev, ...newQuestionsFromExcel])
+        alert(`Đã nhập thành công ${newQuestionsFromExcel.length} câu hỏi từ file Excel vào danh sách biên tập! Vui lòng kiểm tra lại và bấm 'Xuất Bản Form' hoặc 'Lưu Nháp' để hoàn tất.`)
+      } catch (e) {
+        console.error(e)
+        alert("Lỗi phân tích file Excel: " + e.message)
+      }
+    }
+    reader.readAsBinaryString(file)
+    e.target.value = ""
+  }
 
   const addQuestion = (type) => {
     let initialOptions: any = []
@@ -191,8 +302,20 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
       
       {/* LEFT PANE: EDITOR */}
       <div className={`flex-1 md:w-1/2 flex flex-col ${activeTab === "preview" ? "hidden md:flex" : "flex"}`}>
-        <div className="flex items-center justify-between bg-white p-4 rounded-3xl shadow-xl shadow-slate-100 border border-slate-100 mb-6 sticky top-0 z-30 w-full overflow-x-auto whitespace-nowrap scrollbar-hide">
-          <h2 className="font-black text-slate-800 text-lg mr-4">Builder</h2>
+        <div className="flex items-center justify-between bg-white p-4 rounded-3xl shadow-xl shadow-slate-100 border border-slate-100 mb-6 sticky top-0 z-30 w-full overflow-x-auto whitespace-nowrap scrollbar-hide gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="font-black text-slate-800 text-lg">Builder</h2>
+            <div className="flex items-center gap-1.5 bg-[#00A99D]/5 border border-[#00A99D]/20 px-3 py-1.5 rounded-2xl">
+              <button onClick={downloadTemplate} className="text-[#00A99D] hover:text-[#009085] flex items-center gap-1 text-[10px] font-black uppercase tracking-wider font-semibold" title="Tải file mẫu Excel">
+                <FileDown className="w-3.5 h-3.5" /> Mẫu Excel
+              </button>
+              <span className="text-[#00A99D]/30">|</span>
+              <label className="text-[#00A99D] hover:text-[#009085] flex items-center gap-1 text-[10px] font-black uppercase tracking-wider cursor-pointer font-semibold" title="Import từ file Excel">
+                <Upload className="w-3.5 h-3.5" /> Import
+                <input type="file" onChange={handleImportExcel} accept=".xlsx,.xls" className="hidden" />
+              </label>
+            </div>
+          </div>
           <div className="flex space-x-2">
             <button onClick={() => addQuestion("MULTIPLE_CHOICE")} className="text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
               <Plus className="w-3.5 h-3.5" /> Radio
@@ -225,8 +348,9 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
               <p className="font-black text-xl">Chưa có câu hỏi nào</p>
             </div>
           ) : (
-            questions.map((q, qIndex) => (
-              <div key={q.id} className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden relative group animate-in fade-in slide-in-from-bottom-4">
+            <>
+              {questions.map((q, qIndex) => (
+                <div key={q.id} className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden relative group animate-in fade-in slide-in-from-bottom-4">
                 <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-move text-xs font-semibold">
                   <GripVertical className="w-4 h-4 text-slate-300" />
                 </div>
@@ -375,7 +499,47 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                   </div>
                 </div>
               </div>
-            ))
+              ))}
+              
+              {/* Sticky bottom add fast question card */}
+              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] p-6 text-center space-y-4 shadow-sm">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thêm câu hỏi mới nhanh</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <button onClick={() => addQuestion("SCALE_0_4")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-teal-500 hover:text-teal-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <Plus className="w-4 h-4 text-teal-500" />
+                     <span>Khảo sát (0-4)</span>
+                  </button>
+                  <button onClick={() => addQuestion("NPS")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-amber-500 hover:text-amber-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <Plus className="w-4 h-4 text-amber-500" />
+                     <span>NPS (0-10)</span>
+                  </button>
+                  <button onClick={() => addQuestion("MULTIPLE_CHOICE")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-red-500 hover:text-red-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <Plus className="w-4 h-4 text-red-500" />
+                     <span>Radio</span>
+                  </button>
+                  <button onClick={() => addQuestion("CHECKBOX")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-emerald-500 hover:text-emerald-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <CheckSquare className="w-4 h-4 text-emerald-500" />
+                     <span>Checkbox</span>
+                  </button>
+                  <button onClick={() => addQuestion("TEXT")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-slate-500 hover:text-slate-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <Plus className="w-4 h-4 text-slate-500" />
+                     <span>Tự luận</span>
+                  </button>
+                  <button onClick={() => addQuestion("RATING")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-amber-500 hover:text-amber-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <Plus className="w-4 h-4 text-amber-500" />
+                     <span>Đánh giá sao</span>
+                  </button>
+                  <button onClick={() => addQuestion("MC_GRID")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-violet-500 hover:text-violet-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <LayoutGrid className="w-4 h-4 text-violet-500" />
+                     <span>Lưới Radio</span>
+                  </button>
+                  <button onClick={() => addQuestion("CB_GRID")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-pink-500 hover:text-pink-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
+                     <CheckSquare className="w-4 h-4 text-pink-500" />
+                     <span>Lưới Check</span>
+                  </button>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -393,10 +557,10 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
               const choices = opts.choices || []
               return (
                 <div key={idx} className="bg-white rounded-[3rem] shadow-[-20px_40px_80px_-20px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-500 group/preview">
-                  <div className="h-2 bg-[#d90429] w-full" />
+                  <div className="h-2 bg-[#00A99D] w-full" />
                   <div className="p-10">
                     <div className="flex items-center gap-4 mb-5">
-                      <div className="w-10 h-10 rounded-[1.25rem] bg-[#d90429] text-white text-xs font-black flex items-center justify-center shadow-xl shadow-red-200">{(idx+1).toString().padStart(2, '0')}</div>
+                      <div className="w-10 h-10 rounded-[1.25rem] bg-[#00A99D] text-white text-xs font-black flex items-center justify-center shadow-xl shadow-[#00A99D]/20">{(idx+1).toString().padStart(2, '0')}</div>
                       <span className="text-[10px] text-slate-300 font-black uppercase tracking-widest">Câu hỏi {idx+1}/{questions.length}</span>
                     </div>
                     <h3 className="text-xl font-black text-slate-800 leading-snug mb-8">{q.questionText || "Nội dung câu hỏi..."}</h3>
@@ -461,10 +625,10 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
       {/* ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-3xl border-t border-slate-100 p-8 flex justify-center z-40 md:left-64 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.08)] font-outfit">
         <div className="flex items-center space-x-6">
-          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:text-red-600 active:scale-95 transition-all shadow-xl text-xs font-semibold">
+          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:text-[#00A99D] active:scale-95 transition-all shadow-xl border-none bg-transparent">
              Lưu Nháp
           </button>
-          <button onClick={() => handleSave(true)} disabled={saving} className="px-16 py-5 flex items-center bg-[#d90429] text-white rounded-[1.75rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-red-700 active:scale-95 transition-all shadow-2xl shadow-red-300/60">
+          <button onClick={() => handleSave(true)} disabled={saving} className="px-16 py-5 flex items-center bg-[#00A99D] text-white rounded-[1.75rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-[#009085] active:scale-95 transition-all shadow-2xl shadow-[#00A99D]/30 border-none">
             <CloudUpload className="w-5 h-5 mr-4" /> Xuất Bản Form
           </button>
         </div>

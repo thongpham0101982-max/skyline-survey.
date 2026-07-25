@@ -66,10 +66,10 @@ export function StudentTransfersClient() {
     return () => window.removeEventListener("academicYearChanged", handleYearChange);
   }, [yearId]);
 
+  const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
   useEffect(() => {
     setSelectedOutTransferIds([]);
   }, [activeTab, activeSubTab, yearId]);
-  const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
   const [showInModal, setShowInModal] = useState(false)
