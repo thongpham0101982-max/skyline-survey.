@@ -748,10 +748,11 @@ export async function importTransfersOutAction(records: any[], selectedYearId?: 
         if (["DOMESTIC", "CHUYỂN TRƯỜNG VN", "CHUYEN TRUONG VN"].includes(rawCategory)) transferCategory = "DOMESTIC"
         else if (["ABROAD", "DU HỌC", "DU HOC"].includes(rawCategory)) transferCategory = "ABROAD"
         else if (["RESERVE", "BẢO LƯU", "BAO LUU"].includes(rawCategory)) transferCategory = "RESERVE"
+        else if (["GRADUATED", "TỐT NGHIỆP THPT", "TOT NGHIEP THPT", "TỐT NGHIỆP", "TOT NGHIEP", "TN"].includes(rawCategory)) transferCategory = "GRADUATED"
 
         if (!transferCategory) {
           skipped++
-          errors.push(`Học sinh mã ${studentCode} có Diện chuyển không hợp lệ ("${rawCategory}"). Phải là DOMESTIC, ABROAD hoặc RESERVE`)
+          errors.push(`Học sinh mã ${studentCode} có Diện chuyển không hợp lệ ("${rawCategory}"). Phải là DOMESTIC, ABROAD, RESERVE hoặc GRADUATED`)
           continue
         }
 

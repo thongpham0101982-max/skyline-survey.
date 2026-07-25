@@ -156,7 +156,7 @@ export function StudentTransfersClient() {
       ["Mã học sinh", "Bắt buộc. Mã học sinh đang học tại trường.", "Ví dụ: HS0001"],
       ["Ngày chuyển", "Bắt buộc. Ngày học sinh chính thức chuyển.", "Định dạng dd/mm/yyyy"],
       ["Kỳ học", "Bắt buộc. Kỳ học chuyển đi.", "HK1, HK2, SUMMER"],
-      ["Diện chuyển", "Bắt buộc. Diện chuyển đi.", "DOMESTIC (Chuyển trường VN), ABROAD (Du học), RESERVE (Bảo lưu)"],
+      ["Diện chuyển", "Bắt buộc. Diện chuyển đi.", "DOMESTIC (Chuyển trường VN), ABROAD (Du học), RESERVE (Bảo lưu), GRADUATED (Tốt nghiệp THPT)"],
       ["Trường chuyển đến", "Tên trường chuyển đến (chỉ dùng cho diện DOMESTIC).", "Ví dụ: Trường THPT Phan Châu Trinh"],
       ["Loại hình", "Loại hình trường (chỉ dùng cho diện DOMESTIC).", "PRIVATE (Tư thục), PUBLIC (Công lập), OTHER (Khác)"],
       ["Tỉnh/TP", "Tỉnh/Thành phố của trường đến (chỉ dùng cho diện DOMESTIC).", "Ví dụ: Thành phố Đà Nẵng"],
@@ -697,13 +697,14 @@ export function StudentTransfersClient() {
                         <span className={`px-2 py-0.5 rounded text-[10px] border ${
                           t.transferCategory === 'DOMESTIC' ? 'bg-amber-50 text-amber-700 border-amber-250' : 
                           t.transferCategory === 'ABROAD' ? 'bg-sky-50 text-sky-700 border-sky-250' : 
+                          t.transferCategory === 'GRADUATED' ? 'bg-emerald-50 text-emerald-700 border-emerald-250' :
                           'bg-indigo-50 text-indigo-700 border-indigo-250'
                         }`}>
-                          {t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : "Bảo lưu"}
+                          {t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : t.transferCategory === "GRADUATED" ? "Tốt nghiệp THPT" : "Bảo lưu"}
                         </span>
                       </td>
                       <td className="px-4 py-3.5 text-slate-650 font-medium">
-                        {t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}
+                        {t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.transferCategory === "GRADUATED" ? "Tốt nghiệp (TN)" : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}
                       </td>
                       <td className="px-4 py-3.5 text-right">
                         <button
@@ -1110,6 +1111,15 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
   })
 
   useEffect(() => {
+    if (form.transferCategory === "GRADUATED") {
+      const selectedClass = classes.find(c => c.id === form.classId);
+      if (selectedClass && selectedClass.grade !== "12") {
+        setForm(f => ({ ...f, classId: "", studentId: "" }));
+      }
+    }
+  }, [form.transferCategory, classes]);
+
+  useEffect(() => {
     loadOptions()
   }, [])
 
@@ -1174,7 +1184,11 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
 
   const filteredClasses = classes.filter(c => {
     const isPre = isClassPreschool(c);
-    return activeSubTab === "preschool" ? isPre : !isPre;
+    const matchPre = activeSubTab === "preschool" ? isPre : !isPre;
+    if (form.transferCategory === "GRADUATED") {
+      return matchPre && c.grade === "12";
+    }
+    return matchPre;
   });
 
   return (
@@ -1256,6 +1270,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
                   <option value="DOMESTIC">Chuyển trường VN</option>
                   <option value="ABROAD">Du học</option>
                   <option value="RESERVE">Bảo lưu</option>
+                  <option value="GRADUATED">Tốt nghiệp THPT (TN)</option>
                 </select>
               </div>
             </div>
