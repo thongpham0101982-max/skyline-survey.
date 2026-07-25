@@ -17,7 +17,7 @@ export async function getDestinationSchoolsAction() {
   }
 }
 
-export async function createDestinationSchoolAction(data: { name: string, code: string, level: string }) {
+export async function createDestinationSchoolAction(data: { name: string, code: string, level: string, schoolType: string }) {
   try {
     const session = await auth()
     if (!session) return { success: false, error: "Unauthorized" }
@@ -25,8 +25,9 @@ export async function createDestinationSchoolAction(data: { name: string, code: 
     const name = data.name.trim()
     const code = data.code.trim().toUpperCase()
     const level = data.level // "PHO_THONG" or "MAM_NON"
+    const schoolType = data.schoolType // "PUBLIC" or "PRIVATE"
 
-    if (!name || !code || !level) {
+    if (!name || !code || !level || !schoolType) {
       return { success: false, error: "Thiếu thông tin bắt buộc" }
     }
 
@@ -44,7 +45,7 @@ export async function createDestinationSchoolAction(data: { name: string, code: 
     }
 
     await prisma.destinationSchool.create({
-      data: { name, code, level }
+      data: { name, code, level, schoolType }
     })
 
     revalidatePath("/admin/truong-lien-ket")
@@ -56,7 +57,7 @@ export async function createDestinationSchoolAction(data: { name: string, code: 
   }
 }
 
-export async function updateDestinationSchoolAction(id: string, data: { name: string, code: string, level: string }) {
+export async function updateDestinationSchoolAction(id: string, data: { name: string, code: string, level: string, schoolType: string }) {
   try {
     const session = await auth()
     if (!session) return { success: false, error: "Unauthorized" }
@@ -64,8 +65,9 @@ export async function updateDestinationSchoolAction(id: string, data: { name: st
     const name = data.name.trim()
     const code = data.code.trim().toUpperCase()
     const level = data.level
+    const schoolType = data.schoolType
 
-    if (!name || !code || !level) {
+    if (!name || !code || !level || !schoolType) {
       return { success: false, error: "Thiếu thông tin bắt buộc" }
     }
 
@@ -85,7 +87,7 @@ export async function updateDestinationSchoolAction(id: string, data: { name: st
 
     await prisma.destinationSchool.update({
       where: { id },
-      data: { name, code, level }
+      data: { name, code, level, schoolType }
     })
 
     revalidatePath("/admin/truong-lien-ket")
@@ -121,23 +123,23 @@ export async function seedDestinationSchoolsAction() {
     if (!session) return { success: false, error: "Unauthorized" }
 
     const defaultSchools = [
-      { name: "THPT Quang Trung", code: "QTR", level: "PHO_THONG" },
-      { name: "THPT Khai Trí", code: "KTR", level: "PHO_THONG" },
-      { name: "THCS & THPT Hiển Nhân", code: "HNH", level: "PHO_THONG" },
-      { name: "Phổ thông Hermann Gmeiner", code: "HGM", level: "PHO_THONG" },
-      { name: "Sky-Line Đà Nẵng", code: "SKL", level: "PHO_THONG" },
-      { name: "Quốc tế Hoa Kỳ APU", code: "APU", level: "PHO_THONG" },
-      { name: "Quốc tế Singapore", code: "SIS", level: "PHO_THONG" },
-      { name: "Việt Nhật", code: "VNH", level: "PHO_THONG" },
-      { name: "St. Nicholas", code: "STN", level: "PHO_THONG" },
-      { name: "FPT", code: "FPT", level: "PHO_THONG" },
-      { name: "Anh Quốc", code: "UKA", level: "PHO_THONG" },
-      { name: "Olympia", code: "OLY", level: "PHO_THONG" },
-      { name: "Quảng Nam Academy", code: "QNA", level: "PHO_THONG" },
-      { name: "Quốc tế HAIS", code: "HAI", level: "PHO_THONG" },
-      { name: "Sky-Line Hill", code: "SLH", level: "PHO_THONG" },
-      { name: "Hà Huy Tập", code: "HHT", level: "PHO_THONG" },
-      { name: "Quảng Đông", code: "QDO", level: "PHO_THONG" }
+      { name: "THPT Quang Trung", code: "QTR", level: "PHO_THONG", schoolType: "PUBLIC" },
+      { name: "THPT Khai Trí", code: "KTR", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "THCS & THPT Hiển Nhân", code: "HNH", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Phổ thông Hermann Gmeiner", code: "HGM", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Sky-Line Đà Nẵng", code: "SKL", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Quốc tế Hoa Kỳ APU", code: "APU", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Quốc tế Singapore", code: "SIS", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Việt Nhật", code: "VNH", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "St. Nicholas", code: "STN", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "FPT", code: "FPT", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Anh Quốc", code: "UKA", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Olympia", code: "OLY", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Quảng Nam Academy", code: "QNA", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Quốc tế HAIS", code: "HAI", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Sky-Line Hill", code: "SLH", level: "PHO_THONG", schoolType: "PRIVATE" },
+      { name: "Hà Huy Tập", code: "HHT", level: "PHO_THONG", schoolType: "PUBLIC" },
+      { name: "Quảng Đông", code: "QDO", level: "PHO_THONG", schoolType: "PUBLIC" }
     ]
 
     let addedCount = 0
@@ -153,6 +155,12 @@ export async function seedDestinationSchoolsAction() {
       if (!existing) {
         await prisma.destinationSchool.create({ data: school })
         addedCount++
+      } else {
+        // Update type for existing seeded schools if they don't have it set correctly
+        await prisma.destinationSchool.update({
+          where: { id: existing.id },
+          data: { schoolType: school.schoolType }
+        })
       }
     }
 

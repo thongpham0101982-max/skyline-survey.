@@ -229,10 +229,10 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
       <main className="max-w-[1800px] mx-auto p-6 lg:p-10 space-y-10">
         
         {/* KPI OVERVIEW GRID */}
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 md:grid-cols-3 gap-6">
            {[
              { label: 'Chỉ số NPS', val: stats.nps, sub: 'Độ hài lòng (%)', icon: <Target className="w-5 h-5" />, bg: 'bg-white', text: 'text-red-600', trend: '+2.4%' },
-             { label: 'Điểm trung bình', val: stats.avg, sub: 'Thang điểm 10', icon: <GraduationCap className="w-5 h-5" />, bg: 'bg-white', text: 'text-slate-900', trend: 'Ổn định' },
+             
              { label: 'Tổng số phiếu', val: filteredForms.length, sub: 'Đã hoàn thành', icon: <ClipboardList className="w-5 h-5" />, bg: 'bg-white', text: 'text-slate-900', trend: (stats.completionRate + '% tỷ lệ') },
              { label: 'Phản hồi chi tiết', val: questionAnalytics.reduce((a, b) => a + b.opinions.length, 0), sub: 'Ý kiến đóng góp', icon: <MessageSquare className="w-5 h-5" />, bg: 'bg-white', text: 'text-slate-900', trend: 'Cần phản hồi' }
            ].map((k, i) => (
@@ -329,8 +329,8 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                                   </PieChart>
                                </ResponsiveContainer>
                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                                  <p className="text-[40px] font-black text-slate-900 tracking-tighter leading-none">{q.avg}</p>
-                                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Score</p>
+                                  <p className="text-[32px] font-black text-slate-900 tracking-tighter leading-none">{q.rawCount}</p>
+                                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-1">Phản hồi</p>
                                </div>
                             </div>
                             <div className="space-y-3">

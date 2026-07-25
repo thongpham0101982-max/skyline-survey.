@@ -1525,10 +1525,11 @@ model LearningSupportEvaluation {
 }
 
 model DestinationSchool {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  code      String   @unique
-  level     String   // "PHO_THONG" or "MAM_NON"
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  name       String   @unique
+  code       String   @unique
+  level      String   // "PHO_THONG" or "MAM_NON"
+  schoolType String   @default("PRIVATE") // "PUBLIC" or "PRIVATE"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
