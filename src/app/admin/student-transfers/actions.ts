@@ -51,6 +51,38 @@ export async function createTransferOutAction(data: any) {
   }
 }
 
+export async function updateTransferOutAction(id: string, data: any) {
+  try {
+    const session = await auth()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    if (!data.transferDate) return { success: false, error: "Thiếu ngày chuyển" }
+    if (!data.transferCategory) return { success: false, error: "Thiếu diện chuyển" }
+
+    await prisma.studentTransfer.update({
+      where: { id },
+      data: {
+        transferDate: new Date(data.transferDate),
+        semester: data.semester || null,
+        transferCategory: data.transferCategory,
+        destinationSchool: data.destinationSchool || null,
+        destinationType: data.destinationType || null,
+        destinationProvince: data.destinationProvince || null,
+        destinationCountry: data.destinationCountry || null,
+        reserveStartDate: data.reserveStartDate ? new Date(data.reserveStartDate) : null,
+        reserveEndDate: data.reserveEndDate ? new Date(data.reserveEndDate) : null,
+        reason: data.reason || null,
+      }
+    })
+
+    revalidatePath("/admin/student-transfers")
+    return { success: true }
+  } catch (e: any) {
+    console.error("updateTransferOutAction Error:", e)
+    return { success: false, error: e.message }
+  }
+}
+
 export async function getTransfersAction() {
   try {
     const transfers = await prisma.studentTransfer.findMany({

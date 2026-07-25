@@ -3,12 +3,13 @@ import * as XLSX from "xlsx"
 import { useRef } from "react"
 import { useState, useEffect } from "react" 
 // import useRef added above
-import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, RotateCcw, BarChart3, ChevronDown, ChevronUp, Eye, EyeOff, Building2, Layers, BookOpen } from "lucide-react"
+import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, RotateCcw, BarChart3, ChevronDown, ChevronUp, Eye, EyeOff, Building2, Layers, BookOpen, MapPin, School, Activity } from "lucide-react"
 import { 
   getTransferFormOptionsAction, 
   getClassesByCampusAndYearAction, 
   getStudentsByClassAction, 
   createTransferOutAction, 
+  updateTransferOutAction,
   importTransfersOutAction,
   getTransfersAction, 
   createChangeClassAction, 
@@ -75,6 +76,7 @@ export function StudentTransfersClient() {
   const [pendingRequests, setPendingRequests] = useState<any[]>([])
   const [loadingList, setLoadingList] = useState(true)
   const [showStats, setShowStats] = useState(true)
+  const [showOutStats, setShowOutStats] = useState(true)
   const [globalSearch, setGlobalSearch] = useState("")
   const [historyFilterClass, setHistoryFilterClass] = useState("")
   const [historyPage, setHistoryPage] = useState(1)
@@ -352,6 +354,108 @@ export function StudentTransfersClient() {
     };
   })();
 
+  // --- OUT STATISTICS ---
+  const outStats = (() => {
+    const baseOutTransfers = filteredTransfers.filter(t => t.type === "OUT");
+    const totalOut = baseOutTransfers.length;
+
+    // 1. Thống kê theo Lớp
+    const classMap: Record<string, any> = {};
+    baseOutTransfers.forEach(t => {
+      const name = t.student?.class?.className || "Chưa xếp lớp/Khác";
+      const campusName = t.student?.class?.campus?.campusName || "Không rõ";
+      const key = name + " - " + campusName;
+      if (!classMap[key]) {
+        classMap[key] = { name, campusName, count: 0 };
+      }
+      classMap[key].count++;
+    });
+    const classStats = Object.values(classMap).sort((a: any, b: any) => b.count - a.count);
+
+    // 2. Thống kê theo Cơ sở
+    const campusMap: Record<string, any> = {};
+    baseOutTransfers.forEach(t => {
+      const name = t.student?.class?.campus?.campusName || "Không rõ";
+      if (!campusMap[name]) {
+        campusMap[name] = { name, count: 0 };
+      }
+      campusMap[name].count++;
+    });
+    const campusStats = Object.values(campusMap).sort((a: any, b: any) => b.count - a.count);
+
+    // 3. Thống kê theo Loại hình
+    const typeMap: Record<string, any> = {
+      PRIVATE: { code: "PRIVATE", name: "Tư thục", count: 0 },
+      PUBLIC: { code: "PUBLIC", name: "Công lập", count: 0 },
+      OTHER: { code: "OTHER", name: "Khác", count: 0 },
+    };
+    let unspecifiedTypeCount = 0;
+    baseOutTransfers.forEach(t => {
+      const type = t.destinationType;
+      if (type && typeMap[type]) {
+        typeMap[type].count++;
+      } else {
+        unspecifiedTypeCount++;
+      }
+    });
+    const typeStats = Object.values(typeMap);
+    if (unspecifiedTypeCount > 0) {
+      typeStats.push({ code: "UNSPECIFIED", name: "Không xác định", count: unspecifiedTypeCount });
+    }
+
+    // 4. Thống kê theo Diện chuyển
+    const categoryMap: Record<string, any> = {};
+    baseOutTransfers.forEach(t => {
+      const cat = t.transferCategory || "OTHER";
+      let name = "Khác/Bảo lưu";
+      if (cat === "DOMESTIC") name = "Chuyển trường VN";
+      else if (cat === "ABROAD") name = "Du học";
+      else if (cat === "GRADUATED") name = "Tốt nghiệp THPT";
+      
+      if (!categoryMap[cat]) {
+        categoryMap[cat] = { code: cat, name, count: 0 };
+      }
+      categoryMap[cat].count++;
+    });
+    const categoryStats = Object.values(categoryMap).sort((a: any, b: any) => b.count - a.count);
+
+    // 5. Thống kê theo Tỉnh/TP
+    const provinceMap: Record<string, any> = {};
+    baseOutTransfers.forEach(t => {
+      const prov = t.destinationProvince || "Khác / Không xác định";
+      if (!provinceMap[prov]) {
+        provinceMap[prov] = { name: prov, count: 0 };
+      }
+      provinceMap[prov].count++;
+    });
+    const provinceStats = Object.values(provinceMap).sort((a: any, b: any) => b.count - a.count);
+
+    // Thống kê riêng: Học sinh chuyển trường Tư thục trong Tỉnh/Tp: Thành phố Đà Nẵng, có tỷ lệ
+    const privateDaNang = baseOutTransfers.filter(t => 
+      t.destinationProvince === "Thành phố Đà Nẵng" && t.destinationType === "PRIVATE"
+    ).length;
+
+    const totalDaNang = baseOutTransfers.filter(t => 
+      t.destinationProvince === "Thành phố Đà Nẵng"
+    ).length;
+
+    const pctInDaNang = totalDaNang > 0 ? Math.round((privateDaNang / totalDaNang) * 100) : 0;
+    const pctOverall = totalOut > 0 ? Math.round((privateDaNang / totalOut) * 100) : 0;
+
+    return {
+      totalOut,
+      classStats,
+      campusStats,
+      typeStats,
+      categoryStats,
+      provinceStats,
+      privateDaNang,
+      totalDaNang,
+      pctInDaNang,
+      pctOverall
+    };
+  })();
+
   // Dynamic filter options based on pendingRequests
   const availableCampuses = Array.from(new Set(pendingRequests.map(r => r.admissionCampus).filter(Boolean)));
   
@@ -571,6 +675,225 @@ export function StudentTransfersClient() {
         </div>
       )}
 
+      {/* STATISTICS DASHBOARD FOR OUT */}
+      {activeTab === "OUT" && (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in duration-300">
+          <div className="bg-slate-50/70 p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-rose-50 text-rose-600 rounded-2xl">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">Thống kê Học sinh Chuyển đi</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Theo dõi chi tiết số liệu chuyển đi theo Lớp, Cơ sở, Loại hình, Diện chuyển, Tỉnh/TP</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowOutStats(!showOutStats)}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 transition-colors"
+            >
+              {showOutStats ? (
+                <>
+                  <EyeOff className="w-4 h-4 text-slate-400" />
+                  Ẩn bảng thống kê
+                  <ChevronUp className="w-4 h-4 text-slate-400" />
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-slate-400" />
+                  Hiện bảng thống kê
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </>
+              )}
+            </button>
+          </div>
+
+          {showOutStats && (
+            <div className="p-6 space-y-6">
+              {/* Metric Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng học sinh chuyển đi</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-slate-800">{outStats.totalOut}</span>
+                    <span className="text-xs text-slate-400 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-amber-50/40 p-5 rounded-2xl border border-amber-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Chuyển trường VN</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-amber-600">
+                      {outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0}
+                    </span>
+                    <span className="text-xs text-amber-550/70 font-medium">
+                      ({outStats.totalOut > 0 ? Math.round(((outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0) / outStats.totalOut) * 100) : 0}%)
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-sky-50/40 p-5 rounded-2xl border border-sky-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Du học & Diện khác</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-sky-600">
+                      {outStats.totalOut - (outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0)}
+                    </span>
+                    <span className="text-xs text-sky-550/70 font-medium">
+                      ({outStats.totalOut > 0 ? Math.round(((outStats.totalOut - (outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0)) / outStats.totalOut) * 100) : 0}%)
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-rose-50/40 p-5 rounded-2xl border border-rose-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-rose-700 uppercase tracking-wider">Tư thục tại Đà Nẵng</span>
+                  <div className="flex flex-col mt-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-rose-600">{outStats.privateDaNang}</span>
+                      <span className="text-xs text-rose-500/70 font-medium">học sinh</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-semibold mt-1 space-y-0.5">
+                      <div>Tỷ lệ tại Đà Nẵng: <span className="text-rose-600 font-bold">{outStats.pctInDaNang}%</span> ({outStats.privateDaNang}/{outStats.totalDaNang})</div>
+                      <div>Tỷ lệ toàn hệ thống: <span className="text-rose-600 font-bold">{outStats.pctOverall}%</span> ({outStats.privateDaNang}/{outStats.totalOut})</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakdown Tables Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
+                {/* Column 1: Cơ sở & Lớp cũ */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-5">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-[#00A99D]" /> Theo Cơ sở cũ
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.campusStats.length > 0 ? outStats.campusStats.map(c => (
+                        <div key={c.name} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{c.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{c.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((c.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-rose-500 h-full" style={{ width: (outStats.totalOut > 0 ? (c.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-[#00A99D]" /> Theo Lớp cũ
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.classStats.length > 0 ? outStats.classStats.map(cl => (
+                        <div key={cl.name + "-" + cl.campusName} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span className="flex items-center gap-1.5">
+                              {cl.name}
+                              <span className="text-[10px] text-slate-400 font-medium">({cl.campusName})</span>
+                            </span>
+                            <span className="text-rose-600 font-extrabold">{cl.count} <span className="text-[10px] text-slate-400 font-medium">HS</span></span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-rose-400 h-full" style={{ width: (outStats.totalOut > 0 ? (cl.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2: Diện chuyển & Loại hình */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-5">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-[#00A99D]" /> Theo Diện chuyển
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.categoryStats.length > 0 ? outStats.categoryStats.map(cat => (
+                        <div key={cat.code} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{cat.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{cat.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((cat.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-amber-500 h-full" style={{ width: (outStats.totalOut > 0 ? (cat.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <School className="w-4 h-4 text-[#00A99D]" /> Theo Loại hình trường đến
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.typeStats.length > 0 ? outStats.typeStats.map(t => (
+                        <div key={t.code} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{t.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{t.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((t.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-indigo-500 h-full" style={{ width: (outStats.totalOut > 0 ? (t.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 3: Tỉnh/TP đến */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-[#00A99D]" /> Theo Tỉnh/Thành phố đến
+                  </h4>
+                  <div className="space-y-3.5 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
+                    {outStats.provinceStats.length > 0 ? outStats.provinceStats.map(p => (
+                      <div key={p.name} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                          <span>{p.name}</span>
+                          <span className="text-slate-500">
+                            <span className="text-rose-600 font-extrabold">{p.count}</span>
+                            <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                            <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((p.count / outStats.totalOut) * 100) : 0}%)</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-sky-500 h-full" style={{ width: (outStats.totalOut > 0 ? (p.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
         <div className="border-b border-slate-100 p-3 bg-slate-50/50 flex gap-2 overflow-x-auto custom-scrollbar">
           <button
@@ -717,7 +1040,16 @@ export function StudentTransfersClient() {
                       <td className="px-4 py-3.5 text-slate-650 font-medium">
                         {t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.transferCategory === "GRADUATED" ? "Tốt nghiệp (TN)" : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}
                       </td>
-                      <td className="px-4 py-3.5 text-right">
+                      <td className="px-4 py-3.5 text-right flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingTransfer(t);
+                            setShowOutModal(true);
+                          }}
+                          className="px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          Chỉnh sửa
+                        </button>
                         <button
                           onClick={() => handleRevert(t.id, t.student?.studentName)}
                           className="px-3 py-1.5 border border-amber-200 hover:border-amber-300 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
@@ -1103,7 +1435,17 @@ export function StudentTransfersClient() {
         )}
       </div>
 
-{showOutModal && <TransferOutModal activeSubTab={activeSubTab} onClose={() => setShowOutModal(false)} onSaved={loadTransfers} />}
+{showOutModal && (
+        <TransferOutModal 
+          activeSubTab={activeSubTab} 
+          initialData={editingTransfer}
+          onClose={() => {
+            setShowOutModal(false);
+            setEditingTransfer(null);
+          }}
+          onSaved={loadTransfers}
+        />
+      )}
       {showChangeModal && <ChangeClassModal activeSubTab={activeSubTab} onClose={() => setShowChangeModal(false)} onSaved={loadTransfers} />}
       {showInModal && (
         <TransferInModal 
@@ -1128,7 +1470,7 @@ export function StudentTransfersClient() {
   )
 }
 
-function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "general" | "preschool", onClose: () => void, onSaved: () => void }) {
+function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { activeSubTab: "general" | "preschool", initialData?: any, onClose: () => void, onSaved: () => void }) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   
@@ -1137,20 +1479,20 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
   const [students, setStudents] = useState<any[]>([])
   
   const [form, setForm] = useState({
-    academicYearId: "",
-    campusId: "",
-    classId: "",
-    studentId: "",
-    transferDate: "",
-    semester: "",
-    transferCategory: "", // DOMESTIC, ABROAD
-    destinationSchool: "",
-    destinationType: "",
-    destinationProvince: "",
-    destinationCountry: "",
-    reserveStartDate: "",
-    reserveEndDate: "",
-    reason: ""
+    academicYearId: initialData?.student?.academicYearId || "",
+    campusId: initialData?.student?.campusId || "",
+    classId: initialData?.student?.classId || "",
+    studentId: initialData?.studentId || "",
+    transferDate: initialData?.transferDate ? new Date(initialData.transferDate).toISOString().split('T')[0] : "",
+    semester: initialData?.semester || "",
+    transferCategory: initialData?.transferCategory || "", // DOMESTIC, ABROAD
+    destinationSchool: initialData?.destinationSchool || "",
+    destinationType: initialData?.destinationType || "",
+    destinationProvince: initialData?.destinationProvince || "",
+    destinationCountry: initialData?.destinationCountry || "",
+    reserveStartDate: initialData?.reserveStartDate ? new Date(initialData.reserveStartDate).toISOString().split('T')[0] : "",
+    reserveEndDate: initialData?.reserveEndDate ? new Date(initialData.reserveEndDate).toISOString().split('T')[0] : "",
+    reason: initialData?.reason || ""
   })
 
   useEffect(() => {
@@ -1173,7 +1515,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
       if (data && data.years) {
         setOptions(data)
         const activeYear = data.years.find((y: any) => !y.isOff) || data.years[0];
-        if (activeYear) setForm(f => ({ ...f, academicYearId: activeYear.id }))
+        if (activeYear && !initialData) setForm(f => ({ ...f, academicYearId: activeYear.id }))
       } else {
         alert("Lỗi tải dữ liệu. Xin thử lại.")
       }
@@ -1187,7 +1529,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
     if (form.campusId && form.academicYearId) {
       getClassesByCampusAndYearAction(form.campusId, form.academicYearId).then(data => {
         setClasses(data)
-        setForm(f => ({ ...f, classId: "", studentId: "" }))
+        if (!initialData) setForm(f => ({ ...f, classId: "", studentId: "" }))
       })
     }
   }, [form.campusId, form.academicYearId])
@@ -1196,7 +1538,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
     if (form.classId) {
       getStudentsByClassAction(form.classId).then(data => {
         setStudents(data)
-        setForm(f => ({ ...f, studentId: "" }))
+        if (!initialData) setForm(f => ({ ...f, studentId: "" }))
       })
     }
   }, [form.classId])
@@ -1204,10 +1546,15 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
   async function handleSubmit(e: any) {
     e.preventDefault()
     setSaving(true)
-    const res = await createTransferOutAction(form)
+    let res;
+    if (initialData) {
+      res = await updateTransferOutAction(initialData.id, form)
+    } else {
+      res = await createTransferOutAction(form)
+    }
     setSaving(false)
     if (res.success) {
-      alert("Đã tạo phiếu lưu chuyển và cập nhật danh sách lớp!")
+      alert(initialData ? "Đã cập nhật thông tin chuyển đi thành công!" : "Đã tạo phiếu lưu chuyển và cập nhật danh sách lớp!")
       onSaved()
       onClose()
     } else {
@@ -1240,7 +1587,7 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
         <div className="flex items-center justify-between p-6 text-xs font-semibold">
           <h2 className="text-xl font-bold text-slate-900 flex items-center">
             <ArrowRightToLine className="w-5 h-5 mr-3 text-rose-500" /> 
-            Tạo phiếu Chuyển đi
+            {initialData ? "Chỉnh sửa phiếu Chuyển đi" : "Tạo phiếu Chuyển đi"}
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
             <X className="w-5 h-5" />
@@ -1252,42 +1599,65 @@ function TransferOutModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
         ) : (
                                                             <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
             {/* Filter Group */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
-                  <option value="">Chọn năm học</option>
-                  {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
-                  <option value="">Chọn cơ sở</option>
-                  {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
-                  <option value="">Chọn lớp học</option>
-                  {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                </select>
-                {form.classId && (
-                  <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
-                    <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
-                    <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+            {initialData ? (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Học sinh chuyển đi</div>
+                  <div className="text-base font-extrabold text-[#00A99D] mt-1 flex items-center gap-2">
+                    {initialData.student?.studentName}
+                    <span className="text-[10px] font-semibold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
+                      {initialData.student?.studentCode}
+                    </span>
                   </div>
-                )}
+                  <div className="text-xs text-slate-500 font-semibold mt-1">
+                    Lớp cũ: <span className="text-slate-700 font-bold">{initialData.student?.class?.className}</span> ({initialData.student?.class?.campus?.campusName})
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Năm học</div>
+                  <div className="text-sm font-bold text-slate-700 mt-1">
+                    {options.years.find((y: any) => y.id === form.academicYearId)?.name || "Năm học hiện tại"}
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
-                <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
-                  <option value="">Chọn học sinh</option>
-                  {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
-                </select>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
+                    <option value="">Chọn năm học</option>
+                    {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                    <option value="">Chọn cơ sở</option>
+                    {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                    <option value="">Chọn lớp học</option>
+                    {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                  </select>
+                  {form.classId && (
+                    <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
+                      <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
+                      <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
+                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
+                    <option value="">Chọn học sinh</option>
+                    {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="h-px bg-slate-100" />
 
