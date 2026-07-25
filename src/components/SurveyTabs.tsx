@@ -12,14 +12,12 @@ export function SurveyTabs({ activeTab, role = 'ADMIN' }: SurveyTabsProps) {
     { id: 'surveys', label: 'Quản lý Khảo sát', href: '/admin/surveys', icon: FileSpreadsheet },
     { id: 'categories', label: 'Danh mục Khảo sát', href: '/admin/categories', icon: Layers },
     { id: 'results', label: 'Kết quả KS', href: '/admin/surveys/results', icon: ClipboardCheck },
-    { id: 'nps', label: 'Phân tích NPS', href: '/admin/nps', icon: PieChart },
-    { id: 'reports', label: 'Theo dõi Phản hồi', href: '/admin/reports', icon: BarChart3 }
+    { id: 'reports', label: 'Thống kê', href: '/admin/reports', icon: BarChart3 }
   ]
 
   const teacherTabs = [
     { id: 'surveys', label: 'Quản lý Khảo sát', href: '/teacher/surveys', icon: FileSpreadsheet },
-    { id: 'nps', label: 'Phân tích NPS', href: '/teacher/nps', icon: PieChart },
-    { id: 'feedback', label: 'Theo dõi Phản hồi', href: '/teacher/feedback', icon: MessageSquare }
+    { id: 'feedback', label: 'Thống kê', href: '/teacher/feedback', icon: MessageSquare }
   ]
 
   const tabs = role === 'TEACHER' ? teacherTabs : adminTabs

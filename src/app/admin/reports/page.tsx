@@ -24,8 +24,8 @@ export default async function ReportsPage() {
     <div className="space-y-6">
       <SurveyTabs activeTab="reports" />
       <div>
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Trung tâm Đo Lường &amp; Quản Tỷ Báo Cáo</h1>
-        <p className="text-slate-500 mt-2 font-medium">Bảng xếp hạng thời gian thực tiến độ Survey theo từng Cấp Lớp, Từng phụ huynh.</p>
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Thống Kê Khảo Sát</h1>
+        <p className="text-slate-500 mt-2 font-medium">Thống kê tỷ lệ hoàn thành khảo sát theo cơ sở, khối lớp và tỷ lệ so với tổng số học sinh của năm học.</p>
       </div>
       <TrackingClient
         periods={periods}

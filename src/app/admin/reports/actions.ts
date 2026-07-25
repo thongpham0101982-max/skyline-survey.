@@ -5,6 +5,17 @@ import { revalidatePath } from "next/cache"
 export async function getSurveyPeriodTrackingAction(periodId: string) {
   if (!periodId) return null
 
+  const period = await prisma.surveyPeriod.findUnique({
+    where: { id: periodId }
+  })
+
+  let totalStudentsInYear = 0
+  if (period && period.academicYearId) {
+    totalStudentsInYear = await prisma.student.count({
+      where: { academicYearId: period.academicYearId }
+    })
+  }
+
   // Fetch all forms for this period
   const forms = await prisma.surveyForm.findMany({
     where: { surveyPeriodId: periodId },
@@ -59,7 +70,12 @@ export async function getSurveyPeriodTrackingAction(periodId: string) {
     return acc
   }, {})
 
-  return Object.values(grouped).sort((a: any, b: any) => a.classInfo?.className?.localeCompare(b.classInfo?.className))
+  const groupedList = Object.values(grouped).sort((a: any, b: any) => a.classInfo?.className?.localeCompare(b.classInfo?.className))
+  
+  return {
+    grouped: groupedList,
+    totalStudentsInYear
+  }
 }
 
 export async function sendClassReminderAction(classId: string, surveyPeriodId: string) {
