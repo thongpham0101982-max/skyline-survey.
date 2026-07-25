@@ -266,9 +266,9 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
               </div>
            </div>
 
-           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+           <div className="grid grid-cols-1 gap-8">
               {questionAnalytics.map((q, i) => (
-                <div key={q.id} className={"bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col hover:border-red-100 transition-colors group " + (q.isOpinion ? 'xl:col-span-2' : '')}>
+                <div key={q.id} className="bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden flex flex-col hover:border-red-100 transition-colors group">
                    
                    {/* SHEET HEADER */}
                    <div className="flex justify-between items-center group-hover:bg-red-50/10 transition-colors text-xs font-semibold">
@@ -350,7 +350,7 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                             </div>
                          </div>
                       ) : (
-                         <div className="space-y-8">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
                             <div className="h-[200px] w-full">
                                <ResponsiveContainer width="100%" height="100%">
                                   <BarChart data={q.chartData} layout="vertical" margin={{ top: 0, right: 30, left: 10, bottom: 0 }}>
@@ -367,8 +367,8 @@ export function ResultsDashboard({ periodId, periodName, periodCode, questions, 
                                </ResponsiveContainer>
                             </div>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                               {q.chartData.slice(0, 5).map((item, idx) => (
-                                  <div key={idx} className="p-4 flex flex-col items-center justify-center group/kpi hover:bg-white hover:shadow-md transition-all text-xs font-semibold">
+                               {q.chartData.map((item, idx) => (
+                                  <div key={idx} className="p-4 flex flex-col items-center justify-center group/kpi hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-2xl transition-all text-xs font-semibold">
                                      <p className="text-[18px] font-black text-slate-900 tracking-tighter">{item.percentage}%</p>
                                      <p className="text-[8px] font-black text-slate-400 uppercase truncate max-w-full">{item.name}</p>
                                   </div>
