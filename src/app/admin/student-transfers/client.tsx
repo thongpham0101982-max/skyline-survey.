@@ -3,7 +3,7 @@ import * as XLSX from "xlsx"
 import { useRef } from "react"
 import { useState, useEffect } from "react" 
 // import useRef added above
-import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, RotateCcw } from "lucide-react"
+import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, RotateCcw, BarChart3, ChevronDown, ChevronUp, Eye, EyeOff, Building2, Layers, BookOpen } from "lucide-react"
 import { 
   getTransferFormOptionsAction, 
   getClassesByCampusAndYearAction, 
@@ -74,6 +74,8 @@ export function StudentTransfersClient() {
   const [transfers, setTransfers] = useState<any[]>([])
   const [pendingRequests, setPendingRequests] = useState<any[]>([])
   const [loadingList, setLoadingList] = useState(true)
+  const [showStats, setShowStats] = useState(true)
+  const [globalSearch, setGlobalSearch] = useState("")
 
   // Filters, search, and selection states for pending requests
   const [searchTerm, setSearchTerm] = useState("")
@@ -243,9 +245,88 @@ export function StudentTransfersClient() {
     return activeSubTab === "preschool" ? isPreschool : !isPreschool;
   });
 
-  const outTransfers = filteredTransfers.filter(t => t.type === "OUT")
-  const changeTransfers = filteredTransfers.filter(t => t.type === "CHANGE_CLASS")
-  const inTransfers = filteredTransfers.filter(t => t.type === "IN")
+  const outTransfers = filteredTransfers.filter(t => t.type === "OUT" && (
+    !globalSearch || 
+    (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
+    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase())
+  ))
+  const changeTransfers = filteredTransfers.filter(t => t.type === "CHANGE_CLASS" && (
+    !globalSearch || 
+    (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
+    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase())
+  ))
+  const inTransfers = filteredTransfers.filter(t => t.type === "IN" && (
+    !globalSearch || 
+    (t.student?.studentName || "").toLowerCase().includes(globalSearch.toLowerCase()) ||
+    (t.student?.studentCode || "").toLowerCase().includes(globalSearch.toLowerCase())
+  ))
+
+  // --- ENROLLMENT STATISTICS ---
+  const stats = (() => {
+    const currentSubTabPending = pendingRequests.filter(req => activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool);
+    const currentSubTabEnrolled = inTransfers;
+
+    const totalPending = currentSubTabPending.length;
+    const totalEnrolled = currentSubTabEnrolled.length;
+    const totalRequests = totalPending + totalEnrolled;
+    const completionRate = totalRequests > 0 ? Math.round((totalEnrolled / totalRequests) * 100) : 0;
+
+    // Campus breakdown
+    const campusMap = {};
+    currentSubTabPending.forEach(r => {
+      const name = r.admissionCampus || "Khác";
+      if (!campusMap[name]) campusMap[name] = { name, pending: 0, enrolled: 0 };
+      campusMap[name].pending++;
+    });
+    currentSubTabEnrolled.forEach(t => {
+      const name = t.student?.class?.campus?.campusName || "Khác";
+      if (!campusMap[name]) campusMap[name] = { name, pending: 0, enrolled: 0 };
+      campusMap[name].enrolled++;
+    });
+    const campusStats = Object.values(campusMap).filter(c => c.pending > 0 || c.enrolled > 0);
+
+    // Grade breakdown
+    const gradeMap = {};
+    currentSubTabPending.forEach(r => {
+      const name = r.isPreschool ? "Mầm non" : "Khối " + r.grade;
+      if (!gradeMap[name]) gradeMap[name] = { name, pending: 0, enrolled: 0 };
+      gradeMap[name].pending++;
+    });
+    currentSubTabEnrolled.forEach(t => {
+      const isPre = checkIsPreschoolStudent(t.student);
+      const name = isPre ? "Mầm non" : "Khối " + (t.student?.class?.grade || "Khác");
+      if (!gradeMap[name]) gradeMap[name] = { name, pending: 0, enrolled: 0 };
+      gradeMap[name].enrolled++;
+    });
+    const gradeStats = Object.values(gradeMap).sort((a, b) => {
+      if (a.name === "Mầm non") return -1;
+      if (b.name === "Mầm non") return 1;
+      const numA = parseInt(a.name.replace(/\D/g, ""), 10);
+      const numB = parseInt(b.name.replace(/\D/g, ""), 10);
+      return numA - numB;
+    });
+
+    // Class breakdown
+    const classMap = {};
+    currentSubTabEnrolled.forEach(t => {
+      const name = t.student?.class?.className;
+      if (!name) return;
+      const campusName = t.student?.class?.campus?.campusName || "";
+      if (!classMap[name]) classMap[name] = { name, campusName, enrolled: 0 };
+      classMap[name].enrolled++;
+    });
+    const classStats = Object.values(classMap).sort((a, b) => a.name.localeCompare(b.name));
+
+    return {
+      totalRequests,
+      totalPending,
+      totalEnrolled,
+      completionRate,
+      campusStats,
+      gradeStats,
+      classStats
+    };
+  })();
 
   // Dynamic filter options based on pendingRequests
   const availableCampuses = Array.from(new Set(pendingRequests.map(r => r.admissionCampus).filter(Boolean)));
@@ -306,8 +387,163 @@ export function StudentTransfersClient() {
         </button>
       </div>
 
-      <div className="bg-white rounded-[32px] shadow-sm border-2 border-amber-100 overflow-hidden">
-        <div className="border-b border-slate-100 p-2 flex gap-2 overflow-x-auto custom-scrollbar">
+      {/* STATISTICS DASHBOARD */}
+      {activeTab === "IN" && (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in duration-300">
+          <div className="bg-slate-50/70 p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">Thống kê Tiến độ Nhập học</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Theo dõi chi tiết số liệu phân bổ học sinh theo Lớp, Khối, Cơ sở</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 transition-colors"
+            >
+              {showStats ? (
+                <>
+                  <EyeOff className="w-4 h-4 text-slate-400" />
+                  Ẩn bảng thống kê
+                  <ChevronUp className="w-4 h-4 text-slate-400" />
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-slate-400" />
+                  Hiện bảng thống kê
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </>
+              )}
+            </button>
+          </div>
+
+          {showStats && (
+            <div className="p-6 space-y-6">
+              {/* Metric Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng số yêu cầu</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-slate-800">{stats.totalRequests}</span>
+                    <span className="text-xs text-slate-400 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-amber-50/40 p-5 rounded-2xl border border-amber-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Chờ xếp lớp (Pending)</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-amber-600">{stats.totalPending}</span>
+                    <span className="text-xs text-amber-500/70 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-emerald-50/40 p-5 rounded-2xl border border-emerald-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Đã nhập học (Enrolled)</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-emerald-600">{stats.totalEnrolled}</span>
+                    <span className="text-xs text-emerald-550/70 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-sky-50/40 p-5 rounded-2xl border border-sky-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Tỷ lệ hoàn thành</span>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-2xl font-black text-sky-600">{stats.completionRate}%</span>
+                    <div className="flex-1 bg-sky-100 h-2 rounded-full overflow-hidden">
+                      <div className="bg-sky-500 h-full rounded-full" style={{ width: stats.completionRate + "%" }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakdown Tables Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
+                {/* Campus breakdown */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-[#00A99D]" /> Thống kê theo Cơ sở
+                  </h4>
+                  <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                    {stats.campusStats.length > 0 ? stats.campusStats.map(c => (
+                      <div key={c.name} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                          <span>{c.name}</span>
+                          <span className="text-slate-500">
+                            <span className="text-emerald-600 font-extrabold">{c.enrolled}</span>
+                            <span className="mx-1">/</span>
+                            <span>{c.enrolled + c.pending}</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden flex">
+                          <div className="bg-emerald-500 h-full" style={{ width: ((c.enrolled / (c.enrolled + c.pending)) * 100) + "%" }}></div>
+                          <div className="bg-amber-500 h-full" style={{ width: ((c.pending / (c.enrolled + c.pending)) * 100) + "%" }}></div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Grade breakdown */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-[#00A99D]" /> Thống kê theo Khối
+                  </h4>
+                  <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                    {stats.gradeStats.length > 0 ? stats.gradeStats.map(g => (
+                      <div key={g.name} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                          <span>{g.name}</span>
+                          <span className="text-slate-500">
+                            <span className="text-emerald-600 font-extrabold">{g.enrolled}</span>
+                            <span className="mx-1">/</span>
+                            <span>{g.enrolled + g.pending}</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden flex">
+                          <div className="bg-emerald-500 h-full" style={{ width: ((g.enrolled / (g.enrolled + g.pending)) * 100) + "%" }}></div>
+                          <div className="bg-amber-500 h-full" style={{ width: ((g.pending / (g.enrolled + g.pending)) * 100) + "%" }}></div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Class breakdown */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-[#00A99D]" /> Thống kê theo Lớp (Đã xếp)
+                  </h4>
+                  <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                    {stats.classStats.length > 0 ? stats.classStats.map(cl => (
+                      <div key={cl.name} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                          <span className="flex items-center gap-1.5">
+                            {cl.name}
+                            <span className="text-[10px] text-slate-400 font-medium">({cl.campusName})</span>
+                          </span>
+                          <span className="text-emerald-600 font-extrabold">{cl.enrolled} <span className="text-[10px] text-slate-400 font-medium">HS</span></span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-emerald-500 h-full" style={{ width: '100%' }}></div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Chưa có lớp nào được xếp</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div className="border-b border-slate-100 p-3 bg-slate-50/50 flex gap-2 overflow-x-auto custom-scrollbar">
           <button
             onClick={() => setActiveTab("OUT")}
             className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
@@ -346,8 +582,14 @@ export function StudentTransfersClient() {
       <div className="p-8">
         <div className="flex items-center justify-between mb-6">
            <div className="relative w-72">
-             <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-             <input type="text" placeholder="Tìm kiếm học sinh..." className="w-full pl-11 pr-4 focus:border-indigo-500 font-medium outline-none transition-all text-xs font-semibold" />
+             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450" />
+             <input 
+               type="text" 
+               placeholder="Tìm kiếm học sinh..." 
+               value={globalSearch}
+               onChange={(e) => setGlobalSearch(e.target.value)}
+               className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
+             />
            </div>
            
            {activeTab === "OUT" && (
@@ -395,30 +637,60 @@ export function StudentTransfersClient() {
           loadingList ? (
             <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
           ) : outTransfers.length > 0 ? (
-            <div className="border border-slate-200 rounded-2xl overflow-hidden">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead className="text-slate-600 font-bold uppercase text-[10px] tracking-wider text-xs font-semibold">
+            <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full text-left text-sm border-collapse bg-white">
+                <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
                   <tr>
-                    <th className="p-2 border border-slate-200">Ngày chuyển</th>
-                    <th className="p-2 border border-slate-200">Học sinh</th>
-                    <th className="p-2 border border-slate-200">Lớp / Cơ sở cũ</th>
-                    <th className="p-2 border border-slate-200">Diện chuyển</th>
-                    <th className="p-2 border border-slate-200">Nơi đến</th>
-                    <th className="p-2 text-right border border-slate-200">Thao tác</th>
+                    <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
+                    <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                    <th className="px-4 py-3 font-extrabold">Lớp / Cơ sở cũ</th>
+                    <th className="px-4 py-3 font-extrabold">Diện chuyển</th>
+                    <th className="px-4 py-3 font-extrabold">Nơi đến</th>
+                    <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {outTransfers.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-50 text-xs font-semibold">
-                      <td className="p-2 font-medium text-slate-700 border border-slate-200">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
-                      <td className="p-2 font-bold text-slate-900 border border-slate-200">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
-                      <td className="p-2 border border-slate-200"><span className="px-2 py-1 bg-slate-100 rounded-md font-bold text-slate-600">{t.student?.class?.className}</span> <br/><span className="text-xs text-slate-500">{t.student?.class?.campus?.campusName}</span></td>
-                      <td className="p-2 font-medium text-rose-600 border border-slate-200">{t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : "Bảo lưu"}</td>
-                      <td className="p-2 text-slate-600 border border-slate-200">{t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}</td>
-                      <td className="p-2 text-right border border-slate-200">
+                    <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
+                      <td className="px-4 py-3.5 font-medium text-slate-700">
+                        {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
+                        <br/>
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-slate-900">
+                        {t.student?.studentName} 
+                        <br/>
+                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                          {t.student?.studentCode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 border border-slate-200/40">
+                          {t.student?.class?.className}
+                        </span> 
+                        <br/>
+                        <span className="text-[10px] text-slate-400 font-medium mt-1 inline-block">
+                          {t.student?.class?.campus?.campusName}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-bold">
+                        <span className={`px-2 py-0.5 rounded text-[10px] border ${
+                          t.transferCategory === 'DOMESTIC' ? 'bg-amber-50 text-amber-700 border-amber-250' : 
+                          t.transferCategory === 'ABROAD' ? 'bg-sky-50 text-sky-700 border-sky-250' : 
+                          'bg-indigo-50 text-indigo-700 border-indigo-250'
+                        }`}>
+                          {t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : "Bảo lưu"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-650 font-medium">
+                        {t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}
+                      </td>
+                      <td className="px-4 py-3.5 text-right">
                         <button
                           onClick={() => handleRevert(t.id, t.student?.studentName)}
-                          className="px-3 py-1.5 border border-amber-500 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 border border-amber-200 hover:border-amber-300 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           Hoàn trả
@@ -444,23 +716,35 @@ export function StudentTransfersClient() {
           loadingList ? (
             <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
           ) : changeTransfers.length > 0 ? (
-            <div className="border border-slate-200 rounded-2xl overflow-hidden">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead className="text-slate-600 font-bold uppercase text-[10px] tracking-wider text-xs font-semibold">
+            <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full text-left text-sm border-collapse bg-white">
+                <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
                   <tr>
-                    <th className="p-2 border border-slate-200">Ngày chuyển</th>
-                    <th className="p-2 border border-slate-200">Học sinh</th>
-                    <th className="p-2 border border-slate-200">Lớp chuyển đến</th>
-                    <th className="p-2 border border-slate-200">Lý do</th><th className="p-2 text-right border border-slate-200">Thao tác</th>
+                    <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
+                    <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                    <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
+                    <th className="px-4 py-3 font-extrabold">Lý do</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {changeTransfers.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-50 text-xs font-semibold">
-                      <td className="p-2 font-medium text-slate-700 border border-slate-200">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
-                      <td className="p-2 font-bold text-slate-900 border border-slate-200">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
-                      <td className="p-2 font-medium text-[#00A99D] border border-slate-200">{t.destinationSchool}</td>
-                      <td className="p-2 text-slate-600 border border-slate-200">{t.reason}</td>
+                    <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
+                      <td className="px-4 py-3.5 font-medium text-slate-700">
+                        {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
+                        <br/>
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-slate-900">
+                        {t.student?.studentName} 
+                        <br/>
+                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                          {t.student?.studentCode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-semibold text-[#00A99D]">{t.destinationSchool}</td>
+                      <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -552,11 +836,11 @@ export function StudentTransfersClient() {
                   </div>
 
                   {filteredPendingRequests.length > 0 ? (
-                    <div className="border border-slate-200 bg-white rounded-2xl overflow-hidden shadow-sm">
+                    <div className="border border-slate-200/80 bg-white rounded-2xl overflow-hidden shadow-sm">
                       <table className="w-full text-left text-sm border-collapse">
-                        <thead className="text-slate-600 font-bold uppercase text-[10px] tracking-wider text-xs font-semibold">
+                        <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
                           <tr>
-                            <th className="p-2 border border-slate-200 w-12 text-center bg-slate-50/50">
+                            <th className="px-4 py-3 w-12 text-center">
                               <input 
                                 type="checkbox" 
                                 checked={filteredPendingRequests.length > 0 && selectedRequestIds.length === filteredPendingRequests.length}
@@ -567,21 +851,21 @@ export function StudentTransfersClient() {
                                     setSelectedRequestIds([]);
                                   }
                                 }}
-                                className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4 cursor-pointer"
+                                className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
                               />
                             </th>
-                            <th className="p-2 border border-slate-200">Ngày yêu cầu</th>
-                            <th className="p-2 border border-slate-200">Học sinh</th>
-                            <th className="p-2 border border-slate-200">Cơ sở dự tuyển</th>
-                            <th className="p-2 border border-slate-200">Phân hệ / Khối</th>
-                            <th className="p-2 border border-slate-200">Trạng thái</th>
-                            <th className="p-2 text-right border border-slate-200">Thao tác</th>
+                            <th className="px-4 py-3 font-extrabold">Ngày yêu cầu</th>
+                            <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                            <th className="px-4 py-3 font-extrabold">Cơ sở dự tuyển</th>
+                            <th className="px-4 py-3 font-extrabold">Phân hệ / Khối</th>
+                            <th className="px-4 py-3 font-extrabold">Trạng thái</th>
+                            <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {filteredPendingRequests.map(req => (
-                            <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold ${selectedRequestIds.includes(req.id) ? 'bg-emerald-50/10' : ''}`}>
-                              <td className="p-2 border border-slate-200 text-center">
+                            <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedRequestIds.includes(req.id) ? 'bg-[#00A99D]/5 hover:bg-[#00A99D]/10' : ''}`}>
+                              <td className="px-4 py-3.5 text-center">
                                 <input 
                                   type="checkbox" 
                                   checked={selectedRequestIds.includes(req.id)}
@@ -592,36 +876,41 @@ export function StudentTransfersClient() {
                                       setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
                                     }
                                   }}
-                                  className="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4 cursor-pointer"
+                                  className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
                                 />
                               </td>
-                              <td className="p-2 font-medium text-slate-700 border border-slate-200">
+                              <td className="px-4 py-3.5 font-medium text-slate-700">
                                 {new Date(req.createdAt).toLocaleDateString('vi-VN')}
                               </td>
-                              <td className="p-2 font-bold text-slate-900 border border-slate-200">
-                                {req.fullName} <br/>
-                                <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">Mã KS: {req.studentCode}</span>
-                              </td>
-                              <td className="p-2 font-semibold text-slate-600 border border-slate-200">
-                                {req.admissionCampus}
-                              </td>
-                              <td className="p-2 border border-slate-200">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${req.isPreschool ? 'bg-pink-50 text-pink-700 border-pink-200' : 'bg-indigo-50 text-indigo-700 border-indigo-200'}`}>
-                                  {req.isPreschool ? "Mầm non" : `Khối ${req.grade}`}
+                              <td className="px-4 py-3.5 font-bold text-slate-900">
+                                {req.fullName} 
+                                <br/>
+                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                                  Mã KS: {req.studentCode}
                                 </span>
                               </td>
-                              <td className="p-2 border border-slate-200">
-                                <span className="text-xs font-bold text-amber-800">
+                              <td className="px-4 py-3.5 font-bold text-slate-600">
+                                {req.admissionCampus}
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  req.isPreschool ? 'bg-pink-50 text-pink-700 border-pink-250' : 'bg-indigo-50 text-indigo-700 border-indigo-250'
+                                }`}>
+                                  {req.isPreschool ? "Mầm non" : "Khối " + req.grade}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-250 text-[10px] font-bold rounded">
                                   Chờ xếp lớp
                                 </span>
                               </td>
-                              <td className="p-2 text-right border border-slate-200">
+                              <td className="px-4 py-3.5 text-right">
                                 <button 
                                   onClick={() => {
                                     setSelectedRequest(req);
                                     setShowInModal(true);
                                   }}
-                                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
+                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-100 hover:shadow-lg hover:shadow-emerald-200 transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
                                 >
                                   <UserCheck className="w-3.5 h-3.5" />
                                   Xếp lớp
@@ -644,31 +933,43 @@ export function StudentTransfersClient() {
               <div>
                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Lịch sử học sinh Chuyển đến</h3>
                 {inTransfers.length > 0 ? (
-                  <div className="border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                  <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
                     <table className="w-full text-left text-sm border-collapse">
-                      <thead className="text-slate-600 font-bold uppercase text-[10px] tracking-wider text-xs font-semibold">
+                      <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
                         <tr>
-                          <th className="p-2 border border-slate-200">Ngày nhập học</th>
-                          <th className="p-2 border border-slate-200">Học sinh</th>
-                          <th className="p-2 border border-slate-200">Lớp chuyển đến</th>
-                          <th className="p-2 border border-slate-200">Lý do</th>
-                          <th className="p-2 text-right border border-slate-200">Thao tác</th>
+                          <th className="px-4 py-3 font-extrabold">Ngày nhập học</th>
+                          <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                          <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
+                          <th className="px-4 py-3 font-extrabold">Lý do</th>
+                          <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {inTransfers.map(t => (
-                          <tr key={t.id} className="hover:bg-slate-50 text-xs font-semibold">
-                            <td className="p-2 font-medium text-slate-700 border border-slate-200">{new Date(t.transferDate).toLocaleDateString('vi-VN')} <br/><span className="text-xs text-slate-400">{t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}</span></td>
-                            <td className="p-2 font-bold text-slate-900 border border-slate-200">{t.student?.studentName} <br/><span className="text-xs font-medium text-slate-400">{t.student?.studentCode}</span></td>
-                            <td className="p-2 font-medium text-emerald-600 border border-slate-200">{t.destinationSchool}</td>
-                            <td className="p-2 text-slate-600 border border-slate-200">{t.reason}</td>
-                            <td className="p-2 text-right border border-slate-200">
+                          <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
+                            <td className="px-4 py-3.5 font-medium text-slate-700">
+                              {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
+                              <br/>
+                              <span className="text-[10px] text-slate-400 font-medium">
+                                {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 font-bold text-slate-900">
+                              {t.student?.studentName} 
+                              <br/>
+                              <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                                {t.student?.studentCode}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 font-bold text-emerald-600">{t.destinationSchool}</td>
+                            <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
+                            <td className="px-4 py-3.5 text-right">
                               <button 
                                 onClick={() => {
                                   setEditingTransfer(t);
                                   setShowInModal(true);
                                 }}
-                                className="text-[#00A99D] font-bold hover:text-indigo-800 transition-colors"
+                                className="px-3 py-1.5 border border-[#00A99D] hover:bg-[#00A99D]/5 text-[#00A99D] font-bold rounded-xl text-xs transition-colors cursor-pointer"
                               >
                                 Sửa
                               </button>
