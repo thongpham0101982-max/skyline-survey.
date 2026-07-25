@@ -78,6 +78,7 @@ export function StudentTransfersClient() {
   const [globalSearch, setGlobalSearch] = useState("")
   const [historyFilterClass, setHistoryFilterClass] = useState("")
   const [historyPage, setHistoryPage] = useState(1)
+  const [pendingPage, setPendingPage] = useState(1)
 
   // Filters, search, and selection states for pending requests
   const [searchTerm, setSearchTerm] = useState("")
@@ -97,7 +98,12 @@ export function StudentTransfersClient() {
     setFilterGrade("");
     setHistoryFilterClass("");
     setHistoryPage(1);
+    setPendingPage(1);
   }, [activeSubTab]);
+
+  useEffect(() => {
+    setPendingPage(1);
+  }, [searchTerm, filterCampus, filterGrade]);
 
   useEffect(() => {
     setHistoryPage(1);
@@ -376,6 +382,11 @@ export function StudentTransfersClient() {
       
     return matchCampus && matchGrade && matchSearch;
   });
+
+  // --- PAGINATED PENDING REQUESTS ---
+  const pendingPageSize = 5;
+  const pendingTotalPages = Math.ceil(filteredPendingRequests.length / pendingPageSize);
+  const paginatedPendingRequests = filteredPendingRequests.slice((pendingPage - 1) * pendingPageSize, pendingPage * pendingPageSize);
 
   return (
     <div className="space-y-6">
@@ -854,25 +865,32 @@ export function StudentTransfersClient() {
                     )}
                   </div>
 
-                  {filteredPendingRequests.length > 0 ? (
-                    <div className="border border-slate-200/80 bg-white rounded-2xl overflow-hidden shadow-sm">
-                      <table className="w-full text-left text-sm border-collapse">
-                        <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                          <tr>
-                            <th className="px-4 py-3 w-12 text-center">
-                              <input 
-                                type="checkbox" 
-                                checked={filteredPendingRequests.length > 0 && selectedRequestIds.length === filteredPendingRequests.length}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedRequestIds(filteredPendingRequests.map(r => r.id));
-                                  } else {
-                                    setSelectedRequestIds([]);
-                                  }
-                                }}
-                                className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
-                              />
-                            </th>
+                  {paginatedPendingRequests.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="border border-slate-200/80 bg-white rounded-2xl overflow-hidden shadow-sm">
+                        <table className="w-full text-left text-sm border-collapse">
+                          <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
+                            <tr>
+                              <th className="px-4 py-3 w-12 text-center">
+                                <input 
+                                  type="checkbox" 
+                                  checked={paginatedPendingRequests.length > 0 && paginatedPendingRequests.every(r => selectedRequestIds.includes(r.id))}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedRequestIds(prev => {
+                                        const newIds = [...prev];
+                                        paginatedPendingRequests.forEach(r => {
+                                          if (!newIds.includes(r.id)) newIds.push(r.id);
+                                        });
+                                        return newIds;
+                                      });
+                                    } else {
+                                      setSelectedRequestIds(prev => prev.filter(id => !paginatedPendingRequests.some(r => r.id === id)));
+                                    }
+                                  }}
+                                  className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
+                                />
+                              </th>
                             <th className="px-4 py-3 font-extrabold">Ngày yêu cầu</th>
                             <th className="px-4 py-3 font-extrabold">Học sinh</th>
                             <th className="px-4 py-3 font-extrabold">Cơ sở dự tuyển</th>
@@ -882,7 +900,7 @@ export function StudentTransfersClient() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
-                          {filteredPendingRequests.map(req => (
+                          {paginatedPendingRequests.map(req => (
                             <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedRequestIds.includes(req.id) ? 'bg-[#00A99D]/5 hover:bg-[#00A99D]/10' : ''}`}>
                               <td className="px-4 py-3.5 text-center">
                                 <input 
@@ -940,11 +958,36 @@ export function StudentTransfersClient() {
                         </tbody>
                       </table>
                     </div>
-                  ) : (
-                    <div className="p-16 text-center text-slate-500 font-bold border border-slate-200 rounded-2xl bg-slate-50/50">
-                      Không tìm thấy học sinh nào phù hợp với bộ lọc đã chọn!
-                    </div>
-                  )}
+
+                    {/* Pagination Controls */}
+                    {pendingTotalPages > 1 && (
+                      <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-semibold text-slate-650">
+                        <span>Hiển thị {(pendingPage - 1) * pendingPageSize + 1} - {Math.min(pendingPage * pendingPageSize, filteredPendingRequests.length)} trong tổng số {filteredPendingRequests.length} học sinh</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={pendingPage === 1}
+                            onClick={() => setPendingPage(prev => Math.max(1, prev - 1))}
+                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                          >
+                            Trước
+                          </button>
+                          <span className="px-3.5 font-bold">Trang {pendingPage} / {pendingTotalPages}</span>
+                          <button
+                            disabled={pendingPage === pendingTotalPages}
+                            onClick={() => setPendingPage(prev => Math.min(pendingTotalPages, prev + 1))}
+                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                          >
+                            Sau
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-16 text-center text-slate-500 font-bold border border-slate-200 rounded-2xl bg-slate-50/50">
+                    Không tìm thấy học sinh nào phù hợp với bộ lọc đã chọn!
+                  </div>
+                )}
                 </div>
               )}
 
