@@ -143,7 +143,7 @@ export default function HsFormClient({ formId, periodName, studentName, classNam
                 </div>
 
                 <div className="mt-4 transition-all duration-500">
-                  {['RATING', 'NPS', 'LIKERT', 'SATISFACTION'].includes(type) && (
+                  {['RATING', 'NPS', 'LIKERT', 'SATISFACTION', 'SCALE_0_4'].includes(type) && (
                     <div className="space-y-4">
                       <div className="flex gap-2.5 flex-wrap justify-center sm:justify-start">
                         {Array.from({ length: (q.ratingMax || 10) - (q.ratingMin || 0) + 1 }, (_, k) => k + (q.ratingMin || 0)).map(v => (

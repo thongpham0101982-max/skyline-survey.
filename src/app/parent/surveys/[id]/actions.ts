@@ -66,7 +66,7 @@ export async function submitSurveyAction(data: any) {
         if (npsScoreRaw >= 9) npsCategory = "PROMOTER"
         else if (npsScoreRaw >= 7) npsCategory = "PASSIVE"
         else npsCategory = "DETRACTOR"
-      } else if (r.type === "RATING" || r.type === "LIKERT") {
+      } else if (r.type === "RATING" || r.type === "LIKERT" || r.type === "SCALE_0_4") {
         const val = Number(r.value)
         if (!isNaN(val)) {
           totalRating += val
@@ -78,7 +78,7 @@ export async function submitSurveyAction(data: any) {
       let textAnswer = null;
       let choiceAnswer = null;
 
-      if (r.type === "NPS" || r.type === "RATING") {
+      if (r.type === "NPS" || r.type === "RATING" || r.type === "SCALE_0_4") {
         numericScore = Number(r.value);
       } else if (r.type === "TEXT") {
         textAnswer = String(r.value);

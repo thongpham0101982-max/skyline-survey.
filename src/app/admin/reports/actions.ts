@@ -383,7 +383,7 @@ export async function exportReportExcelAction(periodId: string, campusId?: strin
         const qText = r.question.questionText;
         
         let answerStr = "";
-        if (r.question.questionType === "NPS" || r.question.questionType === "LIKERT" || r.question.questionType === "RATING") {
+        if (r.question.questionType === "NPS" || r.question.questionType === "LIKERT" || r.question.questionType === "RATING" || r.question.questionType === "SCALE_0_4") {
            answerStr = r.numericScore !== null ? r.numericScore.toString() : "";
         } else if (r.question.questionType === "TEXT" || r.question.questionType === "PARAGRAPH") {
            answerStr = r.textAnswer || "";

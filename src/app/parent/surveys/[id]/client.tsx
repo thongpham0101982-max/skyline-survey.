@@ -178,10 +178,10 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
         </div>
       )}
 
-      {q.questionType === "NPS" && (
+      {(q.questionType === "NPS" || q.questionType === "SCALE_0_4") && (
         <div className="animate-in fade-in zoom-in duration-500">
-          <div className="grid grid-cols-11 gap-2 sm:gap-3 mb-6">
-            {[0,1,2,3,4,5,6,7,8,9,10].map((n: number) => (
+          <div className={`grid ${q.questionType === "SCALE_0_4" ? "grid-cols-5" : "grid-cols-11"} gap-2 sm:gap-3 mb-6`}>
+            {Array.from({ length: (q.ratingScaleMax ?? (q.questionType === "NPS" ? 10 : 4)) - (q.ratingScaleMin ?? 0) + 1 }, (_, k) => k + (q.ratingScaleMin ?? 0)).map((n: number) => (
               <button key={n} type="button" onClick={() => onChange(n)}
                 className={`aspect-square rounded-[1.25rem] border-2 font-black text-xs sm:text-lg transition-all duration-300 shadow-sm flex items-center justify-center
                   ${answer === n ? npsColor(n) + " shadow-xl scale-110 -translate-y-2" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-[#00A99D]/50 hover:bg-white hover:text-[#00A99D] hover:shadow-lg"}`}

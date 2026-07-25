@@ -71,8 +71,8 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
       questionType: type,
       isRequired: true,
       options: initialOptions,
-      ratingScaleMin: 1,
-      ratingScaleMax: type === "NPS" ? 10 : 5,
+      ratingScaleMin: type === "SCALE_0_4" ? 0 : (type === "NPS" ? 0 : 1),
+      ratingScaleMax: type === "SCALE_0_4" ? 4 : (type === "NPS" ? 10 : 5),
       weight: 1,
       sectionId: ""
     }
@@ -82,6 +82,18 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
   const updateQuestion = (index, key, value) => {
     const newQs = [...questions]
     newQs[index][key] = value
+    if (key === "questionType") {
+      if (value === "SCALE_0_4") {
+        newQs[index].ratingScaleMin = 0
+        newQs[index].ratingScaleMax = 4
+      } else if (value === "NPS") {
+        newQs[index].ratingScaleMin = 0
+        newQs[index].ratingScaleMax = 10
+      } else if (value === "RATING") {
+        newQs[index].ratingScaleMin = 1
+        newQs[index].ratingScaleMax = 5
+      }
+    }
     setQuestions(newQs)
   }
 
@@ -194,6 +206,12 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
             <button onClick={() => addQuestion("CB_GRID")} className="text-pink-700 text-[10px] font-black uppercase tracking-widest hover:bg-pink-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
               <CheckSquare className="w-3.5 h-3.5" /> Lưới Check
             </button>
+            <button onClick={() => addQuestion("SCALE_0_4")} className="px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
+              <Plus className="w-3.5 h-3.5" /> Khảo sát (0-4)
+            </button>
+            <button onClick={() => addQuestion("NPS")} className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
+              <Plus className="w-3.5 h-3.5" /> NPS (0-10)
+            </button>
             <button onClick={() => addQuestion("TEXT")} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 flex items-center gap-1.5 transition-all">
               <Plus className="w-3.5 h-3.5" /> Tự luận
             </button>
@@ -239,6 +257,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                           <option value="TEXT">Tự luận</option>
                           <option value="RATING">Đánh giá sao</option>
                           <option value="NPS">Khảo sát NPS (0-10)</option>
+                          <option value="SCALE_0_4">Khảo sát (0-4)</option>
                         </select>
                         <label className="flex items-center gap-2">
                           <Tag className="w-3.5 h-3.5 text-red-500" />
@@ -333,6 +352,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                     {q.questionType === "TEXT" && <div className="p-10 text-slate-300 font-bold text-center italic text-sm text-xs font-semibold">Văn bản trả lời tự luận của khách hàng...</div>}
                     {q.questionType === "RATING" && <div className="flex items-center justify-center gap-6 text-amber-400 text-5xl py-8 animate-pulse">★ ★ ★ ★ ★</div>}
                     {q.questionType === "NPS" && <div className="flex items-center justify-center gap-2 flex-wrap py-6">{[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="w-11 h-11 rounded-2xl border-2 border-slate-100 bg-white flex items-center justify-center text-sm font-black text-slate-400 shadow-sm hover:border-red-400 cursor-default transition-all">{n}</div>)}</div>}
+                    {q.questionType === "SCALE_0_4" && <div className="flex items-center justify-center gap-2 flex-wrap py-6">{[0,1,2,3,4].map(n => <div key={n} className="w-11 h-11 rounded-2xl border-2 border-slate-100 bg-white flex items-center justify-center text-sm font-black text-slate-400 shadow-sm hover:border-red-400 cursor-default transition-all">{n}</div>)}</div>}
                   </div>
 
                   <div className="flex flex-wrap items-center justify-between border-t border-slate-50 mt-10 pt-6 gap-6">
@@ -429,6 +449,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                     {q.questionType === "TEXT" && <div className="p-10 h-32 flex items-center justify-center text-slate-200 text-sm font-bold italic text-xs font-semibold">Vùng trả lời</div>}
                     {q.questionType === "RATING" && <div className="flex justify-center text-amber-300 text-5xl py-8 drop-shadow-xl tracking-widest">★ ★ ★ ★ ★</div>}
                     {q.questionType === "NPS" && <div className="flex items-center justify-between gap-1.5 mt-4">{[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="flex-1 aspect-square flex items-center justify-center text-[11px] font-black text-slate-300 text-xs font-semibold">{n}</div>)}</div>}
+                    {q.questionType === "SCALE_0_4" && <div className="flex items-center justify-between gap-1.5 mt-4">{[0,1,2,3,4].map(n => <div key={n} className="flex-1 aspect-square flex items-center justify-center text-[11px] font-black text-slate-300 text-xs font-semibold">{n}</div>)}</div>}
                   </div>
                 </div>
               )
