@@ -1850,20 +1850,22 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                     value={form.destinationSchool} 
                     onChange={e => {
                       const val = e.target.value;
-                      const matched = registeredSchools.find(s => s.name === val);
-                      if (matched) {
-                        setForm(f => ({
-                          ...f,
-                          destinationSchool: val,
-                          destinationType: matched.schoolType || "PRIVATE"
-                        }));
-                      } else {
-                        setForm(f => ({ ...f, destinationSchool: val }));
+                      if (form.destinationProvince === "Thành phố Đà Nẵng") {
+                        const matched = registeredSchools.find(s => s.name === val);
+                        if (matched) {
+                          setForm(f => ({
+                            ...f,
+                            destinationSchool: val,
+                            destinationType: matched.schoolType || "PRIVATE"
+                          }));
+                          return;
+                        }
                       }
+                      setForm(f => ({ ...f, destinationSchool: val }));
                     }} 
                   />
                   <datalist id="destination-schools-list">
-                    {registeredSchools.map(s => <option key={s.id} value={s.name} />)}
+                    {form.destinationProvince === "Thành phố Đà Nẵng" && registeredSchools.map(s => <option key={s.id} value={s.name} />)}
                   </datalist>
                 </div>
                 <div>
