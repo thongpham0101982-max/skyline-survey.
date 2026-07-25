@@ -6,6 +6,29 @@ import { saveSurveyQuestionsAction } from "./actions"
 import Link from "next/link"
 
 export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, categories = [] }) {
+  const formattedCategories = (() => {
+    const rootCategories = categories.filter((c: any) => !c.parentId)
+    const childCategories = categories.filter((c: any) => c.parentId)
+    
+    const result: any[] = []
+    rootCategories.forEach((root: any) => {
+      result.push({ ...root, displayName: root.name })
+      const children = childCategories.filter((child: any) => child.parentId === root.id)
+      children.forEach((child: any) => {
+        result.push({ ...child, displayName: `└─ ${child.name}` })
+      })
+    })
+    
+    // Add orphans
+    childCategories.forEach((child: any) => {
+      if (!result.some((r: any) => r.id === child.id)) {
+        result.push({ ...child, displayName: child.name })
+      }
+    })
+    
+    return result
+  })()
+
   const [questions, setQuestions] = useState(
     initialQuestions.map((q) => {
       let parsedOptions = { choices: [], hasOther: false }
@@ -226,8 +249,8 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
                             className="bg-slate-100 border-none rounded-xl px-4 py-2 font-black outline-none cursor-pointer text-slate-700 max-w-[200px]"
                           >
                             <option value="">-- Chưa phân loại --</option>
-                            {categories.map((cat) => (
-                              <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            {formattedCategories.map((cat) => (
+                              <option key={cat.id} value={cat.id}>{cat.displayName}</option>
                             ))}
                           </select>
                         </label>

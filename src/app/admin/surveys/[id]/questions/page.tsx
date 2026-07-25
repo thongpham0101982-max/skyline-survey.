@@ -17,7 +17,7 @@ export default async function SurveyQuestionsPage({ params }) {
   const categories = await prisma.surveySection.findMany({
     where: { status: "ACTIVE" },
     orderBy: { sortOrder: "asc" },
-    select: { id: true, name: true, code: true }
+    select: { id: true, name: true, code: true, parentId: true }
   })
 
   return (

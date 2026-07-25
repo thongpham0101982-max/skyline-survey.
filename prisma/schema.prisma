@@ -251,7 +251,12 @@ model SurveySection {
   name      String
   sortOrder Int              @default(0)
   status    String           @default("ACTIVE")
+  parentId  String?
+  parent    SurveySection?   @relation("ParentChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children  SurveySection[]  @relation("ParentChildren")
   questions SurveyQuestion[]
+
+  @@index([parentId])
 }
 
 model SurveyQuestion {

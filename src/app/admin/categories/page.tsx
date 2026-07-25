@@ -11,6 +11,10 @@ export default async function CategoriesPage() {
   const categories = await prisma.surveySection.findMany({
     orderBy: { sortOrder: "asc" },
     include: {
+      parent: true,
+      children: {
+        orderBy: { sortOrder: "asc" }
+      },
       _count: { select: { questions: true } }
     }
   })
