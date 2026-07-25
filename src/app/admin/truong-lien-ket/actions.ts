@@ -142,24 +142,28 @@ export async function seedDestinationSchoolsAction() {
       { name: "Quảng Đông", code: "QDO", level: "PHO_THONG", schoolType: "PUBLIC" }
     ]
 
+    const existingList = await prisma.destinationSchool.findMany()
+    const existingByName = new Map(existingList.map(s => [s.name.toLowerCase(), s]))
+    const existingByCode = new Map(existingList.map(s => [s.code.toUpperCase(), s]))
+
     let addedCount = 0
     for (const school of defaultSchools) {
-      const existing = await prisma.destinationSchool.findFirst({
-        where: {
-          OR: [
-            { name: school.name },
-            { code: school.code }
-          ]
-        }
-      })
+      const matchedByName = existingByName.get(school.name.toLowerCase())
+      const matchedByCode = existingByCode.get(school.code)
+      const existing = matchedByName || matchedByCode
+
       if (!existing) {
-        await prisma.destinationSchool.create({ data: school })
+        const newSchool = await prisma.destinationSchool.create({ data: school })
+        existingByName.set(school.name.toLowerCase(), newSchool)
+        existingByCode.set(school.code, newSchool)
         addedCount++
       } else {
-        await prisma.destinationSchool.update({
-          where: { id: existing.id },
-          data: { schoolType: school.schoolType }
-        })
+        if (existing.schoolType !== school.schoolType || existing.level !== school.level) {
+          await prisma.destinationSchool.update({
+            where: { id: existing.id },
+            data: { schoolType: school.schoolType, level: school.level }
+          })
+        }
       }
     }
 
@@ -176,40 +180,44 @@ export async function importDestinationSchoolsAction(payload: Array<{ name: stri
     const session = await auth()
     if (!session) return { success: false, error: "Unauthorized" }
 
+    // 1. Fetch all existing schools to check duplicates in memory (avoids loop queries)
+    const existingList = await prisma.destinationSchool.findMany()
+    const existingByName = new Map(existingList.map(s => [s.name.toLowerCase(), s]))
+    const existingByCode = new Map(existingList.map(s => [s.code.toUpperCase(), s]))
+
     let addedCount = 0
-    await prisma.$transaction(async (tx) => {
-      for (const item of payload) {
-        const name = item.name.trim()
-        const code = item.code.trim().toUpperCase()
-        const level = item.level === "MAM_NON" ? "MAM_NON" : "PHO_THONG"
-        const schoolType = item.schoolType === "PUBLIC" ? "PUBLIC" : "PRIVATE"
 
-        if (!name || !code) continue
+    // 2. Loop and perform inserts / updates sequentially
+    for (const item of payload) {
+      const name = item.name.trim()
+      const code = item.code.trim().toUpperCase()
+      const level = item.level === "MAM_NON" ? "MAM_NON" : "PHO_THONG"
+      const schoolType = item.schoolType === "PUBLIC" ? "PUBLIC" : "PRIVATE"
 
-        // Check duplicates inside transaction
-        const existing = await tx.destinationSchool.findFirst({
-          where: {
-            OR: [
-              { name },
-              { code }
-            ]
-          }
+      if (!name || !code) continue
+
+      // Check duplicates in memory
+      const matchedByName = existingByName.get(name.toLowerCase())
+      const matchedByCode = existingByCode.get(code)
+      const existing = matchedByName || matchedByCode
+
+      if (!existing) {
+        const newSchool = await prisma.destinationSchool.create({
+          data: { name, code, level, schoolType }
         })
-
-        if (!existing) {
-          await tx.destinationSchool.create({
-            data: { name, code, level, schoolType }
-          })
-          addedCount++
-        } else {
-          // Update details if it exists
-          await tx.destinationSchool.update({
+        existingByName.set(name.toLowerCase(), newSchool)
+        existingByCode.set(code, newSchool)
+        addedCount++
+      } else {
+        // Update details if it exists and values differ
+        if (existing.level !== level || existing.schoolType !== schoolType) {
+          await prisma.destinationSchool.update({
             where: { id: existing.id },
             data: { level, schoolType }
           })
         }
       }
-    })
+    }
 
     revalidatePath("/admin/truong-lien-ket")
     revalidatePath("/admin/student-transfers")
