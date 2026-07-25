@@ -156,7 +156,6 @@ export async function seedDestinationSchoolsAction() {
         await prisma.destinationSchool.create({ data: school })
         addedCount++
       } else {
-        // Update type for existing seeded schools if they don't have it set correctly
         await prisma.destinationSchool.update({
           where: { id: existing.id },
           data: { schoolType: school.schoolType }
@@ -168,6 +167,55 @@ export async function seedDestinationSchoolsAction() {
     return { success: true, count: addedCount }
   } catch (e: any) {
     console.error("seedDestinationSchoolsAction error:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function importDestinationSchoolsAction(payload: Array<{ name: string, code: string, level: string, schoolType: string }>) {
+  try {
+    const session = await auth()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    let addedCount = 0
+    await prisma.$transaction(async (tx) => {
+      for (const item of payload) {
+        const name = item.name.trim()
+        const code = item.code.trim().toUpperCase()
+        const level = item.level === "MAM_NON" ? "MAM_NON" : "PHO_THONG"
+        const schoolType = item.schoolType === "PUBLIC" ? "PUBLIC" : "PRIVATE"
+
+        if (!name || !code) continue
+
+        // Check duplicates inside transaction
+        const existing = await tx.destinationSchool.findFirst({
+          where: {
+            OR: [
+              { name },
+              { code }
+            ]
+          }
+        })
+
+        if (!existing) {
+          await tx.destinationSchool.create({
+            data: { name, code, level, schoolType }
+          })
+          addedCount++
+        } else {
+          // Update details if it exists
+          await tx.destinationSchool.update({
+            where: { id: existing.id },
+            data: { level, schoolType }
+          })
+        }
+      }
+    })
+
+    revalidatePath("/admin/truong-lien-ket")
+    revalidatePath("/admin/student-transfers")
+    return { success: true, count: addedCount }
+  } catch (e: any) {
+    console.error("importDestinationSchoolsAction error:", e)
     return { success: false, error: e.message }
   }
 }

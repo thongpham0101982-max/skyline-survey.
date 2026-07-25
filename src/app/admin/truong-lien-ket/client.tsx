@@ -1,5 +1,5 @@
 "use client"
-import { useState, useTransition } from "react"
+import { useState, useTransition, useRef } from "react"
 import { 
   Plus, 
   Search, 
@@ -12,12 +12,14 @@ import {
   X, 
   Loader2 
 } from "lucide-react"
+import * as xlsx from "xlsx"
 import { 
   createDestinationSchoolAction, 
   updateDestinationSchoolAction, 
   deleteDestinationSchoolAction, 
   seedDestinationSchoolsAction,
-  getDestinationSchoolsAction
+  getDestinationSchoolsAction,
+  importDestinationSchoolsAction
 } from "./actions"
 
 export function DestinationSchoolsClient({ initialSchools }: { initialSchools: any[] }) {
@@ -26,6 +28,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
   const [levelFilter, setLevelFilter] = useState<"ALL" | "PHO_THONG" | "MAM_NON">("ALL")
   const [typeFilter, setTypeFilter] = useState<"ALL" | "PUBLIC" | "PRIVATE">("ALL")
   const [isPending, startTransition] = useTransition()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Modal states
   const [showModal, setShowModal] = useState(false)
@@ -116,6 +119,85 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
         alert("Lỗi: " + res.error)
       }
     })
+  }
+
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        "Mã trường*": "QTR",
+        "Tên trường*": "THPT Quang Trung",
+        "Cấp bậc*": "Phổ thông",
+        "Loại hình*": "Công lập"
+      },
+      {
+        "Mã trường*": "KTR",
+        "Tên trường*": "THPT Khai Trí",
+        "Cấp bậc*": "Phổ thông",
+        "Loại hình*": "Tư thục"
+      },
+      {
+        "Mã trường*": "MAM_NON_TEST",
+        "Tên trường*": "Mầm non Sao Mai",
+        "Cấp bậc*": "Mầm non",
+        "Loại hình*": "Tư thục"
+      }
+    ]
+    const ws = xlsx.utils.json_to_sheet(templateData)
+    const wb = xlsx.utils.book_new()
+    xlsx.utils.book_append_sheet(wb, ws, "Danh_sach_truong")
+    xlsx.writeFile(wb, "Mau_Import_Truong_Hoc.xlsx")
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = async (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = xlsx.read(bstr, { type: 'binary' })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const rawData = xlsx.utils.sheet_to_json(ws) as any[]
+
+        if (rawData.length === 0) {
+          alert("File Excel trống hoặc không đúng định dạng!")
+          return
+        }
+
+        const payload = rawData.map((row: any) => {
+          const rawLevel = (row["Cấp bậc*"] || row["Cap bac*"] || row["Cấp bậc"] || row["Cap bac"] || "").toString().trim()
+          const rawType = (row["Loại hình*"] || row["Loai hinh*"] || row["Loại hình"] || row["Loai hinh"] || "").toString().trim()
+
+          return {
+            code: (row["Mã trường*"] || row["Ma truong*"] || row["Mã trường"] || row["Ma truong"] || "").toString().trim().toUpperCase(),
+            name: (row["Tên trường*"] || row["Ten truong*"] || row["Tên trường"] || row["Ten truong"] || "").toString().trim(),
+            level: rawLevel.includes("Mầm") || rawLevel.toLowerCase().includes("mam") ? "MAM_NON" : "PHO_THONG",
+            schoolType: rawType.includes("Công") || rawType.toLowerCase().includes("cong") ? "PUBLIC" : "PRIVATE"
+          }
+        }).filter(item => item.code && item.name)
+
+        if (payload.length === 0) {
+          alert("Không tìm thấy dữ liệu hợp lệ trong file Excel!")
+          return
+        }
+
+        startTransition(async () => {
+          const res = await importDestinationSchoolsAction(payload)
+          if (res.success) {
+            alert(`Đã import thành công ${res.count} trường học mới!`)
+            loadSchools()
+          } else {
+            alert("Lỗi: " + res.error)
+          }
+        })
+      } catch (err) {
+        console.error(err)
+        alert("Lỗi đọc file Excel!")
+      }
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+    reader.readAsBinaryString(file)
   }
 
   // Filter & Search logic
@@ -222,13 +304,27 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
             </div>
 
             <div className="flex gap-2">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileUpload} 
+                accept=".xlsx, .xls, .csv" 
+                className="hidden" 
+              />
+              
               <button 
-                onClick={handleSeedData}
-                disabled={isPending}
-                className="px-4 py-2.5 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center gap-1.5 shadow-sm text-xs cursor-pointer disabled:opacity-55"
+                onClick={handleDownloadTemplate}
+                className="px-4 py-2.5 border border-slate-200 hover:border-slate-350 hover:bg-slate-50 font-bold rounded-2xl text-xs text-slate-650 cursor-pointer flex items-center gap-1.5"
+                title="Tải mẫu Excel để điền thông tin"
               >
-                {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                Đồng bộ Trường mẫu
+                Tải mẫu Excel
+              </button>
+
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2.5 bg-slate-800 text-white font-bold rounded-2xl hover:bg-slate-700 transition-all flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+              >
+                Nhập từ Excel
               </button>
 
               <button 
@@ -460,7 +556,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                   onClick={() => setShowModal(false)}
                   className="px-4 py-2.5 border border-slate-200 hover:border-slate-350 hover:bg-slate-50 font-bold rounded-xl text-xs text-slate-500 cursor-pointer"
                 >
-                  Hủy bỏ
+                  Hủy bộ
                 </button>
                 <button 
                   type="submit"
