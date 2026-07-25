@@ -8,35 +8,38 @@ export async function createTransferOutAction(data: any) {
     const session = await auth()
     const userId = (session?.user as any)?.id
 
-    if (!data.studentId) return { success: false, error: "Thiếu thông tin Học sinh" }
+    const studentIds = Array.isArray(data.studentIds) ? data.studentIds : [data.studentId].filter(Boolean);
+    if (studentIds.length === 0) return { success: false, error: "Thiếu thông tin Học sinh" }
     if (!data.transferDate) return { success: false, error: "Thiếu ngày chuyển" }
     if (!data.transferCategory) return { success: false, error: "Thiếu diện chuyển" }
 
     await prisma.$transaction(async (tx) => {
-      // 1. Create transfer record
-      await tx.studentTransfer.create({
-        data: {
-          studentId: data.studentId,
-          type: "OUT",
-          transferDate: new Date(data.transferDate),
-          semester: data.semester || null,
-          transferCategory: data.transferCategory,
-          destinationSchool: data.destinationSchool || null,
-          destinationType: data.destinationType || null,
-          destinationProvince: data.destinationProvince || null,
-          destinationCountry: data.destinationCountry || null,
-          reserveStartDate: data.reserveStartDate ? new Date(data.reserveStartDate) : null,
-          reserveEndDate: data.reserveEndDate ? new Date(data.reserveEndDate) : null,
-          reason: data.reason || null,
-          createdById: userId,
-        }
-      })
+      for (const studentId of studentIds) {
+        // 1. Create transfer record
+        await tx.studentTransfer.create({
+          data: {
+            studentId,
+            type: "OUT",
+            transferDate: new Date(data.transferDate),
+            semester: data.semester || null,
+            transferCategory: data.transferCategory,
+            destinationSchool: data.destinationSchool || null,
+            destinationType: data.destinationType || null,
+            destinationProvince: data.destinationProvince || null,
+            destinationCountry: data.destinationCountry || null,
+            reserveStartDate: data.reserveStartDate ? new Date(data.reserveStartDate) : null,
+            reserveEndDate: data.reserveEndDate ? new Date(data.reserveEndDate) : null,
+            reason: data.reason || null,
+            createdById: userId,
+          }
+        })
 
-      // 2. Update student status so they no longer appear in active class lists
-      await tx.student.update({
-        where: { id: data.studentId },
-        data: { status: "TRANSFERRED_OUT" }
-      })
+        // 2. Update student status so they no longer appear in active class lists
+        await tx.student.update({
+          where: { id: studentId },
+          data: { status: "TRANSFERRED_OUT" }
+        })
+      }
     })
 
     revalidatePath("/admin/student-transfers")

@@ -1477,6 +1477,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
   const [options, setOptions] = useState({ years: [] as any[], campuses: [] as any[] })
   const [classes, setClasses] = useState<any[]>([])
   const [students, setStudents] = useState<any[]>([])
+  const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([])
   
   const [form, setForm] = useState({
     academicYearId: initialData?.student?.academicYearId || "",
@@ -1538,19 +1539,29 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
     if (form.classId) {
       getStudentsByClassAction(form.classId).then(data => {
         setStudents(data)
-        if (!initialData) setForm(f => ({ ...f, studentId: "" }))
+        if (!initialData) {
+          setForm(f => ({ ...f, studentId: "" }))
+          setSelectedStudentIds([])
+        }
       })
     }
   }, [form.classId])
 
   async function handleSubmit(e: any) {
     e.preventDefault()
+    if (!initialData && selectedStudentIds.length === 0) {
+      alert("Vui lòng chọn ít nhất một học sinh để tạo phiếu chuyển đi!")
+      return
+    }
     setSaving(true)
     let res;
     if (initialData) {
       res = await updateTransferOutAction(initialData.id, form)
     } else {
-      res = await createTransferOutAction(form)
+      res = await createTransferOutAction({
+        ...form,
+        studentIds: selectedStudentIds
+      })
     }
     setSaving(false)
     if (res.success) {
@@ -1621,40 +1632,92 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
-                    <option value="">Chọn năm học</option>
-                    {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
-                  </select>
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Năm học</label>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.academicYearId} onChange={e => setForm({...form, academicYearId: e.target.value})}>
+                      <option value="">Chọn năm học</option>
+                      {options.years.filter((y: any) => !y.isOff).map(y => <option key={y.id} value={y.id}>{y.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
+                      <option value="">Chọn cơ sở</option>
+                      {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
+                    <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
+                      <option value="">Chọn lớp học</option>
+                      {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                    </select>
+                    {form.classId && (
+                      <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
+                        <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
+                        <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Cơ sở</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.campusId} onChange={e => setForm({...form, campusId: e.target.value})}>
-                    <option value="">Chọn cơ sở</option>
-                    {options.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Lớp học</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.classId} onChange={e => setForm({...form, classId: e.target.value})}>
-                    <option value="">Chọn lớp học</option>
-                    {filteredClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                  </select>
-                  {form.classId && (
-                    <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
-                      <UserCheck className="w-3.5 h-3.5 text-[#00A99D]" />
-                      <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
+
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Học sinh (Chọn 1 hoặc nhiều)</label>
+                  {form.classId ? (
+                    students.length > 0 ? (
+                      <div className="border border-slate-200 rounded-2xl p-4 max-h-[220px] overflow-y-auto space-y-3 bg-slate-50/50">
+                        <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60">
+                          <input
+                            type="checkbox"
+                            id="select-all-students"
+                            className="w-4 h-4 text-[#00A99D] border-slate-300 rounded focus:ring-[#00A99D] cursor-pointer"
+                            checked={students.length > 0 && students.every(s => selectedStudentIds.includes(s.id))}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedStudentIds(students.map(s => s.id));
+                              } else {
+                                setSelectedStudentIds([]);
+                              }
+                            }}
+                          />
+                          <label htmlFor="select-all-students" className="text-xs font-extrabold text-slate-800 cursor-pointer">Chọn tất cả ({students.length})</label>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-1">
+                          {students.map(s => (
+                            <div key={s.id} className="flex items-center gap-2 hover:bg-slate-100/50 p-1.5 rounded-xl transition-all">
+                              <input
+                                type="checkbox"
+                                id={`student-check-${s.id}`}
+                                className="w-4 h-4 text-[#00A99D] border-slate-300 rounded focus:ring-[#00A99D] cursor-pointer"
+                                checked={selectedStudentIds.includes(s.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedStudentIds(prev => [...prev, s.id]);
+                                  } else {
+                                    setSelectedStudentIds(prev => prev.filter(id => id !== s.id));
+                                  }
+                                }}
+                              />
+                              <label htmlFor={`student-check-${s.id}`} className="text-xs font-bold text-slate-700 cursor-pointer flex items-center gap-1.5">
+                                <span>{s.studentName}</span>
+                                <span className="text-[9px] font-semibold text-slate-400 bg-slate-200/50 px-1 rounded">{s.studentCode}</span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs font-bold text-slate-400 italic p-6 border border-slate-200 border-dashed rounded-2xl text-center bg-slate-50">
+                        Không tìm thấy học sinh hoạt động nào trong lớp này.
+                      </div>
+                    )
+                  ) : (
+                    <div className="text-xs font-bold text-slate-400 italic p-6 border border-slate-200 border-dashed rounded-2xl text-center bg-slate-50">
+                      Vui lòng chọn Lớp học để hiển thị danh sách học sinh.
                     </div>
                   )}
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Học sinh</label>
-                  <select required className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 font-medium outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 transition-all text-xs font-semibold text-slate-800" value={form.studentId} onChange={e => setForm({...form, studentId: e.target.value})}>
-                    <option value="">Chọn học sinh</option>
-                    {students.map(s => <option key={s.id} value={s.id}>{s.studentName} ({s.studentCode})</option>)}
-                  </select>
                 </div>
               </div>
             )}
