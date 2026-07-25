@@ -67,9 +67,7 @@ export function StudentTransfersClient() {
   }, [yearId]);
 
   const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
-  useEffect(() => {
-    setSelectedOutTransferIds([]);
-  }, [activeTab, activeSubTab, yearId]);
+
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
   const [showInModal, setShowInModal] = useState(false)
@@ -93,6 +91,10 @@ export function StudentTransfersClient() {
   const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([])
   const [selectedOutTransferIds, setSelectedOutTransferIds] = useState<string[]>([])
   const [selectedRequests, setSelectedRequests] = useState<any[] | null>(null)
+
+  useEffect(() => {
+    setSelectedOutTransferIds([]);
+  }, [activeTab, activeSubTab, yearId]);
 
   useEffect(() => {
     loadTransfers()
