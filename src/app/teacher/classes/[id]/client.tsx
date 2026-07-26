@@ -2,9 +2,9 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { 
-  Users, Info, TrendingUp, ThumbsUp, Camera, Loader2, User, 
-  ArrowLeftRight, LogOut, PlusCircle, CheckCircle2, CalendarDays,
-  Phone, UserCheck
+  Users, Info, TrendingUp, Camera, Loader2, User, 
+  ArrowLeftRight, LogOut, CheckCircle2,
+  UserCheck
 } from "lucide-react"
 import { 
   ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend 
@@ -33,9 +33,6 @@ export function ClassDetailClient({
   monthlyHeadcount: any[]
   studentMovements: any[]
 }) {
-  // Default to "homeroom" if the teacher is the GVCN of this class
-  const [activeTab, setActiveTab] = useState<"survey" | "homeroom">(isGVCNOfThisClass ? "homeroom" : "survey")
-  
   // States for student photos
   const [uploadingStudentId, setUploadingStudentId] = useState<string | null>(null)
   const [avatars, setAvatars] = useState<Record<string, string>>({})
@@ -160,34 +157,9 @@ export function ClassDetailClient({
         </div>
       </div>
 
-      {/* TABS (Only show if logged-in teacher is the GVCN of this class) */}
-      {isGVCNOfThisClass && (
-        <div className="flex border-b border-slate-200 gap-1.5 p-1 bg-slate-100/80 rounded-xl max-w-md shadow-inner">
-          <button
-            onClick={() => setActiveTab("survey")}
-            className={`flex-1 py-2 px-4 text-xs font-extrabold rounded-lg transition-all duration-300 ${
-              activeTab === "survey"
-                ? "bg-white text-[#00A99D] shadow-sm border border-slate-200/55"
-                : "text-slate-500 hover:text-[#00A99D]"
-            }`}
-          >
-            Kết quả Khảo sát
-          </button>
-          <button
-            onClick={() => setActiveTab("homeroom")}
-            className={`flex-1 py-2 px-4 text-xs font-extrabold rounded-lg transition-all duration-300 ${
-              activeTab === "homeroom"
-                ? "bg-white text-[#00A99D] shadow-sm border border-slate-200/55"
-                : "text-slate-500 hover:text-[#00A99D]"
-            }`}
-          >
-            Thông tin Lớp chủ nhiệm
-          </button>
-        </div>
-      )}
-
-      {/* TAB 1: KẾT QUẢ KHẢO SÁT */}
-      {(activeTab === "survey" || !isGVCNOfThisClass) && (
+      {/* RENDER VIEW BASED ON GVCN ROLE (NO TABS) */}
+      {!isGVCNOfThisClass ? (
+        /* SURVEY RESULTS VIEW FOR SUBJECT TEACHERS */
         <div className="bg-white rounded-xl shadow-sm border-2 border-violet-100 p-6 flex flex-col">
           <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Trạng thái Khảo sát theo Học sinh</h3>
           <div className="overflow-x-auto">
@@ -239,10 +211,8 @@ export function ClassDetailClient({
             </table>
           </div>
         </div>
-      )}
-
-      {/* TAB 2: THÔNG TIN LỚP CHỦ NHIỆM */}
-      {activeTab === "homeroom" && isGVCNOfThisClass && (
+      ) : (
+        /* HOMEROOM VIEW FOR GVCN */
         <div className="space-y-8">
           {/* SECTION: CHART AND TIMELINE */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
