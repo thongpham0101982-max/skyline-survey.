@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import { 
-  Users, TrendingUp, Camera, Loader2, User, 
+  Users, TrendingUp, User, 
   ArrowLeftRight, LogOut, CheckCircle2,
   UserCheck, Search, Filter, Sparkles, UserPlus, UserMinus,
   ChevronRight, Calendar, MapPin
@@ -38,11 +38,6 @@ export function ClassDetailClient({
   const [searchTerm, setSearchTerm] = useState("")
   const [genderFilter, setGenderFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-
-  // States for student photos
-  const [uploadingStudentId, setUploadingStudentId] = useState<string | null>(null)
-  const [avatars, setAvatars] = useState<Record<string, string>>({})
-  const [brokenAvatars, setBrokenAvatars] = useState<Record<string, boolean>>({})
 
   // Vietnamese alphabetical sorting & search filtering
   const getVietnameseSortKey = (fullName: string) => {
@@ -105,50 +100,6 @@ export function ClassDetailClient({
     }
   }, [studentMovements])
 
-  // Photo upload handler
-  const handleUploadPhoto = async (studentId: string, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    if (!file.type.startsWith("image/")) {
-      alert("Chỉ chấp nhận các file ảnh!")
-      return
-    }
-
-    try {
-      setUploadingStudentId(studentId)
-      const formData = new FormData()
-      formData.append("file", file)
-
-      const res = await fetch(`/api/teacher-student-records?action=uploadAvatar&studentId=${studentId}`, {
-        method: "POST",
-        body: formData
-      })
-
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success) {
-          // Clear broken cache for this student
-          setBrokenAvatars(prev => ({ ...prev, [studentId]: false }))
-          // Update avatar URL with a bust parameter
-          setAvatars(prev => ({
-            ...prev,
-            [studentId]: `/uploads/students/${studentId}.jpg?t=${Date.now()}`
-          }))
-        } else {
-          alert("Lỗi tải ảnh lên: " + (data.error || "Không rõ nguyên nhân"))
-        }
-      } else {
-        alert("Lỗi tải ảnh lên: HTTP " + res.status)
-      }
-    } catch (err) {
-      console.error("Error uploading student avatar:", err)
-      alert("Đã xảy ra lỗi trong quá trình tải ảnh!")
-    } finally {
-      setUploadingStudentId(null)
-    }
-  }
-
   // Format date helper
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "---"
@@ -170,7 +121,7 @@ export function ClassDetailClient({
   }
 
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-6 sm:space-y-8 pb-16">
       {/* 1. Page Header and Glassmorphism Banner */}
       <div className="space-y-4">
         <div>
@@ -522,7 +473,6 @@ export function ClassDetailClient({
               <table className="w-full text-sm text-left border-collapse">
                 <thead className="text-slate-500 text-xs font-bold bg-slate-50/70 border-b border-slate-200">
                   <tr>
-                    <th className="p-4 border-r border-slate-100 text-center w-20">Ảnh đại diện</th>
                     <th className="p-4 border-r border-slate-100">Mã Học sinh</th>
                     <th className="p-4 border-r border-slate-100">Họ và Tên</th>
                     <th className="p-4 border-r border-slate-100">Ngày sinh</th>
@@ -533,16 +483,12 @@ export function ClassDetailClient({
                 <tbody>
                   {processedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center p-12 text-slate-400 text-xs font-semibold">
+                      <td colSpan={5} className="text-center p-12 text-slate-400 text-xs font-semibold">
                         Không tìm thấy học sinh nào phù hợp bộ lọc.
                       </td>
                     </tr>
                   ) : (
                     processedStudents.map((student) => {
-                      const studentAvatar = avatars[student.id] || `/uploads/students/${student.id}.jpg?t=${Date.now()}`
-                      const isBroken = brokenAvatars[student.id]
-                      const isUploading = uploadingStudentId === student.id
-                      
                       // Determine if student has any transfer status
                       const transfers = student.studentTransfers || []
                       const lastTransfer = transfers[transfers.length - 1]
@@ -568,44 +514,6 @@ export function ClassDetailClient({
 
                       return (
                         <tr key={student.id} className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/50 transition-colors text-xs font-semibold">
-                          {/* Interactive Avatar Image Upload */}
-                          <td className="p-3 border-r border-slate-100 text-center">
-                            <div className="w-12 h-12 rounded-full border border-slate-200 shadow-sm bg-slate-100 flex items-center justify-center relative group overflow-hidden mx-auto transition-transform hover:scale-105 duration-300">
-                              {isUploading ? (
-                                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                                  <Loader2 className="w-4 h-4 text-white animate-spin" />
-                                </div>
-                              ) : (
-                                <>
-                                  {!isBroken ? (
-                                    <img 
-                                      src={studentAvatar} 
-                                      alt={student.studentName} 
-                                      className="w-full h-full object-cover" 
-                                      onError={() => setBrokenAvatars(prev => ({ ...prev, [student.id]: true }))} 
-                                    />
-                                  ) : (
-                                    <User className="w-6 h-6 text-slate-400" />
-                                  )}
-                                  
-                                  <label 
-                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer duration-300"
-                                    htmlFor={`avatar-input-${student.id}`}
-                                  >
-                                    <Camera className="w-4 h-4 text-white" />
-                                  </label>
-                                  <input
-                                    type="file"
-                                    id={`avatar-input-${student.id}`}
-                                    accept="image/*"
-                                    onChange={(e) => handleUploadPhoto(student.id, e)}
-                                    className="hidden"
-                                    disabled={isUploading}
-                                  />
-                                </>
-                              )}
-                            </div>
-                          </td>
                           <td className="p-4 font-black text-slate-800 border-r border-slate-100">{student.studentCode}</td>
                           <td className="p-4 font-black text-slate-700 border-r border-slate-100">{student.studentName}</td>
                           <td className="p-4 border-r border-slate-100 text-slate-500">{formatDate(student.dateOfBirth)}</td>
