@@ -3,7 +3,7 @@ import * as XLSX from "xlsx"
 import { useRef } from "react"
 import { useState, useEffect } from "react" 
 // import useRef added above
-import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, RotateCcw, BarChart3, ChevronDown, ChevronUp, Eye, EyeOff, Building2, Layers, BookOpen, MapPin, School, Activity } from "lucide-react"
+import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, Edit, RotateCcw, BarChart3, ChevronDown, ChevronUp, Eye, EyeOff, Building2, Layers, BookOpen, MapPin, School, Activity } from "lucide-react"
 import { getDestinationSchoolsAction } from "../truong-lien-ket/actions"
 import { 
   getTransferFormOptionsAction, 
@@ -25,7 +25,8 @@ import {
   getPreschoolInputAssessmentPeriodsAction,
   getPreschoolInputAssessmentBatchesAction,
   getPreschoolInputAssessmentStudentsByPeriodAction,
-  revertTransferAction
+  revertTransferAction,
+  updateBatchTransferOutAction
 } from "./actions"
 
 const isClassPreschool = (c: any) => {
@@ -82,6 +83,7 @@ export function StudentTransfersClient() {
   const [showOutStats, setShowOutStats] = useState(true)
   const [globalSearch, setGlobalSearch] = useState("")
   const [historyFilterClass, setHistoryFilterClass] = useState("")
+  const [showBatchEditModal, setShowBatchEditModal] = useState(false)
   const [filterOutClass, setFilterOutClass] = useState("")
   const [filterOutCampus, setFilterOutCampus] = useState("")
   const [filterOutType, setFilterOutType] = useState("")
@@ -1021,13 +1023,21 @@ export function StudentTransfersClient() {
            {activeTab === "OUT" && (
                <div className="flex gap-2 items-center">
                  {selectedOutTransferIds.length > 0 && (
-                   <button 
-                     onClick={handleBatchRevert}
-                     className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200"
-                   >
-                     <RotateCcw className="w-4 h-4 mr-1.5" /> Hoàn trả hàng loạt ({selectedOutTransferIds.length})
-                   </button>
-                 )}
+                    <>
+                      <button 
+                        onClick={() => setShowBatchEditModal(true)}
+                        className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200 mr-2"
+                      >
+                        <Edit className="w-4 h-4 mr-1.5" /> Chỉnh sửa hàng loạt ({selectedOutTransferIds.length})
+                      </button>
+                      <button 
+                        onClick={handleBatchRevert}
+                        className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-1.5" /> Hoàn trả hàng loạt ({selectedOutTransferIds.length})
+                      </button>
+                    </>
+                  )}
                  <button 
                    onClick={handleDownloadTemplate} 
                   className="px-4 py-2 bg-white text-slate-700 font-bold border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all flex items-center shadow-sm text-xs"
@@ -1632,6 +1642,18 @@ export function StudentTransfersClient() {
             setEditingTransfer(null);
           }}
           onSaved={loadTransfers}
+        />
+      )}
+      {showBatchEditModal && (
+        <BatchEditOutModal 
+          ids={selectedOutTransferIds}
+          transfers={transfers}
+          onClose={() => setShowBatchEditModal(false)}
+          onSaved={() => {
+            setShowBatchEditModal(false);
+            setSelectedOutTransferIds([]);
+            loadTransfers();
+          }}
         />
       )}
       {showChangeModal && <ChangeClassModal activeSubTab={activeSubTab} onClose={() => setShowChangeModal(false)} onSaved={loadTransfers} />}
@@ -2640,6 +2662,343 @@ function TransferInModal({
 
 
         )}
+      </div>
+    </div>
+  )
+}
+
+export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: string[], transfers: any[], onClose: () => void, onSaved: () => void }) {
+  const [saving, setSaving] = useState(false)
+  const [updateFields, setUpdateFields] = useState<Record<string, boolean>>({
+    date: false,
+    category: false,
+    reason: false
+  })
+  
+  const [form, setForm] = useState({
+    transferDate: new Date().toISOString().split('T')[0],
+    semester: "HK1",
+    transferCategory: "DOMESTIC",
+    destinationSchool: "",
+    destinationType: "PRIVATE",
+    destinationProvince: "",
+    destinationCountry: "",
+    reserveStartDate: "",
+    reserveEndDate: "",
+    reason: ""
+  })
+  
+  const [registeredSchools, setRegisteredSchools] = useState<any[]>([])
+
+  useEffect(() => {
+    getDestinationSchoolsAction().then(data => {
+      setRegisteredSchools(data);
+    });
+  }, []);
+
+  const selectedStudents = transfers.filter(t => ids.includes(t.id))
+  const selectedNames = selectedStudents.map(t => t.student?.studentName || "Học sinh").join(", ")
+
+  const handleSave = async (e: any) => {
+    e.preventDefault()
+    if (!updateFields.date && !updateFields.category && !updateFields.reason) {
+      alert("Vui lòng chọn ít nhất một nhóm thông tin cần cập nhật!")
+      return
+    }
+
+    const payload: any = {}
+    if (updateFields.date) {
+      payload.transferDate = form.transferDate
+      payload.semester = form.semester
+    }
+    if (updateFields.category) {
+      payload.transferCategory = form.transferCategory
+      if (form.transferCategory === "DOMESTIC") {
+        payload.destinationSchool = form.destinationSchool
+        payload.destinationType = form.destinationType
+        payload.destinationProvince = form.destinationProvince
+      } else if (form.transferCategory === "ABROAD") {
+        payload.destinationCountry = form.destinationCountry
+      } else if (form.transferCategory === "RESERVE") {
+        payload.reserveStartDate = form.reserveStartDate
+        payload.reserveEndDate = form.reserveEndDate
+      }
+    }
+    if (updateFields.reason) {
+      payload.reason = form.reason
+    }
+
+    setSaving(true)
+    const res = await updateBatchTransferOutAction(ids, payload)
+    setSaving(false)
+
+    if (res.success) {
+      alert(`Đã cập nhật hàng loạt thành công cho ${ids.length} học sinh!`)
+      onSaved()
+    } else {
+      alert("Lỗi: " + res.error)
+    }
+  }
+
+  const provinces = [
+    "Thành phố Đà Nẵng",
+    "Tỉnh Quảng Nam",
+    "Tỉnh Thừa Thiên Huế",
+    "Thành phố Hà Nội",
+    "Thành phố Hồ Chí Minh"
+  ]
+
+  const COUNTRIES = [
+    "Mỹ (Hoa Kỳ)",
+    "Anh Quốc",
+    "Úc",
+    "Singapore",
+    "Canada",
+    "New Zealand",
+    "Nhật Bản",
+    "Hàn Quốc",
+    "Khác"
+  ]
+
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-[2rem] w-full max-w-2xl overflow-hidden border border-slate-100 shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 max-h-[90vh]">
+        
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-base font-extrabold text-slate-850 flex items-center gap-2">
+            <School className="w-5 h-5 text-indigo-600" />
+            Chỉnh sửa phiếu Chuyển đi hàng loạt ({ids.length})
+          </h2>
+          <button type="button" onClick={onClose} className="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSave} className="p-6 overflow-y-auto space-y-6 flex-1 text-slate-800">
+          {/* Target students card list */}
+          <div className="bg-indigo-50/50 border border-indigo-100/50 p-4 rounded-2xl">
+            <label className="block text-[10px] font-black text-indigo-700 uppercase tracking-wider mb-1.5">Danh sách học sinh được chọn ({ids.length})</label>
+            <p className="text-xs font-semibold text-slate-650 leading-relaxed max-h-16 overflow-y-auto custom-scrollbar">
+              {selectedNames}
+            </p>
+          </div>
+
+          {/* Group 1: Ngày chuyển & Kỳ học */}
+          <div className="border border-slate-200/80 rounded-2xl overflow-hidden">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200/80 flex items-center justify-between">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={updateFields.date}
+                  onChange={e => setUpdateFields({...updateFields, date: e.target.checked})}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                />
+                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Cập nhật Ngày chuyển & Kỳ học</span>
+              </label>
+            </div>
+            
+            {updateFields.date && (
+              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white animate-in slide-in-from-top-2 duration-200">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Ngày chuyển đi</label>
+                  <input 
+                    type="date" 
+                    required 
+                    value={form.transferDate}
+                    onChange={e => setForm({...form, transferDate: e.target.value})}
+                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kỳ học chuyển đi</label>
+                  <select 
+                    value={form.semester}
+                    onChange={e => setForm({...form, semester: e.target.value})}
+                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                  >
+                    <option value="HK1">Học kỳ 1</option>
+                    <option value="HK2">Học kỳ 2</option>
+                    <option value="SUMMER">Trong hè</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Group 2: Diện chuyển & Nơi đến */}
+          <div className="border border-slate-200/80 rounded-2xl overflow-hidden">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200/80 flex items-center justify-between">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={updateFields.category}
+                  onChange={e => setUpdateFields({...updateFields, category: e.target.checked})}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                />
+                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Cập nhật Diện chuyển & Nơi đến</span>
+              </label>
+            </div>
+            
+            {updateFields.category && (
+              <div className="p-4 space-y-4 bg-white animate-in slide-in-from-top-2 duration-200">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Diện chuyển đi</label>
+                  <select 
+                    value={form.transferCategory}
+                    onChange={e => setForm({...form, transferCategory: e.target.value})}
+                    className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                  >
+                    <option value="DOMESTIC">Chuyển trường VN</option>
+                    <option value="ABROAD">Du học</option>
+                    <option value="RESERVE">Bảo lưu</option>
+                    <option value="GRADUATED">Tốt nghiệp THPT (TN)</option>
+                  </select>
+                </div>
+
+                {form.transferCategory === "DOMESTIC" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/40 p-4 rounded-xl border border-slate-100">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tỉnh/TP</label>
+                      <select 
+                        value={form.destinationProvince} 
+                        onChange={e => setForm({...form, destinationProvince: e.target.value})}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                      >
+                        <option value="">Chọn Tỉnh/TP</option>
+                        {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Trường chuyển đến</label>
+                      <input 
+                        type="text" 
+                        list="batch-destination-schools-list" 
+                        placeholder="Tên trường" 
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none" 
+                        value={form.destinationSchool} 
+                        onChange={e => {
+                          const val = e.target.value;
+                          if (form.destinationProvince === "Thành phố Đà Nẵng") {
+                            const matched = registeredSchools.find(s => s.name === val);
+                            if (matched) {
+                              setForm(f => ({
+                                ...f,
+                                destinationSchool: val,
+                                destinationType: matched.schoolType || "PRIVATE"
+                              }));
+                              return;
+                            }
+                          }
+                          setForm(f => ({ ...f, destinationSchool: val }));
+                        }} 
+                      />
+                      <datalist id="batch-destination-schools-list">
+                        {form.destinationProvince === "Thành phố Đà Nẵng" && registeredSchools.map(s => <option key={s.id} value={s.name} />)}
+                      </datalist>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Loại hình</label>
+                      <select 
+                        value={form.destinationType} 
+                        onChange={e => setForm({...form, destinationType: e.target.value})}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                      >
+                        <option value="PRIVATE">Tư thục</option>
+                        <option value="PUBLIC">Công lập</option>
+                        <option value="OTHER">Khác</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {form.transferCategory === "ABROAD" && (
+                  <div className="bg-slate-50/40 p-4 rounded-xl border border-slate-100">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Quốc gia du học</label>
+                    <select 
+                      value={form.destinationCountry} 
+                      onChange={e => setForm({...form, destinationCountry: e.target.value})}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none cursor-pointer"
+                    >
+                      <option value="">Chọn Quốc gia</option>
+                      {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                )}
+
+                {form.transferCategory === "RESERVE" && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/40 p-4 rounded-xl border border-slate-100">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Bảo lưu Từ ngày</label>
+                      <input 
+                        type="date" 
+                        value={form.reserveStartDate} 
+                        onChange={e => setForm({...form, reserveStartDate: e.target.value})}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Bảo lưu Đến ngày</label>
+                      <input 
+                        type="date" 
+                        value={form.reserveEndDate} 
+                        onChange={e => setForm({...form, reserveEndDate: e.target.value})}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold text-slate-800 outline-none"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Group 3: Lý do chuyển */}
+          <div className="border border-slate-200/80 rounded-2xl overflow-hidden">
+            <div className="bg-slate-50 px-4 py-3 border-b border-slate-200/80 flex items-center justify-between">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={updateFields.reason}
+                  onChange={e => setUpdateFields({...updateFields, reason: e.target.checked})}
+                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                />
+                <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Cập nhật Lý do chuyển trường</span>
+              </label>
+            </div>
+            
+            {updateFields.reason && (
+              <div className="p-4 bg-white animate-in slide-in-from-top-2 duration-200">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Lý do chi tiết</label>
+                <textarea 
+                  rows={3}
+                  value={form.reason}
+                  onChange={e => setForm({...form, reason: e.target.value})}
+                  placeholder="Nhập lý do chuyển đi chung..."
+                  className="w-full bg-slate-50/50 border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-3 text-xs font-semibold text-slate-800 outline-none resize-none"
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Footer Actions */}
+          <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="px-5 py-2.5 border border-slate-200 hover:border-slate-350 hover:bg-slate-50 font-bold rounded-xl text-xs text-slate-500 cursor-pointer"
+            >
+              Hủy bỏ
+            </button>
+            <button 
+              type="submit"
+              disabled={saving}
+              className="px-5 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer disabled:opacity-55"
+            >
+              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+              Lưu thay đổi hàng loạt
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

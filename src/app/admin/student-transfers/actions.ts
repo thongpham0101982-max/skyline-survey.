@@ -1048,3 +1048,42 @@ export async function completeBatchEnrollmentAction(ids: string[], isPreschool: 
     return { success: false, error: e.message }
   }
 }
+
+export async function updateBatchTransferOutAction(ids: string[], fields: any) {
+  try {
+    const session = await auth()
+    if (!session) return { success: false, error: "Unauthorized" }
+
+    if (!ids || ids.length === 0) return { success: false, error: "Không tìm thấy danh sách cần cập nhật" }
+
+    const updateData: any = {}
+    
+    if (fields.transferDate !== undefined) updateData.transferDate = new Date(fields.transferDate)
+    if (fields.semester !== undefined) updateData.semester = fields.semester || null
+    if (fields.transferCategory !== undefined) updateData.transferCategory = fields.transferCategory
+    if (fields.destinationSchool !== undefined) updateData.destinationSchool = fields.destinationSchool || null
+    if (fields.destinationType !== undefined) updateData.destinationType = fields.destinationType || null
+    if (fields.destinationProvince !== undefined) updateData.destinationProvince = fields.destinationProvince || null
+    if (fields.destinationCountry !== undefined) updateData.destinationCountry = fields.destinationCountry || null
+    if (fields.reserveStartDate !== undefined) updateData.reserveStartDate = fields.reserveStartDate ? new Date(fields.reserveStartDate) : null
+    if (fields.reserveEndDate !== undefined) updateData.reserveEndDate = fields.reserveEndDate ? new Date(fields.reserveEndDate) : null
+    if (fields.reason !== undefined) updateData.reason = fields.reason || null
+
+    if (Object.keys(updateData).length === 0) {
+      return { success: false, error: "Không có trường nào được chọn để cập nhật" }
+    }
+
+    await prisma.studentTransfer.updateMany({
+      where: {
+        id: { in: ids }
+      },
+      data: updateData
+    })
+
+    revalidatePath("/admin/student-transfers")
+    return { success: true }
+  } catch (e: any) {
+    console.error("updateBatchTransferOutAction Error:", e)
+    return { success: false, error: e.message }
+  }
+}
