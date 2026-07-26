@@ -138,23 +138,27 @@ export function ClassDetailClient({
       </div>
 
       {/* KPI METRIC CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${isGVCNOfThisClass ? 'md:grid-cols-1 max-w-sm' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
         <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-blue-100 flex flex-col justify-between">
            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tổng số Học sinh</h3>
            <div className="text-3xl font-black text-slate-800">{totalStudents}</div>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-amber-100 flex flex-col justify-between">
-           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tỷ lệ Hoàn thành Khảo sát</h3>
-           <div className="text-3xl font-black text-slate-800">{completionRate > 100 ? 100 : completionRate.toFixed(1)}%</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-indigo-100 flex flex-col justify-between">
-           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Hài lòng Trung bình</h3>
-           <div className="text-3xl font-black text-slate-800">{averageSatisfaction.toFixed(1)} / 5.0</div>
-        </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-emerald-100 flex flex-col justify-between">
-           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Chỉ số NPS</h3>
-           <div className="text-3xl font-black text-slate-800">{nps}</div>
-        </div>
+        {!isGVCNOfThisClass && (
+          <>
+            <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-amber-100 flex flex-col justify-between">
+               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Tỷ lệ Hoàn thành Khảo sát</h3>
+               <div className="text-3xl font-black text-slate-800">{completionRate > 100 ? 100 : completionRate.toFixed(1)}%</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-indigo-100 flex flex-col justify-between">
+               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Hài lòng Trung bình</h3>
+               <div className="text-3xl font-black text-slate-800">{averageSatisfaction.toFixed(1)} / 5.0</div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm border-2 border-emerald-100 flex flex-col justify-between">
+               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Chỉ số NPS</h3>
+               <div className="text-3xl font-black text-slate-800">{nps}</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* RENDER VIEW BASED ON GVCN ROLE (NO TABS) */}
