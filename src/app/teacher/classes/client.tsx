@@ -56,9 +56,16 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
                     <h3 className="font-extrabold text-lg text-slate-800 group-hover:text-[#00A99D] transition-colors">{c.className}</h3>
                     <p className="text-xs font-bold text-[#00A99D] mt-0.5">{c.classCode}</p>
                   </div>
-                  <span className={`text-[10px] font-black tracking-wider px-2.5 py-1 rounded-full uppercase ${c.status === "ACTIVE" ? "bg-teal-50 text-[#00A99D] border border-teal-100" : "bg-slate-100 text-slate-500"}`}>
-                    {c.status}
-                  </span>
+                  <div className="flex flex-col items-end gap-1.5">
+                    {c.isHomeroom && (
+                      <span className="text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full uppercase bg-[#00A99D] text-white border border-[#00a99d]">
+                        Lớp chủ nhiệm
+                      </span>
+                    )}
+                    <span className={`text-[10px] font-black tracking-wider px-2.5 py-1 rounded-full uppercase ${c.status === "ACTIVE" ? "bg-teal-50 text-[#00A99D] border border-teal-100" : "bg-slate-100 text-slate-500"}`}>
+                      {c.status}
+                    </span>
+                  </div>
                 </div>
                 
                 <div className="space-y-3 mt-6">
@@ -77,12 +84,12 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
                 </div>
               </div>
               
-              <div className="flex justify-end text-xs font-semibold">
+              <div className="flex justify-end text-xs font-semibold p-6 pt-0">
                 <Link 
                   href={`/teacher/classes/${c.id}`} 
                   className="text-xs font-bold text-[#00A99D] hover:text-[#009085] transition-colors flex items-center gap-1.5"
                 >
-                  Xem chi tiết kết quả khảo sát &rarr;
+                  {c.isHomeroom ? "Xem chi tiết Lớp chủ nhiệm \u2192" : "Xem chi tiết k\u1ebft qu\u1ea3 kh\u1ea3o s\u00e1t \u2192"}
                 </Link>
               </div>
             </div>

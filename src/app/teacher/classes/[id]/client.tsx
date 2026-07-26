@@ -33,7 +33,8 @@ export function ClassDetailClient({
   monthlyHeadcount: any[]
   studentMovements: any[]
 }) {
-  const [activeTab, setActiveTab] = useState<"survey" | "homeroom">("survey")
+  // Default to "homeroom" if the teacher is the GVCN of this class
+  const [activeTab, setActiveTab] = useState<"survey" | "homeroom">(isGVCNOfThisClass ? "homeroom" : "survey")
   
   // States for student photos
   const [uploadingStudentId, setUploadingStudentId] = useState<string | null>(null)

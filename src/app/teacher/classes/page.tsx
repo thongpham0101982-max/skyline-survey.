@@ -24,7 +24,11 @@ async function getTeacherClasses(userId: string) {
     }
   })
 
-  return classes
+  return classes.map(c => ({
+    ...c,
+    isHomeroom: c.homeroomTeacherId === teacher.id || 
+                (c.homeroomTeacherId ? c.homeroomTeacherId.includes(teacher.id) : false)
+  }))
 }
 
 export default async function TeacherClassesPage() {
