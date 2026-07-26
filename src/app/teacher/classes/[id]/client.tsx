@@ -252,7 +252,7 @@ export function ClassDetailClient({
               </div>
             </div>
 
-            {/* Timeline: Lịch sử biến động sỹ số */}
+            {/* Timeline: Hệ thống Luân chuyển Học sinh */}
             <div className="bg-white rounded-2xl border-2 border-emerald-100 p-6 shadow-sm flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-3 border-b border-slate-100 pb-3 mb-4">
@@ -260,8 +260,8 @@ export function ClassDetailClient({
                     <ArrowLeftRight className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-slate-800 text-sm">Biến động Học sinh</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Nhập học, chuyển lớp, chuyển trường</p>
+                    <h3 className="font-extrabold text-slate-800 text-sm">Hệ thống Luân chuyển Học sinh</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Lịch sử chuyển đi, nhập học, chuyển lớp</p>
                   </div>
                 </div>
 
