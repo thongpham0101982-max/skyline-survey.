@@ -517,6 +517,27 @@ export function StudentTransfersClient() {
     const pctInDaNang = totalDaNang > 0 ? Math.round((privateDaNang / totalDaNang) * 100) : 0;
     const pctOverall = totalOut > 0 ? Math.round((privateDaNang / totalOut) * 100) : 0;
 
+    const publicDaNang = baseOutTransfers.filter(t => 
+      t.destinationProvince === "Thành phố Đà Nẵng" && t.destinationType === "PUBLIC"
+    ).length;
+    const pctPublicDaNang = totalDaNang > 0 ? Math.round((publicDaNang / totalDaNang) * 100) : 0;
+
+    const otherDaNang = totalDaNang - privateDaNang - publicDaNang;
+    const pctOtherDaNang = totalDaNang > 0 ? Math.round((otherDaNang / totalDaNang) * 100) : 0;
+
+    const privateDaNangTransfers = baseOutTransfers.filter(t => 
+      t.destinationProvince === "Thành phố Đà Nẵng" && t.destinationType === "PRIVATE"
+    );
+    const privateDaNangSchoolMap = {};
+    privateDaNangTransfers.forEach(t => {
+      const school = t.destinationSchool || "Khác / Chưa rõ";
+      privateDaNangSchoolMap[school] = (privateDaNangSchoolMap[school] || 0) + 1;
+    });
+    const privateDaNangSchoolStats = Object.entries(privateDaNangSchoolMap).map(([school, count]) => {
+      const pct = privateDaNang > 0 ? Math.round((count / privateDaNang) * 100) : 0;
+      return { name: school, count, pct };
+    }).sort((a, b) => b.count - a.count);
+
     return {
       totalOut,
       classStats,
@@ -527,7 +548,13 @@ export function StudentTransfersClient() {
       privateDaNang,
       totalDaNang,
       pctInDaNang,
-      pctOverall
+      pctOverall,
+      publicDaNang,
+      pctPublicDaNang,
+      pctPrivateDaNang: pctInDaNang,
+      otherDaNang,
+      pctOtherDaNang,
+      privateDaNangSchoolStats
     };
   })();
 
@@ -938,29 +965,115 @@ export function StudentTransfersClient() {
                   </div>
                 </div>
 
-                {/* Column 3: Tỉnh/TP đến */}
-                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
-                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#00A99D]" /> Theo Tỉnh/Thành phố đến
-                  </h4>
-                  <div className="space-y-3.5 max-h-[350px] overflow-y-auto pr-1 custom-scrollbar">
-                    {outStats.provinceStats.length > 0 ? outStats.provinceStats.map(p => (
-                      <div key={p.name} className="space-y-1">
-                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
-                          <span>{p.name}</span>
-                          <span className="text-slate-500">
-                            <span className="text-rose-600 font-extrabold">{p.count}</span>
-                            <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
-                            <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((p.count / outStats.totalOut) * 100) : 0}%)</span>
+                {/* Column 3: Tỉnh/TP đến & Phân tích Đà Nẵng */}
+                <div className="space-y-6">
+                  <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#00A99D]" /> Theo Tỉnh/Thành phố đến
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.provinceStats.length > 0 ? outStats.provinceStats.map(p => (
+                        <div key={p.name} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{p.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{p.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((p.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-sky-500 h-full" style={{ width: (outStats.totalOut > 0 ? (p.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Drill-down Đà Nẵng analysis */}
+                  <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4 shadow-xs">
+                    <div className="border-b border-slate-50 pb-2">
+                      <h4 className="text-xs font-black text-slate-850 uppercase tracking-wider flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-indigo-600" />
+                        Phân tích tại Đà Nẵng
+                      </h4>
+                      <p className="text-[10px] text-slate-400 font-bold mt-1">Chi tiết trong số {outStats.totalDaNang} HS chuyển đến Đà Nẵng</p>
+                    </div>
+
+                    {/* 1. Loại hình Công lập vs Tư thục */}
+                    <div className="space-y-3">
+                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loại hình trường đến</h5>
+                      
+                      {/* Tư thục */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                          <span>Tư thục</span>
+                          <span>
+                            <span className="font-extrabold text-[#00A99D]">{outStats.privateDaNang}</span> HS ({outStats.pctPrivateDaNang}%)
                           </span>
                         </div>
-                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                          <div className="bg-sky-500 h-full" style={{ width: (outStats.totalOut > 0 ? (p.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                          <div className="bg-[#00A99D] h-full" style={{ width: outStats.pctPrivateDaNang + "%" }}></div>
                         </div>
                       </div>
-                    )) : (
-                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
-                    )}
+
+                      {/* Công lập */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                          <span>Công lập</span>
+                          <span>
+                            <span className="font-extrabold text-amber-600">{outStats.publicDaNang}</span> HS ({outStats.pctPublicDaNang}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                          <div className="bg-amber-500 h-full" style={{ width: outStats.pctPublicDaNang + "%" }}></div>
+                        </div>
+                      </div>
+
+                      {/* Khác */}
+                      {outStats.otherDaNang > 0 && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                            <span>Khác / Chưa rõ</span>
+                            <span>
+                              <span className="font-extrabold text-slate-500">{outStats.otherDaNang}</span> HS ({outStats.pctOtherDaNang}%)
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div className="bg-slate-400 h-full" style={{ width: outStats.pctOtherDaNang + "%" }}></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. Trường Tư thục cụ thể */}
+                    <div className="space-y-3 pt-3 border-t border-slate-100">
+                      <h5 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center justify-between">
+                        <span>Biểu đồ tỷ lệ các trường Tư thục</span>
+                        <span className="text-[9px] font-semibold text-slate-400 normal-case">(Trong {outStats.privateDaNang} HS chuyển Tư thục)</span>
+                      </h5>
+                      
+                      <div className="space-y-3 max-h-[140px] overflow-y-auto pr-1 custom-scrollbar">
+                        {outStats.privateDaNangSchoolStats.length > 0 ? outStats.privateDaNangSchoolStats.map(item => (
+                          <div key={item.name} className="space-y-1">
+                            <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                              <span className="truncate max-w-[70%]">{item.name}</span>
+                              <span className="text-slate-500 font-bold shrink-0">
+                                <span>{item.count} HS</span>
+                                <span className="text-[10px] font-normal text-slate-400 ml-1">({item.pct}%)</span>
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
+                              <div className="bg-indigo-500 h-full" style={{ width: item.pct + "%" }}></div>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="text-[11px] text-slate-400 italic text-center py-2">Không có trường tư thục nào ở Đà Nẵng</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
