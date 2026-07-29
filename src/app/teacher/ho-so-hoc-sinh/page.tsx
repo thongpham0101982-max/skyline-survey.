@@ -307,19 +307,12 @@ export default function TeacherStudentProfilePage() {
     )
   }
 
-  const tabs = [
+    const tabs = [
     { id: "cv", label: "Xem chi tiết HSHS", icon: User },
+    { id: "academic", label: "Kết quả Học tập (MOET)", icon: FileText },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
-    { id: "announcements", label: "Bản tin & Thông báo", icon: Bell },
     { id: "achievements", label: "Thành tích", icon: Award },
     { id: "orientation", label: "Hướng nghiệp", icon: Compass },
-    { 
-      id: "commitment", 
-      label: (profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
-        ? "Kết quả Học tập & Rèn luyện: Chương trình Bộ & Chương trình Học Song Ngữ"
-        : "Cam kết học tập", 
-      icon: FileText 
-    },
     { id: "projects", label: "Hoạt động trải nghiệm", icon: BookOpen },
     { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare },
     { id: "support", label: "Hỗ trợ học tập", icon: GraduationCap }
@@ -665,41 +658,6 @@ export default function TeacherStudentProfilePage() {
                                       </div>
                                     ))}
                                   </div>
-                                )}
-                              </div>
-
-                              {/* Learning Commitment */}
-                              <div className="space-y-3">
-                                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                  <FileText className="w-4 h-4 text-[#00A99D]" />
-                                  {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
-                                    ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ"
-                                    : "Cam kết rèn luyện"}
-                                </h4>
-                                {profileData.commitment ? (
-                                  <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-3">
-                                    <p className="text-[10px] text-slate-600 italic leading-relaxed font-semibold">
-                                      "{profileData.commitment.content}"
-                                    </p>
-                                    <div className="flex justify-between items-center pt-2 border-t border-slate-200/50">
-                                      <span className="text-[9px] text-slate-400 font-bold">Trạng thái:</span>
-                                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-lg border ${
-                                        profileData.commitment.status === "COMPLETED"
-                                          ? "bg-green-50 text-green-700 border-green-200"
-                                          : profileData.commitment.status === "VIOLATED"
-                                          ? "bg-red-50 text-red-700 border-red-200"
-                                          : "bg-blue-50 text-blue-700 border-blue-200"
-                                      }`}>
-                                        {profileData.commitment.status === "COMPLETED" ? "Hoàn thành" : profileData.commitment.status === "VIOLATED" ? "Vi phạm" : "Đang thực hiện"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <p className="text-[10px] text-slate-400 italic font-semibold pl-1">
-                                    {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
-                                      ? "Chưa thiết lập kết quả học tập và rèn luyện."
-                                      : "Chưa thiết lập cam kết."}
-                                  </p>
                                 )}
                               </div>
 
@@ -1299,167 +1257,6 @@ export default function TeacherStudentProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: ANNOUNCEMENTS */}
-                    {activeTab === "announcements" && (
-                      <div className="space-y-6">
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 flex justify-between items-center">
-                          <span>Bản tin rèn luyện & Thông báo học sinh</span>
-                          <span className="bg-indigo-55 text-indigo-650 border border-indigo-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
-                            <Bell className="w-3 h-3" />
-                            Bảng Tin
-                          </span>
-                        </h4>
-                        
-                        {/* Form to create new post */}
-                        <form onSubmit={handleCreatePostSubmit} className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                          <div className="flex gap-3">
-                            <div className="w-9 h-9 rounded-full bg-[#00A99D]/15 text-[#00A99D] flex items-center justify-center font-black text-xs shadow-inner">
-                              {selectedStudent?.studentName?.charAt(0) || "S"}
-                            </div>
-                            <textarea
-                              value={newPostText}
-                              onChange={(e) => setNewPostText(e.target.value)}
-                              placeholder={`Đăng hoạt động, thông báo học tập hoặc nhắc nhở rèn luyện mới về em ${selectedStudent?.studentName}...`}
-                              rows={3}
-                              className="flex-grow bg-white border border-slate-200 rounded-xl p-3 text-xs font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D] resize-none"
-                            />
-                          </div>
-                          <div className="flex justify-end">
-                            <button
-                              type="submit"
-                              disabled={postingAnnouncement || !newPostText.trim()}
-                              className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
-                            >
-                              {postingAnnouncement ? (
-                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              ) : (
-                                <Send className="w-3.5 h-3.5" />
-                              )}
-                              <span>Đăng bản tin</span>
-                            </button>
-                          </div>
-                        </form>
-
-                        {/* Post Feed */}
-                        {profileData.highlightComments?.filter((c: any) => c.category === "ANNOUNCEMENT").length === 0 ? (
-                          <div className="text-xs text-slate-400 italic text-center py-16 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                            <Bell className="w-8 h-8 mx-auto mb-2 text-slate-355" />
-                            Bản tin chưa có thông báo nào. Bạn có thể đăng bản tin rèn luyện ở trên.
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {profileData.highlightComments
-                              .filter((c: any) => c.category === "ANNOUNCEMENT")
-                              .map((c: any) => {
-                                const isLiked = postLikes[c.id]?.liked || false;
-                                const likeCount = postLikes[c.id]?.count || 0;
-                                const comments = postCommentsState[c.id] || [];
-                                const commentText = newCommentTexts[c.id] || "";
-
-                                return (
-                                  <div key={c.id} className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4 hover:border-slate-300 transition-all animate-in fade-in slide-in-from-bottom-2 duration-350">
-                                    {/* Post Header */}
-                                    <div className="flex justify-between items-start">
-                                      <div className="flex gap-3">
-                                        <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-[#00A99D] font-black text-xs shadow-inner">
-                                          {c.teacherName?.substring(0, 2).toUpperCase() || "GV"}
-                                        </div>
-                                        <div>
-                                          <div className="font-extrabold text-xs text-slate-805">{c.teacherName} <span className="text-slate-400 font-bold">(GVCN)</span></div>
-                                          <div className="text-[9px] text-slate-400 font-bold mt-0.5">{new Date(c.updatedAt).toLocaleDateString('vi-VN')} • Bản tin</div>
-                                        </div>
-                                      </div>
-                                      <button
-                                        onClick={async () => {
-                                          if (!confirm("Bạn có chắc chắn muốn xóa bản tin này?")) return
-                                          try {
-                                            const deleteRes = await fetch("/api/teacher-student-records?action=deleteHighlightComment", {
-                                              method: "POST",
-                                              headers: { "Content-Type": "application/json" },
-                                              body: JSON.stringify({ id: c.id })
-                                            })
-                                            if (deleteRes.ok) {
-                                              // Refresh profile data
-                                              const profileRes = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
-                                              if (profileRes.ok) {
-                                                const data = await profileRes.json()
-                                                setProfileData(data)
-                                              }
-                                            }
-                                          } catch (err) {
-                                            console.error("Error deleting post:", err)
-                                          }
-                                        }}
-                                        className="text-slate-450 hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-
-                                    {/* Post Body */}
-                                    <p className="text-xs text-slate-700 bg-slate-50/30 p-3 rounded-xl border border-slate-100 font-semibold leading-relaxed whitespace-pre-wrap pl-3">
-                                      {c.comment}
-                                    </p>
-
-                                    {/* Post Action Buttons */}
-                                    <div className="flex items-center gap-6 border-t border-b border-slate-100 py-2 px-1 text-slate-500 font-bold text-[11px]">
-                                      <button
-                                        onClick={() => toggleLike(c.id)}
-                                        className={`flex items-center gap-1.5 transition-colors cursor-pointer hover:text-rose-500 ${isLiked ? "text-rose-500 animate-bounce-short" : ""}`}
-                                      >
-                                        <Heart className={`w-4 h-4 ${isLiked ? "fill-rose-500 stroke-rose-500" : ""}`} />
-                                        <span>{likeCount} Thích</span>
-                                      </button>
-                                      <div className="flex items-center gap-1.5">
-                                        <MessageCircle className="w-4 h-4" />
-                                        <span>{comments.length} Bình luận</span>
-                                      </div>
-                                    </div>
-
-                                    {/* Comments List */}
-                                    {comments.length > 0 && (
-                                      <div className="space-y-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100 pl-4">
-                                        {comments.map((comm: any, idx: number) => (
-                                          <div key={idx} className="text-xs space-y-0.5 border-b border-slate-100/50 pb-2 last:border-0 last:pb-0">
-                                            <div className="flex justify-between items-center">
-                                              <span className="font-extrabold text-slate-805">{comm.author}</span>
-                                              <span className="text-[9px] text-slate-400 font-semibold">{comm.time}</span>
-                                            </div>
-                                            <p className="text-slate-655 font-medium leading-relaxed">{comm.text}</p>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-
-                                    {/* Add Comment Input */}
-                                    <div className="flex gap-2">
-                                      <input
-                                        type="text"
-                                        value={commentText}
-                                        onChange={(e) => setNewCommentTexts(prev => ({ ...prev, [c.id]: e.target.value }))}
-                                        placeholder="Nhập ý kiến bình luận của bạn..."
-                                        className="flex-grow bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D]"
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") {
-                                            handleAddComment(c.id, c.teacherName || "Giáo viên")
-                                          }
-                                        }}
-                                      />
-                                      <button
-                                        onClick={() => handleAddComment(c.id, c.teacherName || "Giáo viên")}
-                                        className="bg-[#00A99D]/10 hover:bg-[#00A99D] text-[#00A99D] hover:text-white p-2.5 rounded-xl transition-all cursor-pointer"
-                                      >
-                                        <Send className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {/* TAB: ACHIEVEMENTS */}
                     {activeTab === "achievements" && (
                       <div className="space-y-4">
@@ -1521,57 +1318,6 @@ export default function TeacherStudentProfilePage() {
                     )}
 
                     {/* TAB: COMMITMENT */}
-                    {activeTab === "commitment" && (
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">
-                          {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
-                            ? "Kết quả Học tập và Rèn luyện: Chương trình Bộ và Chương trình Học Song Ngữ"
-                            : "Bản cam kết học tập & Rèn luyện"}
-                        </h4>
-                        {profileData.commitment ? (
-                          <div className="bg-slate-50/50 border-2 border-slate-200/60 rounded-3xl p-6 space-y-5 shadow-xs relative overflow-hidden">
-                            {/* Decorative Seal design */}
-                            <div className="absolute top-4 right-4 w-16 h-16 rounded-full border-4 border-slate-200/50 flex items-center justify-center select-none pointer-events-none">
-                              <span className="text-[7px] text-slate-355 font-black tracking-widest uppercase">Verified</span>
-                            </div>
-
-                            <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
-                              <div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                  {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
-                                    ? `Mã kết quả: LSC-${profileData.commitment.id.substring(0, 5).toUpperCase()}`
-                                    : `Mã cam kết: LSC-${profileData.commitment.id.substring(0, 5).toUpperCase()}`}
-                                </span>
-                              </div>
-                              <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-full border ${
-                                profileData.commitment.status === "COMPLETED"
-                                  ? "bg-green-50 text-green-700 border-green-200"
-                                  : profileData.commitment.status === "VIOLATED"
-                                  ? "bg-red-50 text-red-700 border-red-200"
-                                  : "bg-blue-50 text-blue-700 border-blue-200"
-                              }`}>
-                                {profileData.commitment.status === "COMPLETED" ? "Đã hoàn thành tốt" : profileData.commitment.status === "VIOLATED" ? "Vi phạm cam kết" : "Đang thực hiện"}
-                              </span>
-                            </div>
-                            
-                            <div className="bg-white p-5 rounded-2xl border border-slate-200 text-xs font-semibold text-slate-750 leading-relaxed whitespace-pre-line shadow-inner max-w-2xl mx-auto italic">
-                              "{profileData.commitment.content}"
-                            </div>
-                            
-                            <div className="text-[9px] text-slate-455 font-bold text-right pt-2 border-t border-slate-100">
-                              Lập bởi: {profileData.commitment.teacherName} • Cập nhật cuối: {new Date(profileData.commitment.updatedAt).toLocaleDateString('vi-VN')}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-xs text-slate-400 italic text-center py-12">
-                            {(profileData?.student?.class?.educationSystem === "HNG" || profileData?.student?.class?.educationSystem === "SB" || selectedStudent?.educationSystem === "HNG" || selectedStudent?.educationSystem === "SB")
-                              ? "Chưa thiết lập kết quả học tập và rèn luyện: chương trình bộ và chương trình học song ngữ cho học sinh này."
-                              : "Chưa thiết lập bản cam kết học tập & rèn luyện cho học sinh này."}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
                     {/* TAB: EXPERIENTIAL ACTIVITIES */}
                     {activeTab === "projects" && (
                       <div className="space-y-4">
