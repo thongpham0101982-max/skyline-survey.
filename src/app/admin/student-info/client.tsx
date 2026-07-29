@@ -1941,53 +1941,58 @@ export function StudentInfoClient({
       {/* Statistics Cards */}
       {subTab === "result" && (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-slate-150 shadow-xs flex items-center gap-4 hover:shadow-sm transition-all duration-200">
-          <div className="p-3 bg-slate-50 text-slate-650 rounded-xl">
-            <Users2 className="w-5 h-5 text-slate-500" />
+        {/* Card 1: Tổng số */}
+        <div className="bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-100/50 p-5 rounded-2xl border border-indigo-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+          <div className="p-3.5 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/20">
+            <Users2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tổng số trong bộ lọc</p>
-            <p className="text-xl font-black text-slate-800 mt-0.5">{statistics.total}</p>
+            <p className="text-[10px] text-indigo-700 font-extrabold uppercase tracking-wider">Tổng số trong bộ lọc</p>
+            <p className="text-2xl font-black text-indigo-950 mt-0.5">{statistics.total}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-150 shadow-xs flex items-center gap-4 hover:shadow-sm transition-all duration-200">
-          <div className="p-3 bg-emerald-50 text-emerald-650 rounded-xl">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+        {/* Card 2: Đạt / Đạt cam kết / Học thử */}
+        <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/30 to-emerald-100/60 p-5 rounded-2xl border border-emerald-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+          <div className="p-3.5 bg-emerald-600 text-white rounded-2xl shadow-md shadow-emerald-500/20">
+            <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đạt / Đạt cam kết / Học thử</p>
-            <p className="text-xl font-black text-emerald-650 mt-0.5">{statistics.passed}</p>
+            <p className="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider">Đạt / Đạt cam kết / Học thử</p>
+            <p className="text-2xl font-black text-emerald-950 mt-0.5">{statistics.passed}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-150 shadow-xs flex items-center gap-4 hover:shadow-sm transition-all duration-200">
-          <div className="p-3 bg-rose-50 text-rose-650 rounded-xl">
-            <XCircle className="w-5 h-5 text-rose-600" />
+        {/* Card 3: Không đạt */}
+        <div className="bg-gradient-to-br from-rose-50/90 via-red-50/30 to-rose-100/60 p-5 rounded-2xl border border-rose-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+          <div className="p-3.5 bg-rose-600 text-white rounded-2xl shadow-md shadow-rose-500/20">
+            <XCircle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Không đạt</p>
-            <p className="text-xl font-black text-rose-650 mt-0.5">{statistics.failed}</p>
+            <p className="text-[10px] text-rose-800 font-extrabold uppercase tracking-wider">Không đạt</p>
+            <p className="text-2xl font-black text-rose-950 mt-0.5">{statistics.failed}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-150 shadow-xs flex items-center gap-4 hover:shadow-sm transition-all duration-200">
-          <div className="p-3 bg-amber-50 text-amber-650 rounded-xl">
-            <AlertCircle className="w-5 h-5 text-amber-600" />
+        {/* Card 4: Chưa duyệt / Khác */}
+        <div className="bg-gradient-to-br from-amber-50/90 via-yellow-50/30 to-amber-100/60 p-5 rounded-2xl border border-amber-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+          <div className="p-3.5 bg-amber-500 text-white rounded-2xl shadow-md shadow-amber-500/20">
+            <AlertCircle className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Chưa duyệt / Khác</p>
-            <p className="text-xl font-black text-amber-650 mt-0.5">{statistics.pending}</p>
+            <p className="text-[10px] text-amber-800 font-extrabold uppercase tracking-wider">Chưa duyệt / Khác</p>
+            <p className="text-2xl font-black text-amber-950 mt-0.5">{statistics.pending}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-150 shadow-xs flex items-center gap-4 hover:shadow-sm transition-all duration-200">
-          <div className="p-3 bg-[#00A99D]/10 text-[#00A99D] rounded-xl">
-            <UserCheck className="w-5 h-5 text-[#00A99D]" />
+        {/* Card 5: Đã nhập học / Yêu cầu sắp lớp */}
+        <div className="bg-gradient-to-br from-teal-50/90 via-cyan-50/30 to-teal-100/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 flex items-center gap-4 transition-all duration-300">
+          <div className="p-3.5 bg-[#00A99D] text-white rounded-2xl shadow-md shadow-teal-500/20">
+            <UserCheck className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nhập học / Yêu cầu sắp lớp</p>
-            <p className="text-xl font-black text-[#00A99D] mt-0.5">
+            <p className="text-[10px] text-teal-800 font-extrabold uppercase tracking-wider">Đã nhập học / Yêu cầu sắp lớp</p>
+            <p className="text-2xl font-black text-teal-950 mt-0.5">
               {statistics.enrolled} / {statistics.requestedEnrollment}
             </p>
           </div>
