@@ -940,6 +940,8 @@ export function StudentInfoClient({
     let passed = 0;
     let failed = 0;
     let pending = 0;
+    let enrolled = 0;
+    let requestedEnrollment = 0;
 
     filteredStudents.forEach((s) => {
       const res = s.admissionResult || "";
@@ -950,9 +952,16 @@ export function StudentInfoClient({
       } else {
         pending++;
       }
+
+      if (s.enrollmentStatus === "COMPLETED") {
+        enrolled++;
+      }
+      if (s.enrollmentStatus === "PENDING" || s.enrollmentStatus === "COMPLETED") {
+        requestedEnrollment++;
+      }
     });
 
-    return { total, passed, failed, pending };
+    return { total, passed, failed, pending, enrolled, requestedEnrollment };
   }, [filteredStudents]);
 
   // Paginated dataset
@@ -1931,7 +1940,7 @@ export function StudentInfoClient({
 
       {/* Statistics Cards */}
       {subTab === "result" && (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-150 shadow-xs flex items-center gap-4 hover:shadow-sm transition-all duration-200">
           <div className="p-3 bg-slate-50 text-slate-650 rounded-xl">
             <Users2 className="w-5 h-5 text-slate-500" />
@@ -1969,6 +1978,18 @@ export function StudentInfoClient({
           <div>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Chưa duyệt / Khác</p>
             <p className="text-xl font-black text-amber-650 mt-0.5">{statistics.pending}</p>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-2xl border border-slate-150 shadow-xs flex items-center gap-4 hover:shadow-sm transition-all duration-200">
+          <div className="p-3 bg-[#00A99D]/10 text-[#00A99D] rounded-xl">
+            <UserCheck className="w-5 h-5 text-[#00A99D]" />
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nhập học / Yêu cầu sắp lớp</p>
+            <p className="text-xl font-black text-[#00A99D] mt-0.5">
+              {statistics.enrolled} / {statistics.requestedEnrollment}
+            </p>
           </div>
         </div>
       </div>
