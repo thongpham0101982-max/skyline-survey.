@@ -44,6 +44,7 @@ export function SurveyConfigClient({
   gradesK12,
   configs,
   rolePermissions,
+  destinationSchools = [],
   gradesPreschool,
   currentUser
 }: SurveyConfigClientProps) {
@@ -158,6 +159,7 @@ export function SurveyConfigClient({
             departments={departments}
             currentUser={currentUser}
             rolePermissions={rolePermissions}
+            destinationSchools={destinationSchools}
           />
         )}
 

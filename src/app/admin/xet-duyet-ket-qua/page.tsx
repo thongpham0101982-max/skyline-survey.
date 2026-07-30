@@ -43,6 +43,7 @@ export default async function XetDuyetKetQuaPage() {
   let configs: any[] = [];
   let teachers: any[] = [];
   let departments: any[] = [];
+  let destinationSchools: any[] = [];
   let mầmNonClasses: any[] = [];
   const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
   
@@ -96,6 +97,9 @@ export default async function XetDuyetKetQuaPage() {
         configs = await pAny.assessmentConfig.findMany({ 
           orderBy: [{ categoryType: "asc" }, { sortOrder: "asc" }] 
         }).catch(() => []);
+      }
+      if (pAny.destinationSchool) {
+        destinationSchools = await pAny.destinationSchool.findMany({ orderBy: [{ level: "desc" }, { name: "asc" }] }).catch(() => []);
       }
       if (pAny.department) {
         departments = await pAny.department.findMany({ 
@@ -179,6 +183,7 @@ export default async function XetDuyetKetQuaPage() {
         configs={safeJson(configs)}
         teachers={safeJson(teachers)}
         departments={safeJson(departments)}
+        destinationSchools={safeJson(destinationSchools)}
         currentUser={session?.user ? { id: session.user.id, role: (session.user as any).role, campusIds: liveCampusIds, fullName: session.user.name || '' } : null}
         rolePermissions={await (async () => {
           try {

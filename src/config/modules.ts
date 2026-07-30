@@ -68,6 +68,12 @@ export const APP_CATEGORIES = [
         href: "/admin/ktdbcl/support"
       },
       {
+        code: "KTDBCL_IMPORT_KQHT",
+        name: "Import KQHT",
+        icon: FileSpreadsheet,
+        href: "/admin/ktdbcl/import-kqht?v=2.1"
+      },
+      {
         code: "EXPERIENTIAL_ACTIVITIES",
         name: "Hoạt động trải nghiệm",
         icon: Award,
@@ -136,7 +142,7 @@ export const APP_CATEGORIES = [
         code: "ADMIN_STUDENT_PROFILES",
         name: "Hồ sơ Học sinh",
         icon: Users,
-        href: "/admin/ho-so-hoc-sinh"
+        href: "/admin/ho-so-hoc-sinh?v=2.1"
       },
       {
         code: "PHAN_CONG_KHAO_SAT",

@@ -55,6 +55,7 @@ interface StudentInfoClientProps {
   eduSystems: any[];
   campuses: any[];
   grades: string[];
+  destinationSchools?: any[];
   
   // NEW PROPS FOR EMBEDDING
   academicYears: any[];
@@ -133,6 +134,7 @@ export function StudentInfoClient({
   eduSystems = [],
   campuses = [],
   grades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"],
+  destinationSchools = [],
   
   academicYears = [],
   examBoardUsers = [],
@@ -301,6 +303,7 @@ export function StudentInfoClient({
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [schoolNameInput, setSchoolNameInput] = useState<string>("");
   const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
+  const [selectedDestinationSchoolId, setSelectedDestinationSchoolId] = useState<string>("");
   const [originalKqgd, setOriginalKqgd] = useState<string>("");
 
   // System transfer states
@@ -434,9 +437,9 @@ export function StudentInfoClient({
     if (selectedLocationType) {
       let locDetail = "";
       if (selectedLocationType === "Nội tỉnh") {
-        locDetail = selectedWard;
+        locDetail = "TP Đà Nẵng";
       } else if (selectedLocationType === "Ngoại tỉnh") {
-        locDetail = selectedWard ? `${selectedWard} - ${selectedProvince}` : selectedProvince;
+        locDetail = selectedProvince;
       } else if (selectedLocationType === "Nước ngoài") {
         locDetail = selectedCountry;
       }
@@ -2631,7 +2634,7 @@ export function StudentInfoClient({
       {/* Dialog Form: Add / Edit Student */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-[#1E293B]/65 backdrop-blur-sm flex justify-center items-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl w-full max-w-[900px] max-h-[92vh] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 border border-[#D9E2EC]">
+          <div className="bg-white rounded-3xl w-full max-w-6xl w-[95vw] max-h-[92vh] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 border border-[#D9E2EC]">
             {/* Header */}
             <div className="px-6 py-5 flex justify-between items-center bg-white border-b border-[#D9E2EC] shrink-0">
               <div>
@@ -3398,100 +3401,170 @@ export function StudentInfoClient({
                             <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Thông tin trường học cũ ({selectedLocationType})</h4>
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {selectedLocationType === "Nội tỉnh" && (
-                       <div className="col-span-2 md:col-span-1">
-                         <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
-                         <select
-                           required
-                           value={selectedWard}
-                           onChange={(e) => setSelectedWard(e.target.value)}
-                           className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                         >
-                           <option value="">-- Chọn Phường/Xã --</option>
-                           {danangWards.map((w) => (
-                             <option key={w} value={w}>{w}</option>
-                           ))}
-                         </select>
-                       </div>
-                     )}
+                          {selectedLocationType === "Nội tỉnh" && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                                <input
+                                  disabled
+                                  type="text"
+                                  value="Thành phố Đà Nẵng"
+                                  className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#004C97] font-bold text-xs rounded-xl outline-none cursor-not-allowed"
+                                />
+                              </div>
 
-                     {selectedLocationType === "Ngoại tỉnh" && (
-                       <>
-                         <div>
-                           <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
-                           <input
-                             required
-                             type="text"
-                             value={selectedWard}
-                             onChange={(e) => setSelectedWard(e.target.value)}
-                             placeholder="Nhập Phường / Xã"
-                             className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
-                           />
-                         </div>
-                         <div>
-                           <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
-                           <select
-                             required
-                             value={selectedProvince}
-                             onChange={(e) => setSelectedProvince(e.target.value)}
-                             className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                           >
-                             <option value="">-- Chọn Tỉnh/Thành --</option>
-                             {vietnamProvinces.map((p) => (
-                               <option key={p} value={p}>{p}</option>
-                             ))}
-                           </select>
-                         </div>
-                       </>
-                     )}
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Trường trong Danh mục Đơn vị Trường *</label>
+                                <select
+                                  value={selectedDestinationSchoolId}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSelectedDestinationSchoolId(val);
+                                    const found = destinationSchools.find((s: any) => s.id === val);
+                                    if (found) {
+                                      setSchoolNameInput(found.name);
+                                      setSchoolTypeInput(found.schoolType === "PUBLIC" ? "Công lập" : (found.schoolType === "PRIVATE" ? "Tư thục" : found.schoolType || "Tư thục"));
+                                    }
+                                  }}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn trường trong Danh mục --</option>
+                                  {destinationSchools.map((s: any) => (
+                                    <option key={s.id} value={s.id}>
+                                      {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : "Tư thục"})
+                                    </option>
+                                  ))}
+                                  <option value="other">-- Trường khác (Tự nhập tên bên cạnh) --</option>
+                                </select>
+                              </div>
 
-                     {selectedLocationType === "Nước ngoài" && (
-                       <div className="col-span-2 md:col-span-1">
-                         <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
-                         <select
-                           required
-                           value={selectedCountry}
-                           onChange={(e) => setSelectedCountry(e.target.value)}
-                           className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                         >
-                           <option value="">-- Chọn Quốc gia --</option>
-                           {worldCountries.map((c) => (
-                             <option key={c} value={c}>{c}</option>
-                           ))}
-                         </select>
-                       </div>
-                     )}
-                          </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={schoolNameInput}
+                                  onChange={(e) => {
+                                    setSchoolNameInput(e.target.value);
+                                    const match = destinationSchools.find((s: any) => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
+                                    if (match) setSelectedDestinationSchoolId(match.id);
+                                    else setSelectedDestinationSchoolId("other");
+                                  }}
+                                  placeholder="Tên trường (VD: TH Phù Đổng)"
+                                  className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                                />
+                              </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
-                              <input
-                                required
-                                type="text"
-                                value={schoolNameInput}
-                                onChange={(e) => setSchoolNameInput(e.target.value)}
-                                placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
-                                className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
-                              />
+                              <div className="col-span-1 md:col-span-3">
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ học / Loại hình *</label>
+                                <select
+                                  required
+                                  value={schoolTypeInput}
+                                  onChange={(e) => setSchoolTypeInput(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Hệ học --</option>
+                                  <option value="Công lập">Công lập</option>
+                                  <option value="Tư thục">Tư thục</option>
+                                  <option value="Song ngữ">Song ngữ</option>
+                                  <option value="Quốc tế">Quốc tế</option>
+                                </select>
+                              </div>
                             </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
-                              <select
-                                required
-                                value={schoolTypeInput}
-                                onChange={(e) => setSchoolTypeInput(e.target.value)}
-                                className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                              >
-                                <option value="">-- Chọn loại hình --</option>
-                                <option value="Công lập">Công lập</option>
-                                <option value="Tư thục">Tư thục</option>
-                                <option value="Song ngữ">Song ngữ</option>
-                                <option value="Quốc tế">Quốc tế</option>
-                              </select>
+                          )}
+
+                          {selectedLocationType === "Ngoại tỉnh" && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                                <select
+                                  required
+                                  value={selectedProvince}
+                                  onChange={(e) => setSelectedProvince(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                                  {vietnamProvinces.map((p) => (
+                                    <option key={p} value={p}>{p}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={schoolNameInput}
+                                  onChange={(e) => setSchoolNameInput(e.target.value)}
+                                  placeholder="Nhập tên trường cũ"
+                                  className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ học *</label>
+                                <select
+                                  required
+                                  value={schoolTypeInput}
+                                  onChange={(e) => setSchoolTypeInput(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Hệ học --</option>
+                                  <option value="Công lập">Công lập</option>
+                                  <option value="Tư thục">Tư thục</option>
+                                  <option value="Song ngữ">Song ngữ</option>
+                                  <option value="Quốc tế">Quốc tế</option>
+                                </select>
+                              </div>
                             </div>
-                          </div>
+                          )}
+
+                          {selectedLocationType === "Nước ngoài" && (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
+                                <select
+                                  required
+                                  value={selectedCountry}
+                                  onChange={(e) => setSelectedCountry(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Danh sách Quốc gia đầy đủ --</option>
+                                  {worldCountries.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường *</label>
+                                <input
+                                  required
+                                  type="text"
+                                  value={schoolNameInput}
+                                  onChange={(e) => setSchoolNameInput(e.target.value)}
+                                  placeholder="Nhập tên trường nước ngoài"
+                                  className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường (Không bắt buộc)</label>
+                                <select
+                                  value={schoolTypeInput}
+                                  onChange={(e) => setSchoolTypeInput(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Tùy chọn / Để trống --</option>
+                                  <option value="Công lập">Công lập</option>
+                                  <option value="Tư thục">Tư thục</option>
+                                  <option value="Song ngữ">Song ngữ</option>
+                                  <option value="Quốc tế">Quốc tế</option>
+                                </select>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

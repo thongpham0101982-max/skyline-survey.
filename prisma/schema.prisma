@@ -123,6 +123,7 @@ model AcademicYear {
   surveyForms                     SurveyForm[]
   surveyPeriods                   SurveyPeriod[]
   teachingAssignments             TeachingAssignment[]
+  studentCodeMappings             StudentCodeMapping[]
   weeklyReports                   WeeklyReport[]
   workTasks                       WorkTask[]
   teacherTargets                  TeacherAcademicYearTarget[]
@@ -203,6 +204,8 @@ model Student {
   highlightComments      StudentHighlightComment[]
   activityParticipants   ActivityParticipant[]
   learningSupportTargets LearningSupportTarget[]
+  termScores             StudentTermScore[]
+  termSummaries          StudentTermSummary[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -419,6 +422,7 @@ model Subject {
   mainTeachers               Teacher[]                   @relation("teacherMainSubject")
   assignments                TeachingAssignment[]
   learningSupportAssignments LearningSupportAssignment[]
+  StudentTermScore           StudentTermScore[]
 }
 
 model TeachingAssignment {
@@ -1528,8 +1532,66 @@ model DestinationSchool {
   id         String   @id @default(cuid())
   name       String   @unique
   code       String   @unique
-  level      String   // "PHO_THONG" or "MAM_NON"
+  level      String // "PHO_THONG" or "MAM_NON"
   schoolType String   @default("PRIVATE") // "PUBLIC" or "PRIVATE"
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// ==========================================
+// Bảng điểm & Học bạ Định kỳ (Tiểu học & Trung học)
+// ==========================================
+
+model StudentTermScore {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId       String
+  subject         Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  semester        String // "HK1", "HK2", "CN" (Cả năm)
+  score           Float? // Điểm số số thập phân (cho trung học)
+  evaluationGrade String? // Mức đạt được chữ (ví dụ: T, H, C, Đạt, Chưa đạt)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([studentId, subjectId, semester])
+  @@index([studentId])
+  @@index([subjectId])
+}
+
+model StudentTermSummary {
+  id                  String   @id @default(cuid())
+  studentId           String
+  student             Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semester            String // "HK1", "HK2", "CN"
+  academicRating      String? // Xếp loại học lực / Đánh giá KQGD
+  conductRating       String? // Xếp loại rèn luyện / Hạnh kiểm
+  absencesPermitted   Int      @default(0)
+  absencesUnpermitted Int      @default(0)
+  absencesTotal       Int      @default(0)
+  gpa                 Float? // Điểm trung bình (nếu có)
+  notes               String? // Ghi chú
+  reward              String? // Khen thưởng định kỳ (ví dụ: Học sinh Xuất sắc, Học sinh Tiêu biểu)
+  rewardUnexpected    String? // Khen thưởng đột xuất
+  promoted            Boolean? // Trạng thái lên lớp
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([studentId, semester])
+  @@index([studentId])
+}
+
+model StudentCodeMapping {
+  id             String       @id @default(cuid())
+  databaseCode   String       // Mã HS trong CSDL (e.g. 2301855126)
+  markFileCode   String       // Mã HS trong file điểm (e.g. 0602040330)
+  academicYearId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+
+  @@unique([academicYearId, databaseCode])
+  @@unique([academicYearId, markFileCode])
+  @@index([academicYearId])
 }

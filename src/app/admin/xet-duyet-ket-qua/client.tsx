@@ -35,6 +35,7 @@ export function XetDuyetKetQuaClient({
   configs = [],
   teachers = [],
   departments = [],
+  destinationSchools = [],
   currentUser = null,
   rolePermissions = [],
   classes = []
@@ -125,6 +126,7 @@ export function XetDuyetKetQuaClient({
             configs={configs}
             teachers={teachers}
             departments={departments}
+            destinationSchools={destinationSchools}
             currentUser={currentUser}
             rolePermissions={rolePermissions}
           />

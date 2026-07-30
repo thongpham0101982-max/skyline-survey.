@@ -34,6 +34,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
   let gradesK12: string[] = ["1","2","3","4","5","6","7","8","9","10","11","12"];
   let configs: any[] = [];
   let rolePermissions: any[] = [];
+  let destinationSchools: any[] = [];
 
   // --- FETCH MẦM NON RIÊNG ---
   const gradesPreschool = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
@@ -142,6 +143,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
       configs = configsResult;
       eduSystems = eduSystemsResult;
       rolePermissions = rolePermissionsResult;
+      destinationSchools = destinationSchoolsResult;
 
       if (dbAssignments && dbAssignments.length > 0) {
         liveCampusIds = dbAssignments.map((a: any) => a.campusId);
@@ -237,6 +239,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
       gradesK12={safeJson(gradesK12)}
       configs={safeJson(configs)}
       rolePermissions={safeJson(rolePermissions)}
+      destinationSchools={safeJson(destinationSchools)}
 
       // Mầm non
       gradesPreschool={gradesPreschool}

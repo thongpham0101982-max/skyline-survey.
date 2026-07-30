@@ -33,6 +33,11 @@ export async function GET(req: Request) {
         },
         include: {
           students: {
+            where: {
+              NOT: {
+                studentCode: { startsWith: "2" }
+              }
+            },
             orderBy: { studentName: "asc" }
           }
         }
@@ -189,7 +194,12 @@ export async function GET(req: Request) {
       if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
       const students = await prisma.student.findMany({
-        where: { classId },
+        where: {
+          classId,
+          NOT: {
+            studentCode: { startsWith: "2" }
+          }
+        },
         orderBy: { studentName: "asc" }
       })
 
@@ -276,7 +286,12 @@ export async function GET(req: Request) {
 
       // Fetch all students in the class
       const students = await prisma.student.findMany({
-        where: { classId },
+        where: {
+          classId,
+          NOT: {
+            studentCode: { startsWith: "2" }
+          }
+        },
         orderBy: { studentName: "asc" }
       })
 
@@ -421,7 +436,10 @@ export async function GET(req: Request) {
       // Fetch all students in these classes
       const students = await prisma.student.findMany({
         where: {
-          classId: { in: classIds }
+          classId: { in: classIds },
+          NOT: {
+            studentCode: { startsWith: "2" }
+          }
         },
         include: {
           class: true
@@ -547,7 +565,13 @@ export async function GET(req: Request) {
         include: {
           class: true,
           campus: true,
-          academicYear: true
+          academicYear: true,
+          termScores: {
+            include: {
+              subject: true
+            }
+          },
+          termSummaries: true
         }
       })
       if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 })

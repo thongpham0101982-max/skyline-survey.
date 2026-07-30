@@ -44,7 +44,11 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search")
 
     // Build filters
-    const where: any = {}
+    const where: any = {
+      NOT: {
+        studentCode: { startsWith: "2" }
+      }
+    }
     if (studentId) where.id = studentId
     if (academicYearId) where.academicYearId = academicYearId
     if (campusId) where.campusId = campusId
@@ -73,6 +77,12 @@ export async function GET(req: NextRequest) {
           }
         },
         projectExperiences: true,
+        termScores: {
+          include: {
+            subject: true
+          }
+        },
+        termSummaries: true,
         learningSupportTargets: {
           include: {
             assignments: {
