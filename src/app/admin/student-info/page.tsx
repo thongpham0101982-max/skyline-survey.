@@ -70,8 +70,7 @@ export default async function StudentInfoPage() {
         eduSystemsResult,
         rolePermissionsResult,
         generalPeriodsResult,
-        preschoolPeriodsResult,
-        destinationSchoolsResult
+        preschoolPeriodsResult
       ] = await Promise.all([
         // 1. dbAssignments
         user?.id && pAny.userCampusAssignment ? pAny.userCampusAssignment.findMany({ where: { userId: user.id } }).catch(() => []) : Promise.resolve([]),
@@ -142,10 +141,6 @@ export default async function StudentInfoPage() {
           where: activeYearId ? { academicYearId: activeYearId } : {},
           include: { batches: { select: { id: true, name: true, status: true } } },
           orderBy: { name: 'asc' }
-        }).catch(() => []) : Promise.resolve([]),
-        // 16. destinationSchools
-        pAny.destinationSchool ? pAny.destinationSchool.findMany({
-          orderBy: [{ level: "desc" }, { name: "asc" }]
         }).catch(() => []) : Promise.resolve([])
       ]);
 
@@ -172,25 +167,33 @@ export default async function StudentInfoPage() {
 
       if (activeYearId) {
         generalStudents = await pAny.inputAssessmentStudent.findMany({
-          where: { period: { academicYearId: activeYearId } },
+          where: {
+            period: { academicYearId: activeYearId }
+          },
           include: {
             period: { select: { id: true, name: true, academicYearId: true } },
             batch: { select: { id: true, name: true, startDate: true } },
             enrollmentClass: { select: { className: true } },
-            scores: { include: { subject: true } }
+            scores: {
+              include: {
+                subject: true
+              }
+            }
           },
           orderBy: { createdAt: 'desc' }
-        }).catch((e: any) => { console.error("Error fetching generalStudents:", e); return []; });
+        });
 
         preschoolStudents = await pAny.preschoolInputAssessmentStudent.findMany({
-          where: { period: { academicYearId: activeYearId } },
+          where: {
+            period: { academicYearId: activeYearId }
+          },
           include: {
             period: { select: { id: true, name: true, academicYearId: true } },
             batch: { select: { id: true, name: true, startDate: true } },
             enrollmentClass: { select: { className: true } }
           },
           orderBy: { createdAt: 'desc' }
-        }).catch((e: any) => { console.error("Error fetching preschoolStudents:", e); return []; });
+        });
 
         if (pAny.class) {
           const uniqueGrades = await pAny.class.findMany({

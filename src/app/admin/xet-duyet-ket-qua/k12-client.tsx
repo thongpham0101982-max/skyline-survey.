@@ -3417,27 +3417,6 @@ ${reportForm.directorNote}`;
   const [schoolNameInput, setSchoolNameInput] = useState<string>("");
   const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
   const [selectedDestinationSchoolId, setSelectedDestinationSchoolId] = useState<string>("");
-
-    const isPreschoolStudent = useMemo(() => {
-    const g = (sForm.grade || "").toString().toLowerCase();
-    if (g.includes("tháng") || g.includes("tuổi") || g.includes("mầm") || g.includes("chồi") || g.includes("lá") || g.includes("nhà trẻ") || g === "mam_non") return true;
-    return false;
-  }, [sForm.grade]);
-
-  const filteredDestinationSchools = useMemo(() => {
-    if (!Array.isArray(destinationSchools) || destinationSchools.length === 0) return [];
-    const isPre = isPreschoolStudent;
-    const matched = destinationSchools.filter((s: any) => {
-      if (!s) return false;
-      const lvl = String(s.level || "").toUpperCase().trim();
-      if (isPre) {
-        return lvl === "MAM_NON" || lvl === "MẦM NON" || lvl.includes("MAM") || lvl.includes("MẦM");
-      } else {
-        return lvl === "PHO_THONG" || lvl === "PHỔ THÔNG" || lvl.includes("PHO") || lvl.includes("PHỔ") || lvl.includes("TIEU") || lvl.includes("THCS") || lvl.includes("THPT");
-      }
-    });
-    return matched.length > 0 ? matched : destinationSchools;
-  }, [destinationSchools, isPreschoolStudent]);
   const [originalKqgd, setOriginalKqgd] = useState<string>("");
 
   // Sync selectedLocationType when targetType changes
@@ -3536,23 +3515,7 @@ ${reportForm.directorNote}`;
     }
   }, [sModal, editS]);
 
-    // Auto match destination school by name
-  useEffect(() => {
-    if (isFormOpen && selectedLocationType === "Nội tỉnh" && destinationSchools.length > 0) {
-      if (schoolNameInput) {
-        const found = destinationSchools.find((s: any) => s.name.toLowerCase().trim() === schoolNameInput.toLowerCase().trim());
-        if (found) {
-          setSelectedDestinationSchoolId(found.id);
-        } else {
-          setSelectedDestinationSchoolId("other");
-        }
-      } else {
-        setSelectedDestinationSchoolId("");
-      }
-    }
-  }, [isFormOpen, selectedLocationType, schoolNameInput, destinationSchools]);
-
-  // Update sForm when location inputs change
+    // Update sForm when location inputs change
   useEffect(() => {
     if (!sModal) return;
     
@@ -7996,7 +7959,7 @@ return {
                            onChange={(e) => {
                              const val = e.target.value;
                              setSelectedDestinationSchoolId(val);
-                             const found = filteredDestinationSchools.find((s: any) => s.id === val);
+                             const found = destinationSchools.find((s: any) => s.id === val);
                              if (found) {
                                setSchoolNameInput(found.name);
                                setSchoolTypeInput(found.schoolType === "PUBLIC" ? "Công lập" : (found.schoolType === "PRIVATE" ? "Tư thục" : found.schoolType || "Tư thục"));
@@ -8005,7 +7968,7 @@ return {
                            className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                          >
                            <option value="">-- Chọn trường trong Danh mục --</option>
-                           {filteredDestinationSchools.map((s: any) => (
+                           {destinationSchools.map((s: any) => (
                              <option key={s.id} value={s.id}>
                                {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : "Tư thục"})
                              </option>
@@ -8022,7 +7985,7 @@ return {
                            value={schoolNameInput}
                            onChange={(e) => {
                              setSchoolNameInput(e.target.value);
-                             const match = filteredDestinationSchools.find((s: any) => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
+                             const match = destinationSchools.find((s: any) => s.name.toLowerCase() === e.target.value.trim().toLowerCase());
                              if (match) setSelectedDestinationSchoolId(match.id);
                              else setSelectedDestinationSchoolId("other");
                            }}
