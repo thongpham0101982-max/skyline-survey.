@@ -993,7 +993,7 @@ export async function GET(req: any) {
         const periodId = searchParams.get("periodId");
         if (!periodId) return NextResponse.json({error: "Missing periodId"}, {status:400});
         
-        let whereClause: any = { isAbsent: { not: true } };
+        let whereClause: any = {};
         if (periodId === "all") {
             const academicYearId = searchParams.get("academicYearId");
             if (!academicYearId) return NextResponse.json({error: "Missing academicYearId for all periods selection"}, {status:400});

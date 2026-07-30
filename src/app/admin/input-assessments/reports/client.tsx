@@ -828,20 +828,17 @@ export function ReportsClient({
   const [cPeriodId, setCPeriodId] = useState("all");
   const [cBatchId, setCBatchId] = useState("all");
   const [cCampusId, setCCampusId] = useState("");
+  const [cResultFilter, setCResultFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  // Auto select first period when level changes
+  // Default to 'all' when level changes
   useEffect(() => {
-    if (activePeriods.length > 0) {
-      setCPeriodId(activePeriods[0].id);
-      setCBatchId("all");
-    } else {
-      setCPeriodId("");
-      setCBatchId("all");
-    }
+    setCPeriodId("all");
+    setCBatchId("all");
+    setCResultFilter("all");
     setStudents([]);
-  }, [selectedLevel, activePeriods]);
+  }, [selectedLevel]);
 
   // Load students based on filters
   useEffect(() => {
@@ -872,18 +869,48 @@ export function ReportsClient({
   }, [cPeriodId, cBatchId, selectedLevel]);
 
   const activePeriod = activePeriods.find(p => p.id === cPeriodId);
-  const activeBatches = activePeriod?.batches || [];
+  const activeBatches = useMemo(() => {
+    if (cPeriodId === "all") {
+      const allB: Batch[] = [];
+      const seen = new Set<string>();
+      activePeriods.forEach(p => {
+        (p.batches || []).forEach(b => {
+          if (!seen.has(b.id)) {
+            seen.add(b.id);
+            allB.push(b);
+          }
+        });
+      });
+      return allB;
+    }
+    return activePeriod?.batches || [];
+  }, [cPeriodId, activePeriods, activePeriod]);
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
+      // filter by approval result
+      const resVal = String(s.admissionResult || s.devAssessmentResult || "Chưa duyệt");
+      let matchResult = true;
+      if (cResultFilter === "dat") {
+        matchResult = resVal === "Đạt" || resVal === "Đại";
+      } else if (cResultFilter === "cam_ket") {
+        matchResult = resVal === "Đạt cam kết";
+      } else if (cResultFilter === "kiem_tra_lai") {
+        matchResult = resVal.includes("Không đạt");
+      } else if (cResultFilter === "chua_duyet") {
+        matchResult = (!s.admissionResult && !s.devAssessmentResult) || resVal === "Chưa duyệt";
+      } else if (cResultFilter !== "all") {
+        matchResult = resVal === cResultFilter;
+      }
+
       // search query
       const matchQuery = !searchQuery ? true : (
         s.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.studentCode?.toLowerCase().includes(searchQuery.toLowerCase())
       );
-      return matchQuery;
+      return matchResult && matchQuery;
     });
-  }, [students, searchQuery]);
+  }, [students, cResultFilter, searchQuery]);
 
   // Print modal configuration resolver
   const studentCampusConfig = useMemo(() => {
@@ -2857,25 +2884,57 @@ export function ReportsClient({
         <div className="bg-white border border-slate-100 shadow-sm rounded-[2rem] p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* STATS CARDS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+            <div 
+              onClick={() => setCResultFilter("all")}
+              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
+                cResultFilter === "all" ? "ring-2 ring-indigo-500 bg-indigo-50/30 border-indigo-200" : "bg-white border-slate-100 hover:border-slate-300"
+              }`}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-teal-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Tổng HS</span>
-              <span className="text-2xl font-black text-slate-700 z-10">{filteredStudents.length}</span>
+              <span className="text-2xl font-black text-slate-700 z-10">{students.length}</span>
             </div>
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+            <div 
+              onClick={() => setCResultFilter(cResultFilter === "dat" ? "all" : "dat")}
+              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
+                cResultFilter === "dat" ? "ring-2 ring-emerald-500 bg-emerald-50/30 border-emerald-200" : "bg-white border-slate-100 hover:border-slate-300"
+              }`}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt</span>
-              <span className="text-2xl font-black text-emerald-600 z-10">{filteredStudents.filter((s: any) => s.admissionResult === "Đạt" || s.admissionResult === "Đại").length}</span>
+              <span className="text-2xl font-black text-emerald-600 z-10">
+                {students.filter((s: any) => {
+                  const r = s.admissionResult || s.devAssessmentResult || "";
+                  return r === "Đạt" || r === "Đại";
+                }).length}
+              </span>
             </div>
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+            <div 
+              onClick={() => setCResultFilter(cResultFilter === "cam_ket" ? "all" : "cam_ket")}
+              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
+                cResultFilter === "cam_ket" ? "ring-2 ring-amber-500 bg-amber-50/30 border-amber-200" : "bg-white border-slate-100 hover:border-slate-300"
+              }`}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt Cam Kết</span>
-              <span className="text-2xl font-black text-amber-600 z-10">{filteredStudents.filter((s: any) => s.admissionResult === "Đạt cam kết").length}</span>
+              <span className="text-2xl font-black text-amber-600 z-10">
+                {students.filter((s: any) => {
+                  const r = s.admissionResult || s.devAssessmentResult || "";
+                  return r === "Đạt cam kết";
+                }).length}
+              </span>
             </div>
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
+            <div 
+              onClick={() => setCResultFilter(cResultFilter === "kiem_tra_lai" ? "all" : "kiem_tra_lai")}
+              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
+                cResultFilter === "kiem_tra_lai" ? "ring-2 ring-rose-500 bg-rose-50/30 border-rose-200" : "bg-white border-slate-100 hover:border-slate-300"
+              }`}
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Kiểm tra lại</span>
-              <span className="text-2xl font-black text-rose-600 z-10">{filteredStudents.filter((s: any) => String(s.admissionResult || "").includes("Không đạt")).length}</span>
+              <span className="text-2xl font-black text-rose-600 z-10">
+                {students.filter((s: any) => String(s.admissionResult || s.devAssessmentResult || "").includes("Không đạt")).length}
+              </span>
             </div>
           </div>
 
@@ -2906,6 +2965,28 @@ export function ReportsClient({
                   <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[170px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm">
                     <option value="all">Tất cả các đợt</option>
                     {activeBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col group">
+                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
+                  <UserCheck className="w-3 h-3 text-indigo-500" /> Kết quả Phê duyệt
+                </span>
+                <div className="relative">
+                  <select 
+                    value={cResultFilter} 
+                    onChange={e => setCResultFilter(e.target.value)} 
+                    className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[190px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm"
+                  >
+                    <option value="all">Tất cả kết quả</option>
+                    <option value="dat">Đạt</option>
+                    <option value="cam_ket">Đạt cam kết</option>
+                    <option value="kiem_tra_lai">Kiểm tra lại / Không đạt</option>
+                    <option value="chua_duyet">Chưa duyệt</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
@@ -3107,6 +3188,7 @@ export function ReportsClient({
               <div className="flex flex-col">
                 <span className="text-[10px] font-bold uppercase text-slate-400 tracking-wider mb-1 ml-1">Kỳ Khảo sát</span>
                 <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }} className="bg-white border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[200px]">
+                  <option value="all">Tất cả các kỳ</option>
                   {activePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   {activePeriods.length === 0 && <option value="">Không có kỳ nào</option>}
                 </select>

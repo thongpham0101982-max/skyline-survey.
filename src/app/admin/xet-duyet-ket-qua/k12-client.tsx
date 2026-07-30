@@ -2549,7 +2549,7 @@ ${reportForm.directorNote}`;
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
     
     return reportStudents.filter(s => {
-      if (s.isAbsent) return false;
+      // if (s.isAbsent) return false;
       const matchesBatch = reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "";
       if (!matchesBatch) return false;
       
@@ -6657,7 +6657,11 @@ return {
                             <td className="p-2.5 border border-slate-300 text-xs text-center font-bold text-amber-700">{s.surveyFormType || "—"}</td>
                             <td className="p-2.5 border border-slate-300 text-xs text-slate-650 max-w-[200px] truncate" title={s.admissionCriteria}>{s.admissionCriteria || "—"}</td>
                             <td className="p-2.5 border border-slate-300 text-xs text-center">
-                              {s.admissionResult ? (
+                              {s.isAbsent ? (
+                                <span className="font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded text-[11px]">
+                                  Vắng khảo sát
+                                </span>
+                              ) : s.admissionResult ? (
                                 <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded text-[11px]">
                                   {s.admissionResult}
                                 </span>
