@@ -1242,6 +1242,13 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     setCurrentPage(1);
   }, [cPeriodId, cBatchId, approvalFilter, cSearch, cCampusFilter, cAgeGroupFilter, devTab]);
 
+  useEffect(() => {
+    if (devTab === "stats") {
+      setCPeriodId("all");
+      setCBatchId("");
+    }
+  }, [devTab]);
+
 
 
   // Summary scores for students list (Moved here to avoid TDZ ReferenceError in useMemo hooks below)
@@ -1674,7 +1681,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       const stored = localStorage.getItem("selectedAcademicYear");
       if (stored && stored !== yearId) {
         setYearId(stored);
-        setCPeriodId("");
+        setCPeriodId("all"); setCBatchId("");
         setChildren([]);
       }
     };
@@ -1744,8 +1751,6 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         }
         
         if (activeBatch) {
-          setCPeriodId(activeBatch.periodId);
-          setCBatchId(activeBatch.id);
           setLatestBatchInfo(activeBatch);
         }
       }
@@ -2240,7 +2245,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setPLoading(true);
     try {
       const r = await fetch(`/api/preschool-input-assessments?academicYearId=${yearId}`);
-      if (r.ok) { const d: Period[] = await r.json(); setRawPeriods(d); if (!cPeriodId && d.length > 0) { setCPeriodId(d[0].id); setRptPeriodId(d[0].id); } }
+      if (r.ok) { const d: Period[] = await r.json(); setRawPeriods(d); if (!cPeriodId) { setCPeriodId("all"); setCBatchId(""); } }
     } catch (e) {
       console.error("fetchPeriods error:", e);
     } finally { setPLoading(false); }
@@ -3672,6 +3677,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   }, [evalStudent, evalAssignments, devLoading]);
 
   const selPeriod = periods.find(p => p.id === cPeriodId);
+  const availableBatches = useMemo(() => {
+    if (cPeriodId === "all") {
+      return periods.flatMap((p: any) => p.batches || []);
+    }
+    return selPeriod?.batches || [];
+  }, [periods, cPeriodId, selPeriod]);
 
   return (
     <div className="space-y-3 font-sans max-w-[1440px] mx-auto pb-16">
@@ -4253,9 +4264,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div className="flex items-center gap-2">
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
-              <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId || cPeriodId === "all"}>
+              <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
                 <option value="">Tất cả đợt</option>
-                {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
             <button onClick={fetchChildren} className="flex items-center gap-1.5 text-sm font-bold text-[#00A99D] hover:bg-teal-100 text-xs font-semibold"><Search className="w-4 h-4" /> Tìm</button>
@@ -4327,7 +4338,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           
           {/* Custom Preschool/School Styled Tab Bar */}
           ﻿          {/* Custom Preschool/School Styled Tab Bar */}
-          {latestBatchInfo && (
+          {latestBatchInfo && devTab !== "stats" && (
             <div className="no-print relative overflow-hidden p-4 rounded-2xl shadow-md animate-in fade-in slide-in-from-top-4 duration-500 mb-6 bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-amber-100/60 border border-amber-200/80 ring-1 ring-amber-900/5 group hover:shadow-lg transition-all">
             <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/15 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none transition-transform duration-700 group-hover:scale-110"></div>
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-orange-500/15 rounded-full blur-2xl -ml-10 -mb-10 pointer-events-none"></div>
@@ -4451,7 +4462,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -4831,7 +4842,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -5028,7 +5039,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -5445,7 +5456,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -5656,7 +5667,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -6679,7 +6690,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               className={inp}
             >
               <option value="">-- Không gán --</option>
-              {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </Field>
           <Field label="Hệ KS">

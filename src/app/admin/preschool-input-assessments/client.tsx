@@ -1624,8 +1624,6 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       activeBatch = sorted[0];
     }
     if (activeBatch) {
-      setCPeriodId(activeBatch.periodId);
-      setCBatchId(activeBatch.id);
       setLatestBatchInfo(activeBatch);
     }
   }, [periods, cPeriodId]);
@@ -2974,6 +2972,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   }, [evalStudent, evalAssignments, devLoading]);
 
   const selPeriod = periods.find(p => p.id === cPeriodId);
+  const availableBatches = useMemo(() => {
+    if (cPeriodId === "all") {
+      return periods.flatMap((p: any) => p.batches || []);
+    }
+    return selPeriod?.batches || [];
+  }, [periods, cPeriodId, selPeriod]);
 
   return (
     <div className="space-y-3 font-sans max-w-[1440px] mx-auto pb-16">
@@ -3636,7 +3640,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
               <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
                 <option value="">Tất cả đợt</option>
-                {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
               </select>
             </div>
             <button onClick={fetchChildren} className="flex items-center gap-1.5 text-sm font-bold text-[#00A99D] hover:bg-teal-100 text-xs font-semibold"><Search className="w-4 h-4" /> Tìm</button>
@@ -3821,7 +3825,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="relative">
                     <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs" disabled={!cPeriodId}>
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -3960,7 +3964,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="relative">
                     <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs" disabled={!cPeriodId}>
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -4389,7 +4393,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="relative">
                     <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-10 py-2.5 outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer text-xs" disabled={!cPeriodId}>
                       <option value="">Tất cả đợt</option>
-                      {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -4524,7 +4528,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <label className="text-xs font-black text-slate-500 uppercase tracking-wider">Đợt:</label>
                   <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="border border-slate-300 rounded-none p-2 text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-violet-300 min-w-[140px]" disabled={!cPeriodId}>
                     <option value="">Tất cả đợt</option>
-                    {selPeriod?.batches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                    {availableBatches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <button onClick={fetchStudentSummaries} className="flex items-center gap-1.5 text-sm font-bold text-[#00A99D] hover:bg-teal-100 text-xs font-semibold"><Search className="w-4 h-4" /> Tìm</button>

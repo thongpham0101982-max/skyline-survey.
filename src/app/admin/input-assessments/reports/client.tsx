@@ -825,7 +825,7 @@ export function ReportsClient({
   };
 
   // Student Export Tab States
-  const [cPeriodId, setCPeriodId] = useState("");
+  const [cPeriodId, setCPeriodId] = useState("all");
   const [cBatchId, setCBatchId] = useState("all");
   const [cCampusId, setCCampusId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -833,15 +833,10 @@ export function ReportsClient({
   const [loadingStudents, setLoadingStudents] = useState(false);
   // Auto select first period when level changes
   useEffect(() => {
-    if (activePeriods.length > 0) {
-      setCPeriodId(activePeriods[0].id);
-      setCBatchId("all");
-    } else {
-      setCPeriodId("");
-      setCBatchId("all");
-    }
+    setCPeriodId("all");
+    setCBatchId("all");
     setStudents([]);
-  }, [selectedLevel, activePeriods]);
+  }, [selectedLevel]);
 
   // Load students based on filters
   useEffect(() => {
@@ -872,7 +867,22 @@ export function ReportsClient({
   }, [cPeriodId, cBatchId, selectedLevel]);
 
   const activePeriod = activePeriods.find(p => p.id === cPeriodId);
-  const activeBatches = activePeriod?.batches || [];
+  const activeBatches = useMemo(() => {
+    if (cPeriodId === "all" || !cPeriodId) {
+      const allBatches: any[] = [];
+      const seen = new Set();
+      activePeriods.forEach((p: any) => {
+        (p.batches || []).forEach((b: any) => {
+          if (b.status === "ACTIVE" && !seen.has(b.id)) {
+            seen.add(b.id);
+            allBatches.push(b);
+          }
+        });
+      });
+      return allBatches;
+    }
+    return activePeriod?.batches || [];
+  }, [cPeriodId, activePeriods, activePeriod]);
 
   const filteredStudents = useMemo(() => {
     return students.filter(s => {
@@ -884,6 +894,23 @@ export function ReportsClient({
       return matchQuery;
     });
   }, [students, searchQuery]);
+
+  const getApprovalCategory = (s: any) => {
+    const res = String(s.admissionResult || s.devAssessmentResult || "").trim();
+    const lower = res.toLowerCase();
+    if (!res || lower.includes("chưa") || lower === "—") return "other";
+    if (lower.includes("không đạt") || lower.includes("kiểm tra lại")) return "fail";
+    if (lower.includes("cam kết")) return "dat_cam_ket";
+    if (lower.includes("đạt") || lower.includes("đại") || lower.includes("miễn") || lower.includes("dat")) return "dat";
+    return "other";
+  };
+
+  const letterEligibleStudents = useMemo(() => {
+    return filteredStudents.filter(s => {
+      const cat = getApprovalCategory(s);
+      return cat === "dat" || cat === "dat_cam_ket";
+    });
+  }, [filteredStudents]);
 
   // Print modal configuration resolver
   const studentCampusConfig = useMemo(() => {
@@ -1437,33 +1464,34 @@ export function ReportsClient({
       const docList = getStudentDocListForEmail(student);
       if (docList && docList.length > 0) {
         const rowsHtml = docList.map((item: any, idx: number) => {
-          return '<tr style="border-bottom: 1px solid #000000;">' +
-            '<td style="padding: 10px; border-right: 1px solid #000000; text-align: center; color: #000000;">' + (idx + 1) + '</td>' +
-            '<td style="padding: 10px 15px; border-right: 1px solid #000000; font-weight: bold; color: #000000;">' + item.name + '</td>' +
-            '<td style="padding: 10px; text-align: center; font-weight: bold; color: #000000;" className="p-2 border border-slate-200">' + item.qty + '</td>' +
+          return '<tr style="border-bottom: 1px solid #e2e8f0;' + (idx % 2 === 1 ? ' background-color: #f8fafc;' : '') + '">' +
+            '<td style="padding: 10px 8px; border-right: 1px solid #cbd5e1; text-align: center; font-weight: bold; color: #334155;">' + (idx + 1) + '</td>' +
+            '<td style="padding: 10px 16px; border-right: 1px solid #cbd5e1; font-weight: 600; color: #0f172a; font-size: 13px;">' + item.name + '</td>' +
+            '<td style="padding: 10px 8px; text-align: center; font-weight: 800; color: #0f766e; font-size: 13px;">' + (item.qty || "1") + '</td>' +
           '</tr>';
         }).join("");
 
         page2Html = '<div class="print-page">' +
             getImgTag(config.background || DEFAULT_WATERMARK_SVG, "print-watermark", "display: block; position: absolute; top: 22%; left: 10%; transform: none; width: 80%; height: auto; opacity: 0.08; z-index: 0; pointer-events: none;", "Watermark") +
-            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 12px; position: relative; z-index: 10;">' +
+            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 2px solid #0f766e; padding-bottom: 8px; margin-bottom: 16px; position: relative; z-index: 10;">' +
               '<div style="display: flex; align-items: center; justify-content: space-between;">' +
                 logoHtml +
               '</div>' +
               '<div style="text-align: left; margin-top: 4px;">' +
-                '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #1e293b; margin: 0;">' + schoolName + '</h4>' +
+                '<h4 style="font-family: Arial, sans-serif; font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: #0f172a; margin: 0;">' + schoolName + '</h4>' +
               '</div>' +
             '</div>' +
-            '<div class="letter-title">' +
-              '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
+            '<div class="letter-title" style="margin-bottom: 20px;">' +
+              '<h2 style="font-family: Arial, sans-serif; font-size: 18px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; margin: 0;">DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
+              '<div style="width: 60px; height: 3px; background-color: #0f766e; margin: 8px auto 0 auto; border-radius: 9999px;"></div>' +
             '</div>' +
-            '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
-              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;" className="border border-slate-200 border-collapse">' +
+            '<div style="margin-top: 24px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; position: relative; z-index: 10;">' +
+              '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: Arial, sans-serif;">' +
                 '<thead>' +
-                  '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
-                    '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
-                    '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="p-2 border border-slate-200">Số lượng</th>' +
+                  '<tr style="background-color: #0f766e; color: #ffffff; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px;">' +
+                    '<th style="padding: 12px 8px; border-right: 1px solid #0d6861; text-align: center; font-weight: 800; width: 60px;">STT</th>' +
+                    '<th style="padding: 12px 16px; border-right: 1px solid #0d6861; text-align: left; font-weight: 800;">Tên hồ sơ</th>' +
+                    '<th style="padding: 12px 8px; text-align: center; font-weight: 800; width: 120px;">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
                 '<tbody>' +
@@ -1471,9 +1499,9 @@ export function ReportsClient({
                 '</tbody>' +
               '</table>' +
             '</div>' +
-            '<p style="margin-top: 35px; font-size: 14px; font-weight: bold; color: #000000; line-height: 1.6; text-align: left; position: relative; z-index: 10;">' +
-              'Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
-            '</p>' +
+            '<div style="margin-top: 24px; padding: 12px 16px; background-color: #f0fdf4; border-left: 4px solid #0f766e; border-radius: 0 8px 8px 0; font-size: 13px; font-weight: 600; color: #166534; line-height: 1.6; text-align: left; position: relative; z-index: 10;">' +
+              '* Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
+            '</div>' +
             '<div class="footer-container">' +
               customFooterHtml +
             '</div>' +
@@ -2552,7 +2580,7 @@ export function ReportsClient({
               </div>
             </div>
 
-            <button onClick={saveReportConfig} className="w-full hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold">
+            <button onClick={saveReportConfig} className="w-full py-3 bg-[#00a884] hover:bg-[#008f70] text-white font-black text-xs uppercase tracking-widest shadow-md shadow-[#00a884]/25 transition-all flex items-center justify-center gap-2 rounded-xl cursor-pointer active:scale-95">
               <Check className="w-4 h-4" /> Lưu cấu hình mẫu in
             </button>
           </div>
@@ -2854,74 +2882,97 @@ export function ReportsClient({
       )}
       {/* 2. LETTERS EXPORT TABLE */}
       {tab === "letters" && (
-        <div className="bg-white border border-slate-100 shadow-sm rounded-[2rem] p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+        <div className="bg-white border border-slate-200/80 shadow-sm rounded-[2rem] p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* STATS CARDS */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Tổng HS</span>
-              <span className="text-2xl font-black text-slate-700 z-10">{filteredStudents.length}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm flex items-center justify-between relative overflow-hidden group hover:border-teal-300 transition-all">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-teal-500/5 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none"></div>
+              <div>
+                <span className="text-[11px] font-black uppercase text-slate-400 tracking-wider block mb-1">Tổng HS Khảo sát</span>
+                <span className="text-3xl font-black text-slate-800 tracking-tight">{filteredStudents.length}</span>
+                <p className="text-[10px] font-bold text-slate-400 mt-1">Tổng học sinh trong kỳ/đợt</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold shadow-inner group-hover:scale-110 transition-transform">
+                <Users className="w-6 h-6" />
+              </div>
             </div>
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt</span>
-              <span className="text-2xl font-black text-emerald-600 z-10">{filteredStudents.filter((s: any) => s.admissionResult === "Đạt" || s.admissionResult === "Đại").length}</span>
+
+            <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm flex items-center justify-between relative overflow-hidden group hover:border-emerald-300 transition-all">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none"></div>
+              <div>
+                <span className="text-[11px] font-black uppercase text-emerald-600 tracking-wider block mb-1">Số HS Đạt</span>
+                <span className="text-3xl font-black text-emerald-600 tracking-tight">{filteredStudents.filter((s: any) => getApprovalCategory(s) === "dat").length}</span>
+                <p className="text-[10px] font-bold text-emerald-600/70 mt-1">Phê duyệt Đạt nhập học</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold shadow-inner group-hover:scale-110 transition-transform">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
             </div>
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt Cam Kết</span>
-              <span className="text-2xl font-black text-amber-600 z-10">{filteredStudents.filter((s: any) => s.admissionResult === "Đạt cam kết").length}</span>
-            </div>
-            <div className="bg-white border border-slate-100 p-4 rounded-2xl shadow-sm flex flex-col items-center justify-center relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Kiểm tra lại</span>
-              <span className="text-2xl font-black text-rose-600 z-10">{filteredStudents.filter((s: any) => String(s.admissionResult || "").includes("Không đạt")).length}</span>
+
+            <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm flex items-center justify-between relative overflow-hidden group hover:border-amber-300 transition-all">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-amber-500/5 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none"></div>
+              <div>
+                <span className="text-[11px] font-black uppercase text-amber-600 tracking-wider block mb-1">Số HS Đạt Cam Kết</span>
+                <span className="text-3xl font-black text-amber-600 tracking-tight">{filteredStudents.filter((s: any) => getApprovalCategory(s) === "dat_cam_ket").length}</span>
+                <p className="text-[10px] font-bold text-amber-600/70 mt-1">Đạt kèm điều kiện môn cam kết</p>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold shadow-inner group-hover:scale-110 transition-transform">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-5 p-4 text-xs font-semibold">
+          {/* FILTERS & SEARCH BAR */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-200/60 text-xs font-semibold">
             {/* Filters Bar */}
             <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
               <div className="flex flex-col group">
-                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-indigo-500" /> Kỳ Khảo sát
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-indigo-500" /> Kỳ Khảo sát
                 </span>
                 <div className="relative">
-                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }} className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[220px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm">
+                  <select
+                    value={cPeriodId}
+                    onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }}
+                    className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[220px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm"
+                  >
+                    <option value="all">Tất cả các kỳ</option>
                     {activePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                    {activePeriods.length === 0 && <option value="">Không có kỳ nào</option>}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-indigo-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col group">
-                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
-                  <ClipboardList className="w-3 h-3 text-indigo-500" /> Đợt Khảo sát
+                <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
+                  <ClipboardList className="w-3.5 h-3.5 text-indigo-500" /> Đợt Khảo sát
                 </span>
                 <div className="relative">
-                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[170px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm">
+                  <select
+                    value={cBatchId}
+                    onChange={e => setCBatchId(e.target.value)}
+                    className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[180px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm"
+                  >
                     <option value="all">Tất cả các đợt</option>
                     {activeBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-indigo-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Search Input */}
-                        <div className="flex flex-col w-full md:w-auto">
-              <span className="text-[9px] font-black uppercase text-transparent tracking-wider mb-1.5 ml-1 select-none">Xuất</span>
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              {/* Export File Button */}
               <button
                 onClick={() => {
                   const csvData = [
                     ["STT", "Mã HS", "Họ và Tên", "Khối", "Giới tính", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết", "Ý kiến / Ghi chú Hội đồng"]
                   ];
-                  filteredStudents.forEach((s, idx) => {
+                  letterEligibleStudents.forEach((s, idx) => {
                     const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
                     const result = s.admissionResult || s.devAssessmentResult || "Chưa duyệt";
                     const comSubs = extractCommittedSubjects(s).join(", ");
@@ -2943,114 +2994,124 @@ export function ReportsClient({
                   const url = URL.createObjectURL(blob);
                   const link = document.createElement("a");
                   link.setAttribute("href", url);
-                  link.setAttribute("download", "DanhSachHocSinh.csv");
+                  link.setAttribute("download", "DanhSachHocSinh_XuatThu.csv");
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
                 }}
-                className="w-full md:w-auto hover:bg-teal-100 text-teal-700 font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex justify-center items-center gap-2 whitespace-nowrap text-xs font-semibold"
+                className="px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Download className="w-4 h-4"/>
                 Xuất File
               </button>
-            </div>
 
-            {/* Search Input */}
-            <div className="flex flex-col w-full md:w-72">
-              <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1">Tìm học sinh</span>
-              <div className="relative">
+              {/* Search Input */}
+              <div className="relative w-full md:w-64">
                 <input
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Tìm tên hoặc mã học sinh..."
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 font-bold text-slate-700 shadow-sm transition-all"
+                  className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-xs outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 font-bold text-slate-700 shadow-sm transition-all"
                 />
-                <Search className="w-4 h-4 text-slate-350 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               </div>
             </div>
           </div>
 
-          {/* Students Grid */}
-          <div className="overflow-hidden border border-slate-100 rounded-2xl shadow-sm">
+          {/* Students Grid - Eligible for Congratulation Letters (Đạt & Đạt cam kết) */}
+          <div className="overflow-hidden border border-slate-200/80 rounded-2xl shadow-sm">
             {loadingStudents ? (
               <div className="flex flex-col items-center justify-center py-20 space-y-3 bg-white">
                 <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest animate-pulse">Đang tải danh sách học sinh...</p>
               </div>
-            ) : filteredStudents.length === 0 ? (
+            ) : letterEligibleStudents.length === 0 ? (
               <div className="text-center py-20 text-slate-400 bg-white">
                 <Users className="w-12 h-12 mx-auto mb-3 opacity-30 text-indigo-500 animate-bounce duration-1000" />
-                <p className="text-sm font-black text-slate-500">Không tìm thấy học sinh nào trong đợt này</p>
-                <p className="text-xs text-slate-400 mt-1 font-semibold">Vui lòng điều chỉnh bộ lọc hoặc từ khóa tìm kiếm</p>
+                <p className="text-sm font-black text-slate-600">Không tìm thấy học sinh Đạt hoặc Đạt Cam kết nào</p>
+                <p className="text-xs text-slate-400 mt-1 font-semibold">Chỉ hiển thị học sinh có kết quả Phê duyệt là Đạt hoặc Đạt Cam kết để xuất thư chúc mừng</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead className="text-xs font-semibold">
-                    <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                      <th className="p-2 p-2 text-center w-14 border border-slate-200">STT</th>
-                      <th className="p-2 p-2 border border-slate-200">Học sinh</th>
-                      <th className="p-2 p-2 border border-slate-200">Kết quả Phê duyệt</th>
-                      <th className="p-2 p-2 border border-slate-200">Môn Cam kết</th>
-                      <th className="p-2 p-2 border border-slate-200">Ý kiến / Ghi chú Hội đồng</th>
-                      <th className="p-2 p-2 text-center w-[120px] border border-slate-200">Thao tác</th>
+                    <tr className="bg-slate-50/80 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
+                      <th className="p-3 text-center w-14 border-r border-slate-200">STT</th>
+                      <th className="p-3 border-r border-slate-200">Học sinh</th>
+                      <th className="p-3 border-r border-slate-200">Kết quả Phê duyệt</th>
+                      <th className="p-3 border-r border-slate-200">Môn Cam kết</th>
+                      <th className="p-3 border-r border-slate-200">Ý kiến / Ghi chú Hội đồng</th>
+                      <th className="p-3 text-center w-[130px]">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {filteredStudents.map((s, idx) => {
+                    {letterEligibleStudents.map((s, idx) => {
                       const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
                       
                       // Approval results badges
                       const result = s.admissionResult || s.devAssessmentResult || "Chưa duyệt";
-                      const isPassed = (result.includes("Đạt") && !result.includes("Không")) || result.includes("Đại") || result.includes("MIỄN") || result.includes("DAT");
+                      const cat = getApprovalCategory(s);
 
                       return (
-                        <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 group/row text-xs font-semibold">
-                          <td className="p-2 p-2 text-center text-slate-400 font-semibold border border-slate-200">{idx + 1}</td>
-                          <td className="p-2 p-2 border border-slate-200">
+                        <tr key={s.id} className="even:bg-slate-50/40 hover:bg-teal-50/30 transition-all duration-150 group/row text-xs font-semibold">
+                          <td className="p-3 text-center text-slate-400 font-semibold border-r border-slate-100">{idx + 1}</td>
+                          <td className="p-3 border-r border-slate-100">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <span className="font-bold text-slate-800 text-sm group-hover/row:text-teal-700 transition-colors">{s.fullName}</span>
-                                <span className="font-mono text-[10px] font-black text-teal-700 text-xs font-semibold">
+                                <span className="font-mono text-[10px] font-black text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-100">
                                   {s.studentCode || "—"}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                                <span className="bg-slate-100 px-1.5 rounded">{s.grade ? `K${s.grade}` : "—"}</span>
+                                <span className="bg-slate-100 px-1.5 py-0.5 rounded font-bold text-slate-700">{s.grade ? `K${s.grade}` : "—"}</span>
                                 <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                                 <span>{gender}</span>
                                 <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                <span className="truncate max-w-[120px]" title={s.surveyFormType || "—"}>{s.surveyFormType || "—"}</span>
+                                <span className="truncate max-w-[130px] font-semibold text-slate-600" title={s.surveyFormType || "—"}>{s.surveyFormType || "—"}</span>
                               </div>
                             </div>
                           </td>
-                          <td className="p-2 p-2 border border-slate-200">
+                          <td className="p-3 border-r border-slate-100">
                             {(() => {
-                              const isGreen = result.includes("Đạt") && !result.includes("cam kết") && !result.includes("Không");
-                              const isAmber = result.includes("cam kết");
-                              const isRed = result.includes("Không đạt");
-                              
-                              if (isGreen) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
-                              if (isAmber) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
-                              if (isRed) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
-                              return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">{result}</span>;
+                              if (cat === "dat") {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    {result}
+                                  </span>
+                                );
+                              }
+                              if (cat === "dat_cam_ket") {
+                                return (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/80">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                                    {result}
+                                  </span>
+                                );
+                              }
+                              return (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">
+                                  {result}
+                                </span>
+                              );
                             })()}
                           </td>
-                          <td className="p-2 p-2 border border-slate-200">
+                          <td className="p-3 border-r border-slate-100">
                             <div className="flex flex-wrap gap-1 max-w-[180px]">
                               {extractCommittedSubjects(s).length > 0 ? (
                                 extractCommittedSubjects(s).map((sub: string, subIdx: number) => (
-                                  <span key={subIdx} className="text-[10px] font-bold text-amber-700 whitespace-nowrap text-xs font-semibold">
+                                  <span key={subIdx} className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 whitespace-nowrap">
                                     {sub.trim()}
                                   </span>
                                 ))
                               ) : (
-                                <span className="text-slate-400 font-medium text-[10px]">—</span>
+                                <span className="text-slate-300 font-medium text-[11px]">—</span>
                               )}
                             </div>
                           </td>
-                          <td className="p-2 p-2 border border-slate-200">
-                            <div className="text-[11px] font-medium text-slate-600 max-w-[200px] group/note relative cursor-default">
+                          <td className="p-3 border-r border-slate-100">
+                            <div className="text-[11px] font-medium text-slate-600 max-w-[220px] group/note relative cursor-default">
                               <p className="line-clamp-2 leading-relaxed">{extractCleanNote(s) || <span className="text-slate-300">—</span>}</p>
                               {extractCleanNote(s) && (
                                 <div className="absolute left-0 bottom-full mb-2 hidden group-hover/note:block w-max max-w-xs bg-slate-800 text-white text-[11px] p-3 rounded-xl shadow-xl z-50 whitespace-pre-line leading-relaxed pointer-events-none">
@@ -3060,29 +3121,23 @@ export function ReportsClient({
                               )}
                             </div>
                           </td>
-                          <td className="p-2 p-2 border border-slate-200">
-                            <div className="flex gap-2 justify-center">
-                              {isPassed ? (
-                                <>
-                                  <button
-                                    onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                    className="p-2 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm tooltip-trigger relative group/btn text-xs font-semibold"
-                                    title="Thư Chúc mừng"
-                                  >
-                                    <Send className="w-4 h-4 transition-colors" />
-                                  </button>
-                                  {selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
-                                    <button
-                                      onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                      className="p-2 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all shadow-sm tooltip-trigger relative group/btn text-xs font-semibold"
-                                      title="Cam kết học tập"
-                                    >
-                                      <PenLine className="w-4 h-4 transition-colors" />
-                                    </button>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-[10px] font-bold text-slate-300">—</span>
+                          <td className="p-3">
+                            <div className="flex gap-1.5 justify-center">
+                              <button
+                                onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                className="p-2 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded-xl border border-emerald-200 transition-all shadow-sm tooltip-trigger relative group/btn"
+                                title="Xuất Thư Chúc mừng"
+                              >
+                                <Send className="w-4 h-4 transition-colors" />
+                              </button>
+                              {selectedLevel !== "preschool" && cat === "dat_cam_ket" && (
+                                <button
+                                  onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                  className="p-2 text-amber-600 hover:bg-amber-500 hover:text-white rounded-xl border border-amber-200 transition-all shadow-sm tooltip-trigger relative group/btn"
+                                  title="Xuất Bản Cam kết học tập"
+                                >
+                                  <PenLine className="w-4 h-4 transition-colors" />
+                                </button>
                               )}
                             </div>
                           </td>
@@ -3187,19 +3242,26 @@ export function ReportsClient({
 
             {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
       {tab === "admission_documents" && selectedLevel === "high" && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 flex items-center justify-center text-teal-600 shadow-inner text-xs font-semibold">
-                <Tag className="w-6 h-6" />
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+          {/* Header Card */}
+          <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white p-6 rounded-3xl shadow-xl border border-teal-500/20 flex flex-wrap items-center justify-between gap-4 relative overflow-hidden">
+            <div className="absolute -right-10 -top-10 w-48 h-48 bg-teal-500/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-teal-500 to-emerald-400 p-0.5 shadow-lg shadow-teal-500/30 flex items-center justify-center">
+                <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-teal-400">
+                  <ClipboardList className="w-6 h-6" />
+                </div>
               </div>
               <div>
-                <h2 className="text-lg font-black text-slate-800">Danh mục Hồ sơ nhập học</h2>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Cấu hình danh sách giấy tờ cần nộp theo từng đối tượng tuyển sinh</p>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-black text-white tracking-tight">Danh mục Hồ sơ nhập học</h2>
+                  <span className="px-2.5 py-0.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full text-[10px] font-black uppercase tracking-wider">Khổ A4 Chuẩn</span>
+                </div>
+                <p className="text-xs text-slate-300 font-medium mt-0.5">Cấu hình danh sách giấy tờ cần nộp theo từng đối tượng tuyển sinh & hiển thị trực quan bản in A4</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative z-10">
               <button 
                 onClick={() => {
                   setConfirm({
@@ -3211,9 +3273,9 @@ export function ReportsClient({
                     }
                   });
                 }}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-black transition-all flex items-center gap-2"
+                className="px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
               >
-                <RefreshCw className="w-3.5 h-3.5" />
+                <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
                 Khôi phục mẫu
               </button>
               <button 
@@ -3226,34 +3288,44 @@ export function ReportsClient({
                   setDocFormSelectedGrades(docGroupGrades[selectedDocGroup] || []);
                   setIsDocModalOpen(true);
                 }}
-                className="hover:bg-indigo-700 text-white text-xs font-black transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 cursor-pointer text-xs font-semibold"
+                className="px-4 py-2.5 bg-[#00a884] hover:bg-[#008f70] text-white font-black rounded-xl text-xs transition-all flex items-center gap-2 shadow-md shadow-[#00a884]/20 border border-[#00a884]/30 cursor-pointer active:scale-95"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="w-4 h-4" />
                 Thêm hồ sơ mới
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left side configurations */}
-            <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6">
-              <div className="group space-y-2">
-                <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 ml-1">Chọn Đối tượng Hồ sơ</label>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <div className="relative w-full">
+            <div className="lg:col-span-5 space-y-5">
+              {/* Card 1: Select & Manage Doc Group */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                    Chọn Đối tượng Hồ sơ
+                  </label>
+                  <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                    {docGroups.length} đối tượng
+                  </span>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="relative">
                     <select 
                       value={selectedDocGroup} 
                       onChange={(e) => setSelectedDocGroup(e.target.value)} 
-                      className="w-full pr-10 text-sm font-black text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100/50 focus:border-indigo-500 focus:bg-white transition-all duration-300 text-xs font-semibold"
+                      className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-800 outline-none appearance-none cursor-pointer hover:bg-slate-100/80 focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all"
                     >
                       {docGroups.map(g => (
                         <option key={g.id} value={g.id}>{g.label}</option>
                       ))}
                     </select>
-                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none group-hover:text-slate-600 transition-colors" />
+                    <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
 
-                  <div className="flex gap-2 w-full mt-2">
+                  <div className="flex items-center gap-2">
                     <button 
                       onClick={() => {
                         const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
@@ -3265,10 +3337,10 @@ export function ReportsClient({
                           setSelectedDocGroup(newId);
                         }
                       }}
-                      className="flex-1 hover:bg-indigo-100 text-teal-600 flex items-center justify-center gap-2 text-xs font-black transition-all shadow-sm text-xs font-semibold"
+                      className="flex-1 py-2 px-3 bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200/80 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                       title="Thêm đối tượng mới"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="w-3.5 h-3.5" />
                       Thêm đối tượng
                     </button>
 
@@ -3284,10 +3356,10 @@ export function ReportsClient({
                               localStorage.setItem('admission_doc_groups', JSON.stringify(updated));
                             }
                           }}
-                          className="w-10 h-10 hover:bg-amber-100 text-amber-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
+                          className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 rounded-xl transition-all shadow-sm"
                           title="Sửa tên đối tượng"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => {
@@ -3303,10 +3375,10 @@ export function ReportsClient({
                               }
                             });
                           }}
-                          className="w-10 h-10 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-all shadow-sm text-xs font-semibold"
+                          className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl transition-all shadow-sm"
                           title="Xóa đối tượng"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </>
                     )}
@@ -3314,10 +3386,10 @@ export function ReportsClient({
                 </div>
               </div>
 
-              {/* Association checkboxes */}
-              <div className="p-4 space-y-4 text-xs font-semibold">
-                <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+              {/* Card 2: Admission Target Association */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
                     Áp dụng cho Đối tượng Tuyển sinh:
                   </span>
                   <button
@@ -3325,17 +3397,21 @@ export function ReportsClient({
                       localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
                       notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
                     }}
-                    className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 cursor-pointer text-xs font-semibold"
+                    className="px-3 py-1.5 bg-[#00a884] hover:bg-[#008f70] text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-[#00a884]/20 border border-[#00a884]/30 cursor-pointer active:scale-95"
                   >
                     <Check className="w-3 h-3" />
                     Lưu
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-1">
+                <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1">
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
                     return (
-                      <label key={c.id} className="flex items-center gap-2 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none text-xs font-semibold">
+                      <label key={c.id} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all select-none ${
+                        isChecked 
+                          ? 'bg-teal-50 border-teal-300 text-teal-800 shadow-xs' 
+                          : 'bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100'
+                      }`}>
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3351,22 +3427,22 @@ export function ReportsClient({
                             setDocGroupTargets(updatedMappings);
                             localStorage.setItem('admission_doc_targets', JSON.stringify(updatedMappings));
                           }}
-                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 border-slate-300 cursor-pointer"
                         />
-                        <span className="text-[11px] font-bold text-slate-600">{c.name}</span>
+                        <span>{c.name}</span>
                       </label>
                     );
                   })}
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
-                    <span className="text-xs text-slate-400 italic ml-1">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
+                    <span className="text-xs text-slate-400 italic">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
                   )}
                 </div>
               </div>
 
-              {/* Grade association checkboxes */}
-              <div className="p-4 space-y-4 text-xs font-semibold">
+              {/* Card 3: Grade Level Association */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
-                  <span className="block text-[10px] font-bold tracking-wider uppercase text-slate-400 ml-1">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
                     Áp dụng cho Khối lớp học:
                   </span>
                   <div className="flex items-center gap-1.5">
@@ -3378,7 +3454,7 @@ export function ReportsClient({
                         localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                       }}
                       type="button"
-                      className="hover:bg-indigo-100 text-teal-600 text-[9px] font-black transition-all text-xs font-semibold"
+                      className="px-2.5 py-1 bg-teal-50/90 hover:bg-teal-100 text-[#00a884] border border-[#00a884]/30 rounded-lg text-[10px] font-black transition-all cursor-pointer active:scale-95"
                     >
                       Chọn nhanh 2,3,4,5
                     </button>
@@ -3388,18 +3464,22 @@ export function ReportsClient({
                         notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
                       }}
                       type="button"
-                      className="hover:bg-emerald-700 text-white text-xs font-black transition-all flex items-center gap-1 shadow-md shadow-emerald-100 text-xs font-semibold"
+                      className="px-3 py-1.5 bg-[#00a884] hover:bg-[#008f70] text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-[#00a884]/20 border border-[#00a884]/30 cursor-pointer active:scale-95"
                     >
-                      <Check className="w-3.5 h-3.5" />
+                      <Check className="w-3 h-3" />
                       Lưu
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
+                <div className="flex flex-wrap gap-1.5 max-h-[140px] overflow-y-auto pr-1">
                   {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                     const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
                     return (
-                      <label key={g} className="flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-indigo-50/20 hover:border-indigo-200 transition-all select-none font-medium text-xs font-semibold">
+                      <label key={g} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all select-none ${
+                        isChecked 
+                          ? 'bg-teal-50 border-teal-300 text-teal-800 shadow-xs' 
+                          : 'bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100'
+                      }`}>
                         <input 
                           type="checkbox" 
                           checked={isChecked}
@@ -3415,86 +3495,111 @@ export function ReportsClient({
                             setDocGroupGrades(updatedMappings);
                             localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
                           }}
-                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-indigo-500 border-slate-300 transition-all cursor-pointer"
+                          className="w-3.5 h-3.5 rounded text-teal-600 focus:ring-teal-500 border-slate-300 cursor-pointer"
                         />
-                        <span className="text-[11px] font-bold text-slate-600">{g}</span>
+                        <span>{g}</span>
                       </label>
                     );
                   })}
                 </div>
               </div>
 
-              {filteredDocList.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-slate-100 rounded-3xl">
-                  <Tag className="w-8 h-8 text-slate-300 mb-2" />
-                  <p className="font-bold text-xs text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
+              {/* Card 4: Document Items Table */}
+              <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                    <ClipboardList className="w-4 h-4 text-teal-600" />
+                    Danh sách Hồ sơ ({filteredDocList.length})
+                  </span>
                 </div>
-              ) : (
-                <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-inner">
-                  <table className="w-full border-collapse text-left text-xs text-slate-700">
-                    <thead>
-                      <tr className="text-xs font-semibold">
-                        <th className="p-2 p-2 font-black text-slate-900 text-center w-12 border border-slate-200">TT</th>
-                        <th className="p-2 p-2 font-black text-slate-900 border border-slate-200">Hồ sơ</th>
-                        <th className="p-2 p-2 font-black text-slate-900 text-center w-20 border border-slate-200">SL</th>
-                        <th className="p-2 p-2 font-black text-slate-900 text-center w-24 border border-slate-200">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 bg-white">
-                      {filteredDocList.map((item, idx) => (
-                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors text-xs font-semibold">
-                          <td className="p-2 p-2 text-center font-bold text-slate-400 border border-slate-200">{idx + 1}</td>
-                          <td className="p-2 p-2 border border-slate-200">
-                            <div className="font-bold text-slate-800 text-[11px] truncate max-w-[120px] sm:max-w-none" title={item.name}>{item.name}</div>
-                          </td>
-                          <td className="p-2 p-2 text-center font-bold text-slate-600 border border-slate-200">{item.qty || "—"}</td>
-                          <td className="p-2 p-2 text-center border border-slate-200">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button 
-                                onClick={() => {
-                                  setEditingDoc(item);
-                                  setDocFormName(item.name);
-                                  setDocFormQty(item.qty);
-                                  setDocFormNote(item.note);
-                                  setDocFormSelectedTargets(item.targets || []);
-                                  setDocFormSelectedGrades(item.grades || []);
-                                  setIsDocModalOpen(true);
-                                }}
-                                className="w-7 h-7 hover:bg-indigo-100 text-teal-600 flex items-center justify-center transition-colors text-xs font-semibold"
-                                title="Sửa hồ sơ"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                              <button 
-                                onClick={() => {
-                                  setConfirm({
-                                    msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
-                                    fn: () => {
-                                      const updated = docList.filter(d => d.id !== item.id);
-                                      setDocList(updated);
-                                      localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
-                                    }
-                                  });
-                                }}
-                                className="w-7 h-7 hover:bg-rose-100 text-rose-600 flex items-center justify-center transition-colors text-xs font-semibold"
-                                title="Xóa hồ sơ"
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </td>
+
+                {filteredDocList.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    <Tag className="w-8 h-8 text-slate-300 mb-2" />
+                    <p className="font-bold text-xs text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
+                  </div>
+                ) : (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
+                    <table className="w-full border-collapse text-left text-xs">
+                      <thead>
+                        <tr className="bg-slate-100/90 text-slate-700 font-black text-[11px] uppercase tracking-wider border-b border-slate-200">
+                          <th className="py-2.5 px-3 text-center w-12 border-r border-slate-200">TT</th>
+                          <th className="py-2.5 px-3 border-r border-slate-200">Tên Hồ sơ</th>
+                          <th className="py-2.5 px-3 text-center w-16 border-r border-slate-200">SL</th>
+                          <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {filteredDocList.map((item, idx) => (
+                          <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="py-2.5 px-3 text-center font-bold text-slate-400 border-r border-slate-100">{idx + 1}</td>
+                            <td className="py-2.5 px-3 border-r border-slate-100 font-bold text-slate-800 text-xs">
+                              <div className="truncate max-w-[180px] sm:max-w-none" title={item.name}>{item.name}</div>
+                            </td>
+                            <td className="py-2.5 px-3 text-center border-r border-slate-100">
+                              <span className="px-2 py-0.5 bg-teal-50 text-teal-700 font-black text-[11px] rounded-md border border-teal-200/60 inline-block min-w-[24px]">
+                                {item.qty || "1"}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button 
+                                  onClick={() => {
+                                    setEditingDoc(item);
+                                    setDocFormName(item.name);
+                                    setDocFormQty(item.qty);
+                                    setDocFormNote(item.note);
+                                    setDocFormSelectedTargets(item.targets || []);
+                                    setDocFormSelectedGrades(item.grades || []);
+                                    setIsDocModalOpen(true);
+                                  }}
+                                  className="p-1.5 hover:bg-teal-50 text-teal-600 rounded-lg transition-colors cursor-pointer"
+                                  title="Sửa hồ sơ"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button 
+                                  onClick={() => {
+                                    setConfirm({
+                                      msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
+                                      fn: () => {
+                                        const updated = docList.filter(d => d.id !== item.id);
+                                        setDocList(updated);
+                                        localStorage.setItem(getDocStorageKey(selectedDocGroup), JSON.stringify(updated));
+                                      }
+                                    });
+                                  }}
+                                  className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors cursor-pointer"
+                                  title="Xóa hồ sơ"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right side live A4 design preview stack */}
-            <div className="lg:col-span-7 shadow-inner p-8 flex flex-col justify-between min-h-[500px] text-xs font-semibold">
-              <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-5">Khung Xem trước thiết kế A4 thực tế</span>
-              <div className="bg-white rounded-2xl border border-slate-200 p-10 shadow-lg flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-serif text-slate-800 leading-normal" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+            <div className="lg:col-span-7 bg-gradient-to-br from-slate-900/5 via-slate-100/50 to-slate-900/10 rounded-3xl border border-slate-200 p-6 flex flex-col justify-between shadow-inner min-h-[650px]">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-200/80 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Khung Xem trước thiết kế A4 thực tế
+                  </span>
+                </div>
+                <span className="px-3 py-1 bg-white text-slate-600 rounded-full border border-slate-200 text-[10px] font-bold shadow-xs">
+                  Khổ A4 (210 × 297 mm) • Tỷ lệ in 100%
+                </span>
+              </div>
+
+              <div className="bg-white rounded-2xl border border-slate-300 shadow-[0_20px_50px_rgba(15,23,42,0.12)] p-8 sm:p-10 flex flex-col justify-between w-full aspect-[210/297] relative overflow-hidden select-none font-sans text-slate-800 leading-normal">
                 {/* Background Watermark for Preview */}
                 <div 
                   className="absolute pointer-events-none"
@@ -3512,65 +3617,69 @@ export function ReportsClient({
                   }}
                 />
 
-                {/* Top info */}
-                <div className="relative z-10 space-y-4 flex flex-col h-full justify-between">
+                {/* Content Container */}
+                <div className="relative z-10 flex flex-col h-full justify-between">
                   <div>
-                    <div className="border-b border-slate-200 pb-2 mb-3">
+                    {/* School Brand Header */}
+                    <div className="pb-3 border-b-2 border-teal-700 flex flex-col items-start gap-1">
                       {rcLogo ? (
-                        <img src={rcLogo} alt="Logo" className="h-8 object-contain mb-1" />
+                        <img src={rcLogo} alt="Logo" className="h-9 object-contain mb-1" />
                       ) : (
-                        <span className="text-[10px] font-black tracking-tight text-teal-600 uppercase">SKY-LINE</span>
+                        <span className="text-xs font-black tracking-tight text-teal-700 uppercase">SKY-LINE</span>
                       )}
-                      <h4 className="font-extrabold text-[9px] uppercase tracking-wider text-slate-800" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                      <h4 className="font-extrabold text-[10px] sm:text-xs uppercase tracking-wider text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         TRƯỜNG TH, THCS, THPT SKY-LINE
                       </h4>
                     </div>
 
-                    <div className="text-center mb-3">
-                      <h2 className="text-xs font-black tracking-widest text-indigo-950 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                    {/* Title */}
+                    <div className="text-center my-5">
+                      <h2 className="text-sm sm:text-base font-black tracking-widest text-slate-900 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         DANH MỤC HỒ SƠ NHẬP HỌC
                       </h2>
+                      <div className="w-12 h-0.5 bg-teal-600 mx-auto mt-1.5 rounded-full" />
                     </div>
 
-                    {/* Table stack */}
-                    <div className="mt-4 overflow-hidden border border-slate-950">
-                      <table className="w-full border-collapse text-left text-[9px] text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                    {/* Modern Styled Table */}
+                    <div className="mt-4 overflow-hidden rounded-lg border border-slate-300 shadow-xs">
+                      <table className="w-full border-collapse text-left text-[10px] sm:text-xs text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
                         <thead>
-                          <tr className="bg-white border-b border-slate-950 font-bold text-slate-950">
-                            <th className="px-2 py-1.5 border-r border-slate-950 text-center uppercase w-10" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
-                            <th className="px-3 py-1.5 border-r border-slate-950 text-center uppercase" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
-                            <th className="p-2 p-2 text-center uppercase w-16 border border-slate-200">Số lượng</th>
+                          <tr className="bg-[#0f766e] text-white font-bold uppercase tracking-wider">
+                            <th className="px-3 py-2.5 border-r border-teal-800 text-center w-12">STT</th>
+                            <th className="px-4 py-2.5 border-r border-teal-800 text-left">Tên hồ sơ giấy tờ</th>
+                            <th className="px-3 py-2.5 text-center w-20">Số lượng</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-slate-200 bg-white">
                           {filteredDocList.map((item, idx) => (
-                            <tr key={item.id || idx} className="border-b border-slate-950 last:border-b-0">
-                              <td className="px-2 py-1.5 border-r border-slate-950 text-center text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{idx + 1}</td>
-                              <td className="px-3 py-1.5 border-r border-slate-950 font-medium text-slate-900" style={{ borderRightWidth: '1px', borderColor: '#000' }}>{item.name}</td>
-                              <td className="p-2 p-2 text-center text-slate-950 font-bold border border-slate-200">{item.qty || "—"}</td>
+                            <tr key={item.id || idx} className="hover:bg-slate-50/80 even:bg-slate-50/40 transition-colors">
+                              <td className="px-3 py-2 border-r border-slate-200 text-center font-bold text-slate-600">{idx + 1}</td>
+                              <td className="px-4 py-2 border-r border-slate-200 font-semibold text-slate-900">{item.name}</td>
+                              <td className="px-3 py-2 text-center text-teal-800 font-black">{item.qty || "1"}</td>
                             </tr>
                           ))}
                           {filteredDocList.length === 0 && (
                             <tr>
-                              <td colSpan={3} className="text-center p-2 text-slate-400 italic border border-slate-200">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
+                              <td colSpan={3} className="text-center py-6 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
                             </tr>
                           )}
                         </tbody>
                       </table>
                     </div>
 
-                    <p className="mt-4 text-[9px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: '"Open Sans", sans-serif' }}>
+                    {/* Modern Callout Note Box */}
+                    <div className="mt-5 p-3 bg-teal-50/80 border-l-4 border-teal-600 rounded-r-xl font-medium text-[10px] sm:text-xs text-teal-900 leading-relaxed shadow-2xs">
                       * Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
-                    </p>
+                    </div>
                   </div>
 
-                  {/* Signature/Footer Anchor */}
+                  {/* Footer / Signature Anchor */}
                   {rcFooter ? (
                     <div className="pt-2 border-t border-slate-200 mt-2">
                       <img src={rcFooter} alt="Footer" className="w-full h-auto" />
                     </div>
                   ) : (
-                    <div className="border-t border-[#00A99D]/50 pt-2 text-[5px] text-slate-400 text-center">
+                    <div className="border-t border-teal-600/30 pt-2 text-[8px] text-slate-400 text-center font-medium">
                       <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
                     </div>
                   )}
