@@ -16,6 +16,12 @@ export async function GET(request: Request) {
       orderBy: { sortOrder: "asc" }
     });
 
+    // Fetch registered Campuses
+    const allCampuses = await prisma.campus.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { campusName: "asc" }
+    });
+
     // Fetch GVBM Activities (ActivityRecord)
     const activityRecords = await prisma.activityRecord.findMany({
       where: { academicYearId },
@@ -26,7 +32,8 @@ export async function GET(request: Request) {
           include: {
             student: {
               include: {
-                class: true
+                class: true,
+                campus: true
               }
             }
           }
@@ -44,7 +51,8 @@ export async function GET(request: Request) {
       include: {
         student: {
           include: {
-            class: true
+            class: true,
+            campus: true
           }
         }
       }
@@ -120,6 +128,72 @@ export async function GET(request: Request) {
       totalCount: g.gvbmCount + g.gvcbCount,
       studentCount: g.studentCount.size
     })).sort((a, b) => a.grade.localeCompare(b.grade, undefined, { numeric: true }));
+
+    // Group by Campus (Cơ sở học sinh)
+    const campusStatsMap: Record<string, { id: string, name: string, gvbmCount: number, gvcnCount: number, studentCount: Set<string> }> = {};
+
+    allCampuses.forEach(c => {
+      campusStatsMap[c.id] = {
+        id: c.id,
+        name: c.campusName,
+        gvbmCount: 0,
+        gvcnCount: 0,
+        studentCount: new Set<string>()
+      };
+    });
+
+    activityRecords.forEach(record => {
+      record.participants.forEach(p => {
+        const campus = p.student?.campus;
+        const cId = campus?.id || "OTHER";
+        const cName = campus?.campusName || "Chưa xác định";
+
+        if (!campusStatsMap[cId]) {
+          campusStatsMap[cId] = {
+            id: cId,
+            name: cName,
+            gvbmCount: 0,
+            gvcnCount: 0,
+            studentCount: new Set<string>()
+          };
+        }
+        campusStatsMap[cId].studentCount.add(p.studentId);
+      });
+
+      const recordCampuses = new Set(record.participants.map(p => p.student?.campus?.id || "OTHER"));
+      recordCampuses.forEach(cId => {
+        if (campusStatsMap[cId]) {
+          campusStatsMap[cId].gvbmCount += 1;
+        }
+      });
+    });
+
+    projectExperiences.forEach(pe => {
+      const campus = pe.student?.campus;
+      const cId = campus?.id || "OTHER";
+      const cName = campus?.campusName || "Chưa xác định";
+
+      if (!campusStatsMap[cId]) {
+        campusStatsMap[cId] = {
+          id: cId,
+          name: cName,
+          gvbmCount: 0,
+          gvcnCount: 0,
+          studentCount: new Set<string>()
+        };
+      }
+      campusStatsMap[cId].gvcnCount += 1;
+      campusStatsMap[cId].studentCount.add(pe.studentId);
+    });
+
+    const statsByCampus = Object.values(campusStatsMap).map(c => ({
+      id: c.id,
+      name: c.name,
+      gvbmCount: c.gvbmCount,
+      gvcnCount: c.gvcnCount,
+      totalCount: c.gvbmCount + c.gvcnCount,
+      studentCount: c.studentCount.size
+    })).sort((a, b) => b.totalCount - a.totalCount);
 
     // Group by Activity Group (Nhóm hoạt động)
     const groupStatsMap: Record<string, { code: string, name: string, gvbmCount: number, gvcnCount: number, studentCount: Set<string> }> = {};
@@ -245,6 +319,7 @@ export async function GET(request: Request) {
           totalGvbm: gvbmTeacherNames.size,
         },
         statsByGrade,
+        statsByCampus,
         statsByGroup,
         statsByGvbm,
         statsByGvcn,

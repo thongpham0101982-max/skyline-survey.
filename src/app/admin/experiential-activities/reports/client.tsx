@@ -23,7 +23,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
   const [error, setError] = useState<string | null>(null)
   
   const [stats, setStats] = useState<any>(null)
-  const [activeReportTab, setActiveReportTab] = useState<'grade' | 'group' | 'gvbm' | 'gvcn' | 'activity'>('grade')
+  const [activeReportTab, setActiveReportTab] = useState<'grade' | 'campus' | 'group' | 'gvbm' | 'gvcn' | 'activity'>('grade')
 
   const fetchStats = async () => {
     setLoading(true)
@@ -52,6 +52,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
 
   const reportTabs = [
     { id: 'grade', label: 'Thống kê Khối lớp', icon: Layers },
+    { id: 'campus', label: 'Thống kê Cơ sở', icon: Landmark },
     { id: 'group', label: 'Thống kê Nhóm hoạt động', icon: FolderTree },
     { id: 'gvbm', label: 'Thống kê GVBM', icon: User },
     { id: 'gvcn', label: 'Thống kê GVCN', icon: Users },
@@ -233,6 +234,58 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                                 <td className="py-3.5 px-4 text-center">
                                   <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black">
                                     {g.studentCount} học sinh
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Tab Cơ sở */}
+                {activeReportTab === 'campus' && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                        Thống kê Hoạt động theo Cơ sở học sinh tham gia
+                      </h3>
+                      <span className="text-xs font-bold text-slate-400">
+                        Tổng số cơ sở: {stats.statsByCampus?.length || 0}
+                      </span>
+                    </div>
+                    
+                    {!stats.statsByCampus || stats.statsByCampus.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy số liệu theo cơ sở.</div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                              <th className="py-3.5 px-4 text-center w-16">STT</th>
+                              <th className="py-3.5 px-4">Tên cơ sở</th>
+                              <th className="py-3.5 px-4 text-center">Hoạt động do GVBM</th>
+                              <th className="py-3.5 px-4 text-center">Dự án do GVCN</th>
+                              <th className="py-3.5 px-4 text-center">Tổng số Hoạt động</th>
+                              <th className="py-3.5 px-4 text-center">Học sinh tham gia</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                            {stats.statsByCampus.map((c: any, idx: number) => (
+                              <tr key={c.id || idx} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
+                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm flex items-center gap-2">
+                                  <Landmark className="w-4 h-4 text-[#00A99D]" />
+                                  {c.name}
+                                </td>
+                                <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{c.gvbmCount}</td>
+                                <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{c.gvcnCount}</td>
+                                <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{c.totalCount}</td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black">
+                                    {c.studentCount} học sinh
                                   </span>
                                 </td>
                               </tr>
