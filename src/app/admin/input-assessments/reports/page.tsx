@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { ReportsClient } from "./client"
 
 export const metadata = { title: "Xuat bao cao KSNL | Admin" }
-export const dynamic_conf = "force-dynamic"
+export const dynamic = "force-dynamic"
 
 export default async function InputAssessmentReportsPage() {
   let session: any = null;

@@ -281,9 +281,16 @@ function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
   );
 }
 
-export function ReportsClient({
-  academicYears, campuses, giaoVuCSUsers, gdcsUsers, teachers, departments, generalPeriods, preschoolPeriods, currentUser
-}: any) {
+export function ReportsClient(rawProps: any) {
+  const academicYears = Array.isArray(rawProps?.academicYears) ? rawProps.academicYears : [];
+  const campuses = Array.isArray(rawProps?.campuses) ? rawProps.campuses : [];
+  const giaoVuCSUsers = Array.isArray(rawProps?.giaoVuCSUsers) ? rawProps.giaoVuCSUsers : [];
+  const gdcsUsers = Array.isArray(rawProps?.gdcsUsers) ? rawProps.gdcsUsers : [];
+  const teachers = Array.isArray(rawProps?.teachers) ? rawProps.teachers : [];
+  const departments = Array.isArray(rawProps?.departments) ? rawProps.departments : [];
+  const generalPeriods = Array.isArray(rawProps?.generalPeriods) ? rawProps.generalPeriods : [];
+  const preschoolPeriods = Array.isArray(rawProps?.preschoolPeriods) ? rawProps.preschoolPeriods : [];
+  const currentUser = rawProps?.currentUser || null;
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
