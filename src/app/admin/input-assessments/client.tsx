@@ -1164,7 +1164,7 @@ export function InputAssessmentsClient({
   // ───────── STUDENTS STATE ─────────
   const [students, setStudents] = useState<Student[]>([])
   const [sLoading, setSLoading] = useState(false)
-  const [sPeriodId, setSPeriodId] = useState("")
+  const [sPeriodId, setSPeriodId] = useState("all")
   const [sBatchId, setSBatchId] = useState("")
   const [latestBatchInfo, setLatestBatchInfo] = useState(null);
   const [sSearch, setSSearch] = useState("")
@@ -3090,8 +3090,8 @@ ${reportForm.directorNote}`;
 
   useEffect(() => {
     if (visiblePeriods.length > 0) {
-      if (!sPeriodId || !visiblePeriods.some(p => p.id === sPeriodId)) {
-        setSPeriodId(visiblePeriods[0].id);
+      if (!sPeriodId || (sPeriodId !== "all" && !visiblePeriods.some(p => p.id === sPeriodId))) {
+        setSPeriodId("all");
       }
       if (!asPeriodId || !visiblePeriods.some(p => p.id === asPeriodId)) {
         setAsPeriodId(visiblePeriods[0].id);
@@ -3207,11 +3207,10 @@ ${reportForm.directorNote}`;
   const toggleEdu=(c:string)=>setSelEdus(p=>p.includes(c)?p.filter(x=>x!==c):[...p,c]);
 
   const fetchStudents = useCallback(async () => {
-    if (!sPeriodId) return
     setSLoading(true)
     try {
       let url = `/api/input-assessment-students?t=${Date.now()}`
-      if (sPeriodId === "all") url += `&fetch_all=true`
+      if (!sPeriodId || sPeriodId === "all") url += `&fetch_all=true`
       else url += `&periodId=${sPeriodId}`
       if (sBatchId) url += `&batchId=${sBatchId}`
       const r = await fetch(url)
