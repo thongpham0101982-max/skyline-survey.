@@ -829,6 +829,8 @@ export function ReportsClient({
   const [cBatchId, setCBatchId] = useState("all");
   const [cCampusId, setCCampusId] = useState("");
   const [cResultFilter, setCResultFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
   const [searchQuery, setSearchQuery] = useState("");
   const [students, setStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
@@ -837,8 +839,13 @@ export function ReportsClient({
     setCPeriodId("all");
     setCBatchId("all");
     setCResultFilter("all");
+    setCurrentPage(1);
     setStudents([]);
   }, [selectedLevel]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [cPeriodId, cBatchId, cResultFilter, searchQuery]);
 
   // Load students based on filters
   useEffect(() => {
@@ -895,12 +902,11 @@ export function ReportsClient({
         matchResult = resVal === "Đạt" || resVal === "Đại";
       } else if (cResultFilter === "cam_ket") {
         matchResult = resVal === "Đạt cam kết";
-      } else if (cResultFilter === "kiem_tra_lai") {
-        matchResult = resVal.includes("Không đạt");
-      } else if (cResultFilter === "chua_duyet") {
-        matchResult = (!s.admissionResult && !s.devAssessmentResult) || resVal === "Chưa duyệt";
-      } else if (cResultFilter !== "all") {
-        matchResult = resVal === cResultFilter;
+      } else if (cResultFilter === "full_all") {
+        matchResult = true;
+      } else {
+        // default "all": ONLY eligible passed/committed students
+        matchResult = resVal.includes("Đạt") || resVal.includes("Đại") || resVal.includes("DAT") || resVal.includes("MIỄN");
       }
 
       // search query
@@ -911,6 +917,12 @@ export function ReportsClient({
       return matchResult && matchQuery;
     });
   }, [students, cResultFilter, searchQuery]);
+
+  const totalPages = Math.ceil(filteredStudents.length / pageSize) || 1;
+  const paginatedStudents = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredStudents.slice(start, start + pageSize);
+  }, [filteredStudents, currentPage, pageSize]);
 
   // Print modal configuration resolver
   const studentCampusConfig = useMemo(() => {
@@ -2883,16 +2895,21 @@ export function ReportsClient({
       {tab === "letters" && (
         <div className="bg-white border border-slate-100 shadow-sm rounded-[2rem] p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* STATS CARDS */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div 
               onClick={() => setCResultFilter("all")}
               className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
-                cResultFilter === "all" ? "ring-2 ring-indigo-500 bg-indigo-50/30 border-indigo-200" : "bg-white border-slate-100 hover:border-slate-300"
+                cResultFilter === "all" ? "ring-2 ring-teal-500 bg-teal-50/30 border-teal-200" : "bg-white border-slate-100 hover:border-slate-300"
               }`}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-teal-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Tổng HS</span>
-              <span className="text-2xl font-black text-slate-700 z-10">{students.length}</span>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">TỔNG HS ĐỦ ĐK XUẤT THƯ</span>
+              <span className="text-2xl font-black text-slate-700 z-10">
+                {students.filter((s: any) => {
+                  const r = s.admissionResult || s.devAssessmentResult || "";
+                  return r.includes("Đạt") || r.includes("Đại") || r.includes("DAT") || r.includes("MIỄN");
+                }).length}
+              </span>
             </div>
             <div 
               onClick={() => setCResultFilter(cResultFilter === "dat" ? "all" : "dat")}
@@ -2901,7 +2918,7 @@ export function ReportsClient({
               }`}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt</span>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">ĐẠT</span>
               <span className="text-2xl font-black text-emerald-600 z-10">
                 {students.filter((s: any) => {
                   const r = s.admissionResult || s.devAssessmentResult || "";
@@ -2916,24 +2933,12 @@ export function ReportsClient({
               }`}
             >
               <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Đạt Cam Kết</span>
+              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">ĐẠT CAM KẾT</span>
               <span className="text-2xl font-black text-amber-600 z-10">
                 {students.filter((s: any) => {
                   const r = s.admissionResult || s.devAssessmentResult || "";
                   return r === "Đạt cam kết";
                 }).length}
-              </span>
-            </div>
-            <div 
-              onClick={() => setCResultFilter(cResultFilter === "kiem_tra_lai" ? "all" : "kiem_tra_lai")}
-              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
-                cResultFilter === "kiem_tra_lai" ? "ring-2 ring-rose-500 bg-rose-50/30 border-rose-200" : "bg-white border-slate-100 hover:border-slate-300"
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-rose-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">Kiểm tra lại</span>
-              <span className="text-2xl font-black text-rose-600 z-10">
-                {students.filter((s: any) => String(s.admissionResult || s.devAssessmentResult || "").includes("Không đạt")).length}
               </span>
             </div>
           </div>
@@ -2980,13 +2985,12 @@ export function ReportsClient({
                   <select 
                     value={cResultFilter} 
                     onChange={e => setCResultFilter(e.target.value)} 
-                    className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[190px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm"
+                    className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[210px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm"
                   >
-                    <option value="all">Tất cả kết quả</option>
+                    <option value="all">Tất cả (Đạt & Đạt cam kết)</option>
                     <option value="dat">Đạt</option>
                     <option value="cam_ket">Đạt cam kết</option>
-                    <option value="kiem_tra_lai">Kiểm tra lại / Không đạt</option>
-                    <option value="chua_duyet">Chưa duyệt</option>
+                    <option value="full_all">Tất cả trạng thái (Gồm Chưa duyệt)</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
                     <ChevronDown className="w-4 h-4" />
@@ -3079,7 +3083,8 @@ export function ReportsClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {filteredStudents.map((s, idx) => {
+                    {paginatedStudents.map((s, idx) => {
+                      const sttIndex = (currentPage - 1) * pageSize + idx + 1;
                       const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
                       
                       // Approval results badges
@@ -3088,7 +3093,7 @@ export function ReportsClient({
 
                       return (
                         <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 group/row text-xs font-semibold">
-                          <td className="p-2 p-2 text-center text-slate-400 font-semibold border border-slate-200">{idx + 1}</td>
+                          <td className="p-2 p-2 text-center text-slate-400 font-semibold border border-slate-200">{sttIndex}</td>
                           <td className="p-2 p-2 border border-slate-200">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
@@ -3173,6 +3178,58 @@ export function ReportsClient({
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* PAGINATION CONTROLS */}
+            {filteredStudents.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-slate-100 text-xs text-slate-500 font-semibold bg-slate-50/50 rounded-b-2xl">
+                <div>
+                  Hiển thị <span className="font-bold text-slate-800">{(currentPage - 1) * pageSize + 1}</span> - <span className="font-bold text-slate-800">{Math.min(currentPage * pageSize, filteredStudents.length)}</span> trên tổng số <span className="font-bold text-slate-800">{filteredStudents.length}</span> học sinh
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold shadow-sm"
+                  >
+                    Trước
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+                    .reduce((acc, page, i, arr) => {
+                      if (i > 0 && page - (arr[i - 1]) > 1) acc.push("...");
+                      acc.push(page);
+                      return acc;
+                    }, [])
+                    .map((item, idx) => (
+                      typeof item === "number" ? (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentPage(item)}
+                          className={`w-8 h-8 rounded-lg font-bold transition-all shadow-sm ${
+                            currentPage === item
+                              ? "bg-teal-600 text-white"
+                              : "border border-slate-200 text-slate-600 hover:bg-white"
+                          }`}
+                        >
+                          {item}
+                        </button>
+                      ) : (
+                        <span key={idx} className="px-1 text-slate-400 font-bold">...</span>
+                      )
+                    ))
+                  }
+
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold shadow-sm"
+                  >
+                    Sau
+                  </button>
+                </div>
               </div>
             )}
           </div>
