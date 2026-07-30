@@ -1382,181 +1382,22 @@ export function ResultsClient({
 
       {/* --- SUB TAB 3: PROFILES --- */}
       {subTab === 'profiles' && (() => {
-        // Grouping logic based on viewGroup state
-        const achievementsByExam = {};
-        const achievementsByCategory = {};
-        
-        if (selectedStudentProfile && selectedStudentProfile.achievements) {
-          selectedStudentProfile.achievements.forEach((ach) => {
-            // Group by Exam
-            const exam = ach.examName || "Ngoài hệ thống / Kỳ thi khác";
-            if (!achievementsByExam[exam]) {
-              achievementsByExam[exam] = [];
-            }
-            achievementsByExam[exam].push(ach);
-            
-            // Group by Category (Lĩnh vực của kỳ thi)
-            const field = ach.examCategoryName || "Khác";
-            if (!achievementsByCategory[field]) {
-              achievementsByCategory[field] = [];
-            }
-            achievementsByCategory[field].push(ach);
+        // Compute achievements grouped by Exam or Category
+        const achievementsByExam: Record<string, any[]> = {};
+        const achievementsByCategory: Record<string, any[]> = {};
+
+        if (selectedStudentProfile?.achievements) {
+          selectedStudentProfile.achievements.forEach((ach: any) => {
+            const examKey = ach.examName || "Kỳ thi khác";
+            const catKey = ach.examCategoryName || "Lĩnh vực khác";
+
+            if (!achievementsByExam[examKey]) achievementsByExam[examKey] = [];
+            achievementsByExam[examKey].push(ach);
+
+            if (!achievementsByCategory[catKey]) achievementsByCategory[catKey] = [];
+            achievementsByCategory[catKey].push(ach);
           });
         }
-
-        // Helper to get styled badge details
-        const getAwardIconAndStyle = (category, level) => {
-          let bgClass = "bg-amber-50";
-          let textClass = "text-amber-700";
-          let borderClass = "border-amber-200/60";
-          let gradientClass = "from-amber-400 to-amber-600 text-white";
-          let glowClass = "shadow-amber-500/20";
-          let badgeName = "Giải thưởng";
-          let IconComponent = Award;
-
-          if (category === "HUY_CHUONG") {
-            IconComponent = Medal;
-            if (level === "VANG") {
-              badgeName = "Huy chương Vàng";
-              gradientClass = "from-amber-300 via-yellow-400 to-amber-500 text-amber-950";
-              glowClass = "shadow-yellow-500/30";
-              bgClass = "bg-amber-50";
-              textClass = "text-amber-700";
-              borderClass = "border-yellow-200";
-              IconComponent = Trophy;
-            } else if (level === "BAC") {
-              badgeName = "Huy chương Bạc";
-              gradientClass = "from-slate-200 via-slate-100 to-slate-400 text-slate-800";
-              glowClass = "shadow-slate-400/20";
-              bgClass = "bg-slate-50";
-              textClass = "text-slate-700";
-              borderClass = "border-slate-300/60";
-            } else if (level === "DONG") {
-              badgeName = "Huy chương Đồng";
-              gradientClass = "from-amber-600 via-orange-400 to-amber-700 text-white";
-              glowClass = "shadow-orange-500/20";
-              bgClass = "bg-orange-50/50";
-              textClass = "text-orange-800";
-              borderClass = "border-orange-200";
-            } else {
-              badgeName = "Huy chương";
-              gradientClass = "from-teal-400 to-teal-600 text-white";
-              glowClass = "shadow-teal-500/20";
-              bgClass = "bg-teal-50";
-              textClass = "text-teal-700";
-              borderClass = "border-teal-200";
-            }
-          } else if (category === "GIAI_THUONG") {
-            if (level === "NHAT") {
-              badgeName = "Giải Nhất";
-              gradientClass = "from-red-400 via-rose-500 to-red-600 text-white";
-              glowClass = "shadow-rose-500/30";
-              bgClass = "bg-red-50";
-              textClass = "text-red-700";
-              borderClass = "border-red-200";
-              IconComponent = Trophy;
-            } else if (level === "NHI") {
-              badgeName = "Giải Nhì";
-              gradientClass = "from-blue-400 via-indigo-500 to-blue-600 text-white";
-              glowClass = "shadow-blue-500/20";
-              bgClass = "bg-blue-50";
-              textClass = "text-blue-700";
-              borderClass = "border-blue-200";
-              IconComponent = Medal;
-            } else if (level === "BA") {
-              badgeName = "Giải Ba";
-              gradientClass = "from-emerald-400 via-teal-500 to-emerald-600 text-white";
-              glowClass = "shadow-emerald-500/20";
-              bgClass = "bg-emerald-50";
-              textClass = "text-[#009085]";
-              borderClass = "border-emerald-200";
-              IconComponent = Medal;
-            } else if (level === "KHUYEN_KHICH") {
-              badgeName = "Giải Khuyến khích";
-              gradientClass = "from-purple-400 via-fuchsia-500 to-purple-600 text-white";
-              glowClass = "shadow-purple-500/20";
-              bgClass = "bg-purple-50";
-              textClass = "text-purple-700";
-              borderClass = "border-purple-200";
-              IconComponent = Ribbon;
-            } else {
-              badgeName = "Giải thưởng";
-              gradientClass = "from-indigo-400 to-indigo-600 text-white";
-              glowClass = "shadow-indigo-500/20";
-              bgClass = "bg-indigo-50";
-              textClass = "text-indigo-700";
-              borderClass = "border-indigo-200";
-              IconComponent = Award;
-            }
-          } else if (category === "CHUNG_NHAN") {
-            badgeName = "Chứng nhận";
-            gradientClass = "from-sky-300 via-cyan-400 to-sky-500 text-white";
-            glowClass = "shadow-sky-400/20";
-            bgClass = "bg-sky-50/50";
-            textClass = "text-sky-700";
-            borderClass = "border-sky-200";
-            IconComponent = Ribbon;
-          } else {
-            badgeName = "Khác";
-            gradientClass = "from-slate-400 to-slate-500 text-white";
-            glowClass = "shadow-slate-400/10";
-            bgClass = "bg-slate-50";
-            textClass = "text-slate-600";
-            borderClass = "border-slate-200";
-            IconComponent = Award;
-          }
-
-          return { bgClass, textClass, borderClass, badgeName, gradientClass, glowClass, IconComponent };
-        };
-
-        const renderAchievementCard = (ach) => {
-          const style = getAwardIconAndStyle(ach.category, ach.level);
-          const IconComponent = style.IconComponent;
-          return (
-            <div 
-              key={ach.id} 
-              className="p-4 bg-white border border-slate-100 rounded-2xl hover:border-[#00A99D]/40 transition-all duration-300 flex items-start gap-4 shadow-sm hover:shadow-md relative overflow-hidden group shine-effect"
-            >
-              {/* Shine glow decoration */}
-              <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl ${style.gradientClass} opacity-5 blur-xl group-hover:opacity-10 transition-opacity pointer-events-none`} />
-
-              {/* Beautiful Award Icon Container */}
-              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${style.gradientClass} flex items-center justify-center ${style.glowClass} shadow-lg flex-shrink-0 border border-black/5 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                <IconComponent className="w-6 h-6 drop-shadow-sm text-white" />
-              </div>
-
-              <div className="flex-1 min-w-0 space-y-1 z-10">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className={`px-2.5 py-0.5 rounded-md text-[9px] font-black tracking-wider uppercase border ${style.bgClass} ${style.textClass} ${style.borderClass}`}>
-                    {style.badgeName}
-                  </span>
-                  {ach.type === 'DONG_DOI' && (
-                    <span className="px-2.5 py-0.5 rounded-md text-[9px] font-black bg-teal-50 text-[#009085] border border-teal-200/50 tracking-wider uppercase flex items-center gap-0.5">
-                      <Users className="w-3 h-3" /> Đồng đội
-                    </span>
-                  )}
-                  {/* Category / Lĩnh vực Badge */}
-                  <span className="px-2.5 py-0.5 rounded-md text-[9px] font-black bg-indigo-50 text-indigo-700 border border-indigo-200/50 tracking-wider uppercase">
-                    {ach.examCategoryName || "Chung"}
-                  </span>
-                </div>
-                <h4 className="text-sm font-black text-slate-800 leading-snug group-hover:text-[#00A99D] transition-colors">Giải thưởng: {ach.name.includes(" - ") ? ach.name.split(" - ")[0] : (ach.name || style.badgeName)}</h4>
-                
-                {/* Secondary group metadata if grouped by Category */}
-                {viewGroup === 'category' && (
-                  <p className="text-[11px] font-bold text-slate-500 flex items-center gap-1 bg-slate-50 px-2 py-0.5 rounded border border-slate-100 w-fit">
-                    <Sparkles className="w-3 h-3 text-[#00A99D]" /> {ach.examName}
-                  </p>
-                )}
-
-                <div className="text-[11px] text-slate-400 flex flex-wrap gap-x-4 gap-y-0.5 pt-0.5">
-                  <span>GV bồi dưỡng: <strong className="text-[#00A99D] font-bold">{ach.teacherName}</strong></span>
-                  <span>Năm học: <strong className="text-slate-500 font-mono">{ach.yearName}</strong></span>
-                </div>
-              </div>
-            </div>
-          );
-        };
 
         const renderGroupedContent = () => {
           const groupedData = viewGroup === 'exam' ? achievementsByExam : achievementsByCategory;
@@ -1564,10 +1405,10 @@ export function ResultsClient({
 
           if (noData) {
             return (
-              <div className="bg-white border border-slate-200 rounded-2xl py-16 text-center text-slate-400 space-y-1 shadow-xs">
-                <Award className="w-12 h-12 mx-auto opacity-10 mb-2" />
-                <h5 className="font-bold text-slate-600 text-sm">Chưa có thành tích trong nhóm này</h5>
-                <p className="text-xs">Chưa có kết quả ghi nhận phù hợp trong hệ thống.</p>
+              <div className="bg-white border border-slate-200/80 rounded-2xl py-16 text-center text-slate-400 space-y-1 shadow-xs">
+                <Award className="w-12 h-12 mx-auto opacity-20 text-slate-400 mb-2" />
+                <h5 className="font-extrabold text-slate-600 text-sm">Chưa ghi nhận thành tích nào</h5>
+                <p className="text-xs text-slate-400 font-medium">Học sinh chưa có giải thưởng hoặc kết quả khen thưởng trong hệ thống.</p>
               </div>
             );
           }
@@ -1577,29 +1418,29 @@ export function ResultsClient({
               {Object.entries(groupedData).map(([groupName, achList]: [string, any[]]) => (
                 <div key={groupName} className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-xs animate-fade-in hover:shadow-md transition-all duration-300">
                   {/* Group Header */}
-                  <div className="bg-slate-50/80 border-b border-slate-100 px-5 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 bg-teal-50 text-[#00A99D] rounded-xl flex items-center justify-center border border-teal-100/50">
+                  <div className="bg-gradient-to-r from-slate-50 via-teal-50/20 to-slate-50 border-b border-slate-200/80 px-5 py-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-[#00A99D]/10 text-[#00A99D] rounded-xl flex items-center justify-center border border-[#00A99D]/20 shadow-2xs">
                         {viewGroup === 'exam' ? (
-                          <Sparkles className="w-4 h-4" />
+                          <Sparkles className="w-5 h-5" />
                         ) : (
-                          <Award className="w-4 h-4 text-amber-500" />
+                          <Award className="w-5 h-5 text-amber-500" />
                         )}
                       </div>
                       <div>
-                        <h4 className="font-black text-slate-800 text-xs sm:text-sm">{groupName}</h4>
-                        <p className="text-[9.5px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                          {viewGroup === 'exam' ? 'Kỳ thi học sinh' : 'Lĩnh vực thành tích'}
+                        <h4 className="font-black text-slate-800 text-sm sm:text-base">{groupName}</h4>
+                        <p className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider mt-0.5">
+                          {viewGroup === 'exam' ? 'Kỳ thi chính thức' : 'Lĩnh vực thành tích'}
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-black bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-1 rounded-lg border border-[#00A99D]/20 uppercase">
+                    <span className="text-[11px] font-black bg-[#00A99D]/10 text-[#00A99D] px-3 py-1 rounded-full border border-[#00A99D]/20 uppercase">
                       {achList.length} giải thưởng
                     </span>
                   </div>
 
                   {/* Achievements Grid */}
-                  <div className="p-5 bg-slate-50/20 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-5 bg-slate-50/30 grid grid-cols-1 md:grid-cols-2 gap-4">
                     {achList.map((ach) => renderAchievementCard(ach))}
                   </div>
                 </div>
@@ -1609,25 +1450,42 @@ export function ResultsClient({
         };
 
         return (
-          <div className="space-y-6 max-w-4xl mx-auto no-print animate-fade-in">
-            {/* Lookup Card with 2 Options: Quick search vs Class browse */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#00A99D]/10 to-[#00A99D]/20 rounded-xl flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-[#00A99D]" />
+          <div className="space-y-6 max-w-6xl mx-auto no-print animate-fade-in">
+            {/* Search Banner Container */}
+            <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+              {/* Card Banner Header */}
+              <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#00A99D] text-white p-5 px-6 flex items-center justify-between">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 bg-white/10 rounded-xl backdrop-blur-xs shadow-inner">
+                    <BookOpen className="w-6 h-6 text-teal-200" />
                   </div>
                   <div>
-                    <h3 className="text-slate-800 font-black text-sm">Tra cứu hồ sơ thành tích Học sinh</h3>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Tìm kiếm nhanh hoặc duyệt theo lớp học</p>
+                    <h3 className="font-black text-base tracking-wide">Tra Cứu Hồ Sơ Thành Tích Học Sinh</h3>
+                    <p className="text-teal-100 text-xs font-medium">Tìm kiếm học sinh theo Mã/Tên hoặc chọn theo danh sách Lớp học</p>
                   </div>
                 </div>
+                {selectedStudentProfile && (
+                  <button
+                    onClick={() => {
+                      setSelectedStudentProfile(null);
+                      setSearchQuery("");
+                      setSearchResults([]);
+                    }}
+                    className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all cursor-pointer border border-white/20"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Tra cứu HS khác
+                  </button>
+                )}
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Option 1: Quick Search */}
+
+              {/* 2 Search Method Panel */}
+              <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Method 1: Quick Search */}
                 <div className="space-y-3">
-                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cách 1: Tìm nhanh bằng Mã hoặc Tên</h4>
+                  <div className="flex items-center gap-2 text-xs font-black text-slate-700 uppercase tracking-wider">
+                    <span className="w-5 h-5 rounded-full bg-teal-50 text-[#00A99D] border border-teal-200/80 flex items-center justify-center text-[10px] font-black">1</span>
+                    CÁCH 1: Tìm nhanh bằng Mã hoặc Tên học sinh
+                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -1635,21 +1493,31 @@ export function ResultsClient({
                       onChange={e => {
                         setSearchQuery(e.target.value);
                         handleSearchStudents(e.target.value);
-                        // Reset class browsing when quick searching
                         setProfileCampusId("");
                         setProfileGrade("");
                         setProfileClassId("");
                         setClassStudents([]);
                       }}
                       placeholder="Nhập Mã học sinh hoặc Tên học sinh..."
-                      className="w-full border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 shadow-sm bg-slate-50/20"
+                      className="w-full border border-slate-200 rounded-xl pl-10 pr-9 py-3 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs transition-all"
                     />
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          setSearchResults([]);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
 
-                  {/* Live Search dropdown results */}
+                  {/* Dropdown Live Results */}
                   {searchResults.length > 0 && (
-                    <div className="border border-slate-100 rounded-xl bg-white shadow-xl overflow-hidden divide-y divide-slate-100 max-h-60 overflow-y-auto">
+                    <div className="border border-slate-200/80 rounded-xl bg-white shadow-xl overflow-hidden divide-y divide-slate-100 max-h-64 overflow-y-auto">
                       {searchResults.map(student => (
                         <button
                           key={student.id}
@@ -1658,34 +1526,42 @@ export function ResultsClient({
                             setSearchResults([]);
                             setSearchQuery("");
                           }}
-                          className="w-full text-left px-5 py-3 hover:bg-slate-50 transition-all flex justify-between items-center text-xs font-semibold"
+                          className="w-full text-left px-4 py-3 hover:bg-teal-50/40 transition-all flex justify-between items-center text-xs font-semibold group cursor-pointer"
                         >
-                          <div>
-                            <div className="font-bold text-slate-800">{student.studentName}</div>
-                            <div className="text-[10px] text-slate-400 font-mono">Mã HS: {student.studentCode}</div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00A99D] to-[#008A81] text-white flex items-center justify-center font-black text-xs uppercase shadow-2xs">
+                              {student.studentName.split(" ").pop()?.charAt(0) || "H"}
+                            </div>
+                            <div>
+                              <div className="font-black text-slate-800 group-hover:text-[#00A99D] transition-colors">{student.studentName}</div>
+                              <div className="text-[10px] text-slate-400 font-mono font-bold">Mã HS: {student.studentCode}</div>
+                            </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-slate-600 font-bold">{student.className}</div>
-                            <div className="text-[9px] text-slate-400 font-bold">{student.campusName}</div>
+                            <div className="text-slate-700 font-bold bg-slate-100 px-2 py-0.5 rounded text-[10px]">{student.className}</div>
+                            <div className="text-[9px] text-slate-400 font-semibold mt-0.5">{student.campusName}</div>
                           </div>
                         </button>
                       ))}
                     </div>
                   )}
                   {searchQuery.trim().length >= 2 && searchResults.length === 0 && !loadingSearch && (
-                    <p className="text-xs text-slate-400 italic">Không tìm thấy học sinh nào phù hợp.</p>
+                    <p className="text-xs text-rose-500 italic font-semibold">Không tìm thấy học sinh nào phù hợp.</p>
                   )}
                   {loadingSearch && (
-                    <p className="text-xs text-slate-400 animate-pulse font-semibold">Đang tìm kiếm...</p>
+                    <p className="text-xs text-[#00A99D] animate-pulse font-bold">Đang tìm kiếm dữ liệu học sinh...</p>
                   )}
                 </div>
 
-                {/* Option 2: Browse by Class */}
-                <div className="space-y-3 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-6">
-                  <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cách 2: Chọn học sinh theo Lớp học</h4>
-                  <div className="grid grid-cols-3 gap-2">
+                {/* Method 2: Browse by Class */}
+                <div className="space-y-3 border-t lg:border-t-0 lg:border-l border-slate-200/80 pt-6 lg:pt-0 lg:pl-8">
+                  <div className="flex items-center gap-2 text-xs font-black text-slate-700 uppercase tracking-wider">
+                    <span className="w-5 h-5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80 flex items-center justify-center text-[10px] font-black">2</span>
+                    CÁCH 2: Chọn học sinh theo Danh sách Lớp học
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Cơ sở</label>
+                      <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Cơ sở</label>
                       <select
                         value={profileCampusId}
                         onChange={e => {
@@ -1693,9 +1569,9 @@ export function ResultsClient({
                           setProfileClassId("");
                           setClassStudents([]);
                         }}
-                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs"
                       >
-                        <option value="">-- Cơ sở --</option>
+                        <option value="">-- Chọn Cơ sở --</option>
                         {campuses.map(c => (
                           <option key={c.id} value={c.id}>{c.campusName}</option>
                         ))}
@@ -1703,7 +1579,7 @@ export function ResultsClient({
                     </div>
 
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Khối</label>
+                      <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Khối lớp</label>
                       <select
                         value={profileGrade}
                         onChange={e => {
@@ -1711,9 +1587,9 @@ export function ResultsClient({
                           setProfileClassId("");
                           setClassStudents([]);
                         }}
-                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs"
                       >
-                        <option value="">-- Khối --</option>
+                        <option value="">-- Chọn Khối --</option>
                         {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(g => (
                           <option key={g} value={g}>Khối {g}</option>
                         ))}
@@ -1721,14 +1597,14 @@ export function ResultsClient({
                     </div>
 
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Lớp</label>
+                      <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-1">Lớp học</label>
                       <select
                         value={profileClassId}
                         onChange={e => setProfileClassId(e.target.value)}
                         disabled={!profileCampusId || !profileGrade}
-                        className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-[11px] focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50 shadow-2xs"
                       >
-                        <option value="">-- Lớp --</option>
+                        <option value="">-- Chọn Lớp --</option>
                         {classes
                           .filter(c => c.campusId === profileCampusId && c.grade === profileGrade && c.academicYearId === yearId)
                           .map(c => (
@@ -1739,39 +1615,39 @@ export function ResultsClient({
                   </div>
 
                   {profileClassId && (
-                    <div className="pt-3 border-t border-slate-100 animate-fade-in">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Danh sách học sinh của lớp ({classStudents.length})</label>
+                    <div className="pt-3 border-t border-slate-100 animate-fade-in space-y-2">
+                      <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                        <span>Danh sách Học sinh ({classStudents.length})</span>
+                        <span className="text-[#00A99D]">Nhấp chọn để tra cứu</span>
+                      </div>
                       {loadingClassStudents ? (
-                        <p className="text-[11px] text-slate-400 animate-pulse py-2">Đang tải danh sách học sinh...</p>
+                        <p className="text-xs text-[#00A99D] animate-pulse py-2 font-bold">Đang tải danh sách học sinh...</p>
                       ) : classStudents.length === 0 ? (
-                        <p className="text-[11px] text-slate-400 italic py-2">Không có học sinh trong lớp này.</p>
+                        <p className="text-xs text-slate-400 italic py-2">Không tìm thấy học sinh nào thuộc lớp này.</p>
                       ) : (
-                        <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto custom-scrollbar pr-1">
                           {classStudents.map(student => (
                             <button
                               key={student.id}
                               type="button"
                               onClick={() => handleSelectStudentProfile(student.id)}
-                              className={`w-full text-left px-3 py-2 rounded-xl border transition-all flex items-center justify-between text-xs font-semibold ${
+                              className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer ${
                                 selectedStudentProfile?.id === student.id 
-                                  ? 'bg-[#E6F6F5] border-[#00A99D] text-[#00A99D]' 
-                                  : 'bg-slate-50/50 hover:bg-slate-100/50 border-slate-200/60 text-slate-700'
+                                  ? 'bg-teal-50/80 border-[#00A99D] text-[#00A99D] shadow-xs' 
+                                  : 'bg-slate-50/60 hover:bg-slate-100/60 border-slate-200/80 text-slate-700'
                               }`}
                             >
-                              <div className="flex items-center gap-2">
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-[10px] uppercase ${
-                                  selectedStudentProfile?.id === student.id ? 'bg-[#00A99D] text-white' : 'bg-slate-200 text-slate-600'
+                              <div className="flex items-center gap-2.5 truncate">
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] uppercase flex-shrink-0 ${
+                                  selectedStudentProfile?.id === student.id ? 'bg-[#00A99D] text-white' : 'bg-slate-200 text-slate-700'
                                 }`}>
-                                  {student.studentName.split(" ").pop()?.charAt(0) || "HS"}
+                                  {student.studentName.split(" ").pop()?.charAt(0) || "H"}
                                 </div>
-                                <div className="truncate max-w-[150px]">
-                                  <div className="font-bold truncate">{student.studentName}</div>
+                                <div className="truncate">
+                                  <div className="font-bold truncate text-slate-800 text-xs">{student.studentName}</div>
                                   <div className="text-[9px] text-slate-400 font-mono">Mã: {student.studentCode}</div>
                                 </div>
                               </div>
-                              <span className="text-[9px] font-bold bg-white/80 border border-slate-100 px-1.5 py-0.5 rounded text-slate-400">
-                                {student.className}
-                              </span>
                             </button>
                           ))}
                         </div>
@@ -1782,73 +1658,74 @@ export function ResultsClient({
               </div>
             </div>
 
-            {/* Profile display section */}
+            {/* Profile Content Display */}
             {loadingProfile ? (
-              <div className="py-20 text-center text-slate-400 bg-white border border-slate-200 rounded-2xl">
-                <div className="animate-spin rounded-full h-8 w-8 border-2 border-teal-500 border-t-transparent mx-auto mb-3"></div>
-                <p className="text-xs font-bold">Đang tải hồ sơ học sinh...</p>
+              <div className="py-20 text-center text-slate-400 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+                <div className="animate-spin rounded-full h-9 w-9 border-3 border-[#00A99D] border-t-transparent mx-auto mb-3"></div>
+                <p className="text-xs font-black text-slate-600">Đang tải hồ sơ thành tích học sinh...</p>
               </div>
             ) : selectedStudentProfile ? (
               <div className="space-y-6 animate-fade-in">
-                {/* Candidate bio card */}
-                <div className="bg-gradient-to-r from-[#00A99D]/5 via-white to-white border border-[#00A99D]/20 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                {/* Candidate Bio Header Card */}
+                <div className="bg-gradient-to-br from-teal-50/80 via-white to-slate-50 border border-teal-200/80 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
                   {/* Background decoration */}
-                  <div className="absolute top-0 right-0 w-40 h-40 bg-[#00A99D]/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#00A99D]/5 rounded-full blur-3xl pointer-events-none" />
                   
                   <div className="flex items-start gap-5 relative z-10">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#00A99D] to-[#007B73] rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-[#00A99D]/25">
-                      <Users className="w-8 h-8" />
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#00A99D] to-[#007B73] rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-[#00A99D]/20 border border-white/20 font-black text-2xl uppercase">
+                      {selectedStudentProfile.studentName.split(" ").pop()?.charAt(0) || "H"}
                     </div>
                     <div className="space-y-2">
-                      <h3 className="text-xl font-black text-slate-800">{selectedStudentProfile.studentName}</h3>
+                      <h3 className="text-2xl font-black text-slate-800">{selectedStudentProfile.studentName}</h3>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono bg-slate-100 text-slate-600 px-3 py-1 rounded-lg font-black text-[11px] border border-slate-200">
-                          {selectedStudentProfile.studentCode}
+                        <span className="font-mono bg-white text-slate-700 px-3 py-1 rounded-lg font-black text-xs border border-slate-200 shadow-2xs">
+                          Mã HS: {selectedStudentProfile.studentCode}
                         </span>
-                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg font-bold text-[11px] border border-blue-100">
-                          {selectedStudentProfile.gender}
+                        <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg font-extrabold text-xs border border-blue-100">
+                          {selectedStudentProfile.gender || "Chưa rõ"}
                         </span>
                         {selectedStudentProfile.dateOfBirth && (
-                          <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-lg font-bold text-[11px] border border-purple-100">
-                            {new Date(selectedStudentProfile.dateOfBirth).toLocaleDateString("vi-VN")}
+                          <span className="bg-purple-50 text-purple-700 px-3 py-1 rounded-lg font-extrabold text-xs border border-purple-100">
+                            Ngày sinh: {new Date(selectedStudentProfile.dateOfBirth).toLocaleDateString("vi-VN")}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="self-start md:self-center bg-white p-4 rounded-xl border border-slate-200 shadow-xs text-right min-w-[160px] relative z-10">
-                    <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Thông tin lớp</div>
-                    <div className="text-xl font-black text-[#00A99D]">{selectedStudentProfile.className}</div>
-                    <div className="text-xs text-slate-500 font-bold mt-0.5">{selectedStudentProfile.campusName}</div>
-                    <div className="text-[10px] text-slate-400 font-mono mt-1 bg-slate-50 px-2 py-0.5 rounded">{selectedStudentProfile.academicYearName}</div>
+                  <div className="self-start md:self-center bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs text-right min-w-[180px] relative z-10">
+                    <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Đơn vị & Lớp học</div>
+                    <div className="text-2xl font-black text-[#00A99D]">{selectedStudentProfile.className}</div>
+                    <div className="text-xs text-slate-600 font-extrabold mt-0.5">{selectedStudentProfile.campusName}</div>
+                    <div className="text-[10px] text-slate-500 font-mono mt-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60 inline-block font-bold">
+                      Năm học: {selectedStudentProfile.academicYearName}
+                    </div>
                   </div>
                 </div>
 
-                {/* Achievements List Display */}
+                {/* Achievements List Display Header & View Group Toggle */}
                 <div className="space-y-4">
-                  {/* View mode toggle bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center border border-amber-100">
-                        <Award className="w-4.5 h-4.5 text-amber-500" />
+                      <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center border border-amber-200/80 shadow-2xs">
+                        <Award className="w-5 h-5 text-amber-500" />
                       </div>
                       <div>
-                        <h3 className="text-slate-800 font-black text-sm">Lịch sử Thành tích &amp; Giải thưởng</h3>
-                        <p className="text-[10px] text-slate-400 font-semibold">Toàn bộ các giải thưởng đã đạt được</p>
+                        <h3 className="text-slate-800 font-black text-base">Lịch Sử Thành Tích &amp; Khen Thưởng</h3>
+                        <p className="text-xs text-slate-400 font-medium">Toàn bộ giải thưởng đã đạt được trong quá trình học tập</p>
                       </div>
-                      <span className="text-[11px] font-black bg-[#00A99D] text-white px-3 py-1 rounded-lg shadow-sm ml-1">
-                        {selectedStudentProfile.achievements.length}
+                      <span className="text-xs font-black bg-[#00A99D] text-white px-3 py-1 rounded-full shadow-2xs ml-1">
+                        {selectedStudentProfile.achievements.length} giải
                       </span>
                     </div>
 
-                    <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/50 no-print self-start sm:self-auto">
+                    <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 no-print self-start sm:self-auto">
                       <button
                         type="button"
                         onClick={() => setViewGroup('exam')}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           viewGroup === 'exam' 
-                            ? 'bg-white text-[#00A99D] shadow-sm' 
+                            ? 'bg-white text-[#00A99D] shadow-xs' 
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1857,9 +1734,9 @@ export function ResultsClient({
                       <button
                         type="button"
                         onClick={() => setViewGroup('category')}
-                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           viewGroup === 'category' 
-                            ? 'bg-white text-[#00A99D] shadow-sm' 
+                            ? 'bg-white text-[#00A99D] shadow-xs' 
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1872,25 +1749,23 @@ export function ResultsClient({
                 </div>
               </div>
             ) : (
-              <div className="bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl p-16 text-center text-slate-400 shadow-xs animate-fade-in">
-                <div className="w-20 h-20 bg-[#00A99D]/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                  <BookOpen className="w-10 h-10 text-[#00A99D]/30" />
+              <div className="bg-gradient-to-br from-slate-50 via-teal-50/20 to-indigo-50/20 border border-slate-200/80 rounded-2xl p-16 text-center text-slate-400 shadow-xs animate-fade-in">
+                <div className="w-20 h-20 bg-[#00A99D]/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#00A99D]/20 shadow-2xs">
+                  <BookOpen className="w-10 h-10 text-[#00A99D]" />
                 </div>
-                <h4 className="font-black text-slate-700 text-base">Chưa chọn Học sinh để tra cứu</h4>
-                <p className="text-xs mt-2 text-slate-400 max-w-xs mx-auto leading-relaxed">Sử dụng ô tìm kiếm nhanh bên trên hoặc duyệt danh sách học sinh theo lớp để xem lịch sử thành tích.</p>
-                <div className="flex items-center justify-center gap-4 mt-6">
-                  <div className="text-center">
-                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-1.5">
-                      <Search className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <div className="text-[10px] font-bold text-slate-400">Tìm nhanh</div>
+                <h4 className="font-black text-slate-800 text-lg">Chưa Chọn Học Sinh Để Tra Cứu</h4>
+                <p className="text-xs mt-2 text-slate-500 max-w-md mx-auto leading-relaxed font-medium">
+                  Vui lòng nhập Mã học sinh / Tên ở Cách 1 hoặc chọn theo Lớp học ở Cách 2 bên trên để xem đầy đủ hồ sơ lịch sử thành tích.
+                </p>
+                <div className="flex items-center justify-center gap-6 mt-6">
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-2xs">
+                    <Search className="w-4 h-4 text-[#00A99D]" />
+                    <span className="text-xs font-bold text-slate-700">Tìm nhanh mã/tên</span>
                   </div>
-                  <div className="text-slate-200 font-bold">hoặc</div>
-                  <div className="text-center">
-                    <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-1.5">
-                      <Users className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <div className="text-[10px] font-bold text-slate-400">Chọn theo lớp</div>
+                  <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">hoặc</span>
+                  <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-2xs">
+                    <Users className="w-4 h-4 text-indigo-600" />
+                    <span className="text-xs font-bold text-slate-700">Duyệt danh sách lớp</span>
                   </div>
                 </div>
               </div>
@@ -1898,7 +1773,6 @@ export function ResultsClient({
           </div>
         );
       })()}
-
 
       {/* Styled Print Layout CSS */}
       <style jsx global>{`

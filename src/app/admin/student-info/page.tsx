@@ -159,7 +159,7 @@ export default async function StudentInfoPage() {
       rolePermissions = rolePermissionsResult;
       generalPeriods = generalPeriodsResult;
       preschoolPeriods = preschoolPeriodsResult;
-      destinationSchools = destinationSchoolsResult;
+      destinationSchools = destinationSchoolsResult || [];
 
       if (dbAssignments && dbAssignments.length > 0) {
         liveCampusIds = dbAssignments.map((a: any) => a.campusId);
