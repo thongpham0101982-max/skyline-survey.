@@ -60,7 +60,8 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
         count1218Result,
         needsMigrationResult,
         activeYearResult,
-        rolePermissionsResult
+        rolePermissionsResult,
+        destinationSchoolsResult
       ] = await Promise.all([
         // 1. dbAssignments
         user?.id && pAny.userCampusAssignment ? pAny.userCampusAssignment.findMany({ where: { userId: user.id } }).catch(() => []) : Promise.resolve([]),
@@ -128,7 +129,11 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
         // 14. activeYear
         pAny.academicYear ? getDefaultAcademicYear(pAny).catch(() => null) : Promise.resolve(null),
         // 15. rolePermissions
-        pAny.permission ? pAny.permission.findMany({ where: { roleCode } }).catch(() => []) : Promise.resolve([])
+        pAny.permission ? pAny.permission.findMany({ where: { roleCode } }).catch(() => []) : Promise.resolve([]),
+        // 16. destinationSchools
+        pAny.destinationSchool ? pAny.destinationSchool.findMany({
+          orderBy: [{ level: "desc" }, { name: "asc" }]
+        }).catch(() => []) : Promise.resolve([])
       ]);
 
       // Assign results

@@ -70,7 +70,8 @@ export default async function StudentInfoPage() {
         eduSystemsResult,
         rolePermissionsResult,
         generalPeriodsResult,
-        preschoolPeriodsResult
+        preschoolPeriodsResult,
+        destinationSchoolsResult
       ] = await Promise.all([
         // 1. dbAssignments
         user?.id && pAny.userCampusAssignment ? pAny.userCampusAssignment.findMany({ where: { userId: user.id } }).catch(() => []) : Promise.resolve([]),
@@ -141,6 +142,10 @@ export default async function StudentInfoPage() {
           where: activeYearId ? { academicYearId: activeYearId } : {},
           include: { batches: { select: { id: true, name: true, status: true } } },
           orderBy: { name: 'asc' }
+        }).catch(() => []) : Promise.resolve([]),
+        // 16. destinationSchools
+        pAny.destinationSchool ? pAny.destinationSchool.findMany({
+          orderBy: [{ level: "desc" }, { name: "asc" }]
         }).catch(() => []) : Promise.resolve([])
       ]);
 
