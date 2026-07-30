@@ -820,6 +820,8 @@ export async function GET(req: Request) {
 
       return NextResponse.json({
         student,
+        termScores: student.termScores || [],
+        termSummaries: student.termSummaries || [],
         achievements,
         orientation,
         projects,

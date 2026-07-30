@@ -769,6 +769,213 @@ export function StudentProfilesAdminClient({
                       </div>
                     )}
 
+                    {activeTab === "academic" && (() => {
+                      const rawScores = selectedStudent?.termScores || selectedStudent?.student?.termScores || []
+                      const rawSummaries = selectedStudent?.termSummaries || selectedStudent?.student?.termSummaries || []
+                      
+                      const subjectMap = new Map()
+                      rawScores.forEach((ts) => {
+                        const subName = ts.subject?.subjectName || "Môn học"
+                        const subCode = ts.subject?.subjectCode || ""
+                        const key = ts.subjectId || subName
+                        if (!subjectMap.has(key)) {
+                          subjectMap.set(key, { id: key, name: subName, code: subCode, hk1: null, hk2: null, cn: null })
+                        }
+                        const item = subjectMap.get(key)
+                        const displayVal = ts.score !== null && ts.score !== undefined ? ts.score : (ts.evaluationGrade || "—")
+                        if (ts.semester === "HK1") item.hk1 = displayVal
+                        else if (ts.semester === "HK2") item.hk2 = displayVal
+                        else if (ts.semester === "CN") item.cn = displayVal
+                      })
+                      const subjectRows = Array.from(subjectMap.values()).sort((a, b) => a.name.localeCompare(b.name, "vi"))
+
+                      const summariesMap = {}
+                      rawSummaries.forEach((s) => {
+                        if (s.semester) summariesMap[s.semester] = s
+                      })
+
+                      const hk1Summary = summariesMap["HK1"]
+                      const hk2Summary = summariesMap["HK2"]
+                      const cnSummary = summariesMap["CN"]
+
+                      const hasData = subjectRows.length > 0 || rawSummaries.length > 0
+
+                      const formatScoreBadge = (val) => {
+                        if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
+                        const num = typeof val === "number" ? val : parseFloat(val)
+                        if (!isNaN(num)) {
+                          let colorClass = "bg-slate-100 text-slate-700 border-slate-200"
+                          if (num >= 8.0) colorClass = "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          else if (num >= 6.5) colorClass = "bg-sky-50 text-sky-700 border-sky-200"
+                          else if (num >= 5.0) colorClass = "bg-amber-50 text-amber-700 border-amber-200"
+                          else colorClass = "bg-rose-50 text-rose-700 border-rose-200"
+                          return <span className={`inline-block px-2.5 py-0.5 rounded-lg text-xs font-black border ${colorClass}`}>{num.toFixed(1)}</span>
+                        }
+                        return <span className="inline-block px-2.5 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">{String(val)}</span>
+                      }
+
+                      return (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                          <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
+                            <div>
+                              <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide flex items-center gap-2">
+                                <FileText className="w-4 h-4 text-[#00A99D]" />
+                                Kết quả Học tập Văn hóa (MOET)
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-bold mt-0.5">Bảng điểm môn học &amp; Đánh giá xếp loại tổng kết định kỳ</p>
+                            </div>
+                            <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                              Năm học: {selectedStudent.yearName || activeYearName}
+                            </span>
+                          </div>
+
+                          {!hasData ? (
+                            <div className="text-center py-12 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 space-y-3">
+                              <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto opacity-80" />
+                              <div className="text-xs font-bold text-slate-600">Chưa có dữ liệu kết quả học tập MOET cho học sinh này.</div>
+                              <p className="text-[11px] text-slate-400 max-w-md mx-auto">
+                                Vui lòng import điểm từ file Excel tại mục <strong>Quản lý Đào tạo → Import KQHT</strong> để hiển thị bảng điểm tại đây.
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-6">
+                              <div className="space-y-3">
+                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <GraduationCap className="w-4 h-4 text-[#00A99D]" />
+                                  Tổng kết Đánh giá &amp; Xếp loại Học tập
+                                </h5>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 1</span>
+                                      <span className="text-[9px] font-extrabold text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
+                                    </div>
+                                    <div className="space-y-2 text-xs font-semibold text-slate-600">
+                                      <div className="flex justify-between items-center">
+                                        <span>Học lực / Đánh giá:</span>
+                                        <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.academicRating || "—"}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>Hạnh kiểm / Rèn luyện:</span>
+                                        <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.conductRating || "—"}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>Số ngày nghỉ:</span>
+                                        <span className="font-bold text-slate-700">
+                                          {hk1Summary?.absencesTotal !== undefined && hk1Summary?.absencesTotal !== null 
+                                            ? `${hk1Summary.absencesTotal} buổi (CP: ${hk1Summary.absencesPermitted || 0}, KP: ${hk1Summary.absencesUnpermitted || 0})`
+                                            : "—"}
+                                        </span>
+                                      </div>
+                                      {hk1Summary?.reward && (
+                                        <div className="pt-1 border-t border-slate-100 text-[11px]">
+                                          <span className="text-amber-600 font-bold">Khen thưởng: </span>
+                                          <span className="text-slate-800 font-bold">{hk1Summary.reward}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
+                                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                                      <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 2</span>
+                                      <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">HK2</span>
+                                    </div>
+                                    <div className="space-y-2 text-xs font-semibold text-slate-600">
+                                      <div className="flex justify-between items-center">
+                                        <span>Học lực / Đánh giá:</span>
+                                        <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.academicRating || "—"}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>Hạnh kiểm / Rèn luyện:</span>
+                                        <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.conductRating || "—"}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>Số ngày nghỉ:</span>
+                                        <span className="font-bold text-slate-700">
+                                          {hk2Summary?.absencesTotal !== undefined && hk2Summary?.absencesTotal !== null 
+                                            ? `${hk2Summary.absencesTotal} buổi (CP: ${hk2Summary.absencesPermitted || 0}, KP: ${hk2Summary.absencesUnpermitted || 0})`
+                                            : "—"}
+                                        </span>
+                                      </div>
+                                      {hk2Summary?.reward && (
+                                        <div className="pt-1 border-t border-slate-100 text-[11px]">
+                                          <span className="text-amber-600 font-bold">Khen thưởng: </span>
+                                          <span className="text-slate-800 font-bold">{hk2Summary.reward}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="bg-gradient-to-br from-teal-50/40 to-slate-50 border border-teal-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
+                                    <div className="flex items-center justify-between border-b border-teal-100 pb-2">
+                                      <span className="text-xs font-black text-[#00A99D] uppercase tracking-wider">Cả Năm</span>
+                                      <span className="text-[9px] font-extrabold text-white bg-[#00A99D] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
+                                    </div>
+                                    <div className="space-y-2 text-xs font-semibold text-slate-600">
+                                      <div className="flex justify-between items-center">
+                                        <span>Học lực Cả năm:</span>
+                                        <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.academicRating || "—"}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>Rèn luyện Cả năm:</span>
+                                        <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.conductRating || "—"}</span>
+                                      </div>
+                                      <div className="flex justify-between items-center">
+                                        <span>Kết quả Lên lớp:</span>
+                                        <span className="font-black text-emerald-700">
+                                          {cnSummary?.promoted === true ? "Được lên lớp" : (cnSummary?.promoted === false ? "Chưa đủ điều kiện" : "—")}
+                                        </span>
+                                      </div>
+                                      {cnSummary?.reward && (
+                                        <div className="pt-1 border-t border-teal-100 text-[11px]">
+                                          <span className="text-amber-600 font-bold">Danh hiệu / Khen thưởng: </span>
+                                          <span className="text-slate-800 font-extrabold">{cnSummary.reward}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-3">
+                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                                  Bảng điểm Chi tiết Các Môn học
+                                </h5>
+
+                                <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs bg-white">
+                                  <table className="w-full text-xs text-left border-collapse">
+                                    <thead>
+                                      <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                        <th className="py-3 px-4 text-center w-12">STT</th>
+                                        <th className="py-3 px-4">Tên Môn học</th>
+                                        <th className="py-3 px-4 text-center w-28">Học kỳ 1</th>
+                                        <th className="py-3 px-4 text-center w-28">Học kỳ 2</th>
+                                        <th className="py-3 px-4 text-center w-28">Cả năm</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                      {subjectRows.map((row, idx) => (
+                                        <tr key={row.id} className="hover:bg-slate-50/80 transition-all">
+                                          <td className="py-3 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
+                                          <td className="py-3 px-4 font-bold text-slate-800">{row.name}</td>
+                                          <td className="py-3 px-4 text-center">{formatScoreBadge(row.hk1)}</td>
+                                          <td className="py-3 px-4 text-center">{formatScoreBadge(row.hk2)}</td>
+                                          <td className="py-3 px-4 text-center">{formatScoreBadge(row.cn)}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+
                     {activeTab === "entrance" && (
                       <div className="space-y-6 animate-in fade-in duration-300">
                         <div className="border-b border-slate-100 pb-3 flex justify-between items-center">

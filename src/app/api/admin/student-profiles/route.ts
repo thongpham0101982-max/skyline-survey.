@@ -306,6 +306,8 @@ export async function GET(req: NextRequest) {
         
         // Exact structure expected by teacher tabs (profileData)
         student: s,
+        termScores: s.termScores || [],
+        termSummaries: s.termSummaries || [],
         commitment: s.learningCommitments?.[0] || null,
         orientation: s.careerOrientations?.[0] || null,
         achievements: s.achievements || [],
