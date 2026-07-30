@@ -1142,7 +1142,7 @@ export default function TeacherStudentProfilePage() {
                                       )}
                                       {cnSummary?.reward && (
                                         <div className="pt-1 border-t border-teal-100 text-[11px]">
-                                          <span className="text-amber-600 font-black">Danh hiệu / Khen thưởng: </span>
+                                          <span className="text-amber-600 font-black">Danh hiệu / Khen thưởng Cuối năm: </span>
                                           <span className="text-slate-800 font-black bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block mt-1 shadow-2xs">{cnSummary.reward}</span>
                                         </div>
                                       )}
