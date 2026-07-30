@@ -342,7 +342,7 @@ export function StudentInfoClient({
   const [studentSearchQuery, setStudentSearchQuery] = useState("");
 
   const selectedFormPeriod = useMemo(() => {
-    return [...generalPeriods, ...preschoolPeriods].find(p => p.id === formState.periodId);
+    return [...(generalPeriods || []), ...(preschoolPeriods || [])].find(p => p.id === formState.periodId);
   }, [formState.periodId, generalPeriods, preschoolPeriods]);
 
   const isChuyenHe = useMemo(() => {

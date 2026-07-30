@@ -172,33 +172,25 @@ export default async function StudentInfoPage() {
 
       if (activeYearId) {
         generalStudents = await pAny.inputAssessmentStudent.findMany({
-          where: {
-            period: { academicYearId: activeYearId }
-          },
+          where: { period: { academicYearId: activeYearId } },
           include: {
             period: { select: { id: true, name: true, academicYearId: true } },
             batch: { select: { id: true, name: true, startDate: true } },
             enrollmentClass: { select: { className: true } },
-            scores: {
-              include: {
-                subject: true
-              }
-            }
+            scores: { include: { subject: true } }
           },
           orderBy: { createdAt: 'desc' }
-        });
+        }).catch((e: any) => { console.error("Error fetching generalStudents:", e); return []; });
 
         preschoolStudents = await pAny.preschoolInputAssessmentStudent.findMany({
-          where: {
-            period: { academicYearId: activeYearId }
-          },
+          where: { period: { academicYearId: activeYearId } },
           include: {
             period: { select: { id: true, name: true, academicYearId: true } },
             batch: { select: { id: true, name: true, startDate: true } },
             enrollmentClass: { select: { className: true } }
           },
           orderBy: { createdAt: 'desc' }
-        });
+        }).catch((e: any) => { console.error("Error fetching preschoolStudents:", e); return []; });
 
         if (pAny.class) {
           const uniqueGrades = await pAny.class.findMany({

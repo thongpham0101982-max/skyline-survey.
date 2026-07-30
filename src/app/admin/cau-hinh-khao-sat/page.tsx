@@ -148,7 +148,7 @@ export default async function SurveyConfigPage({ searchParams }: { searchParams:
       configs = configsResult;
       eduSystems = eduSystemsResult;
       rolePermissions = rolePermissionsResult;
-      destinationSchools = destinationSchoolsResult;
+      destinationSchools = destinationSchoolsResult || [];
 
       if (dbAssignments && dbAssignments.length > 0) {
         liveCampusIds = dbAssignments.map((a: any) => a.campusId);
