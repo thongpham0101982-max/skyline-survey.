@@ -48,7 +48,10 @@ export async function createDestinationSchoolAction(data: { name: string, code: 
       data: { name, code, level, schoolType }
     })
 
-    revalidatePath("/admin/truong-lien-ket")
+        revalidatePath("/admin/truong-lien-ket")
+    revalidatePath("/admin/student-info")
+    revalidatePath("/admin/cau-hinh-khao-sat")
+    revalidatePath("/admin/xet-duyet-ket-qua")
     revalidatePath("/admin/student-transfers")
     return { success: true }
   } catch (e: any) {
@@ -90,7 +93,10 @@ export async function updateDestinationSchoolAction(id: string, data: { name: st
       data: { name, code, level, schoolType }
     })
 
-    revalidatePath("/admin/truong-lien-ket")
+        revalidatePath("/admin/truong-lien-ket")
+    revalidatePath("/admin/student-info")
+    revalidatePath("/admin/cau-hinh-khao-sat")
+    revalidatePath("/admin/xet-duyet-ket-qua")
     revalidatePath("/admin/student-transfers")
     return { success: true }
   } catch (e: any) {
@@ -108,7 +114,10 @@ export async function deleteDestinationSchoolAction(id: string) {
       where: { id }
     })
 
-    revalidatePath("/admin/truong-lien-ket")
+        revalidatePath("/admin/truong-lien-ket")
+    revalidatePath("/admin/student-info")
+    revalidatePath("/admin/cau-hinh-khao-sat")
+    revalidatePath("/admin/xet-duyet-ket-qua")
     revalidatePath("/admin/student-transfers")
     return { success: true }
   } catch (e: any) {
@@ -219,7 +228,10 @@ export async function importDestinationSchoolsAction(payload: Array<{ name: stri
       }
     }
 
-    revalidatePath("/admin/truong-lien-ket")
+        revalidatePath("/admin/truong-lien-ket")
+    revalidatePath("/admin/student-info")
+    revalidatePath("/admin/cau-hinh-khao-sat")
+    revalidatePath("/admin/xet-duyet-ket-qua")
     revalidatePath("/admin/student-transfers")
     return { success: true, count: addedCount }
   } catch (e: any) {

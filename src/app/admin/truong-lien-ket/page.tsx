@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { getDestinationSchoolsAction } from "./actions"
 import { DestinationSchoolsClient } from "./client"
 

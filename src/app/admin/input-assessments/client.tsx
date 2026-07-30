@@ -2797,10 +2797,17 @@ ${reportForm.directorNote}`;
     return false;
   }, [sForm.grade]);
 
-  const filteredDestinationSchools = useMemo(() => {
+    const filteredDestinationSchools = useMemo(() => {
     if (!destinationSchools || destinationSchools.length === 0) return [];
-    const targetLevel = isPreschoolStudent ? ["MAM_NON", "Mầm non", "MẦM NON"] : ["PHO_THONG", "Phổ thông", "PHỔ THÔNG"];
-    const matched = destinationSchools.filter((s: any) => targetLevel.includes(s.level));
+    const isPre = isPreschoolStudent;
+    const matched = destinationSchools.filter((s: any) => {
+      const lvl = (s.level || "").toUpperCase();
+      if (isPre) {
+        return lvl.includes("MAM") || lvl.includes("MẦM") || lvl === "MAM_NON";
+      } else {
+        return lvl.includes("PHO") || lvl.includes("PHỔ") || lvl === "PHO_THONG" || lvl.includes("TIEU") || lvl.includes("THCS") || lvl.includes("THPT");
+      }
+    });
     return matched.length > 0 ? matched : destinationSchools;
   }, [destinationSchools, isPreschoolStudent]);
   const [originalKqgd, setOriginalKqgd] = useState<string>("");
