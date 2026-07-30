@@ -769,16 +769,28 @@ export function StudentProfilesAdminClient({
                       </div>
                     )}
 
-                                        {activeTab === "academic" && (() => {
+                                                            {activeTab === "academic" && (() => {
                       const rawScores = selectedStudent?.termScores || selectedStudent?.student?.termScores || []
                       const rawSummaries = selectedStudent?.termSummaries || selectedStudent?.student?.termSummaries || []
                       
-                      const isPrimary = selectedStudent?.class?.level === "PRIMARY" || 
+                      const classCodeStr = String(selectedStudent?.class?.classCode || "")
+                      const classGradeStr = String(selectedStudent?.class?.grade || "")
+                      
+                      const isPrimary = schoolBlock === "preschool" ||
+                                        selectedStudent?.class?.level === "PRIMARY" || 
                                         selectedStudent?.class?.level === "Tieu hoc" || 
-                                        ["1", "2", "3", "4", "5"].includes(String(selectedStudent?.class?.grade || "")) || 
-                                        schoolBlock === "preschool"
+                                        ["1", "2", "3", "4", "5"].includes(classGradeStr) ||
+                                        ["1", "2", "3", "4", "5"].some(g => classCodeStr.startsWith(g + "."))
 
                       let extractedPrimaryReward = ""
+
+                      const isCheckSymbol = (v) => {
+                        if (!v || v === "—") return false
+                        const s = String(v).trim()
+                        if (["✓", "", "v", "V", "x", "X", "1", "true", "True"].includes(s)) return true
+                        const code = s.charCodeAt(0)
+                        return code === 61692 || code === 10003 || code === 10004
+                      }
 
                       const subjectMap = new Map()
                       rawScores.forEach((ts) => {
@@ -801,7 +813,13 @@ export function StudentProfilesAdminClient({
                           if (["hoàn thành", "hoàn thành tốt", "hoàn thành xuất sắc", "khen thưởng", "khen thưởng cấp trường"].includes(norm)) {
                             const val = row.cn || row.hk2 || row.hk1
                             if (val && val !== "—") {
-                              extractedPrimaryReward = row.name
+                              if (norm.includes("xuất sắc") && (isCheckSymbol(val) || String(val).trim() === "T")) {
+                                extractedPrimaryReward = "Hoàn thành xuất sắc"
+                              } else if (norm.includes("tốt") && (isCheckSymbol(val) || String(val).trim() === "T")) {
+                                if (!extractedPrimaryReward) extractedPrimaryReward = "Hoàn thành tốt"
+                              } else if (isCheckSymbol(val)) {
+                                if (!extractedPrimaryReward) extractedPrimaryReward = row.name
+                              }
                             }
                             return false
                           }
@@ -825,7 +843,7 @@ export function StudentProfilesAdminClient({
                       const formatScoreBadge = (val) => {
                         if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
                         const str = String(val).trim()
-                        if (["✓", "", "v", "V", "x", "X", "1", "true", "True"].includes(str)) {
+                        if (isCheckSymbol(str)) {
                           return <span className="inline-flex items-center justify-center bg-teal-50 text-[#00A99D] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
                         }
                         if (str === "T" || str === "Tốt") {
@@ -887,13 +905,13 @@ export function StudentProfilesAdminClient({
                                       <span className="text-[9px] font-extrabold text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                      {(!isPrimary || hk1Summary?.academicRating) && (
+                                      {(!isPrimary || (hk1Summary?.academicRating && hk1Summary.academicRating !== "—")) && (
                                         <div className="flex justify-between items-center">
                                           <span>Học lực / Đánh giá:</span>
                                           <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.academicRating || "—"}</span>
                                         </div>
                                       )}
-                                      {(!isPrimary || hk1Summary?.conductRating) && (
+                                      {(!isPrimary || (hk1Summary?.conductRating && hk1Summary.conductRating !== "—")) && (
                                         <div className="flex justify-between items-center">
                                           <span>Hạnh kiểm / Rèn luyện:</span>
                                           <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.conductRating || "—"}</span>
@@ -922,13 +940,13 @@ export function StudentProfilesAdminClient({
                                       <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">HK2</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                      {(!isPrimary || hk2Summary?.academicRating) && (
+                                      {(!isPrimary || (hk2Summary?.academicRating && hk2Summary.academicRating !== "—")) && (
                                         <div className="flex justify-between items-center">
                                           <span>Học lực / Đánh giá:</span>
                                           <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.academicRating || "—"}</span>
                                         </div>
                                       )}
-                                      {(!isPrimary || hk2Summary?.conductRating) && (
+                                      {(!isPrimary || (hk2Summary?.conductRating && hk2Summary.conductRating !== "—")) && (
                                         <div className="flex justify-between items-center">
                                           <span>Hạnh kiểm / Rèn luyện:</span>
                                           <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.conductRating || "—"}</span>
@@ -957,13 +975,13 @@ export function StudentProfilesAdminClient({
                                       <span className="text-[9px] font-extrabold text-white bg-[#00A99D] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                      {(!isPrimary || cnSummary?.academicRating) && (
+                                      {(!isPrimary || (cnSummary?.academicRating && cnSummary.academicRating !== "—")) && (
                                         <div className="flex justify-between items-center">
                                           <span>Học lực Cả năm:</span>
                                           <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.academicRating || "—"}</span>
                                         </div>
                                       )}
-                                      {(!isPrimary || cnSummary?.conductRating) && (
+                                      {(!isPrimary || (cnSummary?.conductRating && cnSummary.conductRating !== "—")) && (
                                         <div className="flex justify-between items-center">
                                           <span>Rèn luyện Cả năm:</span>
                                           <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.conductRating || "—"}</span>
@@ -972,7 +990,7 @@ export function StudentProfilesAdminClient({
                                       {finalReward && (
                                         <div className="pt-1 border-t border-teal-100 text-[11px]">
                                           <span className="text-amber-600 font-black">Danh hiệu / Khen thưởng: </span>
-                                          <span className="text-slate-800 font-black bg-amber-50 border border-amber-200 px-2 py-0.5 rounded inline-block mt-0.5">{finalReward}</span>
+                                          <span className="text-slate-800 font-black bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block mt-1 shadow-2xs">{finalReward}</span>
                                         </div>
                                       )}
                                     </div>
