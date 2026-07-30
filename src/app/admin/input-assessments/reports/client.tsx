@@ -825,7 +825,7 @@ export function ReportsClient({
   };
 
   // Student Export Tab States
-  const [cPeriodId, setCPeriodId] = useState("");
+  const [cPeriodId, setCPeriodId] = useState("all");
   const [cBatchId, setCBatchId] = useState("all");
   const [cCampusId, setCCampusId] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -2888,6 +2888,7 @@ export function ReportsClient({
                 </span>
                 <div className="relative">
                   <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }} className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[220px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm">
+                    <option value="all">Tất cả các kỳ</option>
                     {activePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     {activePeriods.length === 0 && <option value="">Không có kỳ nào</option>}
                   </select>
