@@ -10,6 +10,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: false, error: "Missing academicYearId" }, { status: 400 });
     }
 
+    // Fetch all Activity Groups registered in categories
+    const allActivityGroups = await prisma.activityCategory.findMany({
+      where: { type: "GROUP", status: "ACTIVE" },
+      orderBy: { sortOrder: "asc" }
+    });
+
     // Fetch GVBM Activities (ActivityRecord)
     const activityRecords = await prisma.activityRecord.findMany({
       where: { academicYearId },
@@ -115,6 +121,64 @@ export async function GET(request: Request) {
       studentCount: g.studentCount.size
     })).sort((a, b) => a.grade.localeCompare(b.grade, undefined, { numeric: true }));
 
+    // Group by Activity Group (Nhóm hoạt động)
+    const groupStatsMap: Record<string, { code: string, name: string, gvbmCount: number, gvcnCount: number, studentCount: Set<string> }> = {};
+
+    allActivityGroups.forEach(g => {
+      groupStatsMap[g.id] = {
+        code: g.code,
+        name: g.name,
+        gvbmCount: 0,
+        gvcnCount: 0,
+        studentCount: new Set<string>()
+      };
+    });
+
+    activityRecords.forEach(record => {
+      const group = record.catalog?.group;
+      const key = group?.id || "OTHER";
+      if (!groupStatsMap[key]) {
+        groupStatsMap[key] = {
+          code: group?.code || "KHAC",
+          name: group?.name || "Chưa phân nhóm",
+          gvbmCount: 0,
+          gvcnCount: 0,
+          studentCount: new Set<string>()
+        };
+      }
+      groupStatsMap[key].gvbmCount += 1;
+      record.participants.forEach(p => {
+        groupStatsMap[key].studentCount.add(p.studentId);
+      });
+    });
+
+    projectExperiences.forEach(pe => {
+      const matchedGroup = allActivityGroups.find(g => 
+        (pe as any).category && (g.name.toLowerCase().includes((pe as any).category.toLowerCase()) || g.code.toLowerCase() === (pe as any).category.toLowerCase())
+      );
+      const key = matchedGroup?.id || "OTHER";
+      if (!groupStatsMap[key]) {
+        groupStatsMap[key] = {
+          code: matchedGroup?.code || "GVCN",
+          name: matchedGroup?.name || "Dự án GVCN / Khác",
+          gvbmCount: 0,
+          gvcnCount: 0,
+          studentCount: new Set<string>()
+        };
+      }
+      groupStatsMap[key].gvcnCount += 1;
+      groupStatsMap[key].studentCount.add(pe.studentId);
+    });
+
+    const statsByGroup = Object.values(groupStatsMap).map(g => ({
+      code: g.code,
+      name: g.name,
+      gvbmCount: g.gvbmCount,
+      gvcnCount: g.gvcnCount,
+      totalCount: g.gvbmCount + g.gvcnCount,
+      studentCount: g.studentCount.size
+    })).sort((a, b) => b.totalCount - a.totalCount);
+
     // Group by GVBM
     const gvbmStats: Record<string, { teacherName: string, activityCount: number, studentCount: Set<string> }> = {};
     activityRecords.forEach(record => {
@@ -181,6 +245,7 @@ export async function GET(request: Request) {
           totalGvbm: gvbmTeacherNames.size,
         },
         statsByGrade,
+        statsByGroup,
         statsByGvbm,
         statsByGvcn,
         statsByActivity

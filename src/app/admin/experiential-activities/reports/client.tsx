@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { ExperientialTabs } from '@/components/ExperientialTabs'
 import { 
   Calendar, Layers, Award, ClipboardList, Users, User, Landmark, 
-  BarChart3, RefreshCw, AlertCircle, FileBarChart 
+  BarChart3, RefreshCw, AlertCircle, FileBarChart, FolderTree 
 } from 'lucide-react'
 
 interface AcademicYear {
@@ -23,7 +23,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
   const [error, setError] = useState<string | null>(null)
   
   const [stats, setStats] = useState<any>(null)
-  const [activeReportTab, setActiveReportTab] = useState<'grade' | 'gvbm' | 'gvcn' | 'activity'>('grade')
+  const [activeReportTab, setActiveReportTab] = useState<'grade' | 'group' | 'gvbm' | 'gvcn' | 'activity'>('grade')
 
   const fetchStats = async () => {
     setLoading(true)
@@ -52,6 +52,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
 
   const reportTabs = [
     { id: 'grade', label: 'Thống kê Khối lớp', icon: Layers },
+    { id: 'group', label: 'Thống kê Nhóm hoạt động', icon: FolderTree },
     { id: 'gvbm', label: 'Thống kê GVBM', icon: User },
     { id: 'gvcn', label: 'Thống kê GVCN', icon: Users },
     { id: 'activity', label: 'Chi tiết Hoạt động', icon: Award }
@@ -228,6 +229,57 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                                 <td className="py-3.5 px-4 font-black text-slate-800 text-sm">Khối {g.grade}</td>
                                 <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{g.gvbmCount}</td>
                                 <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{g.gvcbCount}</td>
+                                <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{g.totalCount}</td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black">
+                                    {g.studentCount} học sinh
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. Tab Nhóm hoạt động */}
+                {activeReportTab === 'group' && (
+                  <div className="space-y-4 animate-in fade-in duration-200">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                        Thống kê Hoạt động theo Nhóm phân loại
+                      </h3>
+                      <span className="text-xs font-bold text-slate-400">
+                        Tổng số nhóm: {stats.statsByGroup?.length || 0}
+                      </span>
+                    </div>
+                    
+                    {!stats.statsByGroup || stats.statsByGroup.length === 0 ? (
+                      <div className="text-center py-12 text-slate-400 text-xs italic">Không tìm thấy số liệu theo nhóm hoạt động.</div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-xs">
+                        <table className="w-full text-xs text-left border-collapse">
+                          <thead>
+                            <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                              <th className="py-3.5 px-4 text-center w-16">STT</th>
+                              <th className="py-3.5 px-4 w-28">Mã nhóm</th>
+                              <th className="py-3.5 px-4">Tên nhóm hoạt động</th>
+                              <th className="py-3.5 px-4 text-center">Hoạt động do GVBM</th>
+                              <th className="py-3.5 px-4 text-center">Dự án do GVCN</th>
+                              <th className="py-3.5 px-4 text-center">Tổng số Hoạt động</th>
+                              <th className="py-3.5 px-4 text-center">Học sinh tham gia</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                            {stats.statsByGroup.map((g: any, idx: number) => (
+                              <tr key={g.code || idx} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
+                                <td className="py-3.5 px-4 font-mono font-bold text-[#00A99D]">{g.code}</td>
+                                <td className="py-3.5 px-4 font-black text-slate-800 text-sm">{g.name}</td>
+                                <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{g.gvbmCount}</td>
+                                <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{g.gvcnCount}</td>
                                 <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{g.totalCount}</td>
                                 <td className="py-3.5 px-4 text-center">
                                   <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black">
