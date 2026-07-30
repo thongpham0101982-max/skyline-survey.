@@ -882,7 +882,7 @@ export default function TeacherStudentProfilePage() {
                       </div>
                     )}
 
-                                                            {activeTab === "academic" && (() => {
+                                                                                {activeTab === "academic" && (() => {
                       const rawScores = selectedStudent?.termScores || selectedStudent?.student?.termScores || profileData?.student?.termScores || []
                       const rawSummaries = selectedStudent?.termSummaries || selectedStudent?.student?.termSummaries || profileData?.student?.termSummaries || []
                       
@@ -895,8 +895,6 @@ export default function TeacherStudentProfilePage() {
                                         ["1", "2", "3", "4", "5"].includes(classGradeStr) ||
                                         ["1", "2", "3", "4", "5"].some(g => classCodeStr.startsWith(g + "."))
 
-                      let extractedPrimaryReward = ""
-
                       const isCheckSymbol = (v) => {
                         if (!v || v === "—") return false
                         const s = String(v).trim()
@@ -905,39 +903,61 @@ export default function TeacherStudentProfilePage() {
                         return code === 61692 || code === 10003 || code === 10004
                       }
 
+                      let primaryKqgdHK1 = ""
+                      let primaryKqgdHK2 = ""
+                      let primaryKqgdCN = ""
+
+                      const isKqgdSubject = (code, name) => {
+                        const c = String(code || "").toUpperCase()
+                        const n = String(name || "").trim().toLowerCase()
+                        return c === "HOAN_THANH_XUAT_SAC" || c === "HOAN_THANH_TOT" || c === "HOAN_THANH" || c === "CHUA_HOAN_THANH" ||
+                               n === "hoàn thành xuất sắc" || n === "hoàn thành tốt" || n === "hoàn thành" || n === "chưa hoàn thành" ||
+                               n === "khen thưởng" || n === "khen thưởng cấp trường"
+                      }
+
                       const subjectMap = new Map()
                       rawScores.forEach((ts) => {
                         const subName = ts.subject?.subjectName || "Môn học"
                         const subCode = ts.subject?.subjectCode || ""
+                        const displayVal = ts.score !== null && ts.score !== undefined ? ts.score : (ts.evaluationGrade || "—")
+
+                        // Extract Primary KQGD if applicable
+                        if (displayVal && displayVal !== "—") {
+                          const isHit = isCheckSymbol(displayVal) || String(displayVal).trim() === "T" || String(displayVal).trim() === "1"
+                          if (isHit) {
+                            let levelName = ""
+                            const normN = subName.trim().toLowerCase()
+                            const normC = subCode.trim().toUpperCase()
+                            if (normC === "HOAN_THANH_XUAT_SAC" || normN.includes("xuất sắc")) {
+                              levelName = "Hoàn thành xuất sắc"
+                            } else if (normC === "HOAN_THANH_TOT" || normN.includes("hoàn thành tốt")) {
+                              levelName = "Hoàn thành tốt"
+                            } else if (normC === "HOAN_THANH" || normN === "hoàn thành") {
+                              levelName = "Hoàn thành"
+                            } else if (normC === "CHUA_HOAN_THANH" || normN.includes("chưa hoàn thành")) {
+                              levelName = "Chưa hoàn thành"
+                            }
+
+                            if (levelName) {
+                              if (ts.semester === "CN") primaryKqgdCN = levelName
+                              else if (ts.semester === "HK2") primaryKqgdHK2 = levelName
+                              else if (ts.semester === "HK1") primaryKqgdHK1 = levelName
+                            }
+                          }
+                        }
+
                         const key = ts.subjectId || subName
                         if (!subjectMap.has(key)) {
                           subjectMap.set(key, { id: key, name: subName, code: subCode, hk1: null, hk2: null, cn: null })
                         }
                         const item = subjectMap.get(key)
-                        const displayVal = ts.score !== null && ts.score !== undefined ? ts.score : (ts.evaluationGrade || "—")
                         if (ts.semester === "HK1") item.hk1 = displayVal
                         else if (ts.semester === "HK2") item.hk2 = displayVal
                         else if (ts.semester === "CN") item.cn = displayVal
                       })
 
                       const subjectRows = Array.from(subjectMap.values())
-                        .filter((row) => {
-                          const norm = row.name.trim().toLowerCase()
-                          if (["hoàn thành", "hoàn thành tốt", "hoàn thành xuất sắc", "khen thưởng", "khen thưởng cấp trường"].includes(norm)) {
-                            const val = row.cn || row.hk2 || row.hk1
-                            if (val && val !== "—") {
-                              if (norm.includes("xuất sắc") && (isCheckSymbol(val) || String(val).trim() === "T")) {
-                                extractedPrimaryReward = "Hoàn thành xuất sắc"
-                              } else if (norm.includes("tốt") && (isCheckSymbol(val) || String(val).trim() === "T")) {
-                                if (!extractedPrimaryReward) extractedPrimaryReward = "Hoàn thành tốt"
-                              } else if (isCheckSymbol(val)) {
-                                if (!extractedPrimaryReward) extractedPrimaryReward = row.name
-                              }
-                            }
-                            return false
-                          }
-                          return true
-                        })
+                        .filter((row) => !isKqgdSubject(row.code, row.name))
                         .sort((a, b) => a.name.localeCompare(b.name, "vi"))
 
                       const summariesMap = {}
@@ -949,9 +969,11 @@ export default function TeacherStudentProfilePage() {
                       const hk2Summary = summariesMap["HK2"]
                       const cnSummary = summariesMap["CN"]
 
-                      const finalReward = cnSummary?.reward || extractedPrimaryReward || hk2Summary?.reward || hk1Summary?.reward
+                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating
+                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating
+                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || primaryKqgdHK2 || primaryKqgdHK1
 
-                      const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalReward
+                      const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
                       const formatScoreBadge = (val) => {
                         if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
@@ -1012,23 +1034,29 @@ export default function TeacherStudentProfilePage() {
                                 </h5>
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  {/* HK1 Card */}
                                   <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 1</span>
                                       <span className="text-[9px] font-extrabold text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                      {(!isPrimary || (hk1Summary?.academicRating && hk1Summary.academicRating !== "—")) && (
+                                      {isPrimary ? (
                                         <div className="flex justify-between items-center">
-                                          <span>Học lực / Đánh giá:</span>
-                                          <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.academicRating || "—"}</span>
+                                          <span>Đánh giá KQGD:</span>
+                                          <span className="font-extrabold text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{finalKqgdHK1 || "—"}</span>
                                         </div>
-                                      )}
-                                      {(!isPrimary || (hk1Summary?.conductRating && hk1Summary.conductRating !== "—")) && (
-                                        <div className="flex justify-between items-center">
-                                          <span>Hạnh kiểm / Rèn luyện:</span>
-                                          <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.conductRating || "—"}</span>
-                                        </div>
+                                      ) : (
+                                        <>
+                                          <div className="flex justify-between items-center">
+                                            <span>Học lực / Đánh giá:</span>
+                                            <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.academicRating || "—"}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span>Hạnh kiểm / Rèn luyện:</span>
+                                            <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.conductRating || "—"}</span>
+                                          </div>
+                                        </>
                                       )}
                                       <div className="flex justify-between items-center">
                                         <span>Số ngày nghỉ:</span>
@@ -1047,23 +1075,29 @@ export default function TeacherStudentProfilePage() {
                                     </div>
                                   </div>
 
+                                  {/* HK2 Card */}
                                   <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 2</span>
                                       <span className="text-[9px] font-extrabold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">HK2</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                      {(!isPrimary || (hk2Summary?.academicRating && hk2Summary.academicRating !== "—")) && (
+                                      {isPrimary ? (
                                         <div className="flex justify-between items-center">
-                                          <span>Học lực / Đánh giá:</span>
-                                          <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.academicRating || "—"}</span>
+                                          <span>Đánh giá KQGD:</span>
+                                          <span className="font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">{finalKqgdHK2 || "—"}</span>
                                         </div>
-                                      )}
-                                      {(!isPrimary || (hk2Summary?.conductRating && hk2Summary.conductRating !== "—")) && (
-                                        <div className="flex justify-between items-center">
-                                          <span>Hạnh kiểm / Rèn luyện:</span>
-                                          <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.conductRating || "—"}</span>
-                                        </div>
+                                      ) : (
+                                        <>
+                                          <div className="flex justify-between items-center">
+                                            <span>Học lực / Đánh giá:</span>
+                                            <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.academicRating || "—"}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span>Hạnh kiểm / Rèn luyện:</span>
+                                            <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk2Summary?.conductRating || "—"}</span>
+                                          </div>
+                                        </>
                                       )}
                                       <div className="flex justify-between items-center">
                                         <span>Số ngày nghỉ:</span>
@@ -1082,28 +1116,34 @@ export default function TeacherStudentProfilePage() {
                                     </div>
                                   </div>
 
+                                  {/* CN Card */}
                                   <div className="bg-gradient-to-br from-teal-50/40 to-slate-50 border border-teal-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-teal-100 pb-2">
                                       <span className="text-xs font-black text-[#00A99D] uppercase tracking-wider">Cả Năm</span>
                                       <span className="text-[9px] font-extrabold text-white bg-[#00A99D] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                      {(!isPrimary || (cnSummary?.academicRating && cnSummary.academicRating !== "—")) && (
+                                      {isPrimary ? (
                                         <div className="flex justify-between items-center">
-                                          <span>Học lực Cả năm:</span>
-                                          <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.academicRating || "—"}</span>
+                                          <span>Đánh giá KQGD Cả năm:</span>
+                                          <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN || "—"}</span>
                                         </div>
+                                      ) : (
+                                        <>
+                                          <div className="flex justify-between items-center">
+                                            <span>Học lực Cả năm:</span>
+                                            <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.academicRating || "—"}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span>Rèn luyện Cả năm:</span>
+                                            <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.conductRating || "—"}</span>
+                                          </div>
+                                        </>
                                       )}
-                                      {(!isPrimary || (cnSummary?.conductRating && cnSummary.conductRating !== "—")) && (
-                                        <div className="flex justify-between items-center">
-                                          <span>Rèn luyện Cả năm:</span>
-                                          <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.conductRating || "—"}</span>
-                                        </div>
-                                      )}
-                                      {finalReward && (
+                                      {cnSummary?.reward && (
                                         <div className="pt-1 border-t border-teal-100 text-[11px]">
                                           <span className="text-amber-600 font-black">Danh hiệu / Khen thưởng: </span>
-                                          <span className="text-slate-800 font-black bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block mt-1 shadow-2xs">{finalReward}</span>
+                                          <span className="text-slate-800 font-black bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block mt-1 shadow-2xs">{cnSummary.reward}</span>
                                         </div>
                                       )}
                                     </div>
