@@ -41,7 +41,6 @@ export default async function StudentInfoPage() {
   let preschoolStudents: any[] = [];
   let generalPeriods: any[] = [];
   let preschoolPeriods: any[] = [];
-  let destinationSchools: any[] = [];
   let activeYear: any = null;
 
   // --- FETCH MẦM NON RIÊNG ---
@@ -159,7 +158,6 @@ export default async function StudentInfoPage() {
       rolePermissions = rolePermissionsResult;
       generalPeriods = generalPeriodsResult;
       preschoolPeriods = preschoolPeriodsResult;
-      destinationSchools = destinationSchoolsResult || [];
 
       if (dbAssignments && dbAssignments.length > 0) {
         liveCampusIds = dbAssignments.map((a: any) => a.campusId);
@@ -255,7 +253,6 @@ export default async function StudentInfoPage() {
         initialPreschoolStudents={safeJson(preschoolStudents)} 
         generalPeriods={safeJson(generalPeriods)}
         preschoolPeriods={safeJson(preschoolPeriods)}
-        destinationSchools={safeJson(destinationSchools)}
         activeYearName={activeYear ? activeYear.name : ""}
         activeYearId={activeYear ? activeYear.id : ""}
         configs={safeJson(configs)}
