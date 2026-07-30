@@ -120,53 +120,53 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               
               {/* Card 1: Total Activities */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/60 flex items-center justify-between hover:shadow-md hover:border-slate-300 transition-all group">
+              <div className="bg-gradient-to-br from-teal-50/90 via-emerald-50/30 to-teal-100/60 p-6 rounded-3xl shadow-xs border border-teal-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Tổng số Hoạt động</span>
-                  <span className="text-3xl font-black text-slate-800 block group-hover:text-[#00A99D] transition-colors">
+                  <span className="text-[10px] font-extrabold text-teal-800 uppercase tracking-widest block">Tổng số Hoạt động</span>
+                  <span className="text-3xl font-black text-teal-950 block">
                     {stats.summary.totalActivities}
                   </span>
                 </div>
-                <div className="p-4 bg-teal-50 text-[#00A99D] rounded-2xl group-hover:scale-110 transition-transform">
+                <div className="p-4 bg-[#00A99D] text-white rounded-2xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
                   <Award className="w-6 h-6" />
                 </div>
               </div>
 
               {/* Card 2: Total Grades */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/60 flex items-center justify-between hover:shadow-md hover:border-slate-300 transition-all group">
+              <div className="bg-gradient-to-br from-indigo-50/90 via-purple-50/30 to-indigo-100/60 p-6 rounded-3xl shadow-xs border border-indigo-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Khối lớp tham gia</span>
-                  <span className="text-3xl font-black text-slate-800 block group-hover:text-indigo-600 transition-colors">
+                  <span className="text-[10px] font-extrabold text-indigo-800 uppercase tracking-widest block">Khối lớp tham gia</span>
+                  <span className="text-3xl font-black text-indigo-950 block">
                     {stats.summary.totalGrades}
                   </span>
                 </div>
-                <div className="p-4 bg-indigo-50 text-indigo-600 rounded-2xl group-hover:scale-110 transition-transform">
+                <div className="p-4 bg-indigo-600 text-white rounded-2xl shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
                   <Layers className="w-6 h-6" />
                 </div>
               </div>
 
               {/* Card 3: GVCN */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/60 flex items-center justify-between hover:shadow-md hover:border-slate-300 transition-all group">
+              <div className="bg-gradient-to-br from-pink-50/90 via-rose-50/30 to-pink-100/60 p-6 rounded-3xl shadow-xs border border-pink-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Tổng GVCN tham gia</span>
-                  <span className="text-3xl font-black text-slate-800 block group-hover:text-pink-600 transition-colors">
+                  <span className="text-[10px] font-extrabold text-pink-800 uppercase tracking-widest block">Tổng GVCN tham gia</span>
+                  <span className="text-3xl font-black text-pink-950 block">
                     {stats.summary.totalGvcn}
                   </span>
                 </div>
-                <div className="p-4 bg-pink-50 text-pink-600 rounded-2xl group-hover:scale-110 transition-transform">
+                <div className="p-4 bg-pink-600 text-white rounded-2xl shadow-md shadow-pink-500/20 group-hover:scale-110 transition-transform">
                   <Users className="w-6 h-6" />
                 </div>
               </div>
 
               {/* Card 4: GVBM */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/60 flex items-center justify-between hover:shadow-md hover:border-slate-300 transition-all group">
+              <div className="bg-gradient-to-br from-sky-50/90 via-blue-50/30 to-sky-100/60 p-6 rounded-3xl shadow-xs border border-sky-200/80 flex items-center justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
                 <div className="space-y-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Tổng GVBM tham gia</span>
-                  <span className="text-3xl font-black text-slate-800 block group-hover:text-sky-600 transition-colors">
+                  <span className="text-[10px] font-extrabold text-sky-800 uppercase tracking-widest block">Tổng GVBM tham gia</span>
+                  <span className="text-3xl font-black text-sky-950 block">
                     {stats.summary.totalGvbm}
                   </span>
                 </div>
-                <div className="p-4 bg-sky-50 text-sky-600 rounded-2xl group-hover:scale-110 transition-transform">
+                <div className="p-4 bg-sky-600 text-white rounded-2xl shadow-md shadow-sky-500/20 group-hover:scale-110 transition-transform">
                   <User className="w-6 h-6" />
                 </div>
               </div>
