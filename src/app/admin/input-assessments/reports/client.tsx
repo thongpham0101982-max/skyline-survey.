@@ -672,12 +672,13 @@ export function ReportsClient({
 
 
   const activePeriods = useMemo(() => {
-    const raw = selectedLevel === "preschool" ? preschoolPeriods : generalPeriods;
+    const raw = (selectedLevel === "preschool" ? preschoolPeriods : generalPeriods) || [];
+    if (!Array.isArray(raw)) return [];
     return raw
-      .filter((p: any) => p.academicYearId === yearId)
+      .filter((p: any) => p && (!yearId || p.academicYearId === yearId))
       .map((p: any) => ({
         ...p,
-        batches: (p.batches || []).filter((b: any) => b.status === "ACTIVE")
+        batches: (Array.isArray(p?.batches) ? p.batches : []).filter((b: any) => b && b.status === "ACTIVE")
       }));
   }, [selectedLevel, preschoolPeriods, generalPeriods, yearId]);
 
@@ -871,9 +872,9 @@ export function ReportsClient({
     if (cPeriodId === "all" || !cPeriodId) {
       const allBatches: any[] = [];
       const seen = new Set();
-      activePeriods.forEach((p: any) => {
-        (p.batches || []).forEach((b: any) => {
-          if (b.status === "ACTIVE" && !seen.has(b.id)) {
+      (Array.isArray(activePeriods) ? activePeriods : []).forEach((p: any) => {
+        (Array.isArray(p?.batches) ? p.batches : []).forEach((b: any) => {
+          if (b && b.status === "ACTIVE" && !seen.has(b.id)) {
             seen.add(b.id);
             allBatches.push(b);
           }
@@ -881,12 +882,13 @@ export function ReportsClient({
       });
       return allBatches;
     }
-    return activePeriod?.batches || [];
+    return Array.isArray(activePeriod?.batches) ? activePeriod.batches : [];
   }, [cPeriodId, activePeriods, activePeriod]);
 
   const filteredStudents = useMemo(() => {
+    if (!Array.isArray(students)) return [];
     return students.filter(s => {
-      // search query
+      if (!s) return false;
       const matchQuery = !searchQuery ? true : (
         s.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.studentCode?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -906,7 +908,9 @@ export function ReportsClient({
   };
 
   const letterEligibleStudents = useMemo(() => {
+    if (!Array.isArray(filteredStudents)) return [];
     return filteredStudents.filter(s => {
+      if (!s) return false;
       const cat = getApprovalCategory(s);
       return cat === "dat" || cat === "dat_cam_ket";
     });
