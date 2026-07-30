@@ -1087,3 +1087,30 @@ export async function updateBatchTransferOutAction(ids: string[], fields: any) {
     return { success: false, error: e.message }
   }
 }
+
+export async function revertEnrollmentAction(studentId: string, isPreschool: boolean) {
+  try {
+    const session = await auth()
+    const userId = (session?.user as any)?.id
+    if (!userId) return { success: false, error: "Unauthorized" }
+
+    if (isPreschool) {
+      await prisma.preschoolInputAssessmentStudent.update({
+        where: { id: studentId },
+        data: { enrollmentStatus: null }
+      });
+    } else {
+      await prisma.inputAssessmentStudent.update({
+        where: { id: studentId },
+        data: { enrollmentStatus: null }
+      });
+    }
+
+    revalidatePath("/admin/student-transfers")
+    revalidatePath("/admin/student-info")
+    return { success: true }
+  } catch (e: any) {
+    console.error("revertEnrollmentAction Error:", e)
+    return { success: false, error: e.message }
+  }
+}

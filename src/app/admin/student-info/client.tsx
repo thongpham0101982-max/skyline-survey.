@@ -34,9 +34,10 @@ import {
   Mic,
   Award,
   Shield,
-  Info
+  Info,
+  RotateCcw
 } from "lucide-react";
-import { confirmEnrollmentAction } from "../student-transfers/actions";
+import { confirmEnrollmentAction, revertEnrollmentAction } from "../student-transfers/actions";
 import { getSurveyFormAgeGroup } from "@/lib/preschool";
 import * as XLSX from "xlsx";
 import { InputAssessmentsClient } from "../input-assessments/client";
@@ -1374,6 +1375,22 @@ export function StudentInfoClient({
     }
   };
 
+  const handleRevertEnrollment = async (student: any, isPreschool = false) => {
+    if (!confirm(`Xác nhận HOÀN TRẢ (Hủy yêu cầu nhập học) cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ rút lại yêu cầu nhập học hiện tại.`)) return;
+
+    try {
+      const res = await revertEnrollmentAction(student.id, isPreschool);
+      if (res.success) {
+        showNotification("Đã hoàn trả yêu cầu nhập học!");
+        setTimeout(() => window.location.reload(), 1000);
+      } else {
+        showNotification("Lỗi: " + (res.error || "Không thể thực hiện"), "err");
+      }
+    } catch (e: any) {
+      showNotification("Lỗi kết nối: " + e.message, "err");
+    }
+  };
+
   const handleRegisterRetest = async () => {
     if (!retestStudent) return;
     if (!retestPeriodId) {
@@ -2310,9 +2327,19 @@ export function StudentInfoClient({
                                   <UserCheck className="w-4 h-4" />
                                 </button>
                               ) : s.enrollmentStatus === "PENDING" ? (
-                                <span className="text-[10px] font-semibold text-amber-600" title="Chờ xếp lớp">
-                                  Chờ nhập học
-                                </span>
+                                <div className="flex items-center gap-1.5 justify-center">
+                                  <span className="text-[10px] font-semibold text-amber-600" title="Chờ xếp lớp">
+                                    Chờ nhập học
+                                  </span>
+                                  <button
+                                    onClick={() => handleRevertEnrollment(s, false)}
+                                    className="px-1.5 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[10px] font-bold transition-all flex items-center gap-0.5 border border-rose-200"
+                                    title="Hoàn trả (Hủy yêu cầu nhập học)"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    Hoàn trả
+                                  </button>
+                                </div>
                               ) : (
                                 <span className="text-[10px] font-semibold text-emerald-600" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
                                   Đã nhập học
@@ -2465,9 +2492,19 @@ export function StudentInfoClient({
                                   <UserCheck className="w-4 h-4" />
                                 </button>
                               ) : child.enrollmentStatus === "PENDING" ? (
-                                <span className="text-[10px] font-semibold text-amber-600" title="Chờ xếp lớp">
-                                  Chờ nhập học
-                                </span>
+                                <div className="flex items-center gap-1.5 justify-center">
+                                  <span className="text-[10px] font-semibold text-amber-600" title="Chờ xếp lớp">
+                                    Chờ nhập học
+                                  </span>
+                                  <button
+                                    onClick={() => handleRevertEnrollment(child, true)}
+                                    className="px-1.5 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[10px] font-bold transition-all flex items-center gap-0.5 border border-rose-200"
+                                    title="Hoàn trả (Hủy yêu cầu nhập học)"
+                                  >
+                                    <RotateCcw className="w-3 h-3" />
+                                    Hoàn trả
+                                  </button>
+                                </div>
                               ) : (
                                 <span className="text-[10px] font-semibold text-emerald-600" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
                                   Đã nhập học
