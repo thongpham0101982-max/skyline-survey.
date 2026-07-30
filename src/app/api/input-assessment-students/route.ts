@@ -28,7 +28,7 @@ export async function GET(req) {
        return NextResponse.json({ error: "Missing periodId" }, { status: 400 });
     }
     
-    const where: any = (periodId && periodId !== "all") ? { periodId } : {};
+    const where: any = periodId ? { periodId } : {};
     if (batchId && batchId !== "all" && batchId !== "null") {
       where.OR = [
         { batchId: batchId },
