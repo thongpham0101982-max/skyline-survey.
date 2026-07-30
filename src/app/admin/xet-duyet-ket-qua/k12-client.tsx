@@ -3418,21 +3418,22 @@ ${reportForm.directorNote}`;
   const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
   const [selectedDestinationSchoolId, setSelectedDestinationSchoolId] = useState<string>("");
 
-  const isPreschoolStudent = useMemo(() => {
+    const isPreschoolStudent = useMemo(() => {
     const g = (sForm.grade || "").toString().toLowerCase();
     if (g.includes("tháng") || g.includes("tuổi") || g.includes("mầm") || g.includes("chồi") || g.includes("lá") || g.includes("nhà trẻ") || g === "mam_non") return true;
     return false;
   }, [sForm.grade]);
 
-    const filteredDestinationSchools = useMemo(() => {
-    if (!destinationSchools || destinationSchools.length === 0) return [];
+  const filteredDestinationSchools = useMemo(() => {
+    if (!Array.isArray(destinationSchools) || destinationSchools.length === 0) return [];
     const isPre = isPreschoolStudent;
     const matched = destinationSchools.filter((s: any) => {
-      const lvl = (s.level || "").toUpperCase();
+      if (!s) return false;
+      const lvl = String(s.level || "").toUpperCase().trim();
       if (isPre) {
-        return lvl.includes("MAM") || lvl.includes("MẦM") || lvl === "MAM_NON";
+        return lvl === "MAM_NON" || lvl === "MẦM NON" || lvl.includes("MAM") || lvl.includes("MẦM");
       } else {
-        return lvl.includes("PHO") || lvl.includes("PHỔ") || lvl === "PHO_THONG" || lvl.includes("TIEU") || lvl.includes("THCS") || lvl.includes("THPT");
+        return lvl === "PHO_THONG" || lvl === "PHỔ THÔNG" || lvl.includes("PHO") || lvl.includes("PHỔ") || lvl.includes("TIEU") || lvl.includes("THCS") || lvl.includes("THPT");
       }
     });
     return matched.length > 0 ? matched : destinationSchools;
