@@ -445,7 +445,23 @@ export function StudentInfoClient({
     }
   }, [isFormOpen, formMode]);
 
-    // Update formState when location inputs change
+    // Auto match destination school by name
+  useEffect(() => {
+    if (isFormOpen && selectedLocationType === "Nội tỉnh" && destinationSchools.length > 0) {
+      if (schoolNameInput) {
+        const found = destinationSchools.find((s: any) => s.name.toLowerCase().trim() === schoolNameInput.toLowerCase().trim());
+        if (found) {
+          setSelectedDestinationSchoolId(found.id);
+        } else {
+          setSelectedDestinationSchoolId("other");
+        }
+      } else {
+        setSelectedDestinationSchoolId("");
+      }
+    }
+  }, [isFormOpen, selectedLocationType, schoolNameInput, destinationSchools]);
+
+  // Update formState when location inputs change
   useEffect(() => {
     if (!isFormOpen) return;
     
