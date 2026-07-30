@@ -252,8 +252,20 @@ export function StudentProfilesAdminClient({
   return (
     <div className="space-y-6">
       {/* 1. Selector Bar (Admin filters) */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl p-5 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="bg-white border border-slate-200/80 shadow-xs rounded-2xl p-5 space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2.5 text-xs font-black text-slate-800 uppercase tracking-wider">
+            <div className="p-1.5 bg-[#00A99D]/10 text-[#00A99D] rounded-lg">
+              <Building2 className="w-4 h-4" />
+            </div>
+            <span>Bộ Lọc Tra Cứu &amp; Xuất Báo Cáo Hồ Sơ Học Sinh</span>
+          </div>
+          <span className="text-[10px] font-extrabold text-[#00A99D] bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200/60">
+            Năm học: {academicYears.find(y => y.id === selectedYearId)?.name || activeYearName}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           
           {/* Year selector */}
           <div className="flex flex-col space-y-1.5">
@@ -354,35 +366,38 @@ export function StudentProfilesAdminClient({
 
         {/* Batch Export PDF buttons */}
         <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-3 items-center justify-between text-xs font-bold">
-          <span className="text-slate-400">Xuất báo cáo PDF đồng loạt:</span>
+          <div className="flex items-center gap-2 text-slate-500">
+            <Printer className="w-4 h-4 text-[#00A99D]" />
+            <span>Xuất báo cáo PDF đồng loạt:</span>
+          </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleBatchPdfExport("class")}
               disabled={selectedClassId === "all"}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
             >
-              <Printer className="w-3.5 h-3.5" />
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
               <span>Xuất PDF Lớp</span>
             </button>
             <button
               onClick={() => handleBatchPdfExport("grade")}
               disabled={selectedGrade === "all"}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
             >
-              <Printer className="w-3.5 h-3.5" />
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
               <span>Xuất PDF Khối</span>
             </button>
             <button
               onClick={() => handleBatchPdfExport("campus")}
               disabled={selectedCampusId === "all"}
-              className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200/80 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs"
             >
-              <Printer className="w-3.5 h-3.5" />
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
               <span>Xuất PDF Cơ sở</span>
             </button>
             <button
               onClick={() => handleBatchPdfExport("block")}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl shadow-sm transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#00A99D] to-[#009085] hover:opacity-95 text-white rounded-xl shadow-md shadow-[#00A99D]/20 transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Xuất PDF Bậc Học</span>
@@ -392,22 +407,38 @@ export function StudentProfilesAdminClient({
       </div>
 
       {/* 2. Workspace Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left column: Student list */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Danh sách Học sinh</h3>
+        <div className="lg:col-span-4 space-y-4">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-[#00A99D]" />
+                  Danh sách Học sinh
+                </h3>
+                <span className="text-[10px] font-extrabold bg-teal-50 text-[#00A99D] px-2.5 py-0.5 rounded-full border border-teal-200/80">
+                  {filteredStudentsList.length} học sinh
+                </span>
+              </div>
               <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Tìm học sinh..."
+                  placeholder="Tìm theo mã hoặc tên học sinh..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D] focus:border-[#00A99D] transition-all"
+                  className="w-full pl-9 pr-8 py-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] transition-all text-slate-700"
                 />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -428,17 +459,26 @@ export function StudentProfilesAdminClient({
                   <button
                     key={s.id}
                     onClick={() => setSelectedStudentId(s.id)}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                    className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
                       selectedStudentId === s.id
-                        ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30 shadow-xs"
-                        : "text-slate-600 hover:bg-slate-50 border border-transparent"
+                        ? "bg-teal-50/80 text-[#00A99D] border-[#00A99D] shadow-xs"
+                        : "bg-slate-50/40 hover:bg-slate-100/60 border-slate-200/60 text-slate-700"
                     }`}
                   >
-                    <div className="min-w-0 flex-grow pr-2">
-                      <div className="truncate font-black">{s.studentName}</div>
-                      <div className="text-[9px] opacity-60 font-bold mt-0.5">{s.className || s.classCode || "Chưa xếp lớp"}</div>
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs uppercase flex-shrink-0 ${
+                        selectedStudentId === s.id ? "bg-[#00A99D] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
+                      }`}>
+                        {s.studentName.split(" ").pop()?.charAt(0) || "H"}
+                      </div>
+                      <div className="min-w-0 truncate">
+                        <div className="truncate font-black text-slate-800 text-xs">{s.studentName}</div>
+                        <div className="text-[10px] text-slate-400 font-bold mt-0.5">{s.className || s.classCode || "Chưa xếp lớp"}</div>
+                      </div>
                     </div>
-                    <span className="text-[9px] opacity-60 font-semibold flex-shrink-0">{s.studentCode}</span>
+                    <span className="font-mono text-[10px] bg-white border border-slate-200/80 px-2 py-0.5 rounded text-slate-500 flex-shrink-0 font-extrabold">
+                      {s.studentCode}
+                    </span>
                   </button>
                 ))
               )}
@@ -447,7 +487,7 @@ export function StudentProfilesAdminClient({
         </div>
 
         {/* Right workspace: Selected Student Details */}
-        <div className="md:col-span-3 space-y-6">
+        <div className="lg:col-span-8 space-y-6">
           {selectedStudentId ? (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
               
