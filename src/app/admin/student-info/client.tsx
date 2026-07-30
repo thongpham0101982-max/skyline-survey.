@@ -180,6 +180,7 @@ export function StudentInfoClient({
   const [selectedResult, setSelectedResult] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("");
   const [selectedCampusFilter, setSelectedCampusFilter] = useState("all");
+  const [selectedEnrollmentStatus, setSelectedEnrollmentStatus] = useState("");
 
   useEffect(() => {
     setCurrentPage(1);
@@ -817,6 +818,7 @@ export function StudentInfoClient({
     setSelectedBatch("");
     setSelectedResult("");
     setSelectedGrade("");
+    setSelectedEnrollmentStatus("");
     setSelectedIds([]);
     setCurrentPage(1);
   };
@@ -911,6 +913,15 @@ export function StudentInfoClient({
       }
       if (selectedResult && student.admissionResult !== selectedResult) return false;
       if (selectedGrade && student.grade !== selectedGrade) return false;
+      if (selectedEnrollmentStatus) {
+        if (selectedEnrollmentStatus === "COMPLETED") {
+          if (student.enrollmentStatus !== "COMPLETED") return false;
+        } else if (selectedEnrollmentStatus === "PENDING") {
+          if (student.enrollmentStatus !== "PENDING") return false;
+        } else if (selectedEnrollmentStatus === "UNCONFIRMED") {
+          if (student.enrollmentStatus) return false;
+        }
+      }
 
       // Filter by campus
       if (selectedCampusFilter && selectedCampusFilter !== "all") {
@@ -928,7 +939,7 @@ export function StudentInfoClient({
 
       return true;
     });
-  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade, subTab]);
+  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade, selectedEnrollmentStatus, subTab]);
 
   // Reset selected checkboxes if filtered dataset changes
   useEffect(() => {
@@ -2059,7 +2070,7 @@ export function StudentInfoClient({
           <Filter className="w-4 h-4 text-[#00A99D]" />
           Bộ lọc & Tìm kiếm nhanh
         </div>
-        <div className={`grid grid-cols-1 sm:grid-cols-2 ${subTab === "result" ? "lg:grid-cols-6 md:grid-cols-3" : "lg:grid-cols-5 md:grid-cols-3"} gap-3`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${subTab === "result" ? "lg:grid-cols-7 md:grid-cols-3" : "lg:grid-cols-5 md:grid-cols-3"} gap-3`}>
           {/* Search bar */}
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -2159,6 +2170,23 @@ export function StudentInfoClient({
               {filterOptions.results.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
+            </select>
+          )}
+
+          {/* Enrollment Status Filter */}
+          {subTab === "result" && (
+            <select
+              value={selectedEnrollmentStatus}
+              onChange={(e) => {
+                setSelectedEnrollmentStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+            >
+              <option value="">Tất cả Trạng thái Nhập học</option>
+              <option value="COMPLETED">Đã nhập học</option>
+              <option value="PENDING">Chờ nhập học</option>
+              <option value="UNCONFIRMED">Chưa xác nhận nhập học</option>
             </select>
           )}
         </div>
