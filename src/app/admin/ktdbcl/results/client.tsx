@@ -1225,57 +1225,66 @@ export function ResultsClient({
             </div>
           </div>
 
-          {/* Stats Summaries - Premium KPI Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 no-print animate-fade-in">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 bg-slate-100 rounded-xl flex items-center justify-center group-hover:bg-slate-200 transition-colors">
-                  <Trophy className="w-4 h-4 text-slate-500" />
+          {/* Stats Summaries - Premium Vibrant KPI Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 no-print animate-fade-in">
+            {/* Card 1: Tổng thành tích */}
+            <div className="bg-gradient-to-br from-indigo-50/90 via-slate-50 to-indigo-100/60 p-5 rounded-2xl border border-indigo-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-500/20 group-hover:scale-110 transition-transform">
+                  <Trophy className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Tổng thành tích</div>
-              <div className="text-3xl font-black text-slate-800 leading-none">{reportData.length}</div>
-              <div className="text-[10px] text-slate-400 mt-1 font-semibold">giải thưởng</div>
+              <div className="text-[10px] font-extrabold text-indigo-800 uppercase tracking-wider block mb-1">Tổng thành tích</div>
+              <div className="text-3xl font-black text-indigo-950 leading-none">{reportData.length}</div>
+              <div className="text-[10px] text-indigo-600/80 font-bold mt-1.5">giải thưởng</div>
             </div>
-            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200/60 rounded-2xl p-4 shadow-sm hover:shadow-amber-200/50 hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 bg-amber-100 rounded-xl flex items-center justify-center group-hover:bg-amber-200 transition-colors">
-                  <Award className="w-4 h-4 text-amber-600" />
+
+            {/* Card 2: Nhất / Vàng */}
+            <div className="bg-gradient-to-br from-amber-50/90 via-yellow-50/40 to-amber-100/60 p-5 rounded-2xl border border-amber-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-amber-500 text-white rounded-xl shadow-md shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                  <Award className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-[9px] font-black text-amber-700/70 uppercase tracking-widest mb-1">Nhất / Vàng</div>
-              <div className="text-3xl font-black text-amber-700 leading-none">{goldCount}</div>
-              <div className="text-[10px] text-amber-500 mt-1 font-semibold">giải thưởng</div>
+              <div className="text-[10px] font-extrabold text-amber-800 uppercase tracking-wider block mb-1">Nhất / Vàng</div>
+              <div className="text-3xl font-black text-amber-950 leading-none">{goldCount}</div>
+              <div className="text-[10px] text-amber-600/80 font-bold mt-1.5">giải thưởng</div>
             </div>
-            <div className="bg-gradient-to-br from-slate-50 to-gray-50 border border-slate-200 rounded-2xl p-4 shadow-sm hover:shadow-slate-200/60 hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 bg-slate-200 rounded-xl flex items-center justify-center group-hover:bg-slate-300 transition-colors">
-                  <Medal className="w-4 h-4 text-slate-600" />
+
+            {/* Card 3: Nhì / Bạc */}
+            <div className="bg-gradient-to-br from-slate-100/90 via-blue-50/40 to-slate-200/60 p-5 rounded-2xl border border-slate-300/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-slate-600 text-white rounded-xl shadow-md shadow-slate-500/20 group-hover:scale-110 transition-transform">
+                  <Medal className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Nhì / Bạc</div>
-              <div className="text-3xl font-black text-slate-700 leading-none">{silverCount}</div>
-              <div className="text-[10px] text-slate-400 mt-1 font-semibold">giải thưởng</div>
+              <div className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">Nhì / Bạc</div>
+              <div className="text-3xl font-black text-slate-900 leading-none">{silverCount}</div>
+              <div className="text-[10px] text-slate-500 font-bold mt-1.5">giải thưởng</div>
             </div>
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/50 rounded-2xl p-4 shadow-sm hover:shadow-orange-200/50 hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                  <Medal className="w-4 h-4 text-orange-600" />
+
+            {/* Card 4: Ba / Đồng */}
+            <div className="bg-gradient-to-br from-orange-50/90 via-amber-50/40 to-orange-100/60 p-5 rounded-2xl border border-orange-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-orange-600 text-white rounded-xl shadow-md shadow-orange-500/20 group-hover:scale-110 transition-transform">
+                  <Medal className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-[9px] font-black text-orange-700/70 uppercase tracking-widest mb-1">Ba / Đồng</div>
-              <div className="text-3xl font-black text-orange-700 leading-none">{bronzeCount}</div>
-              <div className="text-[10px] text-orange-400 mt-1 font-semibold">giải thưởng</div>
+              <div className="text-[10px] font-extrabold text-orange-800 uppercase tracking-wider block mb-1">Ba / Đồng</div>
+              <div className="text-3xl font-black text-orange-950 leading-none">{bronzeCount}</div>
+              <div className="text-[10px] text-orange-600/80 font-bold mt-1.5">giải thưởng</div>
             </div>
-            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-200/50 rounded-2xl p-4 shadow-sm hover:shadow-teal-200/50 hover:shadow-md transition-all duration-300 group">
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-8 h-8 bg-teal-100 rounded-xl flex items-center justify-center group-hover:bg-teal-200 transition-colors">
-                  <Ribbon className="w-4 h-4 text-[#00A99D]" />
+
+            {/* Card 5: Khuyến khích */}
+            <div className="bg-gradient-to-br from-teal-50/90 via-cyan-50/40 to-teal-100/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-3 bg-[#00A99D] text-white rounded-xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
+                  <Ribbon className="w-5 h-5" />
                 </div>
               </div>
-              <div className="text-[9px] font-black text-[#00A99D]/70 uppercase tracking-widest mb-1">Khuyến khích</div>
-              <div className="text-3xl font-black text-[#009085] leading-none">{consolCount}</div>
-              <div className="text-[10px] text-teal-400 mt-1 font-semibold">giải thưởng</div>
+              <div className="text-[10px] font-extrabold text-teal-800 uppercase tracking-wider block mb-1">Khuyến khích</div>
+              <div className="text-3xl font-black text-teal-950 leading-none">{consolCount}</div>
+              <div className="text-[10px] text-teal-600/80 font-bold mt-1.5">giải thưởng</div>
             </div>
           </div>
 
