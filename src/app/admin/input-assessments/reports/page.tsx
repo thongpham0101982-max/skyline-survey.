@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
-import dynamic from "next/dynamic"
+// unused dynamic import removed
 
 import { ReportsClient } from "./client"
 
