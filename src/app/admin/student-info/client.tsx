@@ -3368,9 +3368,6 @@ export function StudentInfoClient({
                       {/* CONDITIONAL LOCATION INPUTS */}
                       {selectedLocationType && (
                         <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
-                      {/* CONDITIONAL LOCATION INPUTS */}
-                      {selectedLocationType && (
-                        <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
                           <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
                             <span className="w-1.5 h-4 bg-[#00B5E2] inline-block rounded"></span>
                             <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Thông tin trường học cũ ({selectedLocationType})</h4>
