@@ -5880,7 +5880,7 @@ return {
           </div>
 
           {/* TOP SELECTORS BAR */}
-          <div className="bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white/80 backdrop-blur-md p-5 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
                 <Calendar className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
@@ -5893,7 +5893,7 @@ return {
                     setReportBatchId("all");
                     setReportStudentId("");
                   }}
-                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
                   {periods.length > 0 && <option value="all">Tất cả các kỳ khảo sát</option>}
                   {visiblePeriods.map(p => (
@@ -5901,8 +5901,8 @@ return {
                   ))}
                   {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
             </div>
@@ -5918,15 +5918,15 @@ return {
                     setReportCampusFilter(e.target.value);
                     setReportStudentId("");
                   }}
-                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
                   <option value="all">Tất cả các cơ sở</option>
                   {campuses.map(c => (
                     <option key={c.id} value={c.id}>{c.campusName}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
               </div>
             </div>
@@ -5942,15 +5942,15 @@ return {
                     setReportBatchId(e.target.value);
                     setReportStudentId("");
                   }}
-                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
                   <option value="all">Tất cả các đợt</option>
                   {reportBatches.map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
                 {reportsSubTab === "stats" && reportBatchId !== "all" && (
                   <div className="mt-2.5 flex items-center justify-between animate-in fade-in duration-200">
@@ -5960,8 +5960,66 @@ return {
                       className="inline-flex items-center gap-1.5 text-xs font-black text-indigo-600 hover:text-indigo-700 hover:bg-indigo-100 transition-all shadow-sm disabled:opacity-50 text-xs font-semibold"
                     >
                       {sendingBatchEmail ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                      Thông báo GĐCS xét duyệt đợt
+                      <span>Thông báo GĐCS xét duyệt đợt</span>
                     </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 4. TRẠNG THÁI DUYỆT */}
+            <div className="group">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
+                <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500"/> Trạng thái duyệt
+              </label>
+              <div className="relative">
+                <select 
+                  value={reportApprovalStatusFilter} 
+                  onChange={e => {
+                    setReportApprovalStatusFilter(e.target.value);
+                    setReportStudentId("");
+                  }}
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="Đạt">Đạt</option>
+                  <option value="Đạt cam kết">Đạt cam kết</option>
+                  <option value="Không đạt">Không đạt</option>
+                  <option value="Chưa duyệt">Chờ / Chưa duyệt</option>
+                  <option value="Vắng khảo sát">Vắng khảo sát</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 group-hover:text-indigo-500 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+            </div>
+
+            {/* 5. TÌM KIẾM HỌ TÊN / MÃ HỌC SINH */}
+            <div className="group">
+              <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
+                <Search className="w-3.5 h-3.5 text-indigo-500"/> Tìm kiếm Học sinh
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={reportStudentSearchQuery}
+                  onChange={e => {
+                    setReportStudentSearchQuery(e.target.value);
+                    setReportStudentId("");
+                  }}
+                  placeholder="Nhập Tên hoặc Mã HS..."
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md placeholder:text-slate-400 placeholder:font-normal"
+                />
+                {reportStudentSearchQuery ? (
+                  <button
+                    onClick={() => setReportStudentSearchQuery("")}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 hover:text-slate-600 font-bold"
+                  >
+                    ✕
+                  </button>
+                ) : (
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400">
+                    <Search className="w-4 h-4" />
                   </div>
                 )}
               </div>
