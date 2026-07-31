@@ -3368,34 +3368,27 @@ export function StudentInfoClient({
                       {/* CONDITIONAL LOCATION INPUTS */}
                       {selectedLocationType && (
                         <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
+                      {/* CONDITIONAL LOCATION INPUTS */}
+                      {selectedLocationType && (
+                        <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
                           <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
                             <span className="w-1.5 h-4 bg-[#00B5E2] inline-block rounded"></span>
                             <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Thông tin trường học cũ ({selectedLocationType})</h4>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {selectedLocationType === "Nội tỉnh" && (
-                              <div className="col-span-2 md:col-span-1">
-                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
-                                <input
-                                  type="text"
-                                  disabled
-                                  value="Thành phố Đà Nẵng"
-                                  className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none"
-                                />
-                              </div>
-                            )}
-
-                            {selectedLocationType === "Ngoại tỉnh" && (
+                            {(selectedLocationType === "Nội tỉnh" || selectedLocationType === "Ngoại tỉnh") && (
                               <div className="col-span-2 md:col-span-1">
                                 <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
                                 <select
                                   required
-                                  value={selectedProvince}
+                                  value={selectedLocationType === "Nội tỉnh" ? "Thành phố Đà Nẵng" : (selectedProvince || "Thành phố Đà Nẵng")}
                                   onChange={(e) => setSelectedProvince(e.target.value)}
-                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                  disabled={selectedLocationType === "Nội tỉnh"}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer disabled:bg-slate-100 disabled:text-slate-700"
                                 >
                                   <option value="">-- Chọn Tỉnh/Thành --</option>
+                                  <option value="Thành phố Đà Nẵng">Thành phố Đà Nẵng</option>
                                   {vietnamProvinces.map((p) => (
                                     <option key={p} value={p}>{p}</option>
                                   ))}
@@ -3454,42 +3447,45 @@ export function StudentInfoClient({
                             <div>
                               <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
                               <div className="space-y-2">
-                                <select
-                                  value={
-                                    safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)
-                                      ? schoolNameInput
-                                      : (schoolNameInput ? "__custom__" : "")
-                                  }
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    if (val === "__custom__") {
-                                      setSchoolNameInput("");
-                                    } else {
-                                      setSchoolNameInput(val);
-                                      const matched = safeDestinationSchools.find((s: any) => s && s.name === val);
-                                      if (matched) {
-                                        let mappedType = "Công lập";
-                                        if (matched.schoolType === "PRIVATE") mappedType = "Tư thục";
-                                        else if (matched.schoolType === "PUBLIC") mappedType = "Công lập";
-                                        else if (matched.schoolType) mappedType = matched.schoolType;
-                                        setSchoolTypeInput(mappedType);
-                                      }
+                                {(selectedLocationType === "Nội tỉnh" || selectedProvince === "Thành phố Đà Nẵng" || selectedProvince === "Đà Nẵng" || !selectedProvince) ? (
+                                  <select
+                                    value={
+                                      safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)
+                                        ? schoolNameInput
+                                        : (schoolNameInput ? "__custom__" : "")
                                     }
-                                  }}
-                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                                >
-                                  <option value="">-- Chọn trường từ Danh mục trường --</option>
-                                  {safeDestinationSchools
-                                    .filter((s: any) => !oldSchoolLevelFilter || s.level === oldSchoolLevelFilter)
-                                    .map((s: any) => (
-                                      <option key={s.id || s.code} value={s.name}>
-                                        {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : s.schoolType === "PRIVATE" ? "Tư thục" : s.schoolType})
-                                      </option>
-                                    ))}
-                                  <option value="__custom__">-- Khác / Nhập tên trường ngoài danh mục --</option>
-                                </select>
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === "__custom__") {
+                                        setSchoolNameInput("");
+                                      } else {
+                                        setSchoolNameInput(val);
+                                        const matched = safeDestinationSchools.find((s: any) => s && s.name === val);
+                                        if (matched) {
+                                          let mappedType = "Công lập";
+                                          if (matched.schoolType === "PRIVATE") mappedType = "Tư thục";
+                                          else if (matched.schoolType === "PUBLIC") mappedType = "Công lập";
+                                          else if (matched.schoolType) mappedType = matched.schoolType;
+                                          setSchoolTypeInput(mappedType);
+                                        }
+                                      }
+                                    }}
+                                    className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                  >
+                                    <option value="">-- Chọn trường từ Danh mục Đơn vị Trường --</option>
+                                    {safeDestinationSchools
+                                      .filter((s: any) => s && (!oldSchoolLevelFilter || s.level === oldSchoolLevelFilter))
+                                      .map((s: any) => (
+                                        <option key={s.id || s.code || s.name} value={s.name || ""}>
+                                          {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : s.schoolType === "PRIVATE" ? "Tư thục" : (s.schoolType || "Công lập")})
+                                        </option>
+                                      ))}
+                                    <option value="__custom__">-- Khác / Nhập tên trường ngoài danh mục --</option>
+                                  </select>
+                                ) : null}
 
-                                {(!schoolNameInput || !safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)) && (
+                                {(selectedLocationType !== "Nội tỉnh" && selectedProvince !== "Thành phố Đà Nẵng" && selectedProvince !== "Đà Nẵng") ||
+                                 (!schoolNameInput || !safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)) ? (
                                   <input
                                     required
                                     type="text"
@@ -3498,9 +3494,10 @@ export function StudentInfoClient({
                                     placeholder="Nhập tên trường học cũ..."
                                     className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 animate-in fade-in duration-150"
                                   />
-                                )}
+                                ) : null}
                               </div>
                             </div>
+
                             <div>
                               <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
                               <select
