@@ -297,7 +297,8 @@ const worldCountries = [
 ].sort();
 
 // ========= MAIN =========
-export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [] }: Props) {
+export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [],
+  destinationSchools = [] }: Props) {
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
     categories: "INPUT_ASSESSMENTS_CATEGORIES",

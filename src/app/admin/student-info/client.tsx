@@ -144,11 +144,14 @@ export function StudentInfoClient({
   departments = [],
   currentUser = null,
   rolePermissions = [],
-  gradesPreschool = []
+  gradesPreschool = [],
+  destinationSchools = []
 }: StudentInfoClientProps) {
   useEffect(() => {
     console.log("--- StudentInfoClient VERSION 3.0 LOADED ---");
   }, []);
+
+  const safeDestinationSchools = useMemo(() => Array.isArray(destinationSchools) ? destinationSchools.filter((s: any) => s && s.name) : [], [destinationSchools]);
 
   const generalPeriods = useMemo(() => {
     return rawGeneralPeriods.map((p: any) => ({

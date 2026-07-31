@@ -57,6 +57,7 @@ interface Props {
   rolePermissions?: { module: string, canRead: boolean, canCreate: boolean, canUpdate: boolean, canDelete: boolean }[];
   mode?: "config" | "input";
   forcedTab?: string;
+  destinationSchools?: any[];
 }
 
 // ========= CONSTANTS =========
@@ -2781,6 +2782,7 @@ ${reportForm.directorNote}`;
     cityName: "", districtName: "", wardName: "", countryName: "", oldSchoolName: "", oldSchoolType: ""
   });
 
+  const safeDestinationSchools = useMemo(() => Array.isArray(destinationSchools) ? destinationSchools.filter((s: any) => s && s.name) : [], [destinationSchools]);
   const [selectedLocationType, setSelectedLocationType] = useState<"Nội tỉnh" | "Ngoại tỉnh" | "Nước ngoài" | "">("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedWard, setSelectedWard] = useState<string>("");
