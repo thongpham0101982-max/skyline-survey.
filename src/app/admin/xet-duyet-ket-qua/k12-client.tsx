@@ -7190,7 +7190,7 @@ return {
                         </div>
                       </div>
                     );
-                  })()
+                  })()}
 
                   {/* RETEST HISTORY TIMELINE CARD */}
                   {Array.isArray(retestHistory) && retestHistory.length > 1 && (
