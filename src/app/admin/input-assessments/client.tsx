@@ -2892,7 +2892,7 @@ ${reportForm.directorNote}`;
   // Sync selectedLocationType when targetType changes
   useEffect(() => {
     if (!sModal) return;
-    const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
+    const selectedTargets = typeof sForm?.targetType === "string" ? sForm.targetType.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
     if (selectedTargets.includes("Nội tỉnh")) {
       setSelectedLocationType("Nội tỉnh");
     } else if (selectedTargets.includes("Ngoại tỉnh")) {
@@ -5113,7 +5113,7 @@ return {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1">
-                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                  {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
                     return (
                       <label key={c.id} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all select-none ${
@@ -5142,7 +5142,7 @@ return {
                       </label>
                     );
                   })}
-                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                  {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").length === 0 && (
                     <span className="text-xs text-slate-400 italic">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
                   )}
                 </div>
@@ -5467,7 +5467,7 @@ return {
                 </div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Đối tượng Tuyển sinh</label>
                 <div className="flex flex-wrap gap-2">
-                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                  {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = docFormSelectedTargets.includes(c.name);
                     return (
                       <label key={c.id} className="flex items-center gap-1.5 hover:bg-indigo-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
@@ -7289,7 +7289,7 @@ return {
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
+                    {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").map(c => {
                       const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
                       const isChecked = selectedTargets.includes(c.name);
                       return (
@@ -7311,7 +7311,7 @@ return {
                         </button>
                       );
                     })}
-                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                    {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").length === 0 && (
                        <span className="text-xs text-slate-400 italic">Chưa có đối tượng tuyển sinh nào trong danh mục</span>
                      )}
                    </div>
@@ -7380,7 +7380,7 @@ return {
                         <div className="space-y-2">
                           <select
                             value={
-                              safeDestinationSchools.some((s: any) => s.name === schoolNameInput)
+                              safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)
                                 ? schoolNameInput
                                 : (schoolNameInput ? "__custom__" : "")
                             }
@@ -7390,7 +7390,7 @@ return {
                                 setSchoolNameInput("");
                               } else {
                                 setSchoolNameInput(val);
-                                const matched = safeDestinationSchools.find((s: any) => s.name === val);
+                                const matched = safeDestinationSchools.find((s: any) => s && s.name === val);
                                 if (matched) {
                                   let mappedType = "Công lập";
                                   if (matched.schoolType === "PRIVATE") mappedType = "Tư thục";
@@ -7412,7 +7412,7 @@ return {
                             <option value="__custom__">-- Khác / Nhập tên trường ngoài danh mục --</option>
                           </select>
 
-                          {(!schoolNameInput || !safeDestinationSchools.some((s: any) => s.name === schoolNameInput)) && (
+                          {(!schoolNameInput || !safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)) && (
                             <input
                               required
                               type="text"

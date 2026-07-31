@@ -353,7 +353,7 @@ export function StudentInfoClient({
   // Sync selectedLocationType when targetType changes
   useEffect(() => {
     if (!isFormOpen) return;
-    const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
+    const selectedTargets = typeof formState?.targetType === "string" ? formState.targetType.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
     if (selectedTargets.includes("Nội tỉnh")) {
       setSelectedLocationType("Nội tỉnh");
     } else if (selectedTargets.includes("Ngoại tỉnh")) {
@@ -3332,8 +3332,8 @@ export function StudentInfoClient({
                         <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Đối tượng tuyển sinh</label>
                         <span className="text-[11px] font-semibold text-[#64748B] block mt-0.5">Chọn 1 đối tượng tuyển sinh:</span>
                         <div className="flex flex-wrap gap-2">
-                          {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
-                            const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
+                          {(Array.isArray(activeTab === "preschool" ? preschoolConfigs : configs) ? (activeTab === "preschool" ? preschoolConfigs : configs) : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").map(c => {
+                            const selectedTargets = typeof formState?.targetType === "string" ? formState.targetType.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
                             const isChecked = selectedTargets.includes(c.name);
                             return (
                               <button
@@ -3456,7 +3456,7 @@ export function StudentInfoClient({
                               <div className="space-y-2">
                                 <select
                                   value={
-                                    safeDestinationSchools.some((s: any) => s.name === schoolNameInput)
+                                    safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)
                                       ? schoolNameInput
                                       : (schoolNameInput ? "__custom__" : "")
                                   }
@@ -3466,7 +3466,7 @@ export function StudentInfoClient({
                                       setSchoolNameInput("");
                                     } else {
                                       setSchoolNameInput(val);
-                                      const matched = safeDestinationSchools.find((s: any) => s.name === val);
+                                      const matched = safeDestinationSchools.find((s: any) => s && s.name === val);
                                       if (matched) {
                                         let mappedType = "Công lập";
                                         if (matched.schoolType === "PRIVATE") mappedType = "Tư thục";
@@ -3489,7 +3489,7 @@ export function StudentInfoClient({
                                   <option value="__custom__">-- Khác / Nhập tên trường ngoài danh mục --</option>
                                 </select>
 
-                                {(!schoolNameInput || !safeDestinationSchools.some((s: any) => s.name === schoolNameInput)) && (
+                                {(!schoolNameInput || !safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)) && (
                                   <input
                                     required
                                     type="text"
