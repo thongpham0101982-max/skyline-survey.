@@ -3456,7 +3456,7 @@ export function StudentInfoClient({
                               <div className="space-y-2">
                                 <select
                                   value={
-                                    (destinationSchools || []).some((s: any) => s.name === schoolNameInput)
+                                    safeDestinationSchools.some((s: any) => s.name === schoolNameInput)
                                       ? schoolNameInput
                                       : (schoolNameInput ? "__custom__" : "")
                                   }
@@ -3466,7 +3466,7 @@ export function StudentInfoClient({
                                       setSchoolNameInput("");
                                     } else {
                                       setSchoolNameInput(val);
-                                      const matched = (destinationSchools || []).find((s: any) => s.name === val);
+                                      const matched = safeDestinationSchools.find((s: any) => s.name === val);
                                       if (matched) {
                                         let mappedType = "Công lập";
                                         if (matched.schoolType === "PRIVATE") mappedType = "Tư thục";
@@ -3479,7 +3479,7 @@ export function StudentInfoClient({
                                   className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                                 >
                                   <option value="">-- Chọn trường từ Danh mục trường --</option>
-                                  {(destinationSchools || [])
+                                  {safeDestinationSchools
                                     .filter((s: any) => !oldSchoolLevelFilter || s.level === oldSchoolLevelFilter)
                                     .map((s: any) => (
                                       <option key={s.id || s.code} value={s.name}>
@@ -3489,7 +3489,7 @@ export function StudentInfoClient({
                                   <option value="__custom__">-- Khác / Nhập tên trường ngoài danh mục --</option>
                                 </select>
 
-                                {(!schoolNameInput || !(destinationSchools || []).some((s: any) => s.name === schoolNameInput)) && (
+                                {(!schoolNameInput || !safeDestinationSchools.some((s: any) => s.name === schoolNameInput)) && (
                                   <input
                                     required
                                     type="text"
