@@ -86,41 +86,108 @@ const danangWards = [
 ].sort();
 
 const vietnamProvinces = [
-  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định", 
-  "Bình Dương", "Bình Phước", "Bình Thuận", "Cà Mau", "Cần Thơ", "Cao Bằng", "Đà Nẵng", "Đắk Lắk", 
-  "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", 
-  "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", 
-  "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định", "Nghệ An", 
-  "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", 
-  "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", 
-  "Tiền Giang", "TP Hồ Chí Minh", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
-].sort();
+  "Thành phố Đà Nẵng",
+  "Thành phố Hà Nội",
+  "Thành phố Hồ Chí Minh",
+  "Thành phố Hải Phòng",
+  "Thành phố Cần Thơ",
+  "An Giang",
+  "Bà Rịa - Vũng Tàu",
+  "Bắc Giang",
+  "Bắc Kạn",
+  "Bạc Liêu",
+  "Bắc Ninh",
+  "Bến Tre",
+  "Bình Định",
+  "Bình Dương",
+  "Bình Phước",
+  "Bình Thuận",
+  "Cà Mau",
+  "Cao Bằng",
+  "Đắc Lắk",
+  "Đắk Nông",
+  "Điện Biên",
+  "Đồng Nai",
+  "Đồng Tháp",
+  "Gia Lai",
+  "Hà Giang",
+  "Hà Nam",
+  "Hà Tĩnh",
+  "Hải Dương",
+  "Hậu Giang",
+  "Hòa Bình",
+  "Hưng Yên",
+  "Khánh Hòa",
+  "Kiên Giang",
+  "Kon Tum",
+  "Lai Châu",
+  "Lâm Đồng",
+  "Lạng Sơn",
+  "Lào Cai",
+  "Long An",
+  "Nam Định",
+  "Nghệ An",
+  "Ninh Bình",
+  "Ninh Thuận",
+  "Phú Thọ",
+  "Phú Yên",
+  "Quảng Bình",
+  "Quảng Nam",
+  "Quảng Ngãi",
+  "Quảng Ninh",
+  "Quảng Trị",
+  "Sóc Trăng",
+  "Sơn La",
+  "Tây Ninh",
+  "Thái Bình",
+  "Thái Nguyên",
+  "Thanh Hóa",
+  "Thừa Thiên Huế",
+  "Tiền Giang",
+  "Trà Vinh",
+  "Tuyên Quang",
+  "Vĩnh Long",
+  "Vĩnh Phúc",
+  "Yên Bái"
+];
 
 const worldCountries = [
-  "Afghanistan", "Ai Cập", "Albania", "Algeria", "Andorra", "Angola", "Anh", "Antigua và Barbuda", "Áo", 
-  "Argentina", "Armenia", "Azerbaijan", "Ấn Độ", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Bắc Macedonia", 
-  "Bạch Nga (Belarus)", "Bỉ", "Belize", "Benin", "Bhutan", "Bồ Đào Nha", "Bolivia", "Bosnia và Herzegovina", 
-  "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Các Tiểu vương quốc Ả Rập Thống nhất (UAE)", 
-  "Cameroon", "Campuchia", "Canada", "Chile", "Colombia", "Comoros", "Cộng hòa Congo", "Cộng hòa Dân chủ Congo", 
-  "Cộng hòa Dominica", "Cộng hòa Séc", "Cộng hòa Trung Phi", "Costa Rica", "Croatia", "Cuba", "Djibouti", 
-  "Dominica", "Đan Mạch", "Đông Timor", "Đức", "Ecuador", "El Salvador", "Eritrea", "Estonia", "Eswatini", 
-  "Ethiopia", "Fiji", "Gabon", "Gambia", "Georgia", "Ghana", "Grenada", "Guatemala", "Guinea", 
-  "Guinea-Bissau", "Equatorial Guinea", "Guyana", "Hà Lan", "Haiti", "Hàn Quốc", "Hoa Kỳ (Mỹ)", "Honduras", 
-  "Hungary", "Hy Lạp", "Iceland", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Jamaica", 
-  "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Lào", "Latvia", "Lebanon", 
-  "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", 
-  "Maldives", "Mali", "Malta", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", 
-  "Mông Cổ", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nam Phi", "Nam Sudan", 
-  "Nepal", "New Zealand", "Nga", "Nhật Bản", "Nicaragua", "Niger", "Nigeria", "Na Uy", "Oman", 
-  "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Pháp", "Phần Lan", 
-  "Philippines", "Poland (Ba Lan)", "Qatar", "Romania", "Rwanda", "Saint Kitts và Nevis", "Saint Lucia", 
-  "Saint Vincent và Grenadines", "Samoa", "San Marino", "Sao Tome và Principe", "Saudi Arabia (Ả Rập Xê Út)", 
-  "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", 
-  "Somalia", "Sri Lanka", "Sudan", "Suriname", "Thụy Điển", "Thụy Sĩ", "Syria", "Tajikistan", 
-  "Tanzania", "Tây Ban Nha", "Chad", "Thái Lan", "Togo", "Tonga", "Trinidad và Tobago", "Tunisia", 
-  "Thổ Nhĩ Kỳ", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "Uruguay", "Uzbekistan", "Vanuatu", 
-  "Vatican", "Venezuela", "Việt Nam", "Ý (Italy)", "Yemen", "Zambia", "Zimbabwe", "Đài Loan", "Hồng Kông"
-].sort();
+  "Hoa Kỳ (Mỹ)", "Úc (Australia)", "Singapore", "Anh (UK)", "Nhật Bản", "Hàn Quốc", "Canada", "Lào",
+  "Pháp", "Đức", "Trung Quốc", "Đài Loan", "Hồng Kông", "Thái Lan", "Malaysia", "Campuchia", "New Zealand",
+  "Hà Lan", "Thụy Sĩ", "Ý (Italy)", "Nga", "Đan Mạch", "Thụy Điển", "Phần Lan", "Na Uy", "Tây Ban Nha",
+  "Bỉ", "Áo", "Ireland", "Ấn Độ", "Philippines", "Indonesia", "Các Tiểu vương quốc Ả Rập Thống nhất (UAE)",
+  "Saudi Arabia", "Qatar", "Ba Lan", "Cộng hòa Séc", "Hungary", "Hy Lạp", "Bồ Đào Nha", "Brazil", "Argentina",
+  "Chile", "South Africa (Nam Phi)", "Ai Cập", "Thổ Nhĩ Kỳ", "Khác"
+];
+
+const defaultDanangSchools = [
+  { name: "THCS và THPT Nguyễn Khuyến", schoolType: "PUBLIC" },
+  { name: "THPT Phan Châu Trinh", schoolType: "PUBLIC" },
+  { name: "THPT Trần Phú", schoolType: "PUBLIC" },
+  { name: "THPT Thái Phiên", schoolType: "PUBLIC" },
+  { name: "THPT Hoàng Hoa Thám", schoolType: "PUBLIC" },
+  { name: "THPT Hòa Vang", schoolType: "PUBLIC" },
+  { name: "THPT Nguyễn Trãi", schoolType: "PUBLIC" },
+  { name: "THPT Ông Ích Khiêm", schoolType: "PUBLIC" },
+  { name: "THPT Ngũ Hành Sơn", schoolType: "PUBLIC" },
+  { name: "THPT Ngô Quyền", schoolType: "PUBLIC" },
+  { name: "THPT Chuyên Lê Quý Đôn", schoolType: "PUBLIC" },
+  { name: "TH, THCS & THPT Sky-Line", schoolType: "PRIVATE" },
+  { name: "TH, THCS, THPT Hoàng Sa", schoolType: "PRIVATE" },
+  { name: "TH, THCS, THPT FPT Đà Nẵng", schoolType: "PRIVATE" },
+  { name: "Trường Tiểu học Phù Đổng", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Lý Công Uẩn", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Núi Thành", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Hoàng Dư Khưng", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Lê Đình Chinh", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Trần Đại Nghĩa", schoolType: "PUBLIC" },
+  { name: "Trường THCS Kim Đồng", schoolType: "PUBLIC" },
+  { name: "Trường THCS Tây Sơn", schoolType: "PUBLIC" },
+  { name: "Trường THCS Lê Độ", schoolType: "PUBLIC" },
+  { name: "Trường THCS Nguyễn Huệ", schoolType: "PUBLIC" },
+  { name: "Trường THCS Lý Thường Kiệt", schoolType: "PUBLIC" },
+  { name: "Trường THCS Nguyễn Bỉnh Khiêm", schoolType: "PUBLIC" }
+];
 
 export function StudentInfoClient({ 
   initialGeneralStudents = [], 
@@ -355,7 +422,7 @@ export function StudentInfoClient({
     if (!isFormOpen) return;
     const selectedTargets = formState.targetType ? formState.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
     if (selectedTargets.includes("Nội tỉnh")) {
-      setSelectedLocationType("Nội tỉnh");
+      setSelectedLocationType("Nội tỉnh"); setSelectedProvince("Thành phố Đà Nẵng");
     } else if (selectedTargets.includes("Ngoại tỉnh")) {
       setSelectedLocationType("Ngoại tỉnh");
     } else if (selectedTargets.includes("Nước ngoài")) {
@@ -3366,7 +3433,7 @@ export function StudentInfoClient({
                       </div>
 
                       {/* CONDITIONAL LOCATION INPUTS */}
-                      {selectedLocationType && (
+{selectedLocationType && (
                         <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
                           <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
                             <span className="w-1.5 h-4 bg-[#00B5E2] inline-block rounded"></span>
@@ -3375,21 +3442,129 @@ export function StudentInfoClient({
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             {selectedLocationType === "Nội tỉnh" && (
-                       <div className="col-span-2 md:col-span-1">
-                         <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
-                         <select
-                           required
-                           value={selectedWard}
-                           onChange={(e) => setSelectedWard(e.target.value)}
-                           className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                         >
-                           <option value="">-- Chọn Phường/Xã --</option>
-                           {danangWards.map((w) => (
-                             <option key={w} value={w}>{w}</option>
-                           ))}
-                         </select>
-                       </div>
-                     )}
+                              <div className="col-span-2 md:col-span-1">
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                                <input
+                                  readOnly
+                                  type="text"
+                                  value="Thành phố Đà Nẵng"
+                                  className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs font-bold rounded-xl outline-none cursor-not-allowed"
+                                />
+                              </div>
+                            )}
+
+                            {selectedLocationType === "Ngoại tỉnh" && (
+                              <div className="col-span-2 md:col-span-1">
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                                <select
+                                  required
+                                  value={selectedProvince}
+                                  onChange={(e) => setSelectedProvince(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Tỉnh/Thành --</option>
+                                  {vietnamProvinces.map((p) => (
+                                    <option key={p} value={p}>{p}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            {selectedLocationType === "Nước ngoài" && (
+                              <div className="col-span-2 md:col-span-1">
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
+                                <select
+                                  required
+                                  value={selectedCountry}
+                                  onChange={(e) => setSelectedCountry(e.target.value)}
+                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                >
+                                  <option value="">-- Chọn Quốc gia --</option>
+                                  {worldCountries.map((c) => (
+                                    <option key={c} value={c}>{c}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                              {(selectedLocationType === "Nội tỉnh" || selectedProvince === "Thành phố Đà Nẵng" || selectedProvince.includes("Đà Nẵng")) ? (
+                                <div className="space-y-2">
+                                  <select
+                                    value={
+                                      ((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools).some(s => s.name === schoolNameInput)
+                                        ? schoolNameInput
+                                        : (schoolNameInput ? "__OTHER__" : "")
+                                    }
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      if (val === "__OTHER__") {
+                                        setSchoolNameInput("");
+                                      } else {
+                                        setSchoolNameInput(val);
+                                        const list = ((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools);
+                                        const matched = list.find(s => s.name === val);
+                                        if (matched) {
+                                          const st = matched.schoolType === "PUBLIC" ? "Công lập" : matched.schoolType === "PRIVATE" ? "Tư thục" : (matched.schoolType || "");
+                                          if (st) setSchoolTypeInput(st);
+                                        }
+                                      }
+                                    }}
+                                    className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                                  >
+                                    <option value="">-- Chọn Đơn vị Trường học cũ --</option>
+                                    {((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools).map((s) => (
+                                      <option key={s.id || s.name} value={s.name}>
+                                        {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : s.schoolType === "PRIVATE" ? "Tư thục" : (s.schoolType || "Khác")})
+                                      </option>
+                                    ))}
+                                    <option value="__OTHER__">-- Khác (Nhập thủ công bên dưới) --</option>
+                                  </select>
+
+                                  {(!schoolNameInput || !((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools).some(s => s.name === schoolNameInput)) && (
+                                    <input
+                                      required
+                                      type="text"
+                                      value={schoolNameInput}
+                                      onChange={(e) => setSchoolNameInput(e.target.value)}
+                                      placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
+                                      className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                                    />
+                                  )}
+                                </div>
+                              ) : (
+                                <input
+                                  required
+                                  type="text"
+                                  value={schoolNameInput}
+                                  onChange={(e) => setSchoolNameInput(e.target.value)}
+                                  placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
+                                  className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                                />
+                              )}
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
+                              <select
+                                required
+                                value={schoolTypeInput}
+                                onChange={(e) => setSchoolTypeInput(e.target.value)}
+                                className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                              >
+                                <option value="">-- Chọn loại hình --</option>
+                                <option value="Công lập">Công lập</option>
+                                <option value="Tư thục">Tư thục</option>
+                                <option value="Song ngữ">Song ngữ</option>
+                                <option value="Quốc tế">Quốc tế</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                      {selectedLocationType === "Ngoại tỉnh" && (
                        <>
