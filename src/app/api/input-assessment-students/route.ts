@@ -466,46 +466,57 @@ export async function PUT(req) {
       return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Mọi tính năng nhập, chỉnh sửa, xét duyệt đều bị vô hiệu hóa." }, { status: 403 });
     }
     
+    // Clean relational & undefined fields from payload
+    const updatePayload: any = {};
+    if (data.fullName !== undefined) updatePayload.fullName = data.fullName;
+    if (data.dateOfBirth !== undefined) updatePayload.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
+    if (data.gender !== undefined) updatePayload.gender = data.gender || null;
+    if (data.className !== undefined) updatePayload.className = data.className || null;
+    if (data.grade !== undefined) updatePayload.grade = data.grade || null;
+    if (data.academicRating !== undefined) updatePayload.academicRating = data.academicRating || null;
+    if (data.conductRating !== undefined) updatePayload.conductRating = data.conductRating || null;
+    if (data.admissionCriteria !== undefined) updatePayload.admissionCriteria = data.admissionCriteria || null;
+    if (data.surveySystem !== undefined) updatePayload.surveySystem = data.surveySystem || null;
+    if (data.targetType !== undefined) updatePayload.targetType = data.targetType || null;
+    if (data.surveyFormType !== undefined) updatePayload.surveyFormType = data.surveyFormType || null;
+    if (data.signatureName !== undefined) updatePayload.signatureName = data.signatureName || null;
+    if (data.hocKy !== undefined) updatePayload.hocKy = data.hocKy || null;
+    if (data.kqgdTieuHoc !== undefined) updatePayload.kqgdTieuHoc = data.kqgdTieuHoc || null;
+    if (data.kqHocTap !== undefined) updatePayload.kqHocTap = data.kqHocTap || null;
+    if (data.hoSoCtQuocTe !== undefined) updatePayload.hoSoCtQuocTe = data.hoSoCtQuocTe || null;
+    if (data.kqRenLuyen !== undefined) updatePayload.kqRenLuyen = data.kqRenLuyen || null;
+    if (data.batchId !== undefined) updatePayload.batchId = data.batchId || null;
+    if (data.registeredCampus !== undefined) updatePayload.registeredCampus = data.registeredCampus || null;
+    if (data.admissionResult !== undefined) updatePayload.admissionResult = data.admissionResult;
+    if (data.directorNote !== undefined) updatePayload.directorNote = data.directorNote;
+    if (data.admissionCampus !== undefined) updatePayload.admissionCampus = data.admissionCampus;
+    if (data.isAbsent !== undefined) updatePayload.isAbsent = Boolean(data.isAbsent);
+    if (data.cityName !== undefined) updatePayload.cityName = data.cityName || null;
+    if (data.districtName !== undefined) updatePayload.districtName = data.districtName || null;
+    if (data.wardName !== undefined) updatePayload.wardName = data.wardName || null;
+    if (data.countryName !== undefined) updatePayload.countryName = data.countryName || null;
+    if (data.oldSchoolName !== undefined) updatePayload.oldSchoolName = data.oldSchoolName || null;
+    if (data.oldSchoolType !== undefined) updatePayload.oldSchoolType = data.oldSchoolType || null;
+
+    if (data.psychologyScore !== undefined && data.psychologyScore !== null && !isNaN(parseFloat(data.psychologyScore))) {
+      updatePayload.psychologyScore = parseFloat(data.psychologyScore);
+    }
+    if (data.writtenEnglishScore !== undefined && data.writtenEnglishScore !== null && !isNaN(parseFloat(data.writtenEnglishScore))) {
+      updatePayload.writtenEnglishScore = parseFloat(data.writtenEnglishScore);
+    }
+    if (data.oralEnglishScore !== undefined && data.oralEnglishScore !== null && !isNaN(parseFloat(data.oralEnglishScore))) {
+      updatePayload.oralEnglishScore = parseFloat(data.oralEnglishScore);
+    }
+    if (data.mathScore !== undefined && data.mathScore !== null && !isNaN(parseFloat(data.mathScore))) {
+      updatePayload.mathScore = parseFloat(data.mathScore);
+    }
+    if (data.literatureScore !== undefined && data.literatureScore !== null && !isNaN(parseFloat(data.literatureScore))) {
+      updatePayload.literatureScore = parseFloat(data.literatureScore);
+    }
+
     const result = await (prisma as any).inputAssessmentStudent.update({
       where: { id },
-      data: {
-         fullName: data.fullName,
-         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-           gender: data.gender || null,
-         className: data.className || null,
-           grade: data.grade || null,
-         academicRating: data.academicRating || null,
-         conductRating: data.conductRating || null,
-         admissionCriteria: data.admissionCriteria || null,
-         surveySystem: data.surveySystem || null,
-         targetType: data.targetType || null,
-         surveyFormType: data.surveyFormType || null,
-         signatureName: data.signatureName || null,
-         hocKy: data.hocKy || null,
-         kqgdTieuHoc: data.kqgdTieuHoc || null,
-         kqHocTap: data.kqHocTap || null,
-           hoSoCtQuocTe: data.hoSoCtQuocTe || null,
-           hoSoCtQuocTe: data.hoSoCtQuocTe || null,
-         kqRenLuyen: data.kqRenLuyen || null,
-         psychologyScore: data.psychologyScore ? parseFloat(data.psychologyScore) : null,
-         writtenEnglishScore: data.writtenEnglishScore ? parseFloat(data.writtenEnglishScore) : null,
-         oralEnglishScore: data.oralEnglishScore ? parseFloat(data.oralEnglishScore) : null,
-         mathScore: data.mathScore ? parseFloat(data.mathScore) : null,
-         literatureScore: data.literatureScore ? parseFloat(data.literatureScore) : null,
-         batchId: data.batchId || null,
-         registeredCampus: data.registeredCampus || null,
-         ...(data.admissionResult !== undefined && { admissionResult: data.admissionResult }),
-         ...(data.directorNote !== undefined && { directorNote: data.directorNote }),
-         ...(data.admissionCampus !== undefined && { admissionCampus: data.admissionCampus }),
-         ...(data.signatureName !== undefined && { signatureName: data.signatureName }),
-         ...(data.isAbsent !== undefined && { isAbsent: data.isAbsent }),
-         cityName: data.cityName || null,
-         districtName: data.districtName || null,
-         wardName: data.wardName || null,
-         countryName: data.countryName || null,
-         oldSchoolName: data.oldSchoolName || null,
-         oldSchoolType: data.oldSchoolType || null,
-      }
+      data: updatePayload
     });
     return NextResponse.json(result);
   } catch (error) {

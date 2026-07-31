@@ -2235,6 +2235,9 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [includeChecklistSheet, setIncludeChecklistSheet] = useState(false);
   const handleSaveReportResult = async () => {
     if (!selectedReportStudent) return;
+    if (!reportForm.admissionResult) {
+      return notify("Vui lòng chọn Kết quả Xét tuyển", "err");
+    }
     setSaveReportLoading(true);
     try {
       const userRole = (currentUser?.role || "").toUpperCase();
@@ -2259,23 +2262,46 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         finalSignature = resolvedStudentCampusObj.manager.fullName;
       }
 
-      let finalNote = reportForm.directorNote;
+      const now = new Date();
+      const formattedTime = `${now.getDate().toString().padStart(2, '0')}/${(now.getMonth()+1).toString().padStart(2, '0')}/${now.getFullYear()} ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const approverName = finalSignature || reportForm.signatureName || currentUser?.fullName || "Hội đồng tuyển sinh";
+      const oldRes = selectedReportStudent.admissionResult || "Chưa duyệt";
+      const newRes = reportForm.admissionResult;
+
+      // Extract existing history & clean note
+      const existingParsed = parseApprovalHistory(selectedReportStudent.directorNote);
+      
+      let baseUserNote = (reportForm.directorNote || "").replace(/--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\r?\n[\s\S]*$/, "").trim();
+      baseUserNote = baseUserNote.replace(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/, "").trim();
+
+      const newHistoryItem = {
+        timestamp: formattedTime,
+        approver: approverName,
+        oldResult: oldRes,
+        newResult: newRes,
+        note: baseUserNote || (oldRes !== "Chưa duyệt" ? "Hiệu chỉnh kết quả xét duyệt" : "Xét duyệt kết quả")
+      };
+
+      const updatedHistory = [newHistoryItem, ...existingParsed.history];
+      const historyBlock = updatedHistory.map(h => 
+        `• ${h.timestamp} | ${h.approver} | ${h.oldResult} ➔ ${h.newResult} | Lý do: ${h.note || "Không có ghi chú"}`
+      ).join("\n");
+
+      let finalNote = baseUserNote;
       if (reportForm.admissionResult === "Đạt cam kết" && reportForm.committedSubjects.length > 0) {
-        finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]
-
-${reportForm.directorNote}`;
+        finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]\n\n${baseUserNote}`;
       } else if (reportForm.admissionResult === "Không đạt - Kiểm tra lại" && reportForm.committedSubjects.length > 0) {
-        finalNote = `Môn kiểm tra lại: [${reportForm.committedSubjects.join(", ")}]
-
-${reportForm.directorNote}`;
+        finalNote = `Môn kiểm tra lại: [${reportForm.committedSubjects.join(", ")}]\n\n${baseUserNote}`;
       }
+
+      finalNote = `${finalNote.trim()}\n\n--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\n${historyBlock}`;
+
       const r = await fetch("/api/input-assessment-students", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: selectedReportStudent.id,
           data: {
-            ...selectedReportStudent,
             admissionResult: reportForm.admissionResult,
             admissionCampus: finalCampus,
             signatureName: finalSignature,
@@ -2283,8 +2309,9 @@ ${reportForm.directorNote}`;
           }
         })
       });
+      const resData = await r.json().catch(() => ({}));
       if (r.ok) {
-        notify("Đã lưu kết quả tổng hợp thành công!");
+        notify("Đã lưu kết quả & lược sử xét duyệt thành công!");
         setReportStudents(prev => prev.map(s => s.id === selectedReportStudent.id ? { 
           ...s, 
           admissionResult: reportForm.admissionResult,
@@ -2293,10 +2320,10 @@ ${reportForm.directorNote}`;
           directorNote: finalNote
         } : s));
       } else {
-        notify("Lỗi khi lưu kết quả tổng hợp", "err");
+        notify(resData.error || "Lỗi khi lưu kết quả tổng hợp", "err");
       }
     } catch(e) {
-      notify("Lỗi hệ thống", "err");
+      notify("Lỗi hệ thống: " + (e.message || e), "err");
     }
     setSaveReportLoading(false);
   };
