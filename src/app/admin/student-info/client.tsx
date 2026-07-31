@@ -3049,7 +3049,7 @@ export function StudentInfoClient({
                     </div>
                   </div>
                 ) : (
-                  <>
+                  <Fragment>
                     {formSubTab === "admin" && (
                   <div className="space-y-6 animate-in fade-in duration-200">
                     {/* SECTION 1: THÔNG TIN CÁ NHÂN */}
@@ -3683,7 +3683,7 @@ export function StudentInfoClient({
                     </div>
                   </div>
                 )}
-                </>
+                </Fragment>
               </div>
 
               {/* FOOTER */}
