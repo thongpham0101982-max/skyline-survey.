@@ -3052,8 +3052,7 @@ export function ReportsClient({
                         comSubs
                       ]);
                     });
-                    const csvContent = "﻿" + csvData.map(e => e.map(item => `"${(item||'').replace(/"/g, '""')}"`).join(",")).join("
-");
+                    const csvContent = "\uFEFF" + csvData.map(e => e.map(item => `"${(item||'').replace(/"/g, '""')}"`).join(",")).join("\n");
                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement("a");
