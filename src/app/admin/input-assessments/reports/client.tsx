@@ -1843,20 +1843,40 @@ export function ReportsClient({
   const handlePrintPDF = async () => {
     if (typeof window === "undefined") return;
     
-    let pdfTitle = "In_Thu_Skyline";
+    let pdfTitle = "25_26_K6_HNS_In_Thu_Skyline";
     if (selectedReportStudent) {
-      const currentDate = new Date();
-      const yearStr = currentDate.getFullYear().toString();
-      const monthStr = "T" + String(currentDate.getMonth() + 1).padStart(2, '0');
-      const dayStr = String(currentDate.getDate()).padStart(2, '0');
-      const studentName = selectedReportStudent?.fullName || "";
-      const prefix = isInvitation ? "TM" : isCommitment ? "BCK" : "TCM";
-      pdfTitle = `${yearStr}-${monthStr}.${dayStr}-${prefix}-${studentName}`;
+      const rawYear = selectedReportStudent?.academicYear || "2025-2026";
+      const yearMatches = rawYear.match(/\d{4}/g);
+      let yearPart = "25_26";
+      if (yearMatches && yearMatches.length >= 2) {
+        yearPart = `${yearMatches[0].slice(-2)}_${yearMatches[1].slice(-2)}`;
+      } else if (yearMatches && yearMatches.length === 1) {
+        const y = parseInt(yearMatches[0]);
+        yearPart = `${y.toString().slice(-2)}_${(y + 1).toString().slice(-2)}`;
+      }
+
+      const gradeVal = selectedReportStudent?.grade;
+      const gradePart = gradeVal ? `K${gradeVal}` : "K";
+
+      let rawType = (selectedReportStudent?.surveyFormType || "HNS").trim();
+      if (rawType.toLowerCase().startsWith("hệ ")) {
+        rawType = rawType.slice(3).trim();
+      }
+      const typePart = rawType.replace(/\s+/g, '_');
+
+      const rawName = (selectedReportStudent?.fullName || "").trim();
+      const namePart = rawName.replace(/\s+/g, '_');
+
+      pdfTitle = `${yearPart}_${gradePart}_${typePart}_${namePart}`;
     }
     
+    const originalTitle = document.title;
+    document.title = pdfTitle;
+
     const printArea = document.getElementById('print-area-reports');
     if (!printArea) {
       window.print();
+      document.title = originalTitle;
       return;
     }
 
