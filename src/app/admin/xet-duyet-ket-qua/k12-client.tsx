@@ -2550,16 +2550,30 @@ ${reportForm.directorNote}`;
     const userRole = (currentUser?.role || "").toUpperCase();
     const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
     
+    const query = (reportStudentSearchQuery || "").trim().toLowerCase();
+
     return reportStudents.filter(s => {
-      // if (s.isAbsent) return false;
-      const matchesBatch = reportBatchId === "all" || s.batchId === reportBatchId || s.batchId === null || s.batchId === "";
-      if (!matchesBatch) return false;
-      
+      // 1. Matches Period (Kỳ khảo sát độc lập)
+      if (reportPeriodId && reportPeriodId !== "all") {
+        if (s.periodId !== reportPeriodId && s.period?.id !== reportPeriodId) {
+          return false;
+        }
+      }
+
+      // 2. Matches Batch (Đợt khảo sát độc lập)
+      if (reportBatchId && reportBatchId !== "all") {
+        if (s.batchId !== reportBatchId) {
+          return false;
+        }
+      }
+
+      // 3. OpenDay GDCS campus check
       if (isOpenDay && isGDCS) {
         const allowedIds = currentUser?.campusIds || [];
         if (!(s.registeredCampus && allowedIds.includes(s.registeredCampus))) return false;
       }
 
+      // 4. Matches Campus (Cơ sở độc lập)
       if (reportCampusFilter && reportCampusFilter !== "all") {
         const resolvedCampusId = resolveStudentCampusId(s);
         const matchesCampus = resolvedCampusId === reportCampusFilter || 
@@ -2567,10 +2581,53 @@ ${reportForm.directorNote}`;
                               s.registeredCampus === reportCampusFilter;
         if (!matchesCampus) return false;
       }
-      
+
+      // 5. Matches Approval Status (Trạng thái duyệt độc lập)
+      if (reportApprovalStatusFilter && reportApprovalStatusFilter !== "all") {
+        if (reportApprovalStatusFilter === "Vắng khảo sát") {
+          if (!s.isAbsent) return false;
+        } else if (reportApprovalStatusFilter === "Chưa duyệt") {
+          if (s.admissionResult || s.isAbsent) return false;
+        } else if (reportApprovalStatusFilter === "Đạt cam kết") {
+          if (s.isAbsent) return false;
+          const res = String(s.admissionResult || "").toLowerCase();
+          if (!res.includes("cam kết")) return false;
+        } else if (reportApprovalStatusFilter === "Đạt") {
+          if (s.isAbsent) return false;
+          const res = String(s.admissionResult || "").toLowerCase();
+          if (!res.includes("đạt") || res.includes("không đạt")) return false;
+        } else if (reportApprovalStatusFilter === "Không đạt") {
+          if (s.isAbsent) return false;
+          const res = String(s.admissionResult || "").toLowerCase();
+          if (!res.includes("không đạt")) return false;
+        } else {
+          if (s.isAbsent) return false;
+          const res = String(s.admissionResult || "").toLowerCase();
+          const filterStr = String(reportApprovalStatusFilter).toLowerCase();
+          if (!res.includes(filterStr)) return false;
+        }
+      }
+
+      // 6. Search Student Name or Code (Tìm kiếm Học sinh độc lập)
+      if (query) {
+        const name = String(s.fullName || "").toLowerCase();
+        const code = String(s.studentCode || "").toLowerCase();
+        if (!name.includes(query) && !code.includes(query)) return false;
+      }
+
       return true;
     });
-  }, [reportStudents, reportBatchId, reportSelPeriod, currentUser, reportCampusFilter, resolveStudentCampusId]);
+  }, [
+    reportStudents, 
+    reportPeriodId, 
+    reportBatchId, 
+    reportSelPeriod, 
+    currentUser, 
+    reportCampusFilter, 
+    resolveStudentCampusId, 
+    reportApprovalStatusFilter, 
+    reportStudentSearchQuery
+  ]);
 
   const reportTotalPages = Math.ceil(filteredReportStudents.length / reportPageSize);
   const paginatedReportStudents = useMemo(() => {
@@ -5890,7 +5947,6 @@ return {
                   value={reportPeriodId} 
                   onChange={e => {
                     setReportPeriodId(e.target.value);
-                    setReportBatchId("all");
                     setReportStudentId("");
                   }}
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-4 pr-9 py-3 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-xs text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
