@@ -3105,14 +3105,16 @@ export function ReportsClient({
                 <table className="w-full text-left text-sm border-collapse">
                   <thead className="text-xs font-semibold">
                     <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                      <th className="p-2 text-center w-12 border border-slate-200">STT</th>
-                      <th className="p-2 border border-slate-200">Mã HS</th>
-                      <th className="p-2 border border-slate-200">Học sinh</th>
-                      <th className="p-2 text-center border border-slate-200">Khối</th>
-                      <th className="p-2 border border-slate-200">Hệ</th>
-                      <th className="p-2 border border-slate-200">Kết quả Phê duyệt</th>
-                      <th className="p-2 border border-slate-200">Môn Cam kết</th>
-                      <th className="p-2 text-center w-[110px] border border-slate-200">Thao tác</th>
+                      <th className="p-2.5 text-center w-12 border border-slate-200">STT</th>
+                      <th className="p-2.5 border border-slate-200">Mã HS</th>
+                      <th className="p-2.5 border border-slate-200">Học sinh</th>
+                      <th className="p-2.5 text-center border border-slate-200">Giới tính</th>
+                      <th className="p-2.5 text-center border border-slate-200">Khối</th>
+                      <th className="p-2.5 border border-slate-200">Hệ</th>
+                      <th className="p-2.5 border border-slate-200">Kết quả Phê duyệt</th>
+                      <th className="p-2.5 border border-slate-200">Môn Cam kết</th>
+                      <th className="p-2.5 text-center w-[90px] border border-slate-200">Thư mời</th>
+                      <th className="p-2.5 text-center w-[90px] border border-slate-200">Cam kết</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -3126,23 +3128,23 @@ export function ReportsClient({
 
                       return (
                         <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 group/row text-xs font-semibold">
-                          <td className="p-2 text-center text-slate-400 font-semibold border border-slate-200">{sttIndex}</td>
-                          <td className="p-2 border border-slate-200">
+                          <td className="p-2.5 text-center text-slate-400 font-semibold border border-slate-200">{sttIndex}</td>
+                          <td className="p-2.5 border border-slate-200">
                             <span className="font-mono text-xs font-black text-teal-700">{s.studentCode || "—"}</span>
                           </td>
-                          <td className="p-2 border border-slate-200">
-                            <div className="flex flex-col gap-0.5">
-                              <span className="font-bold text-slate-800 text-sm group-hover/row:text-teal-700 transition-colors">{s.fullName}</span>
-                              <span className="text-[11px] font-medium text-slate-400">{gender}</span>
-                            </div>
+                          <td className="p-2.5 border border-slate-200">
+                            <span className="font-bold text-slate-800 text-sm group-hover/row:text-teal-700 transition-colors">{s.fullName}</span>
                           </td>
-                          <td className="p-2 text-center border border-slate-200">
+                          <td className="p-2.5 text-center border border-slate-200">
+                            <span className="font-bold text-slate-700 text-xs">{gender}</span>
+                          </td>
+                          <td className="p-2.5 text-center border border-slate-200">
                             <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold text-xs">{s.grade ? `K${s.grade}` : "—"}</span>
                           </td>
-                          <td className="p-2 border border-slate-200">
+                          <td className="p-2.5 border border-slate-200">
                             <span className="font-bold text-slate-700 text-xs">{s.surveyFormType || "—"}</span>
                           </td>
-                          <td className="p-2 border border-slate-200">
+                          <td className="p-2.5 border border-slate-200">
                             {(() => {
                               const isGreen = result.includes("Đạt") && !result.includes("cam kết") && !result.includes("Không");
                               const isAmber = result.includes("cam kết");
@@ -3154,7 +3156,7 @@ export function ReportsClient({
                               return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">{result}</span>;
                             })()}
                           </td>
-                          <td className="p-2 border border-slate-200">
+                          <td className="p-2.5 border border-slate-200">
                             <div className="flex flex-wrap gap-1 max-w-[180px]">
                               {extractCommittedSubjects(s).length > 0 ? (
                                 extractCommittedSubjects(s).map((sub: string, subIdx: number) => (
@@ -3167,31 +3169,31 @@ export function ReportsClient({
                               )}
                             </div>
                           </td>
-                          <td className="p-2 border border-slate-200">
-                            <div className="flex gap-2 justify-center">
-                              {isPassed ? (
-                                <>
-                                  <button
-                                    onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                    className="p-2 text-emerald-600 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all shadow-sm tooltip-trigger relative group/btn text-xs font-semibold"
-                                    title="Thư Chúc mừng"
-                                  >
-                                    <Send className="w-4 h-4 transition-colors" />
-                                  </button>
-                                  {selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) && (
-                                    <button
-                                      onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
-                                      className="p-2 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500 transition-all shadow-sm tooltip-trigger relative group/btn text-xs font-semibold"
-                                      title="Cam kết học tập"
-                                    >
-                                      <PenLine className="w-4 h-4 transition-colors" />
-                                    </button>
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-[10px] font-bold text-slate-300">—</span>
-                              )}
-                            </div>
+                          <td className="p-2.5 text-center border border-slate-200">
+                            {isPassed ? (
+                              <button
+                                onClick={() => { setIsInvitation(false); setIsCommitment(false); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                className="p-2 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-200 rounded-lg transition-all shadow-sm mx-auto flex items-center justify-center"
+                                title="Thư Chúc mừng / Thư Mời"
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-300">—</span>
+                            )}
+                          </td>
+                          <td className="p-2.5 text-center border border-slate-200">
+                            {isPassed && selectedLevel !== "preschool" && (result.includes("cam kết") || result.includes("Đạt cam kết")) ? (
+                              <button
+                                onClick={() => { setIsInvitation(false); setIsCommitment(true); setSelectedReportStudent(s); setIsPrintModalOpen(true); }}
+                                className="p-2 text-amber-600 hover:bg-amber-500 hover:text-white border border-amber-200 rounded-lg transition-all shadow-sm mx-auto flex items-center justify-center"
+                                title="Cam kết học tập"
+                              >
+                                <PenLine className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <span className="text-[10px] font-bold text-slate-300">—</span>
+                            )}
                           </td>
                         </tr>
                       );
