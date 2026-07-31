@@ -297,6 +297,50 @@ const worldCountries = [
 ].sort();
 
 // ========= MAIN =========
+
+// Helper to parse approval history entries from directorNote
+export interface ApprovalHistoryItem {
+  timestamp: string;
+  approver: string;
+  oldResult: string;
+  newResult: string;
+  note: string;
+}
+
+export function parseApprovalHistory(note: string | undefined | null): { cleanNote: string; history: ApprovalHistoryItem[] } {
+  if (!note) return { cleanNote: "", history: [] };
+
+  const historyMatch = note.match(/--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\r?\n([\s\S]*)$/);
+  let history: ApprovalHistoryItem[] = [];
+  let cleanNote = note;
+
+  if (historyMatch) {
+    cleanNote = note.replace(/--- LỊCH SỬ XÉT DUYỆT & HIỆU CHỈNH ---\r?\n[\s\S]*$/, "").trim();
+    const historyBlock = historyMatch[1];
+    const lines = historyBlock.split("\n").map(l => l.trim()).filter(Boolean);
+    
+    lines.forEach(line => {
+      const parts = line.replace(/^•\s*/, "").split(" | ");
+      if (parts.length >= 3) {
+        const timestamp = parts[0] || "";
+        const approver = parts[1] || "";
+        const results = parts[2] || "";
+        const [oldRes, newRes] = results.split(" ➔ ");
+        const notePart = parts.slice(3).join(" | ").replace(/^Lý do:\s*/, "");
+        history.push({
+          timestamp,
+          approver,
+          oldResult: oldRes || "—",
+          newResult: newRes || "—",
+          note: notePart || ""
+        });
+      }
+    });
+  }
+
+  return { cleanNote, history };
+}
+
 export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoardUsers = [], subjects: initialSubjects = [], eduSystems = [], configs: initialConfigs = [], grades = [], teachers = [], departments = [], giaoVuCSUsers = [], gdcsUsers = [], currentUser = null, rolePermissions = [] }: Props) {
   const TAB_PERMISSION_MAP: Record<string, string> = {
     periods: "INPUT_ASSESSMENTS_PERIODS",
@@ -7050,24 +7094,17 @@ return {
                     {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
                       <>
                         <Field label="Người duyệt / Phê duyệt">
-                          {selectedReportStudent.admissionResult ? (
-                            <div className="text-xs font-black text-slate-700 flex items-center gap-2 shadow-sm select-none transition-all text-xs font-semibold">
-                              <UserCheck className="w-3.5 h-3.5 text-indigo-500" />
-                              {reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || "Hệ thống ghi nhận"}
-                            </div>
-                          ) : (
-                            <select 
-                              value={reportForm.signatureName}
-                              onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
-                              className={`${inp} py-1.5 text-xs`}
-                              disabled={!canApprove}
-                            >
-                              <option value="">-- Chọn người phê duyệt --</option>
-                              {gdcsUsers.map(u => (
-                                <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
-                              ))}
-                            </select>
-                          )}
+                          <select 
+                            value={reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || ""}
+                            onChange={e => setReportForm(f => ({ ...f, signatureName: e.target.value }))}
+                            className={`${inp} py-1.5 text-xs`}
+                            disabled={!canApprove}
+                          >
+                            <option value="">-- Chọn người phê duyệt --</option>
+                            {gdcsUsers.map(u => (
+                              <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
+                            ))}
+                          </select>
                         </Field>
                       </>
                     )}
@@ -7088,7 +7125,7 @@ return {
                       className="w-full hover:bg-indigo-700 text-white font-black text-[11px] uppercase tracking-wider shadow-md disabled:opacity-50 transition-all flex justify-center items-center gap-1.5 cursor-pointer text-xs font-semibold"
                     >
                       {saveReportLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Check className="w-3.5 h-3.5"/>}
-                      Lưu kết quả tổng hợp
+                      Lưu kết quả & Lược sử xét duyệt
                     </button>
 
                     {selectedReportStudent && selectedReportStudent.admissionResult === "Không đạt - Kiểm tra lại" && (
@@ -7104,9 +7141,56 @@ return {
                         Đăng ký Khảo sát lại (Thi lại)
                       </button>
                     )}
-
-
                   </div>
+
+                  {/* LƯỢC SỬ XÉT DUYỆT & HIỆU CHỈNH CARD */}
+                  {(() => {
+                    const parsed = parseApprovalHistory(selectedReportStudent?.directorNote);
+                    if (!parsed.history || parsed.history.length === 0) return null;
+                    return (
+                      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-3 animate-fade-in text-left">
+                        <h4 className="font-black text-slate-800 text-xs flex items-center justify-between border-b pb-2 mb-1">
+                          <span className="flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                            Lược sử Xét duyệt & Hiệu chỉnh
+                          </span>
+                          <span className="text-[9px] font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full shrink-0">
+                            {parsed.history.length} Lần ghi nhận
+                          </span>
+                        </h4>
+
+                        <div className="relative pl-3 border-l-2 border-indigo-100 space-y-3 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+                          {parsed.history.map((h, idx) => (
+                            <div key={idx} className="relative group text-left">
+                              <span className="absolute -left-[17px] top-1.5 w-2.5 h-2.5 rounded-full bg-indigo-500 border-2 border-white ring-2 ring-indigo-50" />
+                              <div className="bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/60 space-y-1 hover:bg-slate-100/80 transition-colors">
+                                <div className="flex items-center justify-between gap-1 text-[11px]">
+                                  <span className="font-black text-slate-700">{h.approver}</span>
+                                  <span className="text-[10px] text-slate-400 font-bold">{h.timestamp}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[11px] font-extrabold">
+                                  <span className="text-slate-400 line-through">{h.oldResult}</span>
+                                  <ArrowRight className="w-3 h-3 text-indigo-400 shrink-0" />
+                                  <span className={`px-2 py-0.5 rounded text-[10px] ${
+                                    h.newResult.includes("Đạt") ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
+                                    h.newResult.includes("Không đạt") ? "bg-rose-50 text-rose-700 border border-rose-200" :
+                                    "bg-indigo-50 text-indigo-700 border border-indigo-200"
+                                  }`}>
+                                    {h.newResult}
+                                  </span>
+                                </div>
+                                {h.note && (
+                                  <p className="text-[11px] text-slate-600 font-medium italic mt-1 bg-white p-2 rounded-lg border border-slate-100 leading-relaxed">
+                                    "{h.note}"
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()
 
                   {/* RETEST HISTORY TIMELINE CARD */}
                   {Array.isArray(retestHistory) && retestHistory.length > 1 && (
