@@ -7375,32 +7375,55 @@ return {
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                     <div>
-                       <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
-                       <input
-                         required
-                         type="text"
-                         value={schoolNameInput}
-                         onChange={(e) => setSchoolNameInput(e.target.value)}
-                         placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
-                         className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
-                       <select
-                         required
-                         value={schoolTypeInput}
-                         onChange={(e) => setSchoolTypeInput(e.target.value)}
-                         className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                       >
-                         <option value="">-- Chọn loại hình --</option>
-                         <option value="Công lập">Công Lập</option>
-                         <option value="Tư thục">Tư Thục</option>
-                         <option value="Song ngữ">Song ngữ</option>
-                         <option value="Quốc tế">Quốc tế</option>
-                       </select>
-                     </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                        <div className="space-y-2">
+                          <select
+                            value={
+                              (destinationSchools || []).some((s: any) => s.name === schoolNameInput)
+                                ? schoolNameInput
+                                : (schoolNameInput ? "__custom__" : "")
+                            }
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === "__custom__") {
+                                setSchoolNameInput("");
+                              } else {
+                                setSchoolNameInput(val);
+                                const matched = (destinationSchools || []).find((s: any) => s.name === val);
+                                if (matched) {
+                                  let mappedType = "Công lập";
+                                  if (matched.schoolType === "PRIVATE") mappedType = "Tư thục";
+                                  else if (matched.schoolType === "PUBLIC") mappedType = "Công lập";
+                                  else if (matched.schoolType) mappedType = matched.schoolType;
+                                  setSchoolTypeInput(mappedType);
+                                }
+                              }
+                            }}
+                            className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          >
+                            <option value="">-- Chọn trường từ Danh mục trường --</option>
+                            {(destinationSchools || [])
+                              .map((s: any) => (
+                                <option key={s.id || s.code} value={s.name}>
+                                  {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : s.schoolType === "PRIVATE" ? "Tư thục" : s.schoolType})
+                                </option>
+                              ))}
+                            <option value="__custom__">-- Khác / Nhập tên trường ngoài danh mục --</option>
+                          </select>
+
+                          {(!schoolNameInput || !(destinationSchools || []).some((s: any) => s.name === schoolNameInput)) && (
+                            <input
+                              required
+                              type="text"
+                              value={schoolNameInput}
+                              onChange={(e) => setSchoolNameInput(e.target.value)}
+                              placeholder="Nhập tên trường học cũ..."
+                              className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 animate-in fade-in duration-150"
+                            />
+                          )}
+                        </div>
+                      </div>
                    </div>
                  </div>
                )}
