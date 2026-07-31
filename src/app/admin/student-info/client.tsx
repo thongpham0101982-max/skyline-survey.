@@ -67,6 +67,7 @@ interface StudentInfoClientProps {
   currentUser: any;
   rolePermissions: any[];
   gradesPreschool: string[];
+  destinationSchools?: any[];
 }
 
 const preschoolGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
@@ -250,6 +251,7 @@ export function StudentInfoClient({
   // Reset form subtab when form modal opens
   useEffect(() => {
     if (isFormOpen) {
+      setOldSchoolLevelFilter(activeTab === "preschool" ? "MAM_NON" : "PHO_THONG");
       setFormSubTab("admin");
     }
   }, [isFormOpen]);
@@ -300,6 +302,7 @@ export function StudentInfoClient({
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [schoolNameInput, setSchoolNameInput] = useState<string>("");
   const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
+  const [oldSchoolLevelFilter, setOldSchoolLevelFilter] = useState<"PHO_THONG" | "MAM_NON">("PHO_THONG");
   const [originalKqgd, setOriginalKqgd] = useState<string>("");
 
   // System transfer states
@@ -433,9 +436,9 @@ export function StudentInfoClient({
     if (selectedLocationType) {
       let locDetail = "";
       if (selectedLocationType === "Nội tỉnh") {
-        locDetail = selectedWard;
+        locDetail = "Thành phố Đà Nẵng";
       } else if (selectedLocationType === "Ngoại tỉnh") {
-        locDetail = selectedWard ? `${selectedWard} - ${selectedProvince}` : selectedProvince;
+        locDetail = selectedProvince;
       } else if (selectedLocationType === "Nước ngoài") {
         locDetail = selectedCountry;
       }
@@ -444,7 +447,7 @@ export function StudentInfoClient({
       const finalKq = originalKqgd ? `${locationStr}\n${originalKqgd}` : locationStr;
       
       setFormState(prev => {
-        const cityName = selectedLocationType === "Nội tỉnh" ? "TP Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : "");
+        const cityName = selectedLocationType === "Nội tỉnh" ? "Thành phố Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : "");
         const countryName = selectedLocationType === "Nước ngoài" ? selectedCountry : "Việt Nam";
         const districtName = "";
         const wardName = (selectedLocationType === "Nội tỉnh" || selectedLocationType === "Ngoại tỉnh") ? selectedWard : "";

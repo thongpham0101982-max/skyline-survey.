@@ -2992,7 +2992,7 @@ ${reportForm.directorNote}`;
     if (selectedLocationType) {
       let locDetail = "";
       if (selectedLocationType === "Nội tỉnh") {
-        locDetail = selectedWard;
+        locDetail = "Thành phố Đà Nẵng";
       } else if (selectedLocationType === "Ngoại tỉnh") {
         locDetail = selectedWard ? `${selectedWard} - ${selectedProvince}` : selectedProvince;
       } else if (selectedLocationType === "Nước ngoài") {
@@ -3003,7 +3003,7 @@ ${reportForm.directorNote}`;
       const finalKq = originalKqgd ? `${locationStr}\n${originalKqgd}` : locationStr;
       
       setSForm(prev => {
-        const cityName = selectedLocationType === "Nội tỉnh" ? "TP Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : "");
+        const cityName = selectedLocationType === "Nội tỉnh" ? "Thành phố Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : "");
         const countryName = selectedLocationType === "Nước ngoài" ? selectedCountry : "Việt Nam";
         const districtName = "";
         const wardName = (selectedLocationType === "Nội tỉnh" || selectedLocationType === "Ngoại tỉnh") ? selectedWard : "";
