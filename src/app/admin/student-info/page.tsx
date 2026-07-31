@@ -52,6 +52,13 @@ export default async function StudentInfoPage() {
     if (pAny) {
       const roleCode = user?.role || "ADMIN";
       activeYear = await getDefaultAcademicYear(pAny);
+
+      if (pAny.destinationSchool) {
+        destinationSchools = await pAny.destinationSchool.findMany({
+          orderBy: [{ level: "desc" }, { name: "asc" }]
+        }).catch(() => []);
+      }
+
       const activeYearId = activeYear ? activeYear.id : null;
 
       // Trigger all fetches in parallel
@@ -159,7 +166,7 @@ export default async function StudentInfoPage() {
       rolePermissions = rolePermissionsResult;
       generalPeriods = generalPeriodsResult;
       preschoolPeriods = preschoolPeriodsResult;
-      destinationSchools = destinationSchoolsResult || [];
+      
 
       if (dbAssignments && dbAssignments.length > 0) {
         liveCampusIds = dbAssignments.map((a: any) => a.campusId);
