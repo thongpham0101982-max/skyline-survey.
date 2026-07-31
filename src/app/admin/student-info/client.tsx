@@ -3683,6 +3683,8 @@ export function StudentInfoClient({
                     </div>
                   </div>
                 )}
+                </>
+              </div>
 
               {/* FOOTER */}
               <div className="p-4 bg-slate-50 border-t border-[#D9E2EC] flex justify-end gap-3 shrink-0">
