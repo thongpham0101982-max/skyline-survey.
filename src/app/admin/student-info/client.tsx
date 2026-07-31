@@ -3565,6 +3565,7 @@ export function StudentInfoClient({
                           </div>
                         </div>
                       )}
+                      </div>
 
 
                     {/* SECTION 4: ĐÁNH GIÁ MẦM NON (Chỉ hiển thị cho mầm non) */}
