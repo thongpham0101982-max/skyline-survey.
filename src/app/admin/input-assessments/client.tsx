@@ -8,7 +8,7 @@ import {
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
-  Filter, ClipboardCheck, ArrowRight, UserPlus, Info,
+  Filter, Building, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
   Phone, Printer, Lock
 , RefreshCcw } from "lucide-react"
@@ -1144,6 +1144,8 @@ export function InputAssessmentsClient({
 
   const [pLoading, setPLoading] = useState(false)
   const [expandedId, setExpandedId] = useState<string|null>(null)
+  const [batchCampusFilter, setBatchCampusFilter] = useState("all")
+  const [batchStatusFilter, setBatchStatusFilter] = useState("all")
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
   const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
 
@@ -1165,6 +1167,8 @@ export function InputAssessmentsClient({
   const [sLoading, setSLoading] = useState(false)
   const [sPeriodId, setSPeriodId] = useState("")
   const [sBatchId, setSBatchId] = useState("")
+  const [sGradeFilter, setSGradeFilter] = useState("")
+  const [sEduFilter, setSEduFilter] = useState("")
   const [latestBatchInfo, setLatestBatchInfo] = useState(null);
   const [sSearch, setSSearch] = useState("")
   const [studentsCurrentPage, setStudentsCurrentPage] = useState(1);
@@ -1172,7 +1176,7 @@ export function InputAssessmentsClient({
 
   useEffect(() => {
     setStudentsCurrentPage(1);
-  }, [sPeriodId, sBatchId, sSearch]);
+  }, [sPeriodId, sBatchId, sSearch, sGradeFilter, sEduFilter]);
   const [importing, setImporting] = useState(false)
   const [sModal, setSModal] = useState(false)
   const [editS, setEditS] = useState<Student|null>(null)
@@ -4179,6 +4183,62 @@ return {
             </div>
           </div>
 
+                    {/* TOP BATCH FILTER BAR FOR CƠ SỞ & TRẠNG THÁI */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-indigo-500" />
+              <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Bộ lọc Đợt khảo sát</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Bộ lọc Cơ sở */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                  <Building className="w-3.5 h-3.5 text-indigo-500"/> Cơ sở:
+                </label>
+                <select
+                  value={batchCampusFilter}
+                  onChange={e => setBatchCampusFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                >
+                  <option value="all">Tất cả Cơ sở</option>
+                  {campuses.map(c => (
+                    <option key={c.id} value={c.id}>{c.campusName}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Bộ lọc Trạng thái */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500"/> Trạng thái:
+                </label>
+                <select
+                  value={batchStatusFilter}
+                  onChange={e => setBatchStatusFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
+                >
+                  <option value="all">Tất cả Trạng thái</option>
+                  <option value="ACTIVE">Đang mở (ON)</option>
+                  <option value="LOCKED">Đã khóa (OFF)</option>
+                </select>
+              </div>
+
+              {/* Reset Filter Button */}
+              {(batchCampusFilter !== "all" || batchStatusFilter !== "all") && (
+                <button
+                  onClick={() => {
+                    setBatchCampusFilter("all");
+                    setBatchStatusFilter("all");
+                  }}
+                  className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" /> Xóa lọc
+                </button>
+              )}
+            </div>
+          </div>
+
           {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Liên hệ quản trị viên để tạo kỳ khảo sát mới" /> : (
             <div className="space-y-3">
               {visiblePeriods.map(p => (
@@ -4228,7 +4288,25 @@ return {
                                </tr>
                              </thead>
                              <tbody className="divide-y divide-slate-100">
-                               {p.batches?.map(b => {
+                               {p.batches?.filter(b => {
+                                  if (batchCampusFilter && batchCampusFilter !== "all") {
+                                    if (b.campusId) {
+                                      if (b.campusId !== batchCampusFilter) return false;
+                                    } else {
+                                      const selectedCampus = campuses.find(c => c.id === batchCampusFilter);
+                                      const cCode = selectedCampus?.campusCode || "";
+                                      const cName = selectedCampus?.campusName || "";
+                                      const bName = b.name || "";
+                                      if (!bName.includes(cCode) && !bName.includes(cName)) return false;
+                                    }
+                                  }
+                                  if (batchStatusFilter && batchStatusFilter !== "all") {
+                                    const isLocked = b.status === "LOCKED" || b.status === "CLOSED";
+                                    if (batchStatusFilter === "ACTIVE" && isLocked) return false;
+                                    if (batchStatusFilter === "LOCKED" && !isLocked) return false;
+                                  }
+                                  return true;
+                                }).map(b => {
                                  const selectedCampus = campuses.find(c => c.id === b.campusId);
                                  const campusName = selectedCampus ? selectedCampus.campusName : "Tất cả";
                                  const assignee = giaoVuCSUsers.find(u => u.id === b.assignedUserId);
@@ -4389,7 +4467,7 @@ return {
               <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
                 Tổng cộng: <span className="text-[#00A99D] ml-1">{filtStu.length}</span> HS
               </span>
-              <button onClick={handleDownloadTemplate} disabled={!sPeriodId || sPeriodId === "all"} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
+              <button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Tải mẫu</span>
               </button>
