@@ -226,7 +226,7 @@ const renderTemplate = (content: string, student: any, academicYearName?: string
     .replace(/\{\{admissionCampus\}\}/g, actualCampusName)
     .replace(/\{\{schoolName\}\}/g, schoolNameFull)
     .replace(/\{\{truong\}\}/g, truongName)
-    .replace(/\{\{academicYear\}\}/g, student?.academicYear || academicYearName || "2025-2026")
+    .replace(/\{\{academicYear\}\}/g, student?.academicYear || academicYearName || selectedYearName)
     .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "")
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
     .replace(/\{\{committedSubjects\}\}/g, comSubs || "Tiếng Anh")
@@ -290,6 +290,10 @@ export function ReportsClient({
   }, []);
 
   const [yearId, setYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "");
+  const selectedYearObj = useMemo(() => {
+    return (academicYears || []).find((ay: any) => ay.id === yearId);
+  }, [academicYears, yearId]);
+  const selectedYearName = selectedYearObj?.name || getDefaultAcademicYearClient(academicYears)?.name || "2026-2027";
   const [tab, setTab] = useState("report_config");
   const [selectedLevel, setSelectedLevel] = useState<"preschool" | "high">("high");
   const [toast, setToast] = useState<{ msg: string; type: string } | null>(null);
@@ -1845,7 +1849,7 @@ export function ReportsClient({
     
     let pdfTitle = "25_26_K6_HNS_In_Thu_Skyline";
     if (selectedReportStudent) {
-      const rawYear = selectedReportStudent?.academicYear || "2025-2026";
+      const rawYear = selectedReportStudent?.academicYear || selectedYearName;
       const yearMatches = rawYear.match(/\d{4}/g);
       let yearPart = "25_26";
       if (yearMatches && yearMatches.length >= 2) {
@@ -2624,7 +2628,7 @@ export function ReportsClient({
                 fullName: "Nguyễn Minh An", 
                 grade: "1", 
                 surveyFormType: "Chất lượng cao", 
-                academicYear: "2025-2026", 
+                academicYear: selectedYearName, 
                 hocKy: "1",
                 admissionCampus: campuses.find((c: any) => c.id === rcCampusId)?.campusName || "Sky-Line Hill",
                 committedSubjects: ["Tiếng Anh"]
