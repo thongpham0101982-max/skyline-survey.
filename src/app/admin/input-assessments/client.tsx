@@ -7321,92 +7321,77 @@ return {
                {/* CONDITIONAL LOCATION INPUTS */}
                {selectedLocationType && (
                  <div className="p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
-                      {/* CONDITIONAL LOCATION INPUTS */}
-                      {selectedLocationType && (
-                        <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
-                          <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
-                            <span className="w-1.5 h-4 bg-[#00B5E2] inline-block rounded"></span>
-                            <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Thông tin trường học cũ ({selectedLocationType})</h4>
-                          </div>
+                   <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
+                     <span className="w-1.5 h-4 bg-[#00B5E2] inline-block rounded"></span>
+                     <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Thông tin trường học cũ ({selectedLocationType})</h4>
+                   </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {selectedLocationType === "Nội tỉnh" && (
-                              <div className="col-span-2 md:col-span-1">
-                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
-                                <input
-                                  type="text"
-                                  disabled
-                                  value="Thành phố Đà Nẵng"
-                                  className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none"
-                                />
-                              </div>
-                            )}
-
-                            {selectedLocationType === "Ngoại tỉnh" && (
-                              <div className="col-span-2 md:col-span-1">
-                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
-                                <select
-                                  required
-                                  value={selectedProvince}
-                                  onChange={(e) => setSelectedProvince(e.target.value)}
-                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                                >
-                                  <option value="">-- Chọn Tỉnh/Thành --</option>
-                                  {vietnamProvinces.map((p) => (
-                                    <option key={p} value={p}>{p}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            )}
-
-                            {selectedLocationType === "Nước ngoài" && (
-                              <div className="col-span-2 md:col-span-1">
-                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
-                                <select
-                                  required
-                                  value={selectedCountry}
-                                  onChange={(e) => setSelectedCountry(e.target.value)}
-                                  className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                                >
-                                  <option value="">-- Chọn Quốc gia --</option>
-                                  {worldCountries.map((c) => (
-                                    <option key={c} value={c}>{c}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
-                              <input
-                                required
-                                type="text"
-                                value={schoolNameInput}
-                                onChange={(e) => setSchoolNameInput(e.target.value)}
-                                placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
-                                className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
-                              <select
-                                required
-                                value={schoolTypeInput}
-                                onChange={(e) => setSchoolTypeInput(e.target.value)}
-                                className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                              >
-                                <option value="">-- Chọn loại hình --</option>
-                                <option value="Công lập">Công lập</option>
-                                <option value="Tư thục">Tư thục</option>
-                                <option value="Song ngữ">Song ngữ</option>
-                                <option value="Quốc tế">Quốc tế</option>
-                              </select>
-                            </div>
-                          </div>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                      {selectedLocationType === "Nội tỉnh" && (
+                        <div className="col-span-2 md:col-span-1">
+                          <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                          <input
+                            type="text"
+                            disabled
+                            value="Thành phố Đà Nẵng"
+                            className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none"
+                          />
                         </div>
                       )}
+
+                      {selectedLocationType === "Ngoại tỉnh" && (
+                        <div className="col-span-2 md:col-span-1">
+                          <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                          <select
+                            required
+                            value={selectedProvince}
+                            onChange={(e) => setSelectedProvince(e.target.value)}
+                            className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                          >
+                            <option value="">-- Chọn Tỉnh/Thành --</option>
+                            {vietnamProvinces.map((p) => (
+                              <option key={p} value={p}>{p}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
+                     {selectedLocationType === "Nước ngoài" && (
+                       <div className="col-span-2 md:col-span-1">
+                         <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
+                         <select
+                           required
+                           value={selectedCountry}
+                           onChange={(e) => setSelectedCountry(e.target.value)}
+                           className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                         >
+                           <option value="">-- Chọn Quốc gia --</option>
+                           {worldCountries.map((c) => (
+                             <option key={c} value={c}>{c}</option>
+                           ))}
+                         </select>
+                       </div>
+                     )}
+                   </div>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                     <div>
+                       <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                       <input
+                         required
+                         type="text"
+                         value={schoolNameInput}
+                         onChange={(e) => setSchoolNameInput(e.target.value)}
+                         placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
+                         className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
+                       <select
+                         required
+                         value={schoolTypeInput}
+                         onChange={(e) => setSchoolTypeInput(e.target.value)}
                          className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                        >
                          <option value="">-- Chọn loại hình --</option>
