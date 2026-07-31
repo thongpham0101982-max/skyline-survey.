@@ -369,7 +369,7 @@ export function StudentInfoClient({
   useEffect(() => {
     if (isFormOpen) {
       if (formMode === "edit" && formState.kqgdTieuHoc) {
-        const match = formState.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(Nội tỉnh|Ngoại tỉnh|Nước ngoài)\s*-\s*(.*)/);
+        const match = formState.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(.*?)\s*-\s*(.*)/);
         if (match) {
           const [, sName, sType, locType, locDetail] = match;
           setSchoolNameInput(sName);

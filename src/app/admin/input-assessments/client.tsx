@@ -2908,7 +2908,7 @@ ${reportForm.directorNote}`;
   useEffect(() => {
     if (sModal) {
       if (editS && sForm.kqgdTieuHoc) {
-        const match = sForm.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(Nội tỉnh|Ngoại tỉnh|Nước ngoài)\s*-\s*(.*)/);
+        const match = sForm.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(.*?)\s*-\s*(.*)/);
         if (match) {
           const [, sName, sType, locType, locDetail] = match;
           setSchoolNameInput(sName);
