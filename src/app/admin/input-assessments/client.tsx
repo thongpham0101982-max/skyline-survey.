@@ -57,7 +57,6 @@ interface Props {
   rolePermissions?: { module: string, canRead: boolean, canCreate: boolean, canUpdate: boolean, canDelete: boolean }[];
   mode?: "config" | "input";
   forcedTab?: string;
-  destinationSchools?: any[];
 }
 
 // ========= CONSTANTS =========
@@ -2782,7 +2781,6 @@ ${reportForm.directorNote}`;
     cityName: "", districtName: "", wardName: "", countryName: "", oldSchoolName: "", oldSchoolType: ""
   });
 
-  const safeDestinationSchools = useMemo(() => Array.isArray(destinationSchools) ? destinationSchools.filter((s: any) => s && s.name) : [], [destinationSchools]);
   const [selectedLocationType, setSelectedLocationType] = useState<"Nội tỉnh" | "Ngoại tỉnh" | "Nước ngoài" | "">("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedWard, setSelectedWard] = useState<string>("");
@@ -2894,7 +2892,7 @@ ${reportForm.directorNote}`;
   // Sync selectedLocationType when targetType changes
   useEffect(() => {
     if (!sModal) return;
-    const selectedTargets = typeof sForm?.targetType === "string" ? sForm.targetType.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
+    const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
     if (selectedTargets.includes("Nội tỉnh")) {
       setSelectedLocationType("Nội tỉnh");
     } else if (selectedTargets.includes("Ngoại tỉnh")) {
@@ -2910,7 +2908,7 @@ ${reportForm.directorNote}`;
   useEffect(() => {
     if (sModal) {
       if (editS && sForm.kqgdTieuHoc) {
-        const match = sForm.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(.*?)\s*-\s*(.*)/);
+        const match = sForm.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(Nội tỉnh|Ngoại tỉnh|Nước ngoài)\s*-\s*(.*)/);
         if (match) {
           const [, sName, sType, locType, locDetail] = match;
           setSchoolNameInput(sName);
@@ -5115,7 +5113,7 @@ return {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1">
-                  {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").map(c => {
+                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = (docGroupTargets[selectedDocGroup] || []).includes(c.name);
                     return (
                       <label key={c.id} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all select-none ${
@@ -5144,7 +5142,7 @@ return {
                       </label>
                     );
                   })}
-                  {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
                     <span className="text-xs text-slate-400 italic">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
                   )}
                 </div>
@@ -5469,7 +5467,7 @@ return {
                 </div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Đối tượng Tuyển sinh</label>
                 <div className="flex flex-wrap gap-2">
-                  {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").map(c => {
+                  {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = docFormSelectedTargets.includes(c.name);
                     return (
                       <label key={c.id} className="flex items-center gap-1.5 hover:bg-indigo-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
@@ -7291,7 +7289,7 @@ return {
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").map(c => {
+                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                       const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map(t => t.trim()).filter(Boolean) : [];
                       const isChecked = selectedTargets.includes(c.name);
                       return (
@@ -7313,7 +7311,7 @@ return {
                         </button>
                       );
                     })}
-                    {(Array.isArray(configs) ? configs : []).filter(c => c && c.categoryType === "DOI_TUONG_TS").length === 0 && (
+                    {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
                        <span className="text-xs text-slate-400 italic">Chưa có đối tượng tuyển sinh nào trong danh mục</span>
                      )}
                    </div>
@@ -7329,34 +7327,52 @@ return {
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {selectedLocationType === "Nội tỉnh" && (
-                        <div className="col-span-2 md:col-span-1">
-                          <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
-                          <input
-                            type="text"
-                            disabled
-                            value="Thành phố Đà Nẵng"
-                            className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none"
-                          />
-                        </div>
-                      )}
+                     {selectedLocationType === "Nội tỉnh" && (
+                       <div className="col-span-2 md:col-span-1">
+                         <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
+                         <select
+                           required
+                           value={selectedWard}
+                           onChange={(e) => setSelectedWard(e.target.value)}
+                           className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                         >
+                           <option value="">-- Chọn Phường/Xã --</option>
+                           {danangWards.map((w) => (
+                             <option key={w} value={w}>{w}</option>
+                           ))}
+                         </select>
+                       </div>
+                     )}
 
-                      {selectedLocationType === "Ngoại tỉnh" && (
-                        <div className="col-span-2 md:col-span-1">
-                          <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
-                          <select
-                            required
-                            value={selectedProvince}
-                            onChange={(e) => setSelectedProvince(e.target.value)}
-                            className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                          >
-                            <option value="">-- Chọn Tỉnh/Thành --</option>
-                            {vietnamProvinces.map((p) => (
-                              <option key={p} value={p}>{p}</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                     {selectedLocationType === "Ngoại tỉnh" && (
+                       <>
+                         <div>
+                           <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Phường / Xã *</label>
+                           <input
+                             required
+                             type="text"
+                             value={selectedWard}
+                             onChange={(e) => setSelectedWard(e.target.value)}
+                             placeholder="Nhập Phường / Xã"
+                             className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                           />
+                         </div>
+                         <div>
+                           <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
+                           <select
+                             required
+                             value={selectedProvince}
+                             onChange={(e) => setSelectedProvince(e.target.value)}
+                             className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                           >
+                             <option value="">-- Chọn Tỉnh/Thành --</option>
+                             {vietnamProvinces.map((p) => (
+                               <option key={p} value={p}>{p}</option>
+                             ))}
+                           </select>
+                         </div>
+                       </>
+                     )}
 
                      {selectedLocationType === "Nước ngoài" && (
                        <div className="col-span-2 md:col-span-1">
@@ -7377,55 +7393,32 @@ return {
                    </div>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
-                        <div className="space-y-2">
-                          <select
-                            value={
-                              safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)
-                                ? schoolNameInput
-                                : (schoolNameInput ? "__custom__" : "")
-                            }
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === "__custom__") {
-                                setSchoolNameInput("");
-                              } else {
-                                setSchoolNameInput(val);
-                                const matched = safeDestinationSchools.find((s: any) => s && s.name === val);
-                                if (matched) {
-                                  let mappedType = "Công lập";
-                                  if (matched.schoolType === "PRIVATE") mappedType = "Tư thục";
-                                  else if (matched.schoolType === "PUBLIC") mappedType = "Công lập";
-                                  else if (matched.schoolType) mappedType = matched.schoolType;
-                                  setSchoolTypeInput(mappedType);
-                                }
-                              }
-                            }}
-                            className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
-                          >
-                            <option value="">-- Chọn trường từ Danh mục trường --</option>
-                            {safeDestinationSchools
-                              .map((s: any) => (
-                                <option key={s.id || s.code} value={s.name}>
-                                  {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : s.schoolType === "PRIVATE" ? "Tư thục" : s.schoolType})
-                                </option>
-                              ))}
-                            <option value="__custom__">-- Khác / Nhập tên trường ngoài danh mục --</option>
-                          </select>
-
-                          {(!schoolNameInput || !safeDestinationSchools.some((s: any) => s && s.name === schoolNameInput)) && (
-                            <input
-                              required
-                              type="text"
-                              value={schoolNameInput}
-                              onChange={(e) => setSchoolNameInput(e.target.value)}
-                              placeholder="Nhập tên trường học cũ..."
-                              className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 animate-in fade-in duration-150"
-                            />
-                          )}
-                        </div>
-                      </div>
+                     <div>
+                       <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                       <input
+                         required
+                         type="text"
+                         value={schoolNameInput}
+                         onChange={(e) => setSchoolNameInput(e.target.value)}
+                         placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
+                         className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
+                       <select
+                         required
+                         value={schoolTypeInput}
+                         onChange={(e) => setSchoolTypeInput(e.target.value)}
+                         className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
+                       >
+                         <option value="">-- Chọn loại hình --</option>
+                         <option value="Công lập">Công Lập</option>
+                         <option value="Tư thục">Tư Thục</option>
+                         <option value="Song ngữ">Song ngữ</option>
+                         <option value="Quốc tế">Quốc tế</option>
+                       </select>
+                     </div>
                    </div>
                  </div>
                )}

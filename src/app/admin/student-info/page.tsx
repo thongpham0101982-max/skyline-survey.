@@ -188,7 +188,7 @@ export default async function StudentInfoPage() {
             }
           },
           orderBy: { createdAt: 'desc' }
-        }).catch(() => []);
+        });
 
         preschoolStudents = await pAny.preschoolInputAssessmentStudent.findMany({
           where: {
@@ -200,7 +200,7 @@ export default async function StudentInfoPage() {
             enrollmentClass: { select: { className: true } }
           },
           orderBy: { createdAt: 'desc' }
-        }).catch(() => []);
+        });
 
         if (pAny.class) {
           const uniqueGrades = await pAny.class.findMany({
