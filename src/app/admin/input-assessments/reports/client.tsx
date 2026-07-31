@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useRef } from "react"
 import { 
   Baby, Clock, Settings, Users, BarChart3, Calendar,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp, Pencil,
-  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, PenLine, Tag, Check, Printer
+  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, PenLine, Tag, Check, Printer, FileText
 } from "lucide-react"
 
 // Types
@@ -275,7 +275,7 @@ function Modal({ open, onClose, title, children, footer, size = "md" }: any) {
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-all"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-6 overflow-y-auto max-h-[75vh]">{children}</div>
-        {footer && <div className="flex gap-3 text-xs font-semibold">{footer}</div>}
+        {footer && <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between w-full">{footer}</div>}
       </div>
     </div>
   );
@@ -3742,8 +3742,50 @@ export function ReportsClient({
           </div>
         </div>
       )}
-      <Modal open={isPrintModalOpen} onClose={() => setIsPrintModalOpen(false)} title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} size="xl" footer={<><button onClick={() => setIsPrintModalOpen(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Đóng</button><button onClick={handlePrintPDF} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 cursor-pointer text-xs font-semibold"><Printer className="w-4 h-4" /> In / Tải PDF</button></>}>
-        <div className="p-4 overflow-y-auto max-h-[60vh] flex flex-col items-center justify-start gap-8 w-full animate-none text-xs font-semibold">
+      <Modal 
+        open={isPrintModalOpen} 
+        onClose={() => setIsPrintModalOpen(false)} 
+        title={isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"} 
+        size="xl" 
+        footer={
+          <div className="flex items-center justify-between gap-4 w-full">
+            <button 
+              onClick={() => setIsPrintModalOpen(false)} 
+              className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-white transition-all cursor-pointer"
+            >
+              Đóng
+            </button>
+            <button 
+              onClick={handlePrintPDF} 
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-teal-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              Xuất File PDF
+            </button>
+          </div>
+        }
+      >
+        <div className="p-4 overflow-y-auto max-h-[68vh] flex flex-col items-center justify-start gap-5 w-full animate-none text-xs font-semibold">
+          {/* Quick PDF Banner */}
+          <div className="w-full bg-teal-50 border border-teal-200/80 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-teal-600 text-white shadow-sm">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-slate-800 text-xs">Xem trước {isInvitation ? "Thư mời" : isCommitment ? "Bản Cam kết" : "Thư Chúc mừng"}</span>
+                <span className="text-[11px] text-slate-500 font-medium">Khổ giấy A4 chuẩn • Bấm "Xuất File PDF" để lưu về máy</span>
+              </div>
+            </div>
+            <button 
+              onClick={handlePrintPDF} 
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-teal-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <Download className="w-4 h-4" />
+              Xuất File PDF
+            </button>
+          </div>
+
           <div className="flex flex-col items-center gap-8 w-full">
             {renderPrintPages()}
           </div>
