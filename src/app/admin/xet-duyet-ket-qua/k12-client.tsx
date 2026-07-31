@@ -1134,6 +1134,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   const [reportStudentId, setReportStudentId] = useState("");
   const [reportsSubTab, setReportsSubTab] = useState("stats"); // stats or results
   const [reportCampusFilter, setReportCampusFilter] = useState("all");
+  const [reportApprovalStatusFilter, setReportApprovalStatusFilter] = useState("all");
+  const [reportStudentSearchQuery, setReportStudentSearchQuery] = useState("");
   const [reportCurrentPage, setReportCurrentPage] = useState(1);
   const reportPageSize = 10;
 
