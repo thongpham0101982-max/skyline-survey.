@@ -3005,7 +3005,7 @@ export function ReportsClient({
               <button
                 onClick={() => {
                   const csvData = [
-                    ["STT", "Mã HS", "Họ và Tên", "Khối", "Giới tính", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết", "Ý kiến / Ghi chú Hội đồng"]
+                    ["STT", "Mã HS", "Họ và Tên", "Giới tính", "Khối", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết"]
                   ];
                   filteredStudents.forEach((s, idx) => {
                     const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
@@ -3016,12 +3016,11 @@ export function ReportsClient({
                       (idx + 1).toString(),
                       s.studentCode || "—",
                       s.fullName || "",
-                      s.grade ? `K${s.grade}` : "—",
                       gender,
+                      s.grade ? `K${s.grade}` : "—",
                       s.surveyFormType || "—",
                       result,
-                      comSubs,
-                      cleanNote.replace(/\n/g, " ")
+                      comSubs
                     ]);
                   });
                   const csvContent = "\uFEFF" + csvData.map(e => e.map(item => `"${(item||'').replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -3074,12 +3073,14 @@ export function ReportsClient({
                 <table className="w-full text-left text-sm border-collapse">
                   <thead className="text-xs font-semibold">
                     <tr className="text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200">
-                      <th className="p-2 p-2 text-center w-14 border border-slate-200">STT</th>
-                      <th className="p-2 p-2 border border-slate-200">Học sinh</th>
-                      <th className="p-2 p-2 border border-slate-200">Kết quả Phê duyệt</th>
-                      <th className="p-2 p-2 border border-slate-200">Môn Cam kết</th>
-                      <th className="p-2 p-2 border border-slate-200">Ý kiến / Ghi chú Hội đồng</th>
-                      <th className="p-2 p-2 text-center w-[120px] border border-slate-200">Thao tác</th>
+                      <th className="p-2 text-center w-12 border border-slate-200">STT</th>
+                      <th className="p-2 border border-slate-200">Mã HS</th>
+                      <th className="p-2 border border-slate-200">Học sinh</th>
+                      <th className="p-2 text-center border border-slate-200">Khối</th>
+                      <th className="p-2 border border-slate-200">Hệ</th>
+                      <th className="p-2 border border-slate-200">Kết quả Phê duyệt</th>
+                      <th className="p-2 border border-slate-200">Môn Cam kết</th>
+                      <th className="p-2 text-center w-[110px] border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
@@ -3093,37 +3094,35 @@ export function ReportsClient({
 
                       return (
                         <tr key={s.id} className="even:bg-slate-50/50 hover:bg-teal-50/30 transition-all duration-150 group/row text-xs font-semibold">
-                          <td className="p-2 p-2 text-center text-slate-400 font-semibold border border-slate-200">{sttIndex}</td>
-                          <td className="p-2 p-2 border border-slate-200">
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-slate-800 text-sm group-hover/row:text-teal-700 transition-colors">{s.fullName}</span>
-                                <span className="font-mono text-[10px] font-black text-teal-700 text-xs font-semibold">
-                                  {s.studentCode || "—"}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500">
-                                <span className="bg-slate-100 px-1.5 rounded">{s.grade ? `K${s.grade}` : "—"}</span>
-                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                <span>{gender}</span>
-                                <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                                <span className="truncate max-w-[120px]" title={s.surveyFormType || "—"}>{s.surveyFormType || "—"}</span>
-                              </div>
+                          <td className="p-2 text-center text-slate-400 font-semibold border border-slate-200">{sttIndex}</td>
+                          <td className="p-2 border border-slate-200">
+                            <span className="font-mono text-xs font-black text-teal-700">{s.studentCode || "—"}</span>
+                          </td>
+                          <td className="p-2 border border-slate-200">
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-bold text-slate-800 text-sm group-hover/row:text-teal-700 transition-colors">{s.fullName}</span>
+                              <span className="text-[11px] font-medium text-slate-400">{gender}</span>
                             </div>
                           </td>
-                          <td className="p-2 p-2 border border-slate-200">
+                          <td className="p-2 text-center border border-slate-200">
+                            <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold text-xs">{s.grade ? `K${s.grade}` : "—"}</span>
+                          </td>
+                          <td className="p-2 border border-slate-200">
+                            <span className="font-bold text-slate-700 text-xs">{s.surveyFormType || "—"}</span>
+                          </td>
+                          <td className="p-2 border border-slate-200">
                             {(() => {
                               const isGreen = result.includes("Đạt") && !result.includes("cam kết") && !result.includes("Không");
                               const isAmber = result.includes("cam kết");
                               const isRed = result.includes("Không đạt");
                               
-                              if (isGreen) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
-                              if (isAmber) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
-                              if (isRed) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-700 text-xs font-semibold"><span className="w-1.5 h-1.5 text-xs font-semibold"></span>{result}</span>;
+                              if (isGreen) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-emerald-700 text-xs font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{result}</span>;
+                              if (isAmber) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 text-xs font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>{result}</span>;
+                              if (isRed) return <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-rose-700 text-xs font-semibold"><span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>{result}</span>;
                               return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-600">{result}</span>;
                             })()}
                           </td>
-                          <td className="p-2 p-2 border border-slate-200">
+                          <td className="p-2 border border-slate-200">
                             <div className="flex flex-wrap gap-1 max-w-[180px]">
                               {extractCommittedSubjects(s).length > 0 ? (
                                 extractCommittedSubjects(s).map((sub: string, subIdx: number) => (
@@ -3136,18 +3135,7 @@ export function ReportsClient({
                               )}
                             </div>
                           </td>
-                          <td className="p-2 p-2 border border-slate-200">
-                            <div className="text-[11px] font-medium text-slate-600 max-w-[200px] group/note relative cursor-default">
-                              <p className="line-clamp-2 leading-relaxed">{extractCleanNote(s) || <span className="text-slate-300">—</span>}</p>
-                              {extractCleanNote(s) && (
-                                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/note:block w-max max-w-xs bg-slate-800 text-white text-[11px] p-3 rounded-xl shadow-xl z-50 whitespace-pre-line leading-relaxed pointer-events-none">
-                                  {extractCleanNote(s)}
-                                  <div className="absolute -bottom-1 left-4 w-2 h-2 bg-slate-800 rotate-45"></div>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-2 p-2 border border-slate-200">
+                          <td className="p-2 border border-slate-200">
                             <div className="flex gap-2 justify-center">
                               {isPassed ? (
                                 <>
