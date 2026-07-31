@@ -2895,162 +2895,195 @@ export function ReportsClient({
       {tab === "letters" && (
         <div className="bg-white border border-slate-100 shadow-sm rounded-[2rem] p-6 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* STATS CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             <div 
               onClick={() => setCResultFilter("all")}
-              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
-                cResultFilter === "all" ? "ring-2 ring-teal-500 bg-teal-50/30 border-teal-200" : "bg-white border-slate-100 hover:border-slate-300"
+              className={`p-3.5 rounded-2xl border shadow-sm flex items-center justify-between relative overflow-hidden group cursor-pointer transition-all duration-200 ${
+                cResultFilter === "all"
+                  ? "bg-gradient-to-r from-teal-900 to-indigo-900 border-teal-600 text-white shadow-md shadow-teal-900/20 ring-2 ring-teal-500"
+                  : "bg-gradient-to-br from-white to-slate-50 border-slate-200/80 hover:border-teal-400 hover:shadow-md"
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-teal-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">TỔNG HS ĐỦ ĐK XUẤT THƯ</span>
-              <span className="text-2xl font-black text-slate-700 z-10">
-                {students.filter((s: any) => {
-                  const r = s.admissionResult || s.devAssessmentResult || "";
-                  return r.includes("Đạt") || r.includes("Đại") || r.includes("DAT") || r.includes("MIỄN");
-                }).length}
-              </span>
+              <div className="flex flex-col">
+                <span className={`text-[10px] font-black uppercase tracking-wider mb-0.5 ${cResultFilter === "all" ? "text-teal-200" : "text-slate-400"}`}>
+                  TỔNG HS ĐỦ ĐK XUẤT THƯ
+                </span>
+                <span className={`text-2xl font-black ${cResultFilter === "all" ? "text-white" : "text-teal-700"}`}>
+                  {students.filter((s: any) => {
+                    const r = s.admissionResult || s.devAssessmentResult || "";
+                    return r.includes("Đạt") || r.includes("Đại") || r.includes("DAT") || r.includes("MIỄN");
+                  }).length}
+                </span>
+              </div>
+              <div className={`p-3 rounded-xl ${cResultFilter === "all" ? "bg-white/10 text-teal-300" : "bg-teal-50 text-teal-600"}`}>
+                <GraduationCap className="w-6 h-6" />
+              </div>
             </div>
+
             <div 
               onClick={() => setCResultFilter(cResultFilter === "dat" ? "all" : "dat")}
-              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
-                cResultFilter === "dat" ? "ring-2 ring-emerald-500 bg-emerald-50/30 border-emerald-200" : "bg-white border-slate-100 hover:border-slate-300"
+              className={`p-3.5 rounded-2xl border shadow-sm flex items-center justify-between relative overflow-hidden group cursor-pointer transition-all duration-200 ${
+                cResultFilter === "dat"
+                  ? "bg-gradient-to-r from-emerald-800 to-teal-900 border-emerald-500 text-white shadow-md shadow-emerald-900/20 ring-2 ring-emerald-400"
+                  : "bg-gradient-to-br from-white to-emerald-50/30 border-slate-200/80 hover:border-emerald-400 hover:shadow-md"
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">ĐẠT</span>
-              <span className="text-2xl font-black text-emerald-600 z-10">
-                {students.filter((s: any) => {
-                  const r = s.admissionResult || s.devAssessmentResult || "";
-                  return r === "Đạt" || r === "Đại";
-                }).length}
-              </span>
+              <div className="flex flex-col">
+                <span className={`text-[10px] font-black uppercase tracking-wider mb-0.5 ${cResultFilter === "dat" ? "text-emerald-200" : "text-emerald-600/80"}`}>
+                  ĐẠT (TRÚNG TUYỂN)
+                </span>
+                <span className={`text-2xl font-black ${cResultFilter === "dat" ? "text-white" : "text-emerald-600"}`}>
+                  {students.filter((s: any) => {
+                    const r = s.admissionResult || s.devAssessmentResult || "";
+                    return r === "Đạt" || r === "Đại";
+                  }).length}
+                </span>
+              </div>
+              <div className={`p-3 rounded-xl ${cResultFilter === "dat" ? "bg-white/10 text-emerald-300" : "bg-emerald-50 text-emerald-600"}`}>
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
             </div>
+
             <div 
               onClick={() => setCResultFilter(cResultFilter === "cam_ket" ? "all" : "cam_ket")}
-              className={`p-4 rounded-2xl border shadow-sm flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer transition-all ${
-                cResultFilter === "cam_ket" ? "ring-2 ring-amber-500 bg-amber-50/30 border-amber-200" : "bg-white border-slate-100 hover:border-slate-300"
+              className={`p-3.5 rounded-2xl border shadow-sm flex items-center justify-between relative overflow-hidden group cursor-pointer transition-all duration-200 ${
+                cResultFilter === "cam_ket"
+                  ? "bg-gradient-to-r from-amber-800 to-orange-900 border-amber-500 text-white shadow-md shadow-amber-900/20 ring-2 ring-amber-400"
+                  : "bg-gradient-to-br from-white to-amber-50/30 border-slate-200/80 hover:border-amber-400 hover:shadow-md"
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <span className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1 z-10">ĐẠT CAM KẾT</span>
-              <span className="text-2xl font-black text-amber-600 z-10">
-                {students.filter((s: any) => {
-                  const r = s.admissionResult || s.devAssessmentResult || "";
-                  return r === "Đạt cam kết";
-                }).length}
-              </span>
+              <div className="flex flex-col">
+                <span className={`text-[10px] font-black uppercase tracking-wider mb-0.5 ${cResultFilter === "cam_ket" ? "text-amber-200" : "text-amber-600/80"}`}>
+                  ĐẠT CAM KẾT HỌC TẬP
+                </span>
+                <span className={`text-2xl font-black ${cResultFilter === "cam_ket" ? "text-white" : "text-amber-600"}`}>
+                  {students.filter((s: any) => {
+                    const r = s.admissionResult || s.devAssessmentResult || "";
+                    return r === "Đạt cam kết";
+                  }).length}
+                </span>
+              </div>
+              <div className={`p-3 rounded-xl ${cResultFilter === "cam_ket" ? "bg-white/10 text-amber-300" : "bg-amber-50 text-amber-600"}`}>
+                <Edit2 className="w-6 h-6" />
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-5 p-4 text-xs font-semibold">
-            {/* Filters Bar */}
-            <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
-              <div className="flex flex-col group">
-                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-indigo-500" /> Kỳ Khảo sát
-                </span>
+          {/* SINGLE-ROW FILTERS BAR */}
+          <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-3 sm:p-4">
+            <div className="flex flex-wrap items-end gap-3 w-full">
+              {/* 1. Kỳ Khảo sát */}
+              <div className="flex-1 min-w-[170px] group">
+                <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1 flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-teal-600" /> Kỳ Khảo sát
+                </label>
                 <div className="relative">
-                  <select value={cPeriodId} onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }} className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[220px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm">
+                  <select 
+                    value={cPeriodId} 
+                    onChange={e => { setCPeriodId(e.target.value); setCBatchId("all"); }} 
+                    className="w-full bg-white border border-slate-200 pl-3 pr-8 h-[38px] text-xs font-bold text-slate-700 rounded-xl outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 appearance-none cursor-pointer transition-all shadow-sm"
+                  >
                     <option value="all">Tất cả các kỳ</option>
                     {activePeriods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     {activePeriods.length === 0 && <option value="">Không có kỳ nào</option>}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-colors" />
                 </div>
               </div>
 
-              <div className="flex flex-col group">
-                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
-                  <ClipboardList className="w-3 h-3 text-indigo-500" /> Đợt Khảo sát
-                </span>
+              {/* 2. Đợt Khảo sát */}
+              <div className="flex-1 min-w-[150px] group">
+                <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1 flex items-center gap-1">
+                  <ClipboardList className="w-3 h-3 text-teal-600" /> Đợt Khảo sát
+                </label>
                 <div className="relative">
-                  <select value={cBatchId} onChange={e => setCBatchId(e.target.value)} className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[170px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm">
+                  <select 
+                    value={cBatchId} 
+                    onChange={e => setCBatchId(e.target.value)} 
+                    className="w-full bg-white border border-slate-200 pl-3 pr-8 h-[38px] text-xs font-bold text-slate-700 rounded-xl outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 appearance-none cursor-pointer transition-all shadow-sm"
+                  >
                     <option value="all">Tất cả các đợt</option>
                     {activeBatches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-colors" />
                 </div>
               </div>
 
-              <div className="flex flex-col group">
-                <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1 flex items-center gap-1">
-                  <UserCheck className="w-3 h-3 text-indigo-500" /> Kết quả Phê duyệt
-                </span>
+              {/* 3. Kết quả Phê duyệt */}
+              <div className="flex-1 min-w-[180px] group">
+                <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1 flex items-center gap-1">
+                  <UserCheck className="w-3 h-3 text-teal-600" /> Kết quả Phê duyệt
+                </label>
                 <div className="relative">
                   <select 
                     value={cResultFilter} 
                     onChange={e => setCResultFilter(e.target.value)} 
-                    className="bg-white border border-slate-200 pl-4 pr-10 py-2.5 text-xs font-bold text-slate-700 rounded-xl outline-none min-w-[210px] focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 appearance-none cursor-pointer transition-all shadow-sm"
+                    className="w-full bg-white border border-slate-200 pl-3 pr-8 h-[38px] text-xs font-bold text-slate-700 rounded-xl outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 appearance-none cursor-pointer transition-all shadow-sm"
                   >
                     <option value="all">Tất cả (Đạt & Đạt cam kết)</option>
                     <option value="dat">Đạt</option>
                     <option value="cam_ket">Đạt cam kết</option>
                     <option value="full_all">Tất cả trạng thái (Gồm Chưa duyệt)</option>
                   </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors">
-                    <ChevronDown className="w-4 h-4" />
-                  </div>
+                  <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-teal-600 transition-colors" />
                 </div>
               </div>
-            </div>
 
-            {/* Search Input */}
-                        <div className="flex flex-col w-full md:w-auto">
-              <span className="text-[9px] font-black uppercase text-transparent tracking-wider mb-1.5 ml-1 select-none">Xuất</span>
-              <button
-                onClick={() => {
-                  const csvData = [
-                    ["STT", "Mã HS", "Họ và Tên", "Giới tính", "Khối", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết"]
-                  ];
-                  filteredStudents.forEach((s, idx) => {
-                    const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
-                    const result = s.admissionResult || s.devAssessmentResult || "Chưa duyệt";
-                    const comSubs = extractCommittedSubjects(s).join(", ");
-                    const cleanNote = extractCleanNote(s);
-                    csvData.push([
-                      (idx + 1).toString(),
-                      s.studentCode || "—",
-                      s.fullName || "",
-                      gender,
-                      s.grade ? `K${s.grade}` : "—",
-                      s.surveyFormType || "—",
-                      result,
-                      comSubs
-                    ]);
-                  });
-                  const csvContent = "\uFEFF" + csvData.map(e => e.map(item => `"${(item||'').replace(/"/g, '""')}"`).join(",")).join("\n");
-                  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                  const url = URL.createObjectURL(blob);
-                  const link = document.createElement("a");
-                  link.setAttribute("href", url);
-                  link.setAttribute("download", "DanhSachHocSinh.csv");
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
-                className="w-full md:w-auto hover:bg-teal-100 text-teal-700 font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex justify-center items-center gap-2 whitespace-nowrap text-xs font-semibold"
-              >
-                <Download className="w-4 h-4"/>
-                Xuất File
-              </button>
-            </div>
+              {/* 4. Nút Xuất File */}
+              <div className="group">
+                <label className="text-[9px] font-black uppercase text-transparent tracking-wider mb-1 block select-none">Xuất</label>
+                <button
+                  onClick={() => {
+                    const csvData = [
+                      ["STT", "Mã HS", "Họ và Tên", "Giới tính", "Khối", "Hệ Đăng ký", "Kết quả Phê duyệt", "Môn Cam kết"]
+                    ];
+                    filteredStudents.forEach((s, idx) => {
+                      const gender = s.gender === "M" || s.gender === "MALE" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "FEMALE" || s.gender === "Nữ" ? "Nữ" : "—";
+                      const result = s.admissionResult || s.devAssessmentResult || "Chưa duyệt";
+                      const comSubs = extractCommittedSubjects(s).join(", ");
+                      csvData.push([
+                        (idx + 1).toString(),
+                        s.studentCode || "—",
+                        s.fullName || "",
+                        gender,
+                        s.grade ? `K${s.grade}` : "—",
+                        s.surveyFormType || "—",
+                        result,
+                        comSubs
+                      ]);
+                    });
+                    const csvContent = "﻿" + csvData.map(e => e.map(item => `"${(item||'').replace(/"/g, '""')}"`).join(",")).join("
+");
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.setAttribute("href", url);
+                    link.setAttribute("download", "DanhSachHocSinh.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="h-[38px] px-4 bg-teal-50 hover:bg-teal-600 text-teal-700 hover:text-white border border-teal-200 rounded-xl font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer"
+                >
+                  <Download className="w-4 h-4"/>
+                  Xuất File
+                </button>
+              </div>
 
-            {/* Search Input */}
-            <div className="flex flex-col w-full md:w-72">
-              <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1.5 ml-1">Tìm học sinh</span>
-              <div className="relative">
-                <input
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Tìm tên hoặc mã học sinh..."
-                  className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-150/15 font-bold text-slate-700 shadow-sm transition-all"
-                />
-                <Search className="w-4 h-4 text-slate-350 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              {/* 5. Tìm học sinh */}
+              <div className="flex-1 min-w-[200px] group">
+                <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider mb-1 flex items-center gap-1">
+                  <Search className="w-3 h-3 text-teal-600" /> Tìm học sinh
+                </label>
+                <div className="relative">
+                  <input
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Tìm tên hoặc mã học sinh..."
+                    className="w-full bg-white border border-slate-200 pl-9 pr-3 h-[38px] text-xs font-bold text-slate-700 rounded-xl outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 shadow-sm transition-all"
+                  />
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
               </div>
             </div>
           </div>
