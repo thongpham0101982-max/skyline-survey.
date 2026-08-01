@@ -1,3 +1,20 @@
+function parseSmartDate(d: any): Date | null {
+  if (!d) return null;
+  if (d instanceof Date) return isNaN(d.getTime()) ? null : d;
+  const str = String(d).trim();
+  if (!str) return null;
+  const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    const dt = new Date(year, month, day);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
 import { sendEmail } from "@/lib/mail"
 
 function buildPreschoolLetterHtmlServer(student: any, config: any, isCommitmentFlag: boolean = false, isInvitationFlag: boolean = false) {
@@ -1662,7 +1679,7 @@ export async function POST(req) {
         data: {
            studentCode: data.studentCode,
            fullName: data.fullName,
-           dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+           dateOfBirth: parseSmartDate(data.dateOfBirth),
            gender: data.gender || null,
            grade: data.grade || null,
            admissionCriteria: null,
@@ -1760,7 +1777,7 @@ export async function PUT(req) {
       where: { id },
       data: {
          fullName: data.fullName,
-         dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+         dateOfBirth: parseSmartDate(data.dateOfBirth),
          gender: data.gender || null,
          grade: data.grade || null,
          admissionCriteria: null,

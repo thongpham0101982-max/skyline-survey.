@@ -3,6 +3,23 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { sendEmail } from "@/lib/mail"
 
+function parseSmartDate(d: any): Date | null {
+  if (!d) return null;
+  if (d instanceof Date) return isNaN(d.getTime()) ? null : d;
+  const str = String(d).trim();
+  if (!str) return null;
+  const dmyMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (dmyMatch) {
+    const day = parseInt(dmyMatch[1], 10);
+    const month = parseInt(dmyMatch[2], 10) - 1;
+    const year = parseInt(dmyMatch[3], 10);
+    const dt = new Date(year, month, day);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  const parsed = new Date(str);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export async function GET(req) {
   const session = await auth();
   const user = session?.user as any;
@@ -67,7 +84,7 @@ export async function POST(req) {
         data: {
            studentCode: data.studentCode,
            fullName: data.fullName,
-           dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+           dateOfBirth: parseSmartDate(data.dateOfBirth),
            gender: data.gender || null,
            className: data.className || null,
            grade: data.grade || null,
@@ -469,7 +486,7 @@ export async function PUT(req) {
     // Clean relational & undefined fields from payload
     const updatePayload: any = {};
     if (data.fullName !== undefined) updatePayload.fullName = data.fullName;
-    if (data.dateOfBirth !== undefined) updatePayload.dateOfBirth = data.dateOfBirth ? new Date(data.dateOfBirth) : null;
+    if (data.dateOfBirth !== undefined) updatePayload.dateOfBirth = parseSmartDate(data.dateOfBirth);
     if (data.gender !== undefined) updatePayload.gender = data.gender || null;
     if (data.className !== undefined) updatePayload.className = data.className || null;
     if (data.grade !== undefined) updatePayload.grade = data.grade || null;

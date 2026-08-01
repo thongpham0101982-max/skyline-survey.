@@ -1348,14 +1348,22 @@ export function StudentInfoClient({
     if (!formState.fullName.trim()) return showNotification("Họ và tên không được để trống", "err");
     if (!formState.periodId) return showNotification("Kỳ khảo sát là bắt buộc", "err");
 
+    const syncedState = {
+      ...formState,
+      oldSchoolName: schoolNameInput || formState.oldSchoolName || null,
+      oldSchoolType: schoolTypeInput || formState.oldSchoolType || null,
+      cityName: selectedLocationType === "Nội tỉnh" ? "Thành phố Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : (formState.cityName || null)),
+      countryName: selectedLocationType === "Nước ngoài" ? selectedCountry : (formState.countryName || "Việt Nam"),
+    };
+
     const endpoint = activeTab === "general" 
       ? "/api/input-assessment-students" 
       : "/api/preschool-input-assessment-students";
     
     const method = formMode === "edit" ? "PUT" : "POST";
     const bodyData = formMode === "edit"
-      ? { id: editingId, data: formState }
-      : { action: "CREATE", data: formState };
+      ? { id: editingId, data: syncedState }
+      : { action: "CREATE", data: syncedState };
 
     try {
       const res = await fetch(endpoint, {

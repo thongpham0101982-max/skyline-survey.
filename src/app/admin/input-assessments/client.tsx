@@ -3447,6 +3447,7 @@ ${reportForm.directorNote}`;
       genCode = "HS" + nextNum.toString().padStart(3, "0");
     }
 
+    setEditS(null);
     setSForm({ studentCode: genCode, fullName: "", dateOfBirth: "", grade: "", admissionCriteria: "", className: "", hocKy: "", kqgdTieuHoc: "", kqHocTap: "", kqRenLuyen: "", targetType: "", surveySystem: "", hoSoCtQuocTe: "", surveyFormType: "", gender: "", batchId: initialBatchId, registeredCampus: "", periodId: sPeriodId, cityName: "", districtName: "", wardName: "", countryName: "", oldSchoolName: "", oldSchoolType: "" });
     setSModal(true);
   }
