@@ -3159,10 +3159,10 @@ ${reportForm.directorNote}`;
 
   useEffect(() => {
     if (visiblePeriods.length > 0) {
-      if (!sPeriodId || !visiblePeriods.some(p => p.id === sPeriodId)) {
+      if (!sPeriodId || (!visiblePeriods.some(p => p.id === sPeriodId) && sPeriodId !== "all")) {
         setSPeriodId(visiblePeriods[0].id);
       }
-      if (!asPeriodId || !visiblePeriods.some(p => p.id === asPeriodId)) {
+      if (!asPeriodId || (!visiblePeriods.some(p => p.id === asPeriodId) && asPeriodId !== "all")) {
         setAsPeriodId(visiblePeriods[0].id);
       }
     } else {
@@ -4574,9 +4574,9 @@ return {
               </div>
               <div className="md:col-span-3">
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Đợt khảo sát</label>
-                <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"} disabled={!sPeriodId || sPeriodId === "all"}>
+                <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"} disabled={!sPeriodId}>
                    <option value="">-- Tất cả đợt --</option>
-                   {selPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
+                   {((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || []).map((b: any)=><option key={b.id} value={b.id}>{b.name} ({visiblePeriods.find(p => p.id === b.periodId)?.name || ""})</option>)}
                 </select>
               </div>
               <div className="md:col-span-4">
