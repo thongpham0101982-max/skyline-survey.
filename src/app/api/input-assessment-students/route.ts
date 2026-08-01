@@ -80,9 +80,23 @@ export async function POST(req) {
     const { action, data } = body;
     
     if (action === "CREATE") {
+      if (!data.periodId) {
+        return NextResponse.json({ error: "Kỳ khảo sát là bắt buộc" }, { status: 400 });
+      }
+      let finalStudentCode = (data.studentCode || "").trim();
+      if (!finalStudentCode) {
+        const allStudents = await (prisma as any).inputAssessmentStudent.findMany({ select: { studentCode: true } });
+        const nums = allStudents.map((s: any) => {
+          const match = String(s.studentCode || "").match(/\d+$/);
+          return match ? parseInt(match[0], 10) : 0;
+        }).filter((n: number) => !isNaN(n));
+        const maxNum = nums.length > 0 ? Math.max(...nums) : 0;
+        finalStudentCode = "HS" + (maxNum + 1).toString().padStart(3, "0");
+      }
+
       const result = await (prisma as any).inputAssessmentStudent.create({
         data: {
-           studentCode: data.studentCode,
+           studentCode: finalStudentCode,
            fullName: data.fullName,
            dateOfBirth: parseSmartDate(data.dateOfBirth),
            gender: data.gender || null,
@@ -99,7 +113,6 @@ export async function POST(req) {
            kqgdTieuHoc: data.kqgdTieuHoc || null,
            kqHocTap: data.kqHocTap || null,
            hoSoCtQuocTe: data.hoSoCtQuocTe || null,
-           hoSoCtQuocTe: data.hoSoCtQuocTe || null,
            kqRenLuyen: data.kqRenLuyen || null,
            psychologyScore: data.psychologyScore ? parseFloat(data.psychologyScore) : null,
            writtenEnglishScore: data.writtenEnglishScore ? parseFloat(data.writtenEnglishScore) : null,
@@ -107,7 +120,6 @@ export async function POST(req) {
            mathScore: data.mathScore ? parseFloat(data.mathScore) : null,
            literatureScore: data.literatureScore ? parseFloat(data.literatureScore) : null,
            periodId: data.periodId,
-           periodId: data.periodId || null,
          batchId: data.batchId || null,
            registeredCampus: data.registeredCampus || null,
            isAbsent: data.isAbsent || false,
