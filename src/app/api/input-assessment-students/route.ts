@@ -489,9 +489,12 @@ export async function PUT(req) {
 
     if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 });
 
+    const session = await auth();
+    const userRole = (session?.user as any)?.role || "";
+    const isManagerOrAdmin = ["ADMIN", "KTDBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU", "GIAO_VU_CS"].includes(userRole) || (session?.user as any)?.isSuperAdmin;
+
     const isBatchLocked = student.batch?.status === "LOCKED" || student.batch?.status === "CLOSED";
-    // Block everyone if batch is locked (Hard lock feature)
-    if (isBatchLocked) {
+    if (isBatchLocked && !isManagerOrAdmin) {
       return NextResponse.json({ error: "Đợt khảo sát này ĐÃ BỊ KHÓA! Mọi tính năng nhập, chỉnh sửa, xét duyệt đều bị vô hiệu hóa." }, { status: 403 });
     }
     
