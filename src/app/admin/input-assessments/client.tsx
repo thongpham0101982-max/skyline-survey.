@@ -7488,9 +7488,7 @@ return {
                             {selectedLocationType === "Ngoại tỉnh" && (
                               <div className="col-span-2 md:col-span-1">
                                 <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
-                                <select
-                                  required
-                                  value={selectedProvince}
+                                <select value={selectedProvince}
                                   onChange={(e) => setSelectedProvince(e.target.value)}
                                   className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                                 >
@@ -7505,9 +7503,7 @@ return {
                             {selectedLocationType === "Nước ngoài" && (
                               <div className="col-span-2 md:col-span-1">
                                 <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
-                                <select
-                                  required
-                                  value={selectedCountry}
+                                <select value={selectedCountry}
                                   onChange={(e) => setSelectedCountry(e.target.value)}
                                   className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                                 >
@@ -7557,10 +7553,7 @@ return {
                                   </select>
 
                                   {(!schoolNameInput || !((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools).some(s => s.name === schoolNameInput)) && (
-                                    <input
-                                      required
-                                      type="text"
-                                      value={schoolNameInput}
+                                    <input type="text" value={schoolNameInput}
                                       onChange={(e) => setSchoolNameInput(e.target.value)}
                                       placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
                                       className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
@@ -7568,10 +7561,7 @@ return {
                                   )}
                                 </div>
                               ) : (
-                                <input
-                                  required
-                                  type="text"
-                                  value={schoolNameInput}
+                                <input type="text" value={schoolNameInput}
                                   onChange={(e) => setSchoolNameInput(e.target.value)}
                                   placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
                                   className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
@@ -7581,9 +7571,7 @@ return {
 
                             <div>
                               <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
-                              <select
-                                required
-                                value={schoolTypeInput}
+                              <select value={schoolTypeInput}
                                 onChange={(e) => setSchoolTypeInput(e.target.value)}
                                 className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                               >
