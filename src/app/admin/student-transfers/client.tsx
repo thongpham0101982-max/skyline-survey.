@@ -70,6 +70,14 @@ function RealtimeTransferDashboard({
   const [showStats, setShowStats] = useState(true);
   const [selectedCampusFilter, setSelectedCampusFilter] = useState<string>("ALL");
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>("ALL");
+
+  // Sync selectedYearFilter when parent yearId changes or when academicYears loaded
+  useEffect(() => {
+    const stored = localStorage.getItem("selectedAcademicYear");
+    if (stored) {
+      setSelectedYearFilter(stored);
+    }
+  }, []);
   const [selectedLevelFilter, setSelectedLevelFilter] = useState<"ALL" | "K12" | "PRESCHOOL">("ALL");
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -102,7 +110,7 @@ function RealtimeTransferDashboard({
 
   const matchesFilter = (t: any) => {
     if (selectedYearFilter !== "ALL") {
-      const yId = t.student?.class?.academicYearId || t.student?.academicYearId || t.academicYearId;
+      const yId = t.student?.class?.academicYearId || t.student?.academicYearId || t.academicYearId || t.student?.class?.academicYear?.id;
       if (yId && yId !== selectedYearFilter) return false;
     }
 

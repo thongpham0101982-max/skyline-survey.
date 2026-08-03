@@ -93,7 +93,8 @@ export async function getTransfersAction() {
       include: {
         student: {
           include: {
-            class: { include: { campus: true } }
+            class: { include: { campus: true, academicYear: true } },
+            academicYear: true
           }
         },
         createdBy: { select: { fullName: true } }
@@ -547,7 +548,7 @@ export async function getPendingEnrollmentsAction() {
       where: { enrollmentStatus: "PENDING" },
       include: {
         period: {
-          select: { id: true, name: true, campusId: true, campus: { select: { campusName: true } } }
+          select: { id: true, name: true, academicYearId: true, campusId: true, campus: { select: { campusName: true } } }
         }
       }
     });
@@ -556,7 +557,7 @@ export async function getPendingEnrollmentsAction() {
       where: { enrollmentStatus: "PENDING" },
       include: {
         period: {
-          select: { id: true, name: true, campusId: true, campus: { select: { campusName: true } } }
+          select: { id: true, name: true, academicYearId: true, campusId: true, campus: { select: { campusName: true } } }
         }
       }
     });
@@ -572,6 +573,7 @@ export async function getPendingEnrollmentsAction() {
         createdAt: x.createdAt,
         admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
         campusId: x.period?.campusId || "",
+        academicYearId: x.period?.academicYearId || x.academicYearId || "",
         isPreschool: false,
         period: x.period
       })),
@@ -585,6 +587,7 @@ export async function getPendingEnrollmentsAction() {
         createdAt: x.createdAt,
         admissionCampus: x.admissionCampus || x.period?.campus?.campusName || "",
         campusId: x.period?.campusId || "",
+        academicYearId: x.period?.academicYearId || x.academicYearId || "",
         isPreschool: true,
         period: x.period
       }))
