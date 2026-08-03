@@ -70,14 +70,6 @@ function RealtimeTransferDashboard({
   const [showStats, setShowStats] = useState(true);
   const [selectedCampusFilter, setSelectedCampusFilter] = useState<string>("ALL");
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>("ALL");
-
-  // Sync selectedYearFilter when parent yearId changes or when academicYears loaded
-  useEffect(() => {
-    const stored = localStorage.getItem("selectedAcademicYear");
-    if (stored) {
-      setSelectedYearFilter(stored);
-    }
-  }, []);
   const [selectedLevelFilter, setSelectedLevelFilter] = useState<"ALL" | "K12" | "PRESCHOOL">("ALL");
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -110,7 +102,7 @@ function RealtimeTransferDashboard({
 
   const matchesFilter = (t: any) => {
     if (selectedYearFilter !== "ALL") {
-      const yId = t.student?.class?.academicYearId || t.student?.academicYearId || t.academicYearId || t.student?.class?.academicYear?.id;
+      const yId = t.student?.class?.academicYearId || t.student?.academicYearId || t.academicYearId;
       if (yId && yId !== selectedYearFilter) return false;
     }
 
@@ -1359,64 +1351,1135 @@ export function StudentTransfersClient() {
         </button>
       </div>
 
-      {/* 1. DASHBOARD TAB VIEW */}
+      {/* RENDER DASHBOARD TAB ONLY WHEN DASHBOARD IS ACTIVE */}
       {activeSubTab === "dashboard" && (
-        <RealtimeTransferDashboard
-          transfers={transfers}
-          pendingRequests={pendingRequests}
-          academicYears={options.years}
-          activeTab={activeTab}
-          activeSubTab={activeSubTab}
-          onRefresh={loadTransfers}
-          loading={loadingList}
-        />
+        <RealtimeTransferDashboard transfers={transfers} pendingRequests={pendingRequests} academicYears={options.years} activeTab={activeTab} activeSubTab={activeSubTab} onRefresh={loadTransfers} loading={loadingList} />
+      )}
+      {/* OLD STATS REMOVED */}
+      {activeTab === "IN" && (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in duration-300">
+          <div className="bg-slate-50/70 p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">Thống kê Tiến độ Nhập học</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Theo dõi chi tiết số liệu phân bổ học sinh theo Lớp, Khối, Cơ sở</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowStats(!showStats)}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 transition-colors"
+            >
+              {showStats ? (
+                <>
+                  <EyeOff className="w-4 h-4 text-slate-400" />
+                  Ẩn bảng thống kê
+                  <ChevronUp className="w-4 h-4 text-slate-400" />
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-slate-400" />
+                  Hiện bảng thống kê
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </>
+              )}
+            </button>
+          </div>
+
+          {showStats && (
+            <div className="p-6 space-y-6">
+              {/* Metric Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng số yêu cầu</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-slate-800">{stats.totalRequests}</span>
+                    <span className="text-xs text-slate-400 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-amber-50/40 p-5 rounded-2xl border border-amber-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Chờ xếp lớp (Pending)</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-amber-600">{stats.totalPending}</span>
+                    <span className="text-xs text-amber-500/70 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-emerald-50/40 p-5 rounded-2xl border border-emerald-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Đã nhập học (Enrolled)</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-emerald-600">{stats.totalEnrolled}</span>
+                    <span className="text-xs text-emerald-550/70 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-sky-50/40 p-5 rounded-2xl border border-sky-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Tỷ lệ hoàn thành</span>
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="text-2xl font-black text-sky-600">{stats.completionRate}%</span>
+                    <div className="flex-1 bg-sky-100 h-2 rounded-full overflow-hidden">
+                      <div className="bg-sky-500 h-full rounded-full" style={{ width: stats.completionRate + "%" }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakdown Tables Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
+                {/* Campus breakdown */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-[#00A99D]" /> Thống kê theo Cơ sở
+                  </h4>
+                  <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                    {stats.campusStats.length > 0 ? stats.campusStats.map(c => (
+                      <div key={c.name} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                          <span>{c.name}</span>
+                          <span className="text-slate-500">
+                            <span className="text-emerald-600 font-extrabold">{c.enrolled}</span>
+                            <span className="mx-1">/</span>
+                            <span>{c.enrolled + c.pending}</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden flex">
+                          <div className="bg-emerald-500 h-full" style={{ width: ((c.enrolled / (c.enrolled + c.pending)) * 100) + "%" }}></div>
+                          <div className="bg-amber-500 h-full" style={{ width: ((c.pending / (c.enrolled + c.pending)) * 100) + "%" }}></div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Grade breakdown */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <Layers className="w-4 h-4 text-[#00A99D]" /> Thống kê theo Khối
+                  </h4>
+                  <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                    {stats.gradeStats.length > 0 ? stats.gradeStats.map(g => (
+                      <div key={g.name} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                          <span>{g.name}</span>
+                          <span className="text-slate-500">
+                            <span className="text-emerald-600 font-extrabold">{g.enrolled}</span>
+                            <span className="mx-1">/</span>
+                            <span>{g.enrolled + g.pending}</span>
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden flex">
+                          <div className="bg-emerald-500 h-full" style={{ width: ((g.enrolled / (g.enrolled + g.pending)) * 100) + "%" }}></div>
+                          <div className="bg-amber-500 h-full" style={{ width: ((g.pending / (g.enrolled + g.pending)) * 100) + "%" }}></div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Class breakdown */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-[#00A99D]" /> Thống kê theo Lớp (Đã xếp)
+                  </h4>
+                  <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
+                    {stats.classStats.length > 0 ? stats.classStats.map(cl => (
+                      <div key={cl.name} className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                          <span className="flex items-center gap-1.5">
+                            {cl.name}
+                            <span className="text-[10px] text-slate-400 font-medium">({cl.campusName})</span>
+                          </span>
+                          <span className="text-emerald-600 font-extrabold">{cl.enrolled} <span className="text-[10px] text-slate-400 font-medium">HS</span></span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-emerald-500 h-full" style={{ width: '100%' }}></div>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs font-medium text-slate-400 italic text-center py-4">Chưa có lớp nào được xếp</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* 2. DATA MANAGEMENT TAB VIEW (K-12 & MẦM NON) */}
-      {activeSubTab !== "dashboard" && (
-        <DataManagementView
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          activeSubTab={activeSubTab}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          selectedYearFilter={selectedYearFilter}
-          setSelectedYearFilter={setSelectedYearFilter}
-          options={options}
-          transfers={transfers}
-          pendingRequests={pendingRequests}
-          loadingList={loadingList}
-          selectedOutTransferIds={selectedOutTransferIds}
-          setSelectedOutTransferIds={setSelectedOutTransferIds}
-          setShowBatchEditModal={setShowBatchEditModal}
-          setEditingTransfer={setEditingTransfer}
-          setShowOutModal={setShowOutModal}
-          selectedRequestIds={selectedRequestIds}
-          setSelectedRequestIds={setSelectedRequestIds}
-          setSelectedRequests={setSelectedRequests}
-          setShowInModal={setShowInModal}
-          paginatedPendingRequests={paginatedPendingRequests}
-          pendingTotalPages={pendingTotalPages}
-          pendingPage={pendingPage}
-          setPendingPage={setPendingPage}
-          setSelectedRequest={setSelectedRequest}
-          setShowChangeModal={setShowChangeModal}
-          paginatedInTransfers={paginatedInTransfers}
-          inTotalPages={inTotalPages}
-          inPage={inPage}
-          setInPage={setInPage}
-          paginatedChangeClassTransfers={paginatedChangeClassTransfers}
-          historyTotalPages={historyTotalPages}
-          historyPage={historyPage}
-          setHistoryPage={setHistoryPage}
-          loadTransfers={loadTransfers}
-          handleDeleteTransfer={handleDeleteTransfer}
-        />
+      {/* STATISTICS DASHBOARD FOR OUT */}
+      {activeTab === "OUT" && (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in duration-300">
+          <div className="bg-slate-50/70 p-6 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-rose-50 text-rose-600 rounded-2xl">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">Thống kê Học sinh Chuyển đi</h3>
+                <p className="text-xs text-slate-500 font-medium mt-0.5">Theo dõi chi tiết số liệu chuyển đi theo Lớp, Cơ sở, Loại hình, Diện chuyển, Tỉnh/TP</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowOutStats(!showOutStats)}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-slate-100 rounded-xl text-xs font-bold text-slate-600 transition-colors"
+            >
+              {showOutStats ? (
+                <>
+                  <EyeOff className="w-4 h-4 text-slate-400" />
+                  Ẩn bảng thống kê
+                  <ChevronUp className="w-4 h-4 text-slate-400" />
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-slate-400" />
+                  Hiện bảng thống kê
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </>
+              )}
+            </button>
+          </div>
+
+          {showOutStats && (
+            <div className="p-6 space-y-6">
+              {/* Metric Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-slate-50/60 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tổng học sinh chuyển đi</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-slate-800">{outStats.totalOut}</span>
+                    <span className="text-xs text-slate-400 font-medium">học sinh</span>
+                  </div>
+                </div>
+                <div className="bg-amber-50/40 p-5 rounded-2xl border border-amber-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Chuyển trường VN</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-amber-600">
+                      {outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0}
+                    </span>
+                    <span className="text-xs text-amber-550/70 font-medium">
+                      ({outStats.totalOut > 0 ? Math.round(((outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0) / outStats.totalOut) * 100) : 0}%)
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-sky-50/40 p-5 rounded-2xl border border-sky-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Du học & Diện khác</span>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-2xl font-black text-sky-600">
+                      {outStats.totalOut - (outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0)}
+                    </span>
+                    <span className="text-xs text-sky-550/70 font-medium">
+                      ({outStats.totalOut > 0 ? Math.round(((outStats.totalOut - (outStats.categoryStats.find(c => c.code === "DOMESTIC")?.count || 0)) / outStats.totalOut) * 100) : 0}%)
+                    </span>
+                  </div>
+                </div>
+                <div className="bg-rose-50/40 p-5 rounded-2xl border border-rose-100 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-rose-700 uppercase tracking-wider">Tư thục tại Đà Nẵng</span>
+                  <div className="flex flex-col mt-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black text-rose-600">{outStats.privateDaNang}</span>
+                      <span className="text-xs text-rose-500/70 font-medium">học sinh</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-semibold mt-1 space-y-0.5">
+                      <div>Tỷ lệ tại Đà Nẵng: <span className="text-rose-600 font-bold">{outStats.pctInDaNang}%</span> ({outStats.privateDaNang}/{outStats.totalDaNang})</div>
+                      <div>Tỷ lệ toàn hệ thống: <span className="text-rose-600 font-bold">{outStats.pctOverall}%</span> ({outStats.privateDaNang}/{outStats.totalOut})</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Breakdown Tables Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4 border-t border-slate-100">
+                {/* Column 1: Cơ sở & Lớp cũ */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-5">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-[#00A99D]" /> Theo Cơ sở cũ
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.campusStats.length > 0 ? outStats.campusStats.map(c => (
+                        <div key={c.name} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{c.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{c.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((c.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-rose-500 h-full" style={{ width: (outStats.totalOut > 0 ? (c.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-[#00A99D]" /> Theo Lớp cũ
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.classStats.length > 0 ? outStats.classStats.map(cl => (
+                        <div key={cl.name + "-" + cl.campusName} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span className="flex items-center gap-1.5">
+                              {cl.name}
+                              <span className="text-[10px] text-slate-400 font-medium">({cl.campusName})</span>
+                            </span>
+                            <span className="text-rose-600 font-extrabold">{cl.count} <span className="text-[10px] text-slate-400 font-medium">HS</span></span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-rose-400 h-full" style={{ width: (outStats.totalOut > 0 ? (cl.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2: Diện chuyển & Loại hình */}
+                <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-5">
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-[#00A99D]" /> Theo Diện chuyển
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.categoryStats.length > 0 ? outStats.categoryStats.map(cat => (
+                        <div key={cat.code} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{cat.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{cat.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((cat.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-amber-500 h-full" style={{ width: (outStats.totalOut > 0 ? (cat.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <School className="w-4 h-4 text-[#00A99D]" /> Theo Loại hình trường đến
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.typeStats.length > 0 ? outStats.typeStats.map(t => (
+                        <div key={t.code} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{t.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{t.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((t.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-indigo-500 h-full" style={{ width: (outStats.totalOut > 0 ? (t.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 3: Tỉnh/TP đến & Phân tích Đà Nẵng */}
+                <div className="space-y-6">
+                  <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-[#00A99D]" /> Theo Tỉnh/Thành phố đến
+                    </h4>
+                    <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
+                      {outStats.provinceStats.length > 0 ? outStats.provinceStats.map(p => (
+                        <div key={p.name} className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-bold text-slate-700">
+                            <span>{p.name}</span>
+                            <span className="text-slate-500">
+                              <span className="text-rose-600 font-extrabold">{p.count}</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">HS</span>
+                              <span className="text-[10px] text-slate-400 font-medium ml-1">({outStats.totalOut > 0 ? Math.round((p.count / outStats.totalOut) * 100) : 0}%)</span>
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div className="bg-sky-500 h-full" style={{ width: (outStats.totalOut > 0 ? (p.count / outStats.totalOut) * 100 : 0) + "%" }}></div>
+                          </div>
+                        </div>
+                      )) : (
+                        <p className="text-xs font-medium text-slate-400 italic text-center py-4">Không có số liệu</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Drill-down Đà Nẵng analysis */}
+                  <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4 shadow-xs">
+                    <div className="border-b border-slate-50 pb-2">
+                      <h4 className="text-xs font-black text-slate-850 uppercase tracking-wider flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-indigo-600" />
+                        Phân tích tại Đà Nẵng
+                      </h4>
+                      <p className="text-[10px] text-slate-400 font-bold mt-1">Chi tiết trong số {outStats.totalDaNang} HS chuyển đến Đà Nẵng</p>
+                    </div>
+
+                    {/* 1. Loại hình Công lập vs Tư thục */}
+                    <div className="space-y-3">
+                      <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loại hình trường đến</h5>
+                      
+                      {/* Tư thục */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                          <span>Tư thục</span>
+                          <span>
+                            <span className="font-extrabold text-[#00A99D]">{outStats.privateDaNang}</span> HS ({outStats.pctPrivateDaNang}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                          <div className="bg-[#00A99D] h-full" style={{ width: outStats.pctPrivateDaNang + "%" }}></div>
+                        </div>
+                      </div>
+
+                      {/* Công lập */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                          <span>Công lập</span>
+                          <span>
+                            <span className="font-extrabold text-amber-600">{outStats.publicDaNang}</span> HS ({outStats.pctPublicDaNang}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                          <div className="bg-amber-500 h-full" style={{ width: outStats.pctPublicDaNang + "%" }}></div>
+                        </div>
+                      </div>
+
+                      {/* Khác */}
+                      {outStats.otherDaNang > 0 && (
+                        <div className="space-y-1">
+                          <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                            <span>Khác / Chưa rõ</span>
+                            <span>
+                              <span className="font-extrabold text-slate-500">{outStats.otherDaNang}</span> HS ({outStats.pctOtherDaNang}%)
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                            <div className="bg-slate-400 h-full" style={{ width: outStats.pctOtherDaNang + "%" }}></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 2. Trường Tư thục cụ thể */}
+                    <div className="space-y-3 pt-3 border-t border-slate-100">
+                      <h5 className="text-[10px] font-black text-indigo-700 uppercase tracking-widest flex items-center justify-between">
+                        <span>Biểu đồ tỷ lệ các trường Tư thục</span>
+                        <span className="text-[9px] font-semibold text-slate-400 normal-case">(Trong {outStats.privateDaNang} HS chuyển Tư thục)</span>
+                      </h5>
+                      
+                      <div className="space-y-3 max-h-[140px] overflow-y-auto pr-1 custom-scrollbar">
+                        {outStats.privateDaNangSchoolStats.length > 0 ? outStats.privateDaNangSchoolStats.map(item => (
+                          <div key={item.name} className="space-y-1">
+                            <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
+                              <span className="truncate max-w-[70%]">{item.name}</span>
+                              <span className="text-slate-500 font-bold shrink-0">
+                                <span>{item.count} HS</span>
+                                <span className="text-[10px] font-normal text-slate-400 ml-1">({item.pct}%)</span>
+                              </span>
+                            </div>
+                            <div className="w-full bg-slate-50 rounded-full h-1.5 overflow-hidden">
+                              <div className="bg-indigo-500 h-full" style={{ width: item.pct + "%" }}></div>
+                            </div>
+                          </div>
+                        )) : (
+                          <p className="text-[11px] text-slate-400 italic text-center py-2">Không có trường tư thục nào ở Đà Nẵng</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
-      {showOutModal && (
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+        <div className="border-b border-slate-100 p-3 bg-slate-50/50 flex gap-2 overflow-x-auto custom-scrollbar">
+          <button
+            onClick={() => setActiveTab("OUT")}
+            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
+              activeTab === "OUT"
+                ? "bg-rose-50 text-rose-600 border-b-4 border-rose-500 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+            }`}
+          >
+            <ArrowRightToLine className="w-5 h-5 mr-3" />
+            Chuyển đi
+          </button>
+          <button
+            onClick={() => setActiveTab("IN")}
+            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
+              activeTab === "IN"
+                ? "bg-emerald-50 text-emerald-600 border-b-4 border-emerald-500 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+            }`}
+          >
+            <ArrowLeftToLine className="w-5 h-5 mr-3" />
+            Chuyển đến
+          </button>
+          <button
+            onClick={() => setActiveTab("CHANGE_CLASS")}
+            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
+              activeTab === "CHANGE_CLASS"
+                ? "bg-[#00A99D]/10 text-[#00A99D] border-b-4 border-indigo-500 shadow-sm"
+                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+            }`}
+          >
+            <ArrowRightLeft className="w-5 h-5 mr-3" />
+            Chuyển lớp
+          </button>
+        </div>
+
+      <div className="p-8">
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex items-center justify-between">
+             <div className="relative w-72">
+             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450" />
+             <input 
+               type="text" 
+               placeholder="Tìm kiếm học sinh..." 
+               value={globalSearch}
+               onChange={(e) => setGlobalSearch(e.target.value)}
+               className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
+             />
+           </div>
+           
+           {activeTab === "OUT" && (
+               <div className="flex gap-2 items-center">
+                 {selectedOutTransferIds.length > 0 && (
+                    <>
+                      <button 
+                        onClick={() => setShowBatchEditModal(true)}
+                        className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200 mr-2"
+                      >
+                        <Edit className="w-4 h-4 mr-1.5" /> Chỉnh sửa hàng loạt ({selectedOutTransferIds.length})
+                      </button>
+                      <button 
+                        onClick={handleBatchRevert}
+                        className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-1.5" /> Hoàn trả hàng loạt ({selectedOutTransferIds.length})
+                      </button>
+                    </>
+                  )}
+                 <button 
+                   onClick={handleDownloadTemplate} 
+                  className="px-4 py-2 bg-white text-slate-700 font-bold border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all flex items-center shadow-sm text-xs"
+                >
+                  Tải File Mẫu
+                </button>
+                <button 
+                  onClick={() => fileInputRef.current?.click()} 
+                  disabled={importing}
+                  className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs disabled:opacity-50"
+                >
+                  {importing ? <Loader2 className="w-4 h-4 animate-spin mr-1"/> : null} Import File Excel
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImportExcel} 
+                  accept=".xlsx, .xls" 
+                  className="hidden" 
+                />
+                <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20 text-xs">
+                  <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đi
+                </button>
+              </div>
+            )}
+         </div>
+
+         {activeTab === "OUT" && (
+           <div className="flex flex-wrap items-center gap-2 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-205/45 animate-in fade-in duration-200">
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-2">Bộ lọc:</span>
+             
+             {/* Lớp */}
+             <select 
+               value={filterOutClass} 
+               onChange={e => setFilterOutClass(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Lớp ({uniqueClasses.length})</option>
+               {uniqueClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+             </select>
+
+             {/* Cơ sở */}
+             <select 
+               value={filterOutCampus} 
+               onChange={e => setFilterOutCampus(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Cơ sở ({uniqueCampuses.length})</option>
+               {uniqueCampuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+             </select>
+
+             {/* Diện chuyển */}
+             <select 
+               value={filterOutCategory} 
+               onChange={e => setFilterOutCategory(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Diện chuyển</option>
+               <option value="DOMESTIC">Chuyển trường VN</option>
+               <option value="ABROAD">Du học</option>
+               <option value="RESERVE">Bảo lưu</option>
+               <option value="GRADUATED">Tốt nghiệp THPT</option>
+             </select>
+
+             {/* Loại hình */}
+             <select 
+               value={filterOutType} 
+               onChange={e => setFilterOutType(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Loại hình</option>
+               <option value="PRIVATE">Tư thục</option>
+               <option value="PUBLIC">Công lập</option>
+               <option value="OTHER">Khác</option>
+             </select>
+
+             {/* Tỉnh/TP */}
+             <select 
+               value={filterOutProvince} 
+               onChange={e => setFilterOutProvince(e.target.value)}
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+             >
+               <option value="">Tất cả Tỉnh/TP ({uniqueProvinces.length})</option>
+               {uniqueProvinces.map(p => <option key={p} value={p}>{p}</option>)}
+             </select>
+
+             {/* Reset button */}
+             {(filterOutClass || filterOutCampus || filterOutType || filterOutCategory || filterOutProvince) && (
+               <button 
+                 onClick={() => {
+                   setFilterOutClass("")
+                   setFilterOutCampus("")
+                   setFilterOutType("")
+                   setFilterOutCategory("")
+                   setFilterOutProvince("")
+                 }}
+                 className="text-xs font-bold text-rose-600 hover:text-rose-700 px-3 py-1.5 rounded-xl hover:bg-rose-50 transition-colors ml-auto cursor-pointer"
+               >
+                 Xóa bộ lọc
+               </button>
+             )}
+           </div>
+         )}
+
+           {activeTab === "CHANGE_CLASS" && (
+             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20">
+               <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển lớp
+             </button>
+           )}
+
+           {activeTab === "IN" && (
+             <button onClick={() => setShowInModal(true)} className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all flex items-center shadow-lg shadow-emerald-100">
+               <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đến
+             </button>
+           )}
+        </div>
+
+        {activeTab === "OUT" && (
+          loadingList ? (
+            <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+          ) : outTransfers.length > 0 ? (
+            <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full text-left text-sm border-collapse bg-white">
+                <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
+                  <tr>
+                    <th className="px-4 py-3 text-center w-10">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-[#00A99D] border-slate-355 rounded focus:ring-[#00A99D] cursor-pointer"
+                        checked={outTransfers.length > 0 && outTransfers.every(t => selectedOutTransferIds.includes(t.id))}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedOutTransferIds(outTransfers.map(t => t.id));
+                          } else {
+                            setSelectedOutTransferIds([]);
+                          }
+                        }}
+                      />
+                    </th>
+                    <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
+                    <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                    <th className="px-4 py-3 font-extrabold">Lớp / Cơ sở cũ</th>
+                    <th className="px-4 py-3 font-extrabold">Diện chuyển</th>
+                    <th className="px-4 py-3 font-extrabold">Nơi đến</th>
+                    <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {outTransfers.map(t => (
+                    <tr key={t.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedOutTransferIds.includes(t.id) ? 'bg-[#00A99D]/5 hover:bg-[#00A99D]/10' : ''}`}>
+                      <td className="px-4 py-3.5 text-center">
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-[#00A99D] border-slate-355 rounded focus:ring-[#00A99D] cursor-pointer"
+                          checked={selectedOutTransferIds.includes(t.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedOutTransferIds(prev => [...prev, t.id]);
+                            } else {
+                              setSelectedOutTransferIds(prev => prev.filter(id => id !== t.id));
+                            }
+                          }}
+                        />
+                      </td>
+                      <td className="px-4 py-3.5 font-medium text-slate-700">
+                        {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
+                        <br/>
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-slate-900">
+                        {t.student?.studentName} 
+                        <br/>
+                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                          {t.student?.studentCode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 border border-slate-200/40">
+                          {t.student?.class?.className}
+                        </span> 
+                        <br/>
+                        <span className="text-[10px] text-slate-400 font-medium mt-1 inline-block">
+                          {t.student?.class?.campus?.campusName}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-bold">
+                        <span className={`px-2 py-0.5 rounded text-[10px] border ${
+                          t.transferCategory === 'DOMESTIC' ? 'bg-amber-50 text-amber-700 border-amber-250' : 
+                          t.transferCategory === 'ABROAD' ? 'bg-sky-50 text-sky-700 border-sky-250' : 
+                          t.transferCategory === 'GRADUATED' ? 'bg-emerald-50 text-emerald-700 border-emerald-250' :
+                          'bg-indigo-50 text-indigo-700 border-indigo-250'
+                        }`}>
+                          {t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : t.transferCategory === "GRADUATED" ? "Tốt nghiệp THPT" : "Bảo lưu"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-slate-650 font-medium">
+                        {t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.transferCategory === "GRADUATED" ? "Tốt nghiệp (TN)" : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}
+                      </td>
+                      <td className="px-4 py-3.5 text-right flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingTransfer(t);
+                            setShowOutModal(true);
+                          }}
+                          className="px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          Chỉnh sửa
+                        </button>
+                        <button
+                          onClick={() => handleRevert(t.id, t.student?.studentName)}
+                          className="px-3 py-1.5 border border-amber-200 hover:border-amber-300 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Hoàn trả
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-16 text-center text-xs font-semibold">
+               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
+                 <ArrowRightToLine className="w-8 h-8 text-rose-300" />
+               </div>
+               <h3 className="text-xl font-bold text-slate-700 mb-2">Chưa có dữ liệu chuyển đi</h3>
+               <p className="text-slate-500 font-medium">Bấm "Tạo phiếu Chuyển đi" để thêm mới.</p>
+            </div>
+          )
+        )}
+
+        {activeTab === "CHANGE_CLASS" && (
+          loadingList ? (
+            <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+          ) : changeTransfers.length > 0 ? (
+            <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full text-left text-sm border-collapse bg-white">
+                <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
+                  <tr>
+                    <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
+                    <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                    <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
+                    <th className="px-4 py-3 font-extrabold">Lý do</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {changeTransfers.map(t => (
+                    <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
+                      <td className="px-4 py-3.5 font-medium text-slate-700">
+                        {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
+                        <br/>
+                        <span className="text-[10px] text-slate-400 font-medium">
+                          {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-slate-900">
+                        {t.student?.studentName} 
+                        <br/>
+                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                          {t.student?.studentCode}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-semibold text-[#00A99D]">{t.destinationSchool}</td>
+                      <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-16 text-center text-xs font-semibold">
+               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
+                 <ArrowRightLeft className="w-8 h-8 text-indigo-300" />
+               </div>
+               <h3 className="text-xl font-bold text-slate-700 mb-2">Chưa có dữ liệu chuyển lớp</h3>
+               <p className="text-slate-500 font-medium">Bấm "Tạo phiếu Chuyển lớp" để thêm mới.</p>
+            </div>
+          )
+        )}
+        
+        {activeTab === "IN" && (
+          loadingList ? (
+            <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
+          ) : (
+            <div className="space-y-8">
+              {/* Pending Enrollment Requests Section */}
+              {pendingRequests.filter(req => activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool).length > 0 && (
+                <div className="p-6 text-xs font-semibold">
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-2.5 w-2.5 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full opacity-75 bg-emerald-400 rounded-full"></span>
+                        <span className="relative inline-flex h-2.5 w-2.5 bg-emerald-500 rounded-full"></span>
+                      </span>
+                      <h3 className="text-base font-black text-slate-800 uppercase tracking-wider">
+                        Danh sách Yêu cầu Nhập học chờ xử lý ({filteredPendingRequests.length})
+                      </h3>
+                    </div>
+                  </div>
+
+                  {/* Filter controls */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="flex flex-wrap items-center gap-3 flex-1">
+                      <div className="relative w-64">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input 
+                          type="text" 
+                          placeholder="Tìm tên hoặc mã khảo sát..." 
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
+                        />
+                      </div>
+                      <select 
+                        value={filterCampus}
+                        onChange={(e) => setFilterCampus(e.target.value)}
+                        className="bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
+                      >
+                        <option value="">Tất cả Cơ sở dự tuyển</option>
+                        {availableCampuses.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      <select 
+                        value={filterGrade}
+                        onChange={(e) => setFilterGrade(e.target.value)}
+                        className="bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
+                      >
+                        <option value="">Tất cả Phân hệ / Khối</option>
+                        {availableGrades.map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                      {(searchTerm || filterCampus || filterGrade) && (
+                        <button 
+                          onClick={() => { setSearchTerm(""); setFilterCampus(""); setFilterGrade(""); }}
+                          className="text-slate-500 hover:text-slate-800 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Xóa bộ lọc
+                        </button>
+                      )}
+                    </div>
+                    {selectedRequestIds.length > 0 && (
+                      <button 
+                        onClick={() => {
+                          const selected = filteredPendingRequests.filter(r => selectedRequestIds.includes(r.id));
+                          setSelectedRequests(selected);
+                          setShowInModal(true);
+                        }}
+                        className="px-4 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00A99D]/20 transition-all flex items-center gap-1.5 cursor-pointer animate-in fade-in slide-in-from-right-3 duration-200"
+                      >
+                        <UserCheck className="w-4 h-4" />
+                        Xếp lớp hàng loạt ({selectedRequestIds.length})
+                      </button>
+                    )}
+                  </div>
+
+                  {paginatedPendingRequests.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="border border-slate-200/80 bg-white rounded-2xl overflow-hidden shadow-sm">
+                        <table className="w-full text-left text-sm border-collapse">
+                          <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
+                            <tr>
+                              <th className="px-4 py-3 w-12 text-center">
+                                <input 
+                                  type="checkbox" 
+                                  checked={paginatedPendingRequests.length > 0 && paginatedPendingRequests.every(r => selectedRequestIds.includes(r.id))}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedRequestIds(prev => {
+                                        const newIds = [...prev];
+                                        paginatedPendingRequests.forEach(r => {
+                                          if (!newIds.includes(r.id)) newIds.push(r.id);
+                                        });
+                                        return newIds;
+                                      });
+                                    } else {
+                                      setSelectedRequestIds(prev => prev.filter(id => !paginatedPendingRequests.some(r => r.id === id)));
+                                    }
+                                  }}
+                                  className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
+                                />
+                              </th>
+                            <th className="px-4 py-3 font-extrabold">Ngày yêu cầu</th>
+                            <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                            <th className="px-4 py-3 font-extrabold">Cơ sở dự tuyển</th>
+                            <th className="px-4 py-3 font-extrabold">Phân hệ / Khối</th>
+                            <th className="px-4 py-3 font-extrabold">Trạng thái</th>
+                            <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {paginatedPendingRequests.map(req => (
+                            <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedRequestIds.includes(req.id) ? 'bg-[#00A99D]/5 hover:bg-[#00A99D]/10' : ''}`}>
+                              <td className="px-4 py-3.5 text-center">
+                                <input 
+                                  type="checkbox" 
+                                  checked={selectedRequestIds.includes(req.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedRequestIds(prev => [...prev, req.id]);
+                                    } else {
+                                      setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
+                                    }
+                                  }}
+                                  className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
+                                />
+                              </td>
+                              <td className="px-4 py-3.5 font-medium text-slate-700">
+                                {new Date(req.createdAt).toLocaleDateString('vi-VN')}
+                              </td>
+                              <td className="px-4 py-3.5 font-bold text-slate-900">
+                                {req.fullName} 
+                                <br/>
+                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                                  Mã KS: {req.studentCode}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 font-bold text-slate-600">
+                                {req.admissionCampus}
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  req.isPreschool ? 'bg-pink-50 text-pink-700 border-pink-250' : 'bg-indigo-50 text-indigo-700 border-indigo-250'
+                                }`}>
+                                  {req.isPreschool ? "Mầm non" : "Khối " + req.grade}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5">
+                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-250 text-[10px] font-bold rounded">
+                                  Chờ xếp lớp
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 text-right">
+                                <button 
+                                  onClick={() => {
+                                    setSelectedRequest(req);
+                                    setShowInModal(true);
+                                  }}
+                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-100 hover:shadow-lg hover:shadow-emerald-200 transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                  Xếp lớp
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {pendingTotalPages > 1 && (
+                      <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-semibold text-slate-650">
+                        <span>Hiển thị {(pendingPage - 1) * pendingPageSize + 1} - {Math.min(pendingPage * pendingPageSize, filteredPendingRequests.length)} trong tổng số {filteredPendingRequests.length} học sinh</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={pendingPage === 1}
+                            onClick={() => setPendingPage(prev => Math.max(1, prev - 1))}
+                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                          >
+                            Trước
+                          </button>
+                          <span className="px-3.5 font-bold">Trang {pendingPage} / {pendingTotalPages}</span>
+                          <button
+                            disabled={pendingPage === pendingTotalPages}
+                            onClick={() => setPendingPage(prev => Math.min(pendingTotalPages, prev + 1))}
+                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                          >
+                            Sau
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-16 text-center text-slate-500 font-bold border border-slate-200 rounded-2xl bg-slate-50/50">
+                    Không tìm thấy học sinh nào phù hợp với bộ lọc đã chọn!
+                  </div>
+                )}
+                </div>
+              )}
+
+              {/* History / Completed Transfers-In */}
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Lịch sử học sinh Chuyển đến</h3>
+                  
+                  {inTransfers.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <select
+                        value={historyFilterClass}
+                        onChange={(e) => setHistoryFilterClass(e.target.value)}
+                        className="bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer shadow-sm"
+                      >
+                        <option value="">Tất cả Lớp chuyển đến</option>
+                        {historyClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                      {historyFilterClass && (
+                        <button
+                          onClick={() => setHistoryFilterClass("")}
+                          className="text-slate-500 hover:text-slate-800 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          Xóa lọc lớp
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {paginatedHistory.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
+                          <tr>
+                            <th className="px-4 py-3 font-extrabold">Ngày nhập học</th>
+                            <th className="px-4 py-3 font-extrabold">Học sinh</th>
+                            <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
+                            <th className="px-4 py-3 font-extrabold">Lý do</th>
+                            <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {paginatedHistory.map(t => (
+                            <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
+                              <td className="px-4 py-3.5 font-medium text-slate-700">
+                                {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
+                                <br/>
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                  {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 font-bold text-slate-900">
+                                {t.student?.studentName} 
+                                <br/>
+                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
+                                  {t.student?.studentCode}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3.5 font-bold text-emerald-600">{t.destinationSchool}</td>
+                              <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
+                              <td className="px-4 py-3.5 text-right">
+                                <button 
+                                  onClick={() => {
+                                    setEditingTransfer(t);
+                                    setShowInModal(true);
+                                  }}
+                                  className="px-3 py-1.5 border border-[#00A99D] hover:bg-[#00A99D]/5 text-[#00A99D] font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                                >
+                                  Sửa
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    {historyTotalPages > 1 && (
+                      <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-semibold text-slate-650">
+                        <span>Hiển thị {(historyPage - 1) * historyPageSize + 1} - {Math.min(historyPage * historyPageSize, filteredHistory.length)} trong tổng số {filteredHistory.length} học sinh</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={historyPage === 1}
+                            onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
+                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                          >
+                            Trước
+                          </button>
+                          <span className="px-3.5 font-bold">Trang {historyPage} / {historyTotalPages}</span>
+                          <button
+                            disabled={historyPage === historyTotalPages}
+                            onClick={() => setHistoryPage(prev => Math.min(historyTotalPages, prev + 1))}
+                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
+                          >
+                            Sau
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-16 text-center text-xs font-semibold bg-slate-50 border border-slate-200 rounded-2xl">
+                    Không tìm thấy học sinh nào phù hợp với lớp chuyển đến đã chọn.
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        )}
+      </div>
+
+{showOutModal && (
         <TransferOutModal 
           activeSubTab={activeSubTab} 
           initialData={editingTransfer}
@@ -1458,6 +2521,7 @@ export function StudentTransfersClient() {
           }} 
         />
       )}
+    </div>
     </div>
   )
 }
@@ -2784,685 +3848,4 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
       </div>
     </div>
   )
-}
-
-
-function DataManagementView(props: any) {
-  const {
-    activeTab, setActiveTab, activeSubTab, searchTerm, setSearchTerm, statusFilter, setStatusFilter,
-    selectedYearFilter, setSelectedYearFilter, options, transfers, pendingRequests, loadingList,
-    selectedOutTransferIds, setSelectedOutTransferIds, setShowBatchEditModal, setEditingTransfer,
-    setShowOutModal, selectedRequestIds, setSelectedRequestIds, setSelectedRequests, setShowInModal,
-    paginatedPendingRequests, pendingTotalPages, pendingPage, setPendingPage, setSelectedRequest,
-    setShowChangeModal, paginatedInTransfers, inTotalPages, inPage, setInPage,
-    paginatedChangeClassTransfers, historyTotalPages, historyPage, setHistoryPage,
-    loadTransfers, handleDeleteTransfer
-  } = props;
-
-  return (
-    <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
-        <div className="border-b border-slate-100 p-3 bg-slate-50/50 flex gap-2 overflow-x-auto custom-scrollbar">
-          <button
-            onClick={() => setActiveTab("OUT")}
-            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
-              activeTab === "OUT"
-                ? "bg-rose-50 text-rose-600 border-b-4 border-rose-500 shadow-sm"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-            }`}
-          >
-            <ArrowRightToLine className="w-5 h-5 mr-3" />
-            Chuyển đi
-          </button>
-          <button
-            onClick={() => setActiveTab("IN")}
-            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
-              activeTab === "IN"
-                ? "bg-emerald-50 text-emerald-600 border-b-4 border-emerald-500 shadow-sm"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-            }`}
-          >
-            <ArrowLeftToLine className="w-5 h-5 mr-3" />
-            Chuyển đến
-          </button>
-          <button
-            onClick={() => setActiveTab("CHANGE_CLASS")}
-            className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
-              activeTab === "CHANGE_CLASS"
-                ? "bg-[#00A99D]/10 text-[#00A99D] border-b-4 border-indigo-500 shadow-sm"
-                : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-            }`}
-          >
-            <ArrowRightLeft className="w-5 h-5 mr-3" />
-            Chuyển lớp
-          </button>
-        </div>
-
-      <div className="p-8">
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex items-center justify-between">
-             <div className="relative w-72">
-             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-450" />
-             <input 
-               type="text" 
-               placeholder="Tìm kiếm học sinh..." 
-               value={globalSearch}
-               onChange={(e) => setGlobalSearch(e.target.value)}
-               className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
-             />
-           </div>
-           
-           {activeTab === "OUT" && (
-               <div className="flex gap-2 items-center">
-                 {selectedOutTransferIds.length > 0 && (
-                    <>
-                      <button 
-                        onClick={() => setShowBatchEditModal(true)}
-                        className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200 mr-2"
-                      >
-                        <Edit className="w-4 h-4 mr-1.5" /> Chỉnh sửa hàng loạt ({selectedOutTransferIds.length})
-                      </button>
-                      <button 
-                        onClick={handleBatchRevert}
-                        className="px-4 py-2 bg-amber-50 text-amber-700 border border-amber-200 font-bold rounded-2xl hover:bg-amber-100 transition-all flex items-center shadow-sm text-xs animate-in fade-in slide-in-from-left duration-200"
-                      >
-                        <RotateCcw className="w-4 h-4 mr-1.5" /> Hoàn trả hàng loạt ({selectedOutTransferIds.length})
-                      </button>
-                    </>
-                  )}
-                 <button 
-                   onClick={handleDownloadTemplate} 
-                  className="px-4 py-2 bg-white text-slate-700 font-bold border border-slate-200 rounded-2xl hover:bg-slate-50 transition-all flex items-center shadow-sm text-xs"
-                >
-                  Tải File Mẫu
-                </button>
-                <button 
-                  onClick={() => fileInputRef.current?.click()} 
-                  disabled={importing}
-                  className="px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-2xl hover:bg-indigo-100 transition-all flex items-center shadow-sm text-xs disabled:opacity-50"
-                >
-                  {importing ? <Loader2 className="w-4 h-4 animate-spin mr-1"/> : null} Import File Excel
-                </button>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleImportExcel} 
-                  accept=".xlsx, .xls" 
-                  className="hidden" 
-                />
-                <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20 text-xs">
-                  <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đi
-                </button>
-              </div>
-            )}
-         </div>
-
-         {activeTab === "OUT" && (
-           <div className="flex flex-wrap items-center gap-2 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-205/45 animate-in fade-in duration-200">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-2">Bộ lọc:</span>
-             
-             {/* Lớp */}
-             <select 
-               value={filterOutClass} 
-               onChange={e => setFilterOutClass(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
-             >
-               <option value="">Tất cả Lớp ({uniqueClasses.length})</option>
-               {uniqueClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-             </select>
-
-             {/* Cơ sở */}
-             <select 
-               value={filterOutCampus} 
-               onChange={e => setFilterOutCampus(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
-             >
-               <option value="">Tất cả Cơ sở ({uniqueCampuses.length})</option>
-               {uniqueCampuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-             </select>
-
-             {/* Diện chuyển */}
-             <select 
-               value={filterOutCategory} 
-               onChange={e => setFilterOutCategory(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
-             >
-               <option value="">Tất cả Diện chuyển</option>
-               <option value="DOMESTIC">Chuyển trường VN</option>
-               <option value="ABROAD">Du học</option>
-               <option value="RESERVE">Bảo lưu</option>
-               <option value="GRADUATED">Tốt nghiệp THPT</option>
-             </select>
-
-             {/* Loại hình */}
-             <select 
-               value={filterOutType} 
-               onChange={e => setFilterOutType(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
-             >
-               <option value="">Tất cả Loại hình</option>
-               <option value="PRIVATE">Tư thục</option>
-               <option value="PUBLIC">Công lập</option>
-               <option value="OTHER">Khác</option>
-             </select>
-
-             {/* Tỉnh/TP */}
-             <select 
-               value={filterOutProvince} 
-               onChange={e => setFilterOutProvince(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
-             >
-               <option value="">Tất cả Tỉnh/TP ({uniqueProvinces.length})</option>
-               {uniqueProvinces.map(p => <option key={p} value={p}>{p}</option>)}
-             </select>
-
-             {/* Reset button */}
-             {(filterOutClass || filterOutCampus || filterOutType || filterOutCategory || filterOutProvince) && (
-               <button 
-                 onClick={() => {
-                   setFilterOutClass("")
-                   setFilterOutCampus("")
-                   setFilterOutType("")
-                   setFilterOutCategory("")
-                   setFilterOutProvince("")
-                 }}
-                 className="text-xs font-bold text-rose-600 hover:text-rose-700 px-3 py-1.5 rounded-xl hover:bg-rose-50 transition-colors ml-auto cursor-pointer"
-               >
-                 Xóa bộ lọc
-               </button>
-             )}
-           </div>
-         )}
-
-           {activeTab === "CHANGE_CLASS" && (
-             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#00A99D] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#00A99D]/20">
-               <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển lớp
-             </button>
-           )}
-
-           {activeTab === "IN" && (
-             <button onClick={() => setShowInModal(true)} className="px-6 py-3 bg-emerald-600 text-white font-bold rounded-2xl hover:bg-emerald-700 transition-all flex items-center shadow-lg shadow-emerald-100">
-               <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đến
-             </button>
-           )}
-        </div>
-
-        {activeTab === "OUT" && (
-          loadingList ? (
-            <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
-          ) : outTransfers.length > 0 ? (
-            <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm border-collapse bg-white">
-                <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                  <tr>
-                    <th className="px-4 py-3 text-center w-10">
-                      <input 
-                        type="checkbox" 
-                        className="w-4 h-4 text-[#00A99D] border-slate-355 rounded focus:ring-[#00A99D] cursor-pointer"
-                        checked={outTransfers.length > 0 && outTransfers.every(t => selectedOutTransferIds.includes(t.id))}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedOutTransferIds(outTransfers.map(t => t.id));
-                          } else {
-                            setSelectedOutTransferIds([]);
-                          }
-                        }}
-                      />
-                    </th>
-                    <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
-                    <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                    <th className="px-4 py-3 font-extrabold">Lớp / Cơ sở cũ</th>
-                    <th className="px-4 py-3 font-extrabold">Diện chuyển</th>
-                    <th className="px-4 py-3 font-extrabold">Nơi đến</th>
-                    <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {outTransfers.map(t => (
-                    <tr key={t.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedOutTransferIds.includes(t.id) ? 'bg-[#00A99D]/5 hover:bg-[#00A99D]/10' : ''}`}>
-                      <td className="px-4 py-3.5 text-center">
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 text-[#00A99D] border-slate-355 rounded focus:ring-[#00A99D] cursor-pointer"
-                          checked={selectedOutTransferIds.includes(t.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedOutTransferIds(prev => [...prev, t.id]);
-                            } else {
-                              setSelectedOutTransferIds(prev => prev.filter(id => id !== t.id));
-                            }
-                          }}
-                        />
-                      </td>
-                      <td className="px-4 py-3.5 font-medium text-slate-700">
-                        {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
-                        <br/>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 font-bold text-slate-900">
-                        {t.student?.studentName} 
-                        <br/>
-                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {t.student?.studentCode}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[10px] font-bold text-slate-600 border border-slate-200/40">
-                          {t.student?.class?.className}
-                        </span> 
-                        <br/>
-                        <span className="text-[10px] text-slate-400 font-medium mt-1 inline-block">
-                          {t.student?.class?.campus?.campusName}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 font-bold">
-                        <span className={`px-2 py-0.5 rounded text-[10px] border ${
-                          t.transferCategory === 'DOMESTIC' ? 'bg-amber-50 text-amber-700 border-amber-250' : 
-                          t.transferCategory === 'ABROAD' ? 'bg-sky-50 text-sky-700 border-sky-250' : 
-                          t.transferCategory === 'GRADUATED' ? 'bg-emerald-50 text-emerald-700 border-emerald-250' :
-                          'bg-indigo-50 text-indigo-700 border-indigo-250'
-                        }`}>
-                          {t.transferCategory === "DOMESTIC" ? "Chuyển trường VN" : t.transferCategory === "ABROAD" ? "Du học" : t.transferCategory === "GRADUATED" ? "Tốt nghiệp THPT" : "Bảo lưu"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 text-slate-650 font-medium">
-                        {t.transferCategory === "DOMESTIC" ? t.destinationSchool : t.transferCategory === "ABROAD" ? t.destinationCountry : t.transferCategory === "GRADUATED" ? "Tốt nghiệp (TN)" : t.reserveStartDate ? `Từ ${new Date(t.reserveStartDate).toLocaleDateString('vi-VN')} đến ${new Date(t.reserveEndDate).toLocaleDateString('vi-VN')}` : "-"}
-                      </td>
-                      <td className="px-4 py-3.5 text-right flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingTransfer(t);
-                            setShowOutModal(true);
-                          }}
-                          className="px-3 py-1.5 border border-slate-200 hover:border-slate-300 text-slate-600 hover:bg-slate-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                          Chỉnh sửa
-                        </button>
-                        <button
-                          onClick={() => handleRevert(t.id, t.student?.studentName)}
-                          className="px-3 py-1.5 border border-amber-200 hover:border-amber-300 text-amber-600 hover:bg-amber-50 rounded-xl text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Hoàn trả
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-16 text-center text-xs font-semibold">
-               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-                 <ArrowRightToLine className="w-8 h-8 text-rose-300" />
-               </div>
-               <h3 className="text-xl font-bold text-slate-700 mb-2">Chưa có dữ liệu chuyển đi</h3>
-               <p className="text-slate-500 font-medium">Bấm "Tạo phiếu Chuyển đi" để thêm mới.</p>
-            </div>
-          )
-        )}
-
-        {activeTab === "CHANGE_CLASS" && (
-          loadingList ? (
-            <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
-          ) : changeTransfers.length > 0 ? (
-            <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-left text-sm border-collapse bg-white">
-                <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                  <tr>
-                    <th className="px-4 py-3 font-extrabold">Ngày chuyển</th>
-                    <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                    <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
-                    <th className="px-4 py-3 font-extrabold">Lý do</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {changeTransfers.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
-                      <td className="px-4 py-3.5 font-medium text-slate-700">
-                        {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
-                        <br/>
-                        <span className="text-[10px] text-slate-400 font-medium">
-                          {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 font-bold text-slate-900">
-                        {t.student?.studentName} 
-                        <br/>
-                        <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
-                          {t.student?.studentCode}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3.5 font-semibold text-[#00A99D]">{t.destinationSchool}</td>
-                      <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="p-16 text-center text-xs font-semibold">
-               <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-                 <ArrowRightLeft className="w-8 h-8 text-indigo-300" />
-               </div>
-               <h3 className="text-xl font-bold text-slate-700 mb-2">Chưa có dữ liệu chuyển lớp</h3>
-               <p className="text-slate-500 font-medium">Bấm "Tạo phiếu Chuyển lớp" để thêm mới.</p>
-            </div>
-          )
-        )}
-        
-        {activeTab === "IN" && (
-          loadingList ? (
-            <div className="flex justify-center p-10"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div>
-          ) : (
-            <div className="space-y-8">
-              {/* Pending Enrollment Requests Section */}
-              {pendingRequests.filter(req => activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool).length > 0 && (
-                <div className="p-6 text-xs font-semibold">
-                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="flex h-2.5 w-2.5 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full opacity-75 bg-emerald-400 rounded-full"></span>
-                        <span className="relative inline-flex h-2.5 w-2.5 bg-emerald-500 rounded-full"></span>
-                      </span>
-                      <h3 className="text-base font-black text-slate-800 uppercase tracking-wider">
-                        Danh sách Yêu cầu Nhập học chờ xử lý ({filteredPendingRequests.length})
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Filter controls */}
-                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                    <div className="flex flex-wrap items-center gap-3 flex-1">
-                      <div className="relative w-64">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input 
-                          type="text" 
-                          placeholder="Tìm tên hoặc mã khảo sát..." 
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
-                        />
-                      </div>
-                      <select 
-                        value={filterCampus}
-                        onChange={(e) => setFilterCampus(e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
-                      >
-                        <option value="">Tất cả Cơ sở dự tuyển</option>
-                        {availableCampuses.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                      <select 
-                        value={filterGrade}
-                        onChange={(e) => setFilterGrade(e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
-                      >
-                        <option value="">Tất cả Phân hệ / Khối</option>
-                        {availableGrades.map(g => <option key={g} value={g}>{g}</option>)}
-                      </select>
-                      {(searchTerm || filterCampus || filterGrade) && (
-                        <button 
-                          onClick={() => { setSearchTerm(""); setFilterCampus(""); setFilterGrade(""); }}
-                          className="text-slate-500 hover:text-slate-800 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Xóa bộ lọc
-                        </button>
-                      )}
-                    </div>
-                    {selectedRequestIds.length > 0 && (
-                      <button 
-                        onClick={() => {
-                          const selected = filteredPendingRequests.filter(r => selectedRequestIds.includes(r.id));
-                          setSelectedRequests(selected);
-                          setShowInModal(true);
-                        }}
-                        className="px-4 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00A99D]/20 transition-all flex items-center gap-1.5 cursor-pointer animate-in fade-in slide-in-from-right-3 duration-200"
-                      >
-                        <UserCheck className="w-4 h-4" />
-                        Xếp lớp hàng loạt ({selectedRequestIds.length})
-                      </button>
-                    )}
-                  </div>
-
-                  {paginatedPendingRequests.length > 0 ? (
-                    <div className="space-y-4">
-                      <div className="border border-slate-200/80 bg-white rounded-2xl overflow-hidden shadow-sm">
-                        <table className="w-full text-left text-sm border-collapse">
-                          <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                            <tr>
-                              <th className="px-4 py-3 w-12 text-center">
-                                <input 
-                                  type="checkbox" 
-                                  checked={paginatedPendingRequests.length > 0 && paginatedPendingRequests.every(r => selectedRequestIds.includes(r.id))}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedRequestIds(prev => {
-                                        const newIds = [...prev];
-                                        paginatedPendingRequests.forEach(r => {
-                                          if (!newIds.includes(r.id)) newIds.push(r.id);
-                                        });
-                                        return newIds;
-                                      });
-                                    } else {
-                                      setSelectedRequestIds(prev => prev.filter(id => !paginatedPendingRequests.some(r => r.id === id)));
-                                    }
-                                  }}
-                                  className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
-                                />
-                              </th>
-                            <th className="px-4 py-3 font-extrabold">Ngày yêu cầu</th>
-                            <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                            <th className="px-4 py-3 font-extrabold">Cơ sở dự tuyển</th>
-                            <th className="px-4 py-3 font-extrabold">Phân hệ / Khối</th>
-                            <th className="px-4 py-3 font-extrabold">Trạng thái</th>
-                            <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {paginatedPendingRequests.map(req => (
-                            <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedRequestIds.includes(req.id) ? 'bg-[#00A99D]/5 hover:bg-[#00A99D]/10' : ''}`}>
-                              <td className="px-4 py-3.5 text-center">
-                                <input 
-                                  type="checkbox" 
-                                  checked={selectedRequestIds.includes(req.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setSelectedRequestIds(prev => [...prev, req.id]);
-                                    } else {
-                                      setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
-                                    }
-                                  }}
-                                  className="rounded border-slate-350 text-[#00A99D] focus:ring-[#00A99D] h-4 w-4 cursor-pointer"
-                                />
-                              </td>
-                              <td className="px-4 py-3.5 font-medium text-slate-700">
-                                {new Date(req.createdAt).toLocaleDateString('vi-VN')}
-                              </td>
-                              <td className="px-4 py-3.5 font-bold text-slate-900">
-                                {req.fullName} 
-                                <br/>
-                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
-                                  Mã KS: {req.studentCode}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 font-bold text-slate-600">
-                                {req.admissionCampus}
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                                  req.isPreschool ? 'bg-pink-50 text-pink-700 border-pink-250' : 'bg-indigo-50 text-indigo-700 border-indigo-250'
-                                }`}>
-                                  {req.isPreschool ? "Mầm non" : "Khối " + req.grade}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5">
-                                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-250 text-[10px] font-bold rounded">
-                                  Chờ xếp lớp
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 text-right">
-                                <button 
-                                  onClick={() => {
-                                    setSelectedRequest(req);
-                                    setShowInModal(true);
-                                  }}
-                                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-100 hover:shadow-lg hover:shadow-emerald-200 transition-all flex items-center gap-1.5 ml-auto cursor-pointer"
-                                >
-                                  <UserCheck className="w-3.5 h-3.5" />
-                                  Xếp lớp
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Pagination Controls */}
-                    {pendingTotalPages > 1 && (
-                      <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-semibold text-slate-650">
-                        <span>Hiển thị {(pendingPage - 1) * pendingPageSize + 1} - {Math.min(pendingPage * pendingPageSize, filteredPendingRequests.length)} trong tổng số {filteredPendingRequests.length} học sinh</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            disabled={pendingPage === 1}
-                            onClick={() => setPendingPage(prev => Math.max(1, prev - 1))}
-                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
-                          >
-                            Trước
-                          </button>
-                          <span className="px-3.5 font-bold">Trang {pendingPage} / {pendingTotalPages}</span>
-                          <button
-                            disabled={pendingPage === pendingTotalPages}
-                            onClick={() => setPendingPage(prev => Math.min(pendingTotalPages, prev + 1))}
-                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
-                          >
-                            Sau
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-16 text-center text-slate-500 font-bold border border-slate-200 rounded-2xl bg-slate-50/50">
-                    Không tìm thấy học sinh nào phù hợp với bộ lọc đã chọn!
-                  </div>
-                )}
-                </div>
-              )}
-
-              {/* History / Completed Transfers-In */}
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center justify-between gap-4">
-                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider">Lịch sử học sinh Chuyển đến</h3>
-                  
-                  {inTransfers.length > 0 && (
-                    <div className="flex items-center gap-3">
-                      <select
-                        value={historyFilterClass}
-                        onChange={(e) => setHistoryFilterClass(e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-[#00A99D] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer shadow-sm"
-                      >
-                        <option value="">Tất cả Lớp chuyển đến</option>
-                        {historyClasses.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                      {historyFilterClass && (
-                        <button
-                          onClick={() => setHistoryFilterClass("")}
-                          className="text-slate-500 hover:text-slate-800 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Xóa lọc lớp
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {paginatedHistory.length > 0 ? (
-                  <div className="space-y-4">
-                    <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-sm">
-                      <table className="w-full text-left text-sm border-collapse">
-                        <thead className="bg-slate-50/75 text-slate-550 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200/80">
-                          <tr>
-                            <th className="px-4 py-3 font-extrabold">Ngày nhập học</th>
-                            <th className="px-4 py-3 font-extrabold">Học sinh</th>
-                            <th className="px-4 py-3 font-extrabold">Lớp chuyển đến</th>
-                            <th className="px-4 py-3 font-extrabold">Lý do</th>
-                            <th className="px-4 py-3 text-right font-extrabold">Thao tác</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {paginatedHistory.map(t => (
-                            <tr key={t.id} className="hover:bg-slate-50/50 text-xs font-semibold transition-colors">
-                              <td className="px-4 py-3.5 font-medium text-slate-700">
-                                {new Date(t.transferDate).toLocaleDateString('vi-VN')} 
-                                <br/>
-                                <span className="text-[10px] text-slate-400 font-medium">
-                                  {t.semester === 'HK1' ? 'Học kỳ 1' : t.semester === 'HK2' ? 'Học kỳ 2' : t.semester === 'SUMMER' ? 'Trong hè' : ''}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 font-bold text-slate-900">
-                                {t.student?.studentName} 
-                                <br/>
-                                <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded mt-1 inline-block">
-                                  {t.student?.studentCode}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3.5 font-bold text-emerald-600">{t.destinationSchool}</td>
-                              <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
-                              <td className="px-4 py-3.5 text-right">
-                                <button 
-                                  onClick={() => {
-                                    setEditingTransfer(t);
-                                    setShowInModal(true);
-                                  }}
-                                  className="px-3 py-1.5 border border-[#00A99D] hover:bg-[#00A99D]/5 text-[#00A99D] font-bold rounded-xl text-xs transition-colors cursor-pointer"
-                                >
-                                  Sửa
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Pagination Controls */}
-                    {historyTotalPages > 1 && (
-                      <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs font-semibold text-slate-650">
-                        <span>Hiển thị {(historyPage - 1) * historyPageSize + 1} - {Math.min(historyPage * historyPageSize, filteredHistory.length)} trong tổng số {filteredHistory.length} học sinh</span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            disabled={historyPage === 1}
-                            onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
-                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
-                          >
-                            Trước
-                          </button>
-                          <span className="px-3.5 font-bold">Trang {historyPage} / {historyTotalPages}</span>
-                          <button
-                            disabled={historyPage === historyTotalPages}
-                            onClick={() => setHistoryPage(prev => Math.min(historyTotalPages, prev + 1))}
-                            className="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl disabled:opacity-50 transition-colors cursor-pointer"
-                          >
-                            Sau
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-16 text-center text-xs font-semibold bg-slate-50 border border-slate-200 rounded-2xl">
-                    Không tìm thấy học sinh nào phù hợp với lớp chuyển đến đã chọn.
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        )}
-      </div>
-      </div>
-  );
 }
