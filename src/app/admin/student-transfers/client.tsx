@@ -63,7 +63,7 @@ function RealtimeTransferDashboard({
   pendingRequests: any[];
   academicYears?: any[];
   activeTab: "OUT" | "IN" | "CHANGE_CLASS";
-  activeSubTab: "general" | "preschool";
+  activeSubTab: "dashboard" | "general" | "preschool";
   onRefresh: () => void;
   loading?: boolean;
 }) {
@@ -85,7 +85,7 @@ function RealtimeTransferDashboard({
 
   const filteredPending = useMemo(() => {
     return pendingRequests.filter(req => {
-      const subTabMatch = activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool;
+      const subTabMatch = activeSubTab === "dashboard" ? true : (activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool);
       if (!subTabMatch) return false;
       if (selectedYearFilter !== "ALL") {
         const reqYear = req.academicYearId || req.period?.academicYearId || req.period?.academicYear?.id;
@@ -724,7 +724,7 @@ export function StudentTransfersClient() {
     return () => window.removeEventListener("academicYearChanged", handleYearChange);
   }, [yearId]);
 
-  const [activeSubTab, setActiveSubTab] = useState<"general" | "preschool">("general")
+  const [activeSubTab, setActiveSubTab] = useState<"dashboard" | "general" | "preschool">("dashboard")
 
   const [showOutModal, setShowOutModal] = useState(false)
   const [showChangeModal, setShowChangeModal] = useState(false)
@@ -1256,10 +1256,23 @@ export function StudentTransfersClient() {
   return (
     <div className="space-y-6">
       {/* Primary Sub-Tabs */}
-      <div className="flex gap-4 border-b border-slate-200">
+      <div className="flex gap-3 border-b border-slate-200">
+        <button
+          onClick={() => setActiveSubTab("dashboard")}
+          className={`flex items-center gap-2.5 px-6 py-3.5 font-extrabold text-sm transition-all border-b-2 -mb-px rounded-t-2xl ${
+            activeSubTab === "dashboard"
+              ? "border-[#00A99D] text-[#00A99D] bg-teal-50/60 shadow-xs"
+              : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
+          }`}
+        >
+          <BarChart3 className="w-5 h-5 text-[#00A99D]" />
+          Dashboard Thống Kê &amp; Phân Tích
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping ml-0.5"></span>
+        </button>
+
         <button
           onClick={() => setActiveSubTab("general")}
-          className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
+          className={`flex items-center gap-2.5 px-6 py-3.5 font-extrabold text-sm transition-all border-b-2 -mb-px rounded-t-2xl ${
             activeSubTab === "general"
               ? "border-[#00A99D] text-[#00A99D] bg-slate-50/50"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
@@ -1268,9 +1281,10 @@ export function StudentTransfersClient() {
           <GraduationCap className="w-5 h-5" />
           Phổ thông K-12
         </button>
+
         <button
           onClick={() => setActiveSubTab("preschool")}
-          className={`flex items-center gap-2 px-6 py-3.5 font-bold text-sm transition-all border-b-2 -mb-px rounded-t-xl ${
+          className={`flex items-center gap-2.5 px-6 py-3.5 font-extrabold text-sm transition-all border-b-2 -mb-px rounded-t-2xl ${
             activeSubTab === "preschool"
               ? "border-[#00A99D] text-[#00A99D] bg-slate-50/50"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
@@ -1281,8 +1295,10 @@ export function StudentTransfersClient() {
         </button>
       </div>
 
-      {/* UNIFIED REALTIME VISUAL DASHBOARD */}
-      <RealtimeTransferDashboard transfers={transfers} pendingRequests={pendingRequests} academicYears={options.years} activeTab={activeTab} activeSubTab={activeSubTab} onRefresh={loadTransfers} loading={loadingList} />
+      {/* RENDER DASHBOARD TAB ONLY WHEN DASHBOARD IS ACTIVE */}
+      {activeSubTab === "dashboard" && (
+        <RealtimeTransferDashboard transfers={transfers} pendingRequests={pendingRequests} academicYears={options.years} activeTab={activeTab} activeSubTab={activeSubTab} onRefresh={loadTransfers} loading={loadingList} />
+      )}
       {/* OLD STATS REMOVED */}
       {activeTab === "IN" && (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in duration-300">
