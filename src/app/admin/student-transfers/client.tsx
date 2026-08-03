@@ -703,6 +703,7 @@ function RealtimeTransferDashboard({
 export function StudentTransfersClient() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [importing, setImporting] = useState(false)
+  const [options, setOptions] = useState<{ years: any[], campuses: any[] }>({ years: [], campuses: [] })
   const [activeTab, setActiveTab] = useState<"OUT" | "IN" | "CHANGE_CLASS">("OUT")
   const [yearId, setYearId] = useState(() => {
     if (typeof window !== "undefined") {
