@@ -2081,7 +2081,6 @@ export function StudentTransfersClient() {
         />
       )}
     </div>
-    </div>
   )
 }
 
