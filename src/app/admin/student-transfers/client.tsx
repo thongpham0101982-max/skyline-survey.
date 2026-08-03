@@ -53,6 +53,7 @@ const PIE_COLORS = ["#00A99D", "#10B981", "#F59E0B", "#6366F1", "#0284C7", "#EC4
 function RealtimeTransferDashboard({
   transfers,
   pendingRequests,
+  academicYears = [],
   activeTab,
   activeSubTab,
   onRefresh,
@@ -60,6 +61,7 @@ function RealtimeTransferDashboard({
 }: {
   transfers: any[];
   pendingRequests: any[];
+  academicYears?: any[];
   activeTab: "OUT" | "IN" | "CHANGE_CLASS";
   activeSubTab: "general" | "preschool";
   onRefresh: () => void;
@@ -67,6 +69,7 @@ function RealtimeTransferDashboard({
 }) {
   const [showStats, setShowStats] = useState(true);
   const [selectedCampusFilter, setSelectedCampusFilter] = useState<string>("ALL");
+  const [selectedYearFilter, setSelectedYearFilter] = useState<string>("ALL");
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -81,14 +84,26 @@ function RealtimeTransferDashboard({
   };
 
   const filteredPending = useMemo(() => {
-    return pendingRequests.filter(req => 
-      activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool
-    );
-  }, [pendingRequests, activeSubTab]);
+    return pendingRequests.filter(req => {
+      const subTabMatch = activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool;
+      if (!subTabMatch) return false;
+      if (selectedYearFilter !== "ALL") {
+        const reqYear = req.academicYearId || req.period?.academicYearId || req.period?.academicYear?.id;
+        if (reqYear && reqYear !== selectedYearFilter) return false;
+      }
+      return true;
+    });
+  }, [pendingRequests, activeSubTab, selectedYearFilter]);
 
-  const filteredInTransfers = useMemo(() => transfers.filter(t => t.type === "IN"), [transfers]);
-  const filteredOutTransfers = useMemo(() => transfers.filter(t => t.type === "OUT"), [transfers]);
-  const filteredChangeClassTransfers = useMemo(() => transfers.filter(t => t.type === "CHANGE_CLASS"), [transfers]);
+  const matchesYear = (t: any) => {
+    if (selectedYearFilter === "ALL") return true;
+    const yId = t.student?.class?.academicYearId || t.student?.academicYearId || t.academicYearId;
+    return !yId || yId === selectedYearFilter;
+  };
+
+  const filteredInTransfers = useMemo(() => transfers.filter(t => t.type === "IN" && matchesYear(t)), [transfers, selectedYearFilter]);
+  const filteredOutTransfers = useMemo(() => transfers.filter(t => t.type === "OUT" && matchesYear(t)), [transfers, selectedYearFilter]);
+  const filteredChangeClassTransfers = useMemo(() => transfers.filter(t => t.type === "CHANGE_CLASS" && matchesYear(t)), [transfers, selectedYearFilter]);
 
   const totalPending = filteredPending.length;
   const totalIn = filteredInTransfers.length;
@@ -279,6 +294,23 @@ function RealtimeTransferDashboard({
         </div>
 
         <div className="flex items-center gap-3 z-10 self-end md:self-center">
+          {/* Academic Year Filter Selector */}
+          <div className="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-700/90 text-white px-3.5 py-2 rounded-xl border border-slate-700/90 shadow-sm transition-all">
+            <GraduationCap className="w-4 h-4 text-[#00A99D]" />
+            <select
+              value={selectedYearFilter}
+              onChange={(e) => setSelectedYearFilter(e.target.value)}
+              className="bg-transparent font-extrabold text-xs text-white outline-none cursor-pointer pr-1"
+            >
+              <option value="ALL" className="bg-slate-900 text-white">🌐 Tất cả Năm học</option>
+              {academicYears.map((y: any) => (
+                <option key={y.id} value={y.id} className="bg-slate-900 text-white">
+                  🎓 {y.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={handleManualRefresh}
             disabled={loading || isRefreshing}
@@ -729,6 +761,9 @@ export function StudentTransfersClient() {
 
   useEffect(() => {
     loadTransfers()
+    getTransferFormOptionsAction().then(data => {
+      if (data && data.years) setOptions(data)
+    })
   }, [])
 
   useEffect(() => {
@@ -1246,7 +1281,7 @@ export function StudentTransfersClient() {
       </div>
 
       {/* UNIFIED REALTIME VISUAL DASHBOARD */}
-      <RealtimeTransferDashboard transfers={transfers} pendingRequests={pendingRequests} activeTab={activeTab} activeSubTab={activeSubTab} onRefresh={loadTransfers} loading={loadingList} />
+      <RealtimeTransferDashboard transfers={transfers} pendingRequests={pendingRequests} academicYears={options.years} activeTab={activeTab} activeSubTab={activeSubTab} onRefresh={loadTransfers} loading={loadingList} />
       {/* OLD STATS REMOVED */}
       {activeTab === "IN" && (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in duration-300">
