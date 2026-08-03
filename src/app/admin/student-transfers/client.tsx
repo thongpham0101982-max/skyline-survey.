@@ -70,6 +70,7 @@ function RealtimeTransferDashboard({
   const [showStats, setShowStats] = useState(true);
   const [selectedCampusFilter, setSelectedCampusFilter] = useState<string>("ALL");
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>("ALL");
+  const [selectedLevelFilter, setSelectedLevelFilter] = useState<"ALL" | "K12" | "PRESCHOOL">("ALL");
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -87,23 +88,36 @@ function RealtimeTransferDashboard({
     return pendingRequests.filter(req => {
       const subTabMatch = activeSubTab === "dashboard" ? true : (activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool);
       if (!subTabMatch) return false;
+
+      if (selectedLevelFilter === "K12" && req.isPreschool) return false;
+      if (selectedLevelFilter === "PRESCHOOL" && !req.isPreschool) return false;
+
       if (selectedYearFilter !== "ALL") {
         const reqYear = req.academicYearId || req.period?.academicYearId || req.period?.academicYear?.id;
         if (reqYear && reqYear !== selectedYearFilter) return false;
       }
       return true;
     });
-  }, [pendingRequests, activeSubTab, selectedYearFilter]);
+  }, [pendingRequests, activeSubTab, selectedYearFilter, selectedLevelFilter]);
 
-  const matchesYear = (t: any) => {
-    if (selectedYearFilter === "ALL") return true;
-    const yId = t.student?.class?.academicYearId || t.student?.academicYearId || t.academicYearId;
-    return !yId || yId === selectedYearFilter;
+  const matchesFilter = (t: any) => {
+    if (selectedYearFilter !== "ALL") {
+      const yId = t.student?.class?.academicYearId || t.student?.academicYearId || t.academicYearId;
+      if (yId && yId !== selectedYearFilter) return false;
+    }
+
+    if (selectedLevelFilter !== "ALL") {
+      const isPre = checkIsPreschoolStudent(t.student);
+      if (selectedLevelFilter === "K12" && isPre) return false;
+      if (selectedLevelFilter === "PRESCHOOL" && !isPre) return false;
+    }
+
+    return true;
   };
 
-  const filteredInTransfers = useMemo(() => transfers.filter(t => t.type === "IN" && matchesYear(t)), [transfers, selectedYearFilter]);
-  const filteredOutTransfers = useMemo(() => transfers.filter(t => t.type === "OUT" && matchesYear(t)), [transfers, selectedYearFilter]);
-  const filteredChangeClassTransfers = useMemo(() => transfers.filter(t => t.type === "CHANGE_CLASS" && matchesYear(t)), [transfers, selectedYearFilter]);
+  const filteredInTransfers = useMemo(() => transfers.filter(t => t.type === "IN" && matchesFilter(t)), [transfers, selectedYearFilter, selectedLevelFilter]);
+  const filteredOutTransfers = useMemo(() => transfers.filter(t => t.type === "OUT" && matchesFilter(t)), [transfers, selectedYearFilter, selectedLevelFilter]);
+  const filteredChangeClassTransfers = useMemo(() => transfers.filter(t => t.type === "CHANGE_CLASS" && matchesFilter(t)), [transfers, selectedYearFilter, selectedLevelFilter]);
 
   const totalPending = filteredPending.length;
   const totalIn = filteredInTransfers.length;
@@ -443,31 +457,72 @@ function RealtimeTransferDashboard({
           </div>
 
           {/* 2. INTERRELATED ENTITY FILTER NODES */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-slate-100 text-slate-700 rounded-lg">
-                <Filter className="w-4 h-4 text-[#00A99D]" />
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+            
+            {/* Level / Category Filter Nodes */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1.5 mr-1">
+                <div className="p-1.5 bg-teal-50 text-[#00A99D] rounded-lg">
+                  <Filter className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Đối tượng / Cấp học:</span>
               </div>
-              <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Lọc Tương Quan Theo Cơ Sở:</span>
-            </div>
 
-            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
               <button
-                onClick={() => setSelectedCampusFilter("ALL")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
-                  selectedCampusFilter === "ALL"
+                onClick={() => setSelectedLevelFilter("ALL")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 ${
+                  selectedLevelFilter === "ALL"
                     ? "bg-slate-900 text-white border-slate-900 shadow-sm"
                     : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                 }`}
               >
-                🌐 Tất cả Cơ sở ({availableCampuses.length})
+                🌐 Tất cả ({transfers.length + pendingRequests.length})
+              </button>
+
+              <button
+                onClick={() => setSelectedLevelFilter("K12")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 ${
+                  selectedLevelFilter === "K12"
+                    ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm"
+                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                <GraduationCap className="w-4 h-4" />
+                Phổ thông K-12
+              </button>
+
+              <button
+                onClick={() => setSelectedLevelFilter("PRESCHOOL")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 ${
+                  selectedLevelFilter === "PRESCHOOL"
+                    ? "bg-pink-600 text-white border-pink-600 shadow-sm"
+                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                <Baby className="w-4 h-4" />
+                Mầm non
+              </button>
+            </div>
+
+            {/* Campus Filter Nodes */}
+            <div className="flex flex-wrap items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100 w-full lg:w-auto">
+              <span className="text-xs font-black text-slate-500 uppercase tracking-wider mr-1">Cơ sở:</span>
+              <button
+                onClick={() => setSelectedCampusFilter("ALL")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                  selectedCampusFilter === "ALL"
+                    ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                Tất cả ({availableCampuses.length})
               </button>
               
               {availableCampuses.map(campus => (
                 <button
                   key={campus}
                   onClick={() => setSelectedCampusFilter(campus)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1 ${
                     selectedCampusFilter === campus
                       ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm"
                       : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
@@ -478,6 +533,7 @@ function RealtimeTransferDashboard({
                 </button>
               ))}
             </div>
+
           </div>
 
           {/* 3. RECHARTS VISUALIZATION GRID */}
