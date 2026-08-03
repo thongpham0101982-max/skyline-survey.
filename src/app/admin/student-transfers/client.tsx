@@ -3,6 +3,7 @@ import * as XLSX from "xlsx"
 import { useRef } from "react"
 import { useState, useEffect } from "react" 
 // import useRef added above
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from "recharts"
 import { ArrowRightLeft, ArrowRightToLine, ArrowLeftToLine, Search, Plus, X, Loader2, UserCheck, GraduationCap, Baby, Edit, RotateCcw, BarChart3, ChevronDown, ChevronUp, Eye, EyeOff, Building2, Layers, BookOpen, MapPin, School, Activity } from "lucide-react"
 import { getDestinationSchoolsAction } from "../truong-lien-ket/actions"
 import { 
@@ -44,6 +45,628 @@ const checkIsPreschoolStudent = (student: any) => {
   if (!student) return false;
   return isClassPreschool(student.class);
 };
+
+
+// --- REALTIME VISUAL DASHBOARD COMPONENT ---
+const PIE_COLORS = ["#00A99D", "#10B981", "#F59E0B", "#6366F1", "#0284C7", "#EC4899", "#8B5CF6", "#F43F5E"];
+
+function RealtimeTransferDashboard({
+  transfers,
+  pendingRequests,
+  activeTab,
+  activeSubTab,
+  onRefresh,
+  loading = false
+}: {
+  transfers: any[];
+  pendingRequests: any[];
+  activeTab: "OUT" | "IN" | "CHANGE_CLASS";
+  activeSubTab: "general" | "preschool";
+  onRefresh: () => void;
+  loading?: boolean;
+}) {
+  const [showStats, setShowStats] = useState(true);
+  const [selectedCampusFilter, setSelectedCampusFilter] = useState<string>("ALL");
+  const [lastUpdated, setLastUpdated] = useState<string>("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useEffect(() => {
+    setLastUpdated(new Date().toLocaleTimeString("vi-VN"));
+  }, [transfers, pendingRequests]);
+
+  const handleManualRefresh = () => {
+    setIsRefreshing(true);
+    onRefresh();
+    setTimeout(() => setIsRefreshing(false), 800);
+  };
+
+  const filteredPending = useMemo(() => {
+    return pendingRequests.filter(req => 
+      activeSubTab === "preschool" ? req.isPreschool : !req.isPreschool
+    );
+  }, [pendingRequests, activeSubTab]);
+
+  const filteredInTransfers = useMemo(() => transfers.filter(t => t.type === "IN"), [transfers]);
+  const filteredOutTransfers = useMemo(() => transfers.filter(t => t.type === "OUT"), [transfers]);
+  const filteredChangeClassTransfers = useMemo(() => transfers.filter(t => t.type === "CHANGE_CLASS"), [transfers]);
+
+  const totalPending = filteredPending.length;
+  const totalIn = filteredInTransfers.length;
+  const totalOut = filteredOutTransfers.length;
+  const totalChangeClass = filteredChangeClassTransfers.length;
+  const totalTransfersOverall = transfers.length;
+
+  const currentTabTotalRequests = activeTab === "IN" 
+    ? (totalPending + totalIn) 
+    : activeTab === "OUT" 
+    ? totalOut 
+    : totalChangeClass;
+
+  const currentTabCompletionRate = currentTabTotalRequests > 0 
+    ? Math.round(((activeTab === "IN" ? totalIn : currentTabTotalRequests) / currentTabTotalRequests) * 100) 
+    : 100;
+
+  // Campus Chart Data
+  const campusChartData = useMemo(() => {
+    const map: Record<string, { campus: string; enrolled: number; pending: number; transferOut: number }> = {};
+    
+    filteredPending.forEach(r => {
+      const name = r.admissionCampus || "Khác";
+      if (!map[name]) map[name] = { campus: name, enrolled: 0, pending: 0, transferOut: 0 };
+      map[name].pending++;
+    });
+
+    filteredInTransfers.forEach(t => {
+      const name = t.student?.class?.campus?.campusName || "Khác";
+      if (!map[name]) map[name] = { campus: name, enrolled: 0, pending: 0, transferOut: 0 };
+      map[name].enrolled++;
+    });
+
+    filteredOutTransfers.forEach(t => {
+      const name = t.student?.class?.campus?.campusName || "Khác";
+      if (!map[name]) map[name] = { campus: name, enrolled: 0, pending: 0, transferOut: 0 };
+      map[name].transferOut++;
+    });
+
+    return Object.values(map).sort((a, b) => (b.enrolled + b.pending) - (a.enrolled + a.pending));
+  }, [filteredPending, filteredInTransfers, filteredOutTransfers]);
+
+  const availableCampuses = useMemo(() => {
+    const set = new Set<string>();
+    campusChartData.forEach(c => set.add(c.campus));
+    return Array.from(set);
+  }, [campusChartData]);
+
+  // Grade Level Distribution
+  const gradeChartData = useMemo(() => {
+    const map: Record<string, number> = {};
+
+    if (activeTab === "IN") {
+      filteredPending.forEach(r => {
+        if (selectedCampusFilter !== "ALL" && (r.admissionCampus || "Khác") !== selectedCampusFilter) return;
+        const name = r.isPreschool ? "Mầm non" : "Khối " + (r.grade || "Khác");
+        map[name] = (map[name] || 0) + 1;
+      });
+      filteredInTransfers.forEach(t => {
+        const campusName = t.student?.class?.campus?.campusName || "Khác";
+        if (selectedCampusFilter !== "ALL" && campusName !== selectedCampusFilter) return;
+        const isPre = checkIsPreschoolStudent(t.student);
+        const name = isPre ? "Mầm non" : "Khối " + (t.student?.class?.grade || "Khác");
+        map[name] = (map[name] || 0) + 1;
+      });
+    } else {
+      const targetTransfers = activeTab === "OUT" ? filteredOutTransfers : filteredChangeClassTransfers;
+      targetTransfers.forEach(t => {
+        const campusName = t.student?.class?.campus?.campusName || "Khác";
+        if (selectedCampusFilter !== "ALL" && campusName !== selectedCampusFilter) return;
+        const name = "Khối " + (t.student?.class?.grade || "Khác");
+        map[name] = (map[name] || 0) + 1;
+      });
+    }
+
+    return Object.entries(map).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
+  }, [filteredPending, filteredInTransfers, filteredOutTransfers, filteredChangeClassTransfers, activeTab, selectedCampusFilter]);
+
+  // Class Breakdown List
+  const classBreakdownList = useMemo(() => {
+    const map: Record<string, { name: string; campusName: string; count: number }> = {};
+    const dataset = activeTab === "IN" ? filteredInTransfers : (activeTab === "OUT" ? filteredOutTransfers : filteredChangeClassTransfers);
+
+    dataset.forEach(t => {
+      const className = t.student?.class?.className;
+      if (!className) return;
+      const campusName = t.student?.class?.campus?.campusName || "Khác";
+      if (selectedCampusFilter !== "ALL" && campusName !== selectedCampusFilter) return;
+
+      if (!map[className]) map[className] = { name: className, campusName, count: 0 };
+      map[className].count++;
+    });
+
+    return Object.values(map).sort((a, b) => b.count - a.count);
+  }, [filteredInTransfers, filteredOutTransfers, filteredChangeClassTransfers, activeTab, selectedCampusFilter]);
+
+  // Recent Activity Feed
+  const recentActivities = useMemo(() => {
+    const events: Array<{ id: string; name: string; code: string; type: string; campus: string; time: string; color: string }> = [];
+
+    filteredPending.slice(0, 3).forEach((p, idx) => {
+      events.push({
+        id: "p_" + (p.id || idx),
+        name: p.fullName || "Học sinh",
+        code: p.studentCode || ("HS00" + (idx + 1)),
+        type: "Chờ xếp lớp",
+        campus: p.admissionCampus || "Cơ sở",
+        time: "Vừa cập nhật",
+        color: "amber"
+      });
+    });
+
+    filteredInTransfers.slice(0, 3).forEach((t, idx) => {
+      events.push({
+        id: "in_" + (t.id || idx),
+        name: t.student?.fullName || "Học sinh",
+        code: t.student?.studentCode || "",
+        type: "Đã nhập học",
+        campus: t.student?.class?.campus?.campusName || "Cơ sở",
+        time: "Gần đây",
+        color: "emerald"
+      });
+    });
+
+    filteredOutTransfers.slice(0, 2).forEach((t, idx) => {
+      events.push({
+        id: "out_" + (t.id || idx),
+        name: t.student?.fullName || "Học sinh",
+        code: t.student?.studentCode || "",
+        type: "Chuyển đi",
+        campus: t.student?.class?.campus?.campusName || "Cơ sở",
+        time: "Gần đây",
+        color: "rose"
+      });
+    });
+
+    return events.slice(0, 5);
+  }, [filteredPending, filteredInTransfers, filteredOutTransfers]);
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-900/90 text-white p-3.5 rounded-2xl shadow-xl border border-slate-700 backdrop-blur-md text-xs font-semibold space-y-1.5 animate-in fade-in duration-150">
+          <p className="font-extrabold text-slate-200 border-b border-slate-700/80 pb-1 flex items-center gap-1.5">
+            <Building2 className="w-3.5 h-3.5 text-[#00A99D]" /> {label}
+          </p>
+          {payload.map((entry: any, index: number) => (
+            <div key={`item-${index}`} className="flex justify-between items-center gap-4">
+              <span className="flex items-center gap-1.5" style={{ color: entry.color }}>
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></span>
+                {entry.name}:
+              </span>
+              <span className="font-extrabold text-white">{entry.value} HS</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden transition-all animate-in fade-in duration-300">
+      {/* REALTIME HEADER */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-5 md:p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#00A99D]/20 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="flex items-center gap-3.5 z-10">
+          <div className="p-3 bg-gradient-to-br from-[#00A99D] to-emerald-600 rounded-2xl shadow-lg text-white">
+            <BarChart3 className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-lg font-black tracking-tight text-white">
+                Dashboard Thống Kê &amp; Phân Tích Lưu Chuyển
+              </h3>
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 animate-pulse">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                REALTIME LIVE
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 font-medium mt-0.5 flex items-center gap-2">
+              <span>Theo dõi trực quan sự tương quan giữa Cơ sở, Khối lớp, Lớp học và Học sinh</span>
+              <span className="text-slate-500">•</span>
+              <span className="text-slate-400">Cập nhật: {lastUpdated}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 z-10 self-end md:self-center">
+          <button
+            onClick={handleManualRefresh}
+            disabled={loading || isRefreshing}
+            className="flex items-center gap-2 px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 rounded-xl text-xs font-extrabold transition-all active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#00A99D]" : ""}`} />
+            Làm mới Realtime
+          </button>
+          
+          <button
+            onClick={() => setShowStats(!showStats)}
+            className="flex items-center gap-2 px-4 py-2 bg-[#00A99D] hover:bg-[#009187] text-white rounded-xl text-xs font-extrabold shadow-md transition-all active:scale-95"
+          >
+            {showStats ? (
+              <>
+                <EyeOff className="w-4 h-4" />
+                Ẩn Dashboard
+              </>
+            ) : (
+              <>
+                <Eye className="w-4 h-4" />
+                Hiện Dashboard
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {showStats && (
+        <div className="p-6 space-y-6 bg-slate-50/40">
+          
+          {/* 1. TOP METRIC CARDS GRID */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            
+            {/* Card 1: Total Requests */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-teal-500/5 rounded-full blur-xl group-hover:bg-teal-500/10 transition-all"></div>
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
+                  {activeTab === "IN" ? "Tổng yêu cầu chuyển đến" : activeTab === "OUT" ? "Tổng học sinh chuyển đi" : "Tổng phiếu chuyển lớp"}
+                </span>
+                <div className="p-2 bg-teal-50 text-[#00A99D] rounded-xl group-hover:scale-110 transition-transform">
+                  <Activity className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-slate-800 tracking-tight">{currentTabTotalRequests}</span>
+                  <span className="text-xs font-semibold text-slate-400">học sinh</span>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                  <span className="text-slate-500 font-medium">Toàn hệ thống:</span>
+                  <span className="font-extrabold text-[#00A99D]">{totalTransfersOverall} lượt</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Pending Placement */}
+            <div className="bg-white p-5 rounded-2xl border border-amber-200/80 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-xl group-hover:bg-amber-500/10 transition-all"></div>
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] font-extrabold text-amber-700 uppercase tracking-wider">Chờ xếp lớp (Pending)</span>
+                <div className="p-2 bg-amber-50 text-amber-600 rounded-xl group-hover:scale-110 transition-transform">
+                  <Clock className="w-4 h-4 animate-pulse" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-amber-600 tracking-tight">{totalPending}</span>
+                  <span className="text-xs font-semibold text-amber-500/80">học sinh</span>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-amber-100 flex items-center justify-between text-[11px]">
+                  <span className="text-amber-700 font-medium">Trạng thái:</span>
+                  <span className="font-extrabold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+                    Cần xử lý ngay
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3: Enrolled */}
+            <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-all"></div>
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] font-extrabold text-emerald-700 uppercase tracking-wider">Đã nhập học (Enrolled)</span>
+                <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl group-hover:scale-110 transition-transform">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-black text-emerald-600 tracking-tight">{totalIn}</span>
+                  <span className="text-xs font-semibold text-emerald-500/80">học sinh</span>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-emerald-100 flex items-center justify-between text-[11px]">
+                  <span className="text-emerald-700 font-medium">Phân lớp chính thức</span>
+                  <span className="font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
+                    Đã hoàn tất
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4: Completion Rate */}
+            <div className="bg-white p-5 rounded-2xl border border-sky-200/80 shadow-xs hover:shadow-md transition-all group flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-sky-500/5 rounded-full blur-xl group-hover:bg-sky-500/10 transition-all"></div>
+              <div className="flex justify-between items-start">
+                <span className="text-[11px] font-extrabold text-sky-700 uppercase tracking-wider">Tỷ lệ Hoàn thành</span>
+                <div className="p-2 bg-sky-50 text-sky-600 rounded-xl group-hover:scale-110 transition-transform">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="mt-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-black text-sky-600 tracking-tight">{currentTabCompletionRate}%</span>
+                  <div className="flex-1 bg-sky-100 h-2.5 rounded-full overflow-hidden p-0.5">
+                    <div 
+                      className="bg-gradient-to-r from-sky-500 to-[#00A99D] h-full rounded-full transition-all duration-500" 
+                      style={{ width: currentTabCompletionRate + "%" }}
+                    ></div>
+                  </div>
+                </div>
+                <div className="mt-2.5 pt-2 border-t border-sky-100 flex items-center justify-between text-[11px]">
+                  <span className="text-sky-700 font-medium">Tiến độ phân bổ:</span>
+                  <span className="font-extrabold text-sky-600">Đạt tiêu chuẩn</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* 2. INTERRELATED ENTITY FILTER NODES */}
+          <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-slate-100 text-slate-700 rounded-lg">
+                <Filter className="w-4 h-4 text-[#00A99D]" />
+              </div>
+              <span className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Lọc Tương Quan Theo Cơ Sở:</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+              <button
+                onClick={() => setSelectedCampusFilter("ALL")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border ${
+                  selectedCampusFilter === "ALL"
+                    ? "bg-slate-900 text-white border-slate-900 shadow-sm"
+                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                }`}
+              >
+                🌐 Tất cả Cơ sở ({availableCampuses.length})
+              </button>
+              
+              {availableCampuses.map(campus => (
+                <button
+                  key={campus}
+                  onClick={() => setSelectedCampusFilter(campus)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 ${
+                    selectedCampusFilter === campus
+                      ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm"
+                      : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  <Building2 className="w-3.5 h-3.5" />
+                  {campus}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. RECHARTS VISUALIZATION GRID */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Chart A: Campus Breakdown Bar Chart (2 columns width) */}
+            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-teal-50 text-[#00A99D] rounded-xl">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                      Biểu đồ Phân bổ Học sinh Theo Cơ sở
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-medium">So sánh số lượng Đã nhập học vs Chờ xếp lớp vs Chuyển đi</p>
+                  </div>
+                </div>
+                {selectedCampusFilter !== "ALL" && (
+                  <span className="text-[11px] font-extrabold text-[#00A99D] bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                    Đang lọc: {selectedCampusFilter}
+                  </span>
+                )}
+              </div>
+
+              {campusChartData.length > 0 ? (
+                <div className="h-[280px] w-full pt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={campusChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="campus" tick={{ fontSize: 11, fontWeight: 700, fill: "#475569" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fontWeight: 600, fill: "#64748B" }} axisLine={false} tickLine={false} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Legend 
+                        wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 10 }} 
+                        iconType="circle"
+                      />
+                      <Bar dataKey="enrolled" name="Đã nhập học" fill="#00A99D" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                      <Bar dataKey="pending" name="Chờ xếp lớp" fill="#F59E0B" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                      <Bar dataKey="transferOut" name="Chuyển đi" fill="#F43F5E" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="h-[260px] flex items-center justify-center text-xs font-medium text-slate-400 italic">
+                  Chưa có dữ liệu biểu đồ cơ sở
+                </div>
+              )}
+            </div>
+
+            {/* Chart B: Grade Distribution Donut Chart (1 column width) */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+                    <PieIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                      Cơ cấu Theo Khối Lớp
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-medium">Tỷ lệ phân bổ học sinh theo khối</p>
+                  </div>
+                </div>
+              </div>
+
+              {gradeChartData.length > 0 ? (
+                <div className="h-[220px] w-full relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={gradeChartData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {gradeChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: any, name: any) => [`${value} học sinh`, name]}
+                        contentStyle={{ backgroundColor: "#0F172A", borderColor: "#334155", borderRadius: 12, fontSize: 11, color: "#fff", fontWeight: 700 }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-xl font-black text-slate-800">
+                      {gradeChartData.reduce((acc, curr) => acc + curr.value, 0)}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Học sinh</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="h-[220px] flex items-center justify-center text-xs font-medium text-slate-400 italic">
+                  Chưa có dữ liệu khối lớp
+                </div>
+              )}
+
+              <div className="max-h-[85px] overflow-y-auto pr-1 space-y-1.5 custom-scrollbar text-[11px]">
+                {gradeChartData.map((g, idx) => (
+                  <div key={g.name} className="flex justify-between items-center font-bold text-slate-600">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: PIE_COLORS[idx % PIE_COLORS.length] }}></span>
+                      {g.name}
+                    </span>
+                    <span className="text-slate-800 font-extrabold">{g.value} HS</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* 4. INTERRELATED DRILL-DOWN & RECENT ACTIVITY STREAM */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
+            
+            {/* Class Capacity & Allocation Breakdown List (2 cols) */}
+            <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-sky-50 text-sky-600 rounded-xl">
+                    <BookOpen className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                      <span>Phân bổ Học sinh Theo Lớp học</span>
+                      {selectedCampusFilter !== "ALL" && (
+                        <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-extrabold">
+                          Cơ sở: {selectedCampusFilter}
+                        </span>
+                      )}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-medium">Danh sách các lớp học đã tiếp nhận học sinh lưu chuyển</p>
+                  </div>
+                </div>
+                <span className="text-xs font-extrabold text-slate-500">
+                  {classBreakdownList.length} lớp học
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
+                {classBreakdownList.length > 0 ? classBreakdownList.map(cl => (
+                  <div key={cl.name} className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200/60 hover:bg-white hover:shadow-xs transition-all flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-black text-slate-800">{cl.name}</span>
+                        <span className="text-[10px] font-bold text-[#00A99D] bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">
+                          {cl.campusName}
+                        </span>
+                      </div>
+                      <div className="w-32 bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                        <div className="bg-[#00A99D] h-full rounded-full" style={{ width: Math.min(100, (cl.count * 15)) + "%" }}></div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <span className="text-sm font-black text-emerald-600">{cl.count}</span>
+                      <span className="text-[10px] font-bold text-slate-400 block">học sinh</span>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="col-span-2 text-center py-8 text-xs font-medium text-slate-400 italic">
+                    Chưa có dữ liệu lớp học cho cơ sở đã chọn
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Live Activity Stream (1 col) */}
+            <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <Sparkles className="w-4 h-4 animate-spin" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                      Luồng Hoạt Động Realtime
+                    </h4>
+                    <p className="text-[11px] text-slate-400 font-medium">Nhật ký cập nhật học sinh mới nhất</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1 custom-scrollbar">
+                {recentActivities.map((act) => (
+                  <div key={act.id} className="p-3 bg-slate-50/60 rounded-xl border border-slate-100 space-y-1 hover:bg-slate-100/50 transition-colors text-xs">
+                    <div className="flex items-center justify-between font-bold">
+                      <span className="text-slate-800 truncate max-w-[140px]">{act.name}</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
+                        act.color === "emerald" 
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : act.color === "amber"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : "bg-rose-50 text-rose-700 border-rose-200"
+                      }`}>
+                        {act.type}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[11px] text-slate-500 font-medium">
+                      <span>Mã: <strong className="text-slate-700">{act.code}</strong> • {act.campus}</span>
+                      <span className="text-slate-400 text-[10px]">{act.time}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function StudentTransfersClient() {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -622,7 +1245,9 @@ export function StudentTransfersClient() {
         </button>
       </div>
 
-      {/* STATISTICS DASHBOARD */}
+      {/* UNIFIED REALTIME VISUAL DASHBOARD */}
+      <RealtimeTransferDashboard transfers={transfers} pendingRequests={pendingRequests} activeTab={activeTab} activeSubTab={activeSubTab} onRefresh={loadTransfers} loading={loadingList} />
+      {/* OLD STATS REMOVED */}
       {activeTab === "IN" && (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden animate-in fade-in duration-300">
           <div className="bg-slate-50/70 p-6 border-b border-slate-100 flex items-center justify-between">
