@@ -2037,8 +2037,9 @@ export function StudentTransfersClient() {
           )
         )}
       </div>
+      )}
 
-{showOutModal && (
+      {showOutModal && (
         <TransferOutModal 
           activeSubTab={activeSubTab} 
           initialData={editingTransfer}
