@@ -1086,7 +1086,7 @@ export function SupportClient({
                             </td>
                             <td className="px-4 py-3.5">
                               <span className="text-[11px] text-indigo-600 font-bold">
-                                {row.className && row.className.includes("CS") ? `Cơ sở ${row.className.split("CS")[1].split(/[_-]/)[0]}` : "Cơ sở 1"}
+                                {row.className && row.className.includes("CS") ? row.className.split("CS")[1].split(/[_-]/)[0] : "1"}
                               </span>
                             </td>
                             <td className="px-4 py-3.5">
