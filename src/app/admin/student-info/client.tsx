@@ -2425,9 +2425,7 @@ export function StudentInfoClient({
                                 s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && s.enrollmentStatus !== "COMPLETED" && s.enrollmentStatus !== "ENROLLED" && s.enrollmentStatus !== "PENDING" && !s.enrollmentClass && !s.enrollmentClassId
                                   ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
                                   : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-
-
-
+                            }`}
                              title={
                                 s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentClass || s.enrollmentClassId
                                   ? "Đã sắp lớp" + (s.enrollmentClass?.className || s.enrollmentClassId ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")" : "")
@@ -2607,10 +2605,8 @@ export function StudentInfoClient({
                                 child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && child.enrollmentStatus !== "COMPLETED" && child.enrollmentStatus !== "ENROLLED" && child.enrollmentStatus !== "PENDING" && !child.enrollmentClass && !child.enrollmentClassId
                                   ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
                                   : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-
-
-
-                            title={
+                            }`}
+                             title={
                                 child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentClass || child.enrollmentClassId
                                   ? "Đã sắp lớp" + (child.enrollmentClass?.className || child.enrollmentClassId ? " (" + (child.enrollmentClass?.className || child.enrollmentClassId) + ")" : "")
                                 : child.enrollmentStatus === "PENDING"
