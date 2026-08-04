@@ -788,34 +788,34 @@ export function SupportClient({
     const nameLower = subName.toLowerCase()
     if (nameLower.includes("toán") || nameLower.includes("math")) {
       return (
-        <span className="px-2.5 py-1 rounded-lg bg-orange-55 text-orange-700 border border-orange-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
-          📐 Toán
+        <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 font-bold text-[11px] inline-block">
+          Toán
         </span>
       )
     }
     if (nameLower.includes("văn") || nameLower.includes("việt") || nameLower.includes("literature") || nameLower.includes("ngữ văn")) {
       return (
-        <span className="px-2.5 py-1 rounded-lg bg-emerald-55 text-emerald-700 border border-emerald-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
-          📖 Tiếng Việt
+        <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold text-[11px] inline-block">
+          Tiếng Việt
         </span>
       )
     }
     if (nameLower.includes("anh") || nameLower.includes("english")) {
       return (
-        <span className="px-2.5 py-1 rounded-lg bg-blue-55 text-blue-700 border border-blue-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
-          🇬🇧 Tiếng Anh
+        <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 font-bold text-[11px] inline-block">
+          Tiếng Anh
         </span>
       )
     }
     if (nameLower.includes("lý") || nameLower.includes("tâm") || nameLower.includes("psychology")) {
       return (
-        <span className="px-2.5 py-1 rounded-lg bg-violet-55 text-violet-700 border border-violet-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs flex items-center gap-1">
-          🧠 Tâm lý
+        <span className="px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-200/60 font-bold text-[11px] inline-block">
+          Tâm lý
         </span>
       )
     }
     return (
-      <span className="px-2.5 py-1 rounded-lg bg-slate-55 text-slate-700 border border-slate-200/60 font-extrabold text-[10px] uppercase tracking-wider shadow-3xs">
+      <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 border border-slate-200/60 font-bold text-[11px] inline-block">
         {subName}
       </span>
     )
@@ -1051,12 +1051,14 @@ export function SupportClient({
                   <table className="min-w-full divide-y divide-slate-100 text-xs">
                     <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
                       <tr>
-                        <th className="px-5 py-3 text-center w-12">STT</th>
-                        <th className="px-5 py-3 text-left">Họ tên / Mã HS</th>
-                        <th className="px-5 py-3 text-left">Lớp / Cơ sở</th>
-                        <th className="px-5 py-3 text-left">Môn Cam kết</th>
-                        <th className="px-5 py-3 text-center">Tình trạng đề xuất</th>
-                        <th className="px-5 py-3 text-left">Kết quả Khảo sát & Ghi chú</th>
+                        <th className="px-4 py-3.5 text-center w-12">STT</th>
+                        <th className="px-4 py-3.5 text-left">Họ tên</th>
+                        <th className="px-4 py-3.5 text-left">Mã HS</th>
+                        <th className="px-4 py-3.5 text-left">Lớp</th>
+                        <th className="px-4 py-3.5 text-left">Cơ sở</th>
+                        <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
+                        <th className="px-4 py-3.5 text-left">Tình trạng</th>
+                        <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
@@ -1067,26 +1069,27 @@ export function SupportClient({
 
                         return (
                           <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-5 py-4 text-center text-slate-400 font-bold">{sttNumber}</td>
-                            <td className="px-5 py-4">
+                            <td className="px-4 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
+                            <td className="px-4 py-3.5">
                               <div className="font-extrabold text-slate-800 text-[12px]">{row.fullName}</div>
-                              <div className="text-[10px] text-slate-400 font-bold mt-0.5 flex items-center gap-1.5">
-                                <span>{row.studentCode}</span>
-                                {row.gender && (
-                                  <>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                                    <span>{row.gender}</span>
-                                  </>
-                                )}
-                              </div>
+                              {row.gender && (
+                                <div className="text-[10px] text-slate-400 font-medium mt-0.5">{row.gender}</div>
+                              )}
                             </td>
-                            <td className="px-5 py-4">
-                              <div className="font-extrabold text-slate-700">Lớp {row.className.split(/[_-]/)[0]}</div>
-                              <div className="text-[10px] text-indigo-500/80 font-bold mt-0.5">
-                                {row.className.includes("CS") ? `Cơ sở ${row.className.split("CS")[1].split(/[_-]/)[0]}` : "Cơ sở 1"}
-                              </div>
+                            <td className="px-4 py-3.5">
+                              <span className="font-mono font-bold text-slate-600 text-[11px]">{row.studentCode}</span>
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="px-4 py-3.5">
+                              <span className="font-extrabold text-slate-700 text-[12px]">
+                                {row.className ? (row.className.includes("_") ? row.className.split("_")[0] : (row.className.includes("-") ? row.className.split("-")[0] : row.className)) : ""}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className="text-[11px] text-indigo-600 font-bold">
+                                {row.className && row.className.includes("CS") ? `Cơ sở ${row.className.split("CS")[1].split(/[_-]/)[0]}` : "Cơ sở 1"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
                               {row.committedSubjects && row.committedSubjects.length > 0 ? (
                                 <div className="flex flex-wrap gap-1.5">
                                   {row.committedSubjects.map((sub, sIdx) => (
@@ -1099,27 +1102,27 @@ export function SupportClient({
                                 <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
                               )}
                             </td>
-                            <td className="px-5 py-4 text-center">
+                            <td className="px-4 py-3.5">
                               {isProposed ? (
-                                <div className="space-y-1.5 flex flex-col items-center">
-                                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 font-black text-[10px] uppercase tracking-wider inline-flex items-center gap-1.5 shadow-3xs">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <div className="space-y-1">
+                                  <div className="font-extrabold text-emerald-600 text-[12px] flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                     Đã đề xuất
-                                  </span>
+                                  </div>
                                   {studentTargets.map((st, stIdx) => (
-                                    <div key={stIdx} className="text-[9px] font-bold text-indigo-500 bg-indigo-50/60 px-1.5 py-0.5 rounded border border-indigo-100/50">
-                                      {st.supportType === "ACADEMIC" ? "📖 Phụ đạo" : "🧠 Tâm lý"} ({st.status})
+                                    <div key={stIdx} className="text-[10px] text-slate-500 font-medium pl-3">
+                                      • {st.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý"} ({st.status})
                                     </div>
                                   ))}
                                 </div>
                               ) : (
-                                <span className="px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200/80 font-black text-[10px] uppercase tracking-wider inline-flex items-center gap-1.5 shadow-3xs">
+                                <div className="font-extrabold text-rose-500 text-[12px] flex items-center gap-1.5">
                                   <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                                   Chưa đề xuất
-                                </span>
+                                </div>
                               )}
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="px-4 py-3.5">
                               <div className="text-[10px] text-slate-500 font-bold mb-1.5 flex flex-wrap gap-x-2 gap-y-1">
                                 {getScoreTag("Toán", row.mathScore)}
                                 {getScoreTag("Văn", row.literatureScore)}
