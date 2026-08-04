@@ -1440,6 +1440,11 @@ export function StudentInfoClient({
   };
 
   const handleConfirmEnrollment = async (student: any, isPreschool = false) => {
+    const isAssigned = student.enrollmentStatus === "COMPLETED" || student.enrollmentStatus === "ENROLLED" || !!student.enrollmentClass || !!student.enrollmentClassId;
+    if (isAssigned) {
+      showNotification("Học sinh này đã được sắp lớp, không thể thực hiện xác nhận nhập học!", "err");
+      return;
+    }
     if (!confirm(`Xác nhận nhập học cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ gửi một phiếu yêu cầu đến Tổ Giáo vụ để tiến hành xếp lớp.`)) return;
 
     try {
@@ -1456,6 +1461,11 @@ export function StudentInfoClient({
   };
 
   const handleRevertEnrollment = async (student: any, isPreschool = false) => {
+    const isAssigned = student.enrollmentStatus === "COMPLETED" || student.enrollmentStatus === "ENROLLED" || !!student.enrollmentClass || !!student.enrollmentClassId;
+    if (isAssigned) {
+      showNotification("Học sinh này đã được sắp lớp, không thể hoàn lại!", "err");
+      return;
+    }
     if (!confirm(`Xác nhận HOÀN TRẢ (Hủy yêu cầu nhập học) cho học sinh ${student.fullName} (Mã KS: ${student.studentCode})?\nHành động này sẽ rút lại yêu cầu nhập học hiện tại.`)) return;
 
     try {
@@ -2410,36 +2420,38 @@ export function StudentInfoClient({
                         <div className="flex justify-center items-center gap-1.5">
                           <button
                             onClick={() => handleConfirmEnrollment(s, false)}
-                            disabled={s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || (s.admissionResult && s.admissionResult.toUpperCase().includes("KHÔNG"))}
+                            disabled={s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId || !s.admissionResult || !s.admissionResult.toUpperCase().includes("ĐẠT")}
                             className={`p-1.5 rounded-xl transition-all ${
-                              s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING"
-                                ? "text-emerald-600 bg-emerald-50/80 border border-emerald-200/60 cursor-default"
-                                : (s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT"))
-                                ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
-                                : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-                            }`}
-                            title={
-                              s.enrollmentStatus === "ENROLLED"
-                                ? `Đã nhập học (${s.enrollmentClass?.className || "Đã xếp lớp"})`
+                                s.admissionResult && s.admissionResult.toUpperCase().includes("ĐẠT") && s.enrollmentStatus !== "COMPLETED" && s.enrollmentStatus !== "ENROLLED" && s.enrollmentStatus !== "PENDING" && !s.enrollmentClass && !s.enrollmentClassId
+                                  ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
+                                  : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
+
+
+
+                             title={
+                                s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentClass || s.enrollmentClassId
+                                  ? "Đã sắp lớp" + (s.enrollmentClass?.className || s.enrollmentClassId ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")" : "")
                                 : s.enrollmentStatus === "PENDING"
-                                ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
+                                  ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
                                 : "Xác nhận nhập học"
-                            }
+                             }
                           >
                             <UserCheck className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleRevertEnrollment(s, false)}
-                            disabled={!s.enrollmentStatus}
+                            disabled={!s.enrollmentStatus || s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || !!s.enrollmentClass || !!s.enrollmentClassId}
                             className={`p-1.5 rounded-xl transition-all ${
-                              s.enrollmentStatus
+                                s.enrollmentStatus && s.enrollmentStatus !== "COMPLETED" && s.enrollmentStatus !== "ENROLLED" && !s.enrollmentClass && !s.enrollmentClassId
                                 ? "text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 shadow-xs cursor-pointer active:scale-95"
                                 : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
                             }`}
                             title={
-                              s.enrollmentStatus
-                                ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
-                                : "Chưa có thông tin nhập học để hoàn trả"
+                                s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentClass || s.enrollmentClassId
+                                  ? "Đã sắp lớp" + (s.enrollmentClass?.className || s.enrollmentClassId ? " (" + (s.enrollmentClass?.className || s.enrollmentClassId) + ")" : "") + " - Không thể hoàn lại"
+                                  : s.enrollmentStatus
+                                  ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
+                                  : "Chưa có thông tin nhập học để hoàn trả"
                             }
                           >
                             <RotateCcw className="w-4 h-4" />
@@ -2590,17 +2602,17 @@ export function StudentInfoClient({
                         <div className="flex justify-center items-center gap-1.5">
                           <button
                             onClick={() => handleConfirmEnrollment(child, true)}
-                            disabled={child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING" || (child.admissionResult && child.admissionResult.toUpperCase().includes("KHÔNG"))}
+                            disabled={child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING" || !!child.enrollmentClass || !!child.enrollmentClassId || !child.admissionResult || !child.admissionResult.toUpperCase().includes("ĐẠT")}
                             className={`p-1.5 rounded-xl transition-all ${
-                              child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING"
-                                ? "text-emerald-600 bg-emerald-50/80 border border-emerald-200/60 cursor-default"
-                                : (child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT"))
-                                ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
-                                : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
-                            }`}
+                                child.admissionResult && child.admissionResult.toUpperCase().includes("ĐẠT") && child.enrollmentStatus !== "COMPLETED" && child.enrollmentStatus !== "ENROLLED" && child.enrollmentStatus !== "PENDING" && !child.enrollmentClass && !child.enrollmentClassId
+                                  ? "text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 border border-emerald-200 cursor-pointer shadow-xs active:scale-95"
+                                  : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
+
+
+
                             title={
-                              child.enrollmentStatus === "ENROLLED"
-                                ? `Đã nhập học (${child.enrollmentClass?.className || "Đã xếp lớp"})`
+                                child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentClass || child.enrollmentClassId
+                                  ? "Đã sắp lớp" + (child.enrollmentClass?.className || child.enrollmentClassId ? " (" + (child.enrollmentClass?.className || child.enrollmentClassId) + ")" : "")
                                 : child.enrollmentStatus === "PENDING"
                                 ? "Đã gửi yêu cầu nhập học (Chờ xếp lớp)"
                                 : "Xác nhận nhập học"
@@ -2610,16 +2622,18 @@ export function StudentInfoClient({
                           </button>
                           <button
                             onClick={() => handleRevertEnrollment(child, true)}
-                            disabled={!child.enrollmentStatus}
+                            disabled={!child.enrollmentStatus || child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || !!child.enrollmentClass || !!child.enrollmentClassId}
                             className={`p-1.5 rounded-xl transition-all ${
-                              child.enrollmentStatus
+                                child.enrollmentStatus && child.enrollmentStatus !== "COMPLETED" && child.enrollmentStatus !== "ENROLLED" && !child.enrollmentClass && !child.enrollmentClassId
                                 ? "text-rose-600 hover:text-rose-800 hover:bg-rose-50 border border-rose-200 shadow-xs cursor-pointer active:scale-95"
                                 : "text-slate-300 border border-slate-100 cursor-not-allowed opacity-40"
                             }`}
                             title={
-                              child.enrollmentStatus
-                                ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
-                                : "Chưa có thông tin nhập học để hoàn trả"
+                                child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentClass || child.enrollmentClassId
+                                  ? "Đã sắp lớp" + (child.enrollmentClass?.className || child.enrollmentClassId ? " (" + (child.enrollmentClass?.className || child.enrollmentClassId) + ")" : "") + " - Không thể hoàn lại"
+                                  : child.enrollmentStatus
+                                  ? "Hoàn trả (Hủy yêu cầu / Rút nhập học)"
+                                  : "Chưa có thông tin nhập học để hoàn trả"
                             }
                           >
                             <RotateCcw className="w-4 h-4" />

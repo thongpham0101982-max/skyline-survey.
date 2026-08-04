@@ -218,7 +218,7 @@ export function PhanCongK12Client({
   // ─── Auto-set period ───
   useEffect(() => {
     if (visiblePeriods.length > 0 && !asPeriodId) {
-      setAsPeriodId(visiblePeriods[0].id)
+      // setAsPeriodId(visiblePeriods[0].id);
     }
   }, [visiblePeriods, asPeriodId])
 

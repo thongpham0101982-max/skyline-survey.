@@ -3815,10 +3815,10 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   useEffect(() => {
     if (visiblePeriods.length > 0) {
       if (!sPeriodId || (!visiblePeriods.some(p => p.id === sPeriodId) && sPeriodId !== "all")) {
-        setSPeriodId(visiblePeriods[0].id);
+        // setSPeriodId(visiblePeriods[0].id);
       }
       if (!asPeriodId || (!visiblePeriods.some(p => p.id === asPeriodId) && asPeriodId !== "all")) {
-        setAsPeriodId(visiblePeriods[0].id);
+        // setAsPeriodId(visiblePeriods[0].id);
       }
     } else {
       setSPeriodId("");
@@ -3839,8 +3839,8 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
         const d = await periodsRes.json()
         setPeriods(d)
         if (d.length) {
-          if (!sPeriodId) setSPeriodId(d[0].id)
-          if (!asPeriodId) setAsPeriodId(d[0].id)
+          // if (!sPeriodId) setSPeriodId(d[0].id);
+          // if (!asPeriodId) setAsPeriodId(d[0].id);
         }
       }
       if (gradesRes.ok) {
