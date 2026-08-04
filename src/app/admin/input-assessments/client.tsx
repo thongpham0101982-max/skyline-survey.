@@ -3517,6 +3517,32 @@ ${reportForm.directorNote}`;
     const r = await fetch(`/api/input-assessment-students?ids=${sSelected.join(",")}`,{method:"DELETE"})
     if (r.ok) { setSSelected([]); fetchStudents(); notify(`Đã xóa ${sSelected.length} học sinh`) }
   }
+
+  const [syncingMaster, setSyncingMaster] = useState(false);
+  const handleSyncMasterStudentInfo = async () => {
+    if (!confirm("Thực hiện đồng bộ thông tin Họ tên, Giới tính, Ngày sinh của học sinh trong danh sách khảo sát khớp với Danh sách Học sinh gốc?")) return;
+    setSyncingMaster(true);
+    try {
+      const res = await fetch("/api/input-assessment-students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "SYNC_WITH_MASTER_STUDENTS" })
+      });
+      const data = await res.json();
+      if (data.success) {
+        notify(data.message || "Đã đồng bộ thành công!");
+        if (typeof fetchStudents === 'function') fetchStudents();
+        else window.location.reload();
+      } else {
+        notify(data.error || "Lỗi đồng bộ", "err");
+      }
+    } catch (e: any) {
+      notify("Lỗi khi kết nối server: " + e.message, "err");
+    } finally {
+      setSyncingMaster(false);
+    }
+  };
+
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (cannotCreate) return;
     const file = e.target.files?.[0]; if (!file||!sPeriodId) return
@@ -4535,7 +4561,18 @@ return {
               <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
                 Tổng cộng: <span className="text-[#00A99D] ml-1">{filtStu.length}</span> HS
               </span>
-              <button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
+              
+              <button
+                onClick={handleSyncMasterStudentInfo}
+                disabled={syncingMaster}
+                className="h-10 px-3.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl flex items-center justify-center hover:bg-teal-100 hover:text-teal-800 shadow-sm transition-all text-xs font-bold disabled:opacity-50 cursor-pointer"
+                title="Đồng bộ Họ tên, Giới tính, Ngày sinh khớp với Danh sách Học sinh gốc"
+              >
+                <RefreshCw className={`w-4 h-4 mr-1.5 ${syncingMaster ? 'animate-spin' : ''}`} />
+                <span className="hidden sm:inline">{syncingMaster ? "Đang đồng bộ..." : "Đồng bộ TT HS"}</span>
+              </button>
+
+<button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
                  <span className="hidden sm:inline">Tải mẫu</span>
               </button>

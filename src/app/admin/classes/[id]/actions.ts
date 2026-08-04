@@ -127,6 +127,7 @@ export async function addStudentAction(classId: string, data: any) {
       null,
       { studentCode, studentName: data.studentName, classId }
     )
+    await syncAssessmentStudentInfoWithMasterAction(studentCode, data.studentName, data.gender, data.dateOfBirth);
     revalidatePath(`/admin/classes/${classId}`)
     return { success: true }
   } catch (e: any) {
@@ -342,5 +343,36 @@ export async function syncClassStudentsWithSurveysAction(classId: string) {
     }
   } catch (e: any) {
     return { success: false, error: e.message }
+  }
+}
+
+
+export async function syncAssessmentStudentInfoWithMasterAction(studentCode: string, studentName: string, gender?: string | null, dateOfBirth?: Date | null) {
+  if (!studentCode) return;
+  const codeUpper = studentCode.trim().toUpperCase();
+  try {
+    const pAny = prisma as any;
+    if (pAny.inputAssessmentStudent) {
+      await pAny.inputAssessmentStudent.updateMany({
+        where: { studentCode: codeUpper },
+        data: {
+          fullName: studentName,
+          gender: gender || null,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null
+        }
+      });
+    }
+    if (pAny.preschoolInputAssessmentStudent) {
+      await pAny.preschoolInputAssessmentStudent.updateMany({
+        where: { studentCode: codeUpper },
+        data: {
+          fullName: studentName,
+          gender: gender || null,
+          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null
+        }
+      });
+    }
+  } catch (e) {
+    console.error("Auto sync assessment student error:", e);
   }
 }

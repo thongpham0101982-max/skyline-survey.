@@ -79,6 +79,94 @@ export async function POST(req) {
     const body = await req.json();
     const { action, data } = body;
     
+
+    if (action === "SYNC_WITH_MASTER_STUDENTS") {
+      const masterStudents = await prisma.student.findMany({
+        select: {
+          studentCode: true,
+          studentName: true,
+          gender: true,
+          dateOfBirth: true
+        }
+      });
+
+      const masterMap = new Map();
+      for (const ms of masterStudents) {
+        if (ms.studentCode) {
+          masterMap.set(ms.studentCode.trim().toUpperCase(), ms);
+        }
+      }
+
+      const k12Students = await (prisma as any).inputAssessmentStudent.findMany({
+        select: { id: true, studentCode: true, fullName: true, gender: true, dateOfBirth: true }
+      });
+
+      let updatedK12Count = 0;
+      for (const student of k12Students) {
+        const sCode = (student.studentCode || "").trim().toUpperCase();
+        const master = masterMap.get(sCode);
+        if (master) {
+          const nameChanged = master.studentName && master.studentName !== student.fullName;
+          const genderChanged = master.gender && master.gender !== student.gender;
+          const dobMasterStr = master.dateOfBirth ? new Date(master.dateOfBirth).toISOString().split("T")[0] : null;
+          const dobCurrStr = student.dateOfBirth ? new Date(student.dateOfBirth).toISOString().split("T")[0] : null;
+          const dobChanged = dobMasterStr && dobMasterStr !== dobCurrStr;
+
+          if (nameChanged || genderChanged || dobChanged) {
+            await (prisma as any).inputAssessmentStudent.update({
+              where: { id: student.id },
+              data: {
+                fullName: master.studentName,
+                gender: master.gender || student.gender,
+                dateOfBirth: master.dateOfBirth || student.dateOfBirth
+              }
+            });
+            updatedK12Count++;
+          }
+        }
+      }
+
+      let updatedPreschoolCount = 0;
+      try {
+        const preschoolStudents = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+          select: { id: true, studentCode: true, fullName: true, gender: true, dateOfBirth: true }
+        });
+        for (const child of preschoolStudents) {
+          const sCode = (child.studentCode || "").trim().toUpperCase();
+          const master = masterMap.get(sCode);
+          if (master) {
+            const nameChanged = master.studentName && master.studentName !== child.fullName;
+            const genderChanged = master.gender && master.gender !== child.gender;
+            const dobMasterStr = master.dateOfBirth ? new Date(master.dateOfBirth).toISOString().split("T")[0] : null;
+            const dobCurrStr = child.dateOfBirth ? new Date(child.dateOfBirth).toISOString().split("T")[0] : null;
+            const dobChanged = dobMasterStr && dobMasterStr !== dobCurrStr;
+
+            if (nameChanged || genderChanged || dobChanged) {
+              await (prisma as any).preschoolInputAssessmentStudent.update({
+                where: { id: child.id },
+                data: {
+                  fullName: master.studentName,
+                  gender: master.gender || child.gender,
+                  dateOfBirth: master.dateOfBirth || child.dateOfBirth
+                }
+              });
+              updatedPreschoolCount++;
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Preschool sync error:", e);
+      }
+
+      const totalUpdated = updatedK12Count + updatedPreschoolCount;
+      return NextResponse.json({
+        success: true,
+        message: `Đã đồng bộ thành công ${totalUpdated} học sinh khớp với danh sách Học sinh gốc (Họ và tên, Giới tính, Ngày sinh)!`,
+        updatedK12Count,
+        updatedPreschoolCount
+      });
+    }
+
     if (action === "CREATE") {
       if (!data.periodId) {
         return NextResponse.json({ error: "Kỳ khảo sát là bắt buộc" }, { status: 400 });
