@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { 
   FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
-  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard
+  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { OverviewDashboard } from "./overview"
@@ -564,6 +564,25 @@ export function SupportClient({
     toast.success("Đã xuất báo cáo Excel thành công!")
   }
 
+  // Count pending targets requiring review/approval for Academic and Psychology
+  const academicPendingCount = useMemo(() => {
+    return targets.filter((t: any) => 
+      t.supportType === "ACADEMIC" && (
+        (t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT") ||
+        t.terminationStatus === "PENDING_TERMINATION"
+      )
+    ).length
+  }, [targets])
+
+  const psychologyPendingCount = useMemo(() => {
+    return targets.filter((t: any) => 
+      t.supportType === "PSYCHOLOGICAL" && (
+        (t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT") ||
+        t.terminationStatus === "PENDING_TERMINATION"
+      )
+    ).length
+  }, [targets])
+
   // Helper selectors
   const allStudents = classes.flatMap(c => c.students || [])
 
@@ -893,26 +912,38 @@ export function SupportClient({
 
         <button
           onClick={() => setActiveTab("academic")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
+          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all relative ${
             activeTab === "academic"
               ? "border-indigo-600 text-indigo-600 font-bold"
               : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <GraduationCap className="h-4 w-4" />
-          Hỗ trợ Học tập
+          <span>Hỗ trợ Học tập</span>
+          {academicPendingCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs animate-pulse">
+              <Bell className="h-3 w-3 fill-white animate-bounce" />
+              <span>{academicPendingCount} mới</span>
+            </span>
+          )}
         </button>
 
         <button
           onClick={() => setActiveTab("psychology")}
-          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all ${
+          className={`py-4 px-6 font-semibold border-b-2 text-sm flex items-center gap-2 transition-all relative ${
             activeTab === "psychology"
               ? "border-indigo-600 text-indigo-600 font-bold"
               : "border-transparent text-slate-500 hover:text-slate-700"
           }`}
         >
           <Users className="h-4 w-4" />
-          Hỗ trợ Tâm lý
+          <span>Hỗ trợ Tâm lý</span>
+          {psychologyPendingCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white shadow-xs animate-pulse">
+              <Bell className="h-3 w-3 fill-white animate-bounce" />
+              <span>{psychologyPendingCount} mới</span>
+            </span>
+          )}
         </button>
 
         <button
@@ -981,6 +1012,32 @@ export function SupportClient({
               </div>
             </div>
           </div>
+
+          {/* Notification Alert Banner for Pending Reviews */}
+          {((activeTab === "academic" && academicPendingCount > 0) || (activeTab === "psychology" && psychologyPendingCount > 0)) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-500 text-white rounded-lg animate-bounce shrink-0">
+                  <Bell className="h-4 w-4 fill-white" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-amber-900">
+                    Thông báo xét duyệt: Có {activeTab === "academic" ? academicPendingCount : psychologyPendingCount} học sinh đang cần xét duyệt {activeTab === "academic" ? "Hỗ trợ Học tập" : "Hỗ trợ Tâm lý"}
+                  </div>
+                  <div className="text-[11px] text-amber-700 mt-0.5">
+                    Bao gồm các đề xuất phân công giáo viên mới hoặc đề xuất chấm dứt hỗ trợ từ giáo viên.
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setTargetStatusFilter("UNAPPROVED")}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 shrink-0"
+              >
+                <Filter className="h-3.5 w-3.5" />
+                Lọc danh sách chờ duyệt
+              </button>
+            </div>
+          )}
 
           {/* Filters Bar */}
           <div className="bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xxs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -1316,7 +1373,8 @@ export function SupportClient({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-wrap gap-1.5">
                             {group.pendingCount > 0 && (
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-orange-100 text-orange-800 border border-orange-200 inline-flex items-center gap-1">
+                                <Bell className="h-3 w-3 text-orange-600 animate-bounce fill-orange-600" />
                                 {group.pendingCount} Chờ duyệt
                               </span>
                             )}
@@ -1326,7 +1384,8 @@ export function SupportClient({
                               </span>
                             )}
                             {group.pendingTerminationCount > 0 && (
-                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+                              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse inline-flex items-center gap-1">
+                                <Bell className="h-3 w-3 text-amber-600 animate-bounce fill-amber-600" />
                                 {group.pendingTerminationCount} Chờ kết thúc
                               </span>
                             )}
