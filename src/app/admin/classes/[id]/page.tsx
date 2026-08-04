@@ -3,12 +3,13 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { AdminClassStudentsClient } from "./client"
+import { sortVietnameseStudents } from "@/lib/vietnameseSort"
 
 export default async function AdminClassDetailPage({ params }: any) {
   const { id: classId } = await params
   
   const activeSurveys = await prisma.surveyPeriod.findMany({
-    where: { status: 'ACTIVE', targetAudience: { contains: 'Hoc' } },
+    where: { status: 'ACTIVE' },
     orderBy: { endDate: 'asc' }
   });
 
@@ -18,12 +19,17 @@ export default async function AdminClassDetailPage({ params }: any) {
       campus: true,
       students: {
         where: { status: 'ACTIVE' },
-        orderBy: { studentName: 'asc' }
+        include: {
+          surveyForms: true
+        }
       }
     }
   })
 
   if (!classInfo) return notFound()
+
+  // Sort students by Vietnamese alphabetical order (Tên -> Họ & đệm)
+  const sortedStudents = sortVietnameseStudents(classInfo.students || []);
 
   return (
     <div className="space-y-6">
@@ -37,7 +43,7 @@ export default async function AdminClassDetailPage({ params }: any) {
         </div>
       </div>
 
-      <AdminClassStudentsClient classId={classId} initialStudents={classInfo.students} activeSurveys={activeSurveys} />
+      <AdminClassStudentsClient classId={classId} initialStudents={sortedStudents} activeSurveys={activeSurveys} />
     </div>
   )
 }

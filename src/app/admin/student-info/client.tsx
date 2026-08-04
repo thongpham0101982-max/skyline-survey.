@@ -1,5 +1,6 @@
-﻿"use client";
+"use client";
 
+import { sortVietnameseStudents } from "@/lib/vietnameseSort";
 import { useState, useMemo, useRef, useEffect, Fragment, useCallback } from "react";
 import { 
   Search, 

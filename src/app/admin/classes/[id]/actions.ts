@@ -259,3 +259,88 @@ export async function getPaginatedStudentsInClassAction(classId: string, page: n
     return { success: false, students: [], total: 0, error: e.message }
   }
 }
+
+
+export async function syncClassStudentsWithSurveysAction(classId: string) {
+  try {
+    const cls = await prisma.class.findUnique({
+      where: { id: classId },
+      include: { students: { where: { status: "ACTIVE" } } }
+    })
+    if (!cls) return { success: false, error: "Class not found" }
+
+    const activePeriods = await prisma.surveyPeriod.findMany({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { academicYearId: cls.academicYearId },
+          { campusId: cls.campusId },
+          { campusId: null }
+        ]
+      }
+    })
+
+    if (activePeriods.length === 0) {
+      return { success: false, error: "Không tìm thấy đợt khảo sát nào đang mở cho cơ sở/năm học này." }
+    }
+
+    let createdCount = 0
+    let updatedCount = 0
+
+    for (const student of cls.students) {
+      for (const period of activePeriods) {
+        const existing = await prisma.surveyForm.findFirst({
+          where: {
+            studentId: student.id,
+            surveyPeriodId: period.id
+          }
+        })
+
+        if (!existing) {
+          await prisma.surveyForm.create({
+            data: {
+              surveyPeriodId: period.id,
+              studentId: student.id,
+              classId: student.classId,
+              campusId: student.campusId,
+              academicYearId: student.academicYearId || cls.academicYearId,
+              status: "PENDING"
+            }
+          })
+          createdCount++
+        } else {
+          await prisma.surveyForm.update({
+            where: { id: existing.id },
+            data: {
+              classId: student.classId,
+              campusId: student.campusId,
+              academicYearId: student.academicYearId || cls.academicYearId
+            }
+          })
+          updatedCount++
+        }
+      }
+    }
+
+    const session = await auth()
+    await logActivity(
+      session?.user?.id || "SYSTEM",
+      session?.user?.email || "SYSTEM",
+      "SYNC_SURVEY_FORMS",
+      "SurveyForm",
+      classId,
+      null,
+      { createdCount, updatedCount, studentCount: cls.students.length }
+    )
+
+    revalidatePath(`/admin/classes/${classId}`)
+    return {
+      success: true,
+      message: `Đã đồng bộ thành công ${cls.students.length} học sinh với ${activePeriods.length} đợt khảo sát (${createdCount} tạo mới, ${updatedCount} cập nhật).`,
+      createdCount,
+      updatedCount
+    }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
