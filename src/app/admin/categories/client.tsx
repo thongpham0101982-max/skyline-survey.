@@ -4,7 +4,7 @@ import {
   Plus, Trash2, Edit3, Check, X, Tag, Hash, Folder, CornerDownRight,
   Search, Info, FolderPlus, Layers, GitMerge, CheckCircle2, Eye, EyeOff,
   Sparkles, SlidersHorizontal, ArrowUpDown, CheckSquare, Square, RefreshCw,
-  CornerUpRight
+  CornerUpRight, ChevronDown, ChevronRight, ChevronsUp, ChevronsDown
 } from "lucide-react"
 import {
   createCategoryAction, updateCategoryAction, deleteCategoryAction,
@@ -18,6 +18,9 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
 
   // Multi-Selection State
   const [selectedIds, setSelectedIds] = useState<string[]>([])
+
+  // Collapse / Expand State for Root Categories
+  const [collapsedRootIds, setCollapsedRootIds] = useState<string[]>([])
 
   // Modal State for Create, Edit, & Bulk Edit Parent
   const [modalMode, setModalMode] = useState<"NONE" | "CREATE" | "EDIT" | "BULK_PARENT">("NONE")
@@ -39,6 +42,25 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
   const childCategories = categories.filter(c => c.parentId)
   const activeCategories = categories.filter(c => c.status === "ACTIVE")
   const inactiveCategories = categories.filter(c => c.status === "INACTIVE")
+
+  // Toggle Collapse / Expand for individual root category
+  const toggleCollapseRoot = (id: string) => {
+    setCollapsedRootIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    )
+  }
+
+  // Global Collapse All / Expand All
+  const rootsWithChildren = rootCategories.filter(r => categories.some(c => c.parentId === r.id)).map(r => r.id)
+  const isAllCollapsed = rootsWithChildren.length > 0 && rootsWithChildren.every(id => collapsedRootIds.includes(id))
+
+  const toggleCollapseAll = () => {
+    if (isAllCollapsed) {
+      setCollapsedRootIds([])
+    } else {
+      setCollapsedRootIds(rootsWithChildren)
+    }
+  }
 
   // Search & Filter Logic
   const matchesSearch = (cat: any) => {
@@ -228,7 +250,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
   }
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-24 font-outfit">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
@@ -314,7 +336,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
           )}
         </div>
 
-        {/* Filter Pills */}
+        {/* Filter Pills & Global Collapse Toggle */}
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
           <button
             onClick={() => setFilterTab("ALL")}
@@ -340,6 +362,18 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
               className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${filterTab === "INACTIVE" ? "bg-amber-500 text-white shadow-xs" : "bg-amber-50 text-amber-700 hover:bg-amber-100"}`}
             >
               Tạm ẩn ({inactiveCategories.length})
+            </button>
+          )}
+
+          {/* Global Collapse All / Expand All Toggle Button */}
+          {!isFiltering && rootsWithChildren.length > 0 && (
+            <button
+              onClick={toggleCollapseAll}
+              className="ml-2 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all flex items-center gap-1 cursor-pointer border border-slate-200"
+              title={isAllCollapsed ? "Mở rộng tất cả danh mục con" : "Thu gọn tất cả danh mục con"}
+            >
+              {isAllCollapsed ? <ChevronsDown className="w-3.5 h-3.5 text-[#00A99D]" /> : <ChevronsUp className="w-3.5 h-3.5 text-[#00A99D]" />}
+              <span>{isAllCollapsed ? "Mở rộng tất cả" : "Thu gọn tất cả"}</span>
             </button>
           )}
         </div>
@@ -393,14 +427,16 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                   .filter((c: any) => c.parentId === root.id)
                   .sort((a: any, b: any) => a.sortOrder - b.sortOrder)
 
+                const isCollapsed = collapsedRootIds.includes(root.id)
+
                 return (
                   <div key={root.id} className="bg-white">
                     {/* Root Row Card */}
-                    {renderCategoryRow(root, true, children.length)}
+                    {renderCategoryRow(root, true, children.length, isCollapsed)}
 
-                    {/* Children List */}
-                    {children.length > 0 && (
-                      <div className="bg-slate-50/50 border-t border-slate-100/80 pl-6 md:pl-10 pr-4 py-2 space-y-2">
+                    {/* Children List (Hidden when collapsed) */}
+                    {children.length > 0 && !isCollapsed && (
+                      <div className="bg-slate-50/50 border-t border-slate-100/80 pl-6 md:pl-10 pr-4 py-2 space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                         {children.map(child => renderCategoryRow(child, false))}
                       </div>
                     )}
@@ -634,8 +670,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         <div className="space-y-1">
           <span className="font-extrabold text-teal-900">Hướng dẫn phân cấp Danh Mục:</span>
           <p className="text-teal-800/90 leading-relaxed">
-            • <strong>Danh mục gốc:</strong> Nhóm chủ đề chính (Ví dụ: <em>Cơ sở vật chất</em>, <em>Học tập</em>).<br />
-            • <strong>Danh mục con:</strong> Phân loại chi tiết (Ví dụ: <em>[HS] Học tập</em> thuộc nhóm gốc <em>Học tập</em>).<br />
+            • <strong>Thu gọn / Mở rộng:</strong> Nhấp vào biểu tượng mũi tên <ChevronDown className="w-3.5 h-3.5 inline text-[#00A99D]" /> bên cạnh thư mục gốc để thu gọn hoặc mở rộng danh mục con.<br />
             • <strong>Thao tác hàng loạt:</strong> Đánh dấu checkbox ở đầu dòng để chọn 1 hoặc nhiều danh mục để chuyển trạng thái, gán mục cha hoặc xóa hàng loạt.
           </p>
         </div>
@@ -645,10 +680,11 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
   )
 
   // Reusable Category Card Row Renderer
-  function renderCategoryRow(cat: any, isRoot = true, childCount = 0) {
+  function renderCategoryRow(cat: any, isRoot = true, childCount = 0, isCollapsed = false) {
     const isActive = cat.status === "ACTIVE"
     const questionsCount = cat._count?.questions || 0
     const isSelected = selectedIds.includes(cat.id)
+    const hasChildren = isRoot && childCount > 0
 
     return (
       <div
@@ -659,8 +695,8 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
             : (isRoot ? "bg-white border-slate-200/80 shadow-2xs hover:shadow-xs" : "bg-white/80 border-slate-200/60 hover:bg-white")
         }`}
       >
-        {/* Left: Checkbox + Folder icon + Name + Badges */}
-        <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* Left: Checkbox + Collapse Chevron + Folder icon + Name + Badges */}
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
           {/* Checkbox */}
           <input
             type="checkbox"
@@ -668,6 +704,19 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
             onChange={() => toggleSelect(cat.id)}
             className="w-4.5 h-4.5 rounded text-[#00A99D] focus:ring-0 cursor-pointer flex-shrink-0"
           />
+
+          {/* Collapse / Expand Chevron Icon (for Root categories with children) */}
+          {hasChildren ? (
+            <button
+              onClick={() => toggleCollapseRoot(cat.id)}
+              className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-[#00A99D] transition-colors cursor-pointer border-none bg-transparent flex-shrink-0"
+              title={isCollapsed ? "Mở rộng danh mục con" : "Thu gọn danh mục con"}
+            >
+              {isCollapsed ? <ChevronRight className="w-4 h-4 text-[#00A99D]" /> : <ChevronDown className="w-4 h-4 text-[#00A99D]" />}
+            </button>
+          ) : (
+            isRoot && <div className="w-6 flex-shrink-0" />
+          )}
 
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold ${
             isRoot ? "bg-[#00A99D]/10 text-[#00A99D]" : "bg-slate-100 text-slate-500"
@@ -677,7 +726,10 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className={`font-black truncate ${isRoot ? "text-slate-800 text-sm" : "text-slate-700 text-xs"} ${!isActive && "line-through text-slate-400"}`}>
+              <span
+                onClick={() => hasChildren && toggleCollapseRoot(cat.id)}
+                className={`font-black truncate ${isRoot ? "text-slate-800 text-sm cursor-pointer hover:text-[#00A99D]" : "text-slate-700 text-xs"} ${!isActive && "line-through text-slate-400"}`}
+              >
                 {cat.name}
               </span>
 
@@ -695,9 +747,13 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
 
               {/* Sub-categories count badge */}
               {isRoot && childCount > 0 && (
-                <span className="text-[10px] font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-full">
-                  {childCount} danh mục con
-                </span>
+                <button
+                  onClick={() => toggleCollapseRoot(cat.id)}
+                  className="text-[10px] font-extrabold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-full transition-all cursor-pointer border-none flex items-center gap-1"
+                >
+                  <span>{childCount} danh mục con</span>
+                  {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
               )}
             </div>
 
