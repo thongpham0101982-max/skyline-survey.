@@ -919,6 +919,7 @@ export function TeacherSupportClient({
             </span>
           )}
         </button>
+      </div>
 
       {/* Action panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border">
@@ -1430,7 +1431,7 @@ export function TeacherSupportClient({
           </table>
         </div>
       ) : (
-        <div className="space-y-4">
+        <>
           {approvedHistoryCount > 0 && (
             <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center gap-3 shadow-xs">
               <div className="p-2 bg-emerald-500 text-white rounded-lg animate-bounce shrink-0">
@@ -1441,7 +1442,7 @@ export function TeacherSupportClient({
                   Thông báo kết quả xét duyệt: Có {approvedHistoryCount} đề xuất bồi dưỡng của bạn đã được BGH / KTĐBCL xét duyệt và phân công giáo viên phụ trách.
                 </div>
                 <div className="text-[11px] text-emerald-700 mt-0.5">
-                  Các đề xuất đã duyệt sẽ được chuyển sang trạng thái "Đang hỗ trợ" hoặc "Hoàn thành".
+                  Các đề xuất đã duyệt sẽ được chuyển sang trạng thái &quot;Đang hỗ trợ&quot; hoặc &quot;Hoàn thành&quot;.
                 </div>
               </div>
             </div>
@@ -1569,6 +1570,7 @@ export function TeacherSupportClient({
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       {/* --- TEACHER MODALS SECTION --- */}
