@@ -1,10 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
   FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, 
-  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info
+  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -628,6 +628,18 @@ export function TeacherSupportClient({
     return matchesSearch
   })
 
+  // Count approved proposals submitted by this teacher
+  const approvedHistoryCount = useMemo(() => {
+    return targets.filter((t: any) => 
+      t.createdById === teacher?.id && (
+        (t.assignments && t.assignments.length > 0) || 
+        t.status === "ĐÃ DUYỆT" || 
+        t.terminationStatus === "TERMINATED" || 
+        t.terminationStatus === "PENDING_TERMINATION"
+      )
+    ).length
+  }, [targets, teacher?.id])
+
   // Proposal history filter - server already filters by teacher visibility
   // Only apply local search filter here
   const historyTargets = targets.filter(t => {
@@ -892,16 +904,21 @@ export function TeacherSupportClient({
         </button>
         <button
           onClick={() => setActiveSubTab("history")}
-          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 relative ${
             activeSubTab === "history"
               ? "border-indigo-600 text-indigo-600 font-extrabold"
               : "border-transparent text-slate-500 hover:text-slate-800"
           }`}
         >
           <Clock className="h-4 w-4" />
-          Lược sử đề xuất bồi dưỡng
+          <span>Lược sử đề xuất bồi dưỡng</span>
+          {approvedHistoryCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white shadow-xs animate-pulse">
+              <Bell className="h-3 w-3 fill-white animate-bounce" />
+              <span>{approvedHistoryCount} đã duyệt</span>
+            </span>
+          )}
         </button>
-      </div>
 
       {/* Action panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border">
@@ -1413,7 +1430,23 @@ export function TeacherSupportClient({
           </table>
         </div>
       ) : (
-        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+        <div className="space-y-4">
+          {approvedHistoryCount > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3.5 flex items-center gap-3 shadow-xs">
+              <div className="p-2 bg-emerald-500 text-white rounded-lg animate-bounce shrink-0">
+                <Bell className="h-4 w-4 fill-white" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-emerald-900">
+                  Thông báo kết quả xét duyệt: Có {approvedHistoryCount} đề xuất bồi dưỡng của bạn đã được BGH / KTĐBCL xét duyệt và phân công giáo viên phụ trách.
+                </div>
+                <div className="text-[11px] text-emerald-700 mt-0.5">
+                  Các đề xuất đã duyệt sẽ được chuyển sang trạng thái "Đang hỗ trợ" hoặc "Hoàn thành".
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
@@ -1522,7 +1555,7 @@ export function TeacherSupportClient({
                                     Xóa
                                   </button>
                                 ) : (
-                                  <span className="text-slate-400 font-medium text-[10px]">Đã duyệt</span>
+                                  <span className="text-emerald-600 font-bold text-[10px] inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded shadow-xs"><CheckCircle2 className="h-3 w-3 text-emerald-600" /> Đã duyệt</span>
                                 )}
                               </div>
                             )
