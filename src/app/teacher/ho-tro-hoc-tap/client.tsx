@@ -7,6 +7,7 @@ import {
   MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { TeacherImprovementAnalytics } from "./analytics"
 
 interface Props {
   teacher: any
@@ -807,6 +808,13 @@ export function TeacherSupportClient({
           </div>
         </div>
       </div>
+
+      {/* Visual Student Improvement Analytics Section */}
+      <TeacherImprovementAnalytics 
+        targets={targets} 
+        configs={configs} 
+        homeroomClasses={homeroomClasses} 
+      />
 
       {/* Statistical Dashboard Cards */}
       {activeSubTab === "assigned" && (() => {
