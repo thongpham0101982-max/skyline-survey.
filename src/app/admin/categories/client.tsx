@@ -561,7 +561,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                     onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:bg-white cursor-pointer transition-all"
                   >
-                    <option value="">-- Danh mục gốc (Cấp cao nhất) --</option>
+                    <option value="">-- Mặc định: Danh mục gốc (Cấp cao nhất) --</option>
                     {parentOptions(editingId).map((opt: any) => (
                       <option key={opt.id} value={opt.id}>{opt.name}</option>
                     ))}
@@ -643,7 +643,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                 onChange={(e) => setBulkParentId(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] cursor-pointer"
               >
-                <option value="">-- Chuyển thành Danh mục gốc (Không có cha) --</option>
+                <option value="">-- Mặc định: Chuyển thành Danh mục gốc (Không có cha) --</option>
                 {parentOptions().map((opt: any) => (
                   <option key={opt.id} value={opt.id}>{opt.name}</option>
                 ))}
