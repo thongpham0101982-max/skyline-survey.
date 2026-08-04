@@ -568,7 +568,7 @@ export function SupportClient({
   const academicPendingCount = useMemo(() => {
     return targets.filter((t: any) => 
       t.supportType === "ACADEMIC" && (
-        (t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT") ||
+        (t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0)) ||
         t.terminationStatus === "PENDING_TERMINATION"
       )
     ).length
@@ -577,7 +577,7 @@ export function SupportClient({
   const psychologyPendingCount = useMemo(() => {
     return targets.filter((t: any) => 
       t.supportType === "PSYCHOLOGICAL" && (
-        (t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0) && t.status !== "ĐÃ DUYỆT") ||
+        (t.terminationStatus === "ACTIVE" && (!t.assignments || t.assignments.length === 0)) ||
         t.terminationStatus === "PENDING_TERMINATION"
       )
     ).length

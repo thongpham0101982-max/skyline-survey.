@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import {
-  Users, BookOpen, Brain,
+  Users, BookOpen, Brain, Bell,
   AlertCircle, GraduationCap,
   Building2, Sparkles, TrendingUp, Clock
 } from "lucide-react"
@@ -394,7 +394,8 @@ export function OverviewDashboard({
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-ping" />
             Đang hỗ trợ: {activeCount}
           </span>
-          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 text-orange-200 font-bold border border-orange-500/20 text-[11px] backdrop-blur-xs">
+          <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/20 text-orange-200 font-bold border border-orange-500/30 text-[11px] backdrop-blur-xs shadow-xs animate-pulse">
+            <Bell className="h-3 w-3 text-orange-300 fill-orange-300 animate-bounce" />
             Cần can thiệp: {pendingApprovalCount}
           </span>
           <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-200 font-bold border border-amber-500/20 text-[11px] backdrop-blur-xs">
