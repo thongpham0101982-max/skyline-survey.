@@ -2,16 +2,19 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import { SurveyQuestionBuilderClient } from "./client"
 
-export default async function SurveyQuestionsPage({ params }) {
+export default async function SurveyQuestionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   
-  const period = await prisma.surveyPeriod.findUnique({ where: { id } })
+  const period = await prisma.surveyPeriod.findUnique({
+    where: { id },
+    include: { academicYear: true, campus: true }
+  })
   if (!period) return notFound()
 
   const questions = await prisma.surveyQuestion.findMany({
     where: { surveyPeriodId: id },
     orderBy: { sortOrder: "asc" },
-    include: { section: { select: { id: true, name: true } } }
+    include: { section: { select: { id: true, name: true, code: true } } }
   })
 
   const categories = await prisma.surveySection.findMany({
@@ -21,12 +24,8 @@ export default async function SurveyQuestionsPage({ params }) {
   })
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col">
-      <div className="mb-4 pl-1">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Studio Tao/Chinh Sửa Form</h1>
-        <p className="text-sm font-semibold text-indigo-600 mt-1 uppercase tracking-wider inline-block shadow-sm text-xs font-semibold">Target: {period.name}</p>
-      </div>
-      <SurveyQuestionBuilderClient surveyPeriodId={period.id} initialQuestions={questions} categories={categories} />
+    <div className="min-h-screen bg-[#F3F4F6] p-3 md:p-6 font-outfit">
+      <SurveyQuestionBuilderClient period={period} initialQuestions={questions} categories={categories} />
     </div>
   )
 }

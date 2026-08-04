@@ -1,59 +1,96 @@
-﻿"use server"
+"use server"
 import { prisma } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-export async function saveSurveyQuestionsAction(surveyPeriodId, questions) {
-  const existing = await prisma.surveyQuestion.findMany({ where: { surveyPeriodId } })
-  const newIds = questions.map(q => q.id).filter(id => !id.startsWith("new_"))
-  
-  const toDelete = existing.filter(e => !newIds.includes(e.id))
-  for (const d of toDelete) {
-    await prisma.surveyQuestion.delete({ where: { id: d.id } }).catch(() => {})
+export async function createSectionAction(name: string) {
+  try {
+    const cleanName = name.trim()
+    if (!cleanName) return { success: false, error: "Tên mục không được để trống" }
+    
+    let section = await prisma.surveySection.findFirst({ where: { name: cleanName } })
+    if (!section) {
+      section = await prisma.surveySection.create({
+        data: {
+          name: cleanName,
+          code: `SEC-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+        }
+      })
+    }
+    revalidatePath("/admin/surveys")
+    return { success: true, section }
+  } catch (e: any) {
+    return { success: false, error: e.message }
   }
+}
 
-  for (const [index, q] of questions.entries()) {
-    const isNew = q.id.startsWith("new_")
+export async function saveSurveyQuestionsAction(
+  surveyPeriodId: string,
+  questions: any[],
+  periodDetails?: { name?: string }
+) {
+  try {
+    if (periodDetails?.name?.trim()) {
+      await prisma.surveyPeriod.update({
+        where: { id: surveyPeriodId },
+        data: { name: periodDetails.name.trim() }
+      }).catch(() => {})
+    }
 
-    let activeSectionId = q.sectionId || null
-    if (activeSectionId === "") activeSectionId = null
+    const existing = await prisma.surveyQuestion.findMany({ where: { surveyPeriodId } })
+    const newIds = questions.map(q => q.id).filter(id => !id.startsWith("new_"))
+    
+    const toDelete = existing.filter(e => !newIds.includes(e.id))
+    for (const d of toDelete) {
+      await prisma.surveyQuestion.delete({ where: { id: d.id } }).catch(() => {})
+    }
 
-    if (!activeSectionId && q.category && q.category.trim() !== "") {
-      let section = await prisma.surveySection.findFirst({ where: { name: q.category.trim() } })
-      if (!section) {
-        section = await prisma.surveySection.create({
-          data: { name: q.category.trim(), code: `SEC-${Date.now()}-${Math.floor(Math.random()*1000)}` }
-        }).catch((e) => { console.error(e); return null; })
+    for (const [index, q] of questions.entries()) {
+      const isNew = q.id.startsWith("new_")
+
+      let activeSectionId = q.sectionId || null
+      if (activeSectionId === "") activeSectionId = null
+
+      if (!activeSectionId && q.category && q.category.trim() !== "") {
+        let section = await prisma.surveySection.findFirst({ where: { name: q.category.trim() } })
+        if (!section) {
+          section = await prisma.surveySection.create({
+            data: { name: q.category.trim(), code: `SEC-${Date.now()}-${Math.floor(Math.random()*1000)}` }
+          }).catch((e) => { console.error(e); return null; })
+        }
+        if (section) activeSectionId = section.id
       }
-      if (section) activeSectionId = section.id
+
+      // Handle options: avoid double stringify if already a string
+      let finalOptions = q.options
+      if (finalOptions && typeof finalOptions !== "string") {
+        finalOptions = JSON.stringify(finalOptions)
+      }
+
+      const data = {
+        code: q.code || `Q-${Date.now()}-${index}`,
+        questionText: q.questionText || "",
+        questionType: q.questionType,
+        isRequired: q.isRequired ?? true,
+        ratingScaleMin: q.ratingScaleMin,
+        ratingScaleMax: q.ratingScaleMax,
+        options: finalOptions,
+        weight: q.weight ?? 1.0,
+        sortOrder: index,
+        surveyPeriodId,
+        sectionId: activeSectionId
+      }
+
+      if (isNew) {
+        await prisma.surveyQuestion.create({ data }).catch(() => {})
+      } else {
+        await prisma.surveyQuestion.update({ where: { id: q.id }, data }).catch(() => {})
+      }
     }
 
-    // Handle options: avoid double stringify if already a string
-    let finalOptions = q.options
-    if (finalOptions && typeof finalOptions !== "string") {
-      finalOptions = JSON.stringify(finalOptions)
-    }
-
-    const data = {
-      code: q.code || `Q-${Date.now()}-${index}`,
-      questionText: q.questionText,
-      questionType: q.questionType,
-      isRequired: q.isRequired,
-      ratingScaleMin: q.ratingScaleMin,
-      ratingScaleMax: q.ratingScaleMax,
-      options: finalOptions,
-      weight: q.weight,
-      sortOrder: index,
-      surveyPeriodId,
-      sectionId: activeSectionId
-    }
-
-    if (isNew) {
-      await prisma.surveyQuestion.create({ data }).catch(() => {})
-    } else {
-      await prisma.surveyQuestion.update({ where: { id: q.id }, data }).catch(() => {})
-    }
+    revalidatePath(`/admin/surveys/${surveyPeriodId}/questions`)
+    return { success: true }
+  } catch (err: any) {
+    console.error("Save Error:", err)
+    return { success: false, error: err?.message || "Lỗi lưu form" }
   }
-
-  revalidatePath(`/admin/surveys/${surveyPeriodId}/questions`)
-  return { success: true }
 }

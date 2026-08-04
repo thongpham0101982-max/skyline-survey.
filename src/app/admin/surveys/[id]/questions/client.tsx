@@ -1,37 +1,34 @@
-﻿"use client"
+"use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Trash2, ArrowUp, ArrowDown, GripVertical, Eye, Save, CloudUpload, X, Tag, ListPlus, LayoutGrid, CheckSquare, Settings2, CheckCircle2, FileDown, Upload } from "lucide-react"
+import {
+  Plus, Trash2, ArrowUp, ArrowDown, GripVertical, Eye, Save, CloudUpload,
+  X, Tag, ListPlus, LayoutGrid, CheckSquare, Settings2, CheckCircle2,
+  FileDown, Upload, Monitor, Smartphone, FolderPlus, Copy, HelpCircle,
+  ChevronRight, Sparkles, Layers, ArrowLeft
+} from "lucide-react"
 import * as xlsx from "xlsx"
-import { saveSurveyQuestionsAction } from "./actions"
+import { saveSurveyQuestionsAction, createSectionAction } from "./actions"
 import Link from "next/link"
 
-export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, categories = [] }) {
-  const formattedCategories = (() => {
-    const rootCategories = categories.filter((c: any) => !c.parentId)
-    const childCategories = categories.filter((c: any) => c.parentId)
-    
-    const result: any[] = []
-    rootCategories.forEach((root: any) => {
-      result.push({ ...root, displayName: root.name })
-      const children = childCategories.filter((child: any) => child.parentId === root.id)
-      children.forEach((child: any) => {
-        result.push({ ...child, displayName: `└─ ${child.name}` })
-      })
-    })
-    
-    // Add orphans
-    childCategories.forEach((child: any) => {
-      if (!result.some((r: any) => r.id === child.id)) {
-        result.push({ ...child, displayName: child.name })
-      }
-    })
-    
-    return result
-  })()
+export function SurveyQuestionBuilderClient({ period, initialQuestions, categories = [] }: any) {
+  const router = useRouter()
 
+  // Form Header State (Tiêu đề & Diễn giải Form)
+  const [formTitle, setFormTitle] = useState(period.name || "Phiếu Khảo Sát")
+  const [formDescription, setFormDescription] = useState(
+    period.description || "Vui lòng hoàn thành các câu hỏi khảo sát dưới đây để giúp nhà trường nâng cao chất lượng dịch vụ và đào tạo."
+  )
+
+  // Sections State
+  const [sectionsList, setSectionsList] = useState(categories)
+  const [activeSectionFilter, setActiveSectionFilter] = useState("ALL")
+  const [newSectionName, setNewSectionName] = useState("")
+  const [showAddSectionModal, setShowAddSectionModal] = useState(false)
+
+  // Questions State
   const [questions, setQuestions] = useState(
-    initialQuestions.map((q) => {
+    initialQuestions.map((q: any) => {
       let parsedOptions = { choices: [], hasOther: false }
       try {
         const raw = q.options ? JSON.parse(q.options) : []
@@ -50,17 +47,45 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
       }
     })
   )
-  const [activeTab, setActiveTab ] = useState("editor")
-  const [saving, setSaving] = useState(false)
-  const router = useRouter()
 
+  // View state: 'editor' | 'preview'
+  const [activeTab, setActiveTab] = useState<"editor" | "preview">("editor")
+  // Preview device: 'desktop' | 'mobile'
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop")
+  // Active Question Card Index
+  const [activeQIndex, setActiveQIndex] = useState<number | null>(0)
+
+  const [saving, setSaving] = useState(false)
+
+  // Categories helper
+  const formattedCategories = (() => {
+    const rootCategories = sectionsList.filter((c: any) => !c.parentId)
+    const childCategories = sectionsList.filter((c: any) => c.parentId)
+    
+    const result: any[] = []
+    rootCategories.forEach((root: any) => {
+      result.push({ ...root, displayName: root.name })
+      const children = childCategories.filter((child: any) => child.parentId === root.id)
+      children.forEach((child: any) => {
+        result.push({ ...child, displayName: `└─ ${child.name}` })
+      })
+    })
+    childCategories.forEach((child: any) => {
+      if (!result.some((r: any) => r.id === child.id)) {
+        result.push({ ...child, displayName: child.name })
+      }
+    })
+    return result
+  })()
+
+  // Download Excel Template
   const downloadTemplate = () => {
     const headers = [
-      ["STT", "Nội dung câu hỏi", "Loại câu hỏi", "Danh mục", "Bắt buộc", "Trọng số", "Danh sách lựa chọn (nếu có)"],
+      ["STT", "Nội dung câu hỏi", "Loại câu hỏi", "Danh mục / Mục", "Bắt buộc", "Trọng số", "Danh sách lựa chọn (nếu có)"],
       ["1", "Tôi thích tìm hiểu khoa học và công nghệ", "SCALE_0_4", "Realistic", "Có", "1", ""],
-      ["2", "Bạn đánh giá thế nào về cơ sở vật chất của Sky-line?", "MULTIPLE_CHOICE", "", "Có", "1", "Rất tệ, Bình thường, Rất tốt"],
-      ["3", "Ý kiến phản hồi tự luận", "TEXT", "", "Không", "1", ""],
-      ["4", "Đánh giá theo các tiêu chuẩn kỹ năng", "MC_GRID", "", "Có", "1", "Kỹ năng lập kế hoạch, Kỹ năng làm việc nhóm | Kém, Khá, Tốt"]
+      ["2", "Bạn đánh giá thế nào về cơ sở vật chất của Sky-line?", "MULTIPLE_CHOICE", "Cơ sở vật chất", "Có", "1", "Rất tệ, Bình thường, Rất tốt"],
+      ["3", "Ý kiến phản hồi tự luận", "TEXT", "Ý kiến đóng góp", "Không", "1", ""],
+      ["4", "Đánh giá theo các tiêu chuẩn kỹ năng", "MC_GRID", "Kỹ năng", "Có", "1", "Kỹ năng lập kế hoạch, Kỹ năng làm việc nhóm | Kém, Khá, Tốt"]
     ]
     const ws = xlsx.utils.aoa_to_sheet(headers)
     const wb = xlsx.utils.book_new()
@@ -68,24 +93,25 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     xlsx.writeFile(wb, "Mau_Import_Cau_Hoi.xlsx")
   }
 
-  const handleImportExcel = (e) => {
+  // Handle Excel Import
+  const handleImportExcel = (e: any) => {
     const file = e.target.files?.[0]
     if (!file) return
     
     const reader = new FileReader()
-    reader.onload = (evt) => {
+    reader.onload = (evt: any) => {
       try {
         const bstr = evt.target?.result
         const wb = xlsx.read(bstr, { type: "binary" })
         const wsname = wb.SheetNames[0]
         const ws = wb.Sheets[wsname]
-        const rawRows = xlsx.utils.sheet_to_json(ws, { header: 1 })
+        const rawRows: any[] = xlsx.utils.sheet_to_json(ws, { header: 1 })
         
         if (rawRows.length <= 1) {
           return alert("File Excel rỗng hoặc không đúng định dạng!")
         }
         
-        const newQuestionsFromExcel = []
+        const newQuestionsFromExcel: any[] = []
         
         for (let i = 1; i < rawRows.length; i++) {
           const row = rawRows[i]
@@ -107,8 +133,8 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
           const catName = row[3]?.toString().trim()
           let matchedSectionId = ""
           if (catName) {
-            const cleanCatName = catName.replace(/^└─\s*/, "").toLowerCase()
-            const foundCat = categories.find((c) => c.name.toLowerCase() === cleanCatName)
+            const cleanCatName = catName.replace(/^└─s*/, "").toLowerCase()
+            const foundCat = sectionsList.find((c: any) => c.name.toLowerCase() === cleanCatName)
             if (foundCat) matchedSectionId = foundCat.id
           }
           
@@ -118,10 +144,10 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
           const wVal = parseFloat(row[5])
           const weight = isNaN(wVal) ? 1 : wVal
           
-          let initialOptions = []
+          let initialOptions: any = []
           if (type === "MULTIPLE_CHOICE" || type === "CHECKBOX" || type === "DROPDOWN") {
             const optsStr = row[6]?.toString().trim()
-            const choices = optsStr ? optsStr.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean) : ["Tùy chọn 1"]
+            const choices = optsStr ? optsStr.split(/[,;\n]+/).map((s: string) => s.trim()).filter(Boolean) : ["Tùy chọn 1"]
             initialOptions = { choices, hasOther: false }
           } else if (type === "MC_GRID" || type === "CB_GRID") {
             const optsStr = row[6]?.toString().trim()
@@ -129,8 +155,8 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
             let columns = ["Kém", "Trung bình", "Khá", "Tốt", "Xuất sắc"]
             if (optsStr && optsStr.includes("|")) {
               const [rPart, cPart] = optsStr.split("|")
-              if (rPart) rows = rPart.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean)
-              if (cPart) columns = cPart.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean)
+              if (rPart) rows = rPart.split(/[,;\n]+/).map((s: string) => s.trim()).filter(Boolean)
+              if (cPart) columns = cPart.split(/[,;\n]+/).map((s: string) => s.trim()).filter(Boolean)
             }
             initialOptions = { rows, columns }
           }
@@ -154,8 +180,8 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
         }
         
         setQuestions(prev => [...prev, ...newQuestionsFromExcel])
-        alert(`Đã nhập thành công ${newQuestionsFromExcel.length} câu hỏi từ file Excel vào danh sách biên tập! Vui lòng kiểm tra lại và bấm 'Xuất Bản Form' hoặc 'Lưu Nháp' để hoàn tất.`)
-      } catch (e) {
+        alert(`Đã nhập thành công ${newQuestionsFromExcel.length} câu hỏi từ file Excel vào Form!`)
+      } catch (e: any) {
         console.error(e)
         alert("Lỗi phân tích file Excel: " + e.message)
       }
@@ -164,16 +190,32 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     e.target.value = ""
   }
 
-  const addQuestion = (type) => {
+  // Create new section action
+  const handleCreateSection = async () => {
+    if (!newSectionName.trim()) return
+    const res = await createSectionAction(newSectionName)
+    if (res?.success && res.section) {
+      setSectionsList(prev => [...prev, res.section])
+      setNewSectionName("")
+      setShowAddSectionModal(false)
+    } else {
+      alert(res?.error || "Không thể tạo mục mới")
+    }
+  }
+
+  // Add question
+  const addQuestion = (type: string, targetSectionId = "") => {
     let initialOptions: any = []
     if (type === "MULTIPLE_CHOICE" || type === "CHECKBOX" || type === "DROPDOWN") {
-      initialOptions = { choices: ["Tùy chọn 1"], hasOther: false }
+      initialOptions = { choices: ["Tùy chọn 1", "Tùy chọn 2"], hasOther: false }
     } else if (type === "MC_GRID" || type === "CB_GRID") {
       initialOptions = { 
         rows: ["Tiêu chí 1", "Tiêu chí 2"], 
         columns: ["Kém", "Trung bình", "Khá", "Tốt", "Xuất sắc"] 
       }
     }
+
+    const assignedSec = targetSectionId || (activeSectionFilter !== "ALL" ? activeSectionFilter : "")
 
     const newQ = {
       id: `new_${Date.now()}`,
@@ -185,12 +227,28 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
       ratingScaleMin: type === "SCALE_0_4" ? 0 : (type === "NPS" ? 0 : 1),
       ratingScaleMax: type === "SCALE_0_4" ? 4 : (type === "NPS" ? 10 : 5),
       weight: 1,
-      sectionId: ""
+      sectionId: assignedSec
     }
     setQuestions([...questions, newQ])
+    setActiveQIndex(questions.length)
   }
 
-  const updateQuestion = (index, key, value) => {
+  // Duplicate question
+  const duplicateQuestion = (index: number) => {
+    const target = questions[index]
+    const newQ = {
+      ...JSON.parse(JSON.stringify(target)),
+      id: `new_${Date.now()}`,
+      code: `Q-${Date.now()}`,
+      questionText: `${target.questionText} (Bản sao)`
+    }
+    const updated = [...questions]
+    updated.splice(index + 1, 0, newQ)
+    setQuestions(updated)
+    setActiveQIndex(index + 1)
+  }
+
+  const updateQuestion = (index: number, key: string, value: any) => {
     const newQs = [...questions]
     newQs[index][key] = value
     if (key === "questionType") {
@@ -208,7 +266,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     setQuestions(newQs)
   }
 
-  const updateOption = (qIndex, optIndex, value) => {
+  const updateOption = (qIndex: number, optIndex: number, value: string) => {
     const newQs = [...questions]
     const q = newQs[qIndex]
     if (q.options && Array.isArray(q.options.choices)) {
@@ -217,7 +275,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     }
   }
 
-  const addOption = (qIndex) => {
+  const addOption = (qIndex: number) => {
     const newQs = [...questions]
     const q = newQs[qIndex]
     if (q.options && Array.isArray(q.options.choices)) {
@@ -226,16 +284,16 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     }
   }
 
-  const removeOption = (qIndex, optIndex) => {
+  const removeOption = (qIndex: number, optIndex: number) => {
     const newQs = [...questions]
     const q = newQs[qIndex]
     if (q.options && Array.isArray(q.options.choices)) {
-      q.options.choices = q.options.choices.filter((_, i) => i !== optIndex)
+      q.options.choices = q.options.choices.filter((_: any, i: number) => i !== optIndex)
       setQuestions(newQs)
     }
   }
 
-  const toggleOther = (qIndex) => {
+  const toggleOther = (qIndex: number) => {
     const newQs = [...questions]
     const q = newQs[qIndex]
     if (q.options && typeof q.options === "object" && !Array.isArray(q.options)) {
@@ -244,7 +302,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     }
   }
 
-  const updateGridOption = (qIndex, part, index, value) => {
+  const updateGridOption = (qIndex: number, part: string, index: number, value: string) => {
     const newQs = [...questions]
     const q = newQs[qIndex]
     if ((q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && q.options[part]) {
@@ -253,7 +311,7 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     }
   }
 
-  const addGridItem = (qIndex, part) => {
+  const addGridItem = (qIndex: number, part: string) => {
     const newQs = [...questions]
     const q = newQs[qIndex]
     if ((q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && q.options[part]) {
@@ -262,377 +320,625 @@ export function SurveyQuestionBuilderClient({ surveyPeriodId, initialQuestions, 
     }
   }
 
-  const removeGridItem = (qIndex, part, index) => {
+  const removeGridItem = (qIndex: number, part: string, index: number) => {
     const newQs = [...questions]
     const q = newQs[qIndex]
     if ((q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && q.options[part]) {
-      q.options[part] = q.options[part].filter((_, i) => i !== index)
+      q.options[part] = q.options[part].filter((_: any, i: number) => i !== index)
       setQuestions(newQs)
     }
   }
 
-  const moveQuestion = (index, dir) => {
+  const moveQuestion = (index: number, dir: number) => {
     if (index + dir < 0 || index + dir >= questions.length) return
     const newQs = [...questions]
     const temp = newQs[index]
     newQs[index] = newQs[index + dir]
     newQs[index + dir] = temp
     setQuestions(newQs)
+    setActiveQIndex(index + dir)
   }
 
-  const removeQuestion = (index) => {
-    setQuestions(questions.filter((_, i) => i !== index))
+  const removeQuestion = (index: number) => {
+    const filtered = questions.filter((_: any, i: number) => i !== index)
+    setQuestions(filtered)
+    setActiveQIndex(null)
   }
 
   const handleSave = async (publish = false) => {
     setSaving(true)
-    const res = await saveSurveyQuestionsAction(surveyPeriodId, questions)
+    const res = await saveSurveyQuestionsAction(period.id, questions, { name: formTitle })
     setSaving(false)
     if (res?.success) {
       if (publish) {
-        router.push(`/admin/surveys/${surveyPeriodId}/publish`)
+        router.push(`/admin/surveys/${period.id}/publish`)
       } else {
-        alert("Đã lưu bản nháp thành công!")
+        alert("Đã lưu bản nháp Form thành công!")
       }
+    } else {
+      alert("Lỗi lưu form: " + (res?.error || "Không xác định"))
     }
   }
 
+  // Filtered questions according to active section tab
+  const filteredQuestions = activeSectionFilter === "ALL" 
+    ? questions 
+    : (activeSectionFilter === "UNASSIGNED" 
+        ? questions.filter((q: any) => !q.sectionId)
+        : questions.filter((q: any) => q.sectionId === activeSectionFilter))
+
   return (
-    <div className="flex flex-col md:flex-row h-full w-full gap-6 font-outfit">
+    <div className="max-w-6xl mx-auto flex flex-col min-h-[calc(100vh-60px)] pb-32">
       
-      {/* LEFT PANE: EDITOR */}
-      <div className={`flex-1 md:w-1/2 flex flex-col ${activeTab === "preview" ? "hidden md:flex" : "flex"}`}>
-        <div className="flex items-center justify-between bg-white p-4 rounded-3xl shadow-xl shadow-slate-100 border border-slate-100 mb-6 sticky top-0 z-30 w-full overflow-x-auto whitespace-nowrap scrollbar-hide gap-4">
-          <div className="flex items-center gap-3">
-            <h2 className="font-black text-slate-800 text-lg">Builder</h2>
-            <div className="flex items-center gap-1.5 bg-[#00A99D]/5 border border-[#00A99D]/20 px-3 py-1.5 rounded-2xl">
-              <button onClick={downloadTemplate} className="text-[#00A99D] hover:text-[#009085] flex items-center gap-1 text-[10px] font-black uppercase tracking-wider font-semibold" title="Tải file mẫu Excel">
-                <FileDown className="w-3.5 h-3.5" /> Mẫu Excel
-              </button>
-              <span className="text-[#00A99D]/30">|</span>
-              <label className="text-[#00A99D] hover:text-[#009085] flex items-center gap-1 text-[10px] font-black uppercase tracking-wider cursor-pointer font-semibold" title="Import từ file Excel">
-                <Upload className="w-3.5 h-3.5" /> Import
-                <input type="file" onChange={handleImportExcel} accept=".xlsx,.xls" className="hidden" />
-              </label>
+      {/* TOP MICROSOFT FORMS HEADER NAVBAR */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-4 mb-4 sticky top-2 z-30 flex flex-wrap items-center justify-between gap-4">
+        
+        {/* Left: Back & Title */}
+        <div className="flex items-center gap-3">
+          <Link href="/admin/surveys" className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="font-extrabold text-slate-800 text-lg tracking-tight">Studio Tạo / Chỉnh Sửa Form</h1>
+              <span className="bg-[#00A99D]/10 text-[#00A99D] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                Microsoft Forms
+              </span>
             </div>
-          </div>
-          <div className="flex space-x-2">
-            <button onClick={() => addQuestion("MULTIPLE_CHOICE")} className="text-red-600 text-[10px] font-black uppercase tracking-widest hover:bg-red-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
-              <Plus className="w-3.5 h-3.5" /> Radio
-            </button>
-            <button onClick={() => addQuestion("CHECKBOX")} className="text-emerald-700 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
-              <CheckSquare className="w-3.5 h-3.5" /> Checkbox
-            </button>
-            <button onClick={() => addQuestion("MC_GRID")} className="text-violet-700 text-[10px] font-black uppercase tracking-widest hover:bg-violet-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
-              <LayoutGrid className="w-3.5 h-3.5" /> Lưới Radio
-            </button>
-            <button onClick={() => addQuestion("CB_GRID")} className="text-pink-700 text-[10px] font-black uppercase tracking-widest hover:bg-pink-100 flex items-center gap-1.5 transition-all text-xs font-semibold">
-              <CheckSquare className="w-3.5 h-3.5" /> Lưới Check
-            </button>
-            <button onClick={() => addQuestion("SCALE_0_4")} className="px-4 py-2 bg-teal-50 hover:bg-teal-100 text-teal-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
-              <Plus className="w-3.5 h-3.5" /> Khảo sát (0-4)
-            </button>
-            <button onClick={() => addQuestion("NPS")} className="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all">
-              <Plus className="w-3.5 h-3.5" /> NPS (0-10)
-            </button>
-            <button onClick={() => addQuestion("TEXT")} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 flex items-center gap-1.5 transition-all">
-              <Plus className="w-3.5 h-3.5" /> Tự luận
-            </button>
+            <p className="text-xs text-slate-400 font-medium">Đối tượng: <strong className="text-slate-600">{period.targetAudience || "Tất cả"}</strong> • Khóa: <strong className="text-slate-600">{period.academicYear?.name || "2026-2027"}</strong></p>
           </div>
         </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto pb-44 pr-2 custom-scrollbar">
-          {questions.length === 0 ? (
-            <div className="text-center p-20 bg-white rounded-[3rem] border-4 border-dashed border-slate-50 text-slate-200">
-              <Plus className="w-16 h-16 mx-auto mb-4 opacity-5" />
-              <p className="font-black text-xl">Chưa có câu hỏi nào</p>
+        {/* Center: Mode Tabs (Editor vs Preview) */}
+        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+          <button
+            onClick={() => setActiveTab("editor")}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === "editor" ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            <Sparkles className="w-4 h-4" /> Chỉnh sửa Form
+          </button>
+          <button
+            onClick={() => setActiveTab("preview")}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === "preview" ? "bg-[#00A99D] text-white shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            <Eye className="w-4 h-4" /> Xem trước Live
+          </button>
+        </div>
+
+        {/* Right: Device preview toggles & Excel actions */}
+        <div className="flex items-center gap-2">
+          {activeTab === "preview" ? (
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <button
+                onClick={() => setPreviewDevice("desktop")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${previewDevice === "desktop" ? "bg-white text-slate-800 shadow-xs" : "text-slate-400"}`}
+              >
+                <Monitor className="w-4 h-4" /> Máy tính
+              </button>
+              <button
+                onClick={() => setPreviewDevice("mobile")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${previewDevice === "mobile" ? "bg-white text-slate-800 shadow-xs" : "text-slate-400"}`}
+              >
+                <Smartphone className="w-4 h-4" /> Điện thoại
+              </button>
             </div>
           ) : (
-            <>
-              {questions.map((q, qIndex) => (
-                <div key={q.id} className="bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/40 border border-slate-100 overflow-hidden relative group animate-in fade-in slide-in-from-bottom-4">
-                <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all cursor-move text-xs font-semibold">
-                  <GripVertical className="w-4 h-4 text-slate-300" />
-                </div>
-                <div className="p-8 md:pl-14">
-                  <div className="flex flex-col md:flex-row items-start justify-between gap-6 mb-6 font-outfit">
-                    <div className="flex-1 w-full">
-                      <input
-                        type="text"
-                        value={q.questionText}
-                        onChange={(e) => updateQuestion(qIndex, "questionText", e.target.value)}
-                        placeholder="Nội dung câu hỏi..."
-                        className="w-full text-xl font-black text-slate-900 border-b-2 border-transparent hover:border-slate-100 focus:border-red-600 outline-none pb-2 transition-all bg-transparent"
-                      />
-                      <div className="flex flex-wrap items-center gap-4 mt-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        <label className="flex items-center gap-2">
-                          <span>Mã:</span>
-                          <input type="text" value={q.code} onChange={e => updateQuestion(qIndex, "code", e.target.value)} className="focus:ring-2 focus:ring-red-100 outline-none w-32 text-slate-900 font-bold text-xs font-semibold" />
-                        </label>
-                        <select
-                          value={q.questionType}
-                          onChange={(e) => updateQuestion(qIndex, "questionType", e.target.value)}
-                          className="bg-red-600 text-white border-none rounded-xl px-4 py-2 font-black outline-none cursor-pointer hover:bg-red-700 transition-all shadow-lg shadow-red-100"
-                        >
-                          <option value="MULTIPLE_CHOICE">Trắc nghiệm (Radio)</option>
-                          <option value="CHECKBOX">Trắc nghiệm (Checkbox)</option>
-                          <option value="MC_GRID">Lưới trắc nghiệm Radio</option>
-                          <option value="CB_GRID">Lưới trắc nghiệm Checkbox</option>
-                          <option value="TEXT">Tự luận</option>
-                          <option value="RATING">Đánh giá sao</option>
-                          <option value="NPS">Khảo sát NPS (0-10)</option>
-                          <option value="SCALE_0_4">Khảo sát (0-4)</option>
-                        </select>
-                        <label className="flex items-center gap-2">
-                          <Tag className="w-3.5 h-3.5 text-red-500" />
-                          <span>Danh mục:</span>
-                          <select
-                            value={q.sectionId || ""}
-                            onChange={(e) => updateQuestion(qIndex, "sectionId", e.target.value)}
-                            className="bg-slate-100 border-none rounded-xl px-4 py-2 font-black outline-none cursor-pointer text-slate-700 max-w-[200px]"
-                          >
-                            <option value="">-- Chưa phân loại --</option>
-                            {formattedCategories.map((cat) => (
-                              <option key={cat.id} value={cat.id}>{cat.displayName}</option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {(q.questionType === "MULTIPLE_CHOICE" || q.questionType === "CHECKBOX" || q.questionType === "DROPDOWN") && (
-                      <div className="space-y-3 p-6 text-xs font-semibold">
-                        <div className="flex items-center justify-between mb-4">
-                           <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tùy chọn trả lời</h4>
-                           {q.questionType === "CHECKBOX" && <span className="text-emerald-600 text-[9px] font-black uppercase tracking-tighter text-xs font-semibold">Chọn nhiều mục</span>}
-                        </div>
-                        {(q.options.choices || []).map((opt, optIndex) => (
-                          <div key={optIndex} className="flex items-center gap-3 group/opt animate-in fade-in slide-in-from-left-2">
-                            <div className={`w-5 h-5 border-2 border-slate-200 bg-white shadow-inner flex-shrink-0 ${q.questionType === "MULTIPLE_CHOICE" ? "rounded-full" : "rounded-lg"}`} />
-                            <input
-                              type="text"
-                              value={opt}
-                              onChange={(e) => updateOption(qIndex, optIndex, e.target.value)}
-                              className="bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm font-bold flex-1 outline-none focus:border-red-500 focus:shadow-xl transition-all shadow-sm"
-                              placeholder={`Tùy chọn ${optIndex + 1}`}
-                            />
-                            <button onClick={() => removeOption(qIndex, optIndex)} className="text-red-400 opacity-0 group-hover/opt:opacity-100 hover:text-red-600 transition-all p-3 bg-white rounded-2xl shadow-md border border-slate-100"><X className="w-5 h-5" /></button>
-                          </div>
-                        ))}
-                        
-                        <div className="flex flex-wrap items-center gap-3 mt-6">
-                           <button onClick={() => addOption(qIndex)} className="text-[11px] font-black text-red-600 bg-white hover:shadow-xl border border-red-100 px-6 py-3 rounded-2xl flex items-center transition-all active:scale-95"><Plus className="w-4 h-4 mr-2"/> THÊM TÙY CHỌN</button>
-                           
-                           {(q.questionType === "MULTIPLE_CHOICE" || q.questionType === "CHECKBOX") && (
-                             <button onClick={() => toggleOther(qIndex)} 
-                               className={`text-[11px] font-black px-6 py-3 rounded-2xl border flex items-center transition-all active:scale-95 ${q.options.hasOther ? "bg-amber-600 text-white border-amber-600 shadow-xl shadow-amber-200" : "bg-white text-slate-400 border-slate-100 hover:border-amber-400 hover:text-amber-600"}`}>
-                               <Settings2 className="w-4 h-4 mr-2" />
-                               {q.options.hasOther ? "ĐÃ BẬT TRẢ LỜI KHÁC" : "BẬT Tùy chọn 'KHÁC'"}
-                             </button>
-                           )}
-                        </div>
-                      </div>
-                    )}
-
-                    {(q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && (
-                      <div className={`grid grid-cols-1 md:grid-cols-2 gap-8 p-6 rounded-[2rem] border border-slate-100 ${q.questionType === "CB_GRID" ? "bg-pink-50/20" : "bg-red-50/20"}`}>
-                        <div>
-                          <div className="flex items-center gap-2 mb-4">
-                            <ListPlus className={`w-4 h-4 ${q.questionType === "CB_GRID" ? "text-pink-500" : "text-red-500"}`} />
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Hàng (Tiêu chí)</h4>
-                          </div>
-                          <div className="space-y-2">
-                            {q.options.rows?.map((row, rIndex) => (
-                              <div key={rIndex} className="flex items-center gap-2 group/grid animate-in fade-in slide-in-from-left-2">
-                                <span className="text-[9px] font-black text-slate-300 w-4">{rIndex+1}</span>
-                                <input type="text" value={row} onChange={e => updateGridOption(qIndex, "rows", rIndex, e.target.value)} className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold focus:border-red-500 outline-none shadow-sm" />
-                                <button onClick={() => removeGridItem(qIndex, "rows", rIndex)} className="p-2.5 text-red-400 opacity-0 group-hover/grid:opacity-100 hover:text-red-600 transition-all"><X className="w-4 h-4"/></button>
-                              </div>
-                            ))}
-                            <button onClick={() => addGridItem(qIndex, "rows")} className={`w-full text-[10px] font-black border-2 border-dashed rounded-xl py-3 transition-all mt-3 uppercase tracking-widest bg-white/50 ${q.questionType === "CB_GRID" ? "text-pink-600 border-pink-100 hover:bg-pink-600 hover:text-white" : "text-red-600 border-red-100 hover:bg-red-600 hover:text-white"}`}>+ Thêm hàng</button>
-                          </div>
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-4">
-                            <LayoutGrid className="w-4 h-4 text-emerald-500" />
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Cột (Mức độ)</h4>
-                          </div>
-                          <div className="space-y-2">
-                            {q.options.columns?.map((col, cIndex) => (
-                              <div key={cIndex} className="flex items-center gap-2 group/grid animate-in fade-in slide-in-from-right-2">
-                                <span className="text-[9px] font-black text-slate-300 w-4">{String.fromCharCode(65+cIndex)}</span>
-                                <input type="text" value={col} onChange={e => updateGridOption(qIndex, "columns", cIndex, e.target.value)} className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold focus:border-emerald-500 outline-none shadow-sm" />
-                                <button onClick={() => removeGridItem(qIndex, "columns", cIndex)} className="p-2.5 text-red-400 opacity-0 group-hover/grid:opacity-100 hover:text-red-600 transition-all"><X className="w-4 h-4"/></button>
-                              </div>
-                            ))}
-                            <button onClick={() => addGridItem(qIndex, "columns")} className="w-full text-[10px] font-black text-emerald-600 hover:text-white hover:bg-emerald-600 transition-all mt-3 uppercase tracking-widest shadow-sm text-xs font-semibold">+ Thêm cột</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {q.questionType === "TEXT" && <div className="p-10 text-slate-300 font-bold text-center italic text-sm text-xs font-semibold">Văn bản trả lời tự luận của khách hàng...</div>}
-                    {q.questionType === "RATING" && <div className="flex items-center justify-center gap-6 text-amber-400 text-5xl py-8 animate-pulse">★ ★ ★ ★ ★</div>}
-                    {q.questionType === "NPS" && <div className="flex items-center justify-center gap-2 flex-wrap py-6">{[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="w-11 h-11 rounded-2xl border-2 border-slate-100 bg-white flex items-center justify-center text-sm font-black text-slate-400 shadow-sm hover:border-red-400 cursor-default transition-all">{n}</div>)}</div>}
-                    {q.questionType === "SCALE_0_4" && <div className="flex items-center justify-center gap-2 flex-wrap py-6">{[0,1,2,3,4].map(n => <div key={n} className="w-11 h-11 rounded-2xl border-2 border-slate-100 bg-white flex items-center justify-center text-sm font-black text-slate-400 shadow-sm hover:border-red-400 cursor-default transition-all">{n}</div>)}</div>}
-                  </div>
-
-                  <div className="flex flex-wrap items-center justify-between border-t border-slate-50 mt-10 pt-6 gap-6">
-                    <div className="flex flex-wrap items-center gap-10 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                      <label className="flex items-center gap-4 cursor-pointer group">
-                        <input type="checkbox" checked={q.isRequired} onChange={(e) => updateQuestion(qIndex, "isRequired", e.target.checked)} className="w-6 h-6 rounded-xl border-2 border-slate-200 text-red-600 focus:ring-0 cursor-pointer transition-all shadow-sm" />
-                        <span className="group-hover:text-slate-900 transition-colors">Bắt buộc trả lời</span>
-                      </label>
-                      <label className="flex items-center gap-4">
-                        <span>Trọng số:</span>
-                        <input type="number" value={q.weight} onChange={(e) => updateQuestion(qIndex, "weight", parseFloat(e.target.value))} className="w-20 text-center focus:ring-2 focus:ring-red-100 outline-none font-black text-slate-900 shadow-inner text-xs font-semibold" min="0" step="0.1" />
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => moveQuestion(qIndex, -1)} className="p-4 text-slate-400 hover:text-red-600 transition-all active:scale-90 text-xs font-semibold"><ArrowUp className="w-5 h-5" /></button>
-                      <button onClick={() => moveQuestion(qIndex, 1)} className="p-4 text-slate-400 hover:text-red-600 transition-all active:scale-90 text-xs font-semibold"><ArrowDown className="w-5 h-5" /></button>
-                      <div className="w-px h-8 bg-slate-100 mx-3" />
-                      <button onClick={() => removeQuestion(qIndex)} className="p-4 text-red-500 hover:text-white hover:bg-red-500 transition-all active:scale-90 shadow-md text-xs font-semibold"><Trash2 className="w-5 h-5" /></button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              ))}
-              
-              {/* Sticky bottom add fast question card */}
-              <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2.5rem] p-6 text-center space-y-4 shadow-sm">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Thêm câu hỏi mới nhanh</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <button onClick={() => addQuestion("SCALE_0_4")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-teal-500 hover:text-teal-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <Plus className="w-4 h-4 text-teal-500" />
-                     <span>Khảo sát (0-4)</span>
-                  </button>
-                  <button onClick={() => addQuestion("NPS")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-amber-500 hover:text-amber-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <Plus className="w-4 h-4 text-amber-500" />
-                     <span>NPS (0-10)</span>
-                  </button>
-                  <button onClick={() => addQuestion("MULTIPLE_CHOICE")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-red-500 hover:text-red-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <Plus className="w-4 h-4 text-red-500" />
-                     <span>Radio</span>
-                  </button>
-                  <button onClick={() => addQuestion("CHECKBOX")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-emerald-500 hover:text-emerald-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <CheckSquare className="w-4 h-4 text-emerald-500" />
-                     <span>Checkbox</span>
-                  </button>
-                  <button onClick={() => addQuestion("TEXT")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-slate-500 hover:text-slate-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <Plus className="w-4 h-4 text-slate-500" />
-                     <span>Tự luận</span>
-                  </button>
-                  <button onClick={() => addQuestion("RATING")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-amber-500 hover:text-amber-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <Plus className="w-4 h-4 text-amber-500" />
-                     <span>Đánh giá sao</span>
-                  </button>
-                  <button onClick={() => addQuestion("MC_GRID")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-violet-500 hover:text-violet-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <LayoutGrid className="w-4 h-4 text-violet-500" />
-                     <span>Lưới Radio</span>
-                  </button>
-                  <button onClick={() => addQuestion("CB_GRID")} className="p-3 bg-white border border-slate-200 rounded-2xl hover:border-pink-500 hover:text-pink-600 font-black text-[10px] uppercase tracking-wider transition-all flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-md font-semibold">
-                     <CheckSquare className="w-4 h-4 text-pink-500" />
-                     <span>Lưới Check</span>
-                  </button>
-                </div>
-              </div>
-            </>
+            <div className="flex items-center gap-2">
+              <button onClick={downloadTemplate} className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all" title="Tải Mẫu File Excel">
+                <FileDown className="w-4 h-4 text-[#00A99D]" /> Mẫu Excel
+              </button>
+              <label className="inline-flex items-center gap-1 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#00A99D] rounded-xl text-xs font-bold cursor-pointer transition-all">
+                <Upload className="w-4 h-4" /> Import Excel
+                <input type="file" onChange={handleImportExcel} accept=".xlsx,.xls" className="hidden" />
+              </label>
+            </div>
           )}
         </div>
       </div>
 
-      {/* RIGHT PANE: PREVIEW */}
-      <div className={`flex-1 md:w-1/2 flex flex-col bg-white/40 rounded-[3.5rem] overflow-hidden border border-slate-100 shadow-2xl ${activeTab === "editor" ? "hidden md:flex" : "flex"}`}>
-        <div className="flex items-center justify-between bg-white/90 backdrop-blur-xl p-8 border-b border-slate-100 sticky top-0 z-20">
-          <h2 className="font-black text-slate-400 text-[10px] flex items-center uppercase tracking-[0.3em]"><Eye className="w-5 h-5 mr-4 text-red-500"/> Preview thực tế</h2>
-          <div className="flex items-center gap-2 font-black text-[9px] text-red-600 uppercase tracking-widest"><div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" /> LIVE</div>
-        </div>
-        <div className="flex-1 p-10 overflow-y-auto custom-scrollbar">
-          <div className="max-w-lg mx-auto space-y-8 pb-48">
-            {questions.map((q, idx) => {
-              const opts = q.options || { choices: [], hasOther: false }
-              const choices = opts.choices || []
+      {/* SECTION FILTER / QUICK JUMP BAR */}
+      {activeTab === "editor" && (
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 p-3 mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-1">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 pl-1">
+              <Layers className="w-3.5 h-3.5" /> Mục:
+            </span>
+            <button
+              onClick={() => setActiveSectionFilter("ALL")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeSectionFilter === "ALL" ? "bg-[#00A99D] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            >
+              Tất cả ({questions.length})
+            </button>
+            {sectionsList.map((sec: any) => {
+              const count = questions.filter((q: any) => q.sectionId === sec.id).length
               return (
-                <div key={idx} className="bg-white rounded-[3rem] shadow-[-20px_40px_80px_-20px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-500 group/preview">
-                  <div className="h-2 bg-[#00A99D] w-full" />
-                  <div className="p-10">
-                    <div className="flex items-center gap-4 mb-5">
-                      <div className="w-10 h-10 rounded-[1.25rem] bg-[#00A99D] text-white text-xs font-black flex items-center justify-center shadow-xl shadow-[#00A99D]/20">{(idx+1).toString().padStart(2, '0')}</div>
-                      <span className="text-[10px] text-slate-300 font-black uppercase tracking-widest">Câu hỏi {idx+1}/{questions.length}</span>
-                    </div>
-                    <h3 className="text-xl font-black text-slate-800 leading-snug mb-8">{q.questionText || "Nội dung câu hỏi..."}</h3>
-                    
-                    {(q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && (
-                      <div className="overflow-x-auto -mx-10 px-10">
-                        <table className="w-full border-collapse">
-                          <thead>
-                            <tr className="border-b-2 border-slate-50">
-                              <th className="p-2 text-[10px] font-black text-slate-300 text-left uppercase tracking-tighter w-1/3 border border-slate-200">Tiêu chí</th>
-                              {opts.columns?.map((col, i) => <th key={i} className="p-2 text-[10px] font-black text-slate-300 text-center uppercase tracking-tighter border border-slate-200">{col}</th>)}
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-50">
-                            {opts.rows?.map((row, rIndex) => (
-                              <tr key={rIndex}>
-                                <td className="p-2 p-2 text-sm font-bold text-slate-600 leading-tight border border-slate-200">{row}</td>
-                                {opts.columns?.map((_, cIndex) => (
-                                  <td key={cIndex} className="p-2 text-center border border-slate-200">
-                                    <div className={`w-6 h-6 border-2 border-slate-100 mx-auto bg-slate-50 shadow-inner ${q.questionType === "CB_GRID" ? "rounded-xl" : "rounded-full"}`} />
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    
-                    {(q.questionType === "MULTIPLE_CHOICE" || q.questionType === "CHECKBOX") && (
-                      <div className="space-y-3">
-                        {choices.map((o,i)=>(
-                          <div key={i} className="flex items-center gap-5 p-5 group-hover/preview:bg-white transition-all shadow-sm text-xs font-semibold">
-                            <div className={`w-6 h-6 border-2 border-slate-200 transition-all ${q.questionType === "CHECKBOX" ? "rounded-xl" : "rounded-full"}`} />
-                            <span className="text-base font-bold text-slate-600">{o}</span>
-                          </div>
-                        ))}
-                        {opts.hasOther && (
-                          <div className="flex flex-col gap-3 p-6 text-xs font-semibold">
-                            <div className="flex items-center gap-5">
-                              <div className={`w-6 h-6 border-2 border-amber-300 bg-white shadow-xl shadow-amber-100 ${q.questionType === "CHECKBOX" ? "rounded-xl" : "rounded-full"}`} />
-                              <span className="text-base font-black text-amber-700">Lựa chọn khác...</span>
-                            </div>
-                            <div className="ml-11 h-12 bg-white border-2 border-dashed border-amber-200 rounded-xl flex items-center px-4 text-[11px] text-amber-300 font-bold italic">Khách hàng sẽ nhập lý kiến tại đây</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {q.questionType === "TEXT" && <div className="p-10 h-32 flex items-center justify-center text-slate-200 text-sm font-bold italic text-xs font-semibold">Vùng trả lời</div>}
-                    {q.questionType === "RATING" && <div className="flex justify-center text-amber-300 text-5xl py-8 drop-shadow-xl tracking-widest">★ ★ ★ ★ ★</div>}
-                    {q.questionType === "NPS" && <div className="flex items-center justify-between gap-1.5 mt-4">{[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="flex-1 aspect-square flex items-center justify-center text-[11px] font-black text-slate-300 text-xs font-semibold">{n}</div>)}</div>}
-                    {q.questionType === "SCALE_0_4" && <div className="flex items-center justify-between gap-1.5 mt-4">{[0,1,2,3,4].map(n => <div key={n} className="flex-1 aspect-square flex items-center justify-center text-[11px] font-black text-slate-300 text-xs font-semibold">{n}</div>)}</div>}
-                  </div>
-                </div>
+                <button
+                  key={sec.id}
+                  onClick={() => setActiveSectionFilter(sec.id)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeSectionFilter === sec.id ? "bg-[#00A99D] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                >
+                  <span>{sec.name}</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeSectionFilter === sec.id ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>{count}</span>
+                </button>
               )
             })}
           </div>
+
+          <button
+            onClick={() => setShowAddSectionModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00A99D]/10 hover:bg-[#00A99D]/20 text-[#00A99D] rounded-xl text-xs font-extrabold transition-all"
+          >
+            <FolderPlus className="w-4 h-4" /> + Thêm Mục mới
+          </button>
+        </div>
+      )}
+
+      {/* MODAL ADD NEW SECTION */}
+      {showAddSectionModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                <FolderPlus className="w-5 h-5 text-[#00A99D]" /> Thêm Phân Mục Form mới
+              </h3>
+              <button onClick={() => setShowAddSectionModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
+            </div>
+            <p className="text-xs text-slate-500 mb-4">Phân mục giúp nhóm các câu hỏi có cùng chủ đề lại với nhau để người trả lời dễ theo dõi.</p>
+            <input
+              type="text"
+              value={newSectionName}
+              onChange={(e) => setNewSectionName(e.target.value)}
+              placeholder="VD: Mục 1: Thông tin cá nhân, Mục 2: Đánh giá giảng dạy..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 mb-6"
+              autoFocus
+            />
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowAddSectionModal(false)} className="px-4 py-2 text-slate-500 font-bold text-xs hover:bg-slate-100 rounded-xl">Hủy</button>
+              <button onClick={handleCreateSection} className="px-5 py-2 bg-[#00A99D] text-white font-extrabold text-xs rounded-xl hover:bg-[#009085]">Tạo Mục</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDITOR TAB CONTENT */}
+      {activeTab === "editor" && (
+        <div className="space-y-4">
+          
+          {/* MS FORMS FORM HEADER CARD */}
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden relative transition-all">
+            {/* Signature Top Accent Banner */}
+            <div className="h-3 bg-[#00A99D] w-full" />
+            <div className="p-6 md:p-8 space-y-4">
+              <div>
+                <input
+                  type="text"
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="Tiêu đề Khảo sát..."
+                  className="w-full text-2xl md:text-3xl font-black text-slate-900 border-b-2 border-transparent hover:border-slate-200 focus:border-[#00A99D] outline-none pb-2 transition-all bg-transparent"
+                />
+              </div>
+              <div>
+                <textarea
+                  rows={2}
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  placeholder="Thêm diễn giải / hướng dẫn làm khảo sát tại đây..."
+                  className="w-full text-sm font-medium text-slate-600 border-b border-transparent hover:border-slate-200 focus:border-[#00A99D] outline-none py-1 transition-all bg-transparent resize-none"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-bold text-slate-400 border-t border-slate-100">
+                <span className="flex items-center gap-1 text-teal-700 bg-teal-50 px-3 py-1 rounded-lg">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Tổng số: {questions.length} câu hỏi
+                </span>
+                <span className="flex items-center gap-1 text-slate-600 bg-slate-100 px-3 py-1 rounded-lg">
+                  <Layers className="w-3.5 h-3.5 text-slate-500" /> {sectionsList.length} Mục phân loại
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* QUESTIONS LIST */}
+          {filteredQuestions.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-slate-200 text-slate-400">
+              <HelpCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+              <p className="font-extrabold text-base text-slate-700 mb-1">Chưa có câu hỏi nào trong mục này</p>
+              <p className="text-xs text-slate-400 mb-6">Hãy bấm nút thêm loại câu hỏi dưới thanh công cụ để tạo câu hỏi đầu tiên</p>
+              <button onClick={() => addQuestion("SCALE_0_4")} className="px-6 py-2.5 bg-[#00A99D] text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-[#009085]">
+                + Thêm Câu Hỏi Khảo Sát (0-4)
+              </button>
+            </div>
+          ) : (
+            filteredQuestions.map((q: any, qIndex: number) => {
+              const realIndex = questions.findIndex((item: any) => item.id === q.id)
+              const isSelected = activeQIndex === realIndex
+
+              const matchedSection = sectionsList.find((s: any) => s.id === q.sectionId)
+
+              return (
+                <div
+                  key={q.id}
+                  onClick={() => setActiveQIndex(realIndex)}
+                  className={`bg-white rounded-2xl border shadow-xs transition-all relative overflow-hidden group ${isSelected ? "border-l-4 border-l-[#00A99D] border-slate-300 shadow-md ring-2 ring-[#00A99D]/10" : "border-slate-200/80 hover:border-slate-300"}`}
+                >
+                  <div className="p-6 md:p-8">
+                    
+                    {/* Top Row: Q Number, Title Input, Type Selector */}
+                    <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
+                      <div className="flex-1 w-full space-y-3">
+                        <div className="flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-xl bg-[#00A99D]/10 text-[#00A99D] text-xs font-black flex items-center justify-center">
+                            {(realIndex + 1).toString().padStart(2, '0')}
+                          </span>
+                          <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                            Câu hỏi {realIndex + 1}
+                          </span>
+
+                          {/* Section Tag Badge */}
+                          <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600">
+                            <Tag className="w-3 h-3 text-[#00A99D]" />
+                            <span>Mục:</span>
+                            <select
+                              value={q.sectionId || ""}
+                              onChange={(e) => updateQuestion(realIndex, "sectionId", e.target.value)}
+                              className="bg-transparent text-slate-800 font-extrabold outline-none cursor-pointer"
+                            >
+                              <option value="">-- Chưa chọn mục --</option>
+                              {formattedCategories.map((cat: any) => (
+                                <option key={cat.id} value={cat.id}>{cat.displayName}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <input
+                          type="text"
+                          value={q.questionText}
+                          onChange={(e) => updateQuestion(realIndex, "questionText", e.target.value)}
+                          placeholder="Nhập nội dung câu hỏi..."
+                          className="w-full text-lg font-black text-slate-800 border-b-2 border-slate-100 hover:border-slate-300 focus:border-[#00A99D] outline-none pb-2 transition-all bg-transparent"
+                        />
+                      </div>
+
+                      {/* Type Selector Dropdown */}
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={q.questionType}
+                          onChange={(e) => updateQuestion(realIndex, "questionType", e.target.value)}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-extrabold border border-slate-200 rounded-xl px-4 py-2.5 outline-none cursor-pointer transition-all shadow-2xs"
+                        >
+                          <option value="MULTIPLE_CHOICE">Trắc nghiệm (Radio - Chọn 1)</option>
+                          <option value="CHECKBOX">Trắc nghiệm (Checkbox - Chọn nhiều)</option>
+                          <option value="SCALE_0_4">Khảo sát Thang điểm (0 - 4)</option>
+                          <option value="NPS">Khảo sát NPS (0 - 10)</option>
+                          <option value="RATING">Đánh giá Sao (1 - 5)</option>
+                          <option value="TEXT">Văn bản Tự luận</option>
+                          <option value="MC_GRID">Lưới Trắc nghiệm (Radio Matrix)</option>
+                          <option value="CB_GRID">Lưới Trắc nghiệm (Checkbox Matrix)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Question Content Editor */}
+                    <div className="space-y-4 my-6">
+                      
+                      {/* RADIO / CHECKBOX OPTIONS */}
+                      {(q.questionType === "MULTIPLE_CHOICE" || q.questionType === "CHECKBOX" || q.questionType === "DROPDOWN") && (
+                        <div className="space-y-3 bg-slate-50/60 p-5 rounded-2xl border border-slate-100">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Danh sách tùy chọn trả lời</span>
+                            {q.questionType === "CHECKBOX" && <span className="text-[#00A99D] text-[11px] font-extrabold uppercase">Cho phép chọn nhiều</span>}
+                          </div>
+                          {(q.options?.choices || []).map((opt: string, optIndex: number) => (
+                            <div key={optIndex} className="flex items-center gap-3 group/opt">
+                              <div className={`w-4 h-4 border-2 border-slate-300 bg-white flex-shrink-0 ${q.questionType === "MULTIPLE_CHOICE" ? "rounded-full" : "rounded-md"}`} />
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) => updateOption(realIndex, optIndex, e.target.value)}
+                                className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold flex-1 outline-none focus:border-[#00A99D] transition-all shadow-2xs"
+                                placeholder={`Tùy chọn ${optIndex + 1}`}
+                              />
+                              <button onClick={() => removeOption(realIndex, optIndex)} className="text-slate-400 hover:text-red-500 p-2"><X className="w-4 h-4"/></button>
+                            </div>
+                          ))}
+
+                          <div className="flex items-center gap-3 pt-3">
+                            <button onClick={() => addOption(realIndex)} className="text-xs font-extrabold text-[#00A99D] bg-white border border-teal-200 hover:bg-teal-50 px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all">
+                              <Plus className="w-4 h-4" /> Thêm Tùy chọn
+                            </button>
+                            <button
+                              onClick={() => toggleOther(realIndex)}
+                              className={`text-xs font-extrabold px-4 py-2 rounded-xl border transition-all ${q.options?.hasOther ? "bg-amber-500 text-white border-amber-500" : "bg-white text-slate-500 border-slate-200 hover:border-amber-300"}`}
+                            >
+                              {q.options?.hasOther ? "✓ Đã bật tùy chọn KHÁC" : "+ Bật Tùy chọn 'KHÁC'"}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* MATRIX GRID OPTIONS */}
+                      {(q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/60 p-5 rounded-2xl border border-slate-100">
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <ListPlus className="w-4 h-4 text-[#00A99D]" />
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Hàng (Tiêu chí đánh giá)</span>
+                            </div>
+                            <div className="space-y-2">
+                              {q.options?.rows?.map((row: string, rIndex: number) => (
+                                <div key={rIndex} className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-400 w-4">{rIndex + 1}.</span>
+                                  <input type="text" value={row} onChange={e => updateGridOption(realIndex, "rows", rIndex, e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#00A99D] outline-none" />
+                                  <button onClick={() => removeGridItem(realIndex, "rows", rIndex)} className="text-slate-400 hover:text-red-500 p-1"><X className="w-4 h-4"/></button>
+                                </div>
+                              ))}
+                              <button onClick={() => addGridItem(realIndex, "rows")} className="w-full text-xs font-extrabold text-[#00A99D] bg-white border border-dashed border-teal-200 hover:bg-teal-50 py-2 rounded-xl mt-2 transition-all">+ Thêm Hàng</button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <LayoutGrid className="w-4 h-4 text-indigo-500" />
+                              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cột (Mức độ / Thang điểm)</span>
+                            </div>
+                            <div className="space-y-2">
+                              {q.options?.columns?.map((col: string, cIndex: number) => (
+                                <div key={cIndex} className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-slate-400 w-4">{String.fromCharCode(65 + cIndex)}.</span>
+                                  <input type="text" value={col} onChange={e => updateGridOption(realIndex, "columns", cIndex, e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-indigo-500 outline-none" />
+                                  <button onClick={() => removeGridItem(realIndex, "columns", cIndex)} className="text-slate-400 hover:text-red-500 p-1"><X className="w-4 h-4"/></button>
+                                </div>
+                              ))}
+                              <button onClick={() => addGridItem(realIndex, "columns")} className="w-full text-xs font-extrabold text-indigo-600 bg-white border border-dashed border-indigo-200 hover:bg-indigo-50 py-2 rounded-xl mt-2 transition-all">+ Thêm Cột</button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* OTHER WIDGET PREVIEWS IN BUILDER */}
+                      {q.questionType === "TEXT" && <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 text-slate-400 text-xs italic font-medium">Vùng cho khách hàng nhập câu trả lời tự luận...</div>}
+                      {q.questionType === "RATING" && <div className="flex items-center justify-center gap-3 text-amber-400 text-3xl py-4">★ ★ ★ ★ ★</div>}
+                      {q.questionType === "NPS" && (
+                        <div className="flex items-center justify-center gap-1.5 py-4 flex-wrap">
+                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => <div key={n} className="w-9 h-9 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-xs font-bold text-slate-600">{n}</div>)}
+                        </div>
+                      )}
+                      {q.questionType === "SCALE_0_4" && (
+                        <div className="flex items-center justify-center gap-2 py-4 flex-wrap">
+                          {[0,1,2,3,4].map(n => <div key={n} className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center text-xs font-extrabold text-slate-700">{n}</div>)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Bottom Card Control Actions Toolbar */}
+                    <div className="flex flex-wrap items-center justify-between pt-4 border-t border-slate-100 gap-4 text-xs font-bold">
+                      <div className="flex items-center gap-6 text-slate-500">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={q.isRequired}
+                            onChange={(e) => updateQuestion(realIndex, "isRequired", e.target.checked)}
+                            className="w-4 h-4 rounded text-[#00A99D] focus:ring-0 cursor-pointer"
+                          />
+                          <span>Bắt buộc trả lời</span>
+                        </label>
+
+                        <label className="flex items-center gap-2">
+                          <span>Trọng số:</span>
+                          <input
+                            type="number"
+                            value={q.weight}
+                            onChange={(e) => updateQuestion(realIndex, "weight", parseFloat(e.target.value))}
+                            className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-center font-bold text-slate-800"
+                            min="0" step="0.1"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => moveQuestion(realIndex, -1)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Di chuyển lên"><ArrowUp className="w-4 h-4"/></button>
+                        <button onClick={() => moveQuestion(realIndex, 1)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Di chuyển xuống"><ArrowDown className="w-4 h-4"/></button>
+                        <button onClick={() => duplicateQuestion(realIndex)} className="p-2 text-slate-400 hover:text-[#00A99D] hover:bg-teal-50 rounded-lg" title="Nhân bản câu hỏi"><Copy className="w-4 h-4"/></button>
+                        <div className="w-px h-5 bg-slate-200 mx-1" />
+                        <button onClick={() => removeQuestion(realIndex)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Xóa câu hỏi"><Trash2 className="w-4 h-4"/></button>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              )
+            })
+          )}
+
+          {/* STICKY QUICK ADD TOOLBAR */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3">
+            <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider block">Thêm câu hỏi mới nhanh</span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
+              <button onClick={() => addQuestion("SCALE_0_4")} className="p-2.5 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-xl text-xs font-bold text-slate-700 hover:text-[#00A99D] transition-all flex flex-col items-center gap-1">
+                <Plus className="w-4 h-4 text-[#00A99D]" />
+                <span>Khảo sát (0-4)</span>
+              </button>
+              <button onClick={() => addQuestion("NPS")} className="p-2.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-xl text-xs font-bold text-slate-700 hover:text-amber-600 transition-all flex flex-col items-center gap-1">
+                <Plus className="w-4 h-4 text-amber-500" />
+                <span>NPS (0-10)</span>
+              </button>
+              <button onClick={() => addQuestion("MULTIPLE_CHOICE")} className="p-2.5 bg-slate-50 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-xl text-xs font-bold text-slate-700 hover:text-blue-600 transition-all flex flex-col items-center gap-1">
+                <Plus className="w-4 h-4 text-blue-500" />
+                <span>Radio</span>
+              </button>
+              <button onClick={() => addQuestion("CHECKBOX")} className="p-2.5 bg-slate-50 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 rounded-xl text-xs font-bold text-slate-700 hover:text-emerald-600 transition-all flex flex-col items-center gap-1">
+                <CheckSquare className="w-4 h-4 text-emerald-500" />
+                <span>Checkbox</span>
+              </button>
+              <button onClick={() => addQuestion("TEXT")} className="p-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-all flex flex-col items-center gap-1">
+                <Plus className="w-4 h-4 text-slate-500" />
+                <span>Tự luận</span>
+              </button>
+              <button onClick={() => addQuestion("RATING")} className="p-2.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-xl text-xs font-bold text-slate-700 hover:text-amber-600 transition-all flex flex-col items-center gap-1">
+                <Plus className="w-4 h-4 text-amber-400" />
+                <span>Đánh giá sao</span>
+              </button>
+              <button onClick={() => addQuestion("MC_GRID")} className="p-2.5 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 transition-all flex flex-col items-center gap-1">
+                <LayoutGrid className="w-4 h-4 text-indigo-500" />
+                <span>Lưới Radio</span>
+              </button>
+              <button onClick={() => addQuestion("CB_GRID")} className="p-2.5 bg-slate-50 hover:bg-pink-50 border border-slate-200 hover:border-pink-300 rounded-xl text-xs font-bold text-slate-700 hover:text-pink-600 transition-all flex flex-col items-center gap-1">
+                <CheckSquare className="w-4 h-4 text-pink-500" />
+                <span>Lưới Check</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LIVE PREVIEW TAB CONTENT */}
+      {activeTab === "preview" && (
+        <div className="flex justify-center my-4">
+          <div className={`w-full transition-all ${previewDevice === "mobile" ? "max-w-sm border-8 border-slate-800 rounded-[2.5rem] p-3 bg-slate-100 shadow-2xl" : "max-w-3xl"}`}>
+            
+            {/* Rendered Live Form */}
+            <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden space-y-6 pb-8">
+              {/* Header Banner */}
+              <div className="h-3 bg-[#00A99D] w-full" />
+              <div className="px-6 pt-2 pb-4 border-b border-slate-100">
+                <h2 className="text-2xl font-black text-slate-900 mb-2">{formTitle || "Phiếu Khảo Sát"}</h2>
+                <p className="text-xs font-medium text-slate-600 whitespace-pre-line">{formDescription}</p>
+              </div>
+
+              {/* Questions */}
+              <div className="px-6 space-y-6">
+                {questions.map((q: any, idx: number) => {
+                  const opts = q.options || { choices: [], hasOther: false }
+                  const choices = opts.choices || []
+                  const sec = sectionsList.find((s: any) => s.id === q.sectionId)
+
+                  return (
+                    <div key={idx} className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/80 space-y-4">
+                      {sec && (
+                        <span className="inline-block text-[10px] font-extrabold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-100 uppercase tracking-wider mb-1">
+                          {sec.name}
+                        </span>
+                      )}
+                      
+                      <div className="flex items-start gap-2">
+                        <span className="text-xs font-black text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded-lg">{idx + 1}.</span>
+                        <h3 className="text-sm font-extrabold text-slate-800 flex-1 leading-snug">
+                          {q.questionText || "Nội dung câu hỏi..."}
+                          {q.isRequired && <span className="text-red-500 ml-1">*</span>}
+                        </h3>
+                      </div>
+
+                      {/* OPTIONS PREVIEW */}
+                      {(q.questionType === "MULTIPLE_CHOICE" || q.questionType === "CHECKBOX") && (
+                        <div className="space-y-2 pl-4">
+                          {choices.map((c: string, ci: number) => (
+                            <label key={ci} className="flex items-center gap-3 p-2 hover:bg-white rounded-xl cursor-pointer text-xs font-bold text-slate-700 border border-transparent hover:border-slate-200 transition-all">
+                              <input type={q.questionType === "CHECKBOX" ? "checkbox" : "radio"} name={`preview_${idx}`} className="w-4 h-4 text-[#00A99D]" />
+                              <span>{c}</span>
+                            </label>
+                          ))}
+                          {opts.hasOther && (
+                            <div className="space-y-1 pl-2 pt-1">
+                              <label className="flex items-center gap-3 text-xs font-bold text-amber-700">
+                                <input type={q.questionType === "CHECKBOX" ? "checkbox" : "radio"} name={`preview_${idx}`} className="w-4 h-4 text-amber-600" />
+                                <span>Tùy chọn khác...</span>
+                              </label>
+                              <input type="text" placeholder="Nhập ý kiến khác tại đây..." className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {(q.questionType === "MC_GRID" || q.questionType === "CB_GRID") && (
+                        <div className="overflow-x-auto -mx-2">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="border-b border-slate-200 text-slate-500">
+                                <th className="p-2 text-left font-bold">Tiêu chí</th>
+                                {opts.columns?.map((col: string, ci: number) => (
+                                  <th key={ci} className="p-2 text-center font-bold">{col}</th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {opts.rows?.map((row: string, ri: number) => (
+                                <tr key={ri}>
+                                  <td className="p-2 font-bold text-slate-700">{row}</td>
+                                  {opts.columns?.map((_: any, ci: number) => (
+                                    <td key={ci} className="p-2 text-center">
+                                      <input type={q.questionType === "CB_GRID" ? "checkbox" : "radio"} name={`grid_${idx}_${ri}`} className="w-4 h-4 text-[#00A99D]" />
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {q.questionType === "TEXT" && (
+                        <textarea rows={3} placeholder="Nhập câu trả lời tự luận..." className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-[#00A99D]" />
+                      )}
+
+                      {q.questionType === "RATING" && (
+                        <div className="flex gap-2 text-amber-400 text-2xl py-2 justify-center">★ ★ ★ ★ ★</div>
+                      )}
+
+                      {q.questionType === "NPS" && (
+                        <div className="flex gap-1 justify-between py-2">
+                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => <button key={n} className="flex-1 py-2 bg-white border border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D] rounded-lg text-xs font-bold text-slate-600 transition-all">{n}</button>)}
+                        </div>
+                      )}
+
+                      {q.questionType === "SCALE_0_4" && (
+                        <div className="flex gap-2 justify-center py-2">
+                          {[0,1,2,3,4].map(n => <button key={n} className="w-10 h-10 bg-white border border-slate-200 hover:border-[#00A99D] hover:bg-teal-50 rounded-xl text-xs font-extrabold text-slate-700 transition-all">{n}</button>)}
+                        </div>
+                      )}
+
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Submit Preview Button */}
+              <div className="px-6 pt-4">
+                <button disabled className="w-full py-3 bg-[#00A99D] text-white font-extrabold rounded-xl text-xs uppercase tracking-wider opacity-90 cursor-not-allowed">
+                  Gửi Phản Hồi (Preview Mode)
+                </button>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* FIXED BOTTOM ACTION BAR */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200/80 p-4 z-40 shadow-lg flex items-center justify-between max-w-6xl mx-auto px-6 rounded-t-2xl">
+        <div className="text-xs font-bold text-slate-400 hidden sm:block">
+          {saving ? "Đang lưu thay đổi..." : `Đã tạo ${questions.length} câu hỏi • ${sectionsList.length} mục`}
+        </div>
+
+        <div className="flex items-center gap-4 ml-auto">
+          <button
+            onClick={() => handleSave(false)}
+            disabled={saving}
+            className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-extrabold text-xs transition-all"
+          >
+            Lưu Nháp
+          </button>
+          <button
+            onClick={() => handleSave(true)}
+            disabled={saving}
+            className="px-8 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-teal-500/20 transition-all active:scale-95"
+          >
+            <CloudUpload className="w-4 h-4" /> Xuất Bản Form
+          </button>
         </div>
       </div>
 
-      {/* ACTION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-3xl border-t border-slate-100 p-8 flex justify-center z-40 md:left-64 shadow-[0_-20px_60px_-10px_rgba(0,0,0,0.08)] font-outfit">
-        <div className="flex items-center space-x-6">
-          <button onClick={() => handleSave(false)} disabled={saving} className="flex items-center text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:text-[#00A99D] active:scale-95 transition-all shadow-xl border-none bg-transparent">
-             Lưu Nháp
-          </button>
-          <button onClick={() => handleSave(true)} disabled={saving} className="px-16 py-5 flex items-center bg-[#00A99D] text-white rounded-[1.75rem] font-black text-xs uppercase tracking-[0.2em] hover:bg-[#009085] active:scale-95 transition-all shadow-2xl shadow-[#00A99D]/30 border-none">
-            <CloudUpload className="w-5 h-5 mr-4" /> Xuất Bản Form
-          </button>
-        </div>
-      </div>
     </div>
   )
 }
