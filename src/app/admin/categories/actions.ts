@@ -46,8 +46,24 @@ export async function updateCategoryAction(data: { id: string; name?: string; co
   return updatedCat
 }
 
+export async function bulkUpdateCategoriesAction(data: { ids: string[]; status?: string; parentId?: string | null }) {
+  const { ids, status, parentId } = data
+  if (!ids || ids.length === 0) return { success: false }
+
+  const updateData: any = {}
+  if (status !== undefined) updateData.status = status
+  if (parentId !== undefined) updateData.parentId = parentId === "" ? null : parentId
+
+  await prisma.surveySection.updateMany({
+    where: { id: { in: ids } },
+    data: updateData
+  })
+
+  revalidatePath("/admin/categories")
+  return { success: true }
+}
+
 export async function deleteCategoryAction(id: string) {
-  // Set child categories parent to null first
   await prisma.surveySection.updateMany({
     where: { parentId: id },
     data: { parentId: null }
@@ -58,4 +74,22 @@ export async function deleteCategoryAction(id: string) {
   })
   await prisma.surveySection.delete({ where: { id } })
   revalidatePath("/admin/categories")
+}
+
+export async function bulkDeleteCategoriesAction(ids: string[]) {
+  if (!ids || ids.length === 0) return { success: false }
+
+  await prisma.surveySection.updateMany({
+    where: { parentId: { in: ids } },
+    data: { parentId: null }
+  })
+  await prisma.surveyQuestion.updateMany({
+    where: { sectionId: { in: ids } },
+    data: { sectionId: null }
+  })
+  await prisma.surveySection.deleteMany({
+    where: { id: { in: ids } }
+  })
+  revalidatePath("/admin/categories")
+  return { success: true }
 }

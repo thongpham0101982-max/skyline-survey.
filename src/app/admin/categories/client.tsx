@@ -3,17 +3,24 @@ import { useState } from "react"
 import {
   Plus, Trash2, Edit3, Check, X, Tag, Hash, Folder, CornerDownRight,
   Search, Info, FolderPlus, Layers, GitMerge, CheckCircle2, Eye, EyeOff,
-  Sparkles, SlidersHorizontal, ArrowUpDown
+  Sparkles, SlidersHorizontal, ArrowUpDown, CheckSquare, Square, RefreshCw,
+  CornerUpRight
 } from "lucide-react"
-import { createCategoryAction, updateCategoryAction, deleteCategoryAction } from "./actions"
+import {
+  createCategoryAction, updateCategoryAction, deleteCategoryAction,
+  bulkUpdateCategoriesAction, bulkDeleteCategoriesAction
+} from "./actions"
 
 export function CategoriesClient({ initialCategories }: { initialCategories: any[] }) {
   const [categories, setCategories] = useState(initialCategories)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterTab, setFilterTab] = useState<"ALL" | "ROOT" | "CHILD" | "INACTIVE">("ALL")
 
-  // Modal State for Create & Edit
-  const [modalMode, setModalMode] = useState<"NONE" | "CREATE" | "EDIT">("NONE")
+  // Multi-Selection State
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+
+  // Modal State for Create, Edit, & Bulk Edit Parent
+  const [modalMode, setModalMode] = useState<"NONE" | "CREATE" | "EDIT" | "BULK_PARENT">("NONE")
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: "",
@@ -22,6 +29,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
     parentId: "",
     status: "ACTIVE"
   })
+  const [bulkParentId, setBulkParentId] = useState("")
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState("")
 
@@ -31,6 +39,45 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
   const childCategories = categories.filter(c => c.parentId)
   const activeCategories = categories.filter(c => c.status === "ACTIVE")
   const inactiveCategories = categories.filter(c => c.status === "INACTIVE")
+
+  // Search & Filter Logic
+  const matchesSearch = (cat: any) => {
+    const q = searchQuery.toLowerCase().trim()
+    if (!q) return true
+    return cat.name.toLowerCase().includes(q) || cat.code.toLowerCase().includes(q)
+  }
+
+  const matchesTab = (cat: any) => {
+    if (filterTab === "ROOT") return !cat.parentId
+    if (filterTab === "CHILD") return !!cat.parentId
+    if (filterTab === "INACTIVE") return cat.status === "INACTIVE"
+    return true
+  }
+
+  const isFiltering = searchQuery.trim() !== "" || filterTab !== "ALL"
+  const filteredCategories = categories.filter(c => matchesSearch(c) && matchesTab(c))
+
+  // Toggle selection for a single category
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    )
+  }
+
+  // Toggle select all visible items
+  const isAllSelected = filteredCategories.length > 0 && filteredCategories.every(c => selectedIds.includes(c.id))
+  
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !filteredCategories.some(c => c.id === id)))
+    } else {
+      const visibleIds = filteredCategories.map(c => c.id)
+      const merged = Array.from(new Set([...selectedIds, ...visibleIds]))
+      setSelectedIds(merged)
+    }
+  }
+
+  const clearSelection = () => setSelectedIds([])
 
   // Parent options list for dropdown
   const parentOptions = (currentId: string | null = null) => {
@@ -50,7 +97,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
     setModalMode("CREATE")
   }
 
-  // Open modal for editing
+  // Open modal for editing single item
   const openEditModal = (cat: any) => {
     setEditingId(cat.id)
     setFormData({
@@ -136,28 +183,52 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         .filter(c => c.id !== id)
         .map(c => c.parentId === id ? { ...c, parentId: null, parent: null } : c)
       )
+      setSelectedIds(prev => prev.filter(item => item !== id))
     } catch (e) {}
   }
 
-  // Search & Filter Logic
-  const matchesSearch = (cat: any) => {
-    const q = searchQuery.toLowerCase().trim()
-    if (!q) return true
-    return cat.name.toLowerCase().includes(q) || cat.code.toLowerCase().includes(q)
+  // BULK ACTIONS
+  const handleBulkStatusChange = async (targetStatus: string) => {
+    if (selectedIds.length === 0) return
+    setSaving(true)
+    try {
+      await bulkUpdateCategoriesAction({ ids: selectedIds, status: targetStatus })
+      setCategories(prev => prev.map(c => selectedIds.includes(c.id) ? { ...c, status: targetStatus } : c))
+    } catch (e) {}
+    setSaving(false)
   }
 
-  const matchesTab = (cat: any) => {
-    if (filterTab === "ROOT") return !cat.parentId
-    if (filterTab === "CHILD") return !!cat.parentId
-    if (filterTab === "INACTIVE") return cat.status === "INACTIVE"
-    return true
+  const handleBulkParentChange = async () => {
+    if (selectedIds.length === 0) return
+    setSaving(true)
+    try {
+      const parentVal = bulkParentId === "" ? null : bulkParentId
+      await bulkUpdateCategoriesAction({ ids: selectedIds, parentId: parentVal })
+      const parentObj = categories.find(c => c.id === parentVal) || null
+      setCategories(prev => prev.map(c => selectedIds.includes(c.id) ? { ...c, parentId: parentVal, parent: parentObj } : c))
+      closeModal()
+    } catch (e) {}
+    setSaving(false)
   }
 
-  const isFiltering = searchQuery.trim() !== "" || filterTab !== "ALL"
-  const filteredCategories = categories.filter(c => matchesSearch(c) && matchesTab(c))
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.length} danh mục đã chọn?\n\nCác danh mục con thuộc nhóm xóa sẽ tự động chuyển thành danh mục gốc.`)) return
+    
+    setSaving(true)
+    try {
+      await bulkDeleteCategoriesAction(selectedIds)
+      setCategories(prev => prev
+        .filter(c => !selectedIds.includes(c.id))
+        .map(c => selectedIds.includes(c.parentId || "") ? { ...c, parentId: null, parent: null } : c)
+      )
+      clearSelection()
+    } catch (e) {}
+    setSaving(false)
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24">
       
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-xs">
@@ -274,6 +345,22 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         </div>
       </div>
 
+      {/* SELECT ALL TOOLBAR ROW */}
+      <div className="flex items-center justify-between bg-slate-50 border border-slate-200/70 px-4 py-2 rounded-xl text-xs font-extrabold text-slate-600">
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isAllSelected}
+            onChange={toggleSelectAll}
+            className="w-4 h-4 rounded text-[#00A99D] focus:ring-0 cursor-pointer"
+          />
+          <span>{isAllSelected ? "Đã chọn tất cả" : "Chọn tất cả trên trang này"}</span>
+        </label>
+        {selectedIds.length > 0 && (
+          <span className="text-teal-700 font-extrabold">Đã chọn {selectedIds.length} danh mục</span>
+        )}
+      </div>
+
       {/* CATEGORY TREE CARDS CONTAINER */}
       <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
         
@@ -326,8 +413,63 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
 
       </div>
 
+      {/* FLOATING BULK ACTION TOOLBAR */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl z-50 flex flex-wrap items-center gap-4 animate-in slide-in-from-bottom-6 border border-slate-700/60 max-w-4xl w-[92%] justify-between">
+          <div className="flex items-center gap-2 text-xs font-black">
+            <span className="w-6 h-6 rounded-full bg-[#00A99D] flex items-center justify-center text-white text-[11px]">
+              {selectedIds.length}
+            </span>
+            <span>Đã chọn {selectedIds.length} mục</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => handleBulkStatusChange("ACTIVE")}
+              disabled={saving}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl transition-all border-none cursor-pointer flex items-center gap-1"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" /> Đang dùng
+            </button>
+
+            <button
+              onClick={() => handleBulkStatusChange("INACTIVE")}
+              disabled={saving}
+              className="px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs rounded-xl transition-all border-none cursor-pointer flex items-center gap-1"
+            >
+              <EyeOff className="w-3.5 h-3.5" /> Tạm ẩn
+            </button>
+
+            <button
+              onClick={() => { setBulkParentId(""); setModalMode("BULK_PARENT"); }}
+              disabled={saving}
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl transition-all border-none cursor-pointer flex items-center gap-1"
+            >
+              <CornerUpRight className="w-3.5 h-3.5" /> Đổi Mục Cha
+            </button>
+
+            <button
+              onClick={handleBulkDelete}
+              disabled={saving}
+              className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs rounded-xl transition-all border-none cursor-pointer flex items-center gap-1"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Xóa
+            </button>
+
+            <div className="w-px h-5 bg-slate-700 mx-1" />
+
+            <button
+              onClick={clearSelection}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-extrabold text-xs rounded-xl transition-all border-none cursor-pointer"
+            >
+              Bỏ chọn
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* CREATE & EDIT MODAL DIALOG */}
-      {modalMode !== "NONE" && (
+      {modalMode !== "NONE" && modalMode !== "BULK_PARENT" && (
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in fade-in zoom-in-95">
             
@@ -440,6 +582,52 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         </div>
       )}
 
+      {/* MODAL BULK EDIT PARENT */}
+      {modalMode === "BULK_PARENT" && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                <CornerUpRight className="w-5 h-5 text-blue-600" />
+                Gán Danh Mục Cha Hàng Loạt ({selectedIds.length} mục)
+              </h3>
+              <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 p-1"><X className="w-5 h-5"/></button>
+            </div>
+            
+            <p className="text-xs text-slate-500">
+              Chọn danh mục cha mới cho <strong>{selectedIds.length}</strong> danh mục đã chọn. Tất cả các mục này sẽ được chuyển thành danh mục con thuộc mục cha được chọn.
+            </p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">
+                Chọn Danh Mục Cha Mới
+              </label>
+              <select
+                value={bulkParentId}
+                onChange={(e) => setBulkParentId(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] cursor-pointer"
+              >
+                <option value="">-- Chuyển thành Danh mục gốc (Không có cha) --</option>
+                {parentOptions().map((opt: any) => (
+                  <option key={opt.id} value={opt.id}>{opt.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+              <button onClick={closeModal} className="px-4 py-2 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl">Hủy</button>
+              <button
+                onClick={handleBulkParentChange}
+                disabled={saving}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all cursor-pointer border-none"
+              >
+                {saving ? "Đang áp dụng..." : "Áp Dụng Gán Mục Cha"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HELPER GUIDELINES FOOTER */}
       <div className="p-4 bg-teal-50/60 rounded-2xl border border-teal-100 text-xs text-teal-800 flex items-start gap-3">
         <Info className="w-5 h-5 text-[#00A99D] flex-shrink-0 mt-0.5" />
@@ -448,7 +636,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
           <p className="text-teal-800/90 leading-relaxed">
             • <strong>Danh mục gốc:</strong> Nhóm chủ đề chính (Ví dụ: <em>Cơ sở vật chất</em>, <em>Học tập</em>).<br />
             • <strong>Danh mục con:</strong> Phân loại chi tiết (Ví dụ: <em>[HS] Học tập</em> thuộc nhóm gốc <em>Học tập</em>).<br />
-            • Khi soạn thảo Form, bạn có thể dễ dàng lọc và gán câu hỏi vào bất kỳ mục nào.
+            • <strong>Thao tác hàng loạt:</strong> Đánh dấu checkbox ở đầu dòng để chọn 1 hoặc nhiều danh mục để chuyển trạng thái, gán mục cha hoặc xóa hàng loạt.
           </p>
         </div>
       </div>
@@ -460,18 +648,27 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
   function renderCategoryRow(cat: any, isRoot = true, childCount = 0) {
     const isActive = cat.status === "ACTIVE"
     const questionsCount = cat._count?.questions || 0
+    const isSelected = selectedIds.includes(cat.id)
 
     return (
       <div
         key={cat.id}
         className={`p-4 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 border ${
-          isRoot 
-            ? "bg-white border-slate-200/80 shadow-2xs hover:shadow-xs" 
-            : "bg-white/80 border-slate-200/60 hover:bg-white"
+          isSelected
+            ? "bg-teal-50/50 border-[#00A99D] shadow-xs"
+            : (isRoot ? "bg-white border-slate-200/80 shadow-2xs hover:shadow-xs" : "bg-white/80 border-slate-200/60 hover:bg-white")
         }`}
       >
-        {/* Left: Folder icon, Name, Code badge, Info pills */}
+        {/* Left: Checkbox + Folder icon + Name + Badges */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Checkbox */}
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleSelect(cat.id)}
+            className="w-4.5 h-4.5 rounded text-[#00A99D] focus:ring-0 cursor-pointer flex-shrink-0"
+          />
+
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold ${
             isRoot ? "bg-[#00A99D]/10 text-[#00A99D]" : "bg-slate-100 text-slate-500"
           }`}>
