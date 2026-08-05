@@ -226,7 +226,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   : "text-white/70"
               }`}>
                 <Eye className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-amber-400" : "text-white/60"}`} />
-                {!isCollapsed && <span className="font-semibold">Dự giờ Giáo viên</span>}
+                {!isCollapsed && <span className="font-semibold">Dự giờ đánh giá Giáo viên</span>}
               </div>
               {/* Sub-item: only Mầm non for BGH_MN */}
               {!isCollapsed && (
@@ -578,7 +578,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/du-gio') ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>2. Dự giờ Giáo viên</span>}
+                  {!isCollapsed && <span>2. Dự giờ đánh giá Giáo viên</span>}
                 </Link>
 
                 {/* 3. Đánh giá nhận xét: Hướng nghiệp */}
