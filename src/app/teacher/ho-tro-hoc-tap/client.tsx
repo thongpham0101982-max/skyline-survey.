@@ -7,7 +7,6 @@ import {
   MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2
 } from "lucide-react"
 import toast from "react-hot-toast"
-import { TeacherImprovementAnalytics } from "./analytics"
 
 interface Props {
   teacher: any
@@ -47,9 +46,9 @@ const getCompactScore = (val: any) => {
 
 export function TeacherSupportClient({
   teacher,
-  academicYears = [],
-  homeroomClasses = [],
-  subjects = []
+  academicYears,
+  homeroomClasses,
+  subjects
 }: Props) {
   const router = useRouter()
 
@@ -58,17 +57,12 @@ export function TeacherSupportClient({
     academicYears[0]?.id || ""
   )
   const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history">("assigned")
-  const [isGuideOpen, setIsGuideOpen] = useState(false)
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
   const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
 
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
   const [targets, setTargets] = useState<any[]>([])
-  const safeTargets = useMemo(() => Array.isArray(targets) ? targets : [], [targets])
-  const safeConfigs = useMemo(() => Array.isArray(configs) ? configs : [], [configs])
-  const safeAcademicYears = useMemo(() => Array.isArray(academicYears) ? academicYears : [], [academicYears])
-  const safeHomeroomClasses = useMemo(() => Array.isArray(homeroomClasses) ? homeroomClasses : [], [homeroomClasses])
   const [loading, setLoading] = useState(false)
 
   // Filters for teacher page
@@ -232,7 +226,7 @@ export function TeacherSupportClient({
         if (data.length > 0) {
           const eligibleFromCommitment = data
             .filter((c: any) => {
-              const existingAcademic = safeTargets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
+              const existingAcademic = targets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
               return !existingAcademic || existingAcademic.createdById === null
             })
             .map((c: any) => c.id)
@@ -262,7 +256,7 @@ export function TeacherSupportClient({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedYear = localStorage.getItem("academicYearId")
-      if (storedYear && safeAcademicYears.some(y => y.id === storedYear)) {
+      if (storedYear && academicYears.some(y => y.id === storedYear)) {
         setSelectedYearId(storedYear)
       }
     }
@@ -364,8 +358,8 @@ export function TeacherSupportClient({
       let successCount = 0
       let failCount = 0
       for (const studentId of selectedStudentIds) {
-        const existingAcademic = safeTargets.find(t => t.studentId === studentId && t.supportType === "ACADEMIC")
-        const existingPsych = safeTargets.find(t => t.studentId === studentId && t.supportType === "PSYCHOLOGICAL")
+        const existingAcademic = targets.find(t => t.studentId === studentId && t.supportType === "ACADEMIC")
+        const existingPsych = targets.find(t => t.studentId === studentId && t.supportType === "PSYCHOLOGICAL")
 
         const blockAcademic = existingAcademic && existingAcademic.createdById !== null
         const blockPsych = existingPsych && existingPsych.createdById !== null
@@ -599,12 +593,12 @@ export function TeacherSupportClient({
   }
 
   // Filter students related to this teacher
-  const filteredTargets = safeTargets.filter(t => {
+  const filteredTargets = targets.filter(t => {
     // Only show active targets that are approved (have assigned teachers)
     if (!t.assignments || t.assignments.length === 0) return false
 
     // Check if homeroom or assigned
-    const isHomeroomStudent = safeHomeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
+    const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
     const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher.id)
 
     // Apply role filter
@@ -636,7 +630,7 @@ export function TeacherSupportClient({
 
   // Count approved proposals submitted by this teacher
   const approvedHistoryCount = useMemo(() => {
-    return safeTargets.filter((t: any) => 
+    return targets.filter((t: any) => 
       t.createdById === teacher?.id && (
         (t.assignments && t.assignments.length > 0) || 
         t.status === "ĐÃ DUYỆT" || 
@@ -648,7 +642,7 @@ export function TeacherSupportClient({
 
   // Proposal history filter - server already filters by teacher visibility
   // Only apply local search filter here
-  const historyTargets = safeTargets.filter(t => {
+  const historyTargets = targets.filter(t => {
     if (t.createdById !== teacher?.id) return false
 
     const name = t.student?.studentName || ""
@@ -692,124 +686,132 @@ export function TeacherSupportClient({
           </p>
         </div>
 
-        {/* Active Academic Year Display Badge */}
-        <div className="flex items-center gap-2 mt-3 md:mt-0 bg-indigo-50/80 border border-indigo-100 px-3.5 py-1.5 rounded-xl shadow-2xs">
-          <Calendar className="h-4 w-4 text-indigo-600 shrink-0" />
-          <span className="text-xs font-bold text-slate-500">Năm học:</span>
-          <span className="text-xs font-black text-indigo-900">
-            {safeAcademicYears.find(y => y.id === selectedYearId)?.name || "2026 - 2027"}
-          </span>
+        {/* Global Year Switcher */}
+        <div className="flex items-center gap-3 mt-4 md:mt-0">
+          <label className="text-sm font-semibold text-slate-700">Năm học:</label>
+          <select
+            value={selectedYearId}
+            onChange={(e) => {
+              setSelectedYearId(e.target.value)
+              localStorage.setItem("academicYearId", e.target.value)
+              window.dispatchEvent(new Event("academicYearChanged"))
+            }}
+            className="rounded-lg border-slate-300 border py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+          >
+            {academicYears.map((year) => (
+              <option key={year.id} value={year.id}>
+                {year.name}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-            {/* Compact Collapsible Guide Handbook Banner */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-2xl shadow-md text-white transition-all duration-300">
-        {/* Banner Top Row - Always Visible & Compact */}
-        <div 
-          onClick={() => setIsGuideOpen(!isGuideOpen)}
-          className="px-5 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 cursor-pointer select-none hover:bg-white/5 transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-500/20 backdrop-blur-md rounded-xl border border-indigo-400/30 text-indigo-300 shrink-0">
-              <Info className="h-5 w-5" />
+      {/* Introduction Card */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl text-white space-y-6">
+        {/* Glow Effects */}
+        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
+
+        <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
+          <div className="flex items-start gap-4">
+            <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-3 rounded-2xl shadow-lg shadow-indigo-500/20 text-white mt-1">
+              <Info className="h-6 w-6" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">Cẩm nang</span>
-                <span className="text-sm font-extrabold text-white">Quy trình Phụ đạo & Bồi dưỡng Học sinh</span>
-              </div>
-              <p className="text-xs text-slate-300 mt-0.5 line-clamp-1">
-                Quy trình thống nhất đề xuất, phân công và theo dõi định kỳ học sinh cần phụ đạo văn hóa hoặc hỗ trợ tâm lý.
+              <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">Cẩm nang hướng dẫn</span>
+              <h2 className="text-xl md:text-2xl font-black text-white mt-0.5 tracking-tight">
+                Phụ đạo & Bồi dưỡng Học sinh
+              </h2>
+              <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+                Hệ thống đề xuất, tổ chức học tập chuyên biệt và theo dõi sát sao tiến độ phát triển tâm lý, văn học của học sinh tại các cơ sở.
               </p>
             </div>
           </div>
+        </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            {/* Quick Flow Badge Preview */}
-            <div className="hidden lg:flex items-center gap-1.5 text-[11px] font-bold text-slate-300 bg-white/5 px-3 py-1 rounded-xl border border-white/10">
-              <span>Đề xuất</span> ➔ <span>Xác nhận</span> ➔ <span>Phân công</span> ➔ <span>Đánh giá</span>
+        <div className="relative grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Cột 1: Hỗ trợ Tâm lý */}
+          <div className="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-indigo-500/30 rounded-2xl p-5 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-indigo-500/20 p-2 rounded-xl text-indigo-400">
+                <Heart className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-extrabold text-indigo-300 uppercase tracking-wider">
+                Đề xuất Hỗ trợ Tâm lý
+              </h3>
             </div>
+            <ul className="text-xs text-slate-350 space-y-3 pl-1 leading-relaxed">
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                <span><strong>Đơn vị đề xuất:</strong> GVCN và Giáo viên Tâm lý chủ động đề xuất học sinh cần hỗ trợ hoặc tiếp tục theo dõi tâm lý sát sao.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+                <span><strong>Quy trình hỗ trợ:</strong> Giáo viên Tâm lý thực hiện hỗ trợ chuyên sâu, cập nhật diễn biến và đánh giá kết quả định kỳ <strong>hằng tuần</strong>.</span>
+              </li>
+            </ul>
+          </div>
 
-            <button 
-              type="button"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-300 bg-indigo-500/20 border border-indigo-400/30 px-3 py-1.5 rounded-xl hover:bg-indigo-500/30 transition-all"
-            >
-              <span>{isGuideOpen ? "Thu gọn" : "Xem chi tiết quy trình"}</span>
-              {isGuideOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-            </button>
+          {/* Cột 2: Hỗ trợ Học tập */}
+          <div className="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-emerald-500/30 rounded-2xl p-5 transition-all duration-300">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-emerald-500/20 p-2 rounded-xl text-emerald-400">
+                <GraduationCap className="h-5 w-5" />
+              </div>
+              <h3 className="text-sm font-extrabold text-emerald-300 uppercase tracking-wider">
+                Đề xuất Hỗ trợ Học tập
+              </h3>
+            </div>
+            <ul className="text-xs text-slate-350 space-y-3 pl-1 leading-relaxed">
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span><strong>Đơn vị đề xuất:</strong> Giáo viên Bộ môn (GVBM) đề xuất học sinh cần phụ đạo, bồi dưỡng học tập theo từng môn học được phân công.</span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span><strong>Quy trình hỗ trợ:</strong> GVBM trực tiếp xây dựng nội dung hỗ trợ, theo dõi mức độ tiến bộ và đánh giá kết quả định kỳ <strong>hằng tháng</strong>.</span>
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* Collapsible Content Section */}
-        {isGuideOpen && (
-          <div className="p-5 border-t border-white/10 space-y-5 bg-slate-950/40">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Cột 1: Hỗ trợ Tâm lý */}
-              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2 text-indigo-300 font-extrabold text-xs">
-                  <Heart className="h-4 w-4" />
-                  ĐỀ XUẤT HỖ TRỢ TÂM LÝ
-                </div>
-                <ul className="text-xs text-slate-300 space-y-1.5 pl-1">
-                  <li>• <strong>Đơn vị đề xuất:</strong> GVCN và Giáo viên Tâm lý.</li>
-                  <li>• <strong>Quy trình:</strong> GV Tâm lý hỗ trợ chuyên sâu & cập nhật hằng tuần.</li>
-                </ul>
-              </div>
-
-              {/* Cột 2: Hỗ trợ Học tập */}
-              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2 text-emerald-300 font-extrabold text-xs">
-                  <GraduationCap className="h-4 w-4" />
-                  ĐỀ XUẤT HỖ TRỢ HỌC TẬP
-                </div>
-                <ul className="text-xs text-slate-300 space-y-1.5 pl-1">
-                  <li>• <strong>Đơn vị đề xuất:</strong> Giáo viên Bộ môn (GVBM).</li>
-                  <li>• <strong>Quy trình:</strong> GVBM hỗ trợ trực tiếp & đánh giá hằng tháng.</li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Quy trình quản lý 6 bước */}
-            <div className="bg-white/[0.02] border border-white/10 rounded-xl p-3.5">
-              <div className="text-[11px] font-black text-amber-300 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Award className="h-4 w-4 text-amber-400" />
-                Quy trình 6 bước Quản lý Chung:
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                {[
-                  { label: "1. Đề xuất", bg: "bg-slate-800 text-slate-200 border-slate-700" },
-                  { label: "2. Xác nhận nhu cầu", bg: "bg-indigo-950/80 text-indigo-300 border-indigo-900/50" },
-                  { label: "3. Phân công hỗ trợ", bg: "bg-emerald-950/80 text-emerald-300 border-emerald-900/50" },
-                  { label: "4. Theo dõi định kỳ", bg: "bg-amber-950/80 text-amber-300 border-amber-900/50" },
-                  { label: "5. Đánh giá tiến bộ", bg: "bg-blue-950/80 text-blue-300 border-blue-900/50" },
-                  { label: "6. Kết thúc hỗ trợ", bg: "bg-white text-slate-900 border-white font-black" }
-                ].map((step, idx, arr) => (
-                  <div key={idx} className="flex items-center gap-1.5">
-                    <span className={`px-2.5 py-1 rounded-lg border text-[11px] font-bold ${step.bg}`}>
-                      {step.label}
-                    </span>
-                    {idx < arr.length - 1 && <span className="text-slate-600 font-bold">➔</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Quy trình quản lý chung */}
+        <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Award className="h-4.5 w-4.5 text-amber-400" />
+            <h4 className="text-xs font-black text-amber-300 uppercase tracking-widest">
+              Quy trình quản lý chung
+            </h4>
           </div>
-        )}
+          <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
+            {[
+              { label: "Đề xuất", bg: "bg-slate-800 text-slate-200 border-slate-700" },
+              { label: "Xác nhận nhu cầu", bg: "bg-indigo-950/80 text-indigo-300 border-indigo-900/50" },
+              { label: "Phân công hỗ trợ", bg: "bg-emerald-950/80 text-emerald-300 border-emerald-900/50" },
+              { label: "Theo dõi định kỳ", bg: "bg-amber-950/80 text-amber-300 border-amber-900/50" },
+              { label: "Đánh giá tiến bộ", bg: "bg-blue-950/80 text-blue-300 border-blue-900/50" },
+              { label: "Tiếp tục / Kết thúc hỗ trợ", bg: "bg-white text-slate-900 border-white font-black shadow-lg shadow-white/5" }
+            ].map((step, idx, arr) => (
+              <div key={idx} className="flex items-center gap-2 my-1">
+                <span className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${step.bg} shadow-xs`}>
+                  {step.label}
+                </span>
+                {idx < arr.length - 1 && (
+                  <span className="text-slate-650 font-black text-sm">➔</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-
-
-
-      {/* Visual Student Improvement Analytics Section */}
-      <TeacherImprovementAnalytics 
-        targets={Array.isArray(targets) ? targets : []} 
-        configs={Array.isArray(configs) ? configs : []} 
-        homeroomClasses={Array.isArray(homeroomClasses) ? homeroomClasses : []} 
-      />
 
       {/* Statistical Dashboard Cards */}
       {activeSubTab === "assigned" && (() => {
-        const teacherTargets = safeTargets.filter(t => {
-          const isHR = safeHomeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId));
+        const teacherTargets = targets.filter(t => {
+          const isHR = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId));
           const isAS = t.assignments?.some((a: any) => a.teacherId === teacher?.id);
           return isHR || isAS;
         });
@@ -1005,7 +1007,7 @@ export function TeacherSupportClient({
                 if (selectedEvalTargetIds.length === 0) return;
                 setEvalTargetId("")
                 setEvalTargetName("Nhiều học sinh")
-                const firstSelected = safeTargets.find((t:any) => t.id === selectedEvalTargetIds[0])
+                const firstSelected = targets.find((t:any) => t.id === selectedEvalTargetIds[0])
                 setEvalTargetType(firstSelected?.supportType || "ACADEMIC")
                 setEvalPeriodType("MONTH")
                 const curMonth = "Tháng " + (new Date().getMonth() + 1)
@@ -1202,7 +1204,7 @@ export function TeacherSupportClient({
 
                 return filtered.map((s: any, index: number) => {
                   const hasPsychology = s.committedSubjects.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
-                  const existingTarget = safeTargets.find(t => 
+                  const existingTarget = targets.find(t => 
                     t.studentId === s.id && 
                     (hasPsychology ? t.supportType === "PSYCHOLOGICAL" : t.supportType === "ACADEMIC")
                   )
@@ -1677,7 +1679,7 @@ export function TeacherSupportClient({
                         onClick={() => {
                           const eligibleFromCommitment = commitmentCandidates
                             .filter(c => {
-                              const existingAcademic = safeTargets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
+                              const existingAcademic = targets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
                               return !existingAcademic || existingAcademic.createdById === null
                             })
                             .map(c => c.id)
@@ -1703,8 +1705,8 @@ export function TeacherSupportClient({
                       </label>
                       {classStudents.length > 0 && (() => {
                         const eligibleStudents = classStudents.filter(s => {
-                          const existingAcademic = safeTargets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
-                          const existingPsych = safeTargets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                          const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                          const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
                           
                           const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
                           const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
@@ -1774,8 +1776,8 @@ export function TeacherSupportClient({
                       return (
                         <div className="border border-slate-100 rounded-xl max-h-56 overflow-y-auto p-2 space-y-1.5 bg-slate-50/50">
                           {filteredList.map((s: any) => {
-                            const existingAcademic = safeTargets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
-                            const existingPsych = safeTargets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                            const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                            const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
                             const hasCommitment = commitmentCandidates.some(c => c.id === s.id)
                             const commitmentCandidate = commitmentCandidates.find(c => c.id === s.id)
 

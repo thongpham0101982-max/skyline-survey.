@@ -6,7 +6,6 @@ import { TeacherSupportClient } from "./client"
 export const dynamic = "force-dynamic"
 
 export default async function TeacherSupportPage() {
-  try {
   const session = await auth()
   if (!session) redirect("/login")
 
@@ -63,13 +62,4 @@ export default async function TeacherSupportPage() {
       />
     </div>
   )
-  } catch (error: any) {
-    console.error("Error in TeacherSupportPage:", error);
-    return (
-      <div className="p-8 text-center text-slate-700 font-semibold bg-slate-50 rounded-2xl border m-6">
-        <h2 className="text-lg font-bold text-slate-900 mb-2">Đang tải lại dữ liệu hệ thống</h2>
-        <p className="text-xs text-slate-500">Vui lòng làm mới trang (F5) để tiếp tục.</p>
-      </div>
-    );
-  }
 }
