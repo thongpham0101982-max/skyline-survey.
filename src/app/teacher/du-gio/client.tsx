@@ -169,6 +169,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
+  const [myScheduleMonth, setMyScheduleMonth] = useState<string>("ALL");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
   // Filter states
@@ -1099,6 +1100,29 @@ export function ObservationClient(props: ObservationClientProps) {
   const selectedMonthStr = newDate ? `${(new Date(newDate).getMonth() + 1).toString().padStart(2, "0")}/${new Date(newDate).getFullYear()}` : "tháng hiện tại"
 
   // Calculate progress values inside JSX or right before return:
+  
+  // Compute available months for Section 4 (Lịch dạy & dự giờ của tôi)
+  const availableScheduleMonths = useMemo(() => {
+    const myTaught = slots.filter(s => s.teacherId === currentTeacher?.id);
+    const myRegistered = slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+    const allMySlots = [...myTaught, ...myRegistered];
+    
+    const monthMap = new Map<string, string>();
+    allMySlots.forEach(s => {
+      if (!s.date) return;
+      const d = new Date(s.date);
+      if (isNaN(d.getTime())) return;
+      const year = d.getFullYear();
+      const month = d.getMonth() + 1;
+      const key = `${year}-${String(month).padStart(2, '0')}`;
+      const label = `Tháng ${month}/${year}`;
+      monthMap.set(key, label);
+    });
+    
+    const sorted = Array.from(monthMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
+    return sorted.map(([value, label]) => ({ value, label }));
+  }, [slots, currentTeacher?.id]);
+
   const myStats = currentTeacher?.id ? teacherStats[currentTeacher.id] : undefined;
   const myObserved = myStats?.observedCount || 0;
   const myTaught = myStats?.taughtCount || 0;
