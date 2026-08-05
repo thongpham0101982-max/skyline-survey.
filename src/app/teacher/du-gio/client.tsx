@@ -1122,17 +1122,17 @@ export function ObservationClient(props: ObservationClientProps) {
       )}
 
       {/* Top Header Navbar with Teacher Card */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#003B3A] to-[#00A99D] p-6 md:p-8 rounded-[2rem] shadow-lg text-white">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#002D2B] via-[#005E57] to-[#009085] p-6 md:p-8 rounded-[2rem] shadow-lg text-white">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> Skyline System
+              <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> SKY-LINE SYSTEM | ĐÁNH GIÁ CHUYÊN MÔN
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-1 flex items-center gap-2">
-            Hệ thống Dự giờ Giáo viên
+            Dự giờ đánh giá Giáo viên
           </h1>
-          <p className="text-emerald-100/80 text-xs font-medium">Giao diện điều khiển dự giờ và phân công chuyên môn chuẩn Sky-Line</p>
+          <p className="text-emerald-100/80 text-xs font-medium">Giao diện điều khiển dự giờ, theo dõi chỉ tiêu và đánh giá chuyên môn giáo viên chuẩn Sky-Line</p>
         </div>
         
         {/* Profile Card right */}
