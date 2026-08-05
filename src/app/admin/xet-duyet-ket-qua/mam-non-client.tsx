@@ -7,7 +7,7 @@ import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
-  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, Info, Building
+  X, CheckCircle, CheckCircle2, AlertCircle, Download, Upload, Star, Heart, Sparkles, UserCheck, Eye, Send, ClipboardList, Mail, GraduationCap, Phone, Loader2, Info, Building, Printer
 } from "lucide-react"
 
 interface Period { id: string; code: string; name: string; status: string; startDate?: string; endDate?: string; description?: string; assignedUserId?: string; surveyType?: string; batches: Batch[] }
@@ -8817,114 +8817,134 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
         title={`Đánh giá kết quả Học thử: ${probStudent?.fullName || ""}`}
         size="xl"
         footer={
-          <>
-            <button onClick={() => setProbModal(false)} className="px-4 text-xs font-black uppercase text-slate-400 hover:text-slate-600">
+          <div className="flex items-center justify-between w-full gap-3 pt-2">
+            <button
+              onClick={() => setProbModal(false)}
+              className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all cursor-pointer"
+            >
               Đóng
             </button>
-            {probStudent && (
+            <div className="flex items-center gap-2">
+              {probStudent && (
+                <button
+                  onClick={() => printProbationaryAssessment(probStudent)}
+                  className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl border border-emerald-200/80 text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Printer className="w-4 h-4" />
+                  In Phiếu Đánh Giá
+                </button>
+              )}
               <button
-                onClick={() => printProbationaryAssessment(probStudent)}
-                className="hover:bg-emerald-100 text-emerald-700 text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-1.5 shadow-none text-xs font-semibold"
+                onClick={saveProbationary}
+                disabled={savingProb || devLoading}
+                className="px-6 py-2.5 bg-gradient-to-r from-[#00A99D] to-teal-600 hover:from-[#009085] hover:to-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-teal-500/20 disabled:opacity-50 transition-all flex items-center gap-2 cursor-pointer"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                In Phiếu
+                {savingProb ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                {savingProb ? "Đang lưu..." : "Lưu Kết Quả Học Thử"}
               </button>
-            )}
-            <button
-              onClick={saveProbationary}
-              disabled={savingProb || devLoading}
-              className="flex-1 py-3.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-[#00A99D]/20 disabled:opacity-50 transition-all"
-            >
-              {savingProb ? "Đang lưu..." : "Lưu Kết Quả Học Thử"}
-            </button>
-          </>
+            </div>
+          </div>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Child Details Card */}
-          <div className="bg-[#00A99D]/5/50 p-4 rounded-none border border-slate-300 flex flex-wrap justify-between gap-4">
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Học sinh</p>
-              <p className="text-base font-black text-slate-800">{probStudent?.fullName}</p>
+          <div className="bg-gradient-to-r from-teal-50/90 via-emerald-50/60 to-teal-50/90 p-4 rounded-2xl border border-teal-200/70 shadow-sm flex flex-wrap items-center justify-between gap-4 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#00A99D]/10 border border-[#00A99D]/20 flex items-center justify-center text-[#00A99D]">
+                <Baby className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Học sinh Mầm Non</p>
+                <p className="text-base font-black text-slate-800">{probStudent?.fullName}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã bé</p>
-              <p className="text-sm font-bold text-[#00A99D] font-mono">{probStudent?.studentCode}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhóm tuổi</p>
-              <p className="text-sm font-bold text-purple-700 bg-[#00A99D]/5 px-2 py-0.5 rounded-none border border-slate-300">{probStudent?.grade}</p>
-            </div>
-            <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cơ sở</p>
-              <p className="text-sm font-bold text-indigo-700 bg-[#00A99D]/10 px-2 py-0.5 rounded-none border border-[#00A99D]/20">{probStudent?.admissionCampus || "—"}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-2xs">
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Mã bé</p>
+                <p className="text-xs font-black text-[#00A99D] font-mono">{probStudent?.studentCode}</p>
+              </div>
+              <div className="bg-purple-50/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-purple-200/60 shadow-2xs">
+                <p className="text-[9px] font-black text-purple-400 uppercase tracking-wider">Nhóm tuổi</p>
+                <p className="text-xs font-black text-purple-700">{probStudent?.grade}</p>
+              </div>
+              <div className="bg-indigo-50/80 backdrop-blur-sm px-3 py-1.5 rounded-xl border border-indigo-200/60 shadow-2xs">
+                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-wider">Cơ sở</p>
+                <p className="text-xs font-black text-indigo-700">{probStudent?.admissionCampus || "—"}</p>
+              </div>
             </div>
           </div>
 
           {/* Probationary Inputs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 text-xs font-semibold">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50/60 p-4 rounded-2xl border border-slate-200/80 text-xs font-semibold">
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Thời gian học thử</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-teal-600" /> Thời gian học thử
+              </label>
               <input
                 type="text"
                 value={probPeriod}
                 onChange={e => setProbPeriod(e.target.value)}
                 placeholder="Ví dụ: 20/05/2026 ~ 03/06/2026"
-                className="w-full px-3.5 py-2 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 bg-white transition-all shadow-2xs"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Lớp học thử</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                <GraduationCap className="w-3 h-3 text-purple-600" /> Lớp học thử
+              </label>
               <input
                 type="text"
                 value={probClass}
                 onChange={e => setProbClass(e.target.value)}
                 placeholder="Ví dụ: Jerry 1"
-                className="w-full px-3.5 py-2 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 bg-white transition-all shadow-2xs"
               />
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Giáo viên học thử</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1">
+                <Users className="w-3 h-3 text-indigo-600" /> Giáo viên học thử
+              </label>
               <input
                 type="text"
                 value={probTeacher}
                 onChange={e => setProbTeacher(e.target.value)}
                 placeholder="Ví dụ: Cô Mai, Cô Hằng"
-                className="w-full px-3.5 py-2 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 bg-white transition-all shadow-2xs"
               />
             </div>
           </div>
 
           {/* Criteria & Rating Table */}
           {devLoading ? (
-            <div className="flex justify-center p-8">
-              <span className="text-[#00A99D] font-bold animate-pulse text-sm">Đang tải tiêu chí...</span>
+            <div className="flex flex-col items-center justify-center p-12 gap-2 bg-slate-50/50 rounded-2xl border border-slate-200/80">
+              <Loader2 className="w-6 h-6 text-[#00A99D] animate-spin" />
+              <span className="text-[#00A99D] font-bold text-xs">Đang tải tiêu chí đánh giá học thử...</span>
             </div>
           ) : devAreas.length === 0 ? (
-            <div className="text-center text-slate-400 font-bold text-sm text-xs font-semibold">
-              Chưa cấu hình tiêu chí nào cho nhóm tuổi: {probStudent?.grade}
+            <div className="text-center text-slate-400 font-bold text-xs p-8 bg-slate-50/50 rounded-2xl border border-slate-200/80">
+              Chưa cấu hình tiêu chí nào cho nhóm tuổi: <span className="text-purple-700 font-black">{probStudent?.grade}</span>
             </div>
           ) : (
             <div className="space-y-4">
               {devAreas.map(area => (
-                <div key={area.id} className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
-                  <div className="flex items-center gap-2.5 text-xs font-semibold">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: area.color || "#6366f1" }} />
-                    <h4 className="font-black text-slate-800 text-sm uppercase tracking-wide">{area.name}</h4>
+                <div key={area.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">
+                  <div className="flex items-center gap-2.5 px-4 py-3 bg-slate-50/80 border-b border-slate-200/80">
+                    <div className="w-3 h-3 rounded-full shadow-2xs" style={{ backgroundColor: area.color || "#00A99D" }} />
+                    <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider">{area.name}</h4>
                   </div>
                   
-                  <div className="overflow-x-auto custom-scrollbar flex-1">
-                    <table className="w-full text-left whitespace-nowrap table-fixed border-collapse">
-                      <thead className="bg-[#F0FDFA] sticky top-0 z-10 shadow-[0_1px_0_#CCFBF1]">
+                  <div className="overflow-x-auto custom-scrollbar">
+                    <table className="w-full text-left table-fixed border-collapse">
+                      <thead className="bg-slate-100/70 border-b border-slate-200">
                         <tr>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-[40%] border border-slate-200">Tiêu chí</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%] border border-slate-200">Chưa thể hiện</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%] border border-slate-200">Bắt đầu thể hiện</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider text-center w-[15%] border border-slate-200">Thể hiện tốt</th>
-                          <th className="p-2 text-[9px] font-black text-slate-400 uppercase tracking-wider w-[15%] border border-slate-200">Ghi chú</th>
+                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider w-[40%]">Tiêu chí đánh giá</th>
+                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-[15%]">Chưa thể hiện</th>
+                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-[15%]">Bắt đầu thể hiện</th>
+                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider text-center w-[15%]">Thể hiện tốt</th>
+                          <th className="p-3 text-[10px] font-black text-slate-500 uppercase tracking-wider w-[15%]">Ghi chú</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100/80">
+                      <tbody className="divide-y divide-slate-100">
                         {area.criteria?.map(crit => {
                           const currentScore = probScores[crit.id] || { result: "", note: "" };
                           
@@ -8943,54 +8963,57 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           };
 
                           return (
-                            <tr key={crit.id} className="hover:bg-slate-50/30 transition-colors text-xs font-semibold">
-                              <td className="p-2 text-slate-700 text-xs font-semibold whitespace-normal break-words leading-relaxed border border-slate-200">{crit.name}</td>
-                              <td className="p-2 text-center border border-slate-200">
+                            <tr key={crit.id} className="hover:bg-teal-50/20 transition-colors text-xs font-semibold">
+                              <td className="p-3 text-slate-700 text-xs font-medium whitespace-normal leading-relaxed">{crit.name}</td>
+                              <td className="p-2 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={() => setScoreResult(currentScore.result === "CHUA_THE_HIEN" ? "" : "CHUA_THE_HIEN")}
-                                  className={`w-5 h-5 rounded-full border transition-all ${
+                                  className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto ${
                                     currentScore.result === "CHUA_THE_HIEN"
-                                      ? "bg-amber-500 border-amber-500 shadow-none text-white flex items-center justify-center text-[10px] font-bold mx-auto"
-                                      : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
+                                      ? "bg-amber-500 text-white border-amber-600 shadow-sm shadow-amber-500/30 scale-[1.03]"
+                                      : "border-amber-200 bg-amber-50/40 text-amber-700 hover:bg-amber-100/80"
                                   }`}
                                 >
-                                  {currentScore.result === "CHUA_THE_HIEN" && "✓"}
+                                  {currentScore.result === "CHUA_THE_HIEN" && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                  Chưa thể hiện
                                 </button>
                               </td>
-                              <td className="p-2 text-center border border-slate-200">
+                              <td className="p-2 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={() => setScoreResult(currentScore.result === "BAT_DAU_THE_HIEN" ? "" : "BAT_DAU_THE_HIEN")}
-                                  className={`w-5 h-5 rounded-full border transition-all ${
+                                  className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto ${
                                     currentScore.result === "BAT_DAU_THE_HIEN"
-                                      ? "bg-[#00A99D]/100 border-indigo-500 shadow-none text-white flex items-center justify-center text-[10px] font-bold mx-auto"
-                                      : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
+                                      ? "bg-indigo-600 text-white border-indigo-700 shadow-sm shadow-indigo-600/30 scale-[1.03]"
+                                      : "border-indigo-200 bg-indigo-50/40 text-indigo-700 hover:bg-indigo-100/80"
                                   }`}
                                 >
-                                  {currentScore.result === "BAT_DAU_THE_HIEN" && "✓"}
+                                  {currentScore.result === "BAT_DAU_THE_HIEN" && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                  Bắt đầu thể hiện
                                 </button>
                               </td>
-                              <td className="p-2 text-center border border-slate-200">
+                              <td className="p-2 text-center align-middle">
                                 <button
                                   type="button"
                                   onClick={() => setScoreResult(currentScore.result === "THE_HIEN_TOT" ? "" : "THE_HIEN_TOT")}
-                                  className={`w-5 h-5 rounded-full border transition-all ${
+                                  className={`px-2.5 py-1.5 rounded-xl border text-[10px] font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1 mx-auto ${
                                     currentScore.result === "THE_HIEN_TOT"
-                                      ? "bg-emerald-500 border-emerald-500 shadow-none text-white flex items-center justify-center text-[10px] font-bold mx-auto"
-                                      : "border-slate-300 hover:border-slate-400 bg-white mx-auto block"
+                                      ? "bg-emerald-600 text-white border-emerald-700 shadow-sm shadow-emerald-600/30 scale-[1.03]"
+                                      : "border-emerald-200 bg-emerald-50/40 text-emerald-700 hover:bg-emerald-100/80"
                                   }`}
                                 >
-                                  {currentScore.result === "THE_HIEN_TOT" && "✓"}
+                                  {currentScore.result === "THE_HIEN_TOT" && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                  Thể hiện tốt
                                 </button>
                               </td>
-                              <td className="p-2 border border-slate-200">
+                              <td className="p-2 align-middle">
                                 <input
                                   type="text"
                                   value={currentScore.note || ""}
                                   onChange={e => setScoreNote(e.target.value)}
-                                  placeholder="Ghi chú..."
-                                  className="w-full px-2.5 py-1 border border-slate-300 rounded-none text-xs font-medium outline-none focus:ring-1 focus:ring-violet-300 bg-white"
+                                  placeholder="Ghi chú quan sát..."
+                                  className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-normal outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 bg-white"
                                 />
                               </td>
                             </tr>
@@ -9005,27 +9028,28 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           )}
 
           {/* Probationary Final Results */}
-          <div className="p-4 space-y-4 text-xs font-semibold">
+          <div className="bg-slate-50/70 p-5 rounded-2xl border border-slate-200/80 space-y-5 text-xs font-semibold">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider">Kết luận sau thời gian học thử</h4>
-                <p className="text-[11px] font-semibold text-slate-400 mt-0.5">Quyết định kết quả thực nghiệm học tập thử của bé</p>
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-500" /> Kết luận sau thời gian học thử
+                </h4>
+                <p className="text-[11px] font-medium text-slate-400 mt-0.5">Quyết định kết quả thực nghiệm học tập thử của bé</p>
               </div>
               <div className="flex gap-2">
                 {[
-                  { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-none" },
-                  { status: "CHUA_DAT", label: "CHƯA ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-none" }
+                  { status: "DAT", label: "ĐẠT - ĐỦ ĐIỀU KIỆN", activeBg: "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-600/20", inactiveBg: "bg-emerald-50/70 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
+                  { status: "CHUA_DAT", label: "CHƯA ĐẠT", activeBg: "bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-600/20", inactiveBg: "bg-rose-50/70 text-rose-700 border-rose-200 hover:bg-rose-100" }
                 ].map(opt => (
                   <button
                     key={opt.status}
                     type="button"
                     onClick={() => setProbResult(probResult === opt.status ? "" : opt.status)}
-                    className={`px-4 py-2 rounded-none border text-xs font-black transition-all ${
-                      probResult === opt.status 
-                        ? opt.activeColor 
-                        : `${opt.color} text-slate-600 bg-white border-slate-300 hover:scale-[1.02]`
+                    className={`px-4 py-2.5 rounded-xl border text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                      probResult === opt.status ? opt.activeBg : `${opt.inactiveBg} hover:scale-[1.02]`
                     }`}
                   >
+                    {probResult === opt.status && <CheckCircle2 className="w-4 h-4" />}
                     {opt.label}
                   </button>
                 ))}
@@ -9033,13 +9057,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ý kiến / Ghi chú thêm</label>
+              <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Ý kiến / Ghi chú thêm của Giáo viên</label>
               <textarea
                 value={probComment}
                 onChange={e => setProbComment(e.target.value)}
                 placeholder="Nhập ý kiến đánh giá chung, lý do đạt/chưa đạt hoặc hướng phát triển..."
                 rows={3}
-                className="w-full px-3.5 py-2.5 border border-slate-300 rounded-none text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 bg-white"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 bg-white transition-all shadow-2xs"
               />
             </div>
 
@@ -9052,32 +9076,30 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               const canApproveBGH = (isSystemAdmin || isBGHUser) && hasCampusMatch;
 
               return (
-                <div className="pt-4 border-t border-slate-200 space-y-4">
+                <div className="pt-4 border-t border-slate-200/80 space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div>
-                      <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="w-2 h-2 animate-pulse text-xs font-semibold" />
-                        PHÊ DUYỆT CỦA BGH MẦM NON
+                      <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                        <UserCheck className="w-4 h-4 text-teal-600" /> PHÊ DUYỆT CỦA BGH MẦM NON
                       </h4>
-                      <p className="text-[10px] font-semibold text-slate-400 mt-0.5">Trạng thái phê duyệt kết quả học thử của BGH</p>
+                      <p className="text-[10px] font-medium text-slate-400 mt-0.5">Trạng thái phê duyệt kết quả học thử của BGH</p>
                     </div>
                     <div className="flex gap-2">
                       {[
-                        { status: "DAT", label: "ĐẠT", color: "bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100/50", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-none" },
-                        { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-100/50", activeColor: "bg-rose-500 text-white border-rose-500 shadow-none" },
-                        { status: "Y_KIEN_KHAC", label: "Ý KIÊN KHÁC", color: "bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100/50", activeColor: "bg-amber-500 text-white border-amber-500 shadow-none" }
+                        { status: "DAT", label: "ĐẠT", activeBg: "bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-600/20", inactiveBg: "bg-emerald-50/70 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
+                        { status: "KHONG_DAT", label: "KHÔNG ĐẠT", activeBg: "bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-600/20", inactiveBg: "bg-rose-50/70 text-rose-700 border-rose-200 hover:bg-rose-100" },
+                        { status: "Y_KIEN_KHAC", label: "Ý KIÊN KHÁC", activeBg: "bg-amber-500 text-white border-amber-600 shadow-md shadow-amber-500/20", inactiveBg: "bg-amber-50/70 text-amber-700 border-amber-200 hover:bg-amber-100" }
                       ].map(opt => (
                         <button
                           key={opt.status}
                           type="button"
                           disabled={!canApproveBGH}
                           onClick={() => setProbBghStatus(probBghStatus === opt.status ? "" : opt.status)}
-                          className={`px-3 py-1.5 rounded-none border text-xs font-black transition-all ${
-                            probBghStatus === opt.status 
-                              ? opt.activeColor 
-                              : `bg-white ${opt.color} border-slate-300`
-                          } ${!canApproveBGH ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+                          className={`px-3.5 py-2 rounded-xl border text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                            probBghStatus === opt.status ? opt.activeBg : opt.inactiveBg
+                          } ${!canApproveBGH ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}`}
                         >
+                          {probBghStatus === opt.status && <CheckCircle2 className="w-3.5 h-3.5" />}
                           {opt.label}
                         </button>
                       ))}
@@ -9085,39 +9107,39 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Ý kiến phê duyệt của BGH</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Ý kiến phê duyệt của BGH</label>
                     <textarea
                       value={probBghComment}
                       onChange={e => setProbBghComment(e.target.value)}
                       placeholder={canApproveBGH ? "Nhập ý kiến phê duyệt của Ban Giám Hiệu..." : "Chưa có ý kiến phê duyệt của BGH"}
                       disabled={!canApproveBGH}
                       rows={2}
-                      className="w-full text-sm font-medium outline-none focus:ring-2 focus:ring-violet-300 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-semibold"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 bg-white transition-all disabled:bg-slate-100/60 disabled:text-slate-500 disabled:cursor-not-allowed shadow-2xs"
                     />
                   </div>
 
                   {probBghUser && (
-                    <div className="text-[10px] text-slate-505 font-semibold bg-slate-100/50 p-2.5 border border-slate-200">
-                      <div className="flex items-center gap-1">👤 Người duyệt: <span className="font-bold text-slate-700">{probBghUser}</span></div>
+                    <div className="text-[10px] text-slate-600 font-semibold bg-white p-3 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+                      <span className="flex items-center gap-1">👤 Người duyệt: <strong className="text-slate-800">{probBghUser}</strong></span>
                       {probBghDate && (
-                        <div className="flex items-center gap-1">📅 Thời gian: <span className="font-bold text-slate-700">{new Date(probBghDate).toLocaleString("vi-VN")}</span></div>
+                        <span className="flex items-center gap-1">📅 Ngày duyệt: <strong className="text-slate-800">{new Date(probBghDate).toLocaleString("vi-VN")}</strong></span>
                       )}
                     </div>
                   )}
 
                   {/* Teacher Evaluation Logs / Nhật ký đánh giá của Giáo viên */}
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-450 uppercase tracking-widest">Nhật ký Đánh giá của Giáo viên</label>
+                  <div className="space-y-2 pt-2 border-t border-slate-200/60">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Nhật ký Đánh giá của Giáo viên</label>
                     {(() => {
                       let logs = [];
                       if (probTeacherLog) {
                         try { logs = JSON.parse(probTeacherLog); } catch (e) {}
                       }
                       if (logs.length === 0) {
-                        return <p className="text-[11px] text-slate-400 font-semibold italic">Chưa có nhật ký đánh giá.</p>;
+                        return <p className="text-[11px] text-slate-400 font-medium italic">Chưa có nhật ký đánh giá.</p>;
                       }
                       return (
-                        <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white divide-y divide-slate-100">
+                        <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white rounded-xl divide-y divide-slate-100">
                           {logs.map((log, idx) => (
                             <div key={idx} className="pt-2 first:pt-0 text-[11px] text-slate-650 leading-relaxed font-semibold">
                               <div className="flex justify-between items-center text-slate-400">
@@ -9127,7 +9149,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <div className="mt-1">
                                 <div className="flex flex-wrap items-center gap-1.5">
                                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
-                                    log.result === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" : "bg-rose-50 text-rose-700 border border-rose-250"
+                                    log.result === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-rose-50 text-rose-700 border border-rose-200"
                                   }`}>
                                     {log.result === "DAT" ? "ĐẠT" : log.result === "CHUA_DAT" ? "CHƯA ĐẠT" : "CHƯA XÁC ĐỊNH"}
                                   </span>
@@ -9144,19 +9166,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   </div>
 
                   {/* Audit Logs / Nhật ký phê duyệt */}
-                  <div className="space-y-2">
-                    <label className="block text-[10px] font-black text-slate-450 uppercase tracking-widest">Nhật ký phê duyệt</label>
+                  <div className="space-y-2 pt-2 border-t border-slate-200/60">
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Nhật ký phê duyệt BGH</label>
                     {(() => {
                       let logs = [];
                       if (probBghLog) {
                         try { logs = JSON.parse(probBghLog); } catch (e) {}
                       }
                       if (logs.length === 0) {
-                        return <p className="text-[11px] text-slate-400 font-semibold italic">Chưa có nhật ký ghi nhận.</p>;
+                        return <p className="text-[11px] text-slate-400 font-medium italic">Chưa có nhật ký ghi nhận.</p>;
                       }
                       return (
-                        <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white divide-y divide-slate-100">
-                          {logs.map((log: any, idx: number) => (
+                        <div className="space-y-2 max-h-40 overflow-y-auto border border-slate-200 p-3 bg-white rounded-xl divide-y divide-slate-100">
+                          {logs.map((log, idx) => (
                             <div key={idx} className="pt-2 first:pt-0 text-[11px] text-slate-650 leading-relaxed font-semibold">
                               <div className="flex justify-between items-center text-slate-400">
                                 <span>👤 <strong className="text-slate-700">{log.user}</strong></span>
@@ -9164,7 +9186,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               </div>
                               <div className="mt-1 flex items-center gap-2">
                                 <span className={`px-2 py-0.5 rounded-full text-[9px] font-black tracking-wider ${
-                                  log.status === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-250" : log.status === "KHONG_DAT" ? "bg-rose-50 text-rose-700 border border-rose-250" : "bg-amber-50 text-amber-700 border border-amber-250"
+                                  log.status === "DAT" ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : log.status === "KHONG_DAT" ? "bg-rose-50 text-rose-700 border border-rose-200" : "bg-amber-50 text-amber-700 border border-amber-200"
                                 }`}>
                                   {log.status === "DAT" ? "ĐẠT" : log.status === "KHONG_DAT" ? "KHÔNG ĐẠT" : "Ý KIẾN KHÁC"}
                                 </span>

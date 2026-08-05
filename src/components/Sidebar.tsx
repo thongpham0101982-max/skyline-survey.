@@ -404,29 +404,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     {!isCollapsed && <span>2. NSP Khảo sát</span>}
                   </Link>
 
-                  {/* 3. Nhận xét nổi bật */}
-                  <Link 
-                    href="/teacher/nhan-xet-noi-bat" 
-                    onClick={() => setIsOpen(false)} 
-                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                      pathname.includes('/teacher/nhan-xet-noi-bat') 
-                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
-                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                      pathname.includes('/teacher/nhan-xet-noi-bat')
-                        ? "bg-indigo-500/20 border border-indigo-500/40 shadow-[0_0_8px_rgba(99,102,241,0.25)]"
-                        : "bg-white/5 border border-white/10 group-hover:border-indigo-500/30"
-                    }`}>
-                      <MessageSquare className={`w-4 h-4 transition-all ${
-                        pathname.includes('/teacher/nhan-xet-noi-bat') ? "text-indigo-400" : "text-slate-400 group-hover:text-indigo-400 group-hover:scale-110"
-                      }`} />
-                    </div>
-                    {!isCollapsed && <span>3. Nhận xét nổi bật</span>}
-                  </Link>
-
-                  {/* 4. Hồ sơ Học sinh */}
+                  {/* 3. Hồ sơ Học sinh */}
                   <Link 
                     href="/teacher/ho-so-hoc-sinh" 
                     onClick={() => setIsOpen(false)} 
@@ -445,10 +423,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/ho-so-hoc-sinh') ? "text-fuchsia-400" : "text-slate-400 group-hover:text-fuchsia-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>4. Hồ sơ Học sinh</span>}
+                    {!isCollapsed && <span>3. Hồ sơ Học sinh</span>}
                   </Link>
 
-                  {/* 5. Phụ đạo, bồi dưỡng Học sinh */}
+                  {/* 4. Phụ đạo, bồi dưỡng Học sinh */}
                   <Link 
                     href="/teacher/ho-tro-hoc-tap" 
                     onClick={() => setIsOpen(false)} 
@@ -467,7 +445,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                         pathname.includes('/teacher/ho-tro-hoc-tap') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                       }`} />
                     </div>
-                    {!isCollapsed && <span>5. Phụ đạo, bồi dưỡng Học sinh</span>}
+                    {!isCollapsed && <span>4. Phụ đạo, bồi dưỡng Học sinh</span>}
                   </Link>
                 </div>
               )}
