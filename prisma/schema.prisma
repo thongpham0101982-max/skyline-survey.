@@ -417,6 +417,7 @@ model Subject {
 
   // Subject category: MOET, SKL, INTERNATIONAL
   category String? @default("MOET")
+  evaluationType String? @default("SCORE")
 
   quotas                     SubjectQuota[]
   mainTeachers               Teacher[]                   @relation("teacherMainSubject")

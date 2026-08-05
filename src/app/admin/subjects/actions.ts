@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache"
 export async function createSubject(
   code: string, name: string, level: string, desc: string,
   quota?: any, studyPrograms?: string, quotas?: any[],
-  parentId?: string | null, category?: string
+  parentId?: string | null, category?: string, evaluationType?: string
 ) {
   try {
     const subject = await prisma.subject.create({
@@ -16,7 +16,8 @@ export async function createSubject(
         description: desc,
         studyPrograms,
         parentId: parentId || null,
-        category: category || "MOET"
+        category: category || "MOET",
+        evaluationType: evaluationType || "SCORE"
       }
     })
     if (quotas && quotas.length > 0) {
@@ -43,20 +44,23 @@ export async function createSubject(
           studyProgram: quota.studyProgram || "DEFAULT",
           quotaPrimary: quota.quotaPrimary || 0, quotaMiddle: quota.quotaMiddle || 0, quotaHigh: quota.quotaHigh || 0,
           quotaG1: quota.quotaG1 || 0, quotaG2: quota.quotaG2 || 0, quotaG3: quota.quotaG3 || 0, quotaG4: quota.quotaG4 || 0, quotaG5: quota.quotaG5 || 0,
-          quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: quota.quotaG8 || 0, quotaG9: quota.quotaG9 || 0,
-          quotaG10: quota.quotaG10 || 0, quotaG11: quota.quotaG11 || 0, quotaG12: quota.quotaG12 || 0
+          quotaG6: quota.quotaG6 || 0, quotaG7: quota.quotaG7 || 0, quotaG8: q.quotaG8 || 0, quotaG9: q.quotaG9 || 0,
+          quotaG10: q.quotaG10 || 0, quotaG11: q.quotaG11 || 0, quotaG12: q.quotaG12 || 0
         }
       })
     }
     revalidatePath('/admin/subjects')
     return { success: true, subject }
-  } catch (e: any) { if (e.code === 'P2002') return { success: false, error: 'Ma mon hoc nay da ton tai!' }; return { success: false, error: e.message }; }
+  } catch (e: any) {
+    if (e.code === 'P2002') return { success: false, error: 'Mã môn học này đã tồn tại trong hệ thống!' };
+    return { success: false, error: e.message };
+  }
 }
 
 export async function updateSubject(
   id: string, code: string, name: string, level: string, desc: string,
   quota?: any, studyPrograms?: string, quotas?: any[],
-  parentId?: string | null, category?: string
+  parentId?: string | null, category?: string, evaluationType?: string
 ) {
   try {
     const subject = await prisma.subject.update({
@@ -68,7 +72,8 @@ export async function updateSubject(
         description: desc,
         studyPrograms,
         parentId: parentId === undefined ? undefined : (parentId || null),
-        category: category || "MOET"
+        category: category || "MOET",
+        evaluationType: evaluationType || "SCORE"
       }
     })
     if (quotas && quotas.length > 0) {
@@ -111,12 +116,40 @@ export async function updateSubject(
     }
     revalidatePath('/admin/subjects')
     return { success: true, subject }
-  } catch (e: any) { if (e.code === 'P2002') return { success: false, error: 'Ma mon hoc nay da ton tai!' }; return { success: false, error: e.message }; }
+  } catch (e: any) {
+    if (e.code === 'P2002') return { success: false, error: 'Mã môn học này đã tồn tại!' };
+    return { success: false, error: e.message };
+  }
 }
 
 export async function deleteSubject(id: string) {
   try {
     await prisma.subject.delete({ where: { id } })
+    revalidatePath('/admin/subjects')
+    return { success: true }
+  } catch (e: any) { return { success: false, error: e.message } }
+}
+
+export async function deleteMultipleSubjects(ids: string[]) {
+  try {
+    await prisma.subject.deleteMany({
+      where: { id: { in: ids } }
+    })
+    revalidatePath('/admin/subjects')
+    return { success: true }
+  } catch (e: any) { return { success: false, error: e.message } }
+}
+
+export async function bulkUpdateSubjects(ids: string[], data: { evaluationType?: string; category?: string }) {
+  try {
+    const updatePayload: any = {};
+    if (data.evaluationType) updatePayload.evaluationType = data.evaluationType;
+    if (data.category) updatePayload.category = data.category;
+
+    await prisma.subject.updateMany({
+      where: { id: { in: ids } },
+      data: updatePayload
+    })
     revalidatePath('/admin/subjects')
     return { success: true }
   } catch (e: any) { return { success: false, error: e.message } }
