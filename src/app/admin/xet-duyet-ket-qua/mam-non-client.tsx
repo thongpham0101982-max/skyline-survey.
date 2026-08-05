@@ -4439,7 +4439,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -4458,7 +4458,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -4819,7 +4819,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -4838,7 +4838,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -4858,7 +4858,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cCampusFilter} 
                       onChange={e => setCCampusFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Cơ sở</option>
                       {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
@@ -4877,7 +4877,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cAgeGroupFilter} 
                       onChange={e => setCAgeGroupFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Nhóm tuổi</option>
                       <option value="12 đến 18 tháng">12 đến 18 tháng</option>
@@ -4902,7 +4902,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-10 pr-4 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -4910,7 +4910,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 <div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
-                    className="h-10 px-5 text-xs font-black uppercase text-white bg-gradient-to-r from-[#00A99D] to-[#008075] hover:from-[#008075] hover:to-[#007067] hover:scale-[1.01] active:scale-[0.99] rounded-2xl shadow-sm hover:shadow-md shadow-[#00A99D]/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
+                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#00A99D] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
                   >
                     <Search className="w-4 h-4" /> Tìm kiếm
                   </button>
@@ -4918,7 +4918,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
 
               {/* Table Section */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
                 {sumLoading ? (
                   <div className="flex flex-col items-center justify-center p-16 gap-3">
                     <Loader2 className="w-8 h-8 text-[#00A99D] animate-spin" />
@@ -4931,7 +4931,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
-                        <tr className="bg-[#0D3330] text-white select-none">
+                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
                           {assessCols.map(col => (
                             <th key={col.id} className={`px-4 py-3 text-[10px] font-black text-[#9ECFCB] uppercase tracking-wider border-b border-[#0D3330]/20 ${col.width}`}>
                               {col.label}
@@ -4959,7 +4959,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-amber-200/50 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md border border-teal-200/60 text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
@@ -4967,11 +4967,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-24 min-w-[96px] p-3 align-middle text-slate-505 font-semibold border border-slate-100">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                                 <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
                                   <div className="flex flex-col gap-1 items-start">
-                                    <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-black">
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
                                       Khối: {getStandardGrade(s.grade)}
                                     </span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-amber-200/50 rounded-lg text-[10px] font-black">
+                                      <span className="px-2 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-200/60 rounded-md text-[10px] font-bold">
                                         Phiếu: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -5016,7 +5016,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -5035,7 +5035,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -5055,7 +5055,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cCampusFilter} 
                       onChange={e => setCCampusFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Cơ sở</option>
                       {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
@@ -5074,7 +5074,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cAgeGroupFilter} 
                       onChange={e => setCAgeGroupFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Nhóm tuổi</option>
                       <option value="12 đến 18 tháng">12 đến 18 tháng</option>
@@ -5097,7 +5097,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={approvalFilter} 
                       onChange={e => setApprovalFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">-- Tất cả --</option>
                       <option value="CHUA_DUYET">Chưa duyệt</option>
@@ -5122,7 +5122,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-10 pr-4 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -5146,7 +5146,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
 
               {/* Table Section */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
                 {sumLoading ? (
                   <div className="flex flex-col items-center justify-center p-16 gap-3">
                     <Loader2 className="w-8 h-8 text-[#00A99D] animate-spin" />
@@ -5159,7 +5159,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
-                        <tr className="bg-[#0D3330] text-white select-none">
+                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
                           {xetDuyetCols.filter(col => {
                             if (col.id === "bghApproval") return showBghSection;
                             if (col.id === "gdcsApproval") return showGdcsSection;
@@ -5424,7 +5424,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="space-y-6">
               
               {/* Premium Dashboard-style Filter Bar */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6">
+              <div className="bg-white/90 p-4 rounded-2xl shadow-2xs border border-slate-200/80 grid grid-cols-1 md:grid-cols-5 gap-3 items-end mb-5 backdrop-blur-sm">
                 <div className="group relative w-full">
                   <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
                     <Calendar className="w-3.5 h-3.5 text-[#00A99D]"/> Kỳ Khảo sát
@@ -5433,7 +5433,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -5452,7 +5452,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -5473,7 +5473,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-10 pr-4 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -5482,7 +5482,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
-                    className="h-10 px-5 text-xs font-black uppercase text-white bg-gradient-to-r from-[#00A99D] to-[#008075] hover:from-[#008075] hover:to-[#007067] hover:scale-[1.01] active:scale-[0.99] rounded-2xl shadow-sm hover:shadow-md shadow-[#00A99D]/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
+                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#00A99D] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
                   >
                     <Search className="w-4 h-4" /> Tìm kiếm
                   </button>
@@ -5490,7 +5490,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
 
               {/* Table Section */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
                 {sumLoading ? (
                   <div className="flex flex-col items-center justify-center p-16 gap-3">
                     <Loader2 className="w-8 h-8 text-[#00A99D] animate-spin" />
@@ -5509,7 +5509,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
-                        <tr className="bg-[#0D3330] text-white select-none">
+                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
                           {dgkqHocThuCols.map(col => (
                             <th key={col.id} className={`px-4 py-3 text-[10px] font-black text-[#9ECFCB] uppercase tracking-wider border-b border-[#0D3330]/20 ${col.width}`}>
                               {col.label}
@@ -5531,7 +5531,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-amber-200/50 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md border border-teal-200/60 text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
@@ -5539,11 +5539,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-24 min-w-[96px] p-3 align-middle text-slate-505 font-semibold border border-slate-100">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                                 <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
                                   <div className="flex flex-col gap-1 items-start">
-                                    <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-black">
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
                                       Khối: {getStandardGrade(s.grade)}
                                     </span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-amber-200/50 rounded-lg text-[10px] font-black">
+                                      <span className="px-2 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-200/60 rounded-md text-[10px] font-bold">
                                         Phiếu: {s.resolvedAgeGroup}
                                       </span>
                                     )}
@@ -5635,7 +5635,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="space-y-6">
               
               {/* Premium Dashboard-style Filter Bar */}
-              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200/80 grid grid-cols-1 md:grid-cols-5 gap-4 items-end mb-6">
+              <div className="bg-white/90 p-4 rounded-2xl shadow-2xs border border-slate-200/80 grid grid-cols-1 md:grid-cols-5 gap-3 items-end mb-5 backdrop-blur-sm">
                 <div className="group relative w-full">
                   <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
                     <Calendar className="w-3.5 h-3.5 text-[#00A99D]"/> Kỳ Khảo sát
@@ -5644,7 +5644,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -5663,7 +5663,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-4 pr-10 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -5684,7 +5684,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-2xl pl-10 pr-4 py-2.5 outline-none font-bold text-slate-700 shadow-sm transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#00A99D] focus:border-[#008075] focus:ring-4 focus:ring-[#00A99D]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -5693,7 +5693,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
-                    className="h-10 px-5 text-xs font-black uppercase text-white bg-gradient-to-r from-[#00A99D] to-[#008075] hover:from-[#008075] hover:to-[#007067] hover:scale-[1.01] active:scale-[0.99] rounded-2xl shadow-sm hover:shadow-md shadow-[#00A99D]/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
+                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#00A99D] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
                   >
                     <Search className="w-4 h-4" /> Tìm kiếm
                   </button>
@@ -5701,7 +5701,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
 
               {/* Table Section */}
-              <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden">
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
                 {sumLoading ? (
                   <div className="flex flex-col items-center justify-center p-16 gap-3">
                     <Loader2 className="w-8 h-8 text-[#00A99D] animate-spin" />
@@ -5719,7 +5719,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <div className="overflow-x-auto">
                     <table className="w-full min-w-max text-left whitespace-nowrap border-collapse">
                       <thead>
-                        <tr className="bg-[#0D3330] text-white select-none">
+                        <tr className="bg-gradient-to-r from-[#0B2E2B] to-[#0F3D38] text-white select-none">
                           {xuatThuChucMungCols.map(col => (
                             <th key={col.id} className={`px-4 py-3 text-[10px] font-black text-[#9ECFCB] uppercase tracking-wider border-b border-[#0D3330]/20 ${col.width}`}>
                               {col.label}
@@ -5748,7 +5748,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/80 px-2.5 py-0.5 rounded-lg border border-amber-200/50 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md border border-teal-200/60 text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
@@ -5756,11 +5756,11 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-24 min-w-[96px] p-3 align-middle text-slate-505 font-semibold border border-slate-100">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
                                 <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
                                   <div className="flex flex-col gap-1 items-start">
-                                    <span className="px-2.5 py-0.5 bg-slate-100 text-slate-700 rounded-lg text-[10px] font-black">
+                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
                                       Khối: {getStandardGrade(s.grade)}
                                     </span>
                                     {s.resolvedAgeGroup && (
-                                      <span className="px-2.5 py-0.5 bg-teal-50 text-[#00A99D] border border-amber-200/50 rounded-lg text-[10px] font-black">
+                                      <span className="px-2 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-200/60 rounded-md text-[10px] font-bold">
                                         Phiếu: {s.resolvedAgeGroup}
                                       </span>
                                     )}
