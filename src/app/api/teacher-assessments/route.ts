@@ -481,12 +481,30 @@ export async function GET(req: any) {
         
         const totalAssignments = validAssignments.length;
         
-        // Count distinct classes assigned (by grade and system)
-        const uniqueClasses = new Set();
-        validAssignments.forEach(a => {
-            if (a.grade) uniqueClasses.add(a.grade + "_" + a.educationSystem);
+        // Get teacher record & homeroom classes
+        const teacher = await prisma.teacher.findUnique({
+            where: { userId: session.user.id }
         });
-        const totalClasses = uniqueClasses.size;
+
+        let homeroomClassesCount = 0;
+        let homeroomStudentsCount = 0;
+
+        if (teacher) {
+            const homeroomClasses = await prisma.class.findMany({
+                where: {
+                    OR: [
+                        { homeroomTeacherId: teacher.id },
+                        { homeroomTeacherId: { contains: teacher.id } }
+                    ],
+                    ...(academicYearId ? { academicYearId } : {})
+                },
+                include: {
+                    _count: { select: { students: true } }
+                }
+            });
+            homeroomClassesCount = homeroomClasses.length;
+            homeroomStudentsCount = homeroomClasses.reduce((sum, c) => sum + (c._count?.students || 0), 0);
+        }
         
         let academicYearName = "";
         if (academicYearId) {
@@ -494,10 +512,9 @@ export async function GET(req: any) {
             if (year) academicYearName = year.name;
         }
         
-        // This is an approximation
         return NextResponse.json({
-            totalClasses,
-            totalStudents: totalClasses * 25, // Mock data or query real data
+            totalClasses: homeroomClassesCount,
+            totalStudents: homeroomStudentsCount,
             totalAssignments,
             scoredStudents: 0,
             academicYearName

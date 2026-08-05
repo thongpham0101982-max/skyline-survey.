@@ -6418,7 +6418,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             className="relative bg-white rounded-3xl shadow-2xl flex flex-col w-[210mm] shrink-0 max-h-[95vh] overflow-hidden animate-in zoom-in-95 duration-200 cursor-default"
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between no-print text-xs font-semibold">
+            <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200/90 no-print text-xs font-semibold z-10">
               <div className="flex items-center gap-2">
                 {isInvitation ? <Mail className="w-5 h-5 text-[#00A99D]"/> : <GraduationCap className="w-5 h-5 text-[#00A99D]"/>}
                 <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
@@ -6476,15 +6476,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       console.error(err);
                     } finally {
                       if(btn) {
-                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Lưu File (PDF)';
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Xuất File PDF / In';
                         btn.disabled = false;
                       }
                     }
                   }}
-                  className="hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-none shadow-emerald-100 flex items-center gap-2 transition-all text-xs font-semibold"
+                  className="bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md shadow-emerald-600/20 px-4 py-2.5 flex items-center gap-2 transition-all cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
-                  Lưu File (PDF)
+                  Xuất File PDF / In
                 </button>
                 
                 <button type="button"

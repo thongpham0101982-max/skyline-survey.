@@ -61,7 +61,7 @@ export default function TeacherDashboard() {
     {
       label: "Lớp Phụ trách",
       value: finalMetrics.totalClasses,
-      subtext: "Lớp học bộ môn & chủ nhiệm",
+      subtext: "Lớp được phân công chủ nhiệm",
       icon: Layers,
       bgGradient: "from-blue-500/10 via-blue-500/5 to-transparent",
       borderColor: "border-blue-200/60",
