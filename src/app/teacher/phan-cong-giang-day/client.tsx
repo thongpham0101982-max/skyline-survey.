@@ -14,7 +14,9 @@ import {
   CalendarRange,
   Layers,
   ChevronRight,
-  UserCheck
+  UserCheck,
+  LayoutGrid,
+  ListFilter
 } from "lucide-react"
 
 interface TeacherInfo {
@@ -111,6 +113,7 @@ export function TeachingAssignmentClient({
   const [activeTab, setActiveTab] = useState<"me" | "department">("me")
   const [searchQuery, setSearchQuery] = useState("")
   const [semesterFilter, setSemesterFilter] = useState<"all" | "1" | "2">("all")
+  const [viewMode, setViewMode] = useState<"grouped" | "table">("grouped")
 
   // Handle year selection and reload page to fetch new DB records
   const handleYearChange = (yearId: string) => {
@@ -169,6 +172,43 @@ export function TeachingAssignmentClient({
       return true
     })
   }, [initialDeptTeachers, selectedYearId, semesterFilter, searchQuery])
+
+
+  // Group my assignments by subject for compact scientific viewing
+  const groupedMyAssignments = useMemo(() => {
+    const groups: Record<string, {
+      subjectId: string
+      subjectName: string
+      subjectCode: string
+      classes: Array<{ id: string, className: string, classCode: string, semester: number, academicYearName: string }>
+      semesters: Set<number>
+    }> = {}
+
+    filteredMyAssignments.forEach(a => {
+      const key = a.subjectId || a.subject.subjectName
+      if (!groups[key]) {
+        groups[key] = {
+          subjectId: a.subjectId,
+          subjectName: a.subject.subjectName,
+          subjectCode: a.subject.subjectCode,
+          classes: [],
+          semesters: new Set<number>()
+        }
+      }
+      if (!groups[key].classes.some(c => c.id === a.classId && c.semester === a.semester)) {
+        groups[key].classes.push({
+          id: a.classId,
+          className: a.class.className,
+          classCode: a.class.classCode,
+          semester: a.semester,
+          academicYearName: a.academicYear.name
+        })
+      }
+      groups[key].semesters.add(a.semester)
+    })
+
+    return Object.values(groups)
+  }, [filteredMyAssignments])
 
   const currentYearName = useMemo(() => {
     const year = academicYears.find(y => y.id === selectedYearId)
@@ -336,38 +376,68 @@ export function TeachingAssignmentClient({
           />
         </div>
 
-        {/* Semester Filter */}
-        <div className="flex items-center border border-slate-200 rounded-lg p-1 bg-slate-50 self-end sm:self-auto">
-          <button
-            onClick={() => setSemesterFilter("all")}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
-              semesterFilter === "all"
-                ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Cả năm
-          </button>
-          <button
-            onClick={() => setSemesterFilter("1")}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
-              semesterFilter === "1"
-                ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Học kỳ I
-          </button>
-          <button
-            onClick={() => setSemesterFilter("2")}
-            className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
-              semesterFilter === "2"
-                ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
-                : "text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Học kỳ II
-          </button>
+        <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto">
+          {/* View Mode Toggle (Only shown for 'me' tab) */}
+          {activeTab === "me" && (
+            <div className="flex items-center border border-slate-200 rounded-lg p-1 bg-slate-50">
+              <button
+                onClick={() => setViewMode("grouped")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
+                  viewMode === "grouped"
+                    ? "bg-[#00A99D] text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+                title="Hiển thị gộp theo môn học"
+              >
+                <LayoutGrid className="w-3 h-3" /> Gộp theo Môn
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
+                  viewMode === "table"
+                    ? "bg-[#00A99D] text-white shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+                title="Hiển thị bảng chi tiết"
+              >
+                <ListFilter className="w-3 h-3" /> Chi tiết
+              </button>
+            </div>
+          )}
+
+          {/* Semester Filter */}
+          <div className="flex items-center border border-slate-200 rounded-lg p-1 bg-slate-50">
+            <button
+              onClick={() => setSemesterFilter("all")}
+              className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
+                semesterFilter === "all"
+                  ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Cả năm
+            </button>
+            <button
+              onClick={() => setSemesterFilter("1")}
+              className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
+                semesterFilter === "1"
+                  ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Học kỳ I
+            </button>
+            <button
+              onClick={() => setSemesterFilter("2")}
+              className={`px-3 py-1 rounded-md text-[10px] font-black uppercase transition-all ${
+                semesterFilter === "2"
+                  ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Học kỳ II
+            </button>
+          </div>
         </div>
       </div>
 
@@ -382,7 +452,71 @@ export function TeachingAssignmentClient({
               {semesterFilter !== "all" && ` - Học kỳ ${semesterFilter}`}.
             </p>
           </div>
+        ) : viewMode === "grouped" ? (
+          /* GROUPED BY SUBJECT VIEW */
+          <div className="space-y-6">
+            {groupedMyAssignments.map((group, idx) => (
+              <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4 hover:shadow-md transition-shadow">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-600 to-indigo-600 flex items-center justify-center text-white font-black shadow-md">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-black text-slate-900 text-base">{group.subjectName}</h3>
+                        <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 text-[10px] font-extrabold">
+                          {group.subjectCode}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 font-semibold mt-0.5">
+                        Tổng số: <span className="font-extrabold text-slate-800">{group.classes.length} lớp học</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {Array.from(group.semesters).sort().map(sem => (
+                      <span key={sem} className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase border ${
+                        sem === 1 
+                          ? "bg-blue-50 text-blue-700 border-blue-200" 
+                          : "bg-indigo-50 text-indigo-700 border-indigo-200"
+                      }`}>
+                        Học kỳ {sem}
+                      </span>
+                    ))}
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-extrabold flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" /> Đang phụ trách
+                    </span>
+                  </div>
+                </div>
+
+                {/* Class badges grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                  {group.classes.map((cls, cIdx) => (
+                    <div
+                      key={cIdx}
+                      className="group flex flex-col p-3 rounded-xl bg-slate-50 border border-slate-200 hover:border-teal-300 hover:bg-teal-50/20 transition-all"
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="font-black text-slate-800 text-xs group-hover:text-teal-700 transition-colors truncate">
+                          {cls.className}
+                        </span>
+                        <span className="text-[9px] font-bold text-slate-400 px-1 rounded bg-white border border-slate-200 shrink-0">
+                          HK{cls.semester}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-semibold truncate">
+                        {cls.classCode}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
+          /* DETAILED TABLE VIEW */
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs font-semibold">
