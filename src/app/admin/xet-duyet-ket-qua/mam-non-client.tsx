@@ -3,7 +3,7 @@ import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import * as XLSX from "xlsx"
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
-import { getSurveyFormAgeGroup } from "@/lib/preschool";
+import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import {
   Baby, Clock, Settings, Users, BarChart3, Calendar, Layers,
   Plus, Trash2, Edit2, Search, RefreshCw, ChevronDown, ChevronUp,
@@ -2819,7 +2819,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     const printProbationaryAssessment = async (student: any) => {
     notify("Đang chuẩn bị phiếu in...", "info");
     try {
-      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
+      const ageGroup = getProbationAgeGroup(student.grade);
       const areasRes = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
       let loadedAreas: any[] = [];
       if (areasRes.ok) {
@@ -3120,7 +3120,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     setProbModal(true);
     setDevLoading(true);
     try {
-      const ageGroup = getSurveyFormAgeGroup(student.grade, student.batch?.startDate);
+      const ageGroup = getProbationAgeGroup(student.grade);
       const areasRes = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
       if (areasRes.ok) {
         setDevAreas(await areasRes.json());

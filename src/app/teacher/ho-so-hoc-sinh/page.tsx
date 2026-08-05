@@ -889,7 +889,8 @@ export default function TeacherStudentProfilePage() {
                       const classCodeStr = String(selectedStudent?.class?.classCode || "")
                       const classGradeStr = String(selectedStudent?.class?.grade || "")
                       
-                      const isPrimary = schoolBlock === "preschool" ||
+                      const isPrimary = selectedStudent?.class?.level === "PRESCHOOL" ||
+                                        selectedStudent?.class?.level === "preschool" ||
                                         selectedStudent?.class?.level === "PRIMARY" || 
                                         selectedStudent?.class?.level === "Tieu hoc" || 
                                         ["1", "2", "3", "4", "5"].includes(classGradeStr) ||
@@ -1020,10 +1021,7 @@ export default function TeacherStudentProfilePage() {
                           {!hasData ? (
                             <div className="text-center py-12 px-4 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50 space-y-3">
                               <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto opacity-80" />
-                              <div className="text-xs font-bold text-slate-600">Chưa có dữ liệu kết quả học tập MOET cho học sinh này.</div>
-                              <p className="text-[11px] text-slate-400 max-w-md mx-auto">
-                                Vui lòng import điểm từ file Excel tại mục <strong>Quản lý Đào tạo → Import KQHT</strong> để hiển thị bảng điểm tại đây.
-                              </p>
+                              <div className="text-sm font-black text-slate-700">Hệ thống đang cập nhật điểm. Vui lòng quay lại sau.</div>
                             </div>
                           ) : (
                             <div className="space-y-6">

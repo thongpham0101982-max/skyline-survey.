@@ -39,7 +39,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import { confirmEnrollmentAction, revertEnrollmentAction } from "../student-transfers/actions";
-import { getSurveyFormAgeGroup } from "@/lib/preschool";
+import { getSurveyFormAgeGroup, getProbationAgeGroup } from "@/lib/preschool";
 import * as XLSX from "xlsx";
 import { InputAssessmentsClient } from "../input-assessments/client";
 import { PreschoolInputAssessmentsClient } from "../preschool-input-assessments/client";
@@ -562,7 +562,7 @@ export function StudentInfoClient({
       const fetchDevAreas = async () => {
         setDevAreasLoading(true);
         try {
-          const ageGroup = getSurveyFormAgeGroup(selectedStudent.grade, selectedStudent.batch?.startDate);
+          const ageGroup = getProbationAgeGroup(selectedStudent.grade);
           const res = await fetch(`/api/preschool-dev-areas?type=PROBATION&ageGroup=${encodeURIComponent(ageGroup)}`);
           if (res.ok) {
             const data = await res.json();
