@@ -187,9 +187,10 @@ const xetDuyetCols = [
 const assessCols = [
   { id: "stt", label: "#", width: "w-10 min-w-[40px] max-w-[40px] sticky left-0 z-20 text-center" },
   { id: "studentCode", label: "Mã bé", width: "w-20 min-w-[80px]" },
-  { id: "fullName", label: "Họ và tên", width: "w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-20 whitespace-normal" },
+  { id: "fullName", label: "Họ và tên", width: "w-[180px] min-w-[180px] max-w-[180px] sticky left-10 z-20 whitespace-normal" },
   { id: "dateOfBirth", label: "Ngày sinh", width: "w-24 min-w-[96px]" },
-  { id: "resolvedAgeGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "grade", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "resolvedAgeGroup", label: "Phiếu", width: "w-28 min-w-[112px]" },
   { id: "assignedTeachers", label: "GV Phân công", width: "w-44 min-w-[176px] whitespace-normal" },
   { id: "status", label: "Trạng thái", width: "w-32 min-w-[128px]" },
   { id: "actions", label: "Thao tác", width: "w-28 min-w-[112px]" }
@@ -198,23 +199,26 @@ const assessCols = [
 const dgkqHocThuCols = [
   { id: "stt", label: "#", width: "w-10 min-w-[40px] max-w-[40px] sticky left-0 z-20 text-center" },
   { id: "studentCode", label: "Mã bé", width: "w-20 min-w-[80px]" },
-  { id: "fullName", label: "Họ và tên", width: "w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-20 whitespace-normal" },
+  { id: "fullName", label: "Họ và tên", width: "w-[180px] min-w-[180px] max-w-[180px] sticky left-10 z-20 whitespace-normal" },
   { id: "dateOfBirth", label: "Ngày sinh", width: "w-24 min-w-[96px]" },
-  { id: "resolvedAgeGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "grade", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "resolvedAgeGroup", label: "Phiếu", width: "w-28 min-w-[112px]" },
   { id: "probationaryClass", label: "Lớp học thử", width: "w-28 min-w-[112px]" },
   { id: "probationaryTeacher", label: "GV Học thử", width: "w-36 min-w-[144px] whitespace-normal" },
-  { id: "probationaryResult", label: "KQĐG GV", width: "w-32 min-w-[128px]" },
-  { id: "actions", label: "BGH Xét duyệt", width: "w-36 min-w-[144px]" }
+  { id: "probationaryResult", label: "KQĐG GV", width: "w-28 min-w-[112px]" },
+  { id: "bghStatus", label: "Kết quả", width: "w-28 min-w-[112px]" },
+  { id: "actions", label: "BGH Xét duyệt", width: "w-28 min-w-[112px]" }
 ];
 
 const xuatThuChucMungCols = [
   { id: "stt", label: "#", width: "w-10 min-w-[40px] max-w-[40px] sticky left-0 z-20 text-center" },
   { id: "studentCode", label: "Mã bé", width: "w-20 min-w-[80px]" },
-  { id: "fullName", label: "Họ và tên", width: "w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-20 whitespace-normal" },
+  { id: "fullName", label: "Họ và tên", width: "w-[180px] min-w-[180px] max-w-[180px] sticky left-10 z-20 whitespace-normal" },
   { id: "dateOfBirth", label: "Ngày sinh", width: "w-24 min-w-[96px]" },
-  { id: "resolvedAgeGroup", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
-  { id: "admissionCampus", label: "Cơ sở", width: "w-32 min-w-[128px] whitespace-normal" },
-  { id: "result", label: "Kết quả duyệt", width: "w-36 min-w-[144px]" },
+  { id: "grade", label: "Nhóm tuổi", width: "w-28 min-w-[112px]" },
+  { id: "resolvedAgeGroup", label: "Phiếu", width: "w-28 min-w-[112px]" },
+  { id: "admissionCampus", label: "Cơ sở", width: "w-24 min-w-[96px]" },
+  { id: "result", label: "Kết quả duyệt", width: "w-32 min-w-[128px]" },
   { id: "actions", label: "Thao tác", width: "w-64 min-w-[256px]" }
 ];
 
@@ -370,7 +374,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
             </div>
           )}
           <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-            <div className="w-5 h-5 rounded-full bg-[#00A99D]/10 border border-[#00A99D]/20 flex items-center justify-center text-[8px] font-black text-[#00A99D] shrink-0">
+            <div className="w-5 h-5 rounded-full bg-[#00A99D]/10  flex items-center justify-center text-[8px] font-black text-[#00A99D] shrink-0">
               {initials}
             </div>
             <span className="text-[9px] text-slate-500 font-bold truncate max-w-[100px]" title={user || ""}>{user || "—"}</span>
@@ -4236,7 +4240,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             <input type="checkbox" className="w-4 h-4 rounded accent-[#00A99D]" checked={cfgSelected.includes(c.id)} onChange={e => setCfgSelected(e.target.checked ? [...cfgSelected, c.id] : cfgSelected.filter(id => id !== c.id))} />
                           </td>
                           <td className="p-2 text-slate-400 text-sm border border-slate-200">{i+1}</td>
-                          <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none border border-[#00A99D]/20 uppercase">{c.categoryType}</span></td>
+                          <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none  uppercase">{c.categoryType}</span></td>
                           <td className="p-2 font-mono text-xs font-bold text-[#00A99D] border border-slate-200">{c.code}</td>
                           <td className="p-2 font-semibold text-slate-700 text-sm border border-slate-200">{c.name}</td>
                           <td className="p-2 text-right border border-slate-200"><div className="flex justify-end gap-1"><button onClick={() => openEditCfg(c)} className="p-2 text-slate-300 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa "${c.name}"?`, fn: () => doDeleteCfg(c.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
@@ -4349,7 +4353,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
-            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
+            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80  shadow-sm mr-2 flex items-center gap-1.5">
             Thông báo
             </span>
             <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
@@ -4944,7 +4948,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             const statusBadge = () => {
                               if (s.scoredCount > 0) {
                                 return (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-250/50 shadow-xs">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700  shadow-xs">
                                     Đã đánh giá
                                   </span>
                                 );
@@ -4959,23 +4963,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md border border-teal-200/60 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md  text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
                                 <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-3 align-middle bg-inherit font-extrabold text-slate-800 border border-slate-100">{s.fullName}</td>
                                 <td className="w-24 min-w-[96px] p-3 align-middle text-slate-505 font-semibold border border-slate-100">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <div className="flex flex-col gap-1 items-start">
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
-                                      Khối: {getStandardGrade(s.grade)}
-                                    </span>
-                                    {s.resolvedAgeGroup && (
-                                      <span className="px-2 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-200/60 rounded-md text-[10px] font-bold">
-                                        Phiếu: {s.resolvedAgeGroup}
-                                      </span>
-                                    )}
-                                  </div>
+                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit font-semibold text-slate-700">
+                                  <span className="px-2.5 py-1 bg-slate-100/90 text-slate-700 rounded-lg text-[11px] font-bold">
+                                    {getStandardGrade(s.grade)}
+                                  </span>
+                                </td>
+                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit font-semibold">
+                                  <span className="px-2.5 py-1 bg-teal-50 text-[#00A99D] rounded-lg text-[11px] font-bold">
+                                    {s.resolvedAgeGroup || "—"}
+                                  </span>
                                 </td>
                                 <td className="w-44 min-w-[176px] p-3 align-middle bg-inherit border border-slate-100 text-slate-650 font-bold">
                                   {s.assignedTeachers || <span className="text-slate-350 italic font-medium">Chưa phân công</span>}
@@ -4984,7 +4986,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
                                   <button
                                     onClick={() => openEvaluation(s)}
-                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-violet-700 bg-violet-50 hover:bg-violet-100 border border-violet-100 rounded-xl transition-all shadow-xs w-fit cursor-pointer hover:scale-[1.02]"
+                                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-violet-700 bg-violet-50 hover:bg-violet-100  rounded-xl transition-all shadow-xs w-fit cursor-pointer hover:scale-[1.02]"
                                   >
                                     <Eye className="w-3.5 h-3.5" /> Xem kết quả
                                   </button>
@@ -5176,7 +5178,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             const getResultBadge = (res: string) => {
                               if (res === "Đạt - Miễn Học Thử" || res === "DAT_MIEN_HOC_THU") {
                                 return (
-                                  <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
+                                  <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
                                     Miễn HT
                                   </span>
                                 );
@@ -5190,14 +5192,14 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               }
                               if (res === "Đạt" || res === "DAT") {
                                 return (
-                                  <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
+                                  <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
                                     Đạt
                                   </span>
                                 );
                               }
                               if (res === "Không đạt" || res === "KHONG_DAT") {
                                 return (
-                                  <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
+                                  <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs w-fit">
                                     K.Đạt
                                   </span>
                                 );
@@ -5531,23 +5533,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md border border-teal-200/60 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md  text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
                                 <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-3 align-middle bg-inherit font-extrabold text-slate-800 border border-slate-100">{s.fullName}</td>
                                 <td className="w-24 min-w-[96px] p-3 align-middle text-slate-505 font-semibold border border-slate-100">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <div className="flex flex-col gap-1 items-start">
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
-                                      Khối: {getStandardGrade(s.grade)}
-                                    </span>
-                                    {s.resolvedAgeGroup && (
-                                      <span className="px-2 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-200/60 rounded-md text-[10px] font-bold">
-                                        Phiếu: {s.resolvedAgeGroup}
-                                      </span>
-                                    )}
-                                  </div>
+                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit font-semibold text-slate-700">
+                                  <span className="px-2.5 py-1 bg-slate-100/90 text-slate-700 rounded-lg text-[11px] font-bold">
+                                    {getStandardGrade(s.grade)}
+                                  </span>
+                                </td>
+                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit font-semibold">
+                                  <span className="px-2.5 py-1 bg-teal-50 text-[#00A99D] rounded-lg text-[11px] font-bold">
+                                    {s.resolvedAgeGroup || "—"}
+                                  </span>
                                 </td>
                                 <td className="w-28 min-w-[112px] p-3 align-middle text-slate-700 font-extrabold bg-inherit border border-slate-100">{s.probationaryClass || "—"}</td>
                                 <td className="w-36 min-w-[144px] p-3 align-middle text-slate-655 font-bold bg-inherit border border-slate-100">
@@ -5556,7 +5556,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       <span className="font-extrabold text-slate-700">{s.probationaryTeacher}</span>
                                       <button
                                         onClick={() => openAssignModal(s)}
-                                        className="inline-flex items-center justify-center gap-1 px-2 py-0.5 text-[9px] font-bold text-[#00A99D] hover:bg-[#00A99D]/10 rounded border border-[#00A99D]/20 transition-all w-fit cursor-pointer"
+                                        className="inline-flex items-center justify-center gap-1 px-2 py-0.5 text-[9px] font-bold text-[#00A99D] hover:bg-[#00A99D]/10 rounded  transition-all w-fit cursor-pointer"
                                       >
                                         Phân công lại
                                       </button>
@@ -5570,52 +5570,50 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     </button>
                                   )}
                                 </td>
-                                <td className="w-32 min-w-[128px] p-3 align-middle bg-inherit border border-slate-100">{resultBadge()}</td>
-                                <td className="w-36 min-w-[144px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <div className="flex flex-col gap-2 items-center">
-                                    {/* BGH status badge */}
-                                    {(() => {
-                                      const status = s.probationaryBghStatus || "";
-                                      if (status === "DAT") {
-                                        return (
-                                          <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
-                                            Đạt
-                                          </span>
-                                        );
-                                      }
-                                      if (status === "KHONG_DAT") {
-                                        return (
-                                          <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 border border-rose-250/50 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
-                                            ✗ Không đạt
-                                          </span>
-                                        );
-                                      }
-                                      if (status === "Y_KIEN_KHAC") {
-                                        return (
-                                          <span className="inline-flex items-center justify-center bg-amber-50 text-amber-700 border border-amber-250/50 rounded-full px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider">
-                                            ★ Ý kiến khác
-                                          </span>
-                                        );
-                                      }
+                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit font-semibold">{resultBadge()}</td>
+                                <td className="w-28 min-w-[112px] p-3 align-middle text-center bg-inherit font-semibold">
+                                  {(() => {
+                                    const status = s.probationaryBghStatus || "";
+                                    if (status === "DAT") {
                                       return (
-                                        <span className="inline-flex items-center justify-center bg-slate-100 text-slate-400 border border-slate-200/60 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider">
-                                          Chưa duyệt
+                                        <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 rounded-full px-2.5 py-1 text-[10px] font-extrabold">
+                                          ✓ Đạt
                                         </span>
                                       );
-                                    })()}
-
-                                    <button
-                                      onClick={() => openProbationary(s)}
-                                      disabled={isExempt}
-                                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 text-[9px] font-extrabold rounded-xl transition-all hover:scale-[1.02] border border-violet-100 ${
-                                        isExempt 
-                                          ? 'text-slate-400 bg-slate-100 cursor-not-allowed border-transparent' 
-                                          : 'text-violet-750 bg-violet-55 hover:bg-violet-100/80 cursor-pointer'
-                                      }`}
-                                    >
-                                      <ClipboardList className="w-3 h-3" /> Xét duyệt
-                                    </button>
-                                  </div>
+                                    }
+                                    if (status === "KHONG_DAT") {
+                                      return (
+                                        <span className="inline-flex items-center justify-center bg-rose-50 text-rose-700 rounded-full px-2.5 py-1 text-[10px] font-extrabold">
+                                          ✗ Không đạt
+                                        </span>
+                                      );
+                                    }
+                                    if (status === "Y_KIEN_KHAC") {
+                                      return (
+                                        <span className="inline-flex items-center justify-center bg-amber-50 text-amber-700 rounded-full px-2.5 py-1 text-[10px] font-extrabold">
+                                          ★ Ý kiến khác
+                                        </span>
+                                      );
+                                    }
+                                    return (
+                                      <span className="inline-flex items-center justify-center bg-slate-100 text-slate-400 rounded-full px-2.5 py-1 text-[10px] font-bold">
+                                        Chưa duyệt
+                                      </span>
+                                    );
+                                  })()}
+                                </td>
+                                <td className="w-28 min-w-[112px] p-3 align-middle text-center bg-inherit font-semibold">
+                                  <button
+                                    onClick={() => openProbationary(s)}
+                                    disabled={isExempt}
+                                    className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold rounded-xl transition-all hover:scale-[1.02] ${
+                                      isExempt 
+                                        ? 'text-slate-400 bg-slate-100 cursor-not-allowed' 
+                                        : 'text-[#00A99D] bg-teal-50 hover:bg-teal-100 cursor-pointer'
+                                    }`}
+                                  >
+                                    <ClipboardList className="w-3.5 h-3.5" /> Xét duyệt
+                                  </button>
                                 </td>
                               </tr>
                             );
@@ -5732,13 +5730,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             const resultBadge = () => {
                               if (s.probationaryResult === "DAT") {
                                 return (
-                                  <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700 border border-emerald-250/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
+                                  <span className="inline-flex items-center justify-center bg-emerald-50 text-emerald-700  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
                                     ✓ ĐẠT - SAU HỌC THỬ
                                   </span>
                                 );
                               }
                               return (
-                                <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700 border border-teal-200/50 rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
+                                <span className="inline-flex items-center justify-center bg-teal-50 text-teal-700  rounded-full px-2.5 py-1 text-[10px] font-extrabold shadow-xs">
                                   ✓ ĐẠT - MIỄN HỌC THỬ
                                 </span>
                               );
@@ -5748,23 +5746,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <tr key={s.id} className="hover:bg-[#EBF5F4]/40 even:bg-slate-50/40 transition-colors duration-150 text-xs font-semibold">
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                 <td className="w-20 min-w-[80px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md border border-teal-200/60 text-[11px]">
+                                  <span className="font-mono font-bold text-[#00A99D] bg-teal-50/90 px-2 py-0.5 rounded-md  text-[11px]">
                                     {s.studentCode}
                                   </span>
                                 </td>
                                 <td className="w-[200px] min-w-[200px] max-w-[200px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal p-3 align-middle bg-inherit font-extrabold text-slate-800 border border-slate-100">{s.fullName}</td>
                                 <td className="w-24 min-w-[96px] p-3 align-middle text-slate-505 font-semibold border border-slate-100">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
-                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit border border-slate-100">
-                                  <div className="flex flex-col gap-1 items-start">
-                                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold">
-                                      Khối: {getStandardGrade(s.grade)}
-                                    </span>
-                                    {s.resolvedAgeGroup && (
-                                      <span className="px-2 py-0.5 bg-teal-50 text-[#00A99D] border border-teal-200/60 rounded-md text-[10px] font-bold">
-                                        Phiếu: {s.resolvedAgeGroup}
-                                      </span>
-                                    )}
-                                  </div>
+                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit font-semibold text-slate-700">
+                                  <span className="px-2.5 py-1 bg-slate-100/90 text-slate-700 rounded-lg text-[11px] font-bold">
+                                    {getStandardGrade(s.grade)}
+                                  </span>
+                                </td>
+                                <td className="w-28 min-w-[112px] p-3 align-middle bg-inherit font-semibold">
+                                  <span className="px-2.5 py-1 bg-teal-50 text-[#00A99D] rounded-lg text-[11px] font-bold">
+                                    {s.resolvedAgeGroup || "—"}
+                                  </span>
                                 </td>
                                 <td className="w-32 min-w-[128px] p-3 align-middle text-slate-655 font-bold bg-inherit border border-slate-100 whitespace-normal break-words">{s.admissionCampus || "—"}</td>
                                 <td className="w-36 min-w-[144px] p-3 align-middle bg-inherit border border-slate-100">{resultBadge()}</td>
@@ -5772,21 +5768,21 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsCommitment(false); setIsPrintModalOpen(true); }}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:scale-[1.02] border border-emerald-200/50 rounded-xl transition-all shadow-xs w-fit cursor-pointer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 hover:scale-[1.02]  rounded-xl transition-all shadow-xs w-fit cursor-pointer"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
                                       Xuất thư Chúc mừng
                                     </button>
                                     <button
                                       onClick={() => { setSelectedReportStudent(s); setIsInvitation(false); setIsCommitment(true); setIsPrintModalOpen(true); }}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-amber-700 bg-amber-50 hover:bg-amber-100 hover:scale-[1.02] border border-amber-200/50 rounded-xl transition-all shadow-xs w-fit cursor-pointer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-amber-700 bg-amber-50 hover:bg-amber-100 hover:scale-[1.02]  rounded-xl transition-all shadow-xs w-fit cursor-pointer"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                                       Bản Cam kết
                                     </button>
                                     <button
                                       onClick={() => openEmailCongratsModal(s)}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-violet-700 bg-violet-50 hover:bg-violet-100 hover:scale-[1.02] border border-violet-100 rounded-xl transition-all shadow-xs w-fit cursor-pointer"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-extrabold text-violet-700 bg-violet-50 hover:bg-violet-100 hover:scale-[1.02]  rounded-xl transition-all shadow-xs w-fit cursor-pointer"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                                       Gửi Email
@@ -5914,7 +5910,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <div className="bg-[#00A99D]/5/20 border border-slate-300/40 rounded-none p-4 flex flex-col justify-between hover:border-slate-300/60 transition-all">
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className="bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-0.5 rounded-none text-[9px] font-extrabold uppercase tracking-wider border border-[#00A99D]/20">
+                            <span className="bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-0.5 rounded-none text-[9px] font-extrabold uppercase tracking-wider ">
                               Giai đoạn 1
                             </span>
                             <span className="text-[10px] text-slate-400 font-semibold">Từ 01/06 đến 31/12</span>
@@ -5996,7 +5992,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       <td className="p-2 text-slate-400 text-xs border border-slate-200">{idx + 1}</td>
                                       <td className="p-2 font-mono text-xs font-bold text-[#00A99D] border border-slate-200">{crit.code}</td>
                                       <td className="p-2 text-sm font-semibold text-slate-700 max-w-[400px] break-words whitespace-normal border border-slate-200">{crit.name}</td>
-                                      <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none border border-[#00A99D]/20">{crit.ageGroup}</span></td>
+                                      <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-[#00A99D] bg-[#00A99D]/5 px-2 py-0.5 rounded-none ">{crit.ageGroup}</span></td>
                                       <td className="p-2 text-right border border-slate-200">
                                         <div className="flex gap-1">
                                           <button
@@ -8476,16 +8472,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             
             const getCalcBadge = (res: string) => {
               if (res === "Đạt - Miễn Học Thử") {
-                return <span className="text-xs font-black text-teal-700 bg-teal-50 border border-teal-200/50 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✓ ĐẠT - MIỄN HỌC THỬ</span>;
+                return <span className="text-xs font-black text-teal-700 bg-teal-50  rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✓ ĐẠT - MIỄN HỌC THỬ</span>;
               }
               if (res === "Đạt - Học Thử" || res === "Học thử") {
                 return <span className="text-xs font-black text-sky-700 bg-sky-50 border border-sky-200/50 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">★ ĐẠT - HỌC THỬ</span>;
               }
               if (res === "Đạt") {
-                return <span className="text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-250/50 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✓ ĐẠT</span>;
+                return <span className="text-xs font-black text-emerald-700 bg-emerald-50  rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✓ ĐẠT</span>;
               }
               if (res === "Không đạt") {
-                return <span className="text-xs font-black text-rose-700 bg-rose-50 border border-rose-250/50 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✗ KHÔNG ĐẠT</span>;
+                return <span className="text-xs font-black text-rose-700 bg-rose-50  rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">✗ KHÔNG ĐẠT</span>;
               }
               if (res === "Ý kiến khác") {
                 return <span className="text-xs font-black text-amber-700 bg-amber-50 border border-amber-250/50 rounded-full px-2.5 py-1 flex items-center gap-1 shadow-xs">★ Ý KIẾN KHÁC</span>;
@@ -8732,7 +8728,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-200/60">
                   <ClipboardList className="w-4 h-4 text-teal-600" />
                   <h4 className="text-xs font-black text-teal-800 uppercase tracking-wider">Lược sử đánh giá mầm non</h4>
-                  <span className="text-[10px] font-black text-teal-700 ml-auto bg-teal-50 px-2 py-0.5 border border-amber-200/50 rounded-lg">{pastAssessments.length} đợt</span>
+                  <span className="text-[10px] font-black text-teal-700 ml-auto bg-teal-50 px-2 py-0.5  rounded-lg">{pastAssessments.length} đợt</span>
                 </div>
                 {loadingHistory ? (
                   <div className="flex items-center gap-2 text-xs text-slate-400 py-2">
@@ -8788,7 +8784,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <div className="pt-3 border-t border-slate-200/60">
                                   <span className="font-black text-[10px] text-slate-500 uppercase tracking-wider block mb-1.5">Kết quả tiêu chí chi tiết:</span>
                                   <div className="flex gap-4">
-                                    <div className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50/60 px-2.5 py-1 rounded-xl border border-emerald-200/50">
+                                    <div className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50/60 px-2.5 py-1 rounded-xl ">
                                       Đạt: <span className="font-bold">${histRec.scores.filter((s: any) => s.result === "DAT").length}</span>
                                     </div>
                                     <div className="text-[11px] font-extrabold text-rose-700 bg-rose-50/60 px-2.5 py-1 rounded-xl border border-rose-200/50">
@@ -8850,7 +8846,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {/* Child Details Card */}
           <div className="bg-gradient-to-r from-teal-50/90 via-emerald-50/60 to-teal-50/90 p-4 rounded-2xl border border-teal-200/70 shadow-sm flex flex-wrap items-center justify-between gap-4 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#00A99D]/10 border border-[#00A99D]/20 flex items-center justify-center text-[#00A99D]">
+              <div className="w-10 h-10 rounded-xl bg-[#00A99D]/10  flex items-center justify-center text-[#00A99D]">
                 <Baby className="w-5 h-5" />
               </div>
               <div>
