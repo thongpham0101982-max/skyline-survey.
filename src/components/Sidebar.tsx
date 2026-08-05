@@ -647,28 +647,6 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   {!isCollapsed && <span>4. Hoạt động trải nghiệm</span>}
                 </Link>
 
-                {/* 5. Cam kết học tập */}
-                <Link 
-                  href="/teacher/cam-ket-hoc-tap" 
-                  onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold ${
-                    pathname.includes('/teacher/cam-ket-hoc-tap')
-                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
-                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                    pathname.includes('/teacher/cam-ket-hoc-tap')
-                      ? "bg-rose-500/20 border border-rose-500/40 shadow-[0_0_8px_rgba(244,63,94,0.25)]"
-                      : "bg-white/5 border border-white/10 group-hover:border-rose-500/30"
-                  }`}>
-                    <FileText className={`w-4 h-4 transition-all ${
-                      pathname.includes('/teacher/cam-ket-hoc-tap') ? "text-rose-400" : "text-slate-400 group-hover:text-rose-400 group-hover:scale-110"
-                    }`} />
-                  </div>
-                  {!isCollapsed && <span>5. Cam kết học tập</span>}
-                </Link>
-
                 {/* 6. Phân công giảng dạy */}
                 <Link 
                   href="/teacher/phan-cong-giang-day" 
@@ -688,7 +666,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/phan-cong-giang-day') ? "text-violet-400" : "text-slate-400 group-hover:text-violet-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>6. Phân công giảng dạy</span>}
+                  {!isCollapsed && <span>5. Phân công giảng dạy</span>}
                 </Link>
 
                 {/* 7. Phụ đạo, bồi dưỡng Học sinh */}
@@ -710,7 +688,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/ho-tro-hoc-tap') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>7. Phụ đạo, bồi dưỡng Học sinh</span>}
+                  {!isCollapsed && <span>6. Phụ đạo, bồi dưỡng Học sinh</span>}
                 </Link>
               </div>
             </>

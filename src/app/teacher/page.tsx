@@ -118,15 +118,7 @@ export default function TeacherDashboard() {
       icon: Layers,
       badge: "Lop chu nhiem",
     },
-    {
-      href: "/teacher/cam-ket-hoc-tap",
-      title: "Cam ket hoc tap",
-      desc: "Theo doi cam ket va tien do cua hoc sinh",
-      iconBg: "linear-gradient(135deg, #D97706, #F59E0B)",
-      icon: BookOpen,
-      badge: "Cam ket",
-    },
-  ]
+]
 
   return (
     <div className="space-y-6 teacher-fade-in pb-12">
