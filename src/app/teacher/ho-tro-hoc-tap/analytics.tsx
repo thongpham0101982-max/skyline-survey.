@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 import { 
   TrendingUp, BarChart2, CheckCircle2, AlertCircle, Award, 
   ChevronDown, ChevronUp, Sparkles, Filter, Users, Calendar
@@ -11,8 +11,8 @@ import {
 } from "recharts"
 
 interface TeacherImprovementAnalyticsProps {
-  targets: any[]
-  configs: any[]
+  targets?: any[]
+  configs?: any[]
   homeroomClasses?: any[]
 }
 
@@ -22,8 +22,8 @@ const MONTH_ORDER = [
 ]
 
 export function TeacherImprovementAnalytics({
-  targets,
-  configs,
+  targets = [],
+  configs = [],
   homeroomClasses = []
 }: TeacherImprovementAnalyticsProps) {
   const [isOpen, setIsOpen] = useState(true)
@@ -31,13 +31,16 @@ export function TeacherImprovementAnalytics({
   const [chartMetricMode, setChartMetricMode] = useState<"count" | "percentage">("count")
   const [activeTabChart, setActiveTabChart] = useState<"stackedBar" | "trendLine" | "matrix">("stackedBar")
 
+  const safeTargets = useMemo(() => Array.isArray(targets) ? targets : [], [targets])
+
   // Filter targets based on support type
   const filteredTargets = useMemo(() => {
-    return targets.filter(t => {
+    return safeTargets.filter(t => {
+      if (!t) return false
       if (selectedSupportType === "ALL") return true
       return t.supportType === selectedSupportType
     })
-  }, [targets, selectedSupportType])
+  }, [safeTargets, selectedSupportType])
 
   // Extract all unique months from evaluations or defaults
   const monthlyData = useMemo(() => {
@@ -65,12 +68,15 @@ export function TeacherImprovementAnalytics({
     })
 
     filteredTargets.forEach(t => {
-      const evals = t.evaluations || []
+      if (!t) return
+      const evals = Array.isArray(t.evaluations) ? t.evaluations : []
       evals.forEach((ev: any) => {
+        if (!ev) return
         let period = ev.periodName || ""
         if (!period.startsWith("Tháng ")) {
-          const d = new Date(ev.createdAt)
-          period = `Tháng ${d.getMonth() + 1}`
+          const d = ev.createdAt ? new Date(ev.createdAt) : new Date()
+          const monthNum = !isNaN(d.getTime()) ? d.getMonth() + 1 : 8
+          period = `Tháng ${monthNum}`
         }
 
         if (!monthStatsMap[period]) {
@@ -85,9 +91,9 @@ export function TeacherImprovementAnalytics({
           }
         }
 
-        const level = (ev.trackingLevel || "").toLowerCase()
+        const level = String(ev.trackingLevel || "").toLowerCase()
         monthStatsMap[period].totalEvals++
-        monthStatsMap[period].students.add(t.studentId)
+        if (t.studentId) monthStatsMap[period].students.add(t.studentId)
 
         if (
           level.includes("vượt bậc") || 
@@ -124,31 +130,31 @@ export function TeacherImprovementAnalytics({
       }
 
       const total = stat.totalEvals || 1
-      const totalImproved = stat.excellent + stat.good
+      const totalImproved = (stat.excellent || 0) + (stat.good || 0)
       const improvementRate = stat.totalEvals > 0 ? Math.round((totalImproved / stat.totalEvals) * 100) : 0
 
       if (chartMetricMode === "percentage") {
         return {
           month: m,
-          "Tiến bộ vượt bậc / Hoàn thành": Math.round((stat.excellent / total) * 100),
-          "Có tiến bộ / Đạt": Math.round((stat.good / total) * 100),
-          "Đang theo dõi / Duy trì": Math.round((stat.developing / total) * 100),
-          "Cần can thiệp": Math.round((stat.needsAttention / total) * 100),
-          "Tỷ lệ cải thiện (%)": improvementRate,
-          rawTotal: stat.totalEvals,
-          studentCount: stat.students.size
+          "Tiến bộ vượt bậc / Hoàn thành": Math.round(((stat.excellent || 0) / total) * 100) || 0,
+          "Có tiến bộ / Đạt": Math.round(((stat.good || 0) / total) * 100) || 0,
+          "Đang theo dõi / Duy trì": Math.round(((stat.developing || 0) / total) * 100) || 0,
+          "Cần can thiệp": Math.round(((stat.needsAttention || 0) / total) * 100) || 0,
+          "Tỷ lệ cải thiện (%)": improvementRate || 0,
+          rawTotal: stat.totalEvals || 0,
+          studentCount: stat.students?.size || 0
         }
       }
 
       return {
         month: m,
-        "Tiến bộ vượt bậc / Hoàn thành": stat.excellent,
-        "Có tiến bộ / Đạt": stat.good,
-        "Đang theo dõi / Duy trì": stat.developing,
-        "Cần can thiệp": stat.needsAttention,
-        "Tỷ lệ cải thiện (%)": improvementRate,
-        rawTotal: stat.totalEvals,
-        studentCount: stat.students.size
+        "Tiến bộ vượt bậc / Hoàn thành": stat.excellent || 0,
+        "Có tiến bộ / Đạt": stat.good || 0,
+        "Đang theo dõi / Duy trì": stat.developing || 0,
+        "Cần can thiệp": stat.needsAttention || 0,
+        "Tỷ lệ cải thiện (%)": improvementRate || 0,
+        rawTotal: stat.totalEvals || 0,
+        studentCount: stat.students?.size || 0
       }
     })
   }, [filteredTargets, chartMetricMode])
@@ -161,10 +167,12 @@ export function TeacherImprovementAnalytics({
     let totalNeedsAttention = 0
 
     filteredTargets.forEach(t => {
-      const evals = t.evaluations || []
+      if (!t) return
+      const evals = Array.isArray(t.evaluations) ? t.evaluations : []
       evals.forEach((ev: any) => {
+        if (!ev) return
         totalEvalsCount++
-        const level = (ev.trackingLevel || "").toLowerCase()
+        const level = String(ev.trackingLevel || "").toLowerCase()
         if (level.includes("vượt bậc") || level.includes("hoàn thành") || level.includes("xuất sắc") || level.includes("giỏi") || level.includes("kết thúc")) {
           totalExcellent++
         } else if (level.includes("tiến bộ") || level.includes("đạt") || level.includes("cải thiện") || level.includes("khá") || level.includes("tốt")) {
@@ -191,24 +199,32 @@ export function TeacherImprovementAnalytics({
   // Student progress matrix: list students with evaluation timeline
   const studentMatrixData = useMemo(() => {
     return filteredTargets.map(t => {
-      const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) : []
+      if (!t) return null
+      const evals = Array.isArray(t.evaluations) ? t.evaluations : []
+      const sortedEvals = [...evals].sort((a: any, b: any) => {
+        const dA = a?.createdAt ? new Date(a.createdAt).getTime() : 0
+        const dB = b?.createdAt ? new Date(b.createdAt).getTime() : 0
+        return dA - dB
+      })
       const evalByMonth: Record<string, string> = {}
       
       sortedEvals.forEach((ev: any) => {
+        if (!ev) return
         let period = ev.periodName || ""
         if (!period.startsWith("Tháng ")) {
-          const d = new Date(ev.createdAt)
-          period = `Tháng ${d.getMonth() + 1}`
+          const d = ev.createdAt ? new Date(ev.createdAt) : new Date()
+          const monthNum = !isNaN(d.getTime()) ? d.getMonth() + 1 : 8
+          period = `Tháng ${monthNum}`
         }
-        evalByMonth[period] = ev.trackingLevel
+        evalByMonth[period] = ev.trackingLevel || ""
       })
 
       const latestEval = sortedEvals[sortedEvals.length - 1]
       const firstEval = sortedEvals[0]
 
       return {
-        id: t.id,
-        studentName: t.student?.studentName || "N/A",
+        id: t.id || Math.random().toString(),
+        studentName: t.student?.studentName || "Học sinh",
         studentCode: t.student?.studentCode || "N/A",
         className: t.student?.class?.className || "N/A",
         supportType: t.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý",
@@ -217,7 +233,7 @@ export function TeacherImprovementAnalytics({
         latestLevel: latestEval?.trackingLevel || (t.status === "ACTIVE" ? "Đang hỗ trợ" : "Chưa đánh giá"),
         evalCount: sortedEvals.length
       }
-    })
+    }).filter(Boolean)
   }, [filteredTargets])
 
   return (
@@ -273,7 +289,7 @@ export function TeacherImprovementAnalytics({
                       : "text-slate-600 hover:text-slate-900"
                   }`}
                 >
-                  Tất cả ({targets.length})
+                  Tất cả ({safeTargets.length})
                 </button>
                 <button
                   onClick={() => setSelectedSupportType("ACADEMIC")}
@@ -403,7 +419,7 @@ export function TeacherImprovementAnalytics({
           </div>
 
           {/* MAIN VISUALIZATION AREA */}
-          <div className="bg-white p-5 rounded-2xl border shadow-2xs">
+          <div className="bg-white p-5 rounded-2xl border shadow-2xs min-h-[300px]">
             {activeTabChart === "stackedBar" && (
               <div>
                 <div className="flex items-center justify-between mb-4">
@@ -524,7 +540,7 @@ export function TeacherImprovementAnalytics({
                           </td>
                         </tr>
                       ) : (
-                        studentMatrixData.map((st) => (
+                        studentMatrixData.map((st: any) => (
                           <tr key={st.id} className="hover:bg-slate-50">
                             <td className="px-4 py-3 font-semibold whitespace-nowrap">
                               <div className="font-bold text-indigo-600">{st.studentName}</div>
@@ -533,18 +549,18 @@ export function TeacherImprovementAnalytics({
                             <td className="px-4 py-3 font-bold text-slate-700 whitespace-nowrap">{st.className}</td>
                             <td className="px-4 py-3 whitespace-nowrap">
                               <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                                st.supportType.includes("Văn hóa") ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
+                                String(st.supportType || "").includes("Văn hóa") ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
                               }`}>
                                 {st.supportType}
                               </span>
                             </td>
                             {MONTH_ORDER.slice(0, 6).map(m => {
-                              const level = st.evalByMonth[m]
+                              const level = st.evalByMonth?.[m]
                               if (!level) {
                                 return <td key={m} className="px-3 py-3 text-center text-slate-300">-</td>
                               }
 
-                              const lvlLower = level.toLowerCase()
+                              const lvlLower = String(level).toLowerCase()
                               let badgeColor = "bg-slate-100 text-slate-600"
                               if (lvlLower.includes("vượt bậc") || lvlLower.includes("hoàn thành") || lvlLower.includes("kết thúc")) {
                                 badgeColor = "bg-emerald-100 text-emerald-800 font-bold"

@@ -47,9 +47,9 @@ const getCompactScore = (val: any) => {
 
 export function TeacherSupportClient({
   teacher,
-  academicYears,
-  homeroomClasses,
-  subjects
+  academicYears = [],
+  homeroomClasses = [],
+  subjects = []
 }: Props) {
   const router = useRouter()
 
@@ -797,9 +797,9 @@ export function TeacherSupportClient({
 
       {/* Visual Student Improvement Analytics Section */}
       <TeacherImprovementAnalytics 
-        targets={targets} 
-        configs={configs} 
-        homeroomClasses={homeroomClasses} 
+        targets={Array.isArray(targets) ? targets : []} 
+        configs={Array.isArray(configs) ? configs : []} 
+        homeroomClasses={Array.isArray(homeroomClasses) ? homeroomClasses : []} 
       />
 
       {/* Statistical Dashboard Cards */}
