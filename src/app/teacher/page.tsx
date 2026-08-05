@@ -183,12 +183,12 @@ export default function TeacherDashboard() {
   ]
 
   return (
-    <div className="space-y-8 pb-12 transition-all">
+    <div className="space-y-4 sm:space-y-5 pb-6 transition-all">
       {/* Welcome Banner */}
       <WelcomeAlert name={userName} />
 
       {/* Main Dashboard Hero Card */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl text-white">
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-lg text-white">
         {/* Glow Accents */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
@@ -199,10 +199,10 @@ export default function TeacherDashboard() {
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               Cổng Thông tin Giáo viên
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-2">
               Tổng quan Công việc & Nhiệm vụ
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-xs text-slate-300 max-w-2xl leading-normal">
               Theo dõi thống kê lớp học, môn giảng dạy và quản lý các công tác khảo sát, bồi dưỡng học sinh dễ dàng.
             </p>
           </div>
@@ -225,24 +225,24 @@ export default function TeacherDashboard() {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
         {statCards.map((card, idx) => {
           const Icon = card.icon
           const CardInner = (
-            <div className={`relative overflow-hidden bg-white border ${card.borderColor} rounded-2xl p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02] flex flex-col justify-between h-full`}>
+            <div className={`relative overflow-hidden bg-white border ${card.borderColor} rounded-2xl p-3.5 sm:p-4 shadow-2xs transition-all duration-300 hover:shadow-sm hover:scale-[1.01] flex flex-col justify-between h-full`}>
               <div className={`absolute top-0 right-0 w-28 h-28 bg-gradient-to-br ${card.bgGradient} rounded-full blur-2xl pointer-events-none`} />
 
               <div className="flex items-start justify-between gap-3 relative z-10">
                 <div>
                   <p className="text-xs font-bold text-slate-500 tracking-wide uppercase">{card.label}</p>
-                  <p className="text-3xl font-black text-slate-900 mt-1 tracking-tight">{card.value}</p>
+                  <p className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 tracking-tight">{card.value}</p>
                 </div>
-                <div className={`p-3 rounded-2xl border ${card.iconBg}`}>
-                  <Icon className="w-6 h-6" />
+                <div className={`p-2 sm:p-2.5 rounded-xl border ${card.iconBg}`}>
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between relative z-10">
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between relative z-10">
                 <span className="text-[11px] text-slate-400 font-medium">{card.subtext}</span>
                 <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${card.badgeColor}`}>
                   Hoạt động
@@ -264,7 +264,7 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Portal Quick Access Action Center */}
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-slate-200 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-1.5 h-5 rounded-full bg-indigo-600" />
@@ -277,25 +277,25 @@ export default function TeacherDashboard() {
           </span>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-4 sm:space-y-5">
           {actionSections.map((section, secIdx) => (
             <div key={secIdx} className="space-y-3">
               <h3 className="text-xs font-extrabold text-indigo-900/80 uppercase tracking-wider pl-1">
                 {section.category}
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5">
                 {section.items.map((item, itemIdx) => {
                   const Icon = item.icon
                   return (
                     <Link
                       key={itemIdx}
                       href={item.href}
-                      className="group relative bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-5 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between"
+                      className="group relative bg-white border border-slate-200 hover:border-indigo-300 rounded-2xl p-3.5 sm:p-4 shadow-2xs hover:shadow-sm transition-all duration-300 flex flex-col justify-between"
                     >
                       <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className={`p-3 rounded-xl bg-gradient-to-tr ${item.iconGradient} text-white shadow-md shadow-indigo-500/10 group-hover:scale-110 transition-transform duration-300`}>
-                          <Icon className="w-5 h-5" />
+                        <div className={`p-2.5 rounded-lg bg-gradient-to-tr ${item.iconGradient} text-white shadow-md shadow-indigo-500/10 group-hover:scale-110 transition-transform duration-300`}>
+                          <Icon className="w-4 h-4" />
                         </div>
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold border ${item.badgeStyle}`}>
                           {item.badge}
@@ -303,11 +303,11 @@ export default function TeacherDashboard() {
                       </div>
 
                       <div className="space-y-1">
-                        <h4 className="text-sm font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors flex items-center justify-between">
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors flex items-center justify-between">
                           <span>{item.title}</span>
                           <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
                         </h4>
-                        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                        <p className="text-[11px] sm:text-xs text-slate-500 leading-normal line-clamp-2">
                           {item.desc}
                         </p>
                       </div>
