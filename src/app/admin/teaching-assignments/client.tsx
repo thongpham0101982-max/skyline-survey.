@@ -4,15 +4,23 @@ import { useState, useMemo } from "react"
 import { Plus, Trash2, CheckCircle2, User, BookOpen, Layers } from "lucide-react"
 import { saveAssignment, deleteAssignment } from "./actions"
 
-export function TeachingClient({ teachers, classes, subjects, years, departments, initialAssignments }: any) {
+export function TeachingClient({ teachers, classes, subjects, years, departments, campuses = [], initialAssignments }: any) {
   const [selectedYear, setSelectedYear] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
   const [selectedDeptId, setSelectedDeptId] = useState("")
+  const [selectedCampusId, setSelectedCampusId] = useState("")
+  const [selectedFormCampusId, setSelectedFormCampusId] = useState("")
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
 
   const filteredTeachers = useMemo(() => {
-    if (!selectedDeptId) return teachers;
-    return teachers.filter((t: any) => t.departmentId === selectedDeptId);
-  }, [teachers, selectedDeptId])
+    let list = teachers;
+    if (selectedDeptId) {
+      list = list.filter((t: any) => t.departmentId === selectedDeptId);
+    }
+    if (selectedCampusId) {
+      list = list.filter((t: any) => t.campusId === selectedCampusId || t.campus?.id === selectedCampusId);
+    }
+    return list;
+  }, [teachers, selectedDeptId, selectedCampusId])
   const [assignments, setAssignments] = useState(initialAssignments)
   const [loading, setLoading] = useState(false)
 
@@ -49,6 +57,9 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
   // Filter classes by year, level and grade
   const filteredClasses = useMemo(() => {
     let list = classes.filter((c: any) => c.academicYearId === selectedYear)
+    if (selectedFormCampusId) {
+      list = list.filter((c: any) => c.campusId === selectedFormCampusId)
+    }
     if (selectedLevel) {
       list = list.filter((c: any) => (c.level || "").toLowerCase().trim() === selectedLevel.toLowerCase().trim())
     }
@@ -56,7 +67,7 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
       list = list.filter((c: any) => (c.grade || "").toLowerCase().trim() === selectedGrade.toLowerCase().trim())
     }
     return list
-  }, [classes, selectedYear, selectedLevel, selectedGrade])
+  }, [classes, selectedYear, selectedFormCampusId, selectedLevel, selectedGrade])
 
   const handleAdd = async () => {
     if (!selectedTeacherId || !newSubj || newClasses.length === 0 || (!hk1 && !hk2)) return alert("Vui lòng chọn đủ thông tin môn, lớp và ít nhất 1 học kỳ!")
@@ -126,7 +137,11 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
         <div className="p-4 flex flex-wrap gap-3 justify-between items-center text-xs font-semibold">
           <div className="font-bold text-slate-700 flex items-center"><Layers className="w-5 h-5 mr-2 text-indigo-500"/>Bảng phân công</div>
           <div className="flex gap-2">
-            <select value={selectedDeptId} onChange={e=>setSelectedDeptId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none">
+            <select value={selectedCampusId} onChange={e=>setSelectedCampusId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none bg-white">
+              <option value="">Tất cả Cơ sở</option>
+              {(campuses || []).map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+            </select>
+            <select value={selectedDeptId} onChange={e=>setSelectedDeptId(e.target.value)} className="p-2 rounded-lg border border-slate-200 font-semibold text-sm outline-none bg-white">
               <option value="">Tất cả Tổ chuyên môn</option>
               {(departments || []).map((d: any) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>
@@ -179,12 +194,16 @@ export function TeachingClient({ teachers, classes, subjects, years, departments
                   <option value="">-- Chọn Môn học --</option>
                   {subjects.map((s:any) => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
                 </select>
-                <div className="grid grid-cols-2 gap-2">
-                  <select value={selectedLevel} onChange={e=>{ setSelectedLevel(e.target.value); setNewClasses([]); }} className="w-full p-2 border rounded-lg text-sm bg-white">
+                <div className="grid grid-cols-3 gap-2">
+                  <select value={selectedFormCampusId} onChange={e=>{ setSelectedFormCampusId(e.target.value); setNewClasses([]); }} className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium">
+                    <option value="">Tất cả Cơ sở</option>
+                    {(campuses || []).map((c: any) => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                  </select>
+                  <select value={selectedLevel} onChange={e=>{ setSelectedLevel(e.target.value); setNewClasses([]); }} className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium">
                     <option value="">Tất cả Bậc học</option>
                     {levels.map((l: any) => <option key={l} value={l}>{l}</option>)}
                   </select>
-                  <select value={selectedGrade} onChange={e=>{ setSelectedGrade(e.target.value); setNewClasses([]); }} className="w-full p-2 border rounded-lg text-sm bg-white">
+                  <select value={selectedGrade} onChange={e=>{ setSelectedGrade(e.target.value); setNewClasses([]); }} className="w-full p-1.5 border rounded-lg text-xs bg-white font-medium">
                     <option value="">Tất cả Khối</option>
                     {grades.map((g: any) => <option key={g} value={g}>Khối {g}</option>)}
                   </select>
