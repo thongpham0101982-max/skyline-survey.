@@ -65,6 +65,10 @@ export function TeacherSupportClient({
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
   const [targets, setTargets] = useState<any[]>([])
+  const safeTargets = useMemo(() => Array.isArray(targets) ? targets : [], [targets])
+  const safeConfigs = useMemo(() => Array.isArray(configs) ? configs : [], [configs])
+  const safeAcademicYears = useMemo(() => Array.isArray(academicYears) ? academicYears : [], [academicYears])
+  const safeHomeroomClasses = useMemo(() => Array.isArray(homeroomClasses) ? homeroomClasses : [], [homeroomClasses])
   const [loading, setLoading] = useState(false)
 
   // Filters for teacher page
@@ -228,7 +232,7 @@ export function TeacherSupportClient({
         if (data.length > 0) {
           const eligibleFromCommitment = data
             .filter((c: any) => {
-              const existingAcademic = targets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
+              const existingAcademic = safeTargets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
               return !existingAcademic || existingAcademic.createdById === null
             })
             .map((c: any) => c.id)
@@ -258,7 +262,7 @@ export function TeacherSupportClient({
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedYear = localStorage.getItem("academicYearId")
-      if (storedYear && academicYears.some(y => y.id === storedYear)) {
+      if (storedYear && safeAcademicYears.some(y => y.id === storedYear)) {
         setSelectedYearId(storedYear)
       }
     }
@@ -360,8 +364,8 @@ export function TeacherSupportClient({
       let successCount = 0
       let failCount = 0
       for (const studentId of selectedStudentIds) {
-        const existingAcademic = targets.find(t => t.studentId === studentId && t.supportType === "ACADEMIC")
-        const existingPsych = targets.find(t => t.studentId === studentId && t.supportType === "PSYCHOLOGICAL")
+        const existingAcademic = safeTargets.find(t => t.studentId === studentId && t.supportType === "ACADEMIC")
+        const existingPsych = safeTargets.find(t => t.studentId === studentId && t.supportType === "PSYCHOLOGICAL")
 
         const blockAcademic = existingAcademic && existingAcademic.createdById !== null
         const blockPsych = existingPsych && existingPsych.createdById !== null
@@ -595,12 +599,12 @@ export function TeacherSupportClient({
   }
 
   // Filter students related to this teacher
-  const filteredTargets = targets.filter(t => {
+  const filteredTargets = safeTargets.filter(t => {
     // Only show active targets that are approved (have assigned teachers)
     if (!t.assignments || t.assignments.length === 0) return false
 
     // Check if homeroom or assigned
-    const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
+    const isHomeroomStudent = safeHomeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
     const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher.id)
 
     // Apply role filter
@@ -632,7 +636,7 @@ export function TeacherSupportClient({
 
   // Count approved proposals submitted by this teacher
   const approvedHistoryCount = useMemo(() => {
-    return targets.filter((t: any) => 
+    return safeTargets.filter((t: any) => 
       t.createdById === teacher?.id && (
         (t.assignments && t.assignments.length > 0) || 
         t.status === "ĐÃ DUYỆT" || 
@@ -644,7 +648,7 @@ export function TeacherSupportClient({
 
   // Proposal history filter - server already filters by teacher visibility
   // Only apply local search filter here
-  const historyTargets = targets.filter(t => {
+  const historyTargets = safeTargets.filter(t => {
     if (t.createdById !== teacher?.id) return false
 
     const name = t.student?.studentName || ""
@@ -693,7 +697,7 @@ export function TeacherSupportClient({
           <Calendar className="h-4 w-4 text-indigo-600 shrink-0" />
           <span className="text-xs font-bold text-slate-500">Năm học:</span>
           <span className="text-xs font-black text-indigo-900">
-            {academicYears.find(y => y.id === selectedYearId)?.name || "2026 - 2027"}
+            {safeAcademicYears.find(y => y.id === selectedYearId)?.name || "2026 - 2027"}
           </span>
         </div>
       </div>
@@ -804,8 +808,8 @@ export function TeacherSupportClient({
 
       {/* Statistical Dashboard Cards */}
       {activeSubTab === "assigned" && (() => {
-        const teacherTargets = targets.filter(t => {
-          const isHR = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId));
+        const teacherTargets = safeTargets.filter(t => {
+          const isHR = safeHomeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId));
           const isAS = t.assignments?.some((a: any) => a.teacherId === teacher?.id);
           return isHR || isAS;
         });
@@ -1001,7 +1005,7 @@ export function TeacherSupportClient({
                 if (selectedEvalTargetIds.length === 0) return;
                 setEvalTargetId("")
                 setEvalTargetName("Nhiều học sinh")
-                const firstSelected = targets.find((t:any) => t.id === selectedEvalTargetIds[0])
+                const firstSelected = safeTargets.find((t:any) => t.id === selectedEvalTargetIds[0])
                 setEvalTargetType(firstSelected?.supportType || "ACADEMIC")
                 setEvalPeriodType("MONTH")
                 const curMonth = "Tháng " + (new Date().getMonth() + 1)
@@ -1198,7 +1202,7 @@ export function TeacherSupportClient({
 
                 return filtered.map((s: any, index: number) => {
                   const hasPsychology = s.committedSubjects.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
-                  const existingTarget = targets.find(t => 
+                  const existingTarget = safeTargets.find(t => 
                     t.studentId === s.id && 
                     (hasPsychology ? t.supportType === "PSYCHOLOGICAL" : t.supportType === "ACADEMIC")
                   )
@@ -1673,7 +1677,7 @@ export function TeacherSupportClient({
                         onClick={() => {
                           const eligibleFromCommitment = commitmentCandidates
                             .filter(c => {
-                              const existingAcademic = targets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
+                              const existingAcademic = safeTargets.find(t => t.studentId === c.id && t.supportType === "ACADEMIC")
                               return !existingAcademic || existingAcademic.createdById === null
                             })
                             .map(c => c.id)
@@ -1699,8 +1703,8 @@ export function TeacherSupportClient({
                       </label>
                       {classStudents.length > 0 && (() => {
                         const eligibleStudents = classStudents.filter(s => {
-                          const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
-                          const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                          const existingAcademic = safeTargets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                          const existingPsych = safeTargets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
                           
                           const hasAcademicBlock = proposeAcademic && existingAcademic && existingAcademic.createdById !== null
                           const hasPsychBlock = proposePsychological && existingPsych && existingPsych.createdById !== null
@@ -1770,8 +1774,8 @@ export function TeacherSupportClient({
                       return (
                         <div className="border border-slate-100 rounded-xl max-h-56 overflow-y-auto p-2 space-y-1.5 bg-slate-50/50">
                           {filteredList.map((s: any) => {
-                            const existingAcademic = targets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
-                            const existingPsych = targets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
+                            const existingAcademic = safeTargets.find(t => t.studentId === s.id && t.supportType === "ACADEMIC")
+                            const existingPsych = safeTargets.find(t => t.studentId === s.id && t.supportType === "PSYCHOLOGICAL")
                             const hasCommitment = commitmentCandidates.some(c => c.id === s.id)
                             const commitmentCandidate = commitmentCandidates.find(c => c.id === s.id)
 
