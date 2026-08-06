@@ -651,7 +651,7 @@ export default function AdminDashboard() {
                 Khối 1
               </button>
               <button
-                onClick={() => setEntryGradeFilter("9")}
+                onClick={() => setEntryGradeFilter("6")}
                 className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "6" ? "bg-[#6C5CE7] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
               >
                 Khối 6
