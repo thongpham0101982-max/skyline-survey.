@@ -705,21 +705,61 @@ export function TeacherManagerClient({
 
                       <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
-                          <div className="flex flex-col gap-1.5 max-w-xs">
-                            <select value={editForm.department} onChange={e => setEditForm({ ...editForm, department: e.target.value })}
-                              className="border border-[#00A99D] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#00A99D] w-full cursor-pointer">
-                              <option value="">-- Tổ --</option>
-                              {(departments || []).map((d) => <option key={d.id} value={d.name}>{d.name}</option>)}
-                            </select>
+                          <div className="flex flex-col gap-1.5 min-w-[220px]">
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider">Tổ CM & Chức vụ:</p>
+                            <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto p-1.5 border border-[#00A99D] rounded-xl bg-white text-xs">
+                              {(departments || []).map((d: any) => {
+                                const assigned = (editForm.departmentAssignments || []).find((a: any) => a.departmentId === d.id);
+                                const isChecked = !!assigned;
+                                return (
+                                  <div key={d.id} className="flex items-center justify-between p-1 rounded-lg hover:bg-slate-50 border border-slate-100">
+                                    <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700 text-[11px]">
+                                      <input type="checkbox" checked={isChecked} onChange={(e) => {
+                                        const cur = editForm.departmentAssignments || [];
+                                        if (e.target.checked) {
+                                          const next = [...cur, { departmentId: d.id, position: "GV" }];
+                                          setEditForm({ ...editForm, departmentAssignments: next, department: d.name });
+                                        } else {
+                                          const next = cur.filter((x: any) => x.departmentId !== d.id);
+                                          setEditForm({ ...editForm, departmentAssignments: next, department: next[0] ? ((departments || []).find((dx: any) => dx.id === next[0].departmentId)?.name || "") : "" });
+                                        }
+                                      }} className="w-3.5 h-3.5 rounded accent-[#00A99D] cursor-pointer" />
+                                      {d.name}
+                                    </label>
+                                    {isChecked && (
+                                      <select value={assigned.position || "GV"} onChange={(e) => {
+                                        const cur = editForm.departmentAssignments || [];
+                                        const next = cur.map((x: any) => x.departmentId === d.id ? { ...x, position: e.target.value } : x);
+                                        const hasTTCM = next.some((x: any) => x.position === "TTCM");
+                                        setEditForm({ ...editForm, departmentAssignments: next, position: hasTTCM ? "TTCM" : (editForm.position || "GV") });
+                                      }} className="text-[10px] font-extrabold px-1.5 py-0.5 border border-amber-300 rounded-md outline-none bg-amber-50 text-amber-800 cursor-pointer">
+                                        <option value="GV">GV</option>
+                                        <option value="TTCM">TTCM</option>
+                                        <option value="TPTCM">TPTCM</option>
+                                      </select>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         ) : (
-                          <div className="flex flex-col gap-1">
-                            {t.department ? (
-                              <span className={`inline-block px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide self-start ${getDeptColor(t.department)}`}>
+                          <div className="flex flex-wrap gap-1 items-center">
+                            {t.departmentAssignments && t.departmentAssignments.length > 0 ? (
+                              t.departmentAssignments.map((da: any) => (
+                                <span key={da.departmentId || da.departmentName} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-extrabold bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20">
+                                  {da.departmentName || da.departmentCode}
+                                  {da.position && da.position !== "GV" && (
+                                    <span className="bg-amber-100 text-amber-800 text-[10px] px-1 py-0.2 rounded-md font-black">{da.position}</span>
+                                  )}
+                                </span>
+                              ))
+                            ) : t.department ? (
+                              <span className={"inline-block px-2.5 py-1 rounded-xl text-[10px] font-extrabold uppercase tracking-wide self-start " + getDeptColor(t.department)}>
                                 {t.department}
                               </span>
                             ) : (
-                              <span className="text-slate-350 text-xs italic">Chưa phân tổ</span>
+                              <span className="text-slate-350 text-xs italic">Ch�a ph�n t?</span>
                             )}
                           </div>
                         )}
