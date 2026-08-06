@@ -57,7 +57,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     admissionGroup,
     classSummaries
   ] = await Promise.all([
-    prisma.student.count({ where: studentWhere }),
+    prisma.student.count({ where: { status: "ACTIVE", ...(isFullAccess ? {} : { campusId: { in: allowedCampusIds } }) } }),
     prisma.class.count({ where: classWhere }),
     prisma.class.count({
       where: {
@@ -297,7 +297,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
   // Aggregations for grade, campus, level distributions and entry level statistics
   const activeStudentsForStats = await prisma.student.findMany({
-    where: studentWhere,
+    where: { status: "ACTIVE", ...(isFullAccess ? {} : { campusId: { in: allowedCampusIds } }) },
     include: {
       class: { select: { className: true, grade: true, level: true } },
       campus: { select: { id: true, campusCode: true, campusName: true } }
