@@ -295,6 +295,171 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   const totalResponses = totalPromoter + totalDetractor + totalPassive
   const systemNps = totalResponses > 0 ? ((totalPromoter / totalResponses) * 100) - ((totalDetractor / totalResponses) * 100) : 0
 
+  // Aggregations for grade, campus, level distributions and entry level statistics
+  const activeStudentsForStats = await prisma.student.findMany({
+    where: studentWhere,
+    include: {
+      class: { select: { className: true, grade: true, level: true } },
+      campus: { select: { id: true, campusCode: true, campusName: true } }
+    }
+  })
+
+  // Group by Grade
+  const gradeCountMap: Record<string, number> = {}
+  // Group by Campus
+  const campusCountMap: Record<string, { campusId: string; campusCode: string; campusName: string; count: number }> = {}
+  // Group by Level
+  const levelCountMap: Record<string, number> = { "Mầm non": 0, "Tiểu học": 0, "THCS": 0, "THPT": 0 }
+
+  activeStudentsForStats.forEach(s => {
+    // Grade
+    const g = String(s.class?.grade || "").replace("Khối ", "").trim() || "Khác"
+    gradeCountMap[g] = (gradeCountMap[g] || 0) + 1
+
+    // Campus
+    const cName = s.campus?.campusName || "Khác"
+    const cCode = s.campus?.campusCode || "OTHER"
+    const cId = s.campus?.id || "other"
+    if (!campusCountMap[cName]) {
+      campusCountMap[cName] = { campusId: cId, campusCode: cCode, campusName: cName, count: 0 }
+    }
+    campusCountMap[cName].count++
+
+    // Level
+    const lvl = s.class?.level || "Khác"
+    if (levelCountMap[lvl] !== undefined) {
+      levelCountMap[lvl]++
+    } else {
+      levelCountMap[lvl] = (levelCountMap[lvl] || 0) + 1
+    }
+  })
+
+  // Formatted Grade Distribution (Order: Khối 1 -> Khối 12)
+  const orderedGrades = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+  const gradeDistribution = orderedGrades.map(gNum => ({
+    grade: gNum,
+    label: `Khối ${gNum}`,
+    count: gradeCountMap[gNum] || 0,
+    level: Number(gNum) <= 5 ? "Tiểu học" : Number(gNum) <= 9 ? "THCS" : "THPT"
+  }))
+
+  // Add Preschool & Other grades if present
+  Object.keys(gradeCountMap).forEach(gKey => {
+    if (!orderedGrades.includes(gKey)) {
+      gradeDistribution.push({
+        grade: gKey,
+        label: gKey.includes("Mẫu") || gKey.includes("Nhà trẻ") ? gKey : `Khối ${gKey}`,
+        count: gradeCountMap[gKey],
+        level: gKey.includes("Mẫu") || gKey.includes("Nhà trẻ") ? "Mầm non" : "Khác"
+      })
+    }
+  })
+
+  // Formatted Campus Distribution
+  const campusDistribution = Object.values(campusCountMap)
+
+  // Formatted Level Distribution
+  const levelDistribution = Object.entries(levelCountMap).map(([level, count]) => ({
+    level,
+    count,
+    percentage: totalStudents > 0 ? Number(((count / totalStudents) * 100).toFixed(1)) : 0
+  }))
+
+  // Entry Level Students (Khối 1, Khối 9, Khối 10)
+  const generalInputs = await prisma.inputAssessmentStudent.findMany({
+    select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
+  })
+  const preschoolInputs = await prisma.preschoolInputAssessmentStudent.findMany({
+    select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
+  })
+
+  const genCodeSet = new Set<string>()
+  const genNameSet = new Set<string>()
+  generalInputs.forEach(g => {
+    if (g.studentCode) genCodeSet.add(g.studentCode)
+    if (g.enrollmentCode) genCodeSet.add(g.enrollmentCode)
+    if (g.fullName) genNameSet.add(g.fullName.trim().toLowerCase())
+  })
+
+  const preCodeSet = new Set<string>()
+  const preNameSet = new Set<string>()
+  preschoolInputs.forEach(p => {
+    if (p.studentCode) preCodeSet.add(p.studentCode)
+    if (p.enrollmentCode) preCodeSet.add(p.enrollmentCode)
+    if (p.fullName && p.grade === "5 đến 6 tuổi") preNameSet.add(p.fullName.trim().toLowerCase())
+  })
+
+  const entryStudentsList: any[] = []
+  const entryLevelStats = {
+    total: 0,
+    grade1: { total: 0, surveyCount: 0, preschoolCount: 0, otherCount: 0 },
+    grade9: { total: 0, surveyCount: 0, otherCount: 0 },
+    grade10: { total: 0, surveyCount: 0, otherCount: 0 },
+    students: entryStudentsList
+  }
+
+  activeStudentsForStats.forEach(s => {
+    const rawGrade = String(s.class?.grade || "").replace("Khối ", "").trim()
+    if (["1", "9", "10"].includes(rawGrade)) {
+      const code = s.studentCode
+      const nameKey = s.studentName ? s.studentName.trim().toLowerCase() : ""
+
+      const isFromPreschool = preCodeSet.has(code) || preNameSet.has(nameKey)
+      const isFromSurvey = genCodeSet.has(code) || genNameSet.has(nameKey)
+
+      let source: "KHAO_SAT" | "MAU_GIAO_LON" | "KHAC" = "KHAC"
+      let sourceLabel = "Trực tiếp / Khác"
+
+      if (rawGrade === "1") {
+        if (isFromPreschool) {
+          source = "MAU_GIAO_LON"
+          sourceLabel = "Chuyển từ Mẫu giáo lớn"
+          entryLevelStats.grade1.preschoolCount++
+        } else if (isFromSurvey) {
+          source = "KHAO_SAT"
+          sourceLabel = "Nhập học qua Khảo sát"
+          entryLevelStats.grade1.surveyCount++
+        } else {
+          entryLevelStats.grade1.otherCount++
+        }
+        entryLevelStats.grade1.total++
+      } else if (rawGrade === "9") {
+        if (isFromSurvey) {
+          source = "KHAO_SAT"
+          sourceLabel = "Nhập học qua Khảo sát"
+          entryLevelStats.grade9.surveyCount++
+        } else {
+          entryLevelStats.grade9.otherCount++
+        }
+        entryLevelStats.grade9.total++
+      } else if (rawGrade === "10") {
+        if (isFromSurvey) {
+          source = "KHAO_SAT"
+          sourceLabel = "Nhập học qua Khảo sát"
+          entryLevelStats.grade10.surveyCount++
+        } else {
+          entryLevelStats.grade10.otherCount++
+        }
+        entryLevelStats.grade10.total++
+      }
+
+      entryLevelStats.total++
+
+      entryStudentsList.push({
+        id: s.id,
+        studentCode: s.studentCode,
+        studentName: s.studentName,
+        grade: `Khối ${rawGrade}`,
+        rawGrade,
+        className: s.class?.className || "---",
+        campusName: s.campus?.campusName || "---",
+        level: s.class?.level || "---",
+        source,
+        sourceLabel
+      })
+    }
+  })
+
   return {
     academicYearName,
     totalStudents,
@@ -313,7 +478,11 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     systemNps,
     monthlyHeadcount,
     newEnrollmentStats,
-    transferOutStats
+    transferOutStats,
+    gradeDistribution,
+    campusDistribution,
+    levelDistribution,
+    entryLevelStats
   }
 }
 
