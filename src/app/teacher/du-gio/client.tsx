@@ -1643,53 +1643,86 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
 
           {/* Advanced filters inputs block */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-semibold">
-            {/* Campus */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
-              <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
-                <option value="all">Tất cả cơ sở</option>
-                {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-              </select>
-            </div>
+          <div className="p-4 bg-gradient-to-r from-teal-50/70 via-slate-50 to-emerald-50/50 border-2 border-teal-200/80 rounded-3xl shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-semibold">
+              {/* Campus */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-teal-400 transition-all">
+                <span className="text-[10px] font-black text-teal-700 uppercase tracking-wider flex items-center gap-1">
+                  🏢 Cơ sở
+                </span>
+                <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] cursor-pointer">
+                  <option value="all">Tất cả cơ sở</option>
+                  {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                </select>
+              </div>
 
-            {/* Level */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Bậc học</span>
-              <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
-                <option value="all">Tất cả bậc</option>
-                <option value="Mầm non">Mầm non</option>
-                <option value="Phổ thông K-12">Phổ thông K-12</option>
-              </select>
-            </div>
+              {/* Level */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-sky-400 transition-all">
+                <span className="text-[10px] font-black text-sky-700 uppercase tracking-wider flex items-center gap-1">
+                  🎓 Bậc học
+                </span>
+                <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+                  <option value="all">Tất cả bậc</option>
+                  <option value="Mầm non">Mầm non</option>
+                  <option value="Phổ thông K-12">Phổ thông K-12</option>
+                </select>
+              </div>
 
-            {/* Grade */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Khối lớp</span>
-              <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-55">
-                <option value="all">Tất cả khối</option>
-                {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
+              {/* Grade */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-indigo-400 transition-all">
+                <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                  📚 Khối lớp
+                </span>
+                <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none disabled:opacity-55 focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                  <option value="all">Tất cả khối</option>
+                  {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
 
-            {/* Date */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ngày dạy</span>
-              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
-            </div>
+              {/* Date */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-amber-400 transition-all">
+                <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                  📅 Ngày dạy
+                </span>
+                <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer" />
+              </div>
 
-            {/* Period */}
-            <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
-              <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
-                <option value="all">Tất cả tiết</option>
-                {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
-              </select>
+              {/* Period */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-violet-400 transition-all">
+                <span className="text-[10px] font-black text-violet-700 uppercase tracking-wider flex items-center gap-1">
+                  ⏰ Tiết dạy
+                </span>
+                <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer">
+                  <option value="all">Tất cả tiết</option>
+                  {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+                </select>
+              </div>
+
+              {/* Tìm kiếm Giáo viên / Bài dạy */}
+              <div className="flex flex-col gap-1 bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/40 p-2.5 rounded-2xl border-2 border-[#00A99D] shadow-xs col-span-1 sm:col-span-2 md:col-span-1">
+                <span className="text-[10px] font-black text-[#00A99D] uppercase tracking-wider flex items-center gap-1">
+                  <Search className="w-3.5 h-3.5" /> Tìm GV / Môn
+                </span>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="Tên, Mã GV, Môn..."
+                    value={filterTeacherSearch}
+                    onChange={e => setFilterTeacherSearch(e.target.value)}
+                    className="w-full text-xs font-bold rounded-xl border border-teal-300 pl-3 pr-7 py-1.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] shadow-inner-xs"
+                  />
+                  {filterTeacherSearch && (
+                    <button type="button" onClick={() => setFilterTeacherSearch("")} className="absolute right-2 text-rose-500 hover:text-rose-700">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
