@@ -19,7 +19,7 @@ async function getClientIp() {
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  secret: process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "skyline-survey-super-secret-key-change-in-production",
   trustHost: true,
   providers: [
     CredentialsProvider({
@@ -31,53 +31,68 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null
 
-        const identifier = credentials.email as string
+        const rawIdentifier = (credentials.email as string || '').trim()
         const password = credentials.password as string
         let user: any = null
 
-        // 1. Direct Email Lookup in User table
+        // 1. Direct Email / Account Lookup in User table
         if (!user) {
-          user = await prisma.user.findUnique({
-            where: { email: identifier }
+          user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { email: rawIdentifier },
+                { email: rawIdentifier.toLowerCase() },
+                { email: rawIdentifier.toUpperCase() }
+              ]
+            }
           })
           if (user) {
-            console.log('[AUTH] User found via Email:', identifier)
+            console.log('[AUTH] User found via Email/Account:', rawIdentifier)
           }
         }
 
         // 2. Teacher Code Match
         if (!user) {
-          const teacher = await prisma.teacher.findUnique({
-            where: { teacherCode: identifier },
+          const teacher = await prisma.teacher.findFirst({
+            where: {
+              OR: [
+                { teacherCode: rawIdentifier },
+                { teacherCode: rawIdentifier.toUpperCase() },
+                { teacherCode: rawIdentifier.toLowerCase() }
+              ]
+            },
             include: { user: true }
           })
           if (teacher?.user) {
             user = teacher.user
-            console.log('[AUTH] User found via Teacher Code:', identifier)
+            console.log('[AUTH] User found via Teacher Code:', rawIdentifier)
           }
         }
 
-
-        // 3. Parent Code Match (P + Mã HS)
+        // 3. Parent Code Match (P + Mã HS or parentCode)
         if (!user) {
-          const parent = await prisma.parent.findUnique({
-            where: { parentCode: identifier },
+          const parentCodeVariation = rawIdentifier.toUpperCase().startsWith('P') 
+            ? rawIdentifier.toUpperCase() 
+            : 'P' + rawIdentifier.toUpperCase();
+            
+          const parent = await prisma.parent.findFirst({
+            where: {
+              OR: [
+                { parentCode: rawIdentifier },
+                { parentCode: rawIdentifier.toUpperCase() },
+                { parentCode: rawIdentifier.toLowerCase() },
+                { parentCode: parentCodeVariation }
+              ]
+            },
             include: { user: true }
           })
           if (parent?.user) {
             user = parent.user
-            console.log('[AUTH] User found via Parent Code:', identifier)
+            console.log('[AUTH] User found via Parent Code:', rawIdentifier)
           }
         }
 
-        // 4. Student Code Match (Note: Students currently login via separate endpoint, this is kept for compatibility)
-        if (!user) {
-          const student = await prisma.student.findFirst({
-            where: { studentCode: identifier },
-            orderBy: { academicYear: { startDate: 'desc' } }
-          })
-          // Student has no user relation in current schema
-        }
+        const identifier = rawIdentifier
 
         if (!user) {
           console.log('[AUTH] User not found for identifier:', identifier)

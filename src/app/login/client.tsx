@@ -65,18 +65,50 @@ export function LoginClient() {
         window.location.href = '/hocsinh/hs-khaosat/danh-sach'
       } else {
         setLoadingSteps([{ text: 'Đang xác thực tài khoản...', done: false }])
-        await new Promise(r => setTimeout(r, 400))
-        const result = await signIn('credentials', { email: identifier.trim(), password, redirect: false })
-        if (result?.error) {
-          setError(result.error === 'TAI_KHOAN_BI_KHOA' || result.error.includes('TAI_KHOAN_BI_KHOA')
-            ? 'Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.'
-            : 'Sai tên đăng nhập hoặc mật khẩu.')
-          setLoading(false); setLoadingSteps([])
-        } else {
+        await new Promise(r => setTimeout(r, 300))
+        try {
+          const result: any = await signIn('credentials', { 
+            email: identifier.trim(), 
+            password, 
+            redirect: false 
+          })
+
+          if (result?.error || (result?.url && result.url.includes('error='))) {
+            const errCode = String(result?.error || result?.url || '')
+            if (errCode.includes('TAI_KHOAN_BI_KHOA')) {
+              setError('Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.')
+            } else {
+              setError('Sai tên đăng nhập hoặc mật khẩu.')
+            }
+            setLoading(false)
+            setLoadingSteps([])
+            return
+          }
+
           setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
           addStep('Đăng nhập thành công! Đang chuyển trang...')
-          await new Promise(r => setTimeout(r, 400))
-          window.location.assign('/')
+          
+          // Verify session before navigating to prevent race condition
+          await fetch('/api/auth/session').catch(() => {})
+          await new Promise(r => setTimeout(r, 300))
+          window.location.href = '/'
+
+        } catch (err: any) {
+          const errStr = String(err?.message || err?.type || err?.code || err || '')
+          if (errStr.includes('TAI_KHOAN_BI_KHOA')) {
+            setError('Tài khoản của bạn đã bị khóa hoặc ngừng hoạt động.')
+          } else if (
+            errStr.includes('CredentialsSignin') ||
+            errStr.includes('CallbackRouteError') ||
+            errStr.includes('credentials') ||
+            errStr.includes('Configuration')
+          ) {
+            setError('Sai tên đăng nhập hoặc mật khẩu.')
+          } else {
+            setError('Lỗi kết nối hệ thống. Vui lòng thử lại.')
+          }
+          setLoading(false)
+          setLoadingSteps([])
         }
       }
     } catch {

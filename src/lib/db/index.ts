@@ -3,14 +3,7 @@ import { createClient } from '@libsql/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
 
 const createPrismaClient = () => {
-  const dbUrl = process.env.DATABASE_URL || "";
-
-  // If local SQLite file is specified, use default local Prisma client
-  if (dbUrl.startsWith('file:')) {
-    return new PrismaClient();
-  }
-
-  const tursoUrl = process.env.TURSO_DATABASE_URL || "libsql://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
+  const tursoUrl = process.env.TURSO_DATABASE_URL || (process.env.DATABASE_URL?.startsWith('libsql://') ? process.env.DATABASE_URL : "libsql://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io")
   const tursoAuthToken = process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw"
 
   if (tursoUrl && tursoUrl.startsWith('libsql://')) {

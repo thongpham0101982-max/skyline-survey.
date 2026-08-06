@@ -13,7 +13,11 @@ export async function POST(req: NextRequest) {
     const defaultYear = await getDefaultAcademicYear(prisma);
     const student = await prisma.student.findFirst({
       where: { 
-        studentCode: code,
+        OR: [
+          { studentCode: code },
+          { studentCode: code.toUpperCase() },
+          { studentCode: code.toLowerCase() }
+        ],
         ...(defaultYear ? { academicYearId: defaultYear.id } : {})
       },
       select: { 
