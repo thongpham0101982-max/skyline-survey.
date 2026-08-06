@@ -249,10 +249,11 @@ export function StudentInfoClient({
   const [selectedResult, setSelectedResult] = useState("");
   const [selectedGrade, setSelectedGrade] = useState("");
   const [selectedCampusFilter, setSelectedCampusFilter] = useState("all");
+  const [selectedEnrollmentFilter, setSelectedEnrollmentFilter] = useState("all");
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCampusFilter]);
+  }, [selectedCampusFilter, selectedEnrollmentFilter]);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -888,6 +889,7 @@ export function StudentInfoClient({
     setSelectedBatch("");
     setSelectedResult("");
     setSelectedGrade("");
+    setSelectedEnrollmentFilter("all");
     setSelectedIds([]);
     setCurrentPage(1);
   };
@@ -983,6 +985,13 @@ export function StudentInfoClient({
       if (selectedResult && student.admissionResult !== selectedResult) return false;
       if (selectedGrade && student.grade !== selectedGrade) return false;
 
+      // Filter by enrollment status
+      if (selectedEnrollmentFilter && selectedEnrollmentFilter !== "all") {
+        const isEnrolled = student.enrollmentStatus === "COMPLETED" || student.enrollmentStatus === "ENROLLED" || student.enrollmentStatus === "PENDING" || !!student.enrollmentClass || !!student.enrollmentClassId;
+        if (selectedEnrollmentFilter === "enrolled" && !isEnrolled) return false;
+        if (selectedEnrollmentFilter === "not_enrolled" && isEnrolled) return false;
+      }
+
       // Filter by campus
       if (selectedCampusFilter && selectedCampusFilter !== "all") {
         const resolvedCampusId = resolveStudentCampusId(student);
@@ -999,7 +1008,7 @@ export function StudentInfoClient({
 
       return true;
     });
-  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade, subTab]);
+  }, [currentDataset, searchQuery, selectedPeriod, selectedBatch, selectedResult, selectedGrade, selectedCampusFilter, selectedEnrollmentFilter, subTab]);
 
   // Reset selected checkboxes if filtered dataset changes
   useEffect(() => {
@@ -2172,6 +2181,20 @@ export function StudentInfoClient({
               </button>
             )}
           </div>
+
+          {/* Enrollment Filter */}
+          <select
+            value={selectedEnrollmentFilter}
+            onChange={(e) => {
+              setSelectedEnrollmentFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-3 py-2.5 rounded-xl text-sm border border-slate-200/80 focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none bg-white cursor-pointer text-slate-700 font-medium shadow-xs"
+          >
+            <option value="all">Tất cả Trạng thái Nhập học</option>
+            <option value="enrolled">Đã nhập học (X)</option>
+            <option value="not_enrolled">Chưa nhập học</option>
+          </select>
 
           {/* Campus Filter */}
           <select
