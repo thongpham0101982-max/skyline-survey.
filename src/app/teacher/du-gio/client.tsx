@@ -1828,9 +1828,58 @@ export function ObservationClient(props: ObservationClientProps) {
 
             {/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-6 border-t-4 border-t-[#00A99D] mt-6">
-        <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
-          <Calendar className="w-5 h-5 text-[#00A99D]" />
-          <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">4. Lịch dạy & dự giờ của tôi</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] text-[#00A99D] flex items-center justify-center font-bold shadow-sm">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-black text-base text-[#003B3A] uppercase tracking-wider block">4. Lịch dạy & dự giờ của tôi</span>
+              <span className="text-xs text-slate-500 font-semibold">Lọc danh sách tiết dạy và tiết đăng ký dự giờ theo Tháng</span>
+            </div>
+          </div>
+
+          {/* Month Selector dropdown & pills */}
+          <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200/80">
+            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider pl-1 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-[#00A99D]" /> Chọn Tháng:
+            </span>
+            <select
+              value={myScheduleMonth}
+              onChange={e => setMyScheduleMonth(e.target.value)}
+              className="px-3 py-1.5 bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-xl outline-none focus:ring-2 focus:ring-[#00A99D] transition-all cursor-pointer shadow-sm"
+            >
+              <option value="ALL">Tất cả các tháng ({availableScheduleMonths.length > 0 ? `${availableScheduleMonths.length} tháng` : '0'})</option>
+              {availableScheduleMonths.map(m => (
+                <option key={m.value} value={m.value}>{m.label}</option>
+              ))}
+            </select>
+
+            {/* Quick Month Pills */}
+            <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar max-w-full">
+              <button
+                type="button"
+                onClick={() => setMyScheduleMonth("ALL")}
+                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                  myScheduleMonth === "ALL" ? "bg-[#00A99D] text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:border-[#00A99D]"
+                }`}
+              >
+                Tất cả
+              </button>
+              {availableScheduleMonths.map(m => (
+                <button
+                  key={m.value}
+                  type="button"
+                  onClick={() => setMyScheduleMonth(m.value)}
+                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                    myScheduleMonth === m.value ? "bg-[#00A99D] text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:border-[#00A99D]"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* 4.1 TIẾT DẠY CỦA TÔI */}
