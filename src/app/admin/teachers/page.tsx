@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 ﻿import { prisma } from "@/lib/db"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { TeacherManagerClient } from "./client"
