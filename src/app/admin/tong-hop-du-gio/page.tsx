@@ -18,10 +18,10 @@ export default async function AdminTongHopPage(props: {
 
   const currentTeacher = await prisma.teacher.findUnique({
     where: { userId: session.user.id },
-    select: { position: true, departmentId: true }
+    select: { position: true, departmentId: true, departmentAssignments: true }
   }).catch(() => null)
 
-  const isTTCM = currentTeacher?.position === "TTCM"
+  const isTTCM = currentTeacher?.position === "TTCM" || (currentTeacher?.departmentAssignments || []).some((da: any) => da.position === "TTCM")
   const isBGHMN = roleCode === "BGH_MN" || roleCode === "BGH MN"
 
   if (!isSuperAdmin && !isTTCM && !isBGHMN) {

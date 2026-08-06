@@ -54,6 +54,11 @@ export default async function TeacherManagerPage() {
         }
       },
       departmentRel: { select: { name: true, blockCM: true } },
+      departmentAssignments: {
+        include: {
+          department: { select: { id: true, name: true, blockCM: true, code: true } }
+        }
+      },
       mainSubjectRel: { select: { subjectName: true } },
       campus: { select: { campusName: true } }
     }
@@ -91,6 +96,16 @@ export default async function TeacherManagerPage() {
     department: t.departmentRel?.name || null,
     departmentId: t.departmentId || null,
     departmentBlockCM: t.departmentRel?.blockCM || null,
+    departmentAssignments: (t.departmentAssignments || []).map(da => ({
+      id: da.id,
+      departmentId: da.departmentId,
+      departmentName: da.department?.name || "",
+      departmentCode: da.department?.code || "",
+      blockCM: da.department?.blockCM || null,
+      position: da.position || "GV",
+      isPrimary: da.isPrimary
+    })),
+    departmentIds: (t.departmentAssignments || []).map(da => da.departmentId),
     mainSubject: t.mainSubjectRel?.subjectName || null,
     mainSubjectId: t.mainSubjectId || null,
     campus: t.campus?.campusName || null,

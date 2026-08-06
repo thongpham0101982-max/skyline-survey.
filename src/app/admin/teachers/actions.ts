@@ -137,11 +137,44 @@ export async function createTeacherAction(data: any) {
       { teacherCode, teacherName: data.teacherName, campusId }
     )
 
+    // Sync department assignments
+    let deptAssignments: Array<{ departmentId: string; position?: string; isPrimary?: boolean }> = [];
+    if (Array.isArray(data.departmentAssignments) && data.departmentAssignments.length > 0) {
+      deptAssignments = data.departmentAssignments;
+    } else if (Array.isArray(data.departmentIds) && data.departmentIds.length > 0) {
+      deptAssignments = data.departmentIds.map((did: string, idx: number) => ({ departmentId: did, position: data.position || "GV", isPrimary: idx === 0 }));
+    } else if (departmentId) {
+      deptAssignments = [{ departmentId: departmentId, position: data.position || "GV", isPrimary: true }];
+    }
+    await syncTeacherDepartments(teacher.id, deptAssignments);
+
     if (data.homeroomClassId) {
       await assignHomeroomClass(teacher.id, data.homeroomClassId)
     }
 
-    // Sync additional campuses (UserCampusAssignment)
+    // Sync multi-department assignments if department row exists
+      if (row.department) {
+        const parts = String(row.department).split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+        const importAssignments: Array<{ departmentId: string; position: string; isPrimary: boolean }> = [];
+        parts.forEach((p, idx) => {
+          let deptName = p;
+          let pos = row.position || "GV";
+          const match = p.match(/^(.+?)\s*\((.+?)\)$/);
+          if (match) {
+            deptName = match[1].trim();
+            pos = match[2].trim();
+          }
+          const did = deptMap.get(deptName) || deptMap.get(p);
+          if (did) {
+            importAssignments.push({ departmentId: did, position: pos, isPrimary: idx === 0 });
+          }
+        });
+        if (importAssignments.length > 0) {
+          await syncTeacherDepartments(teacher.id, importAssignments);
+        }
+      }
+
+      // Sync additional campuses (UserCampusAssignment)
     const additionalCampuses = Array.isArray(data.additionalCampusIds) ? data.additionalCampusIds : [];
     const allCampuses = Array.from(new Set([campusId, ...additionalCampuses])).filter(Boolean);
     await syncAdditionalCampuses(userId, allCampuses);
@@ -218,6 +251,19 @@ export async function updateTeacherAction(data: any) {
         const allCampuses = Array.from(new Set([campusId, ...currentAdditional])).filter(Boolean);
         await syncAdditionalCampuses(teacher.userId, allCampuses);
       }
+    }
+
+    if (data.departmentAssignments !== undefined || data.departmentIds !== undefined || data.department !== undefined) {
+      let deptAssignments: Array<{ departmentId: string; position?: string; isPrimary?: boolean }> = [];
+      if (Array.isArray(data.departmentAssignments)) {
+        deptAssignments = data.departmentAssignments;
+      } else if (Array.isArray(data.departmentIds)) {
+        deptAssignments = data.departmentIds.map((did: string, idx: number) => ({ departmentId: did, position: data.position || "GV", isPrimary: idx === 0 }));
+      } else if (data.department) {
+        const resolvedId = await resolveDepartmentId(data.department);
+        if (resolvedId) deptAssignments = [{ departmentId: resolvedId, position: data.position || "GV", isPrimary: true }];
+      }
+      await syncTeacherDepartments(id, deptAssignments);
     }
 
     revalidatePath("/admin/teachers")
@@ -449,5 +495,56 @@ export async function assignTeachersToRoleAction(teacherIds: string[], roleCode:
     return { success: true };
   } catch (e) {
     return { success: false, error: e.message };
+  }
+}
+
+
+/** Dong bo TeacherDepartmentAssignment cho teacherId */
+export async function syncTeacherDepartments(
+  teacherId: string,
+  assignments: Array<{ departmentId: string; position?: string; isPrimary?: boolean }>
+) {
+  await prisma.teacherDepartmentAssignment.deleteMany({ where: { teacherId } });
+
+  if (!assignments || assignments.length === 0) {
+    await prisma.teacher.update({ where: { id: teacherId }, data: { departmentId: null } });
+    return;
+  }
+
+  const map = new Map<string, { departmentId: string; position: string; isPrimary: boolean }>();
+  assignments.forEach((a, index) => {
+    if (a.departmentId && !map.has(a.departmentId)) {
+      map.set(a.departmentId, {
+        departmentId: a.departmentId,
+        position: a.position || "GV",
+        isPrimary: a.isPrimary || index === 0
+      });
+    }
+  });
+
+  const uniqueAssignments = Array.from(map.values());
+  if (uniqueAssignments.length > 0) {
+    if (!uniqueAssignments.some(u => u.isPrimary)) {
+      uniqueAssignments[0].isPrimary = true;
+    }
+
+    await prisma.teacherDepartmentAssignment.createMany({
+      data: uniqueAssignments.map(u => ({
+        teacherId,
+        departmentId: u.departmentId,
+        position: u.position,
+        isPrimary: u.isPrimary
+      }))
+    });
+
+    const primary = uniqueAssignments.find(u => u.isPrimary) || uniqueAssignments[0];
+    const topPosition = uniqueAssignments.some(u => u.position === "TTCM") ? "TTCM" : (primary.position || "GV");
+    await prisma.teacher.update({
+      where: { id: teacherId },
+      data: {
+        departmentId: primary.departmentId,
+        position: topPosition
+      }
+    });
   }
 }

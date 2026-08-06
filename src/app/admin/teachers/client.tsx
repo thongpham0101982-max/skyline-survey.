@@ -121,7 +121,12 @@ export function TeacherManagerClient({
       const campusClean = cleanStr(t.campus)
       match = match && (nameClean.includes(q) || codeClean.includes(q) || campusClean.includes(q))
     }
-    if (filterDepartment) match = match && t.department === filterDepartment
+    if (filterDepartment) {
+      match = match && (
+        t.department === filterDepartment ||
+        (t.departmentAssignments && t.departmentAssignments.some((da: any) => da.departmentName === filterDepartment || da.departmentId === filterDepartment))
+      )
+    }
     if (filterSubject) match = match && t.mainSubject === filterSubject
     if (filterStatus) match = match && t.status === filterStatus
     if (activeBlockTab) {
@@ -169,7 +174,11 @@ export function TeacherManagerClient({
     setEditForm({
       teacherName: t.teacherName,
       dateOfBirth: t.dateOfBirth ? new Date(t.dateOfBirth).toISOString().split("T")[0] : "",
-      department: t.department || "", mainSubject: t.mainSubject || "",
+      department: t.department || "",
+      departmentAssignments: t.departmentAssignments && t.departmentAssignments.length > 0
+        ? t.departmentAssignments.map((da: any) => ({ departmentId: da.departmentId, position: da.position || "GV", isPrimary: da.isPrimary }))
+        : (t.departmentId ? [{ departmentId: t.departmentId, position: t.position || "GV", isPrimary: true }] : []),
+      mainSubject: t.mainSubject || "",
       campusId: t.campusId || "", status: t.status || "ACTIVE",
       email: t.email || "", additionalCampusIds: t.additionalCampusIds || [], position: t.position || "GV"
     })
@@ -181,7 +190,13 @@ export function TeacherManagerClient({
       await updateTeacherAction({ id, ...editForm, position: editForm.position })
       setTeachers(teachers.map((t) => t.id === id ? {
         ...t, teacherName: editForm.teacherName, dateOfBirth: editForm.dateOfBirth || null,
-        department: editForm.department || null, mainSubject: editForm.mainSubject || null,
+        department: editForm.department || null,
+        departmentAssignments: (editForm.departmentAssignments || []).map((da: any) => ({
+          departmentId: da.departmentId,
+          departmentName: (departments || []).find((d: any) => d.id === da.departmentId)?.name || "",
+          position: da.position || "GV"
+        })),
+        mainSubject: editForm.mainSubject || null,
         campusId: editForm.campusId || null, email: editForm.email || null,
         campus: (campuses || []).find((c) => c.id === editForm.campusId)?.campusName || null,
         additionalCampuses: (campuses || []).filter((c) => editForm.additionalCampusIds?.includes(c.id)).map((c) => ({ id: c.id, campusName: c.campusName })),
