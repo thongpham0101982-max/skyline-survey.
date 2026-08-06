@@ -3,11 +3,9 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  experimental: {
-    outputFileTracingIncludes: {
-      '/api/**/*': ['./dev.db', './prisma/dev.db'],
-      '/**/*': ['./dev.db', './prisma/dev.db'],
-    },
+  outputFileTracingIncludes: {
+    '/api/**': ['./dev.db', './prisma/dev.db'],
+    '/**': ['./dev.db', './prisma/dev.db'],
   },
   async headers() {
     return [
