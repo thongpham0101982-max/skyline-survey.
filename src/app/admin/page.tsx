@@ -143,7 +143,7 @@ export default function AdminDashboard() {
     gradeDistribution: [],
     campusDistribution: [],
     levelDistribution: [],
-    entryLevelStats: { total: 0, grade1: { total: 0, surveyCount: 0, preschoolCount: 0 }, grade9: { total: 0, surveyCount: 0 }, grade10: { total: 0, surveyCount: 0 }, students: [] }
+    entryLevelStats: { total: 0, grade1: { total: 0, surveyCount: 0, preschoolCount: 0 }, grade6: { total: 0, surveyCount: 0 }, grade10: { total: 0, surveyCount: 0 }, students: [] }
   }
 
   const campusIds = (session?.user as any)?.campusIds || []
@@ -528,7 +528,7 @@ export default function AdminDashboard() {
             <div>
               <h2 className="text-lg font-black text-slate-800 tracking-tight">Quản lý & Phân tích Học sinh Đầu cấp</h2>
               <p className="text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wider">
-                Thống kê học sinh các khối đầu cấp: <strong className="text-[#00A99D]">Khối 1</strong>, <strong className="text-[#6C5CE7]">Khối 9</strong>, <strong className="text-[#2E1065]">Khối 10</strong> phân loại theo nguồn nhập học
+                Thống kê học sinh các khối đầu cấp: <strong className="text-[#00A99D]">Khối 1</strong>, <strong className="text-[#6C5CE7]">Khối 6</strong>, <strong className="text-[#2E1065]">Khối 10</strong> phân loại theo nguồn nhập học
               </p>
             </div>
           </div>
@@ -575,21 +575,21 @@ export default function AdminDashboard() {
           {/* KHỐI 9 CARD */}
           <div className="bg-gradient-to-br from-indigo-50/60 to-blue-50/40 rounded-2xl border-2 border-indigo-100 p-5 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="px-2.5 py-1 bg-[#6C5CE7] text-white rounded-lg text-xs font-black uppercase tracking-wider">Khối 9</span>
-              <span className="text-xs font-bold text-slate-500">Tổng: <strong className="text-[#6C5CE7] text-base font-black">{finalMetrics.entryLevelStats?.grade9?.total || 0}</strong> HS</span>
+              <span className="px-2.5 py-1 bg-[#6C5CE7] text-white rounded-lg text-xs font-black uppercase tracking-wider">Khối 6</span>
+              <span className="text-xs font-bold text-slate-500">Tổng: <strong className="text-[#6C5CE7] text-base font-black">{finalMetrics.entryLevelStats?.grade6?.total || 0}</strong> HS</span>
             </div>
             <div className="space-y-2 pt-1 border-t border-indigo-100/80">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-600 font-semibold flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-[#6C5CE7]"></span> Nhập học qua Khảo sát:
                 </span>
-                <strong className="text-[#6C5CE7] font-black">{finalMetrics.entryLevelStats?.grade9?.surveyCount || 0} HS</strong>
+                <strong className="text-[#6C5CE7] font-black">{finalMetrics.entryLevelStats?.grade6?.surveyCount || 0} HS</strong>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-600 font-semibold flex items-center gap-1">
                   <span className="w-2 h-2 rounded-full bg-slate-400"></span> Trực tiếp / Khác:
                 </span>
-                <strong className="text-slate-700 font-black">{finalMetrics.entryLevelStats?.grade9?.otherCount || 0} HS</strong>
+                <strong className="text-slate-700 font-black">{finalMetrics.entryLevelStats?.grade6?.otherCount || 0} HS</strong>
               </div>
             </div>
           </div>
@@ -652,9 +652,9 @@ export default function AdminDashboard() {
               </button>
               <button
                 onClick={() => setEntryGradeFilter("9")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "9" ? "bg-[#6C5CE7] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "6" ? "bg-[#6C5CE7] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
               >
-                Khối 9
+                Khối 6
               </button>
               <button
                 onClick={() => setEntryGradeFilter("10")}
@@ -726,7 +726,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-4">
                         <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
                           st.rawGrade === '1' ? 'bg-teal-100 text-[#00A99D]' :
-                          st.rawGrade === '9' ? 'bg-indigo-100 text-[#6C5CE7]' :
+                          st.rawGrade === '6' ? 'bg-indigo-100 text-[#6C5CE7]' :
                           'bg-purple-100 text-[#2E1065]'
                         }`}>
                           {st.grade}

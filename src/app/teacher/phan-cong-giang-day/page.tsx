@@ -12,6 +12,9 @@ export default async function TeachingAssignmentsPage() {
     where: { userId },
     include: {
       departmentRel: true,
+      departmentAssignments: {
+        include: { department: true }
+      },
       campus: true,
     }
   })
@@ -54,14 +57,25 @@ export default async function TeachingAssignmentsPage() {
 
   // 4. Get other teachers in the same department and their assignments
   let departmentTeachers: any[] = []
-  if (teacher.departmentId) {
+  const assignedDeptIds = (teacher.departmentAssignments || []).map((da: any) => da.departmentId);
+  if (teacher.departmentId && !assignedDeptIds.includes(teacher.departmentId)) {
+    assignedDeptIds.push(teacher.departmentId);
+  }
+
+  if (assignedDeptIds.length > 0) {
     departmentTeachers = await prisma.teacher.findMany({
       where: {
-        departmentId: teacher.departmentId,
+        OR: [
+          { departmentId: { in: assignedDeptIds } },
+          { departmentAssignments: { some: { departmentId: { in: assignedDeptIds } } } }
+        ],
         status: "ACTIVE"
       },
       include: {
         departmentRel: true,
+        departmentAssignments: {
+          include: { department: true }
+        },
         TeachingAssignment: {
           include: {
             class: true,

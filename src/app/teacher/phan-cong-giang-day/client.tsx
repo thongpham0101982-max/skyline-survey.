@@ -26,6 +26,16 @@ interface TeacherInfo {
   email: string | null
   phone: string | null
   position: string
+  departmentAssignments?: Array<{
+    id: string
+    departmentId: string
+    position: string
+    department: {
+      id: string
+      code: string
+      name: string
+    }
+  }>
   departmentRel: {
     id: string
     code: string
@@ -113,6 +123,15 @@ export function TeachingAssignmentClient({
   const [activeTab, setActiveTab] = useState<"me" | "department">("me")
   const [searchQuery, setSearchQuery] = useState("")
   const [semesterFilter, setSemesterFilter] = useState<"all" | "1" | "2">("all")
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>("all")
+
+  const deptDisplay = useMemo(() => {
+    if (teacher.departmentAssignments && teacher.departmentAssignments.length > 0) {
+      const names = teacher.departmentAssignments.map(da => da.department?.name).filter(Boolean);
+      if (names.length > 0) return Array.from(new Set(names)).join(", ");
+    }
+    return teacher.departmentRel?.name || "";
+  }, [teacher]);
   const [viewMode, setViewMode] = useState<"grouped" | "table">("grouped")
 
   // Handle year selection and reload page to fetch new DB records
@@ -159,6 +178,13 @@ export function TeachingAssignmentClient({
         filteredAssignments: yearAssignments
       }
     }).filter(t => {
+      // Filter by selected department if set
+      if (selectedDeptFilter !== "all") {
+        const inPrimary = t.departmentRel?.name === selectedDeptFilter;
+        const inAssignments = (t as any).departmentAssignments?.some((da: any) => da.department?.name === selectedDeptFilter);
+        if (!inPrimary && !inAssignments) return false;
+      }
+
       // Apply search query: search by teacher name, class name, or subject name
       if (searchQuery.trim() !== "") {
         const query = searchQuery.toLowerCase().trim()
@@ -290,7 +316,7 @@ export function TeachingAssignmentClient({
                   <>
                     <span className="text-white/40">|</span>
                     <span className="text-teal-300 font-extrabold uppercase tracking-wide">
-                      {teacher.departmentRel.name}
+                      {deptDisplay || teacher.departmentRel?.name}
                     </span>
                   </>
                 )}

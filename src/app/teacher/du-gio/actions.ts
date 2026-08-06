@@ -19,6 +19,9 @@ export async function getObservationData(academicYearId?: string) {
       where: { userId: session.user.id },
       include: {
         departmentRel: true,
+        departmentAssignments: {
+          include: { department: true }
+        },
         campus: true,
         user: {
           select: {

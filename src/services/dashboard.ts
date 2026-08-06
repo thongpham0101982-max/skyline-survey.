@@ -393,14 +393,14 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   const entryLevelStats = {
     total: 0,
     grade1: { total: 0, surveyCount: 0, preschoolCount: 0, otherCount: 0 },
-    grade9: { total: 0, surveyCount: 0, otherCount: 0 },
+    grade6: { total: 0, surveyCount: 0, otherCount: 0 },
     grade10: { total: 0, surveyCount: 0, otherCount: 0 },
     students: entryStudentsList
   }
 
   activeStudentsForStats.forEach(s => {
     const rawGrade = String(s.class?.grade || "").replace("Khối ", "").trim()
-    if (["1", "9", "10"].includes(rawGrade)) {
+    if (["1", "6", "10"].includes(rawGrade)) {
       const code = s.studentCode
       const nameKey = s.studentName ? s.studentName.trim().toLowerCase() : ""
 
@@ -423,15 +423,15 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
           entryLevelStats.grade1.otherCount++
         }
         entryLevelStats.grade1.total++
-      } else if (rawGrade === "9") {
+      } else if (rawGrade === "6") {
         if (isFromSurvey) {
           source = "KHAO_SAT"
           sourceLabel = "Nhập học qua Khảo sát"
-          entryLevelStats.grade9.surveyCount++
+          entryLevelStats.grade6.surveyCount++
         } else {
-          entryLevelStats.grade9.otherCount++
+          entryLevelStats.grade6.otherCount++
         }
-        entryLevelStats.grade9.total++
+        entryLevelStats.grade6.total++
       } else if (rawGrade === "10") {
         if (isFromSurvey) {
           source = "KHAO_SAT"
