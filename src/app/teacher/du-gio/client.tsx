@@ -169,6 +169,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
+  const [filterTeacherSearch, setFilterTeacherSearch] = useState("");
   const [myScheduleMonth, setMyScheduleMonth] = useState<string>("ALL");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
@@ -586,6 +587,7 @@ export function ObservationClient(props: ObservationClientProps) {
     if (filterGrade && filterGrade !== "all") count++
     if (filterDate) count++
     if (filterPeriod && filterPeriod !== "all") count++
+    if (filterTeacherSearch.trim()) count++
     return count
   }, [filterCampusId, filterLevel, filterGrade, filterDate, filterPeriod])
 
@@ -619,7 +621,7 @@ export function ObservationClient(props: ObservationClientProps) {
     setFilterDate("")
     setFilterPeriod("all")
     setFilterSchoolBlock("all")
-    setFilterDeptId("all")
+    setFilterDeptId("all"); setFilterTeacherSearch("");
   }
 
   const refreshSlots = async () => {
@@ -1640,7 +1642,7 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
 
           {/* Advanced filters inputs block */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-semibold">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-semibold">
             {/* Campus */}
             <div className="flex flex-col gap-1">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
