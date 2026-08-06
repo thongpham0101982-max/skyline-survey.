@@ -18,15 +18,14 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   })
   const academicYearName = academicYear?.name || ""
 
-  const studentWhere: any = { status: "ACTIVE" }
+  const studentWhere: any = { status: "ACTIVE", ...(targetYearId ? { OR: [{ academicYearId: targetYearId }, { class: { academicYearId: targetYearId } }] } : {}) }
   const classWhere: any = { status: "ACTIVE" }
   const transferWhere: any = {}
   const assessmentWhere: any = {}
   const summaryWhere: any = {}
 
   if (targetYearId) {
-    studentWhere.academicYearId = targetYearId
-    classWhere.academicYearId = targetYearId
+        classWhere.academicYearId = targetYearId
     transferWhere.student = { academicYearId: targetYearId }
     assessmentWhere.period = { academicYearId: targetYearId }
     summaryWhere.class = { academicYearId: targetYearId }
@@ -57,7 +56,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     admissionGroup,
     classSummaries
   ] = await Promise.all([
-    prisma.student.count({ where: { status: "ACTIVE", ...(isFullAccess ? {} : { campusId: { in: allowedCampusIds } }) } }),
+    prisma.student.count({ where: studentWhere }),
     prisma.class.count({ where: classWhere }),
     prisma.class.count({
       where: {
@@ -297,7 +296,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
   // Aggregations for grade, campus, level distributions and entry level statistics
   const activeStudentsForStats = await prisma.student.findMany({
-    where: { status: "ACTIVE", ...(isFullAccess ? {} : { campusId: { in: allowedCampusIds } }) },
+    where: studentWhere,
     include: {
       class: { select: { className: true, grade: true, level: true } },
       campus: { select: { id: true, campusCode: true, campusName: true } }
