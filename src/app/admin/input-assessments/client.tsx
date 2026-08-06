@@ -4189,6 +4189,7 @@ return {
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Môn học</th>
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khối</th>
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nhập học</th>
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                         </tr>
                       </thead>
