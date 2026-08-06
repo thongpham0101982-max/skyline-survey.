@@ -1614,70 +1614,332 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
       {/* ROW 2: Full Width Layout */}
-            {/* Panel 4: Tra cứu & Tìm kiếm thông tin Giáo viên (Compact Layout) */}
-      <div className="w-full mt-5">
-        <div className="w-full bg-white rounded-3xl border border-slate-200/90 shadow-sm p-4 sm:p-5 flex flex-col gap-4 border-t-4 border-t-[#00A99D]">
-          {/* Header & Quick Search Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-150">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#E6F7F6] text-[#00A99D] flex items-center justify-center font-bold shrink-0">
-                <Search className="w-4 h-4" />
+      <div className="w-full mt-6">
+        
+        {/* Panel 4: Danh sách tiết dạy đang mở đăng ký */}
+        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
+            <div className="flex items-center gap-2">
+              <SlidersHorizontal className="w-5 h-5 text-[#00A99D]" />
+              <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">3. Danh sách tiết dạy đăng ký dự giờ</span>
+              {isSearching && (
+                <div className="flex items-center gap-1.5 ml-2 animate-pulse text-xs font-semibold">
+                  <div className="w-2 h-2 border border-sky-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-[10px] font-bold text-sky-600">Đang cập nhật...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Department tabs selector */}
+            <div className="flex gap-2">
+              <button onClick={() => setActiveDeptTab("my-dept")}
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy thuộc TCM
+              </button>
+              <button onClick={() => setActiveDeptTab("other-dept")}
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy TCM khác
+              </button>
+            </div>
+          </div>
+
+          {/* Advanced filters inputs block */}
+          <div className="p-4 bg-gradient-to-r from-teal-50/70 via-slate-50 to-emerald-50/50 border-2 border-teal-200/80 rounded-3xl shadow-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-semibold">
+              {/* Campus */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-teal-400 transition-all">
+                <span className="text-[10px] font-black text-teal-700 uppercase tracking-wider flex items-center gap-1">
+                  🏢 Cơ sở
+                </span>
+                <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] cursor-pointer">
+                  <option value="all">Tất cả cơ sở</option>
+                  {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                </select>
+              </div>
+
+              {/* Level */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-sky-400 transition-all">
+                <span className="text-[10px] font-black text-sky-700 uppercase tracking-wider flex items-center gap-1">
+                  🎓 Bậc học
+                </span>
+                <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+                  <option value="all">Tất cả bậc</option>
+                  <option value="Mầm non">Mầm non</option>
+                  <option value="Phổ thông K-12">Phổ thông K-12</option>
+                </select>
+              </div>
+
+              {/* Grade */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-indigo-400 transition-all">
+                <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider flex items-center gap-1">
+                  📚 Khối lớp
+                </span>
+                <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none disabled:opacity-55 focus:ring-2 focus:ring-indigo-500 cursor-pointer">
+                  <option value="all">Tất cả khối</option>
+                  {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+                </select>
+              </div>
+
+              {/* Date */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-amber-400 transition-all">
+                <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
+                  📅 Ngày dạy
+                </span>
+                <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer" />
+              </div>
+
+              {/* Period */}
+              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-violet-400 transition-all">
+                <span className="text-[10px] font-black text-violet-700 uppercase tracking-wider flex items-center gap-1">
+                  ⏰ Tiết dạy
+                </span>
+                <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
+                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer">
+                  <option value="all">Tất cả tiết</option>
+                  {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+                </select>
+              </div>
+
+              {/* Tìm kiếm Giáo viên / Bài dạy */}
+              <div className="flex flex-col gap-1 bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/40 p-2.5 rounded-2xl border-2 border-[#00A99D] shadow-xs col-span-1 sm:col-span-2 md:col-span-1">
+                <span className="text-[10px] font-black text-[#00A99D] uppercase tracking-wider flex items-center gap-1">
+                  <Search className="w-3.5 h-3.5" /> Tìm GV / Môn
+                </span>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    placeholder="Tên, Mã GV, Môn..."
+                    value={filterTeacherSearch}
+                    onChange={e => setFilterTeacherSearch(e.target.value)}
+                    className="w-full text-xs font-bold rounded-xl border border-teal-300 pl-3 pr-7 py-1.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] shadow-inner-xs"
+                  />
+                  {filterTeacherSearch && (
+                    <button type="button" onClick={() => setFilterTeacherSearch("")} className="absolute right-2 text-rose-500 hover:text-rose-700">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Active Tags */}
+          {activeFilterCount > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {activeFilterTags.map(tag => (
+                <span key={tag.key} className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black rounded-lg bg-[#E6F7F6] text-[#00A99D] border border-[#00A99D]/10">
+                  <span>{tag.label}:</span> {tag.value}
+                  <button onClick={tag.onRemove} className="ml-1 p-0.5 rounded-full hover:bg-[#00A99D]/20 transition-colors">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <button onClick={clearAllFilters} className="text-[10px] font-black text-rose-500 hover:underline ml-1">Xóa tất cả bộ lọc</button>
+            </div>
+          )}
+
+          {/* Slots Table */}
+          {tabFilteredSlots.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+              <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
+              <p className="text-xs font-bold">Không tìm thấy tiết dạy dự giờ nào!</p>
+              <p className="text-[10px] text-slate-400 mt-1">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-slate-150">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                    <th className="p-4">Giáo viên</th>
+                    <th className="p-4">Môn học & Chủ đề</th>
+                    <th className="p-4">Thời gian / Phòng</th>
+                    <th className="p-4 text-center">Số chỗ</th>
+                    <th className="p-4">Trạng thái</th>
+                    <th className="p-4 text-right">Đăng ký</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
+                  {tabFilteredSlots.map(slot => {
+                    const isHost = slot.teacherId === currentTeacher?.id;
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                    const isRegistered = !!myReg;
+                    const observerCount = slot.registrations.length;
+                    const slotDate = new Date(slot.date);
+                    
+                    // Expired (Hết hạn) check compared to today's date
+                    const today = new Date();
+                    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                    const isExpired = slotDate < todayStart;
+
+                    return (
+                      <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-4 font-bold text-slate-800">
+                          <p className="font-extrabold">{slot.teacher.teacherName}</p>
+                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
+                        </td>
+                        <td className="p-4">
+                          {slot.level === "Mầm non" ? (() => {
+                            const parts = (slot.subjectName || "").split(" | ");
+                            const chuDe = parts[0] || "";
+                            const hoatDong = parts[1] || "";
+                            const deTai = slot.topic || "";
+                            return (
+                              <div className="flex flex-col gap-1 text-xs">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-250">Mầm non</span>
+                                  <span className="text-[10px] font-bold text-amber-900 bg-amber-50/40 px-1.5 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
+                                </div>
+                                <p className="font-black text-amber-950 text-[13px] leading-snug">Đề tài: {deTai}</p>
+                                <p className="text-[10px] text-slate-500 font-semibold">
+                                  Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
+                                </p>
+                              </div>
+                            );
+                          })() : (
+                            <>
+                              <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
+                              <p className="text-[10px] text-slate-500 mt-0.5">
+                                {slot.subjectName} • {slot.className || "Lớp"} ({slot.campusName || "Cơ sở"})
+                              </p>
+                            </>
+                          )}
+                        </td>
+                        <td className="p-4">
+                          <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
+                          <p className="text-[10px] text-[#00A99D] font-bold mt-0.5">
+                            {slot.startTime} • Phòng: {slot.room || "X"}
+                          </p>
+                        </td>
+                        <td className="p-4 text-center font-black">
+                          <span className={`px-2 py-0.5 rounded-md ${observerCount >= slot.maxSeats ? "bg-slate-100 text-slate-500" : "bg-sky-50 text-sky-700"}`}>
+                            {observerCount} / {slot.maxSeats}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          {isExpired ? (
+                            <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-rose-50 border border-rose-200 text-rose-600">
+                              Hết hạn
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 border border-emerald-250 text-emerald-700">
+                              Mở đăng ký
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-4 text-right">
+                           {isExpired ? (
+                             <button 
+                               disabled
+                               className="px-3 py-1.5 text-[10px] font-black rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                             >
+                               Hết hạn
+                             </button>
+                           ) : isRegistered ? (
+                             <button onClick={() => handleCancelRegistration(myReg.id)}
+                               className="px-3 py-1.5 text-[10px] font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200">
+                               Hủy dự
+                             </button>
+                           ) : (
+                             <button 
+                               onClick={() => setRegisterDetailSlot(slot)}
+                               className="px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
+                             >
+                               Đăng ký
+                             </button>
+                           )}
+                         </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+            {/* Panel 5: Tra cứu & Tìm kiếm thông tin Giáo viên */}
+      <div className="w-full mt-6">
+        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#00A99D]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] text-[#00A99D] flex items-center justify-center font-bold shadow-xs">
+                <Search className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-black text-sm text-[#003B3A] uppercase tracking-wider block">4. Tra cứu & Tìm kiếm thông tin Giáo viên</span>
-                <span className="text-[11px] text-slate-500 font-semibold hidden sm:inline-block">Tra cứu hồ sơ, số tiết dạy, tiết dự giờ và chỉ tiêu của Giáo viên toàn trường</span>
+                <span className="font-black text-base text-[#003B3A] uppercase tracking-wider block">4. Tra cứu & Tìm kiếm thông tin Giáo viên</span>
+                <span className="text-xs text-slate-500 font-semibold">Tra cứu hồ sơ, số tiết dạy, tiết dự giờ và chỉ tiêu của Giáo viên toàn trường</span>
               </div>
             </div>
 
             {/* Quick search input */}
-            <div className="relative w-full sm:w-72">
-              <Search className="w-3.5 h-3.5 text-[#00A99D] absolute left-3 top-1/2 -translate-y-1/2" />
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-[#00A99D] absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Nhập tên GV, mã số GV..."
                 value={teacherLookupQuery}
                 onChange={e => setTeacherLookupQuery(e.target.value)}
-                className="w-full text-xs font-bold rounded-xl border border-slate-200 pl-8 pr-7 py-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] focus:bg-white shadow-2xs transition-all"
+                className="w-full text-xs font-bold rounded-2xl border-2 border-[#00A99D]/40 pl-9 pr-8 py-2 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] focus:bg-white shadow-xs transition-all"
               />
               {teacherLookupQuery && (
-                <button type="button" onClick={() => setTeacherLookupQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  <X className="w-3.5 h-3.5" />
+                <button type="button" onClick={() => setTeacherLookupQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* List Tổ chuyên môn - Single Compact Row */}
-          <div className="flex items-center gap-2 bg-slate-50/90 p-2 rounded-2xl border border-slate-200/70 overflow-hidden">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider shrink-0 flex items-center gap-1 pl-1">
-              <Building2 className="w-3.5 h-3.5 text-[#00A99D]" /> Tổ CM:
-            </span>
+          {/* List Tổ chuyên môn trực quan */}
+          <div className="flex flex-col gap-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Building2 className="w-4 h-4 text-[#00A99D]" /> List Tổ chuyên môn:
+              </span>
+              {selectedLookupDeptId !== "ALL" && (
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedLookupDeptId("ALL")} 
+                  className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" /> Xem tất cả các Tổ
+                </button>
+              )}
+            </div>
             
-            <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar no-scrollbar flex-nowrap py-0.5 pr-1 flex-1">
+            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 pt-0.5">
               <button
                 type="button"
                 onClick={() => setSelectedLookupDeptId("ALL")}
-                className={`px-2.5 py-1 text-[11px] font-extrabold rounded-lg transition-all whitespace-nowrap cursor-pointer flex items-center gap-1 border shrink-0 ${
+                className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 border ${
                   selectedLookupDeptId === "ALL"
-                    ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-xs"
+                    ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm"
                     : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
                 }`}
               >
-                <span>Tất cả ({teachers.length})</span>
+                <span>🏢 Tất cả Tổ CM</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${selectedLookupDeptId === "ALL" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
+                  {teachers.length}
+                </span>
               </button>
 
               {currentTeacher?.departmentId && (
                 <button
                   type="button"
                   onClick={() => setSelectedLookupDeptId(currentTeacher.departmentId)}
-                  className={`px-2.5 py-1 text-[11px] font-extrabold rounded-lg transition-all whitespace-nowrap cursor-pointer flex items-center gap-1 border shrink-0 ${
+                  className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 border ${
                     selectedLookupDeptId === currentTeacher.departmentId
-                      ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white border-transparent shadow-xs"
+                      ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white border-transparent shadow-sm"
                       : "bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100"
                   }`}
                 >
-                  <span>⭐ {currentTeacher.departmentRel?.name || "Tổ nhà"}</span>
-                  <span className={`px-1 text-[9px] rounded-full font-black ${selectedLookupDeptId === currentTeacher.departmentId ? "bg-white/20 text-white" : "bg-amber-200/80 text-amber-900"}`}>
+                  <span>⭐ Tổ của tôi ({currentTeacher.departmentRel?.name || "Tổ nhà"})</span>
+                  <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${selectedLookupDeptId === currentTeacher.departmentId ? "bg-white/20 text-white" : "bg-amber-200 text-amber-900"}`}>
                     {teachers.filter((t: any) => t.departmentId === currentTeacher.departmentId).length}
                   </span>
                 </button>
@@ -1692,34 +1954,23 @@ export function ObservationClient(props: ObservationClientProps) {
                     key={dept.id}
                     type="button"
                     onClick={() => setSelectedLookupDeptId(dept.id)}
-                    className={`px-2.5 py-1 text-[11px] font-extrabold rounded-lg transition-all whitespace-nowrap cursor-pointer flex items-center gap-1 border shrink-0 ${
+                    className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 border ${
                       isSelected
-                        ? "bg-gradient-to-r from-[#009085] to-[#00A99D] text-white border-transparent shadow-xs"
+                        ? "bg-gradient-to-r from-[#009085] to-[#00A99D] text-white border-transparent shadow-sm"
                         : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50 hover:border-teal-300"
                     }`}
                   >
                     <span>{dept.name}</span>
-                    <span className={`px-1 text-[9px] rounded-full font-black ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                    <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
                       {count}
                     </span>
                   </button>
                 );
               })}
             </div>
-
-            {selectedLookupDeptId !== "ALL" && (
-              <button 
-                type="button" 
-                onClick={() => setSelectedLookupDeptId("ALL")} 
-                className="text-[10px] font-black text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-2 py-1 rounded-lg border border-rose-200 shrink-0 transition-colors cursor-pointer flex items-center gap-0.5"
-                title="Bỏ lọc Tổ chuyên môn"
-              >
-                <X className="w-3 h-3" /> Tất cả
-              </button>
-            )}
           </div>
 
-          {/* Teacher Lookup Results - Compact Cards */}
+          {/* Teacher Lookup Results */}
           {(() => {
             const filteredList = teachers.filter((t: any) => {
               if (selectedLookupDeptId !== "ALL" && t.departmentId !== selectedLookupDeptId) {
@@ -1732,36 +1983,41 @@ export function ObservationClient(props: ObservationClientProps) {
 
             if (filteredList.length === 0) {
               return (
-                <div className="py-6 text-center text-slate-400 text-xs italic bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                  Không tìm thấy giáo viên phù hợp.
+                <div className="p-8 text-center text-slate-400 italic bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  Không tìm thấy giáo viên phù hợp với từ khóa "{teacherLookupQuery}".
                 </div>
               );
             }
 
             return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredList.map((t: any) => {
                   const tStats = teacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
                   return (
-                    <div key={t.id} className="p-3 rounded-2xl border border-slate-200/90 bg-white hover:border-[#00A99D]/50 hover:shadow-md transition-all flex items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-xs flex items-center justify-center border border-white shadow-2xs shrink-0">
+                    <div key={t.id} className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-[#00A99D]/40 hover:shadow-md transition-all flex flex-col justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-base flex items-center justify-center border-2 border-white shadow-sm shrink-0">
                           {t.teacherName.charAt(0)}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <h5 className="font-extrabold text-xs text-slate-800 truncate leading-snug">{t.teacherName}</h5>
-                            <span className="text-[9px] font-bold text-slate-400 bg-slate-100 px-1 py-0.2 rounded shrink-0">{t.teacherCode}</span>
-                          </div>
-                          
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <span className="px-1.5 py-0.2 text-[9px] font-black text-amber-800 bg-amber-50 rounded border border-amber-200/80">
-                              Dạy: {tStats.taughtCount}
+                          <h5 className="font-black text-xs text-slate-800 truncate leading-snug">{t.teacherName}</h5>
+                          <p className="text-[10px] text-slate-500 font-bold">Mã số: {t.teacherCode}</p>
+                          {t.position && (
+                            <span className="inline-block text-[9px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.2 rounded border border-teal-200 mt-1">
+                              {t.position}
                             </span>
-                            <span className="px-1.5 py-0.2 text-[9px] font-black text-[#00A99D] bg-teal-50 rounded border border-teal-200/80">
-                              Dự: {tStats.observedCount}
-                            </span>
-                          </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-bold bg-white p-2.5 rounded-xl border border-slate-150">
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 font-semibold">Số tiết đã dạy</span>
+                          <span className="text-amber-800 font-black text-xs">{tStats.taughtCount} tiết</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 font-semibold">Số tiết đã dự</span>
+                          <span className="text-[#00A99D] font-black text-xs">{tStats.observedCount} tiết</span>
                         </div>
                       </div>
 
@@ -1769,12 +2025,11 @@ export function ObservationClient(props: ObservationClientProps) {
                         type="button"
                         onClick={() => {
                           setFilterTeacherSearch(t.teacherName);
-                          showToast(`Đã lọc tiết dạy của GV ${t.teacherName}`, "info");
+                          showToast(`Đã lọc danh sách tiết dạy của GV ${t.teacherName}`, "info");
                         }}
-                        className="py-1 px-2.5 text-[10px] font-black text-[#00A99D] bg-teal-50/80 hover:bg-[#00A99D] hover:text-white rounded-xl border border-teal-200 transition-all text-center cursor-pointer shrink-0 shadow-2xs hover:scale-105"
-                        title={`Lọc danh sách tiết dạy của ${t.teacherName}`}
+                        className="w-full py-1.5 text-xs font-black text-[#00A99D] bg-teal-50 hover:bg-[#00A99D] hover:text-white rounded-xl border border-teal-200 transition-all text-center cursor-pointer shadow-2xs"
                       >
-                        🔍 Lọc tiết
+                        🔍 Lọc tiết dạy của GV này
                       </button>
                     </div>
                   );
@@ -1785,7 +2040,7 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
       </div>
 
-{/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
+      {/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-6 border-t-4 border-t-[#00A99D] mt-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 pb-4">
           <div className="flex items-center gap-3">
