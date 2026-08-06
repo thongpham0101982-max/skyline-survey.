@@ -2,13 +2,13 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 import { PrismaClient } from "@prisma/client"
-import { createClient } from '@libsql/client'
+import { createClient } from '@libsql/client/web'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
 
 const VALID_TURSO_URL = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
 const VALID_TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw"
 
-// Force Next.js NFT static trace engine to bundle dev.db and prisma/dev.db into Vercel Lambda bundle
+// Force Next.js NFT static trace engine to bundle dev.db into Vercel Lambda bundle
 let tracedDbContent: Buffer | null = null;
 try {
   tracedDbContent = fs.readFileSync(path.join(process.cwd(), 'dev.db'));
