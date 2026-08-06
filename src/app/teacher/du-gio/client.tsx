@@ -1905,124 +1905,151 @@ export function ObservationClient(props: ObservationClientProps) {
               }
 
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {myTaughtSlots.map(slot => {
                     const isHost = true;
                     const slotDate = new Date(slot.date);
+                    const dateFormatted = slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
                     const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                    
+                    const registeredCount = slot.registrations ? slot.registrations.length : 0;
+                    const percentFilled = Math.min(100, Math.round((registeredCount / 4) * 100));
+
                     return (
-                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-amber-50/40 border-amber-200/80 border-l-4 border-l-amber-500">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-800">
-                            Tôi dạy
-                          </span>
-                          <span className="text-[9px] font-extrabold text-slate-400">
-                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                          </span>
+                      <div 
+                        key={slot.id} 
+                        className="bg-gradient-to-b from-amber-50/60 via-white to-white rounded-3xl border border-amber-200/90 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-0.5 relative group"
+                      >
+                        {/* Header Banner */}
+                        <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-white flex items-center justify-between shadow-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full border border-white/20">
+                              TÔI DẠY
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] font-black text-amber-50 bg-black/15 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
+                            <Calendar className="w-3.5 h-3.5 text-amber-200" />
+                            <span>{dateFormatted}</span>
+                          </div>
                         </div>
-                        
-                        <div className="min-w-0 flex-1">
+
+                        {/* Card Body */}
+                        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
                           {slot.level === "Mầm non" ? (() => {
                             const parts = (slot.subjectName || "").split(" | ");
                             const chuDe = parts[0] || "";
                             const hoatDong = parts[1] || "";
                             const deTai = slot.topic || "";
                             return (
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
+                                  <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-800 border border-amber-200">Mầm non</span>
+                                  <span className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">Chủ đề: {chuDe}</span>
                                 </div>
-                                <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
-                                <p className="text-[10px] font-bold text-slate-500 truncate">
-                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span>
-                                </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate mt-0.5">
-                                  Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                                </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate">
-                                  Gv dạy: {slot.teacher.teacherName}
-                                </p>
+                                <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={deTai}>Đề tài: {deTai}</h4>
+                                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
+                                  <div><span className="text-slate-400 font-semibold block text-[10px]">Hoạt động</span><span className="text-amber-800 truncate block">{hoatDong || "Chưa chọn"}</span></div>
+                                  <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp & Tiết</span><span className="text-slate-800 truncate block">{slot.className || "Chưa xếp"} ({slot.startTime})</span></div>
+                                </div>
                               </div>
                             );
                           })() : (
-                            <>
-                              <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                              <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
-                                Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                              </p>
-                              <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
-                                Gv dạy: {slot.teacher.teacherName}
-                              </p>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Host's Observers list block */}
-                        <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
-                          <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
-                            GV đăng ký dự giờ ({slot.registrations.length}/4):
-                          </span>
-                          {slot.registrations.length === 0 ? (
-                            <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
-                          ) : (
-                            <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
-                              {slot.registrations.map((reg: any) => {
-                                const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
-                                return (
-                                  <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
-                                    <div className="min-w-0 flex-1">
-                                      <p className="font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
-                                      <p className="text-[8px] text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
-                                    </div>
-                                    <div className="shrink-0">
-                                      {reg.isApproved ? (
-                                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-[8px] uppercase">Đã duyệt</span>
-                                      ) : approvedCount >= 4 ? (
-                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-[8px] uppercase">Đầy (Tối đa 4)</span>
-                                      ) : (
-                                        <button 
-                                          type="button"
-                                          onClick={() => handleApprove(reg.id)}
-                                          className="px-2 py-0.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded font-black text-[8px] uppercase shadow-sm transition-all"
-                                        >
-                                          Xác nhận
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-sky-100 text-sky-800 border border-sky-200">{slot.level || "K-12"}</span>
+                                <span className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 rounded-md">{slot.subjectName || "Môn học"}</span>
+                              </div>
+                              <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={slot.topic}>{slot.topic}</h4>
+                              <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
+                                <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp học</span><span className="text-slate-800 truncate block">{slot.className || "Chưa xếp"}</span></div>
+                                <div><span className="text-slate-400 font-semibold block text-[10px]">Tiết học</span><span className="text-[#00A99D] font-extrabold truncate block">{slot.startTime} {slot.isDoublePeriod ? "(Tiết đôi)" : ""}</span></div>
+                              </div>
                             </div>
                           )}
+
+                          {/* Observer Progress Block */}
+                          <div className="pt-2 border-t border-slate-100 space-y-2">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-extrabold text-[#003B3A] flex items-center gap-1">
+                                <Users className="w-3.5 h-3.5 text-amber-500" /> GV đăng ký dự giờ:
+                              </span>
+                              <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[10px]">
+                                {registeredCount}/4 GV
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500 rounded-full" style={{ width: `${percentFilled}%` }} />
+                            </div>
+
+                            {/* Registered Teachers List */}
+                            {registeredCount === 0 ? (
+                              <p className="text-[11px] text-slate-400 italic text-center py-2 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">Chưa có giáo viên đăng ký dự giờ.</p>
+                            ) : (
+                              <div className="space-y-1.5 max-h-[130px] overflow-y-auto custom-scrollbar pr-0.5">
+                                {slot.registrations.map((reg: any) => {
+                                  const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
+                                  return (
+                                    <div key={reg.id} className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs gap-2">
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-800 font-black text-xs flex items-center justify-center border border-amber-200 shrink-0">
+                                          {(reg.teacher?.teacherName || "G").charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="text-[11px] font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
+                                          <p className="text-[9px] font-extrabold text-slate-400">{reg.teacher?.teacherCode || ""}</p>
+                                        </div>
+                                      </div>
+                                      <div className="shrink-0">
+                                        {reg.isApproved ? (
+                                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-black text-[9px] uppercase">Đã duyệt</span>
+                                        ) : approvedCount >= 4 ? (
+                                          <span className="px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full font-black text-[9px] uppercase">Đầy</span>
+                                        ) : (
+                                          <button 
+                                            type="button"
+                                            onClick={() => handleApprove(reg.id)}
+                                            className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-full font-black text-[9px] uppercase shadow-xs transition-all cursor-pointer hover:scale-105"
+                                          >
+                                            Xác nhận
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
-                          <button type="button" onClick={() => openEditModal(slot)}
-                            className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
-                            Sửa
+                        {/* Card Footer Actions */}
+                        <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-150 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(slot)}
+                            className="flex-1 py-1.5 text-xs font-black text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 shadow-2xs transition-all text-center"
+                          >
+                            ✏️ Sửa tiết dạy
                           </button>
-                          <button 
+                          <button
                             type="button"
                             onClick={() => handleDeleteSlot(slot.id)}
-                            disabled={slot.registrations.length > 0}
-                            className={`px-2.5 py-1 border rounded-lg font-bold transition-all ${
-                              slot.registrations.length > 0
+                            disabled={registeredCount > 0}
+                            className={`flex-1 py-1.5 text-xs font-black rounded-xl border transition-all text-center ${
+                              registeredCount > 0
                                 ? "text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed"
-                                : "text-rose-600 bg-white border-rose-250 hover:bg-rose-50 cursor-pointer"
+                                : "text-rose-600 bg-white border-rose-200 hover:bg-rose-50 cursor-pointer shadow-2xs"
                             }`}
-                            title={slot.registrations.length > 0 ? "Không thể hủy tiết đã có giáo viên đăng ký" : "Hủy tiết"}
+                            title={registeredCount > 0 ? "Không thể hủy tiết đã có giáo viên đăng ký" : "Hủy tiết dạy"}
                           >
-                            Hủy tiết
+                            🗑️ Hủy tiết
                           </button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              );
+              ); 
             })()}
           </div>
         </div>
@@ -2052,84 +2079,117 @@ export function ObservationClient(props: ObservationClientProps) {
               }
 
               return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                   {myObservedSlots.map(slot => {
                     const isHost = false;
                     const slotDate = new Date(slot.date);
+                    const dateFormatted = slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
                     const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                    const isApproved = myReg ? myReg.isApproved : false;
+                    const hasEvaluation = myReg && myReg.evaluation !== null;
                     const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                    
+
                     return (
-                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#00A99D]">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-[#E6F7F6] text-[#00A99D]">
-                            Tôi dự
-                          </span>
-                          <span className="text-[9px] font-extrabold text-slate-400">
-                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                          </span>
+                      <div 
+                        key={slot.id} 
+                        className="bg-gradient-to-b from-teal-50/60 via-white to-white rounded-3xl border border-teal-200/90 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-0.5 relative group"
+                      >
+                        {/* Header Banner */}
+                        <div className="bg-gradient-to-r from-[#009085] to-[#00A99D] px-4 py-2.5 text-white flex items-center justify-between shadow-xs">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full border border-white/20">
+                              TÔI DỰ GIỜ
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 text-[11px] font-black text-teal-50 bg-black/15 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
+                            <Calendar className="w-3.5 h-3.5 text-teal-200" />
+                            <span>{dateFormatted}</span>
+                          </div>
                         </div>
-                        
-                        <div className="min-w-0 flex-1">
+
+                        {/* Card Body */}
+                        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
                           {slot.level === "Mầm non" ? (() => {
                             const parts = (slot.subjectName || "").split(" | ");
                             const chuDe = parts[0] || "";
                             const hoatDong = parts[1] || "";
                             const deTai = slot.topic || "";
                             return (
-                              <div className="space-y-1">
+                              <div className="space-y-2">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
+                                  <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-800 border border-amber-200">Mầm non</span>
+                                  <span className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">Chủ đề: {chuDe}</span>
                                 </div>
-                                <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
-                                <p className="text-[10px] font-bold text-slate-500 truncate">
-                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span>
-                                </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate mt-0.5">
-                                  Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                                </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate">
-                                  Gv dạy: {slot.teacher.teacherName}
-                                </p>
+                                <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={deTai}>Đề tài: {deTai}</h4>
+                                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
+                                  <div><span className="text-slate-400 font-semibold block text-[10px]">GV Giảng dạy</span><span className="text-slate-800 font-bold truncate block">{slot.teacher?.teacherName}</span></div>
+                                  <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp & Tiết</span><span className="text-slate-800 truncate block">{slot.className || "Chưa xếp"} ({slot.startTime})</span></div>
+                                </div>
                               </div>
                             );
                           })() : (
-                            <>
-                              <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                              <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
-                                Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                              </p>
-                              <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
-                                Gv dạy: {slot.teacher.teacherName}
-                              </p>
-                            </>
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-sky-100 text-sky-800 border border-sky-200">{slot.level || "K-12"}</span>
+                                <span className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 rounded-md">{slot.subjectName || "Môn học"}</span>
+                              </div>
+                              <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={slot.topic}>{slot.topic}</h4>
+                              <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
+                                <div><span className="text-slate-400 font-semibold block text-[10px]">GV Giảng dạy</span><span className="text-slate-800 font-bold truncate block">{slot.teacher?.teacherName}</span></div>
+                                <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp & Tiết</span><span className="text-[#00A99D] font-extrabold truncate block">{slot.className || "Chưa xếp"} • {slot.startTime}</span></div>
+                              </div>
+                            </div>
                           )}
+
+                          {/* Approval & Evaluation Status */}
+                          <div className="pt-2 border-t border-slate-100 space-y-2">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="font-extrabold text-slate-600 flex items-center gap-1">
+                                📌 Trạng thái xác nhận:
+                              </span>
+                              {isApproved ? (
+                                <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-black text-[10px] uppercase flex items-center gap-1">
+                                  ✓ Đã được phê duyệt
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-black text-[10px] uppercase flex items-center gap-1 animate-pulse">
+                                  ⏳ Chờ GV tổ chức xác nhận
+                                </span>
+                              )}
+                            </div>
+
+                            {hasEvaluation && (
+                              <div className="p-2 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex items-center justify-between">
+                                <span className="text-[11px] font-black text-emerald-800 flex items-center gap-1">
+                                  ⭐ Đã đánh giá dự giờ
+                                </span>
+                                <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-lg border border-emerald-200">
+                                  Xếp loại: {myReg.evaluation.overallRating || "Đã đạt"}
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
-                          {!myReg?.isApproved ? (
-                            <div className="flex flex-col gap-1.5 w-full">
-                              <span className="px-2 py-1 text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
-                                Chờ xác nhận GV tổ chức tiết dạy
-                              </span>
-                              <button type="button" onClick={() => handleCancelRegistration(myReg?.id)}
-                                className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
-                                Hủy đăng ký
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-1.5 w-full">
-                              <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
-                                Đã xác nhận dự giờ
-                              </span>
-                              <button type="button" onClick={() => openEvalModal(myReg, slot)}
-                                className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
-                                {myReg?.evaluation ? "Xem đánh giá" : "Nhập đánh giá"}
-                              </button>
-                            </div>
+                        {/* Card Footer Actions */}
+                        <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-150 flex items-center justify-between gap-2">
+                          {isApproved && (
+                            <button
+                              type="button"
+                              onClick={() => openEvalModal(myReg, slot)}
+                              className="flex-1 py-1.5 text-xs font-black text-white bg-gradient-to-r from-[#009085] to-[#00A99D] rounded-xl hover:shadow-sm transition-all text-center cursor-pointer"
+                            >
+                              {hasEvaluation ? "📄 Xem / Sửa phiếu đánh giá" : "📝 Nhập đánh giá dự giờ"}
+                            </button>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => handleCancelRegistration(slot.id)}
+                            className="px-3 py-1.5 text-xs font-black text-rose-600 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 shadow-2xs transition-all text-center cursor-pointer"
+                          >
+                            Hủy đăng ký
+                          </button>
                         </div>
                       </div>
                     );
