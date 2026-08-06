@@ -5,10 +5,10 @@ import { PrismaClient } from "@prisma/client"
 import { createClient } from '@libsql/client'
 import { PrismaLibSQL } from '@prisma/adapter-libsql'
 
-const VALID_TURSO_URL = "libsql://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
+const VALID_TURSO_URL = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
 const VALID_TURSO_TOKEN = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE9_ZAw"
 
-// Always write valid SQLite file to OS temp directory (/tmp) which is guaranteed to be writable on Vercel Lambda
+// Always write valid SQLite file to OS temp directory (/tmp) for Prisma Engine initialization fallback
 let sqliteTmpPath = ''
 try {
   const tmpDir = os.tmpdir() || '/tmp'
@@ -23,13 +23,13 @@ try {
     fs.writeFileSync(sqliteTmpPath, header)
   }
   process.env.DATABASE_URL = 'file:' + sqliteTmpPath
-} catch (e) {
-  console.error('[DB INIT ERROR]', e)
-}
+} catch (e) {}
 
 const createPrismaClient = () => {
-  let tursoUrl = process.env.TURSO_DATABASE_URL || VALID_TURSO_URL
-  if (!tursoUrl.startsWith('libsql://')) tursoUrl = VALID_TURSO_URL
+  let rawUrl = process.env.TURSO_DATABASE_URL || VALID_TURSO_URL
+  // Ensure https:// scheme for serverless HTTP fetch compatibility
+  let tursoUrl = rawUrl.replace(/^libsql:///, 'https://')
+  if (!tursoUrl.startsWith('https://')) tursoUrl = VALID_TURSO_URL
 
   let tursoAuthToken = process.env.TURSO_AUTH_TOKEN || VALID_TURSO_TOKEN
   if (!tursoAuthToken || tursoAuthToken.includes('eyJhIjoicnciLCJleHAiOjE3ODQxODUxMTQs')) {
