@@ -1053,8 +1053,9 @@ export function StudentTransfersClient() {
   });
 
   const outListForFilters = filteredTransfers.filter(t => t.type === "OUT");
-  const uniqueClasses = Array.from(new Set(outListForFilters.filter(t => t.student?.class).map(t => JSON.stringify({ id: t.student.class.id, name: t.student.class.className })))).map(s => JSON.parse(s));
   const uniqueCampuses = Array.from(new Set(outListForFilters.filter(t => t.student?.class?.campus).map(t => JSON.stringify({ id: t.student.class.campus.id, name: t.student.class.campus.campusName })))).map(s => JSON.parse(s));
+  const outListForClasses = outListForFilters.filter(t => !filterOutCampus || t.student?.class?.campusId === filterOutCampus);
+  const uniqueClasses = Array.from(new Set(outListForClasses.filter(t => t.student?.class).map(t => JSON.stringify({ id: t.student.class.id, name: t.student.class.className })))).map(s => JSON.parse(s));
   const uniqueProvinces = Array.from(new Set(outListForFilters.map(t => t.destinationProvince).filter(Boolean))).sort();
   const changeTransfers = filteredTransfers.filter(t => t.type === "CHANGE_CLASS" && (
     !globalSearch || 
@@ -1915,25 +1916,36 @@ export function StudentTransfersClient() {
            <div className="flex flex-wrap items-center gap-2 bg-slate-50/70 p-3.5 rounded-2xl border border-slate-205/45 animate-in fade-in duration-200">
              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider mr-2">Bộ lọc:</span>
              
-             {/* Lớp */}
-             <select 
-               value={filterOutClass} 
-               onChange={e => setFilterOutClass(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
-             >
-               <option value="">Tất cả Lớp ({uniqueClasses.length})</option>
-               {uniqueClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-             </select>
+             {/* Cơ sở cũ */}
+              <select 
+                value={filterOutCampus} 
+                onChange={e => {
+                  const newCampusId = e.target.value;
+                  setFilterOutCampus(newCampusId);
+                  if (filterOutClass) {
+                    const validClassIds = outListForFilters
+                      .filter(t => !newCampusId || t.student?.class?.campusId === newCampusId)
+                      .map(t => t.student?.classId);
+                    if (!validClassIds.includes(filterOutClass)) {
+                      setFilterOutClass("");
+                    }
+                  }
+                }}
+                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+              >
+                <option value="">Tất cả Cơ sở ({uniqueCampuses.length})</option>
+                {uniqueCampuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
 
-             {/* Cơ sở */}
-             <select 
-               value={filterOutCampus} 
-               onChange={e => setFilterOutCampus(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
-             >
-               <option value="">Tất cả Cơ sở ({uniqueCampuses.length})</option>
-               {uniqueCampuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-             </select>
+              {/* Lớp theo cơ sở cũ */}
+              <select 
+                value={filterOutClass} 
+                onChange={e => setFilterOutClass(e.target.value)}
+                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#00A99D] cursor-pointer"
+              >
+                <option value="">Tất cả Lớp ({uniqueClasses.length})</option>
+                {uniqueClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
 
              {/* Diện chuyển */}
              <select 
