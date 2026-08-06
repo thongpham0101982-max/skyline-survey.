@@ -5320,7 +5320,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             };
 
                             return (
-                              <tr key={s.id} className={`group border-b border-slate-100 hover:bg-[#EBF5F4]/40 transition-colors duration-150 ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/40"} text-xs font-semibold`}>
+                              <tr key={s.id} className={`group border-b border-slate-100 transition-colors duration-150 ${(s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId) ? "bg-emerald-50/60 hover:bg-emerald-100/80" : idx % 2 === 0 ? "bg-white hover:bg-[#EBF5F4]/40" : "bg-slate-50/40 hover:bg-[#EBF5F4]/40"} text-xs font-semibold`}>
                                 <td className="w-10 min-w-[40px] max-w-[40px] sticky left-0 z-10 p-3 align-middle text-center text-[10px] text-slate-400 bg-inherit border border-slate-100">{(currentPage - 1) * pageSize + idx + 1}</td>
                                  
                                 <td className="w-[170px] min-w-[170px] max-w-[170px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal py-4 px-4 align-middle bg-inherit border border-slate-100">

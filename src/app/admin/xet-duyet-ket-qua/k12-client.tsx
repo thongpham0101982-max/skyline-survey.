@@ -5024,12 +5024,15 @@ return {
                                <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Ủy quyền xét duyệt</th>
                              </>
                            )}
-                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Thao tác</th>
+                          <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Nhập học</th>
+                           <th className="p-2 p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest text-center border border-slate-300">Thao tác</th>
                        </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {filtStu.map((s, idx) => (
-                        <tr key={s.id} className={`group hover:bg-slate-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                      {filtStu.map((s, idx) => 
+                        {const isEnrolled = s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId;
+                        return (
+                          <tr key={s.id} className={`group transition-colors ${isEnrolled ? "bg-emerald-50/60 hover:bg-emerald-100/80" : idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/30 hover:bg-slate-50'}`}>
                            <td className="p-2 border border-slate-300 font-mono text-xs text-slate-700">{s.studentCode}</td>
                            <td className="p-2 border border-slate-300">
                              <div className="flex flex-col">

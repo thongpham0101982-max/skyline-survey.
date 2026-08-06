@@ -2310,7 +2310,7 @@ export function StudentInfoClient({
                   </tr>
                 ) : (
                   paginatedStudents.map((s, idx) => {
-                    const isEnrolled = s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || !!s.enrollmentClass || !!s.enrollmentClassId;
+                    const isEnrolled = s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || s.enrollmentStatus === "PENDING" || !!s.enrollmentClass || !!s.enrollmentClassId;
                     return (
                     <tr 
                       key={s.id} 
@@ -2546,7 +2546,7 @@ export function StudentInfoClient({
                   </tr>
                 ) : (
                   paginatedStudents.map((child, i) => {
-                    const isEnrolled = child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || !!child.enrollmentClass || !!child.enrollmentClassId;
+                    const isEnrolled = child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || child.enrollmentStatus === "PENDING" || !!child.enrollmentClass || !!child.enrollmentClassId;
                     return (
                     <tr 
                       key={child.id} 
