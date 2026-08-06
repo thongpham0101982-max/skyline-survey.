@@ -2278,6 +2278,7 @@ export function StudentInfoClient({
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28 text-center">Cơ sở</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-20 text-center">Hệ KS</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
+                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Nhập học</th>
                   {subTab === "info" && (
                     <>
                       <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Học lực</th>
@@ -2303,7 +2304,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-300 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 18 : 13) : (subTab === "info" ? 16 : 11)} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
+                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 19 : 14) : (subTab === "info" ? 17 : 12)} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -2372,6 +2373,15 @@ export function StudentInfoClient({
                             await handleUpdateAbsent(s, val);
                           }}
                         />
+                      </td>
+                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-bold">
+                        {isEnrolled ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-extrabold text-xs">
+                            X
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
                       </td>
                       {subTab === "info" && (
                         <>
@@ -2520,6 +2530,7 @@ export function StudentInfoClient({
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-28">Nhóm tuổi</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Cơ sở</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
+                  <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Nhập học</th>
                   {subTab === "result" && (
                     <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Kết quả</th>
                   )}
@@ -2529,7 +2540,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-300">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
+                    <td colSpan={12} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -2593,6 +2604,15 @@ export function StudentInfoClient({
                             await handleUpdateAbsent(child, val);
                           }}
                         />
+                      </td>
+                      <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-bold">
+                        {isEnrolled ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-extrabold text-xs">
+                            X
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
                       </td>
                       {subTab === "result" && (
                         <td className="px-5 py-4 border-b border-slate-100 text-center">
