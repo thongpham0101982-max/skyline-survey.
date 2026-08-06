@@ -365,10 +365,20 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   }))
 
   // Entry Level Students (Khối 1, Khối 9, Khối 10)
+  const inputAssessmentWhere: any = targetYearId ? { batch: { period: { academicYearId: targetYearId } } } : {}
+  if (!isFullAccess) {
+    inputAssessmentWhere.batch = {
+      ...(inputAssessmentWhere.batch || {}),
+      campusId: { in: allowedCampusIds }
+    }
+  }
+
   const generalInputs = await prisma.inputAssessmentStudent.findMany({
+    where: inputAssessmentWhere,
     select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
   })
   const preschoolInputs = await prisma.preschoolInputAssessmentStudent.findMany({
+    where: inputAssessmentWhere,
     select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
   })
 
