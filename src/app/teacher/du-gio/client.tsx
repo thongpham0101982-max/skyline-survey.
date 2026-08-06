@@ -170,6 +170,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
   const [filterTeacherSearch, setFilterTeacherSearch] = useState("");
+  const [teacherLookupQuery, setTeacherLookupQuery] = useState("");
   const [myScheduleMonth, setMyScheduleMonth] = useState<string>("ALL");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
@@ -2204,6 +2205,106 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
       
+      
+      {/* Panel 5: Tra cứu & Tìm kiếm thông tin Giáo viên */}
+      <div className="w-full mt-6">
+        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#00A99D]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] text-[#00A99D] flex items-center justify-center font-bold shadow-xs">
+                <Search className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-black text-base text-[#003B3A] uppercase tracking-wider block">5. Tra cứu & Tìm kiếm thông tin Giáo viên</span>
+                <span className="text-xs text-slate-500 font-semibold">Tra cứu hồ sơ, số tiết dạy, tiết dự giờ và chỉ tiêu của Giáo viên toàn trường</span>
+              </div>
+            </div>
+
+            {/* Quick search input */}
+            <div className="relative w-full sm:w-80">
+              <Search className="w-4 h-4 text-[#00A99D] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Nhập tên GV, mã số GV..."
+                value={teacherLookupQuery}
+                onChange={e => setTeacherLookupQuery(e.target.value)}
+                className="w-full text-xs font-bold rounded-2xl border-2 border-[#00A99D]/40 pl-9 pr-8 py-2 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] focus:bg-white shadow-xs transition-all"
+              />
+              {teacherLookupQuery && (
+                <button type="button" onClick={() => setTeacherLookupQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Teacher Lookup Results */}
+          {(() => {
+            const filteredList = teachers.filter((t: any) => {
+              if (!teacherLookupQuery.trim()) return true;
+              const q = teacherLookupQuery.toLowerCase().trim();
+              return t.teacherName.toLowerCase().includes(q) || (t.teacherCode || "").toLowerCase().includes(q) || (t.position || "").toLowerCase().includes(q);
+            }).slice(0, 6);
+
+            if (filteredList.length === 0) {
+              return (
+                <div className="p-8 text-center text-slate-400 italic bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  Không tìm thấy giáo viên phù hợp với từ khóa "{teacherLookupQuery}".
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredList.map((t: any) => {
+                  const tStats = teacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
+                  return (
+                    <div key={t.id} className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-[#00A99D]/40 hover:shadow-md transition-all flex flex-col justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-base flex items-center justify-center border-2 border-white shadow-sm shrink-0">
+                          {t.teacherName.charAt(0)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h5 className="font-black text-xs text-slate-800 truncate leading-snug">{t.teacherName}</h5>
+                          <p className="text-[10px] text-slate-500 font-bold">Mã số: {t.teacherCode}</p>
+                          {t.position && (
+                            <span className="inline-block text-[9px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.2 rounded border border-teal-200 mt-1">
+                              {t.position}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-bold bg-white p-2.5 rounded-xl border border-slate-150">
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 font-semibold">Số tiết đã dạy</span>
+                          <span className="text-amber-800 font-black text-xs">{tStats.taughtCount} tiết</span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-slate-400 font-semibold">Số tiết đã dự</span>
+                          <span className="text-[#00A99D] font-black text-xs">{tStats.observedCount} tiết</span>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFilterTeacherSearch(t.teacherName);
+                          showToast(`Đã lọc danh sách tiết dạy của GV ${t.teacherName}`, "info");
+                        }}
+                        className="w-full py-1.5 text-xs font-black text-[#00A99D] bg-teal-50 hover:bg-[#00A99D] hover:text-white rounded-xl border border-teal-200 transition-all text-center cursor-pointer shadow-2xs"
+                      >
+                        🔍 Lọc tiết dạy của GV này
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </div>
+      </div>
+
       {/* ROW 4: Full Width Layout for Panel 6 */}
       <div className="w-full mt-6">
         {/* Panel 6: Kết quả đánh giá gần đây */}
