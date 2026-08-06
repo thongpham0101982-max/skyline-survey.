@@ -2308,10 +2308,18 @@ export function StudentInfoClient({
                     </td>
                   </tr>
                 ) : (
-                  paginatedStudents.map((s, idx) => (
+                  paginatedStudents.map((s, idx) => {
+                    const isEnrolled = s.enrollmentStatus === "COMPLETED" || s.enrollmentStatus === "ENROLLED" || !!s.enrollmentClass || !!s.enrollmentClassId;
+                    return (
                     <tr 
                       key={s.id} 
-                      className={`group hover:bg-slate-50 transition-colors cursor-pointer ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}
+                      className={`group transition-colors cursor-pointer ${
+                        isEnrolled 
+                          ? 'bg-emerald-50/60 hover:bg-emerald-100/80' 
+                          : selectedIds.includes(s.id)
+                          ? 'bg-teal-50/40 hover:bg-teal-100/50'
+                          : idx % 2 === 0 ? 'bg-white hover:bg-slate-50' : 'bg-slate-50/30 hover:bg-slate-50'
+                      }`}
                       onClick={() => {
                         setSelectedStudent(s);
                         setIsDetailsOpen(true);
@@ -2486,7 +2494,8 @@ export function StudentInfoClient({
                         </div>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -2525,10 +2534,18 @@ export function StudentInfoClient({
                     </td>
                   </tr>
                 ) : (
-                  paginatedStudents.map((child, i) => (
+                  paginatedStudents.map((child, i) => {
+                    const isEnrolled = child.enrollmentStatus === "COMPLETED" || child.enrollmentStatus === "ENROLLED" || !!child.enrollmentClass || !!child.enrollmentClassId;
+                    return (
                     <tr 
                       key={child.id} 
-                      className={`hover:bg-[#00A99D]/5/30 transition-colors cursor-pointer ${selectedIds.includes(child.id) ? "bg-[#00A99D]/5/50" : ""}`}
+                      className={`transition-colors cursor-pointer ${
+                        isEnrolled
+                          ? 'bg-emerald-50/60 hover:bg-emerald-100/80'
+                          : selectedIds.includes(child.id)
+                          ? 'bg-[#00A99D]/5/50 hover:bg-[#00A99D]/10'
+                          : i % 2 === 0 ? 'bg-white hover:bg-[#00A99D]/5/30' : 'bg-slate-50/30 hover:bg-[#00A99D]/5/30'
+                      }`}
                       onClick={() => {
                         setSelectedStudent(child);
                         setIsDetailsOpen(true);
@@ -2663,7 +2680,8 @@ export function StudentInfoClient({
                         </div>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
