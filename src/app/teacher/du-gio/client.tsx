@@ -158,6 +158,61 @@ export function ObservationClient(props: ObservationClientProps) {
     currentTeacher?.user?.role === "BGH_MN" ||
     (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
   const router = useRouter()
+  const checkIsMyDept = useCallback((slot: any) => {
+    if (!currentTeacher || !slot?.teacher) return false;
+    const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    
+    const myDeptIds = new Set<string>();
+    const myDeptNames = new Set<string>();
+
+    if (currentTeacher.departmentId) myDeptIds.add(currentTeacher.departmentId);
+    if (currentTeacher.departmentRel?.name) myDeptNames.add(normDept(currentTeacher.departmentRel.name));
+    
+    if (currentTeacher.departmentAssignments && Array.isArray(currentTeacher.departmentAssignments)) {
+      currentTeacher.departmentAssignments.forEach((da: any) => {
+        if (da.departmentId) myDeptIds.add(da.departmentId);
+        if (da.department?.name) myDeptNames.add(normDept(da.department.name));
+      });
+    }
+
+    const slotTeacher = slot.teacher;
+    const slotDeptIds = new Set<string>();
+    const slotDeptNames = new Set<string>();
+
+    if (slotTeacher.departmentId) slotDeptIds.add(slotTeacher.departmentId);
+    if (slotTeacher.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher.departmentRel.name));
+
+    if (slotTeacher.departmentAssignments && Array.isArray(slotTeacher.departmentAssignments)) {
+      slotTeacher.departmentAssignments.forEach((da: any) => {
+        if (da.departmentId) slotDeptIds.add(da.departmentId);
+        if (da.department?.name) slotDeptNames.add(normDept(da.department.name));
+      });
+    }
+
+    if (isMamNonTeacher) {
+      const slotMN = slot.level === "Mầm non" || (slotTeacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+      if (!slotMN) return false;
+      if (myDeptNames.size === 0) return true;
+      for (const name of slotDeptNames) {
+        if (name !== "" && myDeptNames.has(name)) return true;
+      }
+      return false;
+    }
+
+    for (const id of slotDeptIds) {
+      if (myDeptIds.has(id)) return true;
+    }
+
+    for (const name of slotDeptNames) {
+      if (name !== "" && myDeptNames.has(name)) return true;
+      for (const myName of myDeptNames) {
+        if (name !== "" && myName !== "" && (name.includes(myName) || myName.includes(name))) return true;
+      }
+    }
+
+    return false;
+  }, [currentTeacher, isMamNonTeacher]);
+
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeTabParam = searchParams.get("tab") || "dang-ky"
@@ -1030,32 +1085,15 @@ export function ObservationClient(props: ObservationClientProps) {
     return slots.filter(slot => {
       const isHost = slot.teacherId === currentTeacher?.id
       const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
-      const slotDate = new Date(slot.date)
-      const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
       if (activeTab === "dang-ky") {
-        // Relax isPast to allow retroactive registration and viewing of recent slots
         if (isHost || isObserver) return false;
+        const isMyDept = checkIsMyDept(slot);
         if (activeDeptTab !== "all") {
-          // Mam non: match by dept NAME across campuses; K-12: match by departmentId
-          const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-          const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
-          let isMyDept;
-          if (isMamNonTeacher) {
-            const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
-            const slotMN = slot.level === "Mamm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-            isMyDept = slotMN && myDeptName !== "" && slotDeptName === myDeptName;
-          } else {
-            isMyDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
-          }
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
           if (activeDeptTab === "other-dept") {
             if (isMyDept) return false;
-            
-            // If the current teacher is a Preschool teacher, they should only see slots in Preschool departments/level.
-            // If they are K-12, they should only see slots in K-12 departments/level.
             const slotIsMamNon = slot.level === "Mầm non" || 
                                  (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-            
             if (isMamNonTeacher) {
               if (!slotIsMamNon) return false;
             } else {
@@ -1069,7 +1107,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (activeTab === "history") return isObserver
       return true
     })
-  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher])
+  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher, checkIsMyDept]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -1516,7 +1554,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     } else {
                       if (!isSlotMamNon) {
                         score += 1000;
-                        const isSameDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
+                        const isSameDept = checkIsMyDept(slot);
                         const isSameCampus = slot.campusId === currentTeacher?.campusId;
                         
                         if (isSameCampus && isSameDept) {
@@ -1627,15 +1665,39 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
 
             {/* Department tabs selector */}
-            <div className="flex gap-2">
-              <button onClick={() => setActiveDeptTab("my-dept")}
-                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                Tiết dạy thuộc TCM
-              </button>
-              <button onClick={() => setActiveDeptTab("other-dept")}
-                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                Tiết dạy TCM khác
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {(() => {
+                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+                const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
+                const otherDeptCount = openSlots.filter(s => !checkIsMyDept(s)).length;
+                const allCount = openSlots.length;
+
+                return (
+                  <>
+                    <button onClick={() => setActiveDeptTab("my-dept")}
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      <span>🏫 Tiết dạy thuộc TCM</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
+                        {myDeptCount}
+                      </span>
+                    </button>
+                    <button onClick={() => setActiveDeptTab("other-dept")}
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      <span>🌐 Tiết dạy TCM khác</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+                        {otherDeptCount}
+                      </span>
+                    </button>
+                    <button onClick={() => setActiveDeptTab("all")}
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      <span>⭐ Tất cả tiết dạy</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+                        {allCount}
+                      </span>
+                    </button>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -1709,8 +1771,25 @@ export function ObservationClient(props: ObservationClientProps) {
           {tabFilteredSlots.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
               <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
-              <p className="text-xs font-bold">Không tìm thấy tiết dạy dự giờ nào!</p>
-              <p className="text-[10px] text-slate-400 mt-1">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
+              {(() => {
+                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+                const otherCount = openSlots.filter(s => !checkIsMyDept(s)).length;
+                return (
+                  <div className="text-center space-y-1.5">
+                    <p className="text-xs font-bold text-slate-700">Không tìm thấy tiết dạy dự giờ nào{activeDeptTab === "my-dept" ? " thuộc Tổ Chuyên Môn của bạn" : ""}!</p>
+                    <p className="text-[10px] text-slate-400">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
+                    {activeDeptTab === "my-dept" && otherCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setActiveDeptTab("other-dept")}
+                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-[#00A99D] bg-teal-50 hover:bg-[#00A99D] hover:text-white rounded-xl border border-teal-200 transition-all cursor-pointer shadow-xs"
+                      >
+                        ⚡ Xem ngay {otherCount} tiết dạy mở tại các Tổ Chuyên Môn khác
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-slate-150">
