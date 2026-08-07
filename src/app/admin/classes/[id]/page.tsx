@@ -5,6 +5,9 @@ import { ArrowLeft } from "lucide-react"
 import { AdminClassStudentsClient } from "./client"
 import { sortVietnameseStudents } from "@/lib/vietnameseSort"
 
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function AdminClassDetailPage({ params }: any) {
   const { id: classId } = await params
   
@@ -34,24 +37,38 @@ export default async function AdminClassDetailPage({ params }: any) {
 
   const [generalCandidates, preschoolCandidates] = await Promise.all([
     prisma.inputAssessmentStudent.findMany({
-      where: { studentCode: { in: studentCodes } },
-      select: { studentCode: true }
+      where: {
+        OR: [
+          { enrollmentClassId: classId },
+          { studentCode: { in: studentCodes } },
+          { enrollmentCode: { in: studentCodes } }
+        ]
+      },
+      select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true }
     }),
     prisma.preschoolInputAssessmentStudent.findMany({
-      where: { studentCode: { in: studentCodes } },
-      select: { studentCode: true }
+      where: {
+        OR: [
+          { enrollmentClassId: classId },
+          { studentCode: { in: studentCodes } },
+          { enrollmentCode: { in: studentCodes } }
+        ]
+      },
+      select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true }
     })
   ]);
 
-  const assessmentCandidateCodes = new Set([
-    ...generalCandidates.map(c => c.studentCode),
-    ...preschoolCandidates.map(c => c.studentCode)
-  ]);
+  const allCandidates = [...generalCandidates, ...preschoolCandidates];
 
   const studentsWithEnrollmentType = (classInfo.students || []).map(student => {
-    const isFromSurvey = 
-      (student.studentTransfers && student.studentTransfers.some((t: any) => t.type === 'IN')) ||
-      assessmentCandidateCodes.has(student.studentCode);
+    const hasTransferIn = student.studentTransfers && student.studentTransfers.some((t: any) => t.type === 'IN');
+    
+    const isCandidate = allCandidates.some(c => 
+      (c.studentCode && (c.studentCode === student.studentCode || c.enrollmentCode === student.studentCode)) ||
+      (c.enrollmentClassId === classId && c.fullName && c.fullName.trim().toLowerCase() === student.studentName.trim().toLowerCase())
+    );
+
+    const isFromSurvey = hasTransferIn || isCandidate;
 
     return {
       ...student,
