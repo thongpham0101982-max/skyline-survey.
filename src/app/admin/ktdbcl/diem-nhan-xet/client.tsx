@@ -1,3 +1,4 @@
+"use client"
 
 const COLUMN_TYPES = [
   { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
@@ -21,7 +22,7 @@ const INTL_OPTIONS = [
   { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
 ]
 
-"use client"
+
 
 import { useState, useEffect, useMemo, useRef } from "react"
 import * as XLSX from "xlsx"
