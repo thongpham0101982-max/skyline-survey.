@@ -96,6 +96,61 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     fetchConfigs()
   }, [selectedYearId])
 
+  // Auto fill form if a config already exists for selected Khối + Môn + Kỳ
+  useEffect(() => {
+    if (!savedConfigs || savedConfigs.length === 0) return
+    const match = savedConfigs.find(c => {
+      const gMatch = c.grade === configGrade
+      const sMatch = (c.subjectId || "ALL") === configSubjectId
+      const pMatch = (c.evaluationPeriod || "ALL") === configPeriod
+      return gMatch && sMatch && pMatch
+    })
+    if (match) {
+      let cols: string[] = []
+      try {
+        cols = typeof match.columnNames === "string" ? JSON.parse(match.columnNames) : match.columnNames || []
+      } catch (_) {}
+      if (cols.length > 0) {
+        setColumnCount(cols.length)
+        setColumnNames(cols)
+      }
+      setHasComposite(match.hasCompositeColumn !== false)
+      setHasRemark(match.hasRemarkColumn !== false)
+    }
+  }, [configGrade, configSubjectId, configPeriod, savedConfigs])
+
+    const handleSelectConfig = (cfg: any) => {
+    setConfigGrade(cfg.grade || "ALL")
+    setConfigSubjectId(cfg.subjectId || "ALL")
+    setConfigPeriod(cfg.evaluationPeriod || "ALL")
+    let cols: string[] = []
+    try {
+      cols = typeof cfg.columnNames === "string" ? JSON.parse(cfg.columnNames) : cfg.columnNames || []
+    } catch (_) {}
+    if (cols.length > 0) {
+      setColumnCount(cols.length)
+      setColumnNames(cols)
+    }
+    setHasComposite(cfg.hasCompositeColumn !== false)
+    setHasRemark(cfg.hasRemarkColumn !== false)
+  }
+
+  const handleDeleteConfig = async (id: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa mẫu cấu hình này?")) return
+    try {
+      const res = await fetch(`/api/admin/ktdbcl/grade-configs?id=${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (data.success) {
+        alert("Đã xóa cấu hình mẫu!")
+        fetchConfigs()
+      } else {
+        alert("Lỗi: " + (data.error || "Không thể xóa"))
+      }
+    } catch (err: any) {
+      alert("Lỗi kết nối: " + err.message)
+    }
+  }
+
   const handleSaveConfig = async () => {
     try {
       setSavingConfig(true)
@@ -694,6 +749,24 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
                       <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between border-t border-slate-100">
                         <span>Cột tổng hợp: {cfg.hasCompositeColumn ? "Có" : "Không"} | Nhận xét: {cfg.hasRemarkColumn ? "Có" : "Không"}</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectConfig(cfg)}
+                            className="px-2 py-0.5 bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 rounded font-bold transition-all"
+                            title="Nạp cấu hình lên Form"
+                          >
+                            Xem / Sửa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteConfig(cfg.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                            title="Xóa cấu hình"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )

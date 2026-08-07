@@ -77,15 +77,65 @@ export async function GET(request: Request) {
     const classGrade = targetClass.grade || targetClass.className || "ALL"
     const targetAcademicYearId = academicYearId || targetClass.academicYearId
 
-    let config = await prisma.subjectGradeConfig.findFirst({
+    // Extract normalized grade numbers for accurate matching across "6", "Khối 6", "6/1"
+    let rawGrade = (targetClass.grade || "").trim()
+    if (!rawGrade && targetClass.className) {
+      const match = targetClass.className.match(/^(\d+)/)
+      if (match) rawGrade = match[1]
+    }
+    const numMatch = rawGrade.match(/(\d+)/)
+    const gradeNum = numMatch ? numMatch[1] : ""
+    const candidateGrades = Array.from(new Set([
+      rawGrade,
+      `Khối ${gradeNum}`,
+      `Khoi ${gradeNum}`,
+      gradeNum,
+      "ALL"
+    ].filter(Boolean)))
+
+    const allConfigs = await prisma.subjectGradeConfig.findMany({
       where: {
         academicYearId: targetAcademicYearId,
-        OR: [{ grade: classGrade }, { grade: "ALL" }],
-        OR: [{ subjectId }, { subjectId: null }],
-        OR: [{ evaluationPeriod }, { evaluationPeriod: "ALL" }]
+        grade: { in: candidateGrades }
       },
       orderBy: { createdAt: "desc" }
     })
+
+    // Strict priority hierarchy matching:
+    // Priority 1: Exact subjectId + Exact Grade + Exact evaluationPeriod
+    let config = allConfigs.find(c =>
+      c.grade !== "ALL" &&
+      c.subjectId === subjectId &&
+      c.evaluationPeriod === evaluationPeriod
+    )
+    // Priority 2: Exact subjectId + Exact Grade + Period ALL
+    if (!config) {
+      config = allConfigs.find(c =>
+        c.grade !== "ALL" &&
+        c.subjectId === subjectId &&
+        (c.evaluationPeriod === "ALL" || !c.evaluationPeriod)
+      )
+    }
+    // Priority 3: General Subject (null) + Exact Grade + Exact evaluationPeriod
+    if (!config) {
+      config = allConfigs.find(c =>
+        c.grade !== "ALL" &&
+        !c.subjectId &&
+        c.evaluationPeriod === evaluationPeriod
+      )
+    }
+    // Priority 4: General Subject (null) + Exact Grade + Period ALL
+    if (!config) {
+      config = allConfigs.find(c =>
+        c.grade !== "ALL" &&
+        !c.subjectId &&
+        (c.evaluationPeriod === "ALL" || !c.evaluationPeriod)
+      )
+    }
+    // Priority 5: Grade ALL fallback
+    if (!config) {
+      config = allConfigs.find(c => c.grade === "ALL")
+    }
 
     if (!config) {
       config = {
