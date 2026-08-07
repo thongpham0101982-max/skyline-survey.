@@ -140,6 +140,8 @@ model AcademicYear {
   learningSupportAssignments      LearningSupportAssignment[]
   learningSupportOutcomeConfigs   LearningSupportOutcomeConfig[]
   learningCommitments             StudentLearningCommitment[]
+  subjectGradeConfigs             SubjectGradeConfig[]
+  subjectGradeEntries             SubjectGradeEntry[]
 }
 
 model Class {
@@ -162,6 +164,7 @@ model Class {
   teachingAssignments  TeachingAssignment[]
   generalEnrollments   InputAssessmentStudent[]          @relation("GeneralEnrollmentClass")
   preschoolEnrollments PreschoolInputAssessmentStudent[] @relation("PreschoolEnrollmentClass")
+  subjectGradeEntries  SubjectGradeEntry[]
 
   @@index([campusId])
   @@index([academicYearId])
@@ -207,6 +210,7 @@ model Student {
   learningSupportTargets LearningSupportTarget[]
   termScores             StudentTermScore[]
   termSummaries          StudentTermSummary[]
+  subjectGradeEntries    SubjectGradeEntry[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -425,6 +429,8 @@ model Subject {
   assignments                TeachingAssignment[]
   learningSupportAssignments LearningSupportAssignment[]
   StudentTermScore           StudentTermScore[]
+  subjectGradeConfigs        SubjectGradeConfig[]
+  subjectGradeEntries        SubjectGradeEntry[]
 }
 
 model TeachingAssignment {
@@ -1614,4 +1620,53 @@ model TeacherDepartmentAssignment {
   @@unique([teacherId, departmentId])
   @@index([teacherId])
   @@index([departmentId])
+}
+
+
+model SubjectGradeConfig {
+  id               String   @id @default(cuid())
+  academicYearId   String
+  grade            String   @default("ALL")
+  subjectId        String?
+  evaluationPeriod String   @default("ALL")
+  columnCount      Int      @default(1)
+  columnNames      String   @default("[\"Điểm 1\"]")
+  hasCompositeColumn Boolean @default(true)
+  hasRemarkColumn    Boolean @default(true)
+  formula          String?  @default("AVERAGE")
+  weights          String?
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  academicYear     AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  subject          Subject?     @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@unique([academicYearId, grade, subjectId, evaluationPeriod])
+  @@index([academicYearId])
+}
+
+model SubjectGradeEntry {
+  id               String   @id @default(cuid())
+  studentId        String
+  subjectId        String
+  classId          String
+  academicYearId   String
+  evaluationPeriod String
+  teacherId        String?
+  componentScores  String?
+  compositeScore   Float?
+  remark           String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  student          Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject          Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  class            Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  academicYear     AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, subjectId, evaluationPeriod, academicYearId])
+  @@index([classId])
+  @@index([subjectId])
+  @@index([academicYearId])
 }

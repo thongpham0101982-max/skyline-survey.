@@ -68,6 +68,12 @@ export const APP_CATEGORIES = [
         href: "/admin/ktdbcl/support"
       },
       {
+        code: "KTDBCL_GRADE_REMARKS",
+        name: "QL Điểm/Nhận xét",
+        icon: ClipboardList,
+        href: "/admin/ktdbcl/diem-nhan-xet"
+      },
+      {
         code: "KTDBCL_IMPORT_KQHT",
         name: "Import KQHT",
         icon: FileSpreadsheet,
