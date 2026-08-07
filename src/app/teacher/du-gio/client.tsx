@@ -158,66 +158,6 @@ export function ObservationClient(props: ObservationClientProps) {
     currentTeacher?.user?.role === "BGH_MN" ||
     (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
   const router = useRouter()
-  const checkIsMyDept = useCallback((slot: any) => {
-    if (!currentTeacher || !slot?.teacher) return false;
-    const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    
-    // Collect all department IDs and names for current teacher (primary + secondary assignments)
-    const myDeptIds = new Set<string>();
-    const myDeptNames = new Set<string>();
-
-    if (currentTeacher.departmentId) myDeptIds.add(currentTeacher.departmentId);
-    if (currentTeacher.departmentRel?.name) myDeptNames.add(normDept(currentTeacher.departmentRel.name));
-    
-    if (currentTeacher.departmentAssignments && Array.isArray(currentTeacher.departmentAssignments)) {
-      currentTeacher.departmentAssignments.forEach((da: any) => {
-        if (da.departmentId) myDeptIds.add(da.departmentId);
-        if (da.department?.name) myDeptNames.add(normDept(da.department.name));
-      });
-    }
-
-    // Collect all department IDs and names for slot's teacher (primary + secondary assignments)
-    const slotTeacher = slot.teacher;
-    const slotDeptIds = new Set<string>();
-    const slotDeptNames = new Set<string>();
-
-    if (slotTeacher.departmentId) slotDeptIds.add(slotTeacher.departmentId);
-    if (slotTeacher.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher.departmentRel.name));
-
-    if (slotTeacher.departmentAssignments && Array.isArray(slotTeacher.departmentAssignments)) {
-      slotTeacher.departmentAssignments.forEach((da: any) => {
-        if (da.departmentId) slotDeptIds.add(da.departmentId);
-        if (da.department?.name) slotDeptNames.add(normDept(da.department.name));
-      });
-    }
-
-    // 1. Mầm non matching
-    if (isMamNonTeacher) {
-      const slotMN = slot.level === "Mầm non" || (slotTeacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-      if (!slotMN) return false;
-      if (myDeptNames.size === 0) return true;
-      for (const name of slotDeptNames) {
-        if (name !== "" && myDeptNames.has(name)) return true;
-      }
-      return false;
-    }
-
-    // 2. ID match
-    for (const id of slotDeptIds) {
-      if (myDeptIds.has(id)) return true;
-    }
-
-    // 3. Name match
-    for (const name of slotDeptNames) {
-      if (name !== "" && myDeptNames.has(name)) return true;
-      for (const myName of myDeptNames) {
-        if (name !== "" && myName !== "" && (name.includes(myName) || myName.includes(name))) return true;
-      }
-    }
-
-    return false;
-  }, [currentTeacher, isMamNonTeacher]);
-
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const activeTabParam = searchParams.get("tab") || "dang-ky"
@@ -1090,15 +1030,32 @@ export function ObservationClient(props: ObservationClientProps) {
     return slots.filter(slot => {
       const isHost = slot.teacherId === currentTeacher?.id
       const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
+      const slotDate = new Date(slot.date)
+      const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
       if (activeTab === "dang-ky") {
+        // Relax isPast to allow retroactive registration and viewing of recent slots
         if (isHost || isObserver) return false;
-        const isMyDept = checkIsMyDept(slot);
         if (activeDeptTab !== "all") {
+          // Mam non: match by dept NAME across campuses; K-12: match by departmentId
+          const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+          const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
+          let isMyDept;
+          if (isMamNonTeacher) {
+            const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
+            const slotMN = slot.level === "Mamm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+            isMyDept = slotMN && myDeptName !== "" && slotDeptName === myDeptName;
+          } else {
+            isMyDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
+          }
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
           if (activeDeptTab === "other-dept") {
             if (isMyDept) return false;
+            
+            // If the current teacher is a Preschool teacher, they should only see slots in Preschool departments/level.
+            // If they are K-12, they should only see slots in K-12 departments/level.
             const slotIsMamNon = slot.level === "Mầm non" || 
                                  (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+            
             if (isMamNonTeacher) {
               if (!slotIsMamNon) return false;
             } else {
@@ -1112,7 +1069,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (activeTab === "history") return isObserver
       return true
     })
-  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher, checkIsMyDept]);
+  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher])
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -1559,7 +1516,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     } else {
                       if (!isSlotMamNon) {
                         score += 1000;
-                        const isSameDept = checkIsMyDept(slot);
+                        const isSameDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
                         const isSameCampus = slot.campusId === currentTeacher?.campusId;
                         
                         if (isSameCampus && isSameDept) {
@@ -1670,31 +1627,15 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
 
             {/* Department tabs selector */}
-            <div className="flex flex-wrap items-center gap-2">
-              {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
-                const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
-                const otherDeptCount = openSlots.filter(s => !checkIsMyDept(s)).length;
-
-                return (
-                  <>
-                    <button onClick={() => setActiveDeptTab("my-dept")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>Tiết dạy thuộc TCM</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
-                        {myDeptCount}
-                      </span>
-                    </button>
-                    <button onClick={() => setActiveDeptTab("other-dept")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>Tiết dạy TCM khác</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
-                        {otherDeptCount}
-                      </span>
-                    </button>
-                  </>
-                );
-              })()}
+            <div className="flex gap-2">
+              <button onClick={() => setActiveDeptTab("my-dept")}
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy thuộc TCM
+              </button>
+              <button onClick={() => setActiveDeptTab("other-dept")}
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy TCM khác
+              </button>
             </div>
           </div>
 
@@ -1768,25 +1709,8 @@ export function ObservationClient(props: ObservationClientProps) {
           {tabFilteredSlots.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
               <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
-              {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
-                const otherCount = openSlots.filter(s => !checkIsMyDept(s)).length;
-                return (
-                  <div className="text-center space-y-1.5">
-                    <p className="text-xs font-bold text-slate-700">Không tìm thấy tiết dạy dự giờ nào{activeDeptTab === "my-dept" ? " thuộc Tổ Chuyên Môn của bạn" : ""}!</p>
-                    <p className="text-[10px] text-slate-400">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
-                    {activeDeptTab === "my-dept" && otherCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveDeptTab("other-dept")}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-[#00A99D] bg-teal-50 hover:bg-[#00A99D] hover:text-white rounded-xl border border-teal-200 transition-all cursor-pointer shadow-xs"
-                      >
-                        ⚡ Xem ngay {otherCount} tiết dạy mở tại các Tổ Chuyên Môn khác
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
+              <p className="text-xs font-bold">Không tìm thấy tiết dạy dự giờ nào!</p>
+              <p className="text-[10px] text-slate-400 mt-1">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-slate-150">
@@ -1904,58 +1828,9 @@ export function ObservationClient(props: ObservationClientProps) {
 
             {/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-6 border-t-4 border-t-[#00A99D] mt-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] text-[#00A99D] flex items-center justify-center font-bold shadow-sm">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-black text-base text-[#003B3A] uppercase tracking-wider block">4. Lịch dạy & dự giờ của tôi</span>
-              <span className="text-xs text-slate-500 font-semibold">Lọc danh sách tiết dạy và tiết đăng ký dự giờ theo Tháng</span>
-            </div>
-          </div>
-
-          {/* Month Selector dropdown & pills */}
-          <div className="flex flex-wrap items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200/80">
-            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider pl-1 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-[#00A99D]" /> Chọn Tháng:
-            </span>
-            <select
-              value={myScheduleMonth}
-              onChange={e => setMyScheduleMonth(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-xl outline-none focus:ring-2 focus:ring-[#00A99D] transition-all cursor-pointer shadow-sm"
-            >
-              <option value="ALL">Tất cả các tháng ({availableScheduleMonths.length > 0 ? `${availableScheduleMonths.length} tháng` : '0'})</option>
-              {availableScheduleMonths.map(m => (
-                <option key={m.value} value={m.value}>{m.label}</option>
-              ))}
-            </select>
-
-            {/* Quick Month Pills */}
-            <div className="flex items-center gap-1 overflow-x-auto custom-scrollbar max-w-full">
-              <button
-                type="button"
-                onClick={() => setMyScheduleMonth("ALL")}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
-                  myScheduleMonth === "ALL" ? "bg-[#00A99D] text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:border-[#00A99D]"
-                }`}
-              >
-                Tất cả
-              </button>
-              {availableScheduleMonths.map(m => (
-                <button
-                  key={m.value}
-                  type="button"
-                  onClick={() => setMyScheduleMonth(m.value)}
-                  className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
-                    myScheduleMonth === m.value ? "bg-[#00A99D] text-white shadow-sm" : "bg-white text-slate-600 border border-slate-200 hover:border-[#00A99D]"
-                  }`}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-          </div>
+        <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
+          <Calendar className="w-5 h-5 text-[#00A99D]" />
+          <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">4. Lịch dạy & dự giờ của tôi</span>
         </div>
 
         {/* 4.1 TIẾT DẠY CỦA TÔI */}
@@ -1981,151 +1856,124 @@ export function ObservationClient(props: ObservationClientProps) {
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {myTaughtSlots.map(slot => {
                     const isHost = true;
                     const slotDate = new Date(slot.date);
-                    const dateFormatted = slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
                     const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                    const registeredCount = slot.registrations ? slot.registrations.length : 0;
-                    const percentFilled = Math.min(100, Math.round((registeredCount / 4) * 100));
-
+                    
                     return (
-                      <div 
-                        key={slot.id} 
-                        className="bg-gradient-to-b from-amber-50/60 via-white to-white rounded-3xl border border-amber-200/90 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-0.5 relative group"
-                      >
-                        {/* Header Banner */}
-                        <div className="bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-white flex items-center justify-between shadow-xs">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-                            <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full border border-white/20">
-                              TÔI DẠY
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-[11px] font-black text-amber-50 bg-black/15 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
-                            <Calendar className="w-3.5 h-3.5 text-amber-200" />
-                            <span>{dateFormatted}</span>
-                          </div>
+                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-amber-50/40 border-amber-200/80 border-l-4 border-l-amber-500">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-800">
+                            Tôi dạy
+                          </span>
+                          <span className="text-[9px] font-extrabold text-slate-400">
+                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                          </span>
                         </div>
-
-                        {/* Card Body */}
-                        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+                        
+                        <div className="min-w-0 flex-1">
                           {slot.level === "Mầm non" ? (() => {
                             const parts = (slot.subjectName || "").split(" | ");
                             const chuDe = parts[0] || "";
                             const hoatDong = parts[1] || "";
                             const deTai = slot.topic || "";
                             return (
-                              <div className="space-y-2">
+                              <div className="space-y-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-800 border border-amber-200">Mầm non</span>
-                                  <span className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">Chủ đề: {chuDe}</span>
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                  <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
                                 </div>
-                                <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={deTai}>Đề tài: {deTai}</h4>
-                                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
-                                  <div><span className="text-slate-400 font-semibold block text-[10px]">Hoạt động</span><span className="text-amber-800 truncate block">{hoatDong || "Chưa chọn"}</span></div>
-                                  <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp & Tiết</span><span className="text-slate-800 truncate block">{slot.className || "Chưa xếp"} ({slot.startTime})</span></div>
-                                </div>
+                                <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
+                                <p className="text-[10px] font-bold text-slate-500 truncate">
+                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span>
+                                </p>
+                                <p className="text-[9px] font-semibold text-slate-400 truncate mt-0.5">
+                                  Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                                </p>
+                                <p className="text-[9px] font-semibold text-slate-400 truncate">
+                                  Gv dạy: {slot.teacher.teacherName}
+                                </p>
                               </div>
                             );
                           })() : (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-sky-100 text-sky-800 border border-sky-200">{slot.level || "K-12"}</span>
-                                <span className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 rounded-md">{slot.subjectName || "Môn học"}</span>
-                              </div>
-                              <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={slot.topic}>{slot.topic}</h4>
-                              <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
-                                <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp học</span><span className="text-slate-800 truncate block">{slot.className || "Chưa xếp"}</span></div>
-                                <div><span className="text-slate-400 font-semibold block text-[10px]">Tiết học</span><span className="text-[#00A99D] font-extrabold truncate block">{slot.startTime} {slot.isDoublePeriod ? "(Tiết đôi)" : ""}</span></div>
-                              </div>
-                            </div>
+                            <>
+                              <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
+                              <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
+                                Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                              </p>
+                              <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                                Gv dạy: {slot.teacher.teacherName}
+                              </p>
+                            </>
                           )}
-
-                          {/* Observer Progress Block */}
-                          <div className="pt-2 border-t border-slate-100 space-y-2">
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="font-extrabold text-[#003B3A] flex items-center gap-1">
-                                <Users className="w-3.5 h-3.5 text-amber-500" /> GV đăng ký dự giờ:
-                              </span>
-                              <span className="font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[10px]">
-                                {registeredCount}/4 GV
-                              </span>
-                            </div>
-                            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-500 rounded-full" style={{ width: `${percentFilled}%` }} />
-                            </div>
-
-                            {/* Registered Teachers List */}
-                            {registeredCount === 0 ? (
-                              <p className="text-[11px] text-slate-400 italic text-center py-2 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">Chưa có giáo viên đăng ký dự giờ.</p>
-                            ) : (
-                              <div className="space-y-1.5 max-h-[130px] overflow-y-auto custom-scrollbar pr-0.5">
-                                {slot.registrations.map((reg: any) => {
-                                  const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
-                                  return (
-                                    <div key={reg.id} className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/80 shadow-xs gap-2">
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-800 font-black text-xs flex items-center justify-center border border-amber-200 shrink-0">
-                                          {(reg.teacher?.teacherName || "G").charAt(0)}
-                                        </div>
-                                        <div className="min-w-0">
-                                          <p className="text-[11px] font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
-                                          <p className="text-[9px] font-extrabold text-slate-400">{reg.teacher?.teacherCode || ""}</p>
-                                        </div>
-                                      </div>
-                                      <div className="shrink-0">
-                                        {reg.isApproved ? (
-                                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-black text-[9px] uppercase">Đã duyệt</span>
-                                        ) : approvedCount >= 4 ? (
-                                          <span className="px-2 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded-full font-black text-[9px] uppercase">Đầy</span>
-                                        ) : (
-                                          <button 
-                                            type="button"
-                                            onClick={() => handleApprove(reg.id)}
-                                            className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-full font-black text-[9px] uppercase shadow-xs transition-all cursor-pointer hover:scale-105"
-                                          >
-                                            Xác nhận
-                                          </button>
-                                        )}
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
                         </div>
 
-                        {/* Card Footer Actions */}
-                        <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-150 flex items-center justify-between gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(slot)}
-                            className="flex-1 py-1.5 text-xs font-black text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 shadow-2xs transition-all text-center"
-                          >
-                            ✏️ Sửa tiết dạy
+                        {/* Host's Observers list block */}
+                        <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
+                          <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
+                            GV đăng ký dự giờ ({slot.registrations.length}/4):
+                          </span>
+                          {slot.registrations.length === 0 ? (
+                            <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
+                          ) : (
+                            <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
+                              {slot.registrations.map((reg: any) => {
+                                const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
+                                return (
+                                  <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
+                                      <p className="text-[8px] text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
+                                    </div>
+                                    <div className="shrink-0">
+                                      {reg.isApproved ? (
+                                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-[8px] uppercase">Đã duyệt</span>
+                                      ) : approvedCount >= 4 ? (
+                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-[8px] uppercase">Đầy (Tối đa 4)</span>
+                                      ) : (
+                                        <button 
+                                          type="button"
+                                          onClick={() => handleApprove(reg.id)}
+                                          className="px-2 py-0.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded font-black text-[8px] uppercase shadow-sm transition-all"
+                                        >
+                                          Xác nhận
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
+                          <button type="button" onClick={() => openEditModal(slot)}
+                            className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
+                            Sửa
                           </button>
-                          <button
+                          <button 
                             type="button"
                             onClick={() => handleDeleteSlot(slot.id)}
-                            disabled={registeredCount > 0}
-                            className={`flex-1 py-1.5 text-xs font-black rounded-xl border transition-all text-center ${
-                              registeredCount > 0
+                            disabled={slot.registrations.length > 0}
+                            className={`px-2.5 py-1 border rounded-lg font-bold transition-all ${
+                              slot.registrations.length > 0
                                 ? "text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed"
-                                : "text-rose-600 bg-white border-rose-200 hover:bg-rose-50 cursor-pointer shadow-2xs"
+                                : "text-rose-600 bg-white border-rose-250 hover:bg-rose-50 cursor-pointer"
                             }`}
-                            title={registeredCount > 0 ? "Không thể hủy tiết đã có giáo viên đăng ký" : "Hủy tiết dạy"}
+                            title={slot.registrations.length > 0 ? "Không thể hủy tiết đã có giáo viên đăng ký" : "Hủy tiết"}
                           >
-                            🗑️ Hủy tiết
+                            Hủy tiết
                           </button>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              ); 
+              );
             })()}
           </div>
         </div>
@@ -2155,117 +2003,84 @@ export function ObservationClient(props: ObservationClientProps) {
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {myObservedSlots.map(slot => {
                     const isHost = false;
                     const slotDate = new Date(slot.date);
-                    const dateFormatted = slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
                     const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
-                    const isApproved = myReg ? myReg.isApproved : false;
-                    const hasEvaluation = myReg && myReg.evaluation !== null;
                     const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-
+                    
                     return (
-                      <div 
-                        key={slot.id} 
-                        className="bg-gradient-to-b from-teal-50/60 via-white to-white rounded-3xl border border-teal-200/90 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between overflow-hidden hover:-translate-y-0.5 relative group"
-                      >
-                        {/* Header Banner */}
-                        <div className="bg-gradient-to-r from-[#009085] to-[#00A99D] px-4 py-2.5 text-white flex items-center justify-between shadow-xs">
-                          <div className="flex items-center gap-1.5">
-                            <span className="w-2 h-2 rounded-full bg-emerald-300 animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded-full border border-white/20">
-                              TÔI DỰ GIỜ
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-[11px] font-black text-teal-50 bg-black/15 px-2.5 py-0.5 rounded-full backdrop-blur-xs">
-                            <Calendar className="w-3.5 h-3.5 text-teal-200" />
-                            <span>{dateFormatted}</span>
-                          </div>
+                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#00A99D]">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-[#E6F7F6] text-[#00A99D]">
+                            Tôi dự
+                          </span>
+                          <span className="text-[9px] font-extrabold text-slate-400">
+                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                          </span>
                         </div>
-
-                        {/* Card Body */}
-                        <div className="p-4 flex-1 flex flex-col justify-between gap-3">
+                        
+                        <div className="min-w-0 flex-1">
                           {slot.level === "Mầm non" ? (() => {
                             const parts = (slot.subjectName || "").split(" | ");
                             const chuDe = parts[0] || "";
                             const hoatDong = parts[1] || "";
                             const deTai = slot.topic || "";
                             return (
-                              <div className="space-y-2">
+                              <div className="space-y-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-800 border border-amber-200">Mầm non</span>
-                                  <span className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">Chủ đề: {chuDe}</span>
+                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                  <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
                                 </div>
-                                <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={deTai}>Đề tài: {deTai}</h4>
-                                <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
-                                  <div><span className="text-slate-400 font-semibold block text-[10px]">GV Giảng dạy</span><span className="text-slate-800 font-bold truncate block">{slot.teacher?.teacherName}</span></div>
-                                  <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp & Tiết</span><span className="text-slate-800 truncate block">{slot.className || "Chưa xếp"} ({slot.startTime})</span></div>
-                                </div>
+                                <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
+                                <p className="text-[10px] font-bold text-slate-500 truncate">
+                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span>
+                                </p>
+                                <p className="text-[9px] font-semibold text-slate-400 truncate mt-0.5">
+                                  Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                                </p>
+                                <p className="text-[9px] font-semibold text-slate-400 truncate">
+                                  Gv dạy: {slot.teacher.teacherName}
+                                </p>
                               </div>
                             );
                           })() : (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-sky-100 text-sky-800 border border-sky-200">{slot.level || "K-12"}</span>
-                                <span className="px-2 py-0.5 text-[10px] font-bold text-slate-700 bg-slate-100 rounded-md">{slot.subjectName || "Môn học"}</span>
-                              </div>
-                              <h4 className="text-sm font-black text-slate-800 leading-snug tracking-tight" title={slot.topic}>{slot.topic}</h4>
-                              <div className="grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600 bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100">
-                                <div><span className="text-slate-400 font-semibold block text-[10px]">GV Giảng dạy</span><span className="text-slate-800 font-bold truncate block">{slot.teacher?.teacherName}</span></div>
-                                <div><span className="text-slate-400 font-semibold block text-[10px]">Lớp & Tiết</span><span className="text-[#00A99D] font-extrabold truncate block">{slot.className || "Chưa xếp"} • {slot.startTime}</span></div>
-                              </div>
-                            </div>
+                            <>
+                              <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
+                              <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
+                                Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
+                              </p>
+                              <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                                Gv dạy: {slot.teacher.teacherName}
+                              </p>
+                            </>
                           )}
-
-                          {/* Approval & Evaluation Status */}
-                          <div className="pt-2 border-t border-slate-100 space-y-2">
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="font-extrabold text-slate-600 flex items-center gap-1">
-                                📌 Trạng thái xác nhận:
-                              </span>
-                              {isApproved ? (
-                                <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-black text-[10px] uppercase flex items-center gap-1">
-                                  ✓ Đã được phê duyệt
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full font-black text-[10px] uppercase flex items-center gap-1 animate-pulse">
-                                  ⏳ Chờ GV tổ chức xác nhận
-                                </span>
-                              )}
-                            </div>
-
-                            {hasEvaluation && (
-                              <div className="p-2 bg-emerald-50/70 border border-emerald-200 rounded-2xl flex items-center justify-between">
-                                <span className="text-[11px] font-black text-emerald-800 flex items-center gap-1">
-                                  ⭐ Đã đánh giá dự giờ
-                                </span>
-                                <span className="text-[10px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-lg border border-emerald-200">
-                                  Xếp loại: {myReg.evaluation.overallRating || "Đã đạt"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
                         </div>
 
-                        {/* Card Footer Actions */}
-                        <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-150 flex items-center justify-between gap-2">
-                          {isApproved && (
-                            <button
-                              type="button"
-                              onClick={() => openEvalModal(myReg, slot)}
-                              className="flex-1 py-1.5 text-xs font-black text-white bg-gradient-to-r from-[#009085] to-[#00A99D] rounded-xl hover:shadow-sm transition-all text-center cursor-pointer"
-                            >
-                              {hasEvaluation ? "📄 Xem / Sửa phiếu đánh giá" : "📝 Nhập đánh giá dự giờ"}
-                            </button>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
+                          {!myReg?.isApproved ? (
+                            <div className="flex flex-col gap-1.5 w-full">
+                              <span className="px-2 py-1 text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
+                                Chờ xác nhận GV tổ chức tiết dạy
+                              </span>
+                              <button type="button" onClick={() => handleCancelRegistration(myReg?.id)}
+                                className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
+                                Hủy đăng ký
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-1.5 w-full">
+                              <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
+                                Đã xác nhận dự giờ
+                              </span>
+                              <button type="button" onClick={() => openEvalModal(myReg, slot)}
+                                className="px-2.5 py-1 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
+                                {myReg?.evaluation ? "Xem đánh giá" : "Nhập đánh giá"}
+                              </button>
+                            </div>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => handleCancelRegistration(slot.id)}
-                            className="px-3 py-1.5 text-xs font-black text-rose-600 bg-white border border-rose-200 rounded-xl hover:bg-rose-50 shadow-2xs transition-all text-center cursor-pointer"
-                          >
-                            Hủy đăng ký
-                          </button>
                         </div>
                       </div>
                     );
