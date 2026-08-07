@@ -1174,7 +1174,12 @@ export function ObservationClient(props: ObservationClientProps) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
+            <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> SKY-LINE SYSTEM | ĐÁNH GIÁ CHUYÊN MÔN
+            </span>
+            <span className="bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
+              ✨ BỘ LỌC ƯU TIÊN TCM (V2.5 LIVE)
+            </span>
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-1 flex items-center gap-2">
