@@ -335,17 +335,6 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     }
   }, [activeTab, selectedClassId, selectedSubjectId, selectedPeriod, selectedYearId])
 
-    const activeColTypes = useMemo(() => {
-    if (!gradeSheetData.config) return activeColNames.map(() => "SCORE_10")
-    try {
-      return typeof gradeSheetData.config.columnTypes === "string"
-        ? JSON.parse(gradeSheetData.config.columnTypes)
-        : gradeSheetData.config.columnTypes || activeColNames.map(() => "SCORE_10")
-    } catch (_) {
-      return activeColNames.map(() => "SCORE_10")
-    }
-  }, [gradeSheetData.config, activeColNames])
-
   const activeColNames = useMemo(() => {
     if (!gradeSheetData.config) return ["Cột 1", "Cột 2", "Cột 3"]
     try {
@@ -356,6 +345,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       return ["Cột 1"]
     }
   }, [gradeSheetData.config])
+
+  const activeColTypes = useMemo(() => {
+    if (!gradeSheetData.config) return activeColNames.map(() => "SCORE_10")
+    try {
+      return typeof gradeSheetData.config.columnTypes === "string"
+        ? JSON.parse(gradeSheetData.config.columnTypes)
+        : gradeSheetData.config.columnTypes || activeColNames.map(() => "SCORE_10")
+    } catch (_) {
+      return activeColNames.map(() => "SCORE_10")
+    }
+  }, [gradeSheetData.config, activeColNames])
 
   const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
     setGradeSheetData(prev => {
