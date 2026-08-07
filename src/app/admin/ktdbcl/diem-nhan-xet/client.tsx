@@ -510,8 +510,11 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
 
             {/* Column count selection */}
             <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 space-y-4">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-800">Số cột điểm thành phần:</label>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block">Số lượng cột điểm thành phần (Tùy chọn linh động 1 hoặc nhiều cột):</label>
+                  <span className="text-[11px] text-slate-500 font-normal">Có thể chọn nhanh từ 1 đến 8 cột hoặc nhấn Thêm/Bớt cột để điều chỉnh linh hoạt.</span>
+                </div>
                 <div className="flex items-center gap-1.5">
                   {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
                     <button
@@ -527,6 +530,25 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                       {num}
                     </button>
                   ))}
+                  <div className="h-6 w-[1px] bg-slate-300 mx-1" />
+                  <button
+                    type="button"
+                    onClick={() => setColumnCount(prev => Math.max(1, prev - 1))}
+                    disabled={columnCount <= 1}
+                    className="px-2.5 py-1 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
+                    title="Bớt cột điểm"
+                  >
+                    - Bớt cột
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setColumnCount(prev => Math.min(12, prev + 1))}
+                    disabled={columnCount >= 12}
+                    className="px-2.5 py-1 bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 rounded-lg text-xs font-bold transition-all disabled:opacity-40"
+                    title="Thêm cột điểm"
+                  >
+                    + Thêm cột
+                  </button>
                 </div>
               </div>
 
