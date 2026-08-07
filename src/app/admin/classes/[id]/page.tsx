@@ -20,7 +20,8 @@ export default async function AdminClassDetailPage({ params }: any) {
       students: {
         where: { status: 'ACTIVE' },
         include: {
-          surveyForms: true
+          surveyForms: true,
+          studentTransfers: true
         }
       }
     }
@@ -28,8 +29,39 @@ export default async function AdminClassDetailPage({ params }: any) {
 
   if (!classInfo) return notFound()
 
+  // Pre-fetch candidate student codes from Input Assessment tables
+  const studentCodes = (classInfo.students || []).map(s => s.studentCode).filter(Boolean);
+
+  const [generalCandidates, preschoolCandidates] = await Promise.all([
+    prisma.inputAssessmentStudent.findMany({
+      where: { studentCode: { in: studentCodes } },
+      select: { studentCode: true }
+    }),
+    prisma.preschoolInputAssessmentStudent.findMany({
+      where: { studentCode: { in: studentCodes } },
+      select: { studentCode: true }
+    })
+  ]);
+
+  const assessmentCandidateCodes = new Set([
+    ...generalCandidates.map(c => c.studentCode),
+    ...preschoolCandidates.map(c => c.studentCode)
+  ]);
+
+  const studentsWithEnrollmentType = (classInfo.students || []).map(student => {
+    const isFromSurvey = 
+      (student.studentTransfers && student.studentTransfers.some((t: any) => t.type === 'IN')) ||
+      assessmentCandidateCodes.has(student.studentCode);
+
+    return {
+      ...student,
+      enrollmentType: isFromSurvey ? "KS" : "Trực tiếp",
+      isSurveyStudent: isFromSurvey
+    };
+  });
+
   // Sort students by Vietnamese alphabetical order (Tên -> Họ & đệm)
-  const sortedStudents = sortVietnameseStudents(classInfo.students || []);
+  const sortedStudents = sortVietnameseStudents(studentsWithEnrollmentType);
 
   return (
     <div className="space-y-6">

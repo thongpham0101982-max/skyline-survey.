@@ -368,6 +368,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
               </th>
               <th className="px-6 py-4 border-r border-slate-200">Giới tính</th>
               <th className="px-6 py-4 border-r border-slate-200">Ngày sinh</th>
+              <th className="px-6 py-4 border-r border-slate-200 text-center">Đối tượng</th>
               <th className="px-6 py-4 border-r border-slate-200">Trạng thái</th>
               <th className="p-2 text-center border border-slate-200">Thao tác</th>
             </tr>
@@ -375,14 +376,27 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           <tbody className="divide-y divide-slate-200">
             {displayStudents.length === 0 ? (
               <tr>
-                <td colSpan={8} className="text-center py-10 text-slate-400 font-medium text-xs">
+                <td colSpan={9} className="text-center py-10 text-slate-400 font-medium text-xs">
                   <UserCircle2 className="w-12 h-12 mx-auto mb-4 opacity-20" />
                   Chưa có học sinh nào. Hãy import hoặc thêm mới.
                 </td>
               </tr>
             ) : (
-              displayStudents.map((student: any, idx: number) => (
-                <tr key={student.id} className={`border-b border-l border-r border-slate-200 hover:bg-slate-50 transition-colors ${selectedIds.includes(student.id) ? "bg-indigo-50/50" : ""}`}>
+              displayStudents.map((student: any, idx: number) => {
+                const isSurvey = student.enrollmentType === "KS" || student.isSurveyStudent || (student.studentTransfers && student.studentTransfers.some((t: any) => t.type === 'IN'));
+                const enrollmentLabel = isSurvey ? "KS" : (student.enrollmentType || "Trực tiếp");
+
+                return (
+                <tr 
+                  key={student.id} 
+                  className={`border-b border-l border-r border-slate-200 transition-colors ${
+                    selectedIds.includes(student.id) 
+                      ? "bg-indigo-50/70" 
+                      : isSurvey 
+                        ? "bg-emerald-50/70 hover:bg-emerald-100/70 font-medium" 
+                        : "hover:bg-slate-50"
+                  }`}
+                >
                   <td className="px-4 py-3 border-r border-slate-200 text-center">
                     <input type="checkbox" className="w-4 h-4 rounded" checked={selectedIds.includes(student.id)} onChange={(e) => handleSelectRow(student.id, e.target.checked)} />
                   </td>
@@ -406,6 +420,15 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   <td className="px-6 py-4 text-slate-600 border-r border-slate-200">
                     {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString("vi-VN") : "Chưa cập nhật"}
                   </td>
+                  <td className="px-6 py-4 border-r border-slate-200 text-center">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold ${
+                      isSurvey 
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300" 
+                        : "bg-slate-100 text-slate-600 border border-slate-200"
+                    }`}>
+                      {enrollmentLabel}
+                    </span>
+                  </td>
                   <td className="px-6 py-4 border-r border-slate-200">
                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${(!student.status || student.status === "ACTIVE") ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"}`}>
                       {(!student.status || student.status === "ACTIVE") ? "HOẠT ĐỘNG" : "BỊ KHÓA"}
@@ -425,7 +448,8 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                      </div>
                   </td>
                 </tr>
-              ))
+                )
+              })
             )}
           </tbody>
         </table>
