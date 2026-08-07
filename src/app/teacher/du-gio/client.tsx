@@ -1807,7 +1807,18 @@ export function ObservationClient(props: ObservationClientProps) {
                     return (
                       <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-4 font-bold text-slate-800">
-                          <p className="font-extrabold">{slot.teacher.teacherName}</p>
+                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                            <p className="font-extrabold text-sm text-slate-900">{slot.teacher.teacherName}</p>
+                            {checkIsMyDept(slot) ? (
+                              <span className="px-2 py-0.5 text-[9px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-md uppercase flex items-center gap-1 shadow-2xs">
+                                🏆 Thuộc TCM của bạn
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 text-[9px] font-extrabold text-slate-600 bg-slate-100 border border-slate-200 rounded-md">
+                                🌐 TCM: {slot.teacher?.departmentRel?.name || "TCM khác"}
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
                         </td>
                         <td className="p-4">
