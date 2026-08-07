@@ -41,6 +41,17 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
     // Level and Grade filters
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
+  const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
+
+    const educationSystemOptions = useMemo(() => {
+    const set = new Set<string>()
+    classes.forEach(c => {
+      if (c.educationSystem && c.educationSystem.trim()) {
+        set.add(c.educationSystem.trim())
+      }
+    })
+    return Array.from(set).sort()
+  }, [classes])
 
   const filteredClasses = useMemo(() => {
     return classes.filter(c => {
@@ -78,9 +89,15 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
         if (!isMatch) return false
       }
 
+      if (selectedSystemFilter !== "ALL") {
+        const cSys = (c.educationSystem || "").trim().toLowerCase()
+        const targetSys = selectedSystemFilter.trim().toLowerCase()
+        if (cSys !== targetSys && !cSys.includes(targetSys)) return false
+      }
+
       return true
     })
-  }, [classes, selectedLevelFilter, selectedGradeFilter])
+  }, [classes, selectedLevelFilter, selectedGradeFilter, selectedSystemFilter])
 
   useEffect(() => {
     if (filteredClasses.length > 0 && !filteredClasses.some(c => c.id === selectedClassId)) {
@@ -404,7 +421,7 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
         </div>
 
         {/* Selection Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mt-6 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-white/10">
+        <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 mt-6 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-white/10">
           <div>
             <label className="block text-[11px] font-bold text-teal-200 mb-1">Bậc học:</label>
             <select
@@ -442,6 +459,20 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
               ))}
               {selectedLevelFilter === "ALL" && ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => (
                 <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-teal-200 mb-1">Hệ học:</label>
+            <select
+              value={selectedSystemFilter}
+              onChange={(e) => setSelectedSystemFilter(e.target.value)}
+              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+            >
+              <option value="ALL">-- Tất cả Hệ --</option>
+              {educationSystemOptions.map(sys => (
+                <option key={sys} value={sys}>{sys}</option>
               ))}
             </select>
           </div>

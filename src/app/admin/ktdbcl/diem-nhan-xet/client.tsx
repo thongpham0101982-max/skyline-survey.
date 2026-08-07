@@ -187,6 +187,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   // Level and Grade filters for Tab 2
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
+  const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
+
+    const educationSystemOptions = useMemo(() => {
+    const set = new Set<string>()
+    classes.forEach(c => {
+      if (c.educationSystem && c.educationSystem.trim()) {
+        set.add(c.educationSystem.trim())
+      }
+    })
+    return Array.from(set).sort()
+  }, [classes])
 
   const filteredClasses = useMemo(() => {
     return classes.filter(c => {
@@ -224,9 +235,15 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
         if (!isMatch) return false
       }
 
+      if (selectedSystemFilter !== "ALL") {
+        const cSys = (c.educationSystem || "").trim().toLowerCase()
+        const targetSys = selectedSystemFilter.trim().toLowerCase()
+        if (cSys !== targetSys && !cSys.includes(targetSys)) return false
+      }
+
       return true
     })
-  }, [classes, selectedLevelFilter, selectedGradeFilter])
+  }, [classes, selectedLevelFilter, selectedGradeFilter, selectedSystemFilter])
 
   useEffect(() => {
     if (filteredClasses.length > 0 && !filteredClasses.some(c => c.id === selectedClassId)) {
@@ -869,6 +886,20 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                   ))}
                   {selectedLevelFilter === "ALL" && GRADES.map(g => (
                     <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-500 mb-1">Hệ học:</label>
+                <select
+                  value={selectedSystemFilter}
+                  onChange={(e) => setSelectedSystemFilter(e.target.value)}
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none bg-purple-50/60 text-purple-900 border-purple-200"
+                >
+                  <option value="ALL">-- Tất cả Hệ học --</option>
+                  {educationSystemOptions.map(sys => (
+                    <option key={sys} value={sys}>{sys}</option>
                   ))}
                 </select>
               </div>
