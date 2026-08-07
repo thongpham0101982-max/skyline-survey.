@@ -1,3 +1,26 @@
+
+const COLUMN_TYPES = [
+  { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
+  { code: "SCORE_1000", name: "Thang điểm 1000" },
+  { code: "GRADE_SKL", name: "Mức độ SKL (A - Tốt, B - Khá, C - Đạt, D - Chưa đạt)" },
+  { code: "GRADE_INTL", name: "Mức độ Quốc tế (E - Tốt, S - Đạt, N - Cần cải thiện, U - Chưa đạt)" },
+  { code: "REMARK", name: "Định dạng Nhận xét bằng lời" }
+]
+
+const SKL_OPTIONS = [
+  { code: "A", label: "A - Tốt" },
+  { code: "B", label: "B - Khá" },
+  { code: "C", label: "C - Đạt" },
+  { code: "D", label: "D - Chưa đạt" }
+]
+
+const INTL_OPTIONS = [
+  { code: "E", label: "E - Excellent (Tốt)" },
+  { code: "S", label: "S - Satisfactory (Đạt yêu cầu)" },
+  { code: "N", label: "N - Needs improvement (Cần cải thiện)" },
+  { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
+]
+
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -183,6 +206,17 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
   useEffect(() => {
     fetchGradeSheet()
   }, [selectedClassId, selectedSubjectId, selectedPeriod, selectedYearId])
+
+    const activeColTypes = useMemo(() => {
+    if (!gradeSheetData.config) return activeColNames.map(() => "SCORE_10")
+    try {
+      return typeof gradeSheetData.config.columnTypes === "string"
+        ? JSON.parse(gradeSheetData.config.columnTypes)
+        : gradeSheetData.config.columnTypes || activeColNames.map(() => "SCORE_10")
+    } catch (_) {
+      return activeColNames.map(() => "SCORE_10")
+    }
+  }, [gradeSheetData.config, activeColNames])
 
   const activeColNames = useMemo(() => {
     if (!gradeSheetData.config) return ["Cột 1", "Cột 2", "Cột 3"]

@@ -38,6 +38,7 @@ export async function POST(request: Request) {
       evaluationPeriod = "ALL",
       columnCount = 1,
       columnNames = [],
+      columnTypes = [],
       hasCompositeColumn = true,
       hasRemarkColumn = true,
       formula = "AVERAGE"
@@ -48,6 +49,7 @@ export async function POST(request: Request) {
     }
 
     const columnNamesStr = JSON.stringify(columnNames)
+    const columnTypesStr = typeof columnTypes === "string" ? columnTypes : JSON.stringify(columnTypes)
     const targetSubjectId = subjectId && subjectId !== "ALL" ? subjectId : null
 
     const existing = await prisma.subjectGradeConfig.findFirst({
@@ -66,6 +68,7 @@ export async function POST(request: Request) {
         data: {
           columnCount: Number(columnCount),
           columnNames: columnNamesStr,
+          columnTypes: columnTypesStr,
           hasCompositeColumn: Boolean(hasCompositeColumn),
           hasRemarkColumn: Boolean(hasRemarkColumn),
           formula
@@ -80,6 +83,7 @@ export async function POST(request: Request) {
           evaluationPeriod,
           columnCount: Number(columnCount),
           columnNames: columnNamesStr,
+          columnTypes: columnTypesStr,
           hasCompositeColumn: Boolean(hasCompositeColumn),
           hasRemarkColumn: Boolean(hasRemarkColumn),
           formula

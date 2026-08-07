@@ -1631,6 +1631,7 @@ model SubjectGradeConfig {
   evaluationPeriod String   @default("ALL")
   columnCount      Int      @default(1)
   columnNames      String   @default("[\"Điểm 1\"]")
+  columnTypes      String?  @default("[]")
   hasCompositeColumn Boolean @default(true)
   hasRemarkColumn    Boolean @default(true)
   formula          String?  @default("AVERAGE")

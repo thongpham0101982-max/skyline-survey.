@@ -1,3 +1,26 @@
+
+const COLUMN_TYPES = [
+  { code: "SCORE_10", name: "Thang điểm 10 (Số thập phân MOET)" },
+  { code: "SCORE_1000", name: "Thang điểm 1000" },
+  { code: "GRADE_SKL", name: "Mức độ SKL (A - Tốt, B - Khá, C - Đạt, D - Chưa đạt)" },
+  { code: "GRADE_INTL", name: "Mức độ Quốc tế (E - Tốt, S - Đạt, N - Cần cải thiện, U - Chưa đạt)" },
+  { code: "REMARK", name: "Định dạng Nhận xét bằng lời" }
+]
+
+const SKL_OPTIONS = [
+  { code: "A", label: "A - Tốt" },
+  { code: "B", label: "B - Khá" },
+  { code: "C", label: "C - Đạt" },
+  { code: "D", label: "D - Chưa đạt" }
+]
+
+const INTL_OPTIONS = [
+  { code: "E", label: "E - Excellent (Tốt)" },
+  { code: "S", label: "S - Satisfactory (Đạt yêu cầu)" },
+  { code: "N", label: "N - Needs improvement (Cần cải thiện)" },
+  { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
+]
+
 "use client"
 
 import { useState, useEffect, useMemo, useRef } from "react"
@@ -311,6 +334,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       fetchGradeSheet()
     }
   }, [activeTab, selectedClassId, selectedSubjectId, selectedPeriod, selectedYearId])
+
+    const activeColTypes = useMemo(() => {
+    if (!gradeSheetData.config) return activeColNames.map(() => "SCORE_10")
+    try {
+      return typeof gradeSheetData.config.columnTypes === "string"
+        ? JSON.parse(gradeSheetData.config.columnTypes)
+        : gradeSheetData.config.columnTypes || activeColNames.map(() => "SCORE_10")
+    } catch (_) {
+      return activeColNames.map(() => "SCORE_10")
+    }
+  }, [gradeSheetData.config, activeColNames])
 
   const activeColNames = useMemo(() => {
     if (!gradeSheetData.config) return ["Cột 1", "Cột 2", "Cột 3"]
@@ -676,20 +710,40 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
               {/* Dynamic Column Name Inputs */}
               <div className="space-y-2 pt-2 border-t border-slate-200">
                 <label className="block text-xs font-bold text-slate-700">Tên các cột điểm thành phần (Đặt tên tùy chỉnh):</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   {columnNames.map((name, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold text-slate-400 w-12 shrink-0">Cột {idx + 1}:</span>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => {
-                          const val = e.target.value
-                          setColumnNames(prev => prev.map((n, i) => i === idx ? val : n))
-                        }}
-                        placeholder={`Tên cột ${idx + 1}`}
-                        className="flex-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-[#00A99D] outline-none"
-                      />
+                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-xl">
+                      <div className="flex items-center gap-2 shrink-0 sm:w-1/3">
+                        <span className="text-[11px] font-bold text-[#00A99D] w-12">Cột {idx + 1}:</span>
+                        <input
+                          type="text"
+                          value={name}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setColumnNames(prev => prev.map((n, i) => i === idx ? val : n))
+                          }}
+                          placeholder={`Tên cột ${idx + 1}`}
+                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <select
+                          value={columnTypes[idx] || "SCORE_10"}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setColumnTypes(prev => {
+                              const next = [...prev]
+                              next[idx] = val
+                              return next
+                            })
+                          }}
+                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                        >
+                          {COLUMN_TYPES.map(ct => (
+                            <option key={ct.code} value={ct.code}>{ct.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -738,11 +792,16 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                       {f}
                     </span>
                   ))}
-                  {columnNames.map((name, i) => (
-                    <span key={i} className="px-2.5 py-1 bg-teal-100 text-teal-800 text-[11px] font-bold rounded-md border border-teal-300">
-                      {name || `Cột ${i + 1}`}
-                    </span>
-                  ))}
+                  {columnNames.map((name, i) => {
+                    const cType = columnTypes[i] || "SCORE_10"
+                    const typeLabel = cType === "GRADE_SKL" ? "SKL: A/B/C/D" : cType === "GRADE_INTL" ? "Quốc tế: E/S/N/U" : cType === "REMARK" ? "Nhận xét" : cType === "SCORE_1000" ? "Thang 1000" : "Thang 10 MOET"
+                    return (
+                      <span key={i} className="px-2.5 py-1 bg-teal-100 text-teal-900 text-[11px] font-bold rounded-md border border-teal-300 flex items-center gap-1">
+                        {name || `Cột ${i + 1}`}
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-teal-800 text-white font-normal">{typeLabel}</span>
+                      </span>
+                    )
+                  })}
                   {hasComposite && (
                     <span className="px-2.5 py-1 bg-indigo-100 text-indigo-800 text-[11px] font-bold rounded-md border border-indigo-300">
                       Điểm thành phần
@@ -1049,18 +1108,71 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                           {currentSubject?.subjectName || "Môn"}
                         </td>
 
-                        {/* Component Score Inputs */}
-                        {activeColNames.map((_: any, cIdx: number) => (
-                          <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200">
-                            <input
-                              type="text"
-                              value={entry.componentScores[`col${cIdx}`] ?? ""}
-                              onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                              className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none"
-                              placeholder="0-10"
-                            />
-                          </td>
-                        ))}
+                        {/* Component Score Inputs with format awareness */}
+                        {activeColNames.map((_: any, cIdx: number) => {
+                          const colType = activeColTypes[cIdx] || "SCORE_10"
+                          const val = entry.componentScores[`col${cIdx}`] ?? ""
+
+                          if (colType === "GRADE_SKL") {
+                            return (
+                              <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[110px]">
+                                <select
+                                  value={val}
+                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-amber-50/60 focus:ring-2 focus:ring-amber-500 outline-none"
+                                >
+                                  <option value="">-- SKL --</option>
+                                  {SKL_OPTIONS.map(opt => (
+                                    <option key={opt.code} value={opt.code}>{opt.label}</option>
+                                  ))}
+                                </select>
+                              </td>
+                            )
+                          }
+
+                          if (colType === "GRADE_INTL") {
+                            return (
+                              <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[130px]">
+                                <select
+                                  value={val}
+                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                  className="w-full text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 bg-purple-50/60 focus:ring-2 focus:ring-purple-500 outline-none"
+                                >
+                                  <option value="">-- Quốc tế --</option>
+                                  {INTL_OPTIONS.map(opt => (
+                                    <option key={opt.code} value={opt.code}>{opt.label}</option>
+                                  ))}
+                                </select>
+                              </td>
+                            )
+                          }
+
+                          if (colType === "REMARK") {
+                            return (
+                              <td key={cIdx} className="py-2 px-2 border-r border-slate-200 min-w-[160px]">
+                                <input
+                                  type="text"
+                                  value={val}
+                                  onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                  className="w-full border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                                  placeholder="Nhập nhận xét..."
+                                />
+                              </td>
+                            )
+                          }
+
+                          return (
+                            <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200 min-w-[80px]">
+                              <input
+                                type="text"
+                                value={val}
+                                onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                                className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none"
+                                placeholder={colType === "SCORE_1000" ? "0-1000" : "0-10"}
+                              />
+                            </td>
+                          )
+                        })}
 
                         {/* Composite score input/display */}
                         {gradeSheetData.config?.hasCompositeColumn !== false && (
