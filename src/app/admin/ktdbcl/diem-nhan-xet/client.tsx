@@ -79,6 +79,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   const [configPeriod, setConfigPeriod] = useState("ALL")
   const [columnCount, setColumnCount] = useState(3)
   const [columnNames, setColumnNames] = useState<string[]>(["Điểm Miệng", "Điểm 15 Phút", "Điểm 1 Tiết"])
+  const [columnTypes, setColumnTypes] = useState<string[]>(["SCORE_10", "SCORE_10", "SCORE_10"])
   const [hasComposite, setHasComposite] = useState(true)
   const [hasRemark, setHasRemark] = useState(true)
   const [savingConfig, setSavingConfig] = useState(false)
@@ -92,6 +93,17 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       if (next.length < columnCount) {
         for (let i = next.length; i < columnCount; i++) {
           next.push(`Cột điểm ${i + 1}`)
+        }
+      } else if (next.length > columnCount) {
+        return next.slice(0, columnCount)
+      }
+      return next
+    })
+    setColumnTypes(prev => {
+      const next = [...prev]
+      if (next.length < columnCount) {
+        for (let i = next.length; i < columnCount; i++) {
+          next.push("SCORE_10")
         }
       } else if (next.length > columnCount) {
         return next.slice(0, columnCount)
@@ -137,6 +149,9 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
       if (cols.length > 0) {
         setColumnCount(cols.length)
         setColumnNames(cols)
+        let types: string[] = []
+        try { types = typeof match.columnTypes === "string" ? JSON.parse(match.columnTypes) : match.columnTypes || [] } catch (_) {}
+        if (types.length > 0) setColumnTypes(types)
       }
       setHasComposite(match.hasCompositeColumn !== false)
       setHasRemark(match.hasRemarkColumn !== false)
@@ -154,6 +169,9 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
     if (cols.length > 0) {
       setColumnCount(cols.length)
       setColumnNames(cols)
+      let types: string[] = []
+      try { types = typeof cfg.columnTypes === "string" ? JSON.parse(cfg.columnTypes) : cfg.columnTypes || [] } catch (_) {}
+      if (types.length > 0) setColumnTypes(types)
     }
     setHasComposite(cfg.hasCompositeColumn !== false)
     setHasRemark(cfg.hasRemarkColumn !== false)

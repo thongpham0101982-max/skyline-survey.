@@ -1029,37 +1029,47 @@ export function ObservationClient(props: ObservationClientProps) {
     return sum / passedEvals.length;
   };
 
+  const checkIsMyDept = useCallback((slot: any) => {
+    const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
+    if (isMamNonTeacher) {
+      const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
+      const slotMN = slot.level === "Mầm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+      return slotMN && myDeptName !== "" && slotDeptName === myDeptName;
+    }
+    return slot.teacher?.departmentId === currentTeacher?.departmentId;
+  }, [currentTeacher, isMamNonTeacher]);
+
   const tabFilteredSlots = useMemo(() => {
-    const now = new Date()
-    return slots.filter(slot => {
-      const isHost = slot.teacherId === currentTeacher?.id
-      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
-      const slotDate = new Date(slot.date)
-      const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const now = new Date();
+    const hasSearchQuery = filterTeacherSearch.trim() !== "";
+
+    const filtered = slots.filter(slot => {
+      const isHost = slot.teacherId === currentTeacher?.id;
+      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
+      
       if (activeTab === "dang-ky") {
-        // Relax isPast to allow retroactive registration and viewing of recent slots
         if (isHost || isObserver) return false;
-        if (activeDeptTab !== "all") {
-          // Mam non: match by dept NAME across campuses; K-12: match by departmentId
-          const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-          const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
-          let isMyDept;
-          if (isMamNonTeacher) {
-            const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
-            const slotMN = slot.level === "Mamm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-            isMyDept = slotMN && myDeptName !== "" && slotDeptName === myDeptName;
-          } else {
-            isMyDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
-          }
+
+        // Apply Teacher / Subject Search filter if entered
+        if (hasSearchQuery) {
+          const q = filterTeacherSearch.toLowerCase().trim();
+          const teacherNameMatch = (slot.teacher?.teacherName || "").toLowerCase().includes(q);
+          const teacherCodeMatch = (slot.teacher?.teacherCode || "").toLowerCase().includes(q);
+          const topicMatch = (slot.topic || "").toLowerCase().includes(q);
+          const subjectMatch = (slot.subjectName || "").toLowerCase().includes(q);
+          if (!teacherNameMatch && !teacherCodeMatch && !topicMatch && !subjectMatch) return false;
+        }
+
+        const isMyDept = checkIsMyDept(slot);
+
+        // If not actively searching, filter by selected tab
+        if (!hasSearchQuery && activeDeptTab !== "all") {
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
           if (activeDeptTab === "other-dept") {
             if (isMyDept) return false;
-            
-            // If the current teacher is a Preschool teacher, they should only see slots in Preschool departments/level.
-            // If they are K-12, they should only see slots in K-12 departments/level.
             const slotIsMamNon = slot.level === "Mầm non" || 
                                  (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-            
             if (isMamNonTeacher) {
               if (!slotIsMamNon) return false;
             } else {
@@ -1069,11 +1079,21 @@ export function ObservationClient(props: ObservationClientProps) {
         }
         return true;
       }
-      if (activeTab === "my-schedule") return isHost
-      if (activeTab === "history") return isObserver
-      return true
-    })
-  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher])
+
+      if (activeTab === "my-schedule") return isHost;
+      if (activeTab === "history") return isObserver;
+      return true;
+    });
+
+    // SORT: ALWAYS prioritize slots belonging to my TCM (isMyDept === true) FIRST!
+    return filtered.sort((a, b) => {
+      const isMyA = checkIsMyDept(a);
+      const isMyB = checkIsMyDept(b);
+      if (isMyA && !isMyB) return -1;
+      if (!isMyA && isMyB) return 1;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    });
+  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher, filterTeacherSearch, checkIsMyDept]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -1631,14 +1651,23 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
 
             {/* Department tabs selector */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button onClick={() => setActiveDeptTab("my-dept")}
-                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                Tiết dạy thuộc TCM
+                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" && !filterTeacherSearch ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                <span>🏫 Tiết dạy thuộc TCM</span>
+                <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" && !filterTeacherSearch ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
+                  {slots.filter(s => checkIsMyDept(s) && s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)).length}
+                </span>
               </button>
+
               <button onClick={() => setActiveDeptTab("other-dept")}
-                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                Tiết dạy TCM khác
+                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" && !filterTeacherSearch ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                <span>🌐 Tiết dạy TCM khác</span>
+              </button>
+
+              <button onClick={() => setActiveDeptTab("all")}
+                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" || filterTeacherSearch ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
+                <span>⭐ Tất cả tiết dạy</span>
               </button>
             </div>
           </div>
