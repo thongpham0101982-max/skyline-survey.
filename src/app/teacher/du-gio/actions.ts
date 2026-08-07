@@ -293,15 +293,43 @@ export async function getObservationSlots(filters: {
       }
     })
 
-        // Filter by visibility and Khối CM
+        // Filter by visibility and Khối CM with multi-department support
     const filteredSlots = slots.filter((slot) => {
       if (isAdmin) {
         return true;
       }
+      if (slot.teacherId === currentTeacher?.id) {
+        return true;
+      }
       if (slot.visibilityType === "DEPARTMENT") {
-        if (!currentTeacher || (slot.teacherId !== currentTeacher.id && slot.targetDeptId !== currentTeacher.departmentId)) {
-          return false;
+        if (!currentTeacher) return false;
+        
+        const myDeptIds = new Set<string>();
+        if (currentTeacher.departmentId) myDeptIds.add(currentTeacher.departmentId);
+        if ((currentTeacher as any).departmentAssignments && Array.isArray((currentTeacher as any).departmentAssignments)) {
+          (currentTeacher as any).departmentAssignments.forEach((da: any) => {
+            if (da.departmentId) myDeptIds.add(da.departmentId);
+          });
         }
+
+        const slotTeacherDeptIds = new Set<string>();
+        if (slot.teacher?.departmentId) slotTeacherDeptIds.add(slot.teacher.departmentId);
+        if (slot.targetDeptId) slotTeacherDeptIds.add(slot.targetDeptId);
+        if (slot.teacher?.departmentAssignments && Array.isArray(slot.teacher.departmentAssignments)) {
+          slot.teacher.departmentAssignments.forEach((da: any) => {
+            if (da.departmentId) slotTeacherDeptIds.add(da.departmentId);
+          });
+        }
+
+        if (slot.targetDeptId && myDeptIds.has(slot.targetDeptId)) return true;
+
+        for (const id of slotTeacherDeptIds) {
+          if (myDeptIds.has(id)) return true;
+        }
+
+        if (!slot.targetDeptId) return true;
+
+        return false;
       }
       
       return true;
@@ -407,7 +435,7 @@ export async function createObservationSlot(data: {
           room: data.room || null,
           description: data.description || null,
           visibilityType: data.visibilityType,
-          targetDeptId: data.targetDeptId || null,
+          targetDeptId: data.targetDeptId || currentTeacher.departmentId || null,
           maxSeats: 4,
           status: "ACTIVE",
           campusId: data.campusId || null,

@@ -181,6 +181,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
     if (slotTeacher.departmentId) slotDeptIds.add(slotTeacher.departmentId);
     if (slotTeacher.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher.departmentRel.name));
+    if (slot.targetDeptId) slotDeptIds.add(slot.targetDeptId);
 
     if (slotTeacher.departmentAssignments && Array.isArray(slotTeacher.departmentAssignments)) {
       slotTeacher.departmentAssignments.forEach((da: any) => {
