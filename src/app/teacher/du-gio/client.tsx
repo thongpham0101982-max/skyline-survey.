@@ -169,9 +169,6 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
-  const [filterTeacherSearch, setFilterTeacherSearch] = useState("");
-  const [teacherLookupQuery, setTeacherLookupQuery] = useState("");
-  const [selectedLookupDeptId, setSelectedLookupDeptId] = useState("ALL");
   const [myScheduleMonth, setMyScheduleMonth] = useState<string>("ALL");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
@@ -589,7 +586,6 @@ export function ObservationClient(props: ObservationClientProps) {
     if (filterGrade && filterGrade !== "all") count++
     if (filterDate) count++
     if (filterPeriod && filterPeriod !== "all") count++
-    if (filterTeacherSearch.trim()) count++
     return count
   }, [filterCampusId, filterLevel, filterGrade, filterDate, filterPeriod])
 
@@ -623,7 +619,7 @@ export function ObservationClient(props: ObservationClientProps) {
     setFilterDate("")
     setFilterPeriod("all")
     setFilterSchoolBlock("all")
-    setFilterDeptId("all"); setFilterTeacherSearch("");
+    setFilterDeptId("all")
   }
 
   const refreshSlots = async () => {
@@ -1029,47 +1025,37 @@ export function ObservationClient(props: ObservationClientProps) {
     return sum / passedEvals.length;
   };
 
-  const checkIsMyDept = useCallback((slot: any) => {
-    const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
-    if (isMamNonTeacher) {
-      const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
-      const slotMN = slot.level === "Mầm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-      return slotMN && myDeptName !== "" && slotDeptName === myDeptName;
-    }
-    return slot.teacher?.departmentId === currentTeacher?.departmentId;
-  }, [currentTeacher, isMamNonTeacher]);
-
   const tabFilteredSlots = useMemo(() => {
-    const now = new Date();
-    const hasSearchQuery = filterTeacherSearch.trim() !== "";
-
-    const filtered = slots.filter(slot => {
-      const isHost = slot.teacherId === currentTeacher?.id;
-      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
-      
+    const now = new Date()
+    return slots.filter(slot => {
+      const isHost = slot.teacherId === currentTeacher?.id
+      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
+      const slotDate = new Date(slot.date)
+      const isPast = slotDate < new Date(now.getFullYear(), now.getMonth(), now.getDate())
       if (activeTab === "dang-ky") {
+        // Relax isPast to allow retroactive registration and viewing of recent slots
         if (isHost || isObserver) return false;
-
-        // Apply Teacher / Subject Search filter if entered
-        if (hasSearchQuery) {
-          const q = filterTeacherSearch.toLowerCase().trim();
-          const teacherNameMatch = (slot.teacher?.teacherName || "").toLowerCase().includes(q);
-          const teacherCodeMatch = (slot.teacher?.teacherCode || "").toLowerCase().includes(q);
-          const topicMatch = (slot.topic || "").toLowerCase().includes(q);
-          const subjectMatch = (slot.subjectName || "").toLowerCase().includes(q);
-          if (!teacherNameMatch && !teacherCodeMatch && !topicMatch && !subjectMatch) return false;
-        }
-
-        const isMyDept = checkIsMyDept(slot);
-
-        // If not actively searching, filter by selected tab
-        if (!hasSearchQuery && activeDeptTab !== "all") {
+        if (activeDeptTab !== "all") {
+          // Mam non: match by dept NAME across campuses; K-12: match by departmentId
+          const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+          const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
+          let isMyDept;
+          if (isMamNonTeacher) {
+            const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
+            const slotMN = slot.level === "Mamm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+            isMyDept = slotMN && myDeptName !== "" && slotDeptName === myDeptName;
+          } else {
+            isMyDept = slot.teacher?.departmentId === currentTeacher?.departmentId;
+          }
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
           if (activeDeptTab === "other-dept") {
             if (isMyDept) return false;
+            
+            // If the current teacher is a Preschool teacher, they should only see slots in Preschool departments/level.
+            // If they are K-12, they should only see slots in K-12 departments/level.
             const slotIsMamNon = slot.level === "Mầm non" || 
                                  (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+            
             if (isMamNonTeacher) {
               if (!slotIsMamNon) return false;
             } else {
@@ -1079,21 +1065,11 @@ export function ObservationClient(props: ObservationClientProps) {
         }
         return true;
       }
-
-      if (activeTab === "my-schedule") return isHost;
-      if (activeTab === "history") return isObserver;
-      return true;
-    });
-
-    // SORT: ALWAYS prioritize slots belonging to my TCM (isMyDept === true) FIRST!
-    return filtered.sort((a, b) => {
-      const isMyA = checkIsMyDept(a);
-      const isMyB = checkIsMyDept(b);
-      if (isMyA && !isMyB) return -1;
-      if (!isMyA && isMyB) return 1;
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
-    });
-  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher, filterTeacherSearch, checkIsMyDept]);
+      if (activeTab === "my-schedule") return isHost
+      if (activeTab === "history") return isObserver
+      return true
+    })
+  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher])
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -1174,12 +1150,7 @@ export function ObservationClient(props: ObservationClientProps) {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
-            <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> SKY-LINE SYSTEM | ĐÁNH GIÁ CHUYÊN MÔN
-            </span>
-            <span className="bg-gradient-to-r from-amber-400 to-amber-500 text-amber-950 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm flex items-center gap-1">
-              ✨ BỘ LỌC ƯU TIÊN TCM (V2.5 LIVE)
-            </span>
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-1 flex items-center gap-2">
@@ -1656,108 +1627,66 @@ export function ObservationClient(props: ObservationClientProps) {
             </div>
 
             {/* Department tabs selector */}
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex gap-2">
               <button onClick={() => setActiveDeptTab("my-dept")}
-                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" && !filterTeacherSearch ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
-                <span>🏫 Tiết dạy thuộc TCM</span>
-                <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" && !filterTeacherSearch ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
-                  {slots.filter(s => checkIsMyDept(s) && s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)).length}
-                </span>
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy thuộc TCM
               </button>
-
               <button onClick={() => setActiveDeptTab("other-dept")}
-                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" && !filterTeacherSearch ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
-                <span>🌐 Tiết dạy TCM khác</span>
-              </button>
-
-              <button onClick={() => setActiveDeptTab("all")}
-                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" || filterTeacherSearch ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"}`}>
-                <span>⭐ Tất cả tiết dạy</span>
+                className={`px-4 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-sm border ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                Tiết dạy TCM khác
               </button>
             </div>
           </div>
 
           {/* Advanced filters inputs block */}
-          <div className="p-4 bg-gradient-to-r from-teal-50/70 via-slate-50 to-emerald-50/50 border-2 border-teal-200/80 rounded-3xl shadow-sm">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 text-xs font-semibold">
-              {/* Campus */}
-              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-teal-400 transition-all">
-                <span className="text-[10px] font-black text-teal-700 uppercase tracking-wider flex items-center gap-1">
-                  🏢 Cơ sở
-                </span>
-                <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] cursor-pointer">
-                  <option value="all">Tất cả cơ sở</option>
-                  {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                </select>
-              </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-semibold">
+            {/* Campus */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
+              <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+                <option value="all">Tất cả cơ sở</option>
+                {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+              </select>
+            </div>
 
-              {/* Level */}
-              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-sky-400 transition-all">
-                <span className="text-[10px] font-black text-sky-700 uppercase tracking-wider flex items-center gap-1">
-                  🎓 Bậc học
-                </span>
-                <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
-                  <option value="all">Tất cả bậc</option>
-                  <option value="Mầm non">Mầm non</option>
-                  <option value="Phổ thông K-12">Phổ thông K-12</option>
-                </select>
-              </div>
+            {/* Level */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Bậc học</span>
+              <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+                <option value="all">Tất cả bậc</option>
+                <option value="Mầm non">Mầm non</option>
+                <option value="Phổ thông K-12">Phổ thông K-12</option>
+              </select>
+            </div>
 
-              {/* Grade */}
-              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-indigo-400 transition-all">
-                <span className="text-[10px] font-black text-indigo-700 uppercase tracking-wider flex items-center gap-1">
-                  📚 Khối lớp
-                </span>
-                <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
-                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none disabled:opacity-55 focus:ring-2 focus:ring-indigo-500 cursor-pointer">
-                  <option value="all">Tất cả khối</option>
-                  {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
+            {/* Grade */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Khối lớp</span>
+              <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-55">
+                <option value="all">Tất cả khối</option>
+                {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
 
-              {/* Date */}
-              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-amber-400 transition-all">
-                <span className="text-[10px] font-black text-amber-700 uppercase tracking-wider flex items-center gap-1">
-                  📅 Ngày dạy
-                </span>
-                <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer" />
-              </div>
+            {/* Date */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ngày dạy</span>
+              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
+            </div>
 
-              {/* Period */}
-              <div className="flex flex-col gap-1 bg-white p-2.5 rounded-2xl border border-slate-200/80 shadow-2xs hover:border-violet-400 transition-all">
-                <span className="text-[10px] font-black text-violet-700 uppercase tracking-wider flex items-center gap-1">
-                  ⏰ Tiết dạy
-                </span>
-                <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-                  className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 cursor-pointer">
-                  <option value="all">Tất cả tiết</option>
-                  {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
-                </select>
-              </div>
-
-              {/* Tìm kiếm Giáo viên / Bài dạy */}
-              <div className="flex flex-col gap-1 bg-gradient-to-br from-emerald-50 via-teal-50 to-emerald-100/40 p-2.5 rounded-2xl border-2 border-[#00A99D] shadow-xs col-span-1 sm:col-span-2 md:col-span-1">
-                <span className="text-[10px] font-black text-[#00A99D] uppercase tracking-wider flex items-center gap-1">
-                  <Search className="w-3.5 h-3.5" /> Tìm GV / Môn
-                </span>
-                <div className="relative flex items-center">
-                  <input
-                    type="text"
-                    placeholder="Tên, Mã GV, Môn..."
-                    value={filterTeacherSearch}
-                    onChange={e => setFilterTeacherSearch(e.target.value)}
-                    className="w-full text-xs font-bold rounded-xl border border-teal-300 pl-3 pr-7 py-1.5 bg-white text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] shadow-inner-xs"
-                  />
-                  {filterTeacherSearch && (
-                    <button type="button" onClick={() => setFilterTeacherSearch("")} className="absolute right-2 text-rose-500 hover:text-rose-700">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
+            {/* Period */}
+            <div className="flex flex-col gap-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
+              <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
+                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+                <option value="all">Tất cả tiết</option>
+                {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
+              </select>
             </div>
           </div>
 
@@ -1812,18 +1741,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     return (
                       <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-4 font-bold text-slate-800">
-                          <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                            <p className="font-extrabold text-sm text-slate-900">{slot.teacher.teacherName}</p>
-                            {checkIsMyDept(slot) ? (
-                              <span className="px-2 py-0.5 text-[9px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 rounded-md uppercase flex items-center gap-1 shadow-2xs">
-                                🏆 Thuộc TCM của bạn
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 text-[9px] font-extrabold text-slate-600 bg-slate-100 border border-slate-200 rounded-md">
-                                🌐 TCM: {slot.teacher?.departmentRel?.name || "TCM khác"}
-                              </span>
-                            )}
-                          </div>
+                          <p className="font-extrabold">{slot.teacher.teacherName}</p>
                           <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
                         </td>
                         <td className="p-4">
@@ -1908,184 +1826,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
       </div>
 
-            {/* Panel 5: Tra cứu & Tìm kiếm thông tin Giáo viên */}
-      <div className="w-full mt-6">
-        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#00A99D]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] text-[#00A99D] flex items-center justify-center font-bold shadow-xs">
-                <Search className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-black text-base text-[#003B3A] uppercase tracking-wider block">4. Tra cứu & Tìm kiếm thông tin Giáo viên</span>
-                <span className="text-xs text-slate-500 font-semibold">Tra cứu hồ sơ, số tiết dạy, tiết dự giờ và chỉ tiêu của Giáo viên toàn trường</span>
-              </div>
-            </div>
-
-            {/* Quick search input */}
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-[#00A99D] absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Nhập tên GV, mã số GV..."
-                value={teacherLookupQuery}
-                onChange={e => setTeacherLookupQuery(e.target.value)}
-                className="w-full text-xs font-bold rounded-2xl border-2 border-[#00A99D]/40 pl-9 pr-8 py-2 bg-slate-50 text-slate-800 outline-none focus:ring-2 focus:ring-[#00A99D] focus:bg-white shadow-xs transition-all"
-              />
-              {teacherLookupQuery && (
-                <button type="button" onClick={() => setTeacherLookupQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* List Tổ chuyên môn trực quan */}
-          <div className="flex flex-col gap-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/80">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-[#00A99D]" /> List Tổ chuyên môn:
-              </span>
-              {selectedLookupDeptId !== "ALL" && (
-                <button 
-                  type="button" 
-                  onClick={() => setSelectedLookupDeptId("ALL")} 
-                  className="text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" /> Xem tất cả các Tổ
-                </button>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 pt-0.5">
-              <button
-                type="button"
-                onClick={() => setSelectedLookupDeptId("ALL")}
-                className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 border ${
-                  selectedLookupDeptId === "ALL"
-                    ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm"
-                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                }`}
-              >
-                <span>🏢 Tất cả Tổ CM</span>
-                <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${selectedLookupDeptId === "ALL" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
-                  {teachers.length}
-                </span>
-              </button>
-
-              {currentTeacher?.departmentId && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedLookupDeptId(currentTeacher.departmentId)}
-                  className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 border ${
-                    selectedLookupDeptId === currentTeacher.departmentId
-                      ? "bg-gradient-to-r from-amber-500 to-amber-600 text-white border-transparent shadow-sm"
-                      : "bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100"
-                  }`}
-                >
-                  <span>⭐ Tổ của tôi ({currentTeacher.departmentRel?.name || "Tổ nhà"})</span>
-                  <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${selectedLookupDeptId === currentTeacher.departmentId ? "bg-white/20 text-white" : "bg-amber-200 text-amber-900"}`}>
-                    {teachers.filter((t: any) => t.departmentId === currentTeacher.departmentId).length}
-                  </span>
-                </button>
-              )}
-
-              {departments.map((dept: any) => {
-                const count = teachers.filter((t: any) => t.departmentId === dept.id).length;
-                if (count === 0 && dept.id !== selectedLookupDeptId) return null;
-                const isSelected = selectedLookupDeptId === dept.id;
-                return (
-                  <button
-                    key={dept.id}
-                    type="button"
-                    onClick={() => setSelectedLookupDeptId(dept.id)}
-                    className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 border ${
-                      isSelected
-                        ? "bg-gradient-to-r from-[#009085] to-[#00A99D] text-white border-transparent shadow-sm"
-                        : "bg-white text-slate-700 border-slate-200 hover:bg-teal-50 hover:border-teal-300"
-                    }`}
-                  >
-                    <span>{dept.name}</span>
-                    <span className={`px-1.5 py-0.2 text-[10px] rounded-full font-black ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Teacher Lookup Results */}
-          {(() => {
-            const filteredList = teachers.filter((t: any) => {
-              if (selectedLookupDeptId !== "ALL" && t.departmentId !== selectedLookupDeptId) {
-                return false;
-              }
-              if (!teacherLookupQuery.trim()) return true;
-              const q = teacherLookupQuery.toLowerCase().trim();
-              return t.teacherName.toLowerCase().includes(q) || (t.teacherCode || "").toLowerCase().includes(q) || (t.position || "").toLowerCase().includes(q) || (t.departmentRel?.name || "").toLowerCase().includes(q);
-            }).slice(0, 12);
-
-            if (filteredList.length === 0) {
-              return (
-                <div className="p-8 text-center text-slate-400 italic bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                  Không tìm thấy giáo viên phù hợp với từ khóa "{teacherLookupQuery}".
-                </div>
-              );
-            }
-
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredList.map((t: any) => {
-                  const tStats = teacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
-                  return (
-                    <div key={t.id} className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-[#00A99D]/40 hover:shadow-md transition-all flex flex-col justify-between gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white font-black text-base flex items-center justify-center border-2 border-white shadow-sm shrink-0">
-                          {t.teacherName.charAt(0)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h5 className="font-black text-xs text-slate-800 truncate leading-snug">{t.teacherName}</h5>
-                          <p className="text-[10px] text-slate-500 font-bold">Mã số: {t.teacherCode}</p>
-                          {t.position && (
-                            <span className="inline-block text-[9px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.2 rounded border border-teal-200 mt-1">
-                              {t.position}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-[10px] font-bold bg-white p-2.5 rounded-xl border border-slate-150">
-                        <div className="flex flex-col">
-                          <span className="text-slate-400 font-semibold">Số tiết đã dạy</span>
-                          <span className="text-amber-800 font-black text-xs">{tStats.taughtCount} tiết</span>
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-slate-400 font-semibold">Số tiết đã dự</span>
-                          <span className="text-[#00A99D] font-black text-xs">{tStats.observedCount} tiết</span>
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFilterTeacherSearch(t.teacherName);
-                          showToast(`Đã lọc danh sách tiết dạy của GV ${t.teacherName}`, "info");
-                        }}
-                        className="w-full py-1.5 text-xs font-black text-[#00A99D] bg-teal-50 hover:bg-[#00A99D] hover:text-white rounded-xl border border-teal-200 transition-all text-center cursor-pointer shadow-2xs"
-                      >
-                        🔍 Lọc tiết dạy của GV này
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
-      </div>
-
-      {/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
+            {/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-6 border-t-4 border-t-[#00A99D] mt-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 pb-4">
           <div className="flex items-center gap-3">
@@ -2093,7 +1834,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-black text-base text-[#003B3A] uppercase tracking-wider block">5. Lịch dạy & dự giờ của tôi</span>
+              <span className="font-black text-base text-[#003B3A] uppercase tracking-wider block">4. Lịch dạy & dự giờ của tôi</span>
               <span className="text-xs text-slate-500 font-semibold">Lọc danh sách tiết dạy và tiết đăng ký dự giờ theo Tháng</span>
             </div>
           </div>
@@ -2460,6 +2201,7 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
       </div>
 
+      
       {/* ROW 4: Full Width Layout for Panel 6 */}
       <div className="w-full mt-6">
         {/* Panel 6: Kết quả đánh giá gần đây */}
