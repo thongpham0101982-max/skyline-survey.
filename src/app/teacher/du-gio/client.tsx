@@ -161,18 +161,61 @@ export function ObservationClient(props: ObservationClientProps) {
   const checkIsMyDept = useCallback((slot: any) => {
     if (!currentTeacher || !slot?.teacher) return false;
     const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    const myDeptName = normDept(currentTeacher?.departmentRel?.name || "");
-    const slotDeptName = normDept(slot.teacher?.departmentRel?.name || "");
     
-    if (isMamNonTeacher) {
-      const slotMN = slot.level === "Mầm non" || (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-      return slotMN && (myDeptName === "" || slotDeptName === myDeptName || (slotDeptName !== "" && myDeptName !== "" && (slotDeptName.includes(myDeptName) || myDeptName.includes(slotDeptName))));
+    // Collect all department IDs and names for current teacher (primary + secondary assignments)
+    const myDeptIds = new Set<string>();
+    const myDeptNames = new Set<string>();
+
+    if (currentTeacher.departmentId) myDeptIds.add(currentTeacher.departmentId);
+    if (currentTeacher.departmentRel?.name) myDeptNames.add(normDept(currentTeacher.departmentRel.name));
+    
+    if (currentTeacher.departmentAssignments && Array.isArray(currentTeacher.departmentAssignments)) {
+      currentTeacher.departmentAssignments.forEach((da: any) => {
+        if (da.departmentId) myDeptIds.add(da.departmentId);
+        if (da.department?.name) myDeptNames.add(normDept(da.department.name));
+      });
     }
 
-    const isSameDeptId = !!(currentTeacher.departmentId && slot.teacher.departmentId && currentTeacher.departmentId === slot.teacher.departmentId);
-    const isSameDeptName = (myDeptName !== "" && slotDeptName !== "" && (myDeptName === slotDeptName || slotDeptName.includes(myDeptName) || myDeptName.includes(slotDeptName)));
+    // Collect all department IDs and names for slot's teacher (primary + secondary assignments)
+    const slotTeacher = slot.teacher;
+    const slotDeptIds = new Set<string>();
+    const slotDeptNames = new Set<string>();
 
-    return isSameDeptId || isSameDeptName;
+    if (slotTeacher.departmentId) slotDeptIds.add(slotTeacher.departmentId);
+    if (slotTeacher.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher.departmentRel.name));
+
+    if (slotTeacher.departmentAssignments && Array.isArray(slotTeacher.departmentAssignments)) {
+      slotTeacher.departmentAssignments.forEach((da: any) => {
+        if (da.departmentId) slotDeptIds.add(da.departmentId);
+        if (da.department?.name) slotDeptNames.add(normDept(da.department.name));
+      });
+    }
+
+    // 1. Mầm non matching
+    if (isMamNonTeacher) {
+      const slotMN = slot.level === "Mầm non" || (slotTeacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+      if (!slotMN) return false;
+      if (myDeptNames.size === 0) return true;
+      for (const name of slotDeptNames) {
+        if (name !== "" && myDeptNames.has(name)) return true;
+      }
+      return false;
+    }
+
+    // 2. ID match
+    for (const id of slotDeptIds) {
+      if (myDeptIds.has(id)) return true;
+    }
+
+    // 3. Name match
+    for (const name of slotDeptNames) {
+      if (name !== "" && myDeptNames.has(name)) return true;
+      for (const myName of myDeptNames) {
+        if (name !== "" && myName !== "" && (name.includes(myName) || myName.includes(name))) return true;
+      }
+    }
+
+    return false;
   }, [currentTeacher, isMamNonTeacher]);
 
   const pathname = usePathname()

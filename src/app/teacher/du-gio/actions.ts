@@ -260,6 +260,11 @@ export async function getObservationSlots(filters: {
             email: true,
             departmentId: true,
             departmentRel: true,
+            departmentAssignments: {
+              include: {
+                department: true
+              }
+            },
             campusId: true,
             campus: {
               select: {
