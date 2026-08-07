@@ -38,6 +38,56 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
   const [classes, setClasses] = useState<any[]>(initialClasses)
   const [subjects, setSubjects] = useState<any[]>(initialSubjects)
 
+    // Level and Grade filters
+  const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
+  const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter(c => {
+      if (selectedLevelFilter !== "ALL") {
+        const cLevel = (c.level || "").toLowerCase()
+        const cGrade = (c.grade || "").toLowerCase()
+        const cName = (c.className || "").toLowerCase()
+
+        if (selectedLevelFilter === "TieuHoc") {
+          const isMatch = cLevel.includes("tiểu học") || cLevel.includes("tieu hoc") ||
+            ["1", "2", "3", "4", "5"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          if (!isMatch) return false
+        } else if (selectedLevelFilter === "THCS") {
+          const isMatch = cLevel.includes("thcs") ||
+            ["6", "7", "8", "9"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          if (!isMatch) return false
+        } else if (selectedLevelFilter === "THPT") {
+          const isMatch = cLevel.includes("thpt") ||
+            ["10", "11", "12"].some(g => cGrade === g || cGrade === `khối ${g}` || cName.startsWith(g))
+          if (!isMatch) return false
+        } else if (selectedLevelFilter === "MamNon") {
+          const isMatch = cLevel.includes("mầm non") || cLevel.includes("mam non") || cLevel.includes("nhà trẻ") || cLevel.includes("mẫu giáo")
+          if (!isMatch) return false
+        }
+      }
+
+      if (selectedGradeFilter !== "ALL") {
+        const targetNum = selectedGradeFilter.replace(/\D/g, "")
+        const cGrade = (c.grade || "").trim()
+        const cName = (c.className || "").trim()
+        const cGradeNum = cGrade.replace(/\D/g, "")
+        const cNameNum = (cName.match(/^(\d+)/) || [])[1] || ""
+
+        const isMatch = cGrade === selectedGradeFilter || (targetNum && (cGradeNum === targetNum || cNameNum === targetNum))
+        if (!isMatch) return false
+      }
+
+      return true
+    })
+  }, [classes, selectedLevelFilter, selectedGradeFilter])
+
+  useEffect(() => {
+    if (filteredClasses.length > 0 && !filteredClasses.some(c => c.id === selectedClassId)) {
+      setSelectedClassId(filteredClasses[0].id)
+    }
+  }, [filteredClasses])
+
   const [selectedClassId, setSelectedClassId] = useState(initialClasses[0]?.id || "")
   const [selectedSubjectId, setSelectedSubjectId] = useState(initialSubjects[0]?.id || "")
   const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
@@ -354,16 +404,57 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
         </div>
 
         {/* Selection Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-white/10">
+        <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 mt-6 bg-black/20 p-4 rounded-xl backdrop-blur-md border border-white/10">
           <div>
-            <label className="block text-[11px] font-bold text-teal-200 mb-1">Lớp giảng dạy:</label>
+            <label className="block text-[11px] font-bold text-teal-200 mb-1">Bậc học:</label>
+            <select
+              value={selectedLevelFilter}
+              onChange={(e) => {
+                setSelectedLevelFilter(e.target.value)
+                setSelectedGradeFilter("ALL")
+              }}
+              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+            >
+              <option value="ALL">-- Tất cả Bậc --</option>
+              <option value="TieuHoc">Tiểu học (1-5)</option>
+              <option value="THCS">THCS (6-9)</option>
+              <option value="THPT">THPT (10-12)</option>
+              <option value="MamNon">Mầm non</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-teal-200 mb-1">Khối học:</label>
+            <select
+              value={selectedGradeFilter}
+              onChange={(e) => setSelectedGradeFilter(e.target.value)}
+              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+            >
+              <option value="ALL">-- Tất cả Khối --</option>
+              {selectedLevelFilter === "TieuHoc" && ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"].map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+              {selectedLevelFilter === "THCS" && ["Khối 6", "Khối 7", "Khối 8", "Khối 9"].map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+              {selectedLevelFilter === "THPT" && ["Khối 10", "Khối 11", "Khối 12"].map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+              {selectedLevelFilter === "ALL" && ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-teal-200 mb-1">Lớp giảng dạy ({filteredClasses.length}):</label>
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
               className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
             >
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.className} ({c.grade})</option>
+              {filteredClasses.map(c => (
+                <option key={c.id} value={c.id}>{c.className} ({c.grade || c.level})</option>
               ))}
             </select>
           </div>
