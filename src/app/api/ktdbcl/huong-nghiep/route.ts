@@ -17,7 +17,6 @@ export async function GET(req: Request) {
   const search = searchParams.get("search")
 
   try {
-    // Resolve academicYearId cuid if yearName or yearCode was passed
     let academicYearId = rawAcademicYearId
     if (rawAcademicYearId) {
       const yearObj = await prisma.academicYear.findFirst({
@@ -43,24 +42,18 @@ export async function GET(req: Request) {
 
     let allowedClassIds: string[] = []
     if (teacher) {
-      const whereAssign: any = { teacherId: teacher.id }
-      if (academicYearId) whereAssign.academicYearId = academicYearId
-
-      const whereClass: any = {
-        OR: [
-          { homeroomTeacherId: teacher.id },
-          { homeroomTeacherId: { contains: teacher.id } }
-        ]
-      }
-      if (academicYearId) whereClass.academicYearId = academicYearId
-
       const [assignments, homeroomClasses] = await Promise.all([
         prisma.teachingAssignment.findMany({
-          where: whereAssign,
+          where: { teacherId: teacher.id },
           select: { classId: true }
         }),
         prisma.class.findMany({
-          where: whereClass,
+          where: {
+            OR: [
+              { homeroomTeacherId: teacher.id },
+              { homeroomTeacherId: { contains: teacher.id } }
+            ]
+          },
           select: { id: true }
         })
       ])
@@ -139,10 +132,9 @@ export async function GET(req: Request) {
           { class: { className: "asc" } },
           { studentName: "asc" }
         ],
-        take: 200
+        take: 300
       })
 
-      // Fallback: If no students found with targetClassIds filter, fetch all active students
       if (students.length === 0) {
         students = await prisma.student.findMany({
           where: search ? {

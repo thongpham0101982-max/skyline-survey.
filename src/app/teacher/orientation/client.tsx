@@ -424,16 +424,7 @@ export function OrientationTeacherClient({
           </div>
         </div>
 
-        {loading ? (
-          <div className="p-12 text-center text-slate-500 text-xs font-medium">
-            Đang nạp dữ liệu Sổ theo dõi Hướng nghiệp...
-          </div>
-        ) : records.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-xs font-medium">
-            Không tìm thấy học sinh nào.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
+        <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
@@ -533,7 +524,6 @@ export function OrientationTeacherClient({
               </tbody>
             </table>
           </div>
-        )}
       </div>
 
       {/* Edit Modal */}
