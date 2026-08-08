@@ -23,9 +23,7 @@ export async function GET(req: Request) {
         where: {
           OR: [
             { id: rawAcademicYearId },
-            { name: rawAcademicYearId },
-            { yearName: rawAcademicYearId },
-            { yearCode: rawAcademicYearId }
+            { name: rawAcademicYearId }
           ]
         }
       })
@@ -249,8 +247,7 @@ export async function POST(req: Request) {
         where: {
           OR: [
             { id: rawYearId },
-            { yearName: rawYearId },
-            { yearCode: rawYearId }
+            { name: rawYearId }
           ]
         }
       })
