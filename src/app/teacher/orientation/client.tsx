@@ -270,8 +270,6 @@ export function OrientationTeacherClient({
       "Nhận xét GVCN": r.gvcnRemark || "",
       "Nhận xét GVBM (HNG)": r.gvbmRemark || "",
       "Kết quả tư vấn": r.counselingResult || "",
-      "Người tư vấn": r.counselorName || "",
-      "Vai trò tư vấn": r.counselorRole || "",
       "Trạng thái": r.status === "DA_TU_VAN" ? "Đã tư vấn" : "Chưa tư vấn",
       "Ghi chú": r.notes || ""
     }))
@@ -436,8 +434,7 @@ export function OrientationTeacherClient({
                   <th className="py-2.5 px-2.5 min-w-[160px] bg-teal-100/60 text-teal-950 border-r border-teal-200/80">Cột Nhận xét GVCN</th>
                   <th className="py-2.5 px-2.5 min-w-[160px] bg-sky-100/60 text-sky-950 border-r border-sky-200/80">Cột Nhận xét GVBM (HNG)</th>
                   <th className="py-2.5 px-2.5 min-w-[160px] bg-emerald-100/60 text-emerald-950 border-r border-emerald-200/80">Cột Kết quả tư vấn</th>
-                  <th className="py-2.5 px-2.5 min-w-[120px] border-r border-slate-200/60">Người & Ngày tư vấn</th>
-                  <th className="py-2.5 px-2 text-center w-24">Thao tác</th>
+                                    <th className="py-2.5 px-2 text-center w-24">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -515,11 +512,6 @@ export function OrientationTeacherClient({
                       />
                     </td>
 
-                    {/* Người tư vấn */}
-                    <td className="py-3 px-3 text-slate-600">
-                      <div className="font-bold text-slate-800 truncate max-w-[120px]">{r.counselorName}</div>
-                      <div className="text-[10px] text-slate-400 font-semibold">{r.counselorRole}</div>
-                    </td>
 
                     {/* Thao tác */}
                     <td className="py-3 px-3 text-center">
