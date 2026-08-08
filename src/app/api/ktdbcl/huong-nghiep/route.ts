@@ -94,54 +94,83 @@ export async function GET(req: Request) {
     }
 
     if (action === "getRecords" || action === "getLogbook") {
-      let targetClassIds: string[] = []
+      let students: any[] = []
 
       if (classId) {
         const targetClass = await prisma.class.findUnique({ where: { id: classId } })
         if (targetClass) {
-          const matchingClasses = await prisma.class.findMany({
-            where: { className: targetClass.className },
-            select: { id: true }
+          // 1. Try finding students strictly matching this exact classId
+          const strictWhere: any = { classId: targetClass.id }
+          if (search) {
+            strictWhere.OR = [
+              { studentCode: { contains: search } },
+              { studentName: { contains: search } }
+            ]
+          }
+          students = await prisma.student.findMany({
+            where: strictWhere,
+            include: {
+              class: { select: { id: true, className: true, classCode: true, homeroomTeacherId: true } },
+              campus: { select: { id: true, campusName: true } },
+              careerOrientations: true
+            },
+            orderBy: { studentName: "asc" }
           })
-          targetClassIds = matchingClasses.map(c => c.id)
-        } else {
-          targetClassIds = [classId]
+
+          // 2. If 0 students, query across all matching class names (e.g., 11.1_CS1 or 12.1_CS1)
+          if (students.length === 0) {
+            const matchingClasses = await prisma.class.findMany({
+              where: { className: targetClass.className },
+              select: { id: true }
+            })
+            const matchIds = matchingClasses.map(c => c.id)
+            const fallbackWhere: any = { classId: { in: matchIds } }
+            if (search) {
+              fallbackWhere.OR = [
+                { studentCode: { contains: search } },
+                { studentName: { contains: search } }
+              ]
+            }
+            students = await prisma.student.findMany({
+              where: fallbackWhere,
+              include: {
+                class: { select: { id: true, className: true, classCode: true, homeroomTeacherId: true } },
+                campus: { select: { id: true, campusName: true } },
+                careerOrientations: true
+              },
+              orderBy: { studentName: "asc" }
+            })
+          }
         }
-      } else if (teacher && allowedClassIds.length > 0) {
-        targetClassIds = allowedClassIds
-      }
-
-      const studentWhere: any = {}
-      if (targetClassIds.length > 0) {
-        studentWhere.classId = { in: targetClassIds }
-      } else if (campusId) {
-        studentWhere.campusId = campusId
-      }
-
-      if (search) {
-        studentWhere.OR = [
-          { studentCode: { contains: search } },
-          { studentName: { contains: search } }
-        ]
-      }
-
-      let students = await prisma.student.findMany({
-        where: studentWhere,
-        include: {
-          class: {
-            select: { id: true, className: true, classCode: true, homeroomTeacherId: true }
+      } else {
+        // No specific class selected: query across allowed assigned classes for teacher
+        let targetClassIds = allowedClassIds
+        const studentWhere: any = {}
+        if (targetClassIds.length > 0) {
+          studentWhere.classId = { in: targetClassIds }
+        } else if (campusId) {
+          studentWhere.campusId = campusId
+        }
+        if (search) {
+          studentWhere.OR = [
+            { studentCode: { contains: search } },
+            { studentName: { contains: search } }
+          ]
+        }
+        students = await prisma.student.findMany({
+          where: studentWhere,
+          include: {
+            class: { select: { id: true, className: true, classCode: true, homeroomTeacherId: true } },
+            campus: { select: { id: true, campusName: true } },
+            careerOrientations: true
           },
-          campus: {
-            select: { id: true, campusName: true }
-          },
-          careerOrientations: true
-        },
-        orderBy: [
-          { class: { className: "asc" } },
-          { studentName: "asc" }
-        ],
-        take: 300
-      })
+          orderBy: [
+            { class: { className: "asc" } },
+            { studentName: "asc" }
+          ],
+          take: 300
+        })
+      }
 
       if (students.length === 0) {
         students = await prisma.student.findMany({
