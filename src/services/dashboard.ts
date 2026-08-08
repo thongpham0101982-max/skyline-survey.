@@ -299,7 +299,9 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     where: studentWhere,
     include: {
       class: { select: { className: true, grade: true, level: true } },
-      campus: { select: { id: true, campusCode: true, campusName: true } }
+      campus: { select: { id: true, campusCode: true, campusName: true } },
+      surveyForms: { select: { id: true } },
+      studentTransfers: { select: { id: true, type: true } }
     }
   })
 
@@ -413,8 +415,10 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
       const code = s.studentCode
       const nameKey = s.studentName ? s.studentName.trim().toLowerCase() : ""
 
-      const isFromPreschool = preCodeSet.has(code) || preNameSet.has(nameKey)
-      const isFromSurvey = genCodeSet.has(code) || genNameSet.has(nameKey)
+      const hasSurveyForm = s.surveyForms && s.surveyForms.length > 0
+      const hasTransferIn = s.studentTransfers && s.studentTransfers.some((t: any) => t.type === "IN")
+      const isFromSurvey = genCodeSet.has(code) || genNameSet.has(nameKey) || hasSurveyForm || hasTransferIn || s.enrollmentType === "KS" || s.isSurveyStudent
+      const isFromPreschool = (preCodeSet.has(code) || preNameSet.has(nameKey)) && !isFromSurvey
 
       let source: "KHAO_SAT" | "MAU_GIAO_LON" | "KHAC" = "KHAC"
       let sourceLabel = "Trực tiếp / Khác"
