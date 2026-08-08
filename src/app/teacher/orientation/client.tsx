@@ -426,18 +426,18 @@ export function OrientationTeacherClient({
         <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                  <th className="py-3.5 px-3 text-center w-10">STT</th>
-                  <th className="py-3.5 px-3 w-24">Mã HS</th>
-                  <th className="py-3.5 px-3 w-20">Lớp</th>
-                  <th className="py-3.5 px-3 min-w-[150px]">Họ tên Học sinh</th>
-                  <th className="py-3.5 px-3 min-w-[120px]">KQKS</th>
-                  <th className="py-3.5 px-3 min-w-[140px]">Định hướng ban đầu</th>
-                  <th className="py-3.5 px-3 min-w-[160px] bg-teal-50/50 text-teal-900">Cột Nhận xét GVCN</th>
-                  <th className="py-3.5 px-3 min-w-[160px] bg-sky-50/50 text-sky-900">Cột Nhận xét GVBM (HNG)</th>
-                  <th className="py-3.5 px-3 min-w-[160px] bg-emerald-50/50 text-emerald-900">Cột Kết quả tư vấn</th>
-                  <th className="py-3.5 px-3 min-w-[130px]">Người tư vấn</th>
-                  <th className="py-3.5 px-3 text-center w-28">Thao tác</th>
+                <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-black uppercase tracking-tight text-[10px] leading-tight select-none">
+                  <th className="py-2.5 px-2 text-center w-9 border-r border-slate-200/60">STT</th>
+                  <th className="py-2.5 px-2.5 w-24 border-r border-slate-200/60">Mã HS</th>
+                  <th className="py-2.5 px-2.5 w-20 border-r border-slate-200/60">Lớp</th>
+                  <th className="py-2.5 px-2.5 min-w-[140px] border-r border-slate-200/60">Họ tên Học sinh</th>
+                  <th className="py-2.5 px-2.5 min-w-[110px] border-r border-slate-200/60">KQKS</th>
+                  <th className="py-2.5 px-2.5 min-w-[130px] border-r border-slate-200/60">Định hướng ban đầu</th>
+                  <th className="py-2.5 px-2.5 min-w-[160px] bg-teal-100/60 text-teal-950 border-r border-teal-200/80">Cột Nhận xét GVCN</th>
+                  <th className="py-2.5 px-2.5 min-w-[160px] bg-sky-100/60 text-sky-950 border-r border-sky-200/80">Cột Nhận xét GVBM (HNG)</th>
+                  <th className="py-2.5 px-2.5 min-w-[160px] bg-emerald-100/60 text-emerald-950 border-r border-emerald-200/80">Cột Kết quả tư vấn</th>
+                  <th className="py-2.5 px-2.5 min-w-[120px] border-r border-slate-200/60">Người & Ngày tư vấn</th>
+                  <th className="py-2.5 px-2 text-center w-24">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -476,8 +476,12 @@ export function OrientationTeacherClient({
                         rows={1}
                         placeholder="Nhận xét GVCN..."
                         value={r.gvcnRemark || ""}
-                        onChange={(e) => handleInlineChange(r.id, "gvcnRemark", e.target.value)}
-                        className="w-full px-2 py-1 bg-white border border-teal-200 rounded-md text-xs font-medium focus:ring-1 focus:ring-teal-500 resize-none"
+                        onChange={(e) => {
+                          handleInlineChange(r.id, "gvcnRemark", e.target.value)
+                          e.target.style.height = "auto"
+                          e.target.style.height = e.target.scrollHeight + "px"
+                        }}
+                        className="w-full min-h-[32px] px-2 py-1 bg-white border border-teal-200/80 rounded-lg text-xs font-medium text-slate-800 focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all resize-y"
                       />
                     </td>
 
@@ -487,19 +491,27 @@ export function OrientationTeacherClient({
                         rows={1}
                         placeholder="Nhận xét GVBM (HNG)..."
                         value={r.gvbmRemark || ""}
-                        onChange={(e) => handleInlineChange(r.id, "gvbmRemark", e.target.value)}
-                        className="w-full px-2 py-1 bg-white border border-sky-200 rounded-md text-xs font-medium focus:ring-1 focus:ring-sky-500 resize-none"
+                        onChange={(e) => {
+                          handleInlineChange(r.id, "gvbmRemark", e.target.value)
+                          e.target.style.height = "auto"
+                          e.target.style.height = e.target.scrollHeight + "px"
+                        }}
+                        className="w-full min-h-[32px] px-2 py-1 bg-white border border-sky-200/80 rounded-lg text-xs font-medium text-slate-800 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all resize-y"
                       />
                     </td>
 
                     {/* Cột Kết quả tư vấn */}
                     <td className="py-3 px-3 bg-emerald-50/20">
-                      <input
-                        type="text"
+                      <textarea
+                        rows={1}
                         placeholder="Kết quả tư vấn..."
                         value={r.counselingResult || ""}
-                        onChange={(e) => handleInlineChange(r.id, "counselingResult", e.target.value)}
-                        className="w-full px-2 py-1 bg-white border border-emerald-200 rounded-md text-xs font-extrabold text-emerald-900 focus:ring-1 focus:ring-emerald-500"
+                        onChange={(e) => {
+                          handleInlineChange(r.id, "counselingResult", e.target.value)
+                          e.target.style.height = "auto"
+                          e.target.style.height = e.target.scrollHeight + "px"
+                        }}
+                        className="w-full min-h-[32px] px-2 py-1 bg-white border border-emerald-200/80 rounded-lg text-xs font-bold text-emerald-950 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all resize-y"
                       />
                     </td>
 

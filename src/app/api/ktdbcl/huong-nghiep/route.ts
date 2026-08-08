@@ -30,6 +30,9 @@ export async function GET(req: Request) {
       if (yearObj) {
         academicYearId = yearObj.id
       }
+    } else {
+      const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+      if (activeYear) academicYearId = activeYear.id
     }
 
     const userRole = (session.user as any)?.role || ""
@@ -63,15 +66,21 @@ export async function GET(req: Request) {
     }
 
     if (action === "getAssignedClasses") {
+      const classWhere: any = teacher ? {
+        OR: [
+          { id: { in: allowedClassIds } },
+          { homeroomTeacherId: teacher.id },
+          { homeroomTeacherId: { contains: teacher.id } },
+          { teachingAssignments: { some: { teacherId: teacher.id } } }
+        ]
+      } : { status: "ACTIVE" }
+
+      if (academicYearId) {
+        classWhere.academicYearId = academicYearId
+      }
+
       let classes = await prisma.class.findMany({
-        where: teacher ? {
-          OR: [
-            { id: { in: allowedClassIds } },
-            { homeroomTeacherId: teacher.id },
-            { homeroomTeacherId: { contains: teacher.id } },
-            { teachingAssignments: { some: { teacherId: teacher.id } } }
-          ]
-        } : { status: "ACTIVE" },
+        where: classWhere,
         orderBy: { className: "asc" }
       })
       if (classes.length === 0) {
