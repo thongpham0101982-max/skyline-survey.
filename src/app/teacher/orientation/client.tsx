@@ -367,7 +367,9 @@ export function OrientationTeacherClient({
               >
                 <option value="">-- Tất cả các Lớp phân công --</option>
                 {filteredClasses.map(c => (
-                  <option key={c.id} value={c.id}>{c.className}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.className} {c.isHomeroom ? "(Lớp Chủ nhiệm - GVCN)" : "(Lớp Bộ môn - GVBM)"}
+                  </option>
                 ))}
               </select>
             </div>

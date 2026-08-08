@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db"
 import { OrientationTeacherClient } from "./client"
 
 export const metadata = {
-  title: "Sổ theo dõi Hướng nghiệp - Giáo viên Bộ môn HNG & GVCN",
+  title: "Sổ theo dõi Hướng nghiệp - Giáo viên Chủ nhiệm (GVCN) & Giáo viên Bộ môn (GVBM)",
 }
 
 export default async function TeacherOrientationPage() {
@@ -20,29 +20,51 @@ export default async function TeacherOrientationPage() {
   })
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
-  let assignments: any[] = []
-  if (teacher) {
-    assignments = await prisma.teachingAssignment.findMany({
-      where: activeYear ? { teacherId: teacher.id, academicYearId: activeYear.id } : { teacherId: teacher.id },
-      include: { class: true, subject: true }
-    })
-  }
-
   let classes: any[] = []
   let subjects: any[] = []
 
-  if (assignments.length > 0) {
-    const classMap = new Map()
+  if (teacher) {
+    // Query both Homeroom classes (GVCN) & Teaching Assignment classes (GVBM)
+    const rawClasses = await prisma.class.findMany({
+      where: {
+        OR: [
+          { homeroomTeacherId: teacher.id },
+          { homeroomTeacherId: { contains: teacher.id } },
+          { teachers: { some: { teacherId: teacher.id } } },
+          { teachingAssignments: { some: { teacherId: teacher.id } } }
+        ]
+      },
+      include: {
+        campus: true,
+        academicYear: true
+      },
+      orderBy: { className: "asc" }
+    })
+
+    classes = rawClasses.map(c => ({
+      ...c,
+      isHomeroom: c.homeroomTeacherId === teacher.id || 
+                  (c.homeroomTeacherId ? c.homeroomTeacherId.includes(teacher.id) : false)
+    }))
+
+    const assignments = await prisma.teachingAssignment.findMany({
+      where: { teacherId: teacher.id },
+      include: { subject: true }
+    })
     const subjectMap = new Map()
     assignments.forEach(a => {
-      if (a.class) classMap.set(a.class.id, a.class)
       if (a.subject) subjectMap.set(a.subject.id, a.subject)
     })
-    classes = Array.from(classMap.values())
     subjects = Array.from(subjectMap.values())
-  } else {
-    classes = await prisma.class.findMany({ where: { status: "ACTIVE" }, orderBy: { className: "asc" } })
-    subjects = await prisma.subject.findMany({ where: { status: "ACTIVE" }, orderBy: { subjectName: "asc" } })
+  }
+
+  if (classes.length === 0) {
+    const rawClasses = await prisma.class.findMany({ where: { status: "ACTIVE" }, orderBy: { className: "asc" }, take: 50 })
+    classes = rawClasses.map(c => ({ ...c, isHomeroom: false }))
+  }
+
+  if (subjects.length === 0) {
+    subjects = await prisma.subject.findMany({ where: { status: "ACTIVE" }, orderBy: { subjectName: "asc" }, take: 20 })
   }
 
   // Ensure HNG / Hướng nghiệp subject is in subjects list
