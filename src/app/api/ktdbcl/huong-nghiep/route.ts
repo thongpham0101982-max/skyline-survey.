@@ -10,13 +10,30 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url)
   const action = searchParams.get("action") || "getRecords"
-  const academicYearId = searchParams.get("academicYearId") || ""
+  const rawAcademicYearId = searchParams.get("academicYearId") || ""
   const classId = searchParams.get("classId")
   const campusId = searchParams.get("campusId")
   const status = searchParams.get("status")
   const search = searchParams.get("search")
 
   try {
+    // Resolve academicYearId cuid if yearName or yearCode was passed
+    let academicYearId = rawAcademicYearId
+    if (rawAcademicYearId) {
+      const yearObj = await prisma.academicYear.findFirst({
+        where: {
+          OR: [
+            { id: rawAcademicYearId },
+            { yearName: rawAcademicYearId },
+            { yearCode: rawAcademicYearId }
+          ]
+        }
+      })
+      if (yearObj) {
+        academicYearId = yearObj.id
+      }
+    }
+
     const userRole = (session.user as any)?.role || ""
     const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
 
@@ -74,15 +91,16 @@ export async function GET(req: Request) {
         where: classesWhere,
         orderBy: { className: "asc" }
       })
-      if (classes.length === 0 && teacher) {
+      if (classes.length === 0) {
         classes = await prisma.class.findMany({
-          where: {
+          where: teacher ? {
             OR: [
               { homeroomTeacherId: teacher.id },
               { homeroomTeacherId: { contains: teacher.id } }
             ]
-          },
-          orderBy: { className: "asc" }
+          } : { status: "ACTIVE" },
+          orderBy: { className: "asc" },
+          take: 50
         })
       }
       return NextResponse.json(classes)
@@ -201,7 +219,7 @@ export async function POST(req: Request) {
     const body = await req.json()
     const {
       studentId,
-      academicYearId,
+      academicYearId: rawYearId,
       counselorId,
       counselorName,
       counselorRole,
@@ -220,7 +238,20 @@ export async function POST(req: Request) {
     }
 
     const student = await prisma.student.findUnique({ where: { id: studentId } })
-    const targetYearId = academicYearId || student?.academicYearId
+    let targetYearId = rawYearId || student?.academicYearId
+    if (rawYearId) {
+      const yearObj = await prisma.academicYear.findFirst({
+        where: {
+          OR: [
+            { id: rawYearId },
+            { yearName: rawYearId },
+            { yearCode: rawYearId }
+          ]
+        }
+      })
+      if (yearObj) targetYearId = yearObj.id
+    }
+
     if (!targetYearId) {
       return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 })
     }
