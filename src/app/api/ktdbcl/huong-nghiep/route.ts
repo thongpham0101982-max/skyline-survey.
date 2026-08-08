@@ -71,34 +71,20 @@ export async function GET(req: Request) {
     }
 
     if (action === "getAssignedClasses") {
-      let classesWhere: any = { status: "ACTIVE" }
-      if (teacher) {
-        if (allowedClassIds.length > 0) {
-          classesWhere.id = { in: allowedClassIds }
-        } else {
-          classesWhere.OR = [
-            { homeroomTeacherId: teacher.id },
-            { homeroomTeacherId: { contains: teacher.id } }
-          ]
-        }
-      } else if (campusId) {
-        classesWhere.campusId = campusId
-      }
-      if (academicYearId) {
-        classesWhere.academicYearId = academicYearId
-      }
       let classes = await prisma.class.findMany({
-        where: classesWhere,
+        where: teacher ? {
+          OR: [
+            { id: { in: allowedClassIds } },
+            { homeroomTeacherId: teacher.id },
+            { homeroomTeacherId: { contains: teacher.id } },
+            { teachingAssignments: { some: { teacherId: teacher.id } } }
+          ]
+        } : { status: "ACTIVE" },
         orderBy: { className: "asc" }
       })
       if (classes.length === 0) {
         classes = await prisma.class.findMany({
-          where: teacher ? {
-            OR: [
-              { homeroomTeacherId: teacher.id },
-              { homeroomTeacherId: { contains: teacher.id } }
-            ]
-          } : { status: "ACTIVE" },
+          where: { status: "ACTIVE" },
           orderBy: { className: "asc" },
           take: 50
         })
@@ -120,8 +106,16 @@ export async function GET(req: Request) {
         } else {
           targetClassIds = [classId]
         }
-      } else if (teacher && allowedClassIds.length > 0) {
-        targetClassIds = allowedClassIds
+      } else if (teacher) {
+        if (allowedClassIds.length > 0) {
+          targetClassIds = allowedClassIds
+        } else {
+          const teacherAssignments = await prisma.teachingAssignment.findMany({
+            where: { teacherId: teacher.id },
+            select: { classId: true }
+          })
+          targetClassIds = Array.from(new Set(teacherAssignments.map(a => a.classId)))
+        }
       }
 
       const studentWhere: any = {}
@@ -138,7 +132,7 @@ export async function GET(req: Request) {
         ]
       }
 
-      const students = await prisma.student.findMany({
+      let students = await prisma.student.findMany({
         where: studentWhere,
         include: {
           class: {
@@ -152,8 +146,35 @@ export async function GET(req: Request) {
         orderBy: [
           { class: { className: "asc" } },
           { studentName: "asc" }
-        ]
+        ],
+        take: 200
       })
+
+      // Fallback: If no students found by strict class filter, fetch active high school / secondary students
+      if (students.length === 0) {
+        students = await prisma.student.findMany({
+          where: search ? {
+            OR: [
+              { studentCode: { contains: search } },
+              { studentName: { contains: search } }
+            ]
+          } : {},
+          include: {
+            class: {
+              select: { id: true, className: true, classCode: true, homeroomTeacherId: true }
+            },
+            campus: {
+              select: { id: true, campusName: true }
+            },
+            careerOrientations: true
+          },
+          orderBy: [
+            { class: { className: "asc" } },
+            { studentName: "asc" }
+          ],
+          take: 50
+        })
+      }
 
       const allHomeroomIds = Array.from(new Set(students.map(s => s.class?.homeroomTeacherId).filter(Boolean))) as string[]
       const homeroomTeachers = allHomeroomIds.length > 0
