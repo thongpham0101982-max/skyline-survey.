@@ -41,7 +41,7 @@ export default async function TeacherDiemNhanXetPage() {
     classes = Array.from(classMap.values())
     subjects = Array.from(subjectMap.values())
   } else {
-    classes = await prisma.class.findMany({ where: { status: "ACTIVE" }, orderBy: { className: "asc" } })
+    classes = await prisma.class.findMany({ where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) }, orderBy: { className: "asc" } })
     subjects = await prisma.subject.findMany({ where: { status: "ACTIVE" }, orderBy: { subjectName: "asc" } })
   }
 

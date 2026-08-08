@@ -6,27 +6,25 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const academicYearId = searchParams.get('academicYearId');
 
-    let classes: any[] = [];
-    if (academicYearId) {
-      classes = await prisma.class.findMany({
-        where: { academicYearId },
-        orderBy: [
-          { level: 'asc' },
-          { grade: 'asc' },
-          { className: 'asc' }
-        ]
-      });
+    let activeYearId = academicYearId;
+    if (!activeYearId || activeYearId === 'all') {
+      const activeYear = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } });
+      activeYearId = activeYear?.id;
     }
 
-    if (!classes || classes.length === 0) {
-      classes = await prisma.class.findMany({
-        orderBy: [
-          { level: 'asc' },
-          { grade: 'asc' },
-          { className: 'asc' }
-        ]
-      });
+    const whereCondition: any = { status: 'ACTIVE' };
+    if (activeYearId) {
+      whereCondition.academicYearId = activeYearId;
     }
+
+    const classes = await prisma.class.findMany({
+      where: whereCondition,
+      orderBy: [
+        { level: 'asc' },
+        { grade: 'asc' },
+        { className: 'asc' }
+      ]
+    });
 
     return NextResponse.json(classes);
   } catch (error) {

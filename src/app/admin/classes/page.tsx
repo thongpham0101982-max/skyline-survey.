@@ -5,8 +5,11 @@ import { getAdminSession } from "@/lib/session"
 export default async function AdminClassesPage() {
   const session = await getAdminSession()
 
-  // Filter classes based on session scope
-  const classWhere = session.isFullAccess ? {} : { campusId: { in: session.allowedCampusIds } }
+  const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+  // Filter classes based on session scope and active academic year
+  const classWhere = session.isFullAccess 
+    ? (activeYear ? { academicYearId: activeYear.id } : {}) 
+    : { campusId: { in: session.allowedCampusIds }, ...(activeYear ? { academicYearId: activeYear.id } : {}) }
   const classesData = await prisma.class.findMany({
     where: classWhere,
     include: {

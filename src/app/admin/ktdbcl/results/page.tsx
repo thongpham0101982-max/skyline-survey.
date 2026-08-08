@@ -69,9 +69,10 @@ export default async function ResultsPage({ searchParams }: { searchParams: Prom
     orderBy: { name: "asc" }
   })
 
-  // Fetch classes
+  const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+  // Fetch classes for active academic year
   const classes = await prisma.class.findMany({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
     orderBy: { className: "asc" },
     select: {
       id: true,

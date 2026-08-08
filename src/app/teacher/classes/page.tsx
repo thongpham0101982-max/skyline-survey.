@@ -3,12 +3,19 @@ import { prisma } from "@/lib/db"
 import { TeacherClassesClient } from "./client"
 import { cookies } from "next/headers"
 
-async function getTeacherClasses(userId: string) {
+async function getTeacherClasses(userId: string, academicYearId?: string) {
   const teacher = await prisma.teacher.findUnique({ where: { userId } })
   if (!teacher) return []
 
+  let yearId = academicYearId;
+  if (!yearId) {
+    const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
+    yearId = activeYear?.id;
+  }
+
   const classes = await prisma.class.findMany({
     where: {
+      ...(yearId ? { academicYearId: yearId } : {}),
       OR: [
         { homeroomTeacherId: teacher.id },
         { homeroomTeacherId: { contains: teacher.id } },
@@ -34,7 +41,7 @@ async function getTeacherClasses(userId: string) {
 export default async function TeacherClassesPage() {
   const session = await auth()
   const userId = (session?.user as any)?.id || ''
-  const classes = await getTeacherClasses(userId)
+  const classes = await getTeacherClasses(userId, activeYearCookie)
   
   const academicYears = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" }

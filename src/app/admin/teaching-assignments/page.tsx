@@ -12,7 +12,11 @@ export default async function TeachingAssignmentsPage() {
     return block !== "mầm non" && block !== "mam non";
   })
 
-  const rawClasses = await prisma.class.findMany({ orderBy: { className: 'asc' } })
+  const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+  const rawClasses = await prisma.class.findMany({ 
+    where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
+    orderBy: { className: 'asc' } 
+  })
   const classes = rawClasses.filter(c => {
     const lvl = (c.level || "").toLowerCase().trim();
     return !["nhà trẻ", "mẫu giáo bé", "mẫu giáo nhỡ", "mẫu giáo lớn", "mầm non", "mam non"].includes(lvl);

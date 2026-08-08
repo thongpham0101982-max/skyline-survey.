@@ -46,8 +46,13 @@ export async function GET(request: Request) {
         availableClasses = Array.from(classMap.values())
         availableSubjects = Array.from(subjectMap.values())
       } else {
+        let activeYearId = academicYearId;
+        if (!activeYearId || activeYearId === "all") {
+          const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
+          activeYearId = activeYear?.id;
+        }
         availableClasses = await prisma.class.findMany({
-          where: { status: "ACTIVE", ...(academicYearId ? { academicYearId } : {}) },
+          where: { status: "ACTIVE", ...(activeYearId ? { academicYearId: activeYearId } : {}) },
           orderBy: { className: "asc" }
         })
         availableSubjects = await prisma.subject.findMany({

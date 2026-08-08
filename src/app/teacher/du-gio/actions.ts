@@ -158,7 +158,10 @@ export async function getObservationData(academicYearId?: string) {
     })
 
     const classes = await prisma.class.findMany({
-      where: { status: "ACTIVE" },
+      where: {
+        status: "ACTIVE",
+        ...(activeYearId ? { academicYearId: activeYearId } : { academicYear: { status: "ACTIVE" } })
+      },
       select: { id: true, classCode: true, className: true, level: true, grade: true, campusId: true, academicYearId: true },
       orderBy: { className: "asc" }
     })

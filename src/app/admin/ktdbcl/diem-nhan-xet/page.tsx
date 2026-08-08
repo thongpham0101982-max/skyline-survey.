@@ -12,7 +12,7 @@ export default async function DiemNhanXetAdminPage() {
   const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
   const classes = await prisma.class.findMany({
-    where: { status: "ACTIVE" },
+    where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) },
     orderBy: { className: "asc" }
   })
 
