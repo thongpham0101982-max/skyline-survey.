@@ -4,12 +4,13 @@ import Link from "next/link"
 import { Users, Building2, CalendarDays, ClipboardList } from "lucide-react"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 
-export function TeacherClassesClient({ initialClasses, academicYears }: { initialClasses: any[], academicYears: any[] }) {
+export function TeacherClassesClient({ initialClasses = [], academicYears = [] }: { initialClasses?: any[], academicYears?: any[] }) {
   const [selectedYearId, setSelectedYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "")
 
   const filteredClasses = useMemo(() => {
-    if (!selectedYearId) return initialClasses
-    return initialClasses.filter(c => c.academicYearId === selectedYearId)
+    const list = Array.isArray(initialClasses) ? initialClasses : []
+    if (!selectedYearId) return list
+    return list.filter(c => c && c.academicYearId === selectedYearId)
   }, [initialClasses, selectedYearId])
 
   return (

@@ -124,7 +124,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
 
   // 4. Calculate monthly headcount trend for this class
   let monthlyHeadcount: { month: string; count: number }[] = []
-  if (classInfo.academicYear) {
+  if (classInfo.academicYear && classInfo.academicYear.startDate && classInfo.academicYear.endDate) {
     const start = new Date(classInfo.academicYear.startDate)
     const end = new Date(classInfo.academicYear.endDate)
 
@@ -188,7 +188,7 @@ export default async function TeacherClassDetailPage({ params }: any) {
         studentCode: s.studentCode,
         studentName: s.studentName,
         type: t.type,
-        transferDate: t.transferDate.toISOString(),
+        transferDate: t.transferDate ? new Date(t.transferDate).toISOString() : new Date().toISOString(),
         reason: t.reason || '',
         destinationSchool: t.destinationSchool || '',
         destinationProvince: t.destinationProvince || '',
