@@ -83,6 +83,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
     if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP') return true;
+    if (module === 'KTDBCL_HUONG_NGHIEP') return true;
       let hasParent = permissionModules?.includes(module) || false
       if (module === "KTDBCL_EXAMS") {
         hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
