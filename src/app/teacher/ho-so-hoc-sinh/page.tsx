@@ -358,7 +358,7 @@ export default function TeacherStudentProfilePage() {
     )
   }
 
-  const tabs = [
+    const tabs = [
     { id: "cv", label: "Xem chi tiết HSHS", icon: User },
     { id: "academic", label: "Kết quả Học tập (MOET)", icon: FileText },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
@@ -368,6 +368,52 @@ export default function TeacherStudentProfilePage() {
     { id: "comments", label: "Nhận xét nổi bật", icon: MessageSquare },
     { id: "support", label: "Hỗ trợ học tập", icon: GraduationCap }
   ]
+
+  // Helper to compute badge count and data availability for tab tags
+  const getTabBadgeInfo = (tabId: string) => {
+    if (!profileData) return { hasData: false, count: 0 }
+
+    switch (tabId) {
+      case "academic": {
+        const rawScores = selectedStudent?.termScores || selectedStudent?.student?.termScores || profileData?.student?.termScores || []
+        const rawSummaries = selectedStudent?.termSummaries || selectedStudent?.student?.termSummaries || profileData?.student?.termSummaries || []
+        const count = rawScores.length || rawSummaries.length
+        return { hasData: count > 0, count }
+      }
+      case "entrance": {
+        const survey = profileData.entranceSurvey
+        if (!survey) return { hasData: false, count: 0 }
+        const count = Array.isArray(survey.scores) && survey.scores.length > 0 ? survey.scores.length : 1
+        return { hasData: true, count }
+      }
+      case "achievements": {
+        const count = profileData.achievements?.length || 0
+        return { hasData: count > 0, count }
+      }
+      case "orientation": {
+        const hasOrientation = !!(profileData.orientation?.result || profileData.orientation?.notes)
+        return { hasData: hasOrientation, count: hasOrientation ? 1 : 0 }
+      }
+      case "projects": {
+        const expCount = profileData.experientialActivities?.length || 0
+        const projCount = profileData.projects?.length || 0
+        const count = expCount + projCount
+        return { hasData: count > 0, count }
+      }
+      case "comments": {
+        const comments = profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT") || []
+        const count = comments.length
+        return { hasData: count > 0, count }
+      }
+      case "support": {
+        const targets = (profileData as any).learningSupportTargets || []
+        const count = targets.length
+        return { hasData: count > 0, count }
+      }
+      default:
+        return { hasData: false, count: 0 }
+    }
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
