@@ -22,7 +22,8 @@ import {
   MessageSquare,
   Award,
   Globe,
-  FileText
+  FileText,
+  Compass
 } from "lucide-react"
 
 export const APP_CATEGORIES = [
@@ -60,6 +61,12 @@ export const APP_CATEGORIES = [
           { code: "KTDBCL_EXAM_STUDENTS", name: "Đăng ký Dự thi", href: "/admin/ktdbcl/students" },
           { code: "KTDBCL_EXAM_RESULTS", name: "Nhập điểm & Kết quả", href: "/admin/ktdbcl/results" },
         ]
+      },
+      {
+        code: "KTDBCL_HUONG_NGHIEP",
+        name: "QL Hướng nghiệp",
+        icon: Compass,
+        href: "/admin/ktdbcl/huong-nghiep"
       },
       {
         code: "KTDBCL_SUPPORT",

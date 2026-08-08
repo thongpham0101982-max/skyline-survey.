@@ -142,6 +142,7 @@ model AcademicYear {
   learningCommitments             StudentLearningCommitment[]
   subjectGradeConfigs             SubjectGradeConfig[]
   subjectGradeEntries             SubjectGradeEntry[]
+  careerOrientations             StudentCareerOrientation[]
 }
 
 model Class {
@@ -1304,18 +1305,29 @@ model AuditLog {
 }
 
 model StudentCareerOrientation {
-  id          String   @id @default(cuid())
-  studentId   String
-  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  teacherId   String
-  teacherName String
-  result      String
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                  String        @id @default(cuid())
+  studentId           String
+  student             Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYearId      String?
+  academicYear        AcademicYear? @relation(fields: [academicYearId], references: [id], onDelete: SetNull)
+  teacherId           String?
+  teacherName         String?
+  counselorRole       String?       @default("GVCN")
+ surveyResult String?
+ initialOrientation String?
+ gvcnRemark String?
+ gvbmRemark String?
+ counselingResult String?
+ result String?
+ counselingDate DateTime @default(now())
+ status String @default("DA_TU_VAN")
+ notes String?
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
 
-  @@unique([studentId])
-  @@index([studentId])
+ @@unique([studentId, academicYearId])
+ @@index([studentId])
+ @@index([academicYearId])
 }
 
 model StudentProjectExperience {

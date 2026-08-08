@@ -82,7 +82,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
-    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES') return true;
+    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP') return true;
       let hasParent = permissionModules?.includes(module) || false
       if (module === "KTDBCL_EXAMS") {
         hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
@@ -447,6 +447,28 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     </div>
                     {!isCollapsed && <span>4. Phụ đạo, bồi dưỡng Học sinh</span>}
                   </Link>
+
+                  {/* 5. Sổ theo dõi Hướng nghiệp */}
+                  <Link 
+                    href="/teacher/orientation" 
+                    onClick={() => setIsOpen(false)} 
+                    className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                      pathname.includes('/teacher/orientation') 
+                        ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                        : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                    }`}
+                  >
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                      pathname.includes('/teacher/orientation')
+                        ? "bg-cyan-500/20 border border-cyan-500/40 shadow-[0_0_8px_rgba(6,182,212,0.25)]"
+                        : "bg-white/5 border border-white/10 group-hover:border-cyan-500/30"
+                    }`}>
+                      <Compass className={`w-4 h-4 transition-all ${
+                        pathname.includes('/teacher/orientation') ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-400 group-hover:scale-110"
+                      }`} />
+                    </div>
+                    {!isCollapsed && <span>5. Sổ theo dõi Hướng nghiệp</span>}
+                  </Link>
                 </div>
               )}
 
@@ -600,7 +622,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                       pathname.includes('/teacher/orientation') ? "text-cyan-400" : "text-slate-400 group-hover:text-cyan-400 group-hover:scale-110"
                     }`} />
                   </div>
-                  {!isCollapsed && <span>3. Hướng nghiệp</span>}
+                  {!isCollapsed && <span>3. Sổ theo dõi Hướng nghiệp</span>}
                 </Link>
 
                 {/* 4. Hoạt động trải nghiệm */}

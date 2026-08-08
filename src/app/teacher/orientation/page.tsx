@@ -1,313 +1,396 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Compass, Loader2, Save, ArrowRight, BookOpen, User, CheckCircle2 } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { Compass, Loader2, Save, BookOpen, User, CheckCircle2, Edit3, Eye, Search, FileSpreadsheet, RefreshCcw } from "lucide-react"
 
 export default function TeacherOrientationPage() {
-  const [classes, setClasses] = useState<any[]>([])
   const [yearId, setYearId] = useState(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("selectedAcademicYear");
-      if (stored) return stored;
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored) return stored
     }
-    return "";
-  });
+    return ""
+  })
 
   useEffect(() => {
     const handleYearChange = () => {
-      const stored = localStorage.getItem("selectedAcademicYear");
+      const stored = localStorage.getItem("selectedAcademicYear")
       if (stored && stored !== yearId) {
-        setYearId(stored);
+        setYearId(stored)
       }
-    };
-    window.addEventListener("academicYearChanged", handleYearChange);
-    return () => window.removeEventListener("academicYearChanged", handleYearChange);
-  }, [yearId]);
-  const [students, setStudents] = useState<any[]>([])
-  const [selectedClassId, setSelectedClassId] = useState("")
-  const [selectedStudentId, setSelectedStudentId] = useState("")
-  const [selectedStudent, setSelectedStudent] = useState<any>(null)
-  
-  const [result, setResult] = useState("")
-  const [notes, setNotes] = useState("")
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+    return () => window.removeEventListener("academicYearChanged", handleYearChange)
+  }, [yearId])
 
-  const [loadingClasses, setLoadingClasses] = useState(true)
-  const [loadingStudents, setLoadingStudents] = useState(false)
-  const [loadingRecord, setLoadingRecord] = useState(false)
+  const [classes, setClasses] = useState<any[]>([])
+  const [selectedClassId, setSelectedClassId] = useState("")
+  const [records, setRecords] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const [editingRecord, setEditingRecord] = useState<any | null>(null)
+  const [viewingRecord, setViewingRecord] = useState<any | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
+  // Form fields
+  const [formSurveyResult, setFormSurveyResult] = useState("")
+  const [formInitialOrientation, setFormInitialOrientation] = useState("")
+  const [formGvcnRemark, setFormGvcnRemark] = useState("")
+  const [formGvbmRemark, setFormGvbmRemark] = useState("")
+  const [formCounselingResult, setFormCounselingResult] = useState("")
+  const [formStatus, setFormStatus] = useState("DA_TU_VAN")
+  const [formNotes, setFormNotes] = useState("")
 
   useEffect(() => {
     if (!yearId) return
-    async function loadClasses() {
+    async function loadAssignedClasses() {
       try {
-        setLoadingClasses(true)
-        const res = await fetch(`/api/teacher-student-records?action=getAssignedClasses&subject=orientation&academicYearId=${yearId}`)
+        const res = await fetch("/api/ktdbcl/huong-nghiep?action=getAssignedClasses&academicYearId=" + yearId)
         if (res.ok) {
           const data = await res.json()
           setClasses(data)
-          if (data.length > 0) {
-            setSelectedClassId(data[0].id)
-          } else {
-            setSelectedClassId("")
-            setStudents([])
-          }
         }
       } catch (err) {
-        console.error("Error loading classes:", err)
-      } finally {
-        setLoadingClasses(false)
+        console.error("Error loading assigned classes:", err)
       }
     }
-    loadClasses()
+    loadAssignedClasses()
   }, [yearId])
 
-  useEffect(() => {
-    if (!selectedClassId) return
-    
-    async function loadStudents() {
-      try {
-        setLoadingStudents(true)
-        setSelectedStudentId("")
-        setSelectedStudent(null)
-        setResult("")
-        setNotes("")
-        const res = await fetch(`/api/teacher-student-records?action=getClassStudents&classId=${selectedClassId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setStudents(data)
-          if (data.length > 0) {
-            setSelectedStudentId(data[0].id)
-          }
-        }
-      } catch (err) {
-        console.error("Error loading students:", err)
-      } finally {
-        setLoadingStudents(false)
+  const fetchRecords = async () => {
+    if (!yearId) return
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        academicYearId: yearId,
+        action: "getLogbook"
+      })
+      if (selectedClassId) params.append("classId", selectedClassId)
+      if (searchQuery) params.append("search", searchQuery)
+
+      const res = await fetch("/api/ktdbcl/huong-nghiep?" + params.toString())
+      if (res.ok) {
+        const data = await res.json()
+        setRecords(data)
       }
+    } catch (err) {
+      console.error("Error fetching logbook records:", err)
+    } finally {
+      setLoading(false)
     }
-    loadStudents()
-  }, [selectedClassId])
+  }
 
   useEffect(() => {
-    if (!selectedStudentId) {
-      setSelectedStudent(null)
-      return
-    }
+    fetchRecords()
+  }, [yearId, selectedClassId, searchQuery])
 
-    async function loadRecord() {
-      try {
-        setLoadingRecord(true)
-        setMessage(null)
-        const activeStudent = students.find(s => s.id === selectedStudentId)
-        setSelectedStudent(activeStudent)
-
-        const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}`)
-        if (res.ok) {
-          const data = await res.json()
-          if (data.orientation) {
-            setResult(data.orientation.result || "")
-            setNotes(data.orientation.notes || "")
-          } else {
-            setResult("")
-            setNotes("")
-          }
-        }
-      } catch (err) {
-        console.error("Error loading student record:", err)
-      } finally {
-        setLoadingRecord(false)
-      }
-    }
-    loadRecord()
-  }, [selectedStudentId, students])
+  const openEditModal = (rec: any) => {
+    setEditingRecord(rec)
+    setFormSurveyResult(rec.surveyResult || "")
+    setFormInitialOrientation(rec.initialOrientation || "")
+    setFormGvcnRemark(rec.gvcnRemark || "")
+    setFormGvbmRemark(rec.gvbmRemark || "")
+    setFormCounselingResult(rec.counselingResult || "")
+    setFormStatus(rec.status === "CHUA_TU_VAN" ? "DA_TU_VAN" : rec.status)
+    setFormNotes(rec.notes || "")
+    setIsModalOpen(true)
+    setMessage(null)
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedStudentId) return
-
+    if (!editingRecord) return
     try {
       setSaving(true)
       setMessage(null)
-      const res = await fetch("/api/teacher-student-records?action=saveOrientation", {
+      const res = await fetch("/api/ktdbcl/huong-nghiep", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          studentId: selectedStudentId,
-          result,
-          notes
+          studentId: editingRecord.studentId,
+          academicYearId: yearId,
+          surveyResult: formSurveyResult,
+          initialOrientation: formInitialOrientation,
+          gvcnRemark: formGvcnRemark,
+          gvbmRemark: formGvbmRemark,
+          counselingResult: formCounselingResult,
+          status: formStatus,
+          notes: formNotes
         })
       })
 
       if (res.ok) {
-        setMessage({ type: "success", text: "Đã lưu kết quả hướng nghiệp thành công!" })
+        setMessage({ type: "success", text: "Lưu sổ theo dõi hướng nghiệp thành công!" })
+        setIsModalOpen(false)
+        fetchRecords()
       } else {
         const errData = await res.json()
-        setMessage({ type: "error", text: errData.error || "Có lỗi xảy ra khi lưu kết quả." })
+        setMessage({ type: "error", text: errData.error || "Có lỗi xảy ra." })
       }
     } catch (err) {
-      console.error("Error saving orientation:", err)
-      setMessage({ type: "error", text: "Lỗi kết nối mạng, vui lòng thử lại." })
+      console.error("Error saving logbook record:", err)
+      setMessage({ type: "error", text: "Lỗi kết nối mạng." })
     } finally {
       setSaving(false)
     }
   }
 
-  if (loadingClasses) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-12 h-12 text-[#00A99D] animate-spin opacity-60" />
-        <p className="text-slate-400 font-bold tracking-wide uppercase text-xs">Đang tải danh sách lớp...</p>
-      </div>
-    )
+  const getStatusBadge = (st: string) => {
+    switch (st) {
+      case "HOAN_THANH":
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ Hoàn thành</span>
+      case "CAN_THEO_DOI":
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">⚠ Cần theo dõi</span>
+      case "DA_TU_VAN":
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-100 text-sky-800 border border-sky-300">💬 Đã tư vấn</span>
+      default:
+        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-300">○ Chưa tư vấn</span>
+    }
   }
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
-      {/* Header Bar */}
-      <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#00A99D] rounded-lg flex items-center justify-center flex-shrink-0">
-            <Compass className="w-4 h-4 text-white" />
+    <div className="space-y-6 max-w-7xl mx-auto pb-12 text-slate-800">
+      <div className="bg-gradient-to-r from-teal-700 via-sky-700 to-indigo-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
+            <Compass className="w-7 h-7 text-teal-200" />
           </div>
-          <div className="min-w-0">
-            <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Đánh giá nhận xét: Hướng nghiệp</h1>
-            <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Định hướng nghề nghiệp và theo dõi thế mạnh của học sinh</p>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight">Sổ Theo dõi Hướng nghiệp</h1>
+            <p className="text-teal-100 text-xs font-normal mt-1">
+              Nhật ký tư vấn hướng nghiệp học sinh dành cho Giáo viên Chủ nhiệm (GVCN) & Giáo viên Bộ môn (GVBM)
+            </p>
           </div>
+        </div>
+        <button
+          onClick={fetchRecords}
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition border border-white/20 backdrop-blur-md shrink-0"
+        >
+          <RefreshCcw className="w-4 h-4" /> Tải lại dữ liệu
+        </button>
+      </div>
+
+      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp được phân công:</label>
+          <select
+            value={selectedClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+            className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500"
+          >
+            <option value="">-- Tất cả các Lớp phân công --</option>
+            {classes.map(c => (
+              <option key={c.id} value={c.id}>{c.className}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="relative flex-1 max-w-xs">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Tìm tên hoặc mã học sinh..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left column: Selection */}
-        <div className="md:col-span-1 space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">1. Chọn lớp học</label>
-              <select
-                value={selectedClassId}
-                onChange={e => setSelectedClassId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#00A99D] transition-colors cursor-pointer"
-              >
-                {classes.length === 0 ? (
-                  <option value="">Không có lớp học nào</option>
-                ) : (
-                  classes.map(c => (
-                    <option key={c.id} value={c.id}>{c.className}</option>
-                  ))
-                )}
-              </select>
-            </div>
+      {message && (
+        <div className={`p-3.5 rounded-xl text-xs font-bold border ${
+          message.type === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-rose-50 text-rose-800 border-rose-200"
+        }`}>
+          {message.text}
+        </div>
+      )}
 
-            <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">2. Danh sách học sinh</label>
-              {loadingStudents ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 text-[#00A99D] animate-spin" />
-                </div>
-              ) : students.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">Không có học sinh nào</p>
-              ) : (
-                <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
-                  {students.map(s => (
-                    <button
-                      key={s.id}
-                      onClick={() => setSelectedStudentId(s.id)}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
-                        selectedStudentId === s.id
-                          ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30"
-                          : "text-slate-600 hover:bg-slate-50 border border-transparent"
-                      }`}
-                    >
-                      <span className="truncate">{s.studentName}</span>
-                      <span className="text-[9px] opacity-60 font-semibold">{s.studentCode}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+      {/* Logbook Table 11 Columns */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+          <h2 className="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-teal-600" />
+            Sổ Theo dõi Hướng nghiệp Lớp ({records.length} học sinh)
+          </h2>
+          <span className="text-xs text-slate-400 font-medium">Bổ sung cột Nhận xét GVCN, GVBM & Kết quả tư vấn</span>
         </div>
 
-        {/* Right column: Editor Form */}
-        <div className="md:col-span-2">
-          {selectedStudentId ? (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
-              {/* Student Header Info */}
-              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
-                  <User className="w-5 h-5" />
+        {loading ? (
+          <div className="p-12 text-center text-slate-500 text-xs font-medium">
+            Đang tải dữ liệu sổ theo dõi hướng nghiệp...
+          </div>
+        ) : records.length === 0 ? (
+          <div className="p-12 text-center text-slate-500 text-xs font-medium">
+            Chưa có học sinh nào trong lớp được phân công.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
+                  <th className="py-3.5 px-4 text-center w-12">STT</th>
+                  <th className="py-3.5 px-4 w-28">Mã HS</th>
+                  <th className="py-3.5 px-4 w-20">Lớp</th>
+                  <th className="py-3.5 px-4 min-w-[150px]">Họ tên Học sinh</th>
+                  <th className="py-3.5 px-4 min-w-[120px]">KQKS</th>
+                  <th className="py-3.5 px-4 min-w-[150px]">Định hướng ban đầu</th>
+                  <th className="py-3.5 px-4 min-w-[160px] bg-teal-50/40 text-teal-900">Cột Nhận xét GVCN</th>
+                  <th className="py-3.5 px-4 min-w-[160px] bg-sky-50/40 text-sky-900">Cột Nhận xét GVBM</th>
+                  <th className="py-3.5 px-4 min-w-[160px] bg-emerald-50/40 text-emerald-900">Cột Kết quả tư vấn</th>
+                  <th className="py-3.5 px-4 min-w-[140px]">Người tư vấn</th>
+                  <th className="py-3.5 px-4 text-center w-32">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {records.map((r, idx) => (
+                  <tr key={r.id} className="hover:bg-teal-50/30 transition">
+                    <td className="py-3 px-4 text-center font-bold text-slate-500">{idx + 1}</td>
+                    <td className="py-3 px-4 font-mono font-bold text-teal-700">{r.studentCode}</td>
+                    <td className="py-3 px-4 font-bold text-slate-700">{r.className}</td>
+                    <td className="py-3 px-4 font-extrabold text-slate-900">{r.studentName}</td>
+                    <td className="py-3 px-4">
+                      {r.surveyResult ? (
+                        <span className="px-2 py-1 bg-violet-50 text-violet-700 rounded-md font-semibold border border-violet-200 block text-center">
+                          {r.surveyResult}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">Chưa KS</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 text-slate-800 font-semibold">{r.initialOrientation || "Chưa có"}</td>
+                    <td className="py-3 px-4 bg-teal-50/20 text-slate-700">
+                      {r.gvcnRemark ? (
+                        <p className="line-clamp-2 text-xs font-medium">{r.gvcnRemark}</p>
+                      ) : (
+                        <span className="text-slate-400 italic text-[11px]">Chưa nhập nhận xét GVCN</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 bg-sky-50/20 text-slate-700">
+                      {r.gvbmRemark ? (
+                        <p className="line-clamp-2 text-xs font-medium">{r.gvbmRemark}</p>
+                      ) : (
+                        <span className="text-slate-400 italic text-[11px]">Chưa nhập nhận xét GVBM</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-4 bg-emerald-50/20 font-bold text-emerald-900">
+                      {r.counselingResult || <span className="text-slate-400 italic font-normal text-[11px]">Chưa có KQ tư vấn</span>}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600">
+                      <div className="font-semibold text-slate-800">{r.counselorName}</div>
+                      <div className="text-[10px] text-slate-400">{r.counselorRole}</div>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        onClick={() => openEditModal(r)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-bold transition shadow-xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" /> Ghi Sổ
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Modal Edit / Update Entry */}
+      {isModalOpen && editingRecord && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900">
+                  Nhập Sổ Theo Dõi Hướng Nghiệp
+                </h3>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  Học sinh: {editingRecord.studentName} - Mã HS: {editingRecord.studentCode} ({editingRecord.className})
+                </p>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">KQKS (Kết quả khảo sát)</label>
+                  <input
+                    type="text"
+                    placeholder="KQKS trắc nghiệm / năng lực..."
+                    value={formSurveyResult}
+                    onChange={(e) => setFormSurveyResult(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500"
+                  />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-sm text-slate-800">{selectedStudent?.studentName}</h3>
-                  <p className="text-[10px] text-slate-400 font-semibold">Mã HS: {selectedStudent?.studentCode} • Ngày sinh: {selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</p>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Định hướng ban đầu</label>
+                  <input
+                    type="text"
+                    placeholder="Định hướng ban đầu..."
+                    value={formInitialOrientation}
+                    onChange={(e) => setFormInitialOrientation(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500"
+                  />
                 </div>
               </div>
 
-              {loadingRecord ? (
-                <div className="flex flex-col items-center justify-center py-20 space-y-3">
-                  <Loader2 className="w-8 h-8 text-[#00A99D] animate-spin opacity-50" />
-                  <p className="text-slate-400 text-xs font-bold">Đang tải kết quả hướng nghiệp...</p>
-                </div>
-              ) : (
-                <form onSubmit={handleSave} className="space-y-4">
-                  {message && (
-                    <div className={`p-4 rounded-xl text-xs font-bold flex items-center gap-2 ${
-                      message.type === "success" ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"
-                    }`}>
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{message.text}</span>
-                    </div>
-                  )}
+              <div>
+                <label className="block text-xs font-bold text-teal-800 mb-1">Cột Nhận xét GVCN (Giáo viên chủ nhiệm)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Nhập nhận xét của GVCN..."
+                  value={formGvcnRemark}
+                  onChange={(e) => setFormGvcnRemark(e.target.value)}
+                  className="w-full px-3 py-2 bg-teal-50/30 border border-teal-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-teal-500 font-medium"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1.5">Kết quả định hướng nghề nghiệp (Ví dụ: Nhóm ngành Kỹ thuật / Kinh tế)</label>
-                    <input
-                      type="text"
-                      value={result}
-                      onChange={e => setResult(e.target.value)}
-                      required
-                      placeholder="Nhập nhóm ngành, khối ngành định hướng..."
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-[#00A99D] transition-all"
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-sky-800 mb-1">Cột Nhận xét GVBM (Giáo viên bộ môn)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Nhập nhận xét của GVBM..."
+                  value={formGvbmRemark}
+                  onChange={(e) => setFormGvbmRemark(e.target.value)}
+                  className="w-full px-3 py-2 bg-sky-50/30 border border-sky-200 rounded-xl text-xs outline-none focus:ring-2 focus:ring-sky-500 font-medium"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-xs font-black text-slate-700 mb-1.5">Nhận xét chi tiết & Lộ trình phát triển</label>
-                    <textarea
-                      rows={6}
-                      value={notes}
-                      onChange={e => setNotes(e.target.value)}
-                      placeholder="Nhập thế mạnh nổi trội, điểm cần bồi dưỡng, lộ trình môn học phù hợp cho năng lực của học sinh..."
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-[#00A99D] transition-all resize-none"
-                    />
-                  </div>
+              <div>
+                <label className="block text-xs font-bold text-emerald-800 mb-1">Cột Kết quả tư vấn (Chính thức)</label>
+                <input
+                  type="text"
+                  placeholder="Kết quả tư vấn chính thức cho học sinh..."
+                  value={formCounselingResult}
+                  onChange={(e) => setFormCounselingResult(e.target.value)}
+                  className="w-full px-3 py-2 bg-emerald-50/50 border border-emerald-200 rounded-xl text-xs font-bold text-emerald-900 outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
 
-                  <div className="flex justify-end pt-2">
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50"
-                    >
-                      {saving ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Save className="w-4 h-4" />
-                      )}
-                      Lưu thông tin
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
-              <Compass className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-base font-bold text-slate-800">Chọn học sinh</h3>
-              <p className="text-slate-400 text-xs mt-1">Chọn học sinh ở cột bên trái để bắt đầu nhập đánh giá hướng nghiệp.</p>
-            </div>
-          )}
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-5 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  <Save className="w-4 h-4" /> {saving ? "Đang lưu..." : "Lưu Sổ Theo Dõi"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
+      )}
     </div>
-  )
+)
 }
