@@ -15,11 +15,12 @@ export default async function CareerGuidanceAdminPage() {
   if (!session) redirect("/login")
 
   const userRole = (session.user as any)?.role || ""
-  const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL"].includes(userRole)
+  const isKTDBCL = ["ADMIN", "KT_DBCL", "KTDBCL", "ADMINISTRATOR"].includes(userRole)
 
   const academicYears = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" }
   })
+  const activeYear = academicYears.find(y => y.status === "ACTIVE") || academicYears[0]
 
   const campuses = await prisma.campus.findMany({
     where: { status: "ACTIVE" },
@@ -27,7 +28,10 @@ export default async function CareerGuidanceAdminPage() {
   })
 
   const classes = await prisma.class.findMany({
-    where: { status: "ACTIVE" },
+    where: {
+      status: "ACTIVE",
+      ...(activeYear ? { academicYearId: activeYear.id } : {})
+    },
     orderBy: { className: "asc" }
   })
 

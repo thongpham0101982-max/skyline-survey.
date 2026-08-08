@@ -22,6 +22,8 @@ interface Props {
   initialSubjects: any[]
   teacherName: string
   teacherId: string
+  isHomeroomTeacher?: boolean
+  isHuongNghiepTeacher?: boolean
 }
 
 export function OrientationTeacherClient({
@@ -30,7 +32,9 @@ export function OrientationTeacherClient({
   initialClasses,
   initialSubjects,
   teacherName,
-  teacherId
+  teacherId,
+  isHomeroomTeacher = false,
+  isHuongNghiepTeacher = false
 }: Props) {
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
   const [classes, setClasses] = useState<any[]>(initialClasses)
@@ -282,6 +286,22 @@ export function OrientationTeacherClient({
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto pb-12 text-slate-800">
+      {/* Assignment Notice for non-GVCN and non-GVBM HNG */}
+      {classes.length === 0 && (
+        <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 text-amber-900 shadow-sm flex items-start gap-3">
+          <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <h4 className="font-extrabold text-sm text-amber-950">Chưa có Phân công Môn Hướng nghiệp hoặc Lớp Chủ nhiệm</h4>
+            <p className="text-xs text-amber-800 leading-relaxed font-medium">
+              Thầy/Cô <strong className="text-amber-950">{teacherName}</strong> chưa được phân công làm Giáo viên Chủ nhiệm (GVCN) hoặc chưa có Phân công giảng dạy môn Hướng nghiệp (HNG) trong <strong className="text-amber-950">Năm học đang hoạt động</strong> này.
+            </p>
+            <p className="text-[11px] text-amber-700 italic">
+              * Sổ theo dõi Hướng nghiệp chỉ tự động xuất hiện đối với GVCN và GVBM được phân công giảng dạy môn Hướng nghiệp theo quy định.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Banner */}
       <div className="bg-gradient-to-r from-teal-700 via-sky-700 to-indigo-800 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
