@@ -107,7 +107,7 @@ export function OrientationTeacherClient({
     if (!selectedYearId) return
     async function loadYearData() {
       try {
-        const res = await fetch("/api/ktdbcl/huong-nghiep?action=getAssignedClasses&academicYearId=" + selectedYearId)
+        const res = await fetch("/api/ktdbcl/huong-nghiep?action=getAssignedClasses&academicYearId=" + selectedYearId + "&_t=" + Date.now())
         if (res.ok) {
           const data = await res.json()
           setClasses(data)
@@ -134,6 +134,7 @@ export function OrientationTeacherClient({
       if (selectedStatusFilter !== "ALL") params.append("status", selectedStatusFilter)
       if (searchQuery) params.append("search", searchQuery)
 
+      params.append("_t", Date.now().toString())
       const res = await fetch("/api/ktdbcl/huong-nghiep?" + params.toString())
       if (res.ok) {
         const data = await res.json()
