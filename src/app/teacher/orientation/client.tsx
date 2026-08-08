@@ -267,13 +267,12 @@ export function OrientationTeacherClient({
     const exportData = records.map((r, idx) => ({
       "STT": idx + 1,
       "Mã HS": r.studentCode,
-      "Lớp": r.className,
       "Họ tên Học sinh": r.studentName,
       "KQKS (Khảo sát)": r.surveyResult || "",
       "Kết quả định hướng ban đầu": r.initialOrientation || "",
-      "Nhận xét GVCN": r.gvcnRemark || "",
-      "Nhận xét GVBM (HNG)": r.gvbmRemark || "",
-      "Kết quả tư vấn": r.counselingResult || "",
+      "NX GVCN": r.gvcnRemark || "",
+      "NX GVBM(HNG)": r.gvbmRemark || "",
+      "KQ Tư vấn": r.counselingResult || "",
       "Trạng thái": r.status === "DA_TU_VAN" ? "Đã tư vấn" : "Chưa tư vấn",
       "Ghi chú": r.notes || ""
     }))
@@ -447,13 +446,12 @@ export function OrientationTeacherClient({
                 <tr className="bg-slate-100/90 border-b border-slate-200 text-slate-700 font-black uppercase tracking-tight text-[10px] leading-tight select-none">
                   <th className="py-2.5 px-2 text-center w-9 border-r border-slate-200/60">STT</th>
                   <th className="py-2.5 px-2.5 w-24 border-r border-slate-200/60">Mã HS</th>
-                  <th className="py-2.5 px-2.5 w-20 border-r border-slate-200/60">Lớp</th>
                   <th className="py-2.5 px-2.5 min-w-[140px] border-r border-slate-200/60">Họ tên Học sinh</th>
                   <th className="py-2.5 px-2.5 min-w-[110px] border-r border-slate-200/60">KQKS</th>
                   <th className="py-2.5 px-2.5 min-w-[130px] border-r border-slate-200/60">Định hướng ban đầu</th>
-                  <th className="py-2.5 px-2.5 min-w-[160px] bg-teal-100/60 text-teal-950 border-r border-teal-200/80">Cột Nhận xét GVCN</th>
-                  <th className="py-2.5 px-2.5 min-w-[160px] bg-sky-100/60 text-sky-950 border-r border-sky-200/80">Cột Nhận xét GVBM (HNG)</th>
-                  <th className="py-2.5 px-2.5 min-w-[160px] bg-emerald-100/60 text-emerald-950 border-r border-emerald-200/80">Cột Kết quả tư vấn</th>
+                  <th className="py-2.5 px-2.5 min-w-[160px] bg-teal-100/60 text-teal-950 border-r border-teal-200/80">NX GVCN</th>
+                  <th className="py-2.5 px-2.5 min-w-[160px] bg-sky-100/60 text-sky-950 border-r border-sky-200/80">NX GVBM(HNG)</th>
+                  <th className="py-2.5 px-2.5 min-w-[160px] bg-emerald-100/60 text-emerald-950 border-r border-emerald-200/80">KQ Tư vấn</th>
                                     <th className="py-2.5 px-2 text-center w-24">Thao tác</th>
                 </tr>
               </thead>
@@ -462,7 +460,6 @@ export function OrientationTeacherClient({
                   <tr key={r.id} className={`hover:bg-teal-50/30 transition ${r.isDirty ? "bg-amber-50/40" : ""}`}>
                     <td className="py-3 px-3 text-center font-bold text-slate-500">{idx + 1}</td>
                     <td className="py-3 px-3 font-mono font-bold text-teal-700">{r.studentCode}</td>
-                    <td className="py-3 px-3 font-bold text-slate-700">{r.className}</td>
                     <td className="py-3 px-3 font-extrabold text-slate-900">{r.studentName}</td>
 
                     {/* KQKS */}

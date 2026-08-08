@@ -178,14 +178,13 @@ export function CareerGuidanceClient({
 
   const exportExcel = () => {
     const headers = [
-      "STT", "Mã HS", "Lớp", "Họ tên Học sinh", "KQKS", 
-      "Kết quả định hướng ban đầu", "Nhận xét GVCN", "Nhận xét GVBM", 
-      "Kết quả tư vấn", "Người tư vấn", "Trạng thái", "Ghi chú"
+      "STT", "Mã HS", "Họ tên Học sinh", "KQKS", 
+      "Kết quả định hướng ban đầu", "NX GVCN", "NX GVBM(HNG)", 
+      "KQ Tư vấn", "Người tư vấn", "Trạng thái", "Ghi chú"
     ]
     const rows = records.map((r, idx) => [
       idx + 1,
       r.studentCode,
-      r.className,
       r.studentName,
       r.surveyResult || "",
       r.initialOrientation || "",
@@ -377,13 +376,12 @@ export function CareerGuidanceClient({
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
                   <th className="py-3.5 px-4 text-center w-12">STT</th>
                   <th className="py-3.5 px-4 w-28">Mã HS</th>
-                  <th className="py-3.5 px-4 w-20">Lớp</th>
                   <th className="py-3.5 px-4 min-w-[150px]">Họ tên Học sinh</th>
                   <th className="py-3.5 px-4 min-w-[120px]">KQKS</th>
                   <th className="py-3.5 px-4 min-w-[160px]">Kết quả định hướng ban đầu</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Nhận xét GVCN</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Nhận xét GVBM</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Kết quả tư vấn</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">NX GVCN</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">NX GVBM(HNG)</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">KQ Tư vấn</th>
                   <th className="py-3.5 px-4 min-w-[140px]">Người & Ngày tư vấn</th>
                   <th className="py-3.5 px-4 text-center w-32">Trạng thái & Thao tác</th>
                 </tr>
@@ -393,7 +391,6 @@ export function CareerGuidanceClient({
                   <tr key={r.id} className="hover:bg-sky-50/40 transition">
                     <td className="py-3 px-4 text-center font-bold text-slate-500">{idx + 1}</td>
                     <td className="py-3 px-4 font-mono font-bold text-sky-700">{r.studentCode}</td>
-                    <td className="py-3 px-4 font-bold text-slate-700">{r.className}</td>
                     <td className="py-3 px-4">
                       <div className="font-extrabold text-slate-900">{r.studentName}</div>
                       <div className="text-[10px] text-slate-400 font-normal">{r.campusName}</div>
