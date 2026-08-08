@@ -41,14 +41,15 @@ async function getTeacherClasses(userId: string, academicYearId?: string) {
 export default async function TeacherClassesPage() {
   const session = await auth()
   const userId = (session?.user as any)?.id || ''
+
+  const cookieStore = await cookies()
+  const activeYearCookie = cookieStore.get("selectedAcademicYear")?.value
+
   const classes = await getTeacherClasses(userId, activeYearCookie)
   
   const academicYears = await prisma.academicYear.findMany({
     orderBy: { startDate: "desc" }
   })
-
-  const cookieStore = await cookies()
-  const activeYearCookie = cookieStore.get("selectedAcademicYear")?.value
 
   const safeJson = (d: any) => JSON.parse(JSON.stringify(d))
 
