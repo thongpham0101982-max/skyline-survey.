@@ -23,6 +23,7 @@ export async function GET(req: Request) {
         where: {
           OR: [
             { id: rawAcademicYearId },
+            { name: rawAcademicYearId },
             { yearName: rawAcademicYearId },
             { yearCode: rawAcademicYearId }
           ]

@@ -104,7 +104,6 @@ export function OrientationTeacherClient({
 
   // Reload assignments & classes if academicYearId changes
   useEffect(() => {
-    if (!selectedYearId) return
     async function loadYearData() {
       try {
         const res = await fetch("/api/ktdbcl/huong-nghiep?action=getAssignedClasses&academicYearId=" + selectedYearId + "&_t=" + Date.now())
@@ -123,7 +122,6 @@ export function OrientationTeacherClient({
   }, [selectedYearId])
 
   const fetchRecords = async () => {
-    if (!selectedYearId) return
     try {
       setLoading(true)
       const params = new URLSearchParams({
@@ -339,7 +337,7 @@ export function OrientationTeacherClient({
                 className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:ring-2 focus:ring-teal-500"
               >
                 {academicYears.map(y => (
-                  <option key={y.id} value={y.id}>{y.yearName || y.yearCode}</option>
+                  <option key={y.id} value={y.id}>{y.name || y.yearName || y.yearCode || y.id}</option>
                 ))}
               </select>
             </div>
