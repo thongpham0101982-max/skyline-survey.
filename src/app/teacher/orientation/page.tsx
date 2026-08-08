@@ -52,6 +52,7 @@ export default function TeacherOrientationPage() {
         if (res.ok) {
           const data = await res.json()
           setClasses(data)
+          if (data.length > 0 && !selectedClassId) { setSelectedClassId(data[0].id) }
         }
       } catch (err) {
         console.error("Error loading assigned classes:", err)

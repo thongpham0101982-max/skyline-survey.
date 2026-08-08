@@ -10,15 +10,11 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url)
   const action = searchParams.get("action") || "getRecords"
-  const academicYearId = searchParams.get("academicYearId")
+  const academicYearId = searchParams.get("academicYearId") || ""
   const classId = searchParams.get("classId")
   const campusId = searchParams.get("campusId")
   const status = searchParams.get("status")
   const search = searchParams.get("search")
-
-  if (!academicYearId) {
-    return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 })
-  }
 
   try {
     const userRole = (session.user as any)?.role || ""
@@ -30,19 +26,24 @@ export async function GET(req: Request) {
 
     let allowedClassIds: string[] = []
     if (teacher) {
+      const whereAssign: any = { teacherId: teacher.id }
+      if (academicYearId) whereAssign.academicYearId = academicYearId
+
+      const whereClass: any = {
+        OR: [
+          { homeroomTeacherId: teacher.id },
+          { homeroomTeacherId: { contains: teacher.id } }
+        ]
+      }
+      if (academicYearId) whereClass.academicYearId = academicYearId
+
       const [assignments, homeroomClasses] = await Promise.all([
         prisma.teachingAssignment.findMany({
-          where: { teacherId: teacher.id, academicYearId },
+          where: whereAssign,
           select: { classId: true }
         }),
         prisma.class.findMany({
-          where: {
-            academicYearId,
-            OR: [
-              { homeroomTeacherId: teacher.id },
-              { homeroomTeacherId: { contains: teacher.id } }
-            ]
-          },
+          where: whereClass,
           select: { id: true }
         })
       ])
@@ -53,29 +54,63 @@ export async function GET(req: Request) {
     }
 
     if (action === "getAssignedClasses") {
-      const classesWhere: any = { academicYearId, status: "ACTIVE" }
+      let classesWhere: any = { status: "ACTIVE" }
       if (teacher) {
-        classesWhere.id = { in: allowedClassIds }
+        if (allowedClassIds.length > 0) {
+          classesWhere.id = { in: allowedClassIds }
+        } else {
+          classesWhere.OR = [
+            { homeroomTeacherId: teacher.id },
+            { homeroomTeacherId: { contains: teacher.id } }
+          ]
+        }
       } else if (campusId) {
         classesWhere.campusId = campusId
       }
-      const classes = await prisma.class.findMany({
+      if (academicYearId) {
+        classesWhere.academicYearId = academicYearId
+      }
+      let classes = await prisma.class.findMany({
         where: classesWhere,
         orderBy: { className: "asc" }
       })
+      if (classes.length === 0 && teacher) {
+        classes = await prisma.class.findMany({
+          where: {
+            OR: [
+              { homeroomTeacherId: teacher.id },
+              { homeroomTeacherId: { contains: teacher.id } }
+            ]
+          },
+          orderBy: { className: "asc" }
+        })
+      }
       return NextResponse.json(classes)
     }
 
     if (action === "getRecords" || action === "getLogbook") {
-      const studentWhere: any = { academicYearId }
+      const studentWhere: any = {}
 
       if (classId) {
         studentWhere.classId = classId
-      } else if (teacher && allowedClassIds.length > 0) {
-        studentWhere.classId = { in: allowedClassIds }
-      }
-
-      if (campusId) {
+      } else if (teacher) {
+        if (allowedClassIds.length > 0) {
+          studentWhere.classId = { in: allowedClassIds }
+        } else {
+          const fallbackClasses = await prisma.class.findMany({
+            where: {
+              OR: [
+                { homeroomTeacherId: teacher.id },
+                { homeroomTeacherId: { contains: teacher.id } }
+              ]
+            },
+            select: { id: true }
+          })
+          if (fallbackClasses.length > 0) {
+            studentWhere.classId = { in: fallbackClasses.map(c => c.id) }
+          }
+        }
+      } else if (campusId) {
         studentWhere.campusId = campusId
       }
 
@@ -95,9 +130,7 @@ export async function GET(req: Request) {
           campus: {
             select: { id: true, campusName: true }
           },
-          careerOrientations: {
-            where: { academicYearId }
-          }
+          careerOrientations: academicYearId ? { where: { academicYearId } } : true
         },
         orderBy: [
           { class: { className: "asc" } },
@@ -128,7 +161,7 @@ export async function GET(req: Request) {
           classId: s.classId,
           className: s.class?.className || "N/A",
           campusName: s.campus?.campusName || "N/A",
-          academicYearId,
+          academicYearId: orientation?.academicYearId || academicYearId,
 
           counselorId: orientation?.teacherId || teacher?.id || null,
           counselorName: orientation?.teacherName || defaultCounselor,
@@ -182,12 +215,17 @@ export async function POST(req: Request) {
       notes
     } = body
 
-    if (!studentId || !academicYearId) {
-      return NextResponse.json({ error: "Missing studentId or academicYearId" }, { status: 400 })
+    if (!studentId) {
+      return NextResponse.json({ error: "Missing studentId" }, { status: 400 })
+    }
+
+    const student = await prisma.student.findUnique({ where: { id: studentId } })
+    const targetYearId = academicYearId || student?.academicYearId
+    if (!targetYearId) {
+      return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 })
     }
 
     const currentTeacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
-
     const finalCounselorName = counselorName || currentTeacher?.teacherName || session.user.name || "GV Tư vấn"
     const finalCounselorRole = counselorRole || (currentTeacher ? "GVCN" : "KTDBCL")
 
@@ -195,12 +233,12 @@ export async function POST(req: Request) {
       where: {
         studentId_academicYearId: {
           studentId,
-          academicYearId
+          academicYearId: targetYearId
         }
       },
       create: {
         studentId,
-        academicYearId,
+        academicYearId: targetYearId,
         teacherId: counselorId || currentTeacher?.id || null,
         teacherName: finalCounselorName,
         counselorRole: finalCounselorRole,
