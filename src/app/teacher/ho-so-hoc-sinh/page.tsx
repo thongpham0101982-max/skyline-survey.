@@ -67,7 +67,19 @@ export default function TeacherStudentProfilePage() {
     highlightComments: any[]
     entranceSurvey: any
     transfers: any[]
+    learningSupportTargets?: any[]
   } | null>(null)
+
+  const safeFormatDate = (dateVal: any, locale = "vi-VN", fallback = "N/A") => {
+    if (!dateVal) return fallback
+    try {
+      const d = new Date(dateVal)
+      if (isNaN(d.getTime())) return fallback
+      return d.toLocaleDateString(locale)
+    } catch {
+      return fallback
+    }
+  }
 
   useEffect(() => {
     if (!yearId) return
@@ -77,8 +89,8 @@ export default function TeacherStudentProfilePage() {
         const res = await fetch(`/api/teacher-student-records?action=getHomeroomStudents&academicYearId=${yearId}&_t=${Date.now()}`)
         if (res.ok) {
           const data = await res.json()
-          setStudents(data)
-          if (data.length > 0) {
+          setStudents(Array.isArray(data) ? data : [])
+          if (Array.isArray(data) && data.length > 0) {
             const hasCurrentStudent = data.some(s => s.id === selectedStudentId)
             if (!hasCurrentStudent) {
               setSelectedStudentId(data[0].id)
@@ -259,18 +271,57 @@ export default function TeacherStudentProfilePage() {
     setAvatarUrl(`/uploads/students/${selectedStudentId}.jpg?t=${Date.now()}`)
 
     async function loadProfile() {
+      const activeStudent = students.find(s => s.id === selectedStudentId)
+      setSelectedStudent(activeStudent)
       try {
         setLoadingProfile(true)
-        const activeStudent = students.find(s => s.id === selectedStudentId)
-        setSelectedStudent(activeStudent)
-
         const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
         if (res.ok) {
           const data = await res.json()
-          setProfileData(data)
+          if (data && !data.error) {
+            setProfileData(data)
+          } else {
+            setProfileData({
+              student: activeStudent || null,
+              achievements: [],
+              orientation: null,
+              projects: [],
+              experientialActivities: [],
+              commitment: null,
+              highlightComments: [],
+              entranceSurvey: null,
+              transfers: [],
+              learningSupportTargets: []
+            })
+          }
+        } else {
+          setProfileData({
+            student: activeStudent || null,
+            achievements: [],
+            orientation: null,
+            projects: [],
+            experientialActivities: [],
+            commitment: null,
+            highlightComments: [],
+            entranceSurvey: null,
+            transfers: [],
+            learningSupportTargets: []
+          })
         }
       } catch (err) {
         console.error("Error loading student profile:", err)
+        setProfileData({
+          student: activeStudent || null,
+          achievements: [],
+          orientation: null,
+          projects: [],
+          experientialActivities: [],
+          commitment: null,
+          highlightComments: [],
+          entranceSurvey: null,
+          transfers: [],
+          learningSupportTargets: []
+        })
       } finally {
         setLoadingProfile(false)
       }
@@ -280,8 +331,8 @@ export default function TeacherStudentProfilePage() {
 
   // Filter students based on search query
   const filteredStudents = students.filter(s => 
-    ((s.studentName || "").toLowerCase().includes(searchQuery.toLowerCase())) ||
-    ((s.studentCode || "").toLowerCase().includes(searchQuery.toLowerCase()))
+    ((s?.studentName || "").toLowerCase().includes(searchQuery.toLowerCase())) ||
+    ((s?.studentCode || "").toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   if (isNotGVCN) {
@@ -307,7 +358,7 @@ export default function TeacherStudentProfilePage() {
     )
   }
 
-    const tabs = [
+  const tabs = [
     { id: "cv", label: "Xem chi tiết HSHS", icon: User },
     { id: "academic", label: "Kết quả Học tập (MOET)", icon: FileText },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
@@ -511,7 +562,7 @@ export default function TeacherStudentProfilePage() {
                   <h3 className="font-black text-lg text-slate-805 tracking-tight leading-tight">{selectedStudent?.studentName}</h3>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400 text-xs font-bold">
                     <span>Mã HS: <span className="text-slate-700 font-extrabold">{selectedStudent?.studentCode}</span></span>
-                    <span>Ngày sinh: <span className="text-slate-700 font-extrabold">{selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span></span>
+                    <span>Ngày sinh: <span className="text-slate-700 font-extrabold">{selectedStudent?.dateOfBirth ? safeFormatDate(selectedStudent.dateOfBirth) : 'N/A'}</span></span>
                     <span>Giới tính: <span className="text-slate-700 font-extrabold">{selectedStudent?.gender || 'N/A'}</span></span>
                   </div>
                 </div>
@@ -628,7 +679,7 @@ export default function TeacherStudentProfilePage() {
                                 </div>
                                 <div className="flex justify-between items-center">
                                   <span>Ngày sinh:</span>
-                                  <span className="font-extrabold text-slate-800">{selectedStudent?.dateOfBirth ? new Date(selectedStudent.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span>
+                                  <span className="font-extrabold text-slate-800">{selectedStudent?.dateOfBirth ? safeFormatDate(selectedStudent.dateOfBirth) : 'N/A'}</span>
                                 </div>
                                 <div className="flex justify-between items-center">
                                   <span>Giới tính:</span>
@@ -642,11 +693,11 @@ export default function TeacherStudentProfilePage() {
                                   <Award className="w-4 h-4 text-[#00A99D]" />
                                   Thành tích nổi bật
                                 </h4>
-                                {profileData.achievements?.length === 0 ? (
+                                {!profileData?.achievements || profileData.achievements.length === 0 ? (
                                   <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Chưa ghi nhận thành tích.</p>
                                 ) : (
                                   <div className="space-y-2">
-                                    {profileData.achievements?.slice(0, 3).map((a: any) => (
+                                    {profileData.achievements.slice(0, 3).map((a: any) => (
                                       <div key={a.id} className="flex gap-2.5 items-start text-xs bg-amber-500/[0.04] border border-amber-500/10 p-2.5 rounded-xl transition-all hover:bg-amber-500/[0.08]">
                                         <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
                                           <Award className="w-4 h-4 text-amber-500" />
@@ -667,7 +718,7 @@ export default function TeacherStudentProfilePage() {
                                   <Compass className="w-4 h-4 text-[#00A99D]" />
                                   Định hướng ngành nghề
                                 </h4>
-                                {profileData.orientation ? (
+                                {profileData?.orientation ? (
                                   <div className="bg-[#00A99D]/[0.03] border border-[#00A99D]/10 p-3.5 rounded-xl space-y-1.5">
                                     <div className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Nhóm ngành quan tâm</div>
                                     <div className="text-xs font-black text-slate-800 flex items-center gap-1.5">
@@ -689,7 +740,7 @@ export default function TeacherStudentProfilePage() {
                                   <ClipboardCheck className="w-4 h-4 text-[#00A99D]" />
                                   Hồ sơ học thuật đầu vào (Intake Evaluation)
                                 </h4>
-                                {profileData.entranceSurvey ? (
+                                {profileData?.entranceSurvey ? (
                                   <div className="space-y-3">
                                     {profileData.entranceSurvey.type === "PRESCHOOL" ? (
                                       <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-2.5">
@@ -705,12 +756,12 @@ export default function TeacherStudentProfilePage() {
                                       </div>
                                     ) : (() => {
                                       const survey = profileData.entranceSurvey
-                                      let mathVal = survey.mathScore
-                                      let litVal = survey.literatureScore
-                                      let writtenVal = survey.writtenEnglishScore
-                                      let oralVal = survey.oralEnglishScore
-                                      let psychVal = survey.psychologyScore
-                                      ;(survey.scores || []).forEach((sc: any) => {
+                                      let mathVal = survey?.mathScore
+                                      let litVal = survey?.literatureScore
+                                      let writtenVal = survey?.writtenEnglishScore
+                                      let oralVal = survey?.oralEnglishScore
+                                      let psychVal = survey?.psychologyScore
+                                      ;(survey?.scores || []).forEach((sc: any) => {
                                         const sName = (sc.subjectName || "").toLowerCase().normalize("NFC")
                                         const scoresArr = Array.isArray(sc.scores) ? sc.scores : []
                                         const scoreVal = scoresArr.find((x: any) => x !== undefined && x !== null && x !== "")
@@ -729,7 +780,7 @@ export default function TeacherStudentProfilePage() {
                                         }
                                       })
                                       
-                                      const isGrade1 = (() => { const m = String(survey.className || survey.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
+                                      const isGrade1 = (() => { const m = String(survey?.className || survey?.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
 
                                       return (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -768,11 +819,11 @@ export default function TeacherStudentProfilePage() {
                                   <BookOpen className="w-4 h-4 text-[#00A99D]" />
                                   Hoạt động trải nghiệm
                                 </h4>
-                                {(!profileData.experientialActivities || profileData.experientialActivities.length === 0) && (!profileData.projects || profileData.projects.length === 0) ? (
+                                {(!profileData?.experientialActivities || profileData.experientialActivities.length === 0) && (!profileData?.projects || profileData.projects.length === 0) ? (
                                   <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Học sinh chưa tham gia hoạt động trải nghiệm nào.</p>
                                 ) : (
                                   <div className="space-y-3">
-                                    {(profileData.experientialActivities || []).slice(0, 3).map((act: any) => (
+                                    {(profileData?.experientialActivities || []).slice(0, 3).map((act: any) => (
                                       <div key={act.id} className="bg-slate-50/40 border border-slate-100 p-3.5 rounded-2xl text-xs space-y-1.5 transition-all hover:bg-slate-50">
                                         <div className="flex justify-between items-start">
                                           <div>
@@ -790,7 +841,7 @@ export default function TeacherStudentProfilePage() {
                                         </div>
                                       </div>
                                     ))}
-                                    {(profileData.projects || []).slice(0, 3).map((p: any) => (
+                                    {(profileData?.projects || []).slice(0, 3).map((p: any) => (
                                       <div key={p.id} className="bg-slate-50/40 border border-slate-100 p-3.5 rounded-2xl text-xs space-y-1.5 transition-all hover:bg-slate-50">
                                         <div className="flex justify-between items-start">
                                           <div>
@@ -819,7 +870,7 @@ export default function TeacherStudentProfilePage() {
                                   <GraduationCap className="w-4 h-4 text-[#00A99D]" />
                                   Kế hoạch hỗ trợ học tập & Phát triển
                                 </h4>
-                                {!(profileData as any).learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
+                                {!(profileData as any)?.learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
                                   <p className="text-[10px] text-slate-400 italic font-semibold pl-1">Không thuộc đối tượng nhận hỗ trợ trong năm học này.</p>
                                 ) : (
                                   <div className="space-y-2.5">
@@ -856,7 +907,7 @@ export default function TeacherStudentProfilePage() {
                                   Nhận xét định kỳ từ Giáo viên Chủ nhiệm
                                 </h4>
                                 {(() => {
-                                  const primaryComment = profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT")?.[0]
+                                  const primaryComment = profileData?.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT")?.[0]
                                   if (primaryComment) {
                                     return (
                                       <div className="bg-[#00A99D]/[0.03] border-l-4 border-[#00A99D] p-4 rounded-r-2xl space-y-3 relative overflow-hidden">
@@ -864,7 +915,7 @@ export default function TeacherStudentProfilePage() {
                                           "{primaryComment.comment}"
                                         </p>
                                         <div className="text-right text-[9px] text-[#00A99D] font-black uppercase tracking-wider">
-                                          — {primaryComment.teacherName} (GVCN) • {new Date(primaryComment.updatedAt).toLocaleDateString('vi-VN')}
+                                          — {primaryComment.teacherName} (GVCN) • {safeFormatDate(primaryComment.updatedAt)}
                                         </div>
                                       </div>
                                     )
@@ -875,14 +926,11 @@ export default function TeacherStudentProfilePage() {
                             </div>
 
                           </div>
-                          
-
-
                         </div>
                       </div>
                     )}
 
-                                                                                {activeTab === "academic" && (() => {
+                    {activeTab === "academic" && (() => {
                       const rawScores = selectedStudent?.termScores || selectedStudent?.student?.termScores || profileData?.student?.termScores || []
                       const rawSummaries = selectedStudent?.termSummaries || selectedStudent?.student?.termSummaries || profileData?.student?.termSummaries || []
                       
@@ -896,7 +944,7 @@ export default function TeacherStudentProfilePage() {
                                         ["1", "2", "3", "4", "5"].includes(classGradeStr) ||
                                         ["1", "2", "3", "4", "5"].some(g => classCodeStr.startsWith(g + "."))
 
-                      const isCheckSymbol = (v) => {
+                      const isCheckSymbol = (v: any) => {
                         if (!v || v === "—") return false
                         const s = String(v).trim()
                         if (["✓", "", "v", "V", "x", "X", "1", "true", "True"].includes(s)) return true
@@ -908,7 +956,7 @@ export default function TeacherStudentProfilePage() {
                       let primaryKqgdHK2 = ""
                       let primaryKqgdCN = ""
 
-                      const isKqgdSubject = (code, name) => {
+                      const isKqgdSubject = (code: any, name: any) => {
                         const c = String(code || "").toUpperCase()
                         const n = String(name || "").trim().toLowerCase()
                         return c === "HOAN_THANH_XUAT_SAC" || c === "HOAN_THANH_TOT" || c === "HOAN_THANH" || c === "CHUA_HOAN_THANH" ||
@@ -917,7 +965,7 @@ export default function TeacherStudentProfilePage() {
                       }
 
                       const subjectMap = new Map()
-                      rawScores.forEach((ts) => {
+                      rawScores.forEach((ts: any) => {
                         const subName = ts.subject?.subjectName || "Môn học"
                         const subCode = ts.subject?.subjectCode || ""
                         const displayVal = ts.score !== null && ts.score !== undefined ? ts.score : (ts.evaluationGrade || "—")
@@ -958,11 +1006,11 @@ export default function TeacherStudentProfilePage() {
                       })
 
                       const subjectRows = Array.from(subjectMap.values())
-                        .filter((row) => !isKqgdSubject(row.code, row.name))
-                        .sort((a, b) => a.name.localeCompare(b.name, "vi"))
+                        .filter((row: any) => !isKqgdSubject(row.code, row.name))
+                        .sort((a: any, b: any) => a.name.localeCompare(b.name, "vi"))
 
-                      const summariesMap = {}
-                      rawSummaries.forEach((s) => {
+                      const summariesMap: Record<string, any> = {}
+                      rawSummaries.forEach((s: any) => {
                         if (s.semester) summariesMap[s.semester] = s
                       })
 
@@ -976,7 +1024,7 @@ export default function TeacherStudentProfilePage() {
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
-                      const formatScoreBadge = (val) => {
+                      const formatScoreBadge = (val: any) => {
                         if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
                         const str = String(val).trim()
                         if (isCheckSymbol(str)) {
@@ -1167,7 +1215,7 @@ export default function TeacherStudentProfilePage() {
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                                      {subjectRows.map((row, idx) => (
+                                      {subjectRows.map((row: any, idx: number) => (
                                         <tr key={row.id} className="hover:bg-slate-50/80 transition-all">
                                           <td className="py-3 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
                                           <td className="py-3 px-4 font-bold text-slate-800">{row.name}</td>
@@ -1190,14 +1238,14 @@ export default function TeacherStudentProfilePage() {
                       <div className="space-y-6">
                         <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
                           <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Kết quả khảo sát đầu vào</h4>
-                          {profileData.entranceSurvey?.type && (
+                          {profileData?.entranceSurvey?.type && (
                             <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                               Hệ {profileData.entranceSurvey.type}
                             </span>
                           )}
                         </div>
 
-                        {profileData.entranceSurvey ? (
+                        {profileData?.entranceSurvey ? (
                           <div className="space-y-6">
                             {/* Entrance sub-tabs navigation */}
                             <div className="flex gap-4 border-b border-slate-200 overflow-x-auto custom-scrollbar no-print">
@@ -1281,14 +1329,14 @@ export default function TeacherStudentProfilePage() {
                                   </div>
                                 ) : (() => {
                                   const survey = profileData.entranceSurvey
-                                  let mathVal: any = survey.mathScore
-                                  let litVal: any = survey.literatureScore
-                                  let writtenVal: any = survey.writtenEnglishScore
-                                  let oralVal: any = survey.oralEnglishScore
-                                  let psychVal: any = survey.psychologyScore
+                                  let mathVal: any = survey?.mathScore
+                                  let litVal: any = survey?.literatureScore
+                                  let writtenVal: any = survey?.writtenEnglishScore
+                                  let oralVal: any = survey?.oralEnglishScore
+                                  let psychVal: any = survey?.psychologyScore
                                   let oralComment = ""
                                   let psychConclusion = ""
-                                  ;(survey.scores || []).forEach((sc: any) => {
+                                  ;(survey?.scores || []).forEach((sc: any) => {
                                     const sName = (sc.subjectName || "").toLowerCase().normalize("NFC")
                                     const scoresArr: any[] = Array.isArray(sc.scores) ? sc.scores : []
                                     const scoreVal = scoresArr.find((x: any) => x !== undefined && x !== null && x !== "")
@@ -1310,7 +1358,7 @@ export default function TeacherStudentProfilePage() {
                                       psychConclusion = commentsArr[0] || ""
                                     }
                                   })
-                                  const isGrade1 = (() => { const m = String(survey.className || survey.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
+                                  const isGrade1 = (() => { const m = String(survey?.className || survey?.grade || "").match(/\d+/); return m ? parseInt(m[0]) === 1 : false })()
                                   const writtenDisplay = writtenVal !== null && writtenVal !== undefined ? (isGrade1 ? `${writtenVal}` : `${writtenVal}/70`) : "—"
                                   const oralDisplay = oralVal !== null && oralVal !== undefined ? (isGrade1 ? `${oralVal}` : `${oralVal}/30`) : "—"
                                   const wNum = parseFloat(writtenVal), oNum = parseFloat(oralVal)
@@ -1369,12 +1417,12 @@ export default function TeacherStudentProfilePage() {
                                           {psychLabel && <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${psychClass}`}>{psychLabel}</span>}
                                         </div>
                                         {psychConclusion && <div className="pl-3 italic opacity-80">→ {psychConclusion}</div>}
-                                        <div>• Kết quả học tập cấp trước: <span className="font-extrabold text-slate-800">{survey.kqHocTap ?? "—"}</span></div>
-                                        <div>• Kết quả rèn luyện cấp trước: <span className="font-extrabold text-slate-800">{survey.kqRenLuyen ?? "—"}</span></div>
+                                        <div>• Kết quả học tập cấp trước: <span className="font-extrabold text-slate-800">{survey?.kqHocTap ?? "—"}</span></div>
+                                        <div>• Kết quả rèn luyện cấp trước: <span className="font-extrabold text-slate-800">{survey?.kqRenLuyen ?? "—"}</span></div>
                                       </div>
 
                                       {/* Committed Subjects & Approval Details */}
-                                      {(survey.directorNote || survey.admissionResult === "Đạt cam kết" || survey.admissionResult === "Đạt - Cam kết") && (() => {
+                                      {(survey?.directorNote || survey?.admissionResult === "Đạt cam kết" || survey?.admissionResult === "Đạt - Cam kết") && (() => {
                                         const parseCommittedSubjects = (note: string) => {
                                           if (!note) return []
                                           const match = note.match(/(?:Môn cam kết|Mon cam ket):\s*\[([^\]]+)\]/i)
@@ -1451,7 +1499,7 @@ export default function TeacherStudentProfilePage() {
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
                                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ngày sinh</label>
-                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.dateOfBirth ? new Date(profileData.entranceSurvey.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span>
+                                  <span className="text-xs font-black text-slate-755 mt-1 block">{profileData.entranceSurvey.dateOfBirth ? safeFormatDate(profileData.entranceSurvey.dateOfBirth, "vi-VN", "-") : "-"}</span>
                                 </div>
                               </div>
                             )}
@@ -1543,12 +1591,12 @@ export default function TeacherStudentProfilePage() {
                             <ArrowLeftRight className="w-4 h-4 text-slate-400" />
                             Thông tin Học sinh chuyển trường (nếu có)
                           </h4>
-                          {profileData.transfers?.length > 0 ? (
+                          {profileData?.transfers && profileData.transfers.length > 0 ? (
                             <div className="space-y-3">
                               {profileData.transfers.map(tr => (
                                 <div key={tr.id} className="bg-orange-50 border border-orange-200 p-4 rounded-xl text-xs font-semibold text-slate-705 shadow-2xs">
                                   <div className="font-black text-slate-800">Học sinh Chuyển đến / Chuyển đi: {tr.type === "IN" ? "Chuyển đến" : tr.type === "OUT" ? "Chuyển đi" : "Chuyển lớp"}</div>
-                                  <div className="mt-1">Ngày thực hiện: {new Date(tr.transferDate).toLocaleDateString('vi-VN')}</div>
+                                  <div className="mt-1">Ngày thực hiện: {safeFormatDate(tr.transferDate)}</div>
                                   {tr.destinationSchool && <div>Trường chuyển đến/đi: {tr.destinationSchool}</div>}
                                   {tr.reason && <div className="mt-1 text-slate-500">Lý do: {tr.reason}</div>}
                                 </div>
@@ -1565,7 +1613,7 @@ export default function TeacherStudentProfilePage() {
                     {activeTab === "achievements" && (
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Thành tích & Khen thưởng của Học sinh</h4>
-                        {profileData.achievements?.length === 0 ? (
+                        {!profileData?.achievements || profileData.achievements.length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa có ghi nhận giải thưởng hoặc thành tích nổi bật nào.</div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1594,7 +1642,7 @@ export default function TeacherStudentProfilePage() {
                     {activeTab === "orientation" && (
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Định hướng Nghề nghiệp & Hướng nghiệp</h4>
-                        {profileData.orientation ? (
+                        {profileData?.orientation ? (
                           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-2xs">
                             <div className="flex items-center gap-3 bg-teal-50/30 border border-teal-100 p-3.5 rounded-xl">
                               <Compass className="w-5 h-5 text-[#00A99D]" />
@@ -1621,12 +1669,11 @@ export default function TeacherStudentProfilePage() {
                       </div>
                     )}
 
-                    {/* TAB: COMMITMENT */}
                     {/* TAB: EXPERIENTIAL ACTIVITIES */}
                     {activeTab === "projects" && (
                       <div className="space-y-4">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">HOẠT ĐỘNG TRẢI NGHIỆM</h4>
-                        {(!profileData.experientialActivities || profileData.experientialActivities.length === 0) && (!profileData.projects || profileData.projects.length === 0) ? (
+                        {(!profileData?.experientialActivities || profileData.experientialActivities.length === 0) && (!profileData?.projects || profileData.projects.length === 0) ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia hoạt động trải nghiệm nào.</div>
                         ) : (
                           <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
@@ -1641,7 +1688,7 @@ export default function TeacherStudentProfilePage() {
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                                {(profileData.experientialActivities || []).map((act: any, idx: number) => (
+                                {(profileData?.experientialActivities || []).map((act: any, idx: number) => (
                                   <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-all">
                                     <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
                                     <td className="py-3.5 px-4 font-extrabold text-slate-800">{act.activityName}</td>
@@ -1662,9 +1709,9 @@ export default function TeacherStudentProfilePage() {
                                     </td>
                                   </tr>
                                 ))}
-                                {(profileData.projects || []).map((p: any, idx: number) => (
+                                {(profileData?.projects || []).map((p: any, idx: number) => (
                                   <tr key={p.id || idx} className="hover:bg-slate-50/80 transition-all">
-                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{(profileData.experientialActivities?.length || 0) + idx + 1}</td>
+                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{(profileData?.experientialActivities?.length || 0) + idx + 1}</td>
                                     <td className="py-3.5 px-4 font-extrabold text-slate-800">{p.projectName}</td>
                                     <td className="py-3.5 px-4">
                                       <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
@@ -1739,7 +1786,7 @@ export default function TeacherStudentProfilePage() {
                         </form>
 
                         {/* List of comments */}
-                        {profileData.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT").length === 0 ? (
+                        {!profileData?.highlightComments || profileData.highlightComments.filter((c: any) => c.category !== "ANNOUNCEMENT").length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                             Chưa có nhận xét nổi bật định kỳ nào từ giáo viên chủ nhiệm.
                           </div>
@@ -1784,7 +1831,7 @@ export default function TeacherStudentProfilePage() {
                                   </p>
                                   <div className="text-[9px] text-slate-400 font-bold border-t border-slate-100 pt-2 mt-3 flex justify-between">
                                     <span>Ghi nhận bởi: {c.teacherName} (GVCN)</span>
-                                    <span>{new Date(c.updatedAt).toLocaleDateString('vi-VN')}</span>
+                                    <span>{safeFormatDate(c.updatedAt)}</span>
                                   </div>
                                 </div>
                               ))}
@@ -1797,7 +1844,7 @@ export default function TeacherStudentProfilePage() {
                     {activeTab === "support" && (
                       <div className="space-y-6">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Lịch sử theo dõi Hỗ trợ Học tập & Tâm lý</h4>
-                        {!(profileData as any).learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
+                        {!(profileData as any)?.learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh không thuộc đối tượng nhận hỗ trợ học tập/tâm lý trong năm học này.</div>
                         ) : (
                           <div className="space-y-6">
@@ -1830,7 +1877,7 @@ export default function TeacherStudentProfilePage() {
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-slate-500">
                                       <div>
                                         <span>Ngày bắt đầu: </span>
-                                        <span className="text-slate-800 font-bold">{new Date(target.startDate).toLocaleDateString("vi-VN")}</span>
+                                        <span className="text-slate-800 font-bold">{safeFormatDate(target.startDate)}</span>
                                       </div>
                                       <div>
                                         <span>Giáo viên phụ trách: </span>
@@ -1839,7 +1886,7 @@ export default function TeacherStudentProfilePage() {
                                       {target.endDate && (
                                         <div>
                                           <span>Ngày chấm dứt: </span>
-                                          <span className="text-slate-800 font-bold">{new Date(target.endDate).toLocaleDateString("vi-VN")}</span>
+                                          <span className="text-slate-800 font-bold">{safeFormatDate(target.endDate)}</span>
                                         </div>
                                       )}
                                     </div>
@@ -1864,7 +1911,7 @@ export default function TeacherStudentProfilePage() {
                                               </span>
                                               <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1.5 transition-all">
                                                 <div className="text-[10px] text-slate-400 font-bold">
-                                                  {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
+                                                  {safeFormatDate(ev.createdAt)} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
                                                 </div>
                                                 <div className="text-xs font-black text-[#00A99D]">Tiến bộ: {ev.trackingLevel}</div>
                                                 <p className="text-xs text-slate-655 font-semibold leading-relaxed">{ev.comment}</p>

@@ -4,6 +4,27 @@ import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
+function safeJsonParse(val: any, fallback: any = {}) {
+  if (!val) return fallback
+  if (typeof val === "object") return val
+  try {
+    return JSON.parse(val)
+  } catch {
+    return fallback
+  }
+}
+
+function safeDateToISO(dateVal: any): string {
+  if (!dateVal) return ""
+  try {
+    const d = new Date(dateVal)
+    if (isNaN(d.getTime())) return ""
+    return d.toISOString().split("T")[0]
+  } catch {
+    return ""
+  }
+}
+
 export async function GET(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -560,278 +581,372 @@ export async function GET(req: Request) {
       const academicYearId = searchParams.get("academicYearId")
       if (!studentId) return NextResponse.json({ error: "Missing studentId" }, { status: 400 })
 
-      const student = await prisma.student.findUnique({
-        where: { id: studentId },
-        include: {
-          class: true,
-          campus: true,
-          academicYear: true,
-          termScores: {
-            include: {
-              subject: true
-            }
-          },
-          termSummaries: true
-        }
-      })
-      if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 })
-
-      // Fetch achievements
-      const achievements = await prisma.studentAchievement.findMany({
-        where: { studentId },
-        include: { achievement: true }
-      })
-
-      // Fetch career orientation
-      const orientation = await prisma.studentCareerOrientation.findUnique({
-        where: { studentId }
-      })
-
-      // Fetch projects
-      const projects = await prisma.studentProjectExperience.findMany({
-        where: { studentId },
-        orderBy: { createdAt: "desc" }
-      })
-
-      // Fetch experiential activities
-      const cleanStudentName = student.studentName.trim().toLowerCase().replace(/\s+/g, ' ');
-
-      let activityParticipants = await prisma.activityParticipant.findMany({
-        where: {
-          OR: [
-            { studentId: student.id },
-            { student: { studentCode: student.studentCode } }
-          ]
-        },
-        include: {
-          record: {
-            include: {
-              catalog: {
-                include: { group: true }
-              }
-            }
-          },
-          student: true
-        },
-        orderBy: { createdAt: "desc" }
-      });
-
-      if (activityParticipants.length === 0) {
-        const allParticipants = await prisma.activityParticipant.findMany({
+      let student: any = null
+      try {
+        student = await prisma.student.findUnique({
+          where: { id: studentId },
           include: {
-            record: {
+            class: true,
+            campus: true,
+            academicYear: true,
+            termScores: {
               include: {
-                catalog: {
-                  include: { group: true }
-                }
+                subject: true
               }
             },
-            student: true
-          },
-          orderBy: { createdAt: "desc" }
-        });
-
-        activityParticipants = allParticipants.filter(p => {
-          if (!p.student) return false;
-          const pName = (p.student.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ');
-          return pName === cleanStudentName || p.student.studentCode === student.studentCode;
-        });
-      }
-
-      const categories = await prisma.activityCategory.findMany();
-
-      const roleDict: Record<string, string> = {
-        TGIA: "Tham gia",
-        TV: "Thành viên",
-        NT: "Nhóm trưởng",
-        PNT: "Phó nhóm trưởng",
-        BTC: "Ban tổ chức"
-      };
-
-      const evalDict: Record<string, string> = {
-        XS: "Xuất sắc",
-        TO: "Tốt",
-        DA: "Đạt",
-        KDA: "Chưa đạt",
-        EXCELLENT: "Xuất sắc",
-        GOOD: "Tốt",
-        SATISFACTORY: "Đạt"
-      };
-
-      const experientialActivities = activityParticipants.map((p, idx) => {
-        const roleCat = categories.find(c => c.id === p.roleId || c.code === p.roleId);
-        const evalCat = categories.find(c => c.id === p.evalLevelId || c.code === p.evalLevelId);
-        const groupCat = categories.find(c => c.id === p.record?.catalog?.groupId || c.code === p.record?.catalog?.groupId);
-
-        const resolvedRole = roleCat?.name || (p.roleId ? roleDict[p.roleId] || p.roleId : "Tham gia");
-        const resolvedEval = evalCat?.name || (p.evalLevelId ? evalDict[p.evalLevelId] || p.evalLevelId : "Đạt");
-        const resolvedGroup = groupCat?.name || p.record?.catalog?.group?.name || "Hoạt động trải nghiệm";
-        const resolvedName = p.record?.name || p.record?.catalog?.name || "Hoạt động trải nghiệm";
-
-        return {
-          id: p.id,
-          stt: idx + 1,
-          activityName: resolvedName.trim(),
-          groupName: resolvedGroup.trim(),
-          role: resolvedRole.trim(),
-          evalLevel: resolvedEval.trim(),
-          date: p.record?.date ? p.record.date.toISOString().split('T')[0] : ''
-        };
-      });
-
-      // Fetch commitment
-      const commitment = await prisma.studentLearningCommitment.findFirst({
-        where: { studentId, ...(academicYearId ? { academicYearId } : {}) }
-      })
-
-      // Fetch learning support targets & evaluations across ALL years by studentCode
-      const learningSupportTargets = await prisma.learningSupportTarget.findMany({
-        where: {
-          student: {
-            studentCode: student.studentCode
-          }
-        },
-        include: {
-          academicYear: true,
-          assignments: {
-            include: {
-              teacher: { select: { teacherName: true } },
-              subject: { select: { subjectName: true } }
-            }
-          },
-          evaluations: {
-            orderBy: { createdAt: "desc" }
-          }
-        },
-        orderBy: { createdAt: "desc" }
-      })
-
-      // Fetch highlight comments
-      const highlightComments = await prisma.studentHighlightComment.findMany({
-        where: { studentId },
-        orderBy: { createdAt: "desc" }
-      })
-
-      // Fetch entrance survey (if any) matching studentCode or enrollmentCode or name/dateOfBirth
-      let entranceSurvey: any = null
-      
-      let generalSurvey = await prisma.inputAssessmentStudent.findFirst({
-        where: {
-          OR: [
-            { studentCode: student.studentCode },
-            { enrollmentCode: student.studentCode }
-          ]
-        },
-        include: {
-          scores: {
-            include: { subject: true }
-          },
-          period: true,
-          batch: true
-        }
-      })
-
-      if (!generalSurvey) {
-        // Fallback matching by name and DOB
-        const allPossible = await prisma.inputAssessmentStudent.findMany({
-          where: {
-            dateOfBirth: student.dateOfBirth || undefined
-          },
-          include: {
-            scores: {
-              include: { subject: true }
-            },
-            period: true,
-            batch: true
-          }
-        });
-        
-        generalSurvey = allPossible.find(x => 
-          x.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === student.studentName.trim().toLowerCase().replace(/\s+/g, ' ')
-        ) || null;
-      }
-
-      if (generalSurvey) {
-        entranceSurvey = {
-          ...generalSurvey,
-          type: "K12",
-          scores: generalSurvey.scores.map(s => ({
-            subjectName: s.subject.name,
-            scores: s.scores ? JSON.parse(s.scores) : {},
-            comments: s.comments ? JSON.parse(s.comments) : {}
-          }))
-        }
-      } else {
-        let preschoolSurvey = await (prisma as any).preschoolInputAssessmentStudent.findFirst({
-          where: {
-            OR: [
-              { studentCode: student.studentCode },
-              { enrollmentCode: student.studentCode }
-            ]
-          },
-          include: {
-            period: true,
-            batch: true
+            termSummaries: true
           }
         })
-        
-        if (!preschoolSurvey) {
-          // Fallback matching by name and DOB in preschool
-          const allPossiblePre = await (prisma as any).preschoolInputAssessmentStudent.findMany({
-            where: {
-              dateOfBirth: student.dateOfBirth || undefined
-            },
-            include: {
-              period: true,
-              batch: true
-            }
-          });
-          
-          preschoolSurvey = allPossiblePre.find((x: any) => 
-            x.fullName.trim().toLowerCase().replace(/\s+/g, ' ') === student.studentName.trim().toLowerCase().replace(/\s+/g, ' ')
-          ) || null;
-        }
-        
-        if (preschoolSurvey) {
-          // Fetch preschool scores
-          const pScores = await (prisma as any).preschoolDevScore.findMany({
-            where: { studentId: preschoolSurvey.id },
-            include: { criteria: { include: { area: true } } }
-          })
-
-          entranceSurvey = {
-            ...preschoolSurvey,
-            type: "PRESCHOOL",
-            scores: pScores.map((s: any) => ({
-              areaName: s.criteria.area.name,
-              criterionName: s.criteria.name,
-              result: s.result,
-              note: s.note
-            }))
-          }
-        }
+      } catch (err) {
+        console.error("Error fetching student in getStudentRecord:", err)
       }
 
-      // Fetch transfer info
-      const transfers = await prisma.studentTransfer.findMany({
-        where: { studentId },
-        orderBy: { transferDate: "desc" }
-      })
+      if (!student) return NextResponse.json({ error: "Student not found" }, { status: 404 })
 
-      return NextResponse.json({
+      // Default safe fallback structure
+      const fallbackProfile = {
         student,
-        termScores: student.termScores || [],
-        termSummaries: student.termSummaries || [],
-        achievements,
-        orientation,
-        projects,
-        experientialActivities,
-        commitment,
-        highlightComments,
-        entranceSurvey,
-        transfers,
-        learningSupportTargets
-      })
+        termScores: student?.termScores || [],
+        termSummaries: student?.termSummaries || [],
+        achievements: [],
+        orientation: null,
+        projects: [],
+        experientialActivities: [],
+        commitment: null,
+        highlightComments: [],
+        entranceSurvey: null,
+        transfers: [],
+        learningSupportTargets: []
+      }
+
+      try {
+        // Fetch achievements
+        let achievements: any[] = []
+        try {
+          achievements = await prisma.studentAchievement.findMany({
+            where: { studentId },
+            include: { achievement: true }
+          })
+        } catch (err) {
+          console.error("Error fetching achievements:", err)
+        }
+
+        // Fetch career orientation
+        let orientation: any = null
+        try {
+          orientation = await prisma.studentCareerOrientation.findUnique({
+            where: { studentId }
+          })
+        } catch (err) {
+          console.error("Error fetching orientation:", err)
+        }
+
+        // Fetch projects
+        let projects: any[] = []
+        try {
+          projects = await prisma.studentProjectExperience.findMany({
+            where: { studentId },
+            orderBy: { createdAt: "desc" }
+          })
+        } catch (err) {
+          console.error("Error fetching projects:", err)
+        }
+
+        // Fetch experiential activities
+        let experientialActivities: any[] = []
+        try {
+          const cleanStudentName = (student?.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ')
+
+          let activityParticipants: any[] = []
+          try {
+            activityParticipants = await prisma.activityParticipant.findMany({
+              where: {
+                OR: [
+                  { studentId: student.id },
+                  ...(student.studentCode ? [{ student: { studentCode: student.studentCode } }] : [])
+                ]
+              },
+              include: {
+                record: {
+                  include: {
+                    catalog: {
+                      include: { group: true }
+                    }
+                  }
+                },
+                student: true
+              },
+              orderBy: { createdAt: "desc" }
+            })
+          } catch (err) {
+            console.error("Error fetching activityParticipants by id/code:", err)
+          }
+
+          if (activityParticipants.length === 0) {
+            try {
+              const allParticipants = await prisma.activityParticipant.findMany({
+                include: {
+                  record: {
+                    include: {
+                      catalog: {
+                        include: { group: true }
+                      }
+                    }
+                  },
+                  student: true
+                },
+                orderBy: { createdAt: "desc" }
+              })
+
+              activityParticipants = allParticipants.filter(p => {
+                if (!p?.student) return false
+                const pName = (p.student.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ')
+                return (cleanStudentName && pName === cleanStudentName) || (student.studentCode && p.student.studentCode === student.studentCode)
+              })
+            } catch (err) {
+              console.error("Error fetching all activityParticipants fallback:", err)
+            }
+          }
+
+          let categories: any[] = []
+          try {
+            categories = await prisma.activityCategory.findMany()
+          } catch (err) {
+            console.error("Error fetching activity categories:", err)
+          }
+
+          const roleDict: Record<string, string> = {
+            TGIA: "Tham gia",
+            TV: "Thành viên",
+            NT: "Nhóm trưởng",
+            PNT: "Phó nhóm trưởng",
+            BTC: "Ban tổ chức"
+          }
+
+          const evalDict: Record<string, string> = {
+            XS: "Xuất sắc",
+            TO: "Tốt",
+            DA: "Đạt",
+            KDA: "Chưa đạt",
+            EXCELLENT: "Xuất sắc",
+            GOOD: "Tốt",
+            SATISFACTORY: "Đạt"
+          }
+
+          experientialActivities = (activityParticipants || []).map((p, idx) => {
+            const roleCat = categories.find(c => c?.id === p?.roleId || c?.code === p?.roleId)
+            const evalCat = categories.find(c => c?.id === p?.evalLevelId || c?.code === p?.evalLevelId)
+            const groupCat = categories.find(c => c?.id === p?.record?.catalog?.groupId || c?.code === p?.record?.catalog?.groupId)
+
+            const resolvedRole = roleCat?.name || (p?.roleId ? roleDict[p.roleId] || p.roleId : "Tham gia")
+            const resolvedEval = evalCat?.name || (p?.evalLevelId ? evalDict[p.evalLevelId] || p.evalLevelId : "Đạt")
+            const resolvedGroup = groupCat?.name || p?.record?.catalog?.group?.name || "Hoạt động trải nghiệm"
+            const resolvedName = p?.record?.name || p?.record?.catalog?.name || "Hoạt động trải nghiệm"
+
+            return {
+              id: p?.id || String(idx),
+              stt: idx + 1,
+              activityName: (resolvedName || "").trim(),
+              groupName: (resolvedGroup || "").trim(),
+              role: (resolvedRole || "").trim(),
+              evalLevel: (resolvedEval || "").trim(),
+              date: safeDateToISO(p?.record?.date)
+            }
+          })
+        } catch (err) {
+          console.error("Error processing experiential activities:", err)
+        }
+
+        // Fetch commitment
+        let commitment: any = null
+        try {
+          commitment = await prisma.studentLearningCommitment.findFirst({
+            where: { studentId, ...(academicYearId ? { academicYearId } : {}) }
+          })
+        } catch (err) {
+          console.error("Error fetching commitment:", err)
+        }
+
+        // Fetch learning support targets & evaluations across ALL years by studentCode
+        let learningSupportTargets: any[] = []
+        try {
+          if (student?.studentCode) {
+            learningSupportTargets = await prisma.learningSupportTarget.findMany({
+              where: {
+                student: {
+                  studentCode: student.studentCode
+                }
+              },
+              include: {
+                academicYear: true,
+                assignments: {
+                  include: {
+                    teacher: { select: { teacherName: true } },
+                    subject: { select: { subjectName: true } }
+                  }
+                },
+                evaluations: {
+                  orderBy: { createdAt: "desc" }
+                }
+              },
+              orderBy: { createdAt: "desc" }
+            })
+          }
+        } catch (err) {
+          console.error("Error fetching learning support targets:", err)
+        }
+
+        // Fetch highlight comments
+        let highlightComments: any[] = []
+        try {
+          highlightComments = await prisma.studentHighlightComment.findMany({
+            where: { studentId },
+            orderBy: { createdAt: "desc" }
+          })
+        } catch (err) {
+          console.error("Error fetching highlight comments:", err)
+        }
+
+        // Fetch entrance survey
+        let entranceSurvey: any = null
+        try {
+          let generalSurvey: any = null
+          if (student?.studentCode) {
+            generalSurvey = await prisma.inputAssessmentStudent.findFirst({
+              where: {
+                OR: [
+                  { studentCode: student.studentCode },
+                  { enrollmentCode: student.studentCode }
+                ]
+              },
+              include: {
+                scores: {
+                  include: { subject: true }
+                },
+                period: true,
+                batch: true
+              }
+            })
+          }
+
+          if (!generalSurvey) {
+            const cleanStudentName = (student?.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ')
+            const allPossible = await prisma.inputAssessmentStudent.findMany({
+              where: {
+                dateOfBirth: student?.dateOfBirth || undefined
+              },
+              include: {
+                scores: {
+                  include: { subject: true }
+                },
+                period: true,
+                batch: true
+              }
+            })
+
+            generalSurvey = allPossible.find(x =>
+              (x?.fullName || "").trim().toLowerCase().replace(/\s+/g, ' ') === cleanStudentName
+            ) || null
+          }
+
+          if (generalSurvey) {
+            entranceSurvey = {
+              ...generalSurvey,
+              type: "K12",
+              scores: (generalSurvey.scores || []).map((s: any) => ({
+                subjectName: s?.subject?.name || s?.subjectName || "",
+                scores: safeJsonParse(s?.scores, {}),
+                comments: safeJsonParse(s?.comments, {})
+              }))
+            }
+          } else {
+            let preschoolSurvey: any = null
+            if (student?.studentCode && (prisma as any).preschoolInputAssessmentStudent) {
+              preschoolSurvey = await (prisma as any).preschoolInputAssessmentStudent.findFirst({
+                where: {
+                  OR: [
+                    { studentCode: student.studentCode },
+                    { enrollmentCode: student.studentCode }
+                  ]
+                },
+                include: {
+                  period: true,
+                  batch: true
+                }
+              })
+            }
+
+            if (!preschoolSurvey && (prisma as any).preschoolInputAssessmentStudent) {
+              const cleanStudentName = (student?.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ')
+              const allPossiblePre = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+                where: {
+                  dateOfBirth: student?.dateOfBirth || undefined
+                },
+                include: {
+                  period: true,
+                  batch: true
+                }
+              })
+
+              preschoolSurvey = allPossiblePre.find((x: any) =>
+                (x?.fullName || "").trim().toLowerCase().replace(/\s+/g, ' ') === cleanStudentName
+              ) || null
+            }
+
+            if (preschoolSurvey) {
+              let pScores: any[] = []
+              if ((prisma as any).preschoolDevScore) {
+                pScores = await (prisma as any).preschoolDevScore.findMany({
+                  where: { studentId: preschoolSurvey.id },
+                  include: { criteria: { include: { area: true } } }
+                })
+              }
+
+              entranceSurvey = {
+                ...preschoolSurvey,
+                type: "PRESCHOOL",
+                scores: pScores.map((s: any) => ({
+                  areaName: s?.criteria?.area?.name || "",
+                  criterionName: s?.criteria?.name || "",
+                  result: s?.result || "",
+                  note: s?.note || ""
+                }))
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching entrance survey:", err)
+        }
+
+        // Fetch transfer info
+        let transfers: any[] = []
+        try {
+          transfers = await prisma.studentTransfer.findMany({
+            where: { studentId },
+            orderBy: { transferDate: "desc" }
+          })
+        } catch (err) {
+          console.error("Error fetching transfers:", err)
+        }
+
+        return NextResponse.json({
+          student,
+          termScores: student?.termScores || [],
+          termSummaries: student?.termSummaries || [],
+          achievements: achievements || [],
+          orientation: orientation || null,
+          projects: projects || [],
+          experientialActivities: experientialActivities || [],
+          commitment: commitment || null,
+          highlightComments: highlightComments || [],
+          entranceSurvey: entranceSurvey || null,
+          transfers: transfers || [],
+          learningSupportTargets: learningSupportTargets || []
+        })
+      } catch (err) {
+        console.error("Error building student record response:", err)
+        return NextResponse.json(fallbackProfile)
+      }
     }
 
     if (action === "getProfiles") {
@@ -994,8 +1109,8 @@ export async function GET(req: Request) {
         SATISFACTORY: "Đạt"
       }
 
-      const localNormName = (n) => n ? n.trim().toLowerCase().replace(/\s+/g, " ") : ""
-      const localSameTime = (a, b) => {
+      const localNormName = (n: any) => n ? String(n).trim().toLowerCase().replace(/\s+/g, " ") : ""
+      const localSameTime = (a: any, b: any) => {
         if (!a || !b) return false
         return new Date(a).toDateString() === new Date(b).toDateString()
       }
@@ -1010,7 +1125,7 @@ export async function GET(req: Request) {
         const studentCode = s.studentCode || ""
         const studentName = s.studentName || ""
         const gender = s.gender || ""
-        const dob = s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : ""
+        const dob = safeDateToISO(s.dateOfBirth)
         const status = s.status || ""
 
         // 2. Career Orientation
@@ -1076,7 +1191,7 @@ export async function GET(req: Request) {
             
             scores.forEach((sc) => {
               const sName = localNormName(sc.subject?.name)
-              const scArr = sc.scores ? JSON.parse(sc.scores) : []
+              const scArr = sc.scores ? safeJsonParse(sc.scores, []) : []
               const scVal = Array.isArray(scArr) ? scArr.find((v) => v !== null && v !== undefined) : null
               if (sName.includes("toán") || sName.includes("math")) {
                 if (scVal !== null) math = scVal
@@ -1147,7 +1262,7 @@ export async function GET(req: Request) {
                 groupName: resolvedGroup.trim(),
                 role: resolvedRole.trim(),
                 evalLevel: resolvedEval.trim(),
-                date: p.record?.date ? p.record.date.toISOString().split('T')[0] : ''
+                date: safeDateToISO(p.record?.date)
               }
             })
           })(),
@@ -1158,8 +1273,8 @@ export async function GET(req: Request) {
             type: surveyType,
             scores: surveyType === "K12" ? (matchedSurvey.scores || []).map((sc) => ({
               subjectName: sc.subject?.name,
-              scores: sc.scores ? JSON.parse(sc.scores) : {},
-              comments: sc.comments ? JSON.parse(sc.comments) : {}
+              scores: safeJsonParse(sc.scores, {}),
+              comments: safeJsonParse(sc.comments, {})
             })) : (preschoolScoresMap.get(matchedSurvey.id) || []).map((s) => ({
               areaName: s.criteria?.area?.name,
               criterionName: s.criteria?.name,
@@ -1362,7 +1477,7 @@ export async function POST(req: Request) {
       })
 
       if (!previousCommitment) {
-        return NextResponse.json({ error: "KhĂ´ng tĂ¬m tháº¥y cam káº¿t nÄƒm há»c cÅ© Ä‘á»ƒ káº¿ thá»«a" }, { status: 404 })
+        return NextResponse.json({ error: "Không tìm thấy cam kết năm học cũ để kế thừa" }, { status: 404 })
       }
 
       const existing = await prisma.studentLearningCommitment.findFirst({
@@ -1370,7 +1485,7 @@ export async function POST(req: Request) {
       })
 
       if (existing) {
-        return NextResponse.json({ error: "Cam káº¿t cho nÄƒm há»c hiá»‡n táº¡i Ä‘Ă£ tá»“n táº¡i" }, { status: 400 })
+        return NextResponse.json({ error: "Cam kết cho năm học hiện tại đã tồn tại" }, { status: 400 })
       }
 
       const commitment = await prisma.studentLearningCommitment.create({
