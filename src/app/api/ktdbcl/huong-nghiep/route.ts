@@ -107,27 +107,26 @@ export async function GET(req: Request) {
     }
 
     if (action === "getRecords" || action === "getLogbook") {
-      const studentWhere: any = {}
+      let targetClassIds: string[] = []
 
       if (classId) {
-        studentWhere.classId = classId
-      } else if (teacher) {
-        if (allowedClassIds.length > 0) {
-          studentWhere.classId = { in: allowedClassIds }
-        } else {
-          const fallbackClasses = await prisma.class.findMany({
-            where: {
-              OR: [
-                { homeroomTeacherId: teacher.id },
-                { homeroomTeacherId: { contains: teacher.id } }
-              ]
-            },
+        const targetClass = await prisma.class.findUnique({ where: { id: classId } })
+        if (targetClass) {
+          const matchingClasses = await prisma.class.findMany({
+            where: { className: targetClass.className },
             select: { id: true }
           })
-          if (fallbackClasses.length > 0) {
-            studentWhere.classId = { in: fallbackClasses.map(c => c.id) }
-          }
+          targetClassIds = matchingClasses.map(c => c.id)
+        } else {
+          targetClassIds = [classId]
         }
+      } else if (teacher && allowedClassIds.length > 0) {
+        targetClassIds = allowedClassIds
+      }
+
+      const studentWhere: any = {}
+      if (targetClassIds.length > 0) {
+        studentWhere.classId = { in: targetClassIds }
       } else if (campusId) {
         studentWhere.campusId = campusId
       }
@@ -148,7 +147,7 @@ export async function GET(req: Request) {
           campus: {
             select: { id: true, campusName: true }
           },
-          careerOrientations: academicYearId ? { where: { academicYearId } } : true
+          careerOrientations: true
         },
         orderBy: [
           { class: { className: "asc" } },
@@ -166,7 +165,7 @@ export async function GET(req: Request) {
       const hrMap = new Map(homeroomTeachers.map(t => [t.id, t.teacherName]))
 
       let records = students.map((s) => {
-        const orientation = s.careerOrientations[0] || null
+        const orientation = (s.careerOrientations && s.careerOrientations.find((o: any) => o.academicYearId === academicYearId)) || s.careerOrientations[0] || null
         const defaultCounselor = teacher?.teacherName || hrMap.get(s.class?.homeroomTeacherId || "") || "Ban Khảo thí & ĐBCL"
 
         return {
