@@ -106,16 +106,8 @@ export async function GET(req: Request) {
         } else {
           targetClassIds = [classId]
         }
-      } else if (teacher) {
-        if (allowedClassIds.length > 0) {
-          targetClassIds = allowedClassIds
-        } else {
-          const teacherAssignments = await prisma.teachingAssignment.findMany({
-            where: { teacherId: teacher.id },
-            select: { classId: true }
-          })
-          targetClassIds = Array.from(new Set(teacherAssignments.map(a => a.classId)))
-        }
+      } else if (teacher && allowedClassIds.length > 0) {
+        targetClassIds = allowedClassIds
       }
 
       const studentWhere: any = {}
@@ -150,7 +142,7 @@ export async function GET(req: Request) {
         take: 200
       })
 
-      // Fallback: If no students found by strict class filter, fetch active high school / secondary students
+      // Fallback: If no students found with targetClassIds filter, fetch all active students
       if (students.length === 0) {
         students = await prisma.student.findMany({
           where: search ? {
