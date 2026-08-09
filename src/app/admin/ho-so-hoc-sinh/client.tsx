@@ -773,14 +773,34 @@ export function StudentProfilesAdminClient({
                       const rawScores = selectedStudent?.termScores || selectedStudent?.student?.termScores || []
                       const rawSummaries = selectedStudent?.termSummaries || selectedStudent?.student?.termSummaries || []
                       
-                      const classCodeStr = String(selectedStudent?.class?.classCode || "")
-                      const classGradeStr = String(selectedStudent?.class?.grade || "")
-                      
-                      const isPrimary = schoolBlock === "preschool" ||
-                                        selectedStudent?.class?.level === "PRIMARY" || 
-                                        selectedStudent?.class?.level === "Tieu hoc" || 
-                                        ["1", "2", "3", "4", "5"].includes(classGradeStr) ||
-                                        ["1", "2", "3", "4", "5"].some(g => classCodeStr.startsWith(g + "."))
+                      const classCodeStr = String(
+                        selectedStudent?.class?.classCode || 
+                        selectedStudent?.classCode || 
+                        selectedStudent?.className || 
+                        selectedStudent?.student?.class?.classCode || 
+                        ""
+                      )
+                      const classGradeStr = String(
+                        selectedStudent?.class?.grade || 
+                        selectedStudent?.grade || 
+                        selectedStudent?.student?.class?.grade || 
+                        ""
+                      )
+                      const levelStr = String(
+                        selectedStudent?.class?.level || 
+                        selectedStudent?.level || 
+                        selectedStudent?.student?.class?.level || 
+                        ""
+                      ).toUpperCase()
+
+                      const isPrimary = 
+                        schoolBlock === "preschool" ||
+                        levelStr === "PRIMARY" || 
+                        levelStr.includes("TIEU HOC") || 
+                        levelStr.includes("TIỂU HỌC") ||
+                        ["1", "2", "3", "4", "5"].includes(classGradeStr) ||
+                        ["1", "2", "3", "4", "5"].some(g => classCodeStr.startsWith(g + ".") || classCodeStr.startsWith(g + "_")) ||
+                        /^[1-5][._\s]/i.test(classCodeStr)
 
                       const isCheckSymbol = (v) => {
                         if (!v || v === "—") return false
