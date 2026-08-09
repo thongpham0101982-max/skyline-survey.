@@ -160,7 +160,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { updateProfile, importSummaryRatings, importAbsences, importRewardAndPromotion, selectedSubjects = [], newSubjectsToCreate = [] } = importOptions
+    const { 
+      updateProfile, 
+      importSummaryRatings, 
+      importAcademicRating,
+      importConductRating,
+      importAbsences, 
+      importRewardAndPromotion, 
+      importReward,
+      importPromotion,
+      selectedSubjects = [] 
+    } = importOptions
+
+    const shouldImportAcademic = importAcademicRating !== undefined ? importAcademicRating : !!importSummaryRatings
+    const shouldImportConduct = importConductRating !== undefined ? importConductRating : !!importSummaryRatings
+    const shouldImportReward = importReward !== undefined ? importReward : !!importRewardAndPromotion
+    const shouldImportPromotion = importPromotion !== undefined ? importPromotion : !!importRewardAndPromotion
 
     let countStudents = 0
     let countScores = 0
@@ -224,43 +239,7 @@ export async function POST(req: NextRequest) {
     })
     const studentMap = new Map<string, any>(existingStudents.map(s => [s.studentCode.toUpperCase(), s]))
 
-    // Create new subjects if flagged
-    if (Array.isArray(newSubjectsToCreate) && newSubjectsToCreate.length > 0) {
-      for (const subName of newSubjectsToCreate) {
-        const cleanName = String(subName).trim()
-        const normName = cleanName.toLowerCase()
-        if (subjectMap.has(normName)) continue
-
-        const code = cleanName
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/đ/g, "d").replace(/Đ/g, "D")
-          .replace(/[^a-zA-Z0-9\s]/g, "")
-          .trim()
-          .replace(/\s+/g, "_")
-          .toUpperCase()
-
-        let finalCode = code
-        let codeCheck = await prisma.subject.findUnique({ where: { subjectCode: finalCode } })
-        let suffix = 1
-        while (codeCheck) {
-          finalCode = `${code}_${suffix}`
-          codeCheck = await prisma.subject.findUnique({ where: { subjectCode: finalCode } })
-          suffix++
-        }
-
-        const createdSub = await prisma.subject.create({
-          data: {
-            subjectCode: finalCode,
-            subjectName: cleanName,
-            status: "ACTIVE",
-            category: "MOET"
-          }
-        })
-        subjectMap.set(finalCode.toUpperCase(), createdSub.id)
-        subjectMap.set(normName, createdSub.id)
-      }
-    }
+    // No new subjects are auto-created to protect DB catalog integrity
 
     // 2. Loop through classes
     for (const cData of classesData) {
@@ -451,20 +430,25 @@ export async function POST(req: NextRequest) {
           }
 
           // 5. Save Term Summary
-          if (importSummaryRatings || importAbsences || (importRewardAndPromotion && (level === "PRIMARY" || semester === "CN"))) {
+          if (shouldImportAcademic || shouldImportConduct || importAbsences || shouldImportReward || shouldImportPromotion) {
             const updateData: any = {}
             const createData: any = {
               studentId: student.id,
               semester: semester
             }
 
-            if (importSummaryRatings) {
+            if (shouldImportAcademic) {
               updateData.academicRating = s.academicRating || null
-              updateData.conductRating = s.conductRating || null
-              updateData.notes = s.notes || null
               createData.academicRating = s.academicRating || null
+              if (s.notes) {
+                updateData.notes = s.notes
+                createData.notes = s.notes
+              }
+            }
+
+            if (shouldImportConduct) {
+              updateData.conductRating = s.conductRating || null
               createData.conductRating = s.conductRating || null
-              createData.notes = s.notes || null
             }
 
             if (importAbsences) {
@@ -481,7 +465,7 @@ export async function POST(req: NextRequest) {
               createData.absencesTotal = total
             }
 
-            if (importRewardAndPromotion) {
+            if (shouldImportReward) {
               let finalReward = s.reward || null
               if (level === "PRIMARY" && s.notes) {
                 if (!finalReward || finalReward === "✓" || finalReward === "" || finalReward === "x") {
@@ -490,15 +474,19 @@ export async function POST(req: NextRequest) {
               }
               updateData.reward = finalReward
               createData.reward = finalReward
-
               updateData.rewardUnexpected = s.rewardUnexpected || null
-              updateData.notes = s.notes || null
               createData.rewardUnexpected = s.rewardUnexpected || null
-              createData.notes = s.notes || null
+              if (s.notes) {
+                updateData.notes = s.notes
+                createData.notes = s.notes
+              }
+            }
 
+            if (shouldImportPromotion) {
               if (level === "SECONDARY" || level === "PRIMARY") {
-                updateData.promoted = s.promoted === true || String(s.promoted).toLowerCase() === "true" || s.promoted === 1 || String(s.promoted).toLowerCase() === "lên lớp" ? true : false
-                createData.promoted = s.promoted === true || String(s.promoted).toLowerCase() === "true" || s.promoted === 1 || String(s.promoted).toLowerCase() === "lên lớp" ? true : false
+                const isPromoted = s.promoted === true || String(s.promoted).toLowerCase() === "true" || s.promoted === 1 || String(s.promoted).toLowerCase() === "lên lớp"
+                updateData.promoted = isPromoted
+                createData.promoted = isPromoted
               }
             }
 

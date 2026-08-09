@@ -75,10 +75,12 @@ export function ImportKQHTClient({
 
   // Field selection configurations
   const [updateProfile, setUpdateProfile] = useState(true)
-  const [importSummaryRatings, setImportSummaryRatings] = useState(true)
+  const [importAcademicRating, setImportAcademicRating] = useState(true)
+  const [importConductRating, setImportConductRating] = useState(true)
   const [importAbsences, setImportAbsences] = useState(true)
-  const [importRewardAndPromotion, setImportRewardAndPromotion] = useState(true)
-  const [selectedSubjects, setSelectedSubjects] = useState<Record<string, boolean>>({}) // key: subjectCode, value: selected
+  const [importReward, setImportReward] = useState(true)
+  const [importPromotion, setImportPromotion] = useState(true)
+  const [selectedSubjects, setSelectedSubjects] = useState<Record<string, boolean>>({}) // key: mappedSubjectCode, value: selected
 
   // Subject mapping configuration
   const [excelSubjects, setExcelSubjects] = useState<{ excelHeader: string; originalHeader: string; mappedSubjectCode: string; isNew: boolean; subType: "score" | "grade" }[]>([])
@@ -920,38 +922,74 @@ export function ImportKQHTClient({
 
             const cleanName = subjectName.normalize("NFC").toLowerCase().trim()
 
-            // Secondary alias dictionary map
+            // Comprehensive alias dictionary map for THPT, THCS & Primary
             let aliasKey = cleanName
-            if (cleanName === "ls&đl" || cleanName === "ls & đl" || cleanName === "ls/đl" || cleanName === "ls_dl" || cleanName === "lịch sử và địa lý") {
-              aliasKey = "lịch sử và địa lí"
-            } else if (cleanName === "khtn") {
-              aliasKey = "khoa học tự nhiên"
-            } else if (cleanName === "tin") {
-              aliasKey = "tin học"
-            } else if (cleanName === "văn") {
-              aliasKey = "ngữ văn"
-            } else if (cleanName === "ng.ngữ" || cleanName === "ng ngữ" || cleanName === "ng.ngữ 1" || cleanName === "ngoại ngữ") {
-              aliasKey = "tiếng anh"
-            } else if (cleanName === "gdcd") {
-              aliasKey = "giáo dục công dân"
-            } else if (cleanName === "c.nghệ" || cleanName === "c nghệ") {
-              aliasKey = "công nghệ"
-            } else if (cleanName === "gdtc") {
-              aliasKey = "giáo dục thể chất"
-            } else if (cleanName === "ndgđđợp" || cleanName === "ndgđđp" || cleanName === "gđđp") {
+
+            if (["lí", "vật lí", "vật lý", "ly", "vật ly", "physics"].includes(cleanName)) {
+              aliasKey = "vật lí"
+            } else if (["hóa", "hóa học", "hoa", "chemistry"].includes(cleanName)) {
+              aliasKey = "hóa học"
+            } else if (["sử", "lịch sử", "history"].includes(cleanName)) {
+              aliasKey = "lịch sử"
+            } else if (["địa", "địa lí", "địa lý", "geography"].includes(cleanName)) {
+              aliasKey = "địa lí"
+            } else if (["gdqp&an", "gdqp & an", "gdqp-an", "gdqp an", "gdqp", "giáo dục quốc phòng và an ninh", "giáo dục quốc phòng - an ninh", "giáo dục quốc phòng an ninh", "gd qp&an"].includes(cleanName)) {
+              aliasKey = "giáo dục quốc phòng và an ninh"
+            } else if (["gdkt&pl", "gdkt & pl", "gdkt_pl", "gdkt-pl", "gd kt&pl", "giáo dục kinh tế và pháp luật", "giáo dục kt&pl", "gd kinh tế và pháp luật"].includes(cleanName)) {
+              aliasKey = "giáo dục kinh tế và pháp luật"
+            } else if (["ndgđcđp", "ndgđcđp/gđđp", "ndgđđp", "gđđp", "ndgđđợp", "giáo dục địa phương", "nội dung giáo dục địa phương", "gđđp/ndgđcđp"].includes(cleanName)) {
               aliasKey = "giáo dục địa phương"
-            } else if (cleanName === "hđtn&hn" || cleanName === "hđtn & hn" || cleanName === "hđtn,hn") {
+            } else if (["sinh", "sinh học", "biology"].includes(cleanName)) {
+              aliasKey = "sinh học"
+            } else if (["toán", "toan", "math", "mathematics"].includes(cleanName)) {
+              aliasKey = "toán"
+            } else if (["văn", "ngữ văn", "literature"].includes(cleanName)) {
+              aliasKey = "ngữ văn"
+            } else if (["ng.ngữ", "ng ngữ", "ng.ngữ 1", "ngoại ngữ", "tiếng anh", "anh", "english"].includes(cleanName)) {
+              aliasKey = "tiếng anh"
+            } else if (["tin", "tin học", "informatics", "it"].includes(cleanName)) {
+              aliasKey = "tin học"
+            } else if (["c.nghệ", "c nghệ", "công nghệ", "technology"].includes(cleanName)) {
+              aliasKey = "công nghệ"
+            } else if (["gdtc", "giáo dục thể chất", "thể chất", "pe"].includes(cleanName)) {
+              aliasKey = "giáo dục thể chất"
+            } else if (["ls&đl", "ls & đl", "ls/đl", "ls_dl", "lịch sử và địa lý", "lịch sử & địa lý", "lịch sử và địa lí", "lịch sử & địa lí", "ls va dl"].includes(cleanName)) {
+              aliasKey = "lịch sử và địa lí"
+            } else if (["khtn", "khoa học tự nhiên", "kh tự nhiên"].includes(cleanName)) {
+              aliasKey = "khoa học tự nhiên"
+            } else if (["gdcd", "giáo dục công dân"].includes(cleanName)) {
+              aliasKey = "giáo dục công dân"
+            } else if (["hđtn&hn", "hđtn & hn", "hđtn,hn", "hđtn", "hoạt động trải nghiệm", "hoạt động trải nghiệm, hướng nghiệp"].includes(cleanName)) {
               aliasKey = "hoạt động trải nghiệm"
+            } else if (["tiếng việt", "t.việt", "t việt", "tv", "vietnamese"].includes(cleanName)) {
+              aliasKey = "tiếng việt"
+            } else if (["đạo đức", "đ.đức", "đ đức", "ethics"].includes(cleanName)) {
+              aliasKey = "đạo đức"
+            } else if (["tn-xh", "tn & xh", "tnxh", "tự nhiên và xã hội", "tự nhiên xã hội"].includes(cleanName)) {
+              aliasKey = "tự nhiên và xã hội"
+            } else if (["khoa học", "kh"].includes(cleanName)) {
+              aliasKey = "khoa học"
+            } else if (["âm nhạc", "nhạc", "music"].includes(cleanName)) {
+              aliasKey = "âm nhạc"
+            } else if (["mỹ thuật", "mĩ thuật", "art"].includes(cleanName)) {
+              aliasKey = "mỹ thuật"
             }
 
             let match = dbSubjects.find(dbSub => {
               const dbNorm = dbSub.subjectName.normalize("NFC").toLowerCase().trim()
-              return dbNorm === aliasKey || dbSub.subjectCode.toLowerCase() === aliasKey
+              const dbCode = dbSub.subjectCode.normalize("NFC").toLowerCase().trim()
+              return dbNorm === aliasKey || dbCode === aliasKey || dbNorm === cleanName || dbCode === cleanName
             })
 
             if (!match) {
-              match = dbSubjects.find(dbSub => dbSub.subjectName.normalize("NFC").toLowerCase().trim() === cleanName)
+              const normAlias1 = aliasKey.replace(/lí/g, "lý").replace(/mĩ/g, "mỹ")
+              const normAlias2 = aliasKey.replace(/lý/g, "lí").replace(/mỹ/g, "mĩ")
+              match = dbSubjects.find(dbSub => {
+                const dbNorm = dbSub.subjectName.normalize("NFC").toLowerCase().trim()
+                return dbNorm === normAlias1 || dbNorm === normAlias2
+              })
             }
+
             if (!match) {
               if (cleanName.includes("(tin học)") || cleanName.includes("(tin hoc)")) {
                 match = dbSubjects.find(dbSub => dbSub.subjectName.normalize("NFC").toLowerCase().includes("tin học"))
@@ -959,6 +997,7 @@ export function ImportKQHTClient({
                 match = dbSubjects.find(dbSub => dbSub.subjectName.normalize("NFC").toLowerCase().includes("công nghệ"))
               }
             }
+
             if (!match) {
               match = dbSubjects.find(dbSub => {
                 const dbNorm = dbSub.subjectName.normalize("NFC").toLowerCase().trim()
@@ -978,7 +1017,7 @@ export function ImportKQHTClient({
             detectedExcelSubjectsMap.set(headerLabel, {
               originalHeader: subjectName,
               mappedSubjectCode: mappedCode,
-              isNew: !match,
+              isNew: false,
               subType
             })
           }
@@ -1058,13 +1097,23 @@ export function ImportKQHTClient({
                 studentSubjects[headerLabel] = { score: null, grade: null }
               }
 
-              if (sub.subType === "score") {
-                const num = parseFloat(cellVal)
-                if (isNaN(num) && cellVal && cellVal !== "-" && cellVal !== "—") {
+              const lowerVal = cellVal.toLowerCase()
+              const isExempt = lowerVal === "miễn" || lowerVal === "m" || lowerVal.includes("miễn") || lowerVal === "mien"
+              
+              if (isExempt) {
+                studentSubjects[headerLabel].grade = "Miễn"
+                studentSubjects[headerLabel].score = null
+              } else if (sub.subType === "score") {
+                const num = parseFloat(cellVal.replace(',', '.'))
+                if (!isNaN(num)) {
+                  studentSubjects[headerLabel].score = cellVal
+                  studentSubjects[headerLabel].grade = null
+                } else if (cellVal && cellVal !== "-" && cellVal !== "—") {
                   studentSubjects[headerLabel].grade = cellVal
                   studentSubjects[headerLabel].score = null
                 } else {
-                  studentSubjects[headerLabel].score = cellVal || null
+                  studentSubjects[headerLabel].score = null
+                  studentSubjects[headerLabel].grade = null
                 }
               } else {
                 studentSubjects[headerLabel].grade = cellVal || null
@@ -1217,10 +1266,9 @@ export function ImportKQHTClient({
         // Set initial selected subjects state immediately
         const initialSelectedSubjects: Record<string, boolean> = {}
         mappingList.forEach(item => {
-          const code = item.isNew 
-            ? item.excelHeader.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/[^a-zA-Z0-9\s]/g, "").trim().replace(/\s+/g, "_").toUpperCase()
-            : item.mappedSubjectCode
-          initialSelectedSubjects[code] = true
+          if (item.mappedSubjectCode) {
+            initialSelectedSubjects[item.mappedSubjectCode] = true
+          }
         })
         setSelectedSubjects(initialSelectedSubjects)
 
@@ -1268,15 +1316,36 @@ export function ImportKQHTClient({
 
     parseWorkbookData()
   }, [workbook, level, semester])
+  // Toggle all sheets selection
+  const handleToggleAllSheets = (select: boolean) => {
+    const updated: Record<string, boolean> = {}
+    sheetNames.forEach(name => {
+      updated[name] = select
+    })
+    setSelectedSheets(updated)
+  }
+
+  // Toggle all subjects selection
+  const handleToggleAllSubjects = (select: boolean) => {
+    const updated: Record<string, boolean> = {}
+    excelSubjects.forEach(item => {
+      if (item.mappedSubjectCode) {
+        updated[item.mappedSubjectCode] = select
+      }
+    })
+    setSelectedSubjects(updated)
+  }
+
+  // Active Excel Subjects for Table Preview (Step 3) - Only validly mapped & checked subjects
+  const activeExcelSubjects = useMemo(() => {
+    return excelSubjects.filter(item => item.mappedSubjectCode && selectedSubjects[item.mappedSubjectCode])
+  }, [excelSubjects, selectedSubjects])
+
   // Handle remapping of Excel subject column to DB subject
   const handleMapSubject = (excelHeader: string, value: string) => {
     setExcelSubjects(prev => prev.map(item => {
       if (item.excelHeader === excelHeader) {
-        if (value === "__NEW__") {
-          return { ...item, mappedSubjectCode: "", isNew: true }
-        } else {
-          return { ...item, mappedSubjectCode: value, isNew: false }
-        }
+        return { ...item, mappedSubjectCode: value, isNew: false }
       }
       return item
     }))
@@ -1319,21 +1388,11 @@ export function ImportKQHTClient({
 
     // Prepare dynamic mapping configurations
     const subjectsToSelect: string[] = []
-    const newSubjectsToCreate: string[] = []
 
     excelSubjects.forEach(item => {
-      const subjectCode = item.isNew 
-        ? item.originalHeader.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/[^a-zA-Z0-9\s]/g, "").trim().replace(/\s+/g, "_").toUpperCase()
-        : item.mappedSubjectCode
-
-      if (item.isNew) {
-        if (!newSubjectsToCreate.includes(item.originalHeader)) {
-          newSubjectsToCreate.push(item.originalHeader)
-        }
-      }
-      if (selectedSubjects[subjectCode]) {
-        if (!subjectsToSelect.includes(subjectCode)) {
-          subjectsToSelect.push(subjectCode)
+      if (item.mappedSubjectCode && selectedSubjects[item.mappedSubjectCode]) {
+        if (!subjectsToSelect.includes(item.mappedSubjectCode)) {
+          subjectsToSelect.push(item.mappedSubjectCode)
         }
       }
     })
@@ -1371,10 +1430,8 @@ export function ImportKQHTClient({
         const studentSubjectsMapped: Record<string, { score: any; grade: any }> = {}
         Object.keys(s.subjects).forEach(key => {
           const mapping = excelSubjects.find(m => m.excelHeader === key)
-          if (mapping) {
-            const subjectCode = mapping.isNew 
-              ? mapping.originalHeader.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/[^a-zA-Z0-9\s]/g, "").trim().replace(/\s+/g, "_").toUpperCase()
-              : mapping.mappedSubjectCode
+          if (mapping && mapping.mappedSubjectCode && selectedSubjects[mapping.mappedSubjectCode]) {
+            const subjectCode = mapping.mappedSubjectCode
 
             if (!studentSubjectsMapped[subjectCode]) {
               studentSubjectsMapped[subjectCode] = { score: null, grade: null }
@@ -1400,11 +1457,14 @@ export function ImportKQHTClient({
         semester,
         importOptions: {
           updateProfile,
-          importSummaryRatings,
+          importAcademicRating,
+          importConductRating,
+          importSummaryRatings: importAcademicRating || importConductRating,
           importAbsences: level === "PRIMARY" ? false : importAbsences,
-          importRewardAndPromotion,
-          selectedSubjects: subjectsToSelect,
-          newSubjectsToCreate: i === 0 ? newSubjectsToCreate : [] // only create new subjects once on the first batch
+          importReward,
+          importPromotion,
+          importRewardAndPromotion: importReward || importPromotion,
+          selectedSubjects: subjectsToSelect
         },
         classesData: [
           {
@@ -1685,26 +1745,41 @@ export function ImportKQHTClient({
                   />
                   <div>
                     <span className="block font-bold text-slate-800">Cập nhật Hồ sơ học sinh</span>
-                    <span className="text-[10px] text-slate-400 font-medium">Họ tên, Ngày sinh (Mã HS dùng làm mã đối khớp)</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Họ tên, Ngày sinh, Giới tính</span>
                   </div>
                 </label>
 
                 <label className="flex items-start gap-2.5 text-xs text-slate-600 font-semibold cursor-pointer">
                   <input 
                     type="checkbox"
-                    checked={importSummaryRatings}
-                    onChange={(e) => setImportSummaryRatings(e.target.checked)}
+                    checked={importAcademicRating}
+                    onChange={(e) => setImportAcademicRating(e.target.checked)}
                     className="mt-0.5 rounded accent-[#00A99D]"
                   />
                   <div>
                     <span className="block font-bold text-slate-800">
-                      {level === "PRIMARY" ? "Đánh giá Kết quả Giáo dục (KQGD)" : "Kết quả xếp loại định kỳ"}
+                      {level === "PRIMARY" ? "Đánh giá Kết quả Giáo dục (KQGD)" : "Học lực (Xếp loại học tập)"}
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium">
-                      {level === "PRIMARY" ? "Đánh giá kết quả giáo dục tổng hợp" : "Xếp loại Học lực, Rèn luyện (Hạnh kiểm)"}
+                      {level === "PRIMARY" ? "Đánh giá kết quả giáo dục tổng hợp" : "Xếp loại Học lực định kỳ"}
                     </span>
                   </div>
                 </label>
+
+                {currentEffectiveLevel === "SECONDARY" && (
+                  <label className="flex items-start gap-2.5 text-xs text-slate-600 font-semibold cursor-pointer">
+                    <input 
+                      type="checkbox"
+                      checked={importConductRating}
+                      onChange={(e) => setImportConductRating(e.target.checked)}
+                      className="mt-0.5 rounded accent-[#00A99D]"
+                    />
+                    <div>
+                      <span className="block font-bold text-slate-800">Rèn luyện (Hạnh kiểm)</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Xếp loại Rèn luyện / Hạnh kiểm định kỳ</span>
+                    </div>
+                  </label>
+                )}
 
                 {currentEffectiveLevel === "SECONDARY" && (
                   <label className="flex items-start gap-2.5 text-xs text-slate-600 font-semibold cursor-pointer">
@@ -1715,27 +1790,36 @@ export function ImportKQHTClient({
                       className="mt-0.5 rounded accent-[#00A99D]"
                     />
                     <div>
-                      <span className="block font-bold text-slate-800">Số buổi nghỉ học (Chuyên cần)</span>
+                      <span className="block font-bold text-slate-800">Chuyên cần (Số buổi nghỉ P/K)</span>
                       <span className="text-[10px] text-slate-400 font-medium">Nghỉ có phép (P), Không phép (K)</span>
                     </div>
                   </label>
                 )}
 
+                <label className="flex items-start gap-2.5 text-xs text-slate-600 font-semibold cursor-pointer">
+                  <input 
+                    type="checkbox"
+                    checked={importReward}
+                    onChange={(e) => setImportReward(e.target.checked)}
+                    className="mt-0.5 rounded accent-[#00A99D]"
+                  />
+                  <div>
+                    <span className="block font-bold text-slate-800">Khen thưởng</span>
+                    <span className="text-[10px] text-slate-400 font-medium">Danh hiệu thi đua / Khen thưởng</span>
+                  </div>
+                </label>
+
                 {semester === "CN" && (
                   <label className="flex items-start gap-2.5 text-xs text-slate-600 font-semibold cursor-pointer">
                     <input 
                       type="checkbox"
-                      checked={importRewardAndPromotion}
-                      onChange={(e) => setImportRewardAndPromotion(e.target.checked)}
+                      checked={importPromotion}
+                      onChange={(e) => setImportPromotion(e.target.checked)}
                       className="mt-0.5 rounded accent-[#00A99D]"
                     />
                     <div>
-                      <span className="block font-bold text-slate-800">
-                        {level === "PRIMARY" ? "Khen thưởng" : "Khen thưởng & Lên lớp"}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-medium">
-                        {level === "PRIMARY" ? "Thông tin khen thưởng học sinh" : "Danh hiệu và trạng thái lên lớp cả năm"}
-                      </span>
+                      <span className="block font-bold text-slate-800">Trạng thái Lên lớp</span>
+                      <span className="text-[10px] text-slate-400 font-medium">Kết quả được lên lớp cả năm</span>
                     </div>
                   </label>
                 )}
@@ -1745,29 +1829,53 @@ export function ImportKQHTClient({
             {/* Subjects Selection */}
             {excelSubjects.length > 0 && (
               <div className="bg-white border border-slate-200/80 p-5 rounded-2xl shadow-sm">
-                <h3 className="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider">Danh sách Môn học/Tiêu chí</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Danh sách Môn học/Tiêu chí</h3>
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <button 
+                      type="button" 
+                      onClick={() => handleToggleAllSubjects(true)}
+                      className="text-indigo-600 font-semibold hover:underline"
+                    >
+                      Tất cả
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button 
+                      type="button" 
+                      onClick={() => handleToggleAllSubjects(false)}
+                      className="text-slate-500 font-semibold hover:underline"
+                    >
+                      Bỏ tất cả
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                   {excelSubjects.map(item => {
-                    const code = item.isNew 
-                      ? item.excelHeader.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").replace(/Đ/g, "D").replace(/[^a-zA-Z0-9\s]/g, "").trim().replace(/\s+/g, "_").toUpperCase()
-                      : item.mappedSubjectCode
+                    const code = item.mappedSubjectCode
+                    const isMapped = !!code
+                    const isChecked = isMapped ? !!selectedSubjects[code] : false
                     return (
                       <label 
                         key={item.excelHeader}
-                        className={"flex items-start gap-2.5 p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all " + (selectedSubjects[code] ? "border-indigo-500 bg-indigo-50/20 text-indigo-700" : "border-slate-200 text-slate-500 hover:bg-slate-50")}
+                        className={"flex items-start gap-2.5 p-2 rounded-xl border text-xs font-semibold transition-all " + 
+                          (!isMapped 
+                            ? "border-slate-100 bg-slate-50/50 text-slate-400 cursor-not-allowed" 
+                            : (isChecked ? "border-indigo-500 bg-indigo-50/20 text-indigo-700 cursor-pointer" : "border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer")
+                          )}
                       >
                         <input 
                           type="checkbox"
-                          checked={!!selectedSubjects[code]}
-                          onChange={() => handleToggleSubject(code)}
-                          className="mt-0.5 rounded accent-indigo-650"
+                          disabled={!isMapped}
+                          checked={isChecked}
+                          onChange={() => isMapped && handleToggleSubject(code)}
+                          className="mt-0.5 rounded accent-indigo-650 disabled:opacity-40"
                         />
                         <div className="min-w-0">
                           <span className="block font-bold truncate">{item.excelHeader}</span>
-                          {item.isNew ? (
-                            <span className="text-[9px] bg-amber-100 text-amber-800 font-black uppercase px-1 rounded-sm">Tạo môn mới</span>
+                          {!isMapped ? (
+                            <span className="text-[9px] text-amber-700 font-bold">⚠️ Chưa ánh xạ (Bỏ qua)</span>
                           ) : (
-                            <span className="text-[9px] text-slate-400 font-medium">Mã: {item.mappedSubjectCode}</span>
+                            <span className="text-[9px] text-slate-400 font-medium">Mã: {code}</span>
                           )}
                         </div>
                       </label>
@@ -1803,21 +1911,21 @@ export function ImportKQHTClient({
                           <td className="p-3 font-bold text-slate-707">{item.excelHeader}</td>
                           <td className="p-3">
                             <select
-                              value={item.isNew ? "__NEW__" : item.mappedSubjectCode}
+                              value={item.mappedSubjectCode || ""}
                               onChange={(e) => handleMapSubject(item.excelHeader, e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-indigo-500"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs outline-none focus:border-indigo-500 font-medium"
                             >
-                              <option value="__NEW__">+ Tạo môn học mới: {item.excelHeader}</option>
+                              <option value="">-- Chưa ánh xạ (Bỏ qua môn này) --</option>
                               {dbSubjects.map(sub => (
                                 <option key={sub.id} value={sub.subjectCode}>{sub.subjectName} ({sub.subjectCode})</option>
                               ))}
                             </select>
                           </td>
                           <td className="p-3 text-center">
-                            {item.isNew ? (
+                            {!item.mappedSubjectCode ? (
                               <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 border border-amber-200 text-amber-700 px-2.5 py-0.5 rounded-full font-bold">
                                 <AlertTriangle className="w-3 h-3" />
-                                Chưa có trong DB (Sẽ tạo mới)
+                                ⚠️ Chưa ánh xạ (Sẽ bỏ qua)
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold">
@@ -1903,42 +2011,43 @@ export function ImportKQHTClient({
                         <th className="p-3 text-center">Ngày sinh</th>
                         <th className="p-3 text-center">Giới tính</th>
 
-                        {/* Dynamic Excel Subject Columns */}
-                        {excelSubjects.map(item => (
-                          <th key={item.excelHeader} className="p-3 text-center bg-indigo-50/40 text-indigo-900 border-x border-slate-100">{item.excelHeader}</th>
+                        {/* Dynamic Excel Subject Columns (Only active mapped & selected subjects) */}
+                        {activeExcelSubjects.map(item => (
+                          <th key={item.excelHeader} className="p-3 text-center bg-indigo-50/40 text-indigo-900 border-x border-slate-100 font-bold">
+                            {item.excelHeader}
+                            <div className="text-[10px] font-normal text-indigo-600">({item.mappedSubjectCode})</div>
+                          </th>
                         ))}
 
-                        {/* Summary Ratings & Absences & Rewards Column Section */}
+                        {/* Dynamic Column Section */}
                         {currentEffectiveLevel === "SECONDARY" ? (
                           <>
-                            {importSummaryRatings && (
-                              <>
-                                <th className="p-3 text-center bg-amber-50/50 text-amber-900">Học lực</th>
-                                <th className="p-3 text-center bg-amber-50/50 text-amber-900">Rèn luyện</th>
-                                {semester === "CN" && (
-                                  <th className="p-3 text-center bg-amber-50/50 text-amber-900">KQRL sau hè</th>
-                                )}
-                              </>
+                            {importAcademicRating && (
+                              <th className="p-3 text-center bg-amber-50/50 text-amber-900">Học lực</th>
+                            )}
+                            {importConductRating && (
+                              <th className="p-3 text-center bg-amber-50/50 text-amber-900">Rèn luyện</th>
+                            )}
+                            {importConductRating && semester === "CN" && (
+                              <th className="p-3 text-center bg-amber-50/50 text-amber-900">KQRL sau hè</th>
                             )}
                             {importAbsences && (
                               <th className="p-3 text-center bg-teal-50/50 text-teal-900">Buổi nghỉ (P/K)</th>
                             )}
-                            {importRewardAndPromotion && (
-                              <>
-                                <th className="p-3 text-center bg-purple-50/50 text-purple-900">Danh hiệu</th>
-                                {semester === "CN" && (
-                                  <th className="p-3 text-center bg-purple-50/50 text-purple-900">Lên lớp</th>
-                                )}
-                              </>
+                            {importReward && (
+                              <th className="p-3 text-center bg-purple-50/50 text-purple-900">Danh hiệu</th>
+                            )}
+                            {importPromotion && semester === "CN" && (
+                              <th className="p-3 text-center bg-purple-50/50 text-purple-900">Lên lớp</th>
                             )}
                             <th className="p-3 text-center">Ghi chú</th>
                           </>
                         ) : (
                           <>
-                            {importSummaryRatings && (
+                            {importAcademicRating && (
                               <th className="p-3 text-center bg-amber-50/50 text-amber-900">Đánh giá KQGD</th>
                             )}
-                            {importRewardAndPromotion && (
+                            {importReward && (
                               <th className="p-3 text-center bg-purple-50/50 text-purple-900">Khen thưởng</th>
                             )}
                             <th className="p-3 text-center">Ghi chú</th>
@@ -1975,8 +2084,8 @@ export function ImportKQHTClient({
                             </td>
                             <td className="p-3 text-center text-slate-500 font-medium">{s.gender || "-"}</td>
                             
-                            {/* Subject grades */}
-                            {excelSubjects.map(subItem => {
+                            {/* Subject grades for activeExcelSubjects */}
+                            {activeExcelSubjects.map(subItem => {
                               const gradeObj = s.subjects[subItem.excelHeader] || { score: null, grade: null }
                               const displayVal = subItem.subType === "score" 
                                 ? (gradeObj.score !== null ? gradeObj.score : (gradeObj.grade !== null ? gradeObj.grade : "-"))
@@ -1991,42 +2100,40 @@ export function ImportKQHTClient({
                             {/* Ratings & Absences & Rewards Body Row Section */}
                             {currentEffectiveLevel === "SECONDARY" ? (
                               <>
-                                {importSummaryRatings && (
-                                  <>
-                                    <td className="p-3 text-center text-slate-800 font-bold bg-amber-50/10">{s.academicRating || "-"}</td>
-                                    <td className="p-3 text-center text-slate-800 font-bold bg-amber-50/10">{s.conductRating || "-"}</td>
-                                    {semester === "CN" && (
-                                      <td className="p-3 text-center text-indigo-700 font-bold bg-amber-50/10">{s.rewardUnexpected || "-"}</td>
-                                    )}
-                                  </>
+                                {importAcademicRating && (
+                                  <td className="p-3 text-center text-slate-800 font-bold bg-amber-50/10">{s.academicRating || "-"}</td>
+                                )}
+                                {importConductRating && (
+                                  <td className="p-3 text-center text-slate-800 font-bold bg-amber-50/10">{s.conductRating || "-"}</td>
+                                )}
+                                {importConductRating && semester === "CN" && (
+                                  <td className="p-3 text-center text-indigo-700 font-bold bg-amber-50/10">{s.rewardUnexpected || "-"}</td>
                                 )}
                                 {importAbsences && (
                                   <td className="p-3 text-center text-slate-600 font-semibold whitespace-nowrap bg-teal-50/10">
                                     {(s.absencesPermitted !== undefined && s.absencesPermitted !== null && s.absencesPermitted !== "") ? s.absencesPermitted : 0} P / {(s.absencesUnpermitted !== undefined && s.absencesUnpermitted !== null && s.absencesUnpermitted !== "") ? s.absencesUnpermitted : 0} K
                                   </td>
                                 )}
-                                {importRewardAndPromotion && (
-                                  <>
-                                    <td className="p-3 text-center text-purple-700 font-bold bg-purple-50/10">{s.reward || "-"}</td>
-                                    {semester === "CN" && (
-                                      <td className="p-3 text-center bg-purple-50/10">
-                                        {s.promoted ? (
-                                          <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Được lên lớp</span>
-                                        ) : (
-                                          <span className="text-slate-500 font-medium">-</span>
-                                        )}
-                                      </td>
+                                {importReward && (
+                                  <td className="p-3 text-center text-purple-700 font-bold bg-purple-50/10">{s.reward || "-"}</td>
+                                )}
+                                {importPromotion && semester === "CN" && (
+                                  <td className="p-3 text-center bg-purple-50/10">
+                                    {s.promoted ? (
+                                      <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">Được lên lớp</span>
+                                    ) : (
+                                      <span className="text-slate-500 font-medium">-</span>
                                     )}
-                                  </>
+                                  </td>
                                 )}
                                 <td className="p-3 text-center text-slate-500 max-w-xs truncate" title={s.notes}>{s.notes || "-"}</td>
                               </>
                             ) : (
                               <>
-                                {importSummaryRatings && (
+                                {importAcademicRating && (
                                   <td className="p-3 text-center text-slate-800 font-bold bg-amber-50/10">{s.academicRating || "-"}</td>
                                 )}
-                                {importRewardAndPromotion && (
+                                {importReward && (
                                   <td className="p-3 text-center text-purple-700 font-bold bg-purple-50/10">{s.reward || "-"}</td>
                                 )}
                                 <td className="p-3 text-center text-slate-500 max-w-xs truncate" title={s.notes}>{s.notes || "-"}</td>
