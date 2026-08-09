@@ -368,16 +368,27 @@ export async function POST(req: NextRequest) {
             for (const subKey of subKeys) {
               // Strip PRIMARY suffixes to get base subject name for DB lookup
               const baseName = subKey
-                .replace(/\s*\(Đi\u1ec3m\)\s*$/i, "")
-                .replace(/\s*\(M\u1ee9c\)\s*$/i, "")
-                .replace(/\s*\(Diem\)\s*$/i, "")
-                .replace(/\s*\(Muc\)\s*$/i, "")
+                .replace(/[\s\-_]+(mức\s*đạt\s*được|điểm\s*ktđk|mức|điểm|diem|muc)/gi, "")
+                .replace(/\s*\([^)]*\)\s*$/gi, "")
                 .normalize("NFC").trim()
 
-              const subId = subjectMap.get(subKey.toUpperCase()) || 
-                            subjectMap.get(subKey.normalize("NFC").toLowerCase().trim()) ||
-                            subjectMap.get(baseName.toUpperCase()) ||
-                            subjectMap.get(baseName.toLowerCase().trim())
+              const cleanSubKey = subKey.normalize("NFC").toLowerCase().trim()
+              const cleanBaseName = baseName.normalize("NFC").toLowerCase().trim()
+
+              let subId = subjectMap.get(subKey.toUpperCase()) || 
+                          subjectMap.get(cleanSubKey) ||
+                          subjectMap.get(baseName.toUpperCase()) ||
+                          subjectMap.get(cleanBaseName)
+
+              if (!subId) {
+                // Fallback search in existingSubjects
+                const found = existingSubjects.find(sub => {
+                  const sName = sub.subjectName.normalize("NFC").toLowerCase().trim()
+                  const sCode = sub.subjectCode.normalize("NFC").toLowerCase().trim()
+                  return sName === cleanBaseName || sCode === cleanBaseName || cleanBaseName.includes(sName) || sName.includes(cleanBaseName)
+                })
+                if (found) subId = found.id
+              }
               if (!subId) continue
 
               const dbSub = existingSubjects.find(sub => sub.id === subId) || 
