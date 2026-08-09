@@ -1014,7 +1014,9 @@ export default function TeacherStudentProfilePage() {
                       rawScores.forEach((ts: any) => {
                         const subName = ts.subject?.subjectName || "Môn học"
                         const subCode = ts.subject?.subjectCode || ""
-                        const displayVal = ts.score !== null && ts.score !== undefined ? ts.score : (ts.evaluationGrade || "—")
+                        const hasScore = ts.score !== null && ts.score !== undefined
+                        const hasGrade = ts.evaluationGrade !== null && ts.evaluationGrade !== undefined && String(ts.evaluationGrade).trim() !== "" && ts.evaluationGrade !== "—"
+                        const displayVal = (hasScore && hasGrade) ? { score: ts.score, grade: ts.evaluationGrade } : (hasScore ? ts.score : (ts.evaluationGrade || "—"))
 
                         // Extract Primary KQGD if applicable
                         if (displayVal && displayVal !== "—") {
