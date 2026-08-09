@@ -340,7 +340,7 @@ export function ImportKQHTClient({
           normScan.includes("khối 6") || normScan.includes("khối 7") || normScan.includes("khối 8") || normScan.includes("khối 9") || normScan.includes("khối 10") || normScan.includes("khối 11") || normScan.includes("khối 12") ||
           normScan.includes("khtn") || normScan.includes("ls&đl") || normScan.includes("gdcd") || normScan.includes("ndgđđợp") || normScan.includes("(hs 1)")
 
-        if (isPrimaryPattern && !isSecondaryPattern) {
+        if (isPrimaryPattern) {
           effectiveLevel = "PRIMARY"
           if (level !== "PRIMARY") setLevel("PRIMARY")
           detectedLevelRef.current = "PRIMARY"
