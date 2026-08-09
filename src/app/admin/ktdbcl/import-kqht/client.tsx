@@ -1014,7 +1014,11 @@ export function ImportKQHTClient({
             if (effectiveLevel === "PRIMARY") {
               const isTestSubject = primaryTestSubjects.some(pts => cleanName.includes(pts))
               if (isTestSubject) {
-                headerLabel = subjectName + (subType === "score" ? " (Điểm)" : " (Mức)")
+                if (!subjectName.includes("Mức") && !subjectName.includes("Điểm") && !subjectName.includes("mức") && !subjectName.includes("điểm")) {
+                  headerLabel = (baseSubjectName || subjectName) + (subType === "score" ? " - Điểm KTĐK" : " - Mức đạt được")
+                } else {
+                  headerLabel = subjectName
+                }
               }
             }
 
