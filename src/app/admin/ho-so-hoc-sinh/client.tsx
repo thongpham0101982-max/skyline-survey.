@@ -925,7 +925,52 @@ export function StudentProfilesAdminClient({
                         return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">{str}</span>
                       }
 
-                      return (
+                                            const renderGradeBadge = (val: any) => {
+                        if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
+                        let gStr = ""
+                        if (typeof val === "object" && val !== null) {
+                          gStr = val.grade ? String(val.grade).trim() : ""
+                        } else {
+                          gStr = String(val).trim()
+                        }
+                        if (gStr === "T" || gStr === "Tốt" || gStr === "Hoàn thành tốt") {
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T (Tốt)</span>
+                        }
+                        if (gStr === "H" || gStr === "Hoàn thành") {
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">H (Hoàn thành)</span>
+                        }
+                        if (gStr === "C" || gStr === "Chưa hoàn thành") {
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">C (Chưa HT)</span>
+                        }
+                        if (gStr && isNaN(Number(gStr))) {
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">{gStr}</span>
+                        }
+                        return <span className="text-slate-400 font-normal">—</span>
+                      }
+
+                      const renderScoreOnlyBadge = (val: any) => {
+                        if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
+                        let num = NaN
+                        if (typeof val === "object" && val !== null) {
+                          num = val.score !== null && val.score !== undefined ? (typeof val.score === "number" ? val.score : parseFloat(val.score)) : NaN
+                        } else if (typeof val === "number") {
+                          num = val
+                        } else if (!isNaN(parseFloat(val))) {
+                          num = parseFloat(val)
+                        }
+
+                        if (!isNaN(num)) {
+                          let colorClass = "bg-slate-100 text-slate-700 border-slate-200"
+                          if (num >= 8.0) colorClass = "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          else if (num >= 6.5) colorClass = "bg-sky-50 text-sky-700 border-sky-200"
+                          else if (num >= 5.0) colorClass = "bg-amber-50 text-amber-700 border-amber-200"
+                          else colorClass = "bg-rose-50 text-rose-700 border-rose-200"
+                          return <span className={`inline-block px-2.5 py-0.5 rounded-lg text-xs font-black border ${colorClass}`}>{num.toFixed(1)}</span>
+                        }
+                        return <span className="text-slate-400 font-normal">—</span>
+                      }
+
+return (
                         <div className="space-y-6 animate-in fade-in duration-300">
                           <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
                             <div>
