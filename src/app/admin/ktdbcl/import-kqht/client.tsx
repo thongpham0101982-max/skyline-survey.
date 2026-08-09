@@ -824,9 +824,9 @@ export function ImportKQHTClient({
               if (!isTestSubject) {
                 subType = "grade"
               } else {
-                if (subLower.includes("mức") || subLower.includes("đạt") || subLower.includes("xếp loại") || subLower.includes("đánh giá")) {
+                if (searchNameLower.includes("mức") || subLower.includes("mức") || subLower.includes("đạt") || subLower.includes("xếp loại") || subLower.includes("đánh giá")) {
                   subType = "grade"
-                } else if (subLower.includes("điểm") || subLower.includes("score") || subLower.includes("ktđk") || subLower.includes("đk") || subLower.includes("thi") || subLower.includes("kt") || subLower.includes("đ.khánh")) {
+                } else if (searchNameLower.includes("điểm") || subLower.includes("điểm") || subLower.includes("score") || subLower.includes("ktđk") || subLower.includes("đk") || subLower.includes("thi") || subLower.includes("kt") || subLower.includes("đ.khánh")) {
                   subType = "score"
                 } else {
                   subType = "score"
@@ -880,7 +880,17 @@ export function ImportKQHTClient({
               "nhân ái",
               "chăm chỉ",
               "trung thực",
-              "trách nhiệm", "kết quả học tập", "kết quả rèn luyện", "học lực", "hạnh kiểm"
+              "trách nhiệm",
+              "kết quả học tập",
+              "kết quả rèn luyện",
+              "học lực",
+              "hạnh kiểm",
+              "hoàn thành xuất sắc",
+              "hoàn thành tốt",
+              "hoàn thành",
+              "chưa hoàn thành",
+              "xuất sắc",
+              "tốt"
             ]
 
             if (
