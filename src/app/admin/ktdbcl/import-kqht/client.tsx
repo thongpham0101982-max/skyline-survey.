@@ -920,7 +920,11 @@ export function ImportKQHTClient({
               subType
             })
 
-            const cleanName = subjectName.normalize("NFC").toLowerCase().trim()
+            const baseSubjectName = subjectName
+              .replace(/[\s\-_]+mức(\s*đạt\s*được)?/gi, "")
+              .replace(/[\s\-_]+điểm(\s*ktđk)?/gi, "")
+              .trim()
+            const cleanName = (baseSubjectName || subjectName).normalize("NFC").toLowerCase().trim()
 
             // Comprehensive alias dictionary map for THPT, THCS & Primary
             let aliasKey = cleanName
