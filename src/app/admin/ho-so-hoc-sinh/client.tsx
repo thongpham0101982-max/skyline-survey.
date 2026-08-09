@@ -806,7 +806,9 @@ export function StudentProfilesAdminClient({
                       rawScores.forEach((ts) => {
                         const subName = ts.subject?.subjectName || "Môn học"
                         const subCode = ts.subject?.subjectCode || ""
-                        const displayVal = ts.score !== null && ts.score !== undefined ? ts.score : (ts.evaluationGrade || "—")
+                        const hasScore = ts.score !== null && ts.score !== undefined
+                        const hasGrade = ts.evaluationGrade !== null && ts.evaluationGrade !== undefined && String(ts.evaluationGrade).trim() !== "" && ts.evaluationGrade !== "—"
+                        const displayVal = (hasScore && hasGrade) ? { score: ts.score, grade: ts.evaluationGrade } : (hasScore ? ts.score : (ts.evaluationGrade || "—"))
 
                         // Extract Primary KQGD if applicable
                         if (displayVal && displayVal !== "—") {
@@ -864,6 +866,40 @@ export function StudentProfilesAdminClient({
 
                       const formatScoreBadge = (val) => {
                         if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
+                        
+                        if (typeof val === "object" && val !== null && (val.score !== undefined || val.grade !== undefined)) {
+                          const gStr = val.grade ? String(val.grade).trim() : ""
+                          const num = val.score !== null && val.score !== undefined ? (typeof val.score === "number" ? val.score : parseFloat(val.score)) : NaN
+
+                          let gradeBadge = null
+                          if (gStr === "T" || gStr === "Tốt" || gStr === "Hoàn thành tốt") {
+                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T (Tốt)</span>
+                          } else if (gStr === "H" || gStr === "Hoàn thành") {
+                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">H (Hoàn thành)</span>
+                          } else if (gStr === "C" || gStr === "Chưa hoàn thành") {
+                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">C (Chưa HT)</span>
+                          } else if (gStr) {
+                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">{gStr}</span>
+                          }
+
+                          let scoreBadge = null
+                          if (!isNaN(num)) {
+                            let colorClass = "bg-slate-100 text-slate-700 border-slate-200"
+                            if (num >= 8.0) colorClass = "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            else if (num >= 6.5) colorClass = "bg-sky-50 text-sky-700 border-sky-200"
+                            else if (num >= 5.0) colorClass = "bg-amber-50 text-amber-700 border-amber-200"
+                            else colorClass = "bg-rose-50 text-rose-700 border-rose-200"
+                            scoreBadge = <span className={`inline-block px-2.5 py-0.5 rounded-lg text-xs font-black border ${colorClass}`}>{num.toFixed(1)}</span>
+                          }
+
+                          return (
+                            <div className="inline-flex items-center gap-1.5 justify-center flex-wrap">
+                              {gradeBadge}
+                              {scoreBadge}
+                            </div>
+                          )
+                        }
+
                         const str = String(val).trim()
                         if (isCheckSymbol(str)) {
                           return <span className="inline-flex items-center justify-center bg-teal-50 text-[#00A99D] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
