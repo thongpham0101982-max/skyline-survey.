@@ -858,9 +858,9 @@ export function StudentProfilesAdminClient({
                       const hk2Summary = summariesMap["HK2"]
                       const cnSummary = summariesMap["CN"]
 
-                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating
-                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating
-                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || primaryKqgdHK2 || primaryKqgdHK1
+                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || (hk1Summary?.reward ? hk1Summary.reward : null)
+                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (hk2Summary?.reward ? hk2Summary.reward : null)
+                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || finalKqgdHK2 || finalKqgdHK1
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 

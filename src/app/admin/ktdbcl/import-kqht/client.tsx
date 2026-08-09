@@ -774,15 +774,25 @@ export function ImportKQHTClient({
           }
 
           let firstStudentRowIndex = -1
-          for (let r = subHeaderRowIndex + 1; r < rawRows.length; r++) {
-            const val = String(rawRows[r]?.[studentCodeCol] || "").trim()
-            if (val && !val.toLowerCase().includes("mã học sinh") && !val.toLowerCase().includes("mã hs") && !val.toLowerCase().includes("họ và tên") && !val.toLowerCase().includes("ngày sinh") && !val.toLowerCase().includes("mức đạt") && !val.toLowerCase().includes("điểm")) {
-              firstStudentRowIndex = r
-              break
+          for (let r = 0; r < rawRows.length; r++) {
+            const codeVal = String(rawRows[r]?.[studentCodeCol] || "").trim().toLowerCase()
+            const nameVal = String(rawRows[r]?.[studentNameCol] || "").trim().toLowerCase()
+            
+            if (codeVal || nameVal) {
+              const isHeader = 
+                codeVal.includes("mã") || codeVal.includes("stt") || codeVal.includes("mức") || codeVal.includes("điểm") || codeVal.includes("học sinh") ||
+                nameVal.includes("họ và tên") || nameVal.includes("hoạt động") || nameVal.includes("năng lực") || nameVal.includes("phẩm chất") || nameVal.includes("đánh giá") || nameVal.includes("môn học")
+              
+              if (!isHeader) {
+                if (/\d{4,}/.test(codeVal) || (nameVal.length > 2 && !nameVal.includes("lớp"))) {
+                  firstStudentRowIndex = r
+                  break
+                }
+              }
             }
           }
           if (firstStudentRowIndex === -1) {
-            firstStudentRowIndex = subHeaderRowIndex + 1
+            firstStudentRowIndex = Math.max(subHeaderRowIndex + 1, 8)
           }
 
           const subjectsInSheet: { colIndex: number; subjectName: string; subType: "score" | "grade" }[] = []
