@@ -1010,14 +1010,20 @@ export function ImportKQHTClient({
             }
             const mappedCode = match ? match.subjectCode : ""
             
+            const baseName = subjectName
+              .replace(/[\s\-_]+mức(\s*đạt\s*được)?/gi, "")
+              .replace(/[\s\-_]+điểm(\s*ktđk)?/gi, "")
+              .trim()
+
             let headerLabel = subjectName
             if (effectiveLevel === "PRIMARY") {
-              const isTestSubject = primaryTestSubjects.some(pts => cleanName.includes(pts))
+              const primaryTestSubjects = ["toán", "tiếng việt", "tiếng anh", "khoa học", "lịch sử", "địa lý", "địa lí", "tin học", "công nghệ"];
+              const isTestSubject = primaryTestSubjects.some(pts => (baseName || subjectName).toLowerCase().includes(pts))
               if (isTestSubject) {
-                if (!subjectName.includes("Mức") && !subjectName.includes("Điểm") && !subjectName.includes("mức") && !subjectName.includes("điểm")) {
-                  headerLabel = (baseSubjectName || subjectName) + (subType === "score" ? " - Điểm KTĐK" : " - Mức đạt được")
-                } else {
-                  headerLabel = subjectName
+                if (subjectName.toLowerCase().includes("mức") || subType === "grade") {
+                  headerLabel = (baseName || subjectName) + " - Mức đạt được"
+                } else if (subjectName.toLowerCase().includes("điểm") || subType === "score") {
+                  headerLabel = (baseName || subjectName) + " - Điểm KTĐK"
                 }
               }
             }
@@ -1092,12 +1098,21 @@ export function ImportKQHTClient({
             const studentSubjects: Record<string, { score: any; grade: any }> = {}
             subjectsInSheet.forEach(sub => {
               const cellVal = String(row[sub.colIndex] || "").trim()
+              const subBaseName = sub.subjectName
+                .replace(/[\s\-_]+mức(\s*đạt\s*được)?/gi, "")
+                .replace(/[\s\-_]+điểm(\s*ktđk)?/gi, "")
+                .trim()
+
               let headerLabel = sub.subjectName
               if (effectiveLevel === "PRIMARY") {
                 const primaryTestSubjects = ["toán", "tiếng việt", "tiếng anh", "khoa học", "lịch sử", "địa lý", "địa lí", "tin học", "công nghệ"];
-                const isTestSubject = primaryTestSubjects.some(pts => sub.subjectName.toLowerCase().trim().includes(pts))
+                const isTestSubject = primaryTestSubjects.some(pts => (subBaseName || sub.subjectName).toLowerCase().includes(pts))
                 if (isTestSubject) {
-                  headerLabel = sub.subjectName + (sub.subType === "score" ? " (Điểm)" : " (Mức)")
+                  if (sub.subjectName.toLowerCase().includes("mức") || sub.subType === "grade") {
+                    headerLabel = (subBaseName || sub.subjectName) + " - Mức đạt được"
+                  } else if (sub.subjectName.toLowerCase().includes("điểm") || sub.subType === "score") {
+                    headerLabel = (subBaseName || sub.subjectName) + " - Điểm KTĐK"
+                  }
                 }
               }
 
