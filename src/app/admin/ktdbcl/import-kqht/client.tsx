@@ -812,21 +812,29 @@ export function ImportKQHTClient({
             const grandparentHeaderVal = getMergedParentHeaderValue(c)
             const subHeaderVal = String(subjectSubRow[c] || "").trim()
 
-            let subjectName = (mainHeaderVal || grandparentHeaderVal).normalize("NFC")
+            let parentName = (mainHeaderVal || grandparentHeaderVal).normalize("NFC").trim()
+            let subjectName = parentName
             let subType: "score" | "grade" = "score"
 
+            const parentLower = parentName.toLowerCase()
             const subLower = subHeaderVal.toLowerCase()
+
+            // Handle subheader when parent is a group title (like Nghệ thuật -> Âm nhạc / Mĩ thuật)
+            if (subHeaderVal && !subLower.includes("mức") && !subLower.includes("điểm") && !subLower.includes("ktđk") && !subLower.includes("xếp loại") && !subLower.includes("đánh giá")) {
+              subjectName = subHeaderVal
+            }
+
             const searchNameLower = subjectName.toLowerCase().trim()
             const primaryTestSubjects = ["toán", "tiếng việt", "tiếng anh", "khoa học", "lịch sử", "địa lý", "địa lí", "tin học", "công nghệ"];
 
             if (effectiveLevel === "PRIMARY") {
-              const isTestSubject = primaryTestSubjects.some(pts => searchNameLower.includes(pts));
+              const isTestSubject = primaryTestSubjects.some(pts => searchNameLower.includes(pts) || parentLower.includes(pts));
               if (!isTestSubject) {
                 subType = "grade"
               } else {
-                if (searchNameLower.includes("mức") || subLower.includes("mức") || subLower.includes("đạt") || subLower.includes("xếp loại") || subLower.includes("đánh giá")) {
+                if (parentLower.includes("mức") || searchNameLower.includes("mức") || subLower.includes("mức") || subLower.includes("đạt")) {
                   subType = "grade"
-                } else if (searchNameLower.includes("điểm") || subLower.includes("điểm") || subLower.includes("score") || subLower.includes("ktđk") || subLower.includes("đk") || subLower.includes("thi") || subLower.includes("kt") || subLower.includes("đ.khánh")) {
+                } else if (parentLower.includes("điểm") || searchNameLower.includes("điểm") || subLower.includes("điểm") || subLower.includes("ktđk")) {
                   subType = "score"
                 } else {
                   subType = "score"
@@ -838,31 +846,6 @@ export function ImportKQHTClient({
               } else {
                 subType = "score"
               }
-            }
-
-            const isSubHeaderTag = 
-              subLower.includes("hs") ||
-              subLower.includes("hệ số") ||
-              subLower.includes("n.xét") ||
-              subLower.includes("n.xet") ||
-              subLower.includes("nhận xét") ||
-              subLower.includes("học kỳ") ||
-              subLower.includes("học kì") ||
-              subLower.includes("hk") ||
-              subLower.includes("cả năm") ||
-              subLower.includes("ca nam") ||
-              subLower.includes("đánh giá") ||
-              subLower.includes("xếp loại") ||
-              subLower.includes("mức") ||
-              subLower.includes("điểm") ||
-              subLower.includes("học sinh") ||
-              subLower.includes("ngày sinh") ||
-              subLower.includes("giới tính") ||
-              subLower.includes("nữ")
-
-            if (subHeaderVal && !isSubHeaderTag) {
-              subjectName = subHeaderVal
-              subType = "grade"
             }
 
             const nameLower = subjectName.toLowerCase().trim()
@@ -1017,6 +1000,34 @@ export function ImportKQHTClient({
                 const dbNorm = dbSub.subjectName.normalize("NFC").toLowerCase().trim()
                 return aliasKey.includes(dbNorm) || dbNorm.includes(aliasKey) || cleanName.includes(dbNorm) || dbNorm.includes(cleanName)
               })
+            }
+
+            if (!match) {
+              if (cleanName.includes("đạo đức") || cleanName.includes("dieu duc")) {
+                match = dbSubjects.find(sub => {
+                  const n = sub.subjectName.normalize("NFC").toLowerCase()
+                  const c = sub.subjectCode.toLowerCase()
+                  return n.includes("đạo đức") || n.includes("công dân") || c.includes("gdcd") || c.includes("dao_duc")
+                })
+              } else if (cleanName.includes("âm nhạc") || cleanName.includes("am nhac")) {
+                match = dbSubjects.find(sub => {
+                  const n = sub.subjectName.normalize("NFC").toLowerCase()
+                  const c = sub.subjectCode.toLowerCase()
+                  return n.includes("âm nhạc") || n.includes("nghệ thuật") || c.includes("am_nhac") || c.includes("nghe_thuat")
+                })
+              } else if (cleanName.includes("mĩ thuật") || cleanName.includes("mỹ thuật")) {
+                match = dbSubjects.find(sub => {
+                  const n = sub.subjectName.normalize("NFC").toLowerCase()
+                  const c = sub.subjectCode.toLowerCase()
+                  return n.includes("mĩ thuật") || n.includes("mỹ thuật") || n.includes("nghệ thuật") || c.includes("mi_thuat") || c.includes("nghe_thuat")
+                })
+              } else if (cleanName.includes("trải nghiệm") || cleanName.includes("hđtn")) {
+                match = dbSubjects.find(sub => {
+                  const n = sub.subjectName.normalize("NFC").toLowerCase()
+                  const c = sub.subjectCode.toLowerCase()
+                  return n.includes("trải nghiệm") || c.includes("hdtn")
+                })
+              }
             }
             const mappedCode = match ? match.subjectCode : ""
             
