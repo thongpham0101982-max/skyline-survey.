@@ -1,4 +1,3 @@
-
 function normalizeSheetToClassCode(sheetName: string, availableClasses: any[] = []): string {
   if (!sheetName) return ""
   const sheetKey = sheetName.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -225,9 +224,7 @@ export async function POST(req: NextRequest) {
     const existingCampuses = await prisma.campus.findMany()
     const campusMap = new Map<string, any>(existingCampuses.map(c => [c.campusCode.toUpperCase(), c]))
 
-    const existingClasses = await prisma.class.findMany({
-      where: { academicYearId: academicYear.id }
-    })
+    const existingClasses = await prisma.class.findMany()
     const classMap = new Map<string, any>(existingClasses.map(c => [c.classCode.toUpperCase(), c]))
 
     const allStudentCodes = classesData.flatMap(c => (c.students || []).map(s => String(s.studentCode).trim().toUpperCase())).filter(Boolean)
@@ -257,28 +254,45 @@ export async function POST(req: NextRequest) {
       
       let campus = campusMap.get(campusCode)
       if (!campus) {
-        campus = await prisma.campus.create({
-          data: {
-            campusCode,
-            campusName: `Cơ sở ${campusCode}`,
-            status: "ACTIVE"
-          }
-        })
-        campusMap.set(campusCode, campus)
+        try {
+          campus = await prisma.campus.create({
+            data: {
+              campusCode,
+              campusName: `Cơ sở ${campusCode}`,
+              status: "ACTIVE"
+            }
+          })
+        } catch (campusErr) {
+          campus = await prisma.campus.findUnique({ where: { campusCode } })
+          if (!campus) throw campusErr
+        }
+        if (campus) {
+          campusMap.set(campusCode, campus)
+        }
       }
 
       let targetClass = classMap.get(rawClassName.toUpperCase())
       if (!targetClass) {
-        targetClass = await prisma.class.create({
-          data: {
-            classCode: rawClassName,
-            className: rawClassName,
-            campusId: campus.id,
-            academicYearId: academicYear.id,
-            level: level === "PRIMARY" ? "Tieu hoc" : "Trung hoc",
-            status: "ACTIVE"
-          }
-        })
+        targetClass = await prisma.class.findFirst({ where: { classCode: rawClassName } })
+      }
+      if (!targetClass) {
+        try {
+          targetClass = await prisma.class.create({
+            data: {
+              classCode: rawClassName,
+              className: rawClassName,
+              campusId: campus.id,
+              academicYearId: academicYear.id,
+              level: level === "PRIMARY" ? "Tieu hoc" : "Trung hoc",
+              status: "ACTIVE"
+            }
+          })
+        } catch (classErr) {
+          targetClass = await prisma.class.findFirst({ where: { classCode: rawClassName } })
+          if (!targetClass) throw classErr
+        }
+      }
+      if (targetClass) {
         classMap.set(rawClassName.toUpperCase(), targetClass)
       }
 
