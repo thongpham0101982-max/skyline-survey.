@@ -1145,22 +1145,55 @@ return (
                                 <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs bg-white">
                                   <table className="w-full text-xs text-left border-collapse">
                                     <thead>
-                                      <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
-                                        <th className="py-3 px-4 text-center w-12">STT</th>
-                                        <th className="py-3 px-4">Tên Môn học</th>
-                                        <th className="py-3 px-4 text-center w-28">Học kỳ 1</th>
-                                        <th className="py-3 px-4 text-center w-28">Học kỳ 2</th>
-                                        <th className="py-3 px-4 text-center w-28">Cả năm</th>
-                                      </tr>
+                                      {isPrimary ? (
+                                        <>
+                                          <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                            <th rowSpan={2} className="py-3 px-3 text-center w-12 border-r border-slate-200">STT</th>
+                                            <th rowSpan={2} className="py-3 px-4 border-r border-slate-200">Tên Môn học</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-teal-700 bg-teal-50/50">Học kỳ 1</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center border-r border-slate-200 text-indigo-700 bg-indigo-50/50">Học kỳ 2</th>
+                                            <th colSpan={2} className="py-2 px-3 text-center text-emerald-800 bg-emerald-50/50">Cả năm</th>
+                                          </tr>
+                                          <tr className="bg-slate-50/80 text-slate-600 font-bold text-[9px] uppercase tracking-wider border-b border-slate-200">
+                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-20">Điểm KT</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-20">Điểm KT</th>
+                                            <th className="py-1.5 px-2 text-center border-r border-slate-200 w-24">Mức đạt</th>
+                                            <th className="py-1.5 px-2 text-center w-20">Điểm KT</th>
+                                          </tr>
+                                        </>
+                                      ) : (
+                                        <tr className="bg-slate-50 text-slate-700 font-black uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                          <th className="py-3 px-4 text-center w-12">STT</th>
+                                          <th className="py-3 px-4">Tên Môn học</th>
+                                          <th className="py-3 px-4 text-center w-28">Học kỳ 1</th>
+                                          <th className="py-3 px-4 text-center w-28">Học kỳ 2</th>
+                                          <th className="py-3 px-4 text-center w-28">Cả năm</th>
+                                        </tr>
+                                      )}
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                                      {subjectRows.map((row, idx) => (
+                                      {subjectRows.map((row: any, idx: number) => (
                                         <tr key={row.id} className="hover:bg-slate-50/80 transition-all">
-                                          <td className="py-3 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                          <td className="py-3 px-4 font-bold text-slate-800">{row.name}</td>
-                                          <td className="py-3 px-4 text-center">{formatScoreBadge(row.hk1)}</td>
-                                          <td className="py-3 px-4 text-center">{formatScoreBadge(row.hk2)}</td>
-                                          <td className="py-3 px-4 text-center">{formatScoreBadge(row.cn)}</td>
+                                          <td className="py-3 px-3 text-center font-bold text-slate-400 border-r border-slate-100">{idx + 1}</td>
+                                          <td className="py-3 px-4 font-bold text-slate-800 border-r border-slate-100">{row.name}</td>
+                                          {isPrimary ? (
+                                            <>
+                                              <td className="py-3 px-2 text-center border-r border-slate-100">{renderGradeBadge(row.hk1)}</td>
+                                              <td className="py-3 px-2 text-center border-r border-slate-100">{renderScoreOnlyBadge(row.hk1)}</td>
+                                              <td className="py-3 px-2 text-center border-r border-slate-100">{renderGradeBadge(row.hk2)}</td>
+                                              <td className="py-3 px-2 text-center border-r border-slate-100">{renderScoreOnlyBadge(row.hk2)}</td>
+                                              <td className="py-3 px-2 text-center border-r border-slate-100">{renderGradeBadge(row.cn)}</td>
+                                              <td className="py-3 px-2 text-center">{renderScoreOnlyBadge(row.cn)}</td>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <td className="py-3 px-4 text-center">{formatScoreBadge(row.hk1)}</td>
+                                              <td className="py-3 px-4 text-center">{formatScoreBadge(row.hk2)}</td>
+                                              <td className="py-3 px-4 text-center">{formatScoreBadge(row.cn)}</td>
+                                            </>
+                                          )}
                                         </tr>
                                       ))}
                                     </tbody>
