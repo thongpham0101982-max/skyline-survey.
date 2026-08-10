@@ -389,6 +389,37 @@ export async function POST(req: NextRequest) {
                 })
                 if (found) subId = found.id
               }
+
+              if (!subId && baseName && baseName.length > 1) {
+                // Failsafe auto-create missing Primary subject in DB so no scores are ever dropped
+                const subCode = baseName
+                  .toUpperCase()
+                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                  .replace(/[^A-Z0-9]/g, "_")
+                  .replace(/_+/g, "_")
+                  .slice(0, 18) || "SUB_" + Date.now()
+
+                try {
+                  const uniqueCode = subCode + "_" + Math.floor(Math.random() * 9000 + 1000)
+                  const newSub = await prisma.subject.create({
+                    data: {
+                      subjectCode: uniqueCode,
+                      subjectName: baseName,
+                      status: "ACTIVE"
+                    }
+                  })
+                  subId = newSub.id
+                  existingSubjects.push(newSub)
+                  subjectMap.set(cleanBaseName, subId)
+                  console.log(`Auto-created missing Primary subject in DB: ${baseName} (${subId})`)
+                } catch (createErr) {
+                  const existing = await prisma.subject.findFirst({
+                    where: { subjectName: baseName }
+                  })
+                  if (existing) subId = existing.id
+                }
+              }
+
               if (!subId) continue
 
               const dbSub = existingSubjects.find(sub => sub.id === subId) || 
