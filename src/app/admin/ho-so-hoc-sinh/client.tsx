@@ -972,7 +972,6 @@ export function StudentProfilesAdminClient({
                       const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || computedKqgdHK2 || null
                       const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || computedPrimaryCN || null
 
-                      const finalRewardCN = cnSummary?.reward || (finalKqgdCN ? (finalKqgdCN === "Hoàn thành xuất sắc" ? "Học sinh Hoàn thành xuất sắc" : "Học sinh Hoàn thành tốt") : null)
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
@@ -1248,8 +1247,6 @@ return (
                                             <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN}</span>
                                           </div>
                                           <div className="pt-2 border-t border-teal-100/80 flex justify-between items-center flex-wrap gap-1">
-                                            <span className="text-amber-700 font-extrabold text-[11px]">Danh hiệu / Khen thưởng Cuối năm:</span>
-                                            <span className="font-black text-slate-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs shadow-2xs">{finalRewardCN}</span>
                                           </div>
                                         </div>
                                       ) : (
@@ -1263,12 +1260,6 @@ return (
                                             <span className="font-extrabold text-teal-800 bg-white px-2 py-0.5 rounded border border-teal-200">{cnSummary?.conductRating || "—"}</span>
                                           </div>
                                         </>
-                                      )}
-                                      {cnSummary?.reward && (
-                                        <div className="pt-1 border-t border-teal-100 text-[11px]">
-                                          <span className="text-amber-600 font-black">Danh hiệu / Khen thưởng Cuối năm: </span>
-                                          <span className="text-slate-800 font-black bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg inline-block mt-1 shadow-2xs">{cnSummary.reward}</span>
-                                        </div>
                                       )}
                                     </div>
                                   </div>
