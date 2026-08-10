@@ -1112,19 +1112,9 @@ return (
                               </h4>
                               <p className="text-[10px] text-slate-400 font-bold mt-0.5">Bảng điểm môn học &amp; Đánh giá xếp loại tổng kết định kỳ</p>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={handleResetMOETData}
-                                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
-                                title="Xóa sạch dữ liệu MOET năm 2025-2026 để Import mới"
-                              >
-                                <RotateCcw className="w-3 h-3 text-rose-600" /> Reset dữ liệu (2025-2026)
-                              </button>
-                              <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                                Năm học: {selectedStudent?.yearName || activeYearName}
-                              </span>
-                            </div>
+                            <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                              Năm học: {selectedStudent?.yearName || activeYearName}
+                            </span>
                           </div>
 
                           {!hasData ? (
