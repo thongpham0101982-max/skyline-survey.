@@ -627,13 +627,13 @@ export function ImportKQHTClient({
             } else if (combinedLower === "nữ" || combinedLower === "nu" || valLower === "nữ" || subLower === "nữ") {
               femaleCol = c
             } else if (
-              combinedLower.includes("kết quả học tập") ||
-              combinedLower.includes("học lực") ||
-              valLower.includes("đánh giá kqgd") || 
-              valLower.includes("đánh giá kết quả") ||
-              valLower.includes("kqgd") ||
-              valLower.includes("học lực") ||
-              valLower.includes("kết quả học tập")
+              (combinedLower.includes("kết quả học tập") ||
+               combinedLower.includes("học lực") ||
+               valLower.includes("đánh giá kqgd") ||
+               valLower.includes("kết quả rèn luyện và học tập")) &&
+              !valLower.includes("bảng tổng hợp") &&
+              !valLower.includes("môn học và hoạt động giáo dục") &&
+              !valLower.includes("môn học & hoạt động giáo dục")
             ) {
               if (effectiveLevel === "SECONDARY") {
                 academicRatingCol = c
@@ -799,8 +799,8 @@ export function ImportKQHTClient({
           const startCol = Math.max(studentNameCol, dobCol, femaleCol, genderCol) + 1
           let endCol = mainHeaderRow.length
           const ratingIndices = [
-            ...academicRatingCols.map(x => x.colIndex),
-            academicRatingCol,
+            ...(effectiveLevel === "SECONDARY" ? academicRatingCols.map(x => x.colIndex) : []),
+            effectiveLevel === "SECONDARY" ? academicRatingCol : -1,
             conductRatingCol,
             rewardUnexpectedCol,
             rewardCol,
@@ -811,7 +811,7 @@ export function ImportKQHTClient({
             absencesTotalCol,
             promotedCol,
             notesCol
-          ].filter(idx => idx !== -1)
+          ].filter(idx => idx !== -1 && idx > startCol + 2)
 
           if (ratingIndices.length > 0) {
             endCol = Math.min(...ratingIndices)
