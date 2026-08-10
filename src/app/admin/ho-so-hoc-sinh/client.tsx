@@ -865,12 +865,39 @@ export function StudentProfilesAdminClient({
                         else if (ts.semester === "CN") item.cn = displayVal
                       })
 
-                      const subjectRows = Array.from(subjectMap.values())
-                        .filter((row) => !isKqgdSubject(row.code, row.name))
-                        .sort((a, b) => a.name.localeCompare(b.name, "vi"))
+                      // Primary full subjects catalog
+                      if (isPrimary) {
+                        const standardPrimarySubjects = [
+                          { code: "TVI", name: "Tiếng Việt" },
+                          { code: "TOA", name: "Toán" },
+                          { code: "ENG", name: "Tiếng Anh" },
+                          { code: "DAO_DUC", name: "Đạo đức" },
+                          { code: "TNXH", name: "TN-XH / Khoa học" },
+                          { code: "TIN", name: "Tin học và Công nghệ" },
+                          { code: "AM_NHAC", name: "Âm nhạc" },
+                          { code: "MI_THUAT", name: "Mĩ thuật" },
+                          { code: "GTC", name: "Giáo dục thể chất" },
+                          { code: "HDTN", name: "Hoạt động trải nghiệm" }
+                        ]
+                        standardPrimarySubjects.forEach(ps => {
+                          const existingKey = Array.from(subjectMap.keys()).find((k: any) => {
+                            const item = subjectMap.get(k)
+                            const n = (item?.name || "").toLowerCase()
+                            const c = (item?.code || "").toLowerCase()
+                            return n.includes(ps.name.toLowerCase().split(" ")[0]) || c === ps.code.toLowerCase()
+                          })
+                          if (!existingKey) {
+                            subjectMap.set(ps.code, { id: ps.code, name: ps.name, code: ps.code, hk1: null, hk2: null, cn: null })
+                          }
+                        })
+                      }
 
-                      const summariesMap = {}
-                      rawSummaries.forEach((s) => {
+                      const subjectRows = Array.from(subjectMap.values())
+                        .filter((row: any) => !isKqgdSubject(row.code, row.name))
+                        .sort((a: any, b: any) => a.name.localeCompare(b.name, "vi"))
+
+                      const summariesMap: Record<string, any> = {}
+                      rawSummaries.forEach((s: any) => {
                         if (s.semester) summariesMap[s.semester] = s
                       })
 
@@ -878,9 +905,49 @@ export function StudentProfilesAdminClient({
                       const hk2Summary = summariesMap["HK2"]
                       const cnSummary = summariesMap["CN"]
 
-                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || (hk1Summary?.reward ? hk1Summary.reward : null)
-                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (hk2Summary?.reward ? hk2Summary.reward : null)
-                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || finalKqgdHK2 || finalKqgdHK1
+                      const computePrimaryKqgd = (rows: any[], sem: "hk1" | "hk2" | "cn") => {
+                        if (!rows || rows.length === 0) return null
+                        let hasVal = false
+                        let allT = true
+                        let anyC = false
+
+                        rows.forEach(r => {
+                          const val = r[sem]
+                          if (!val || val === "—") return
+                          hasVal = true
+                          let g = ""
+                          let num = NaN
+                          if (typeof val === "object" && val !== null) {
+                            g = val.grade ? String(val.grade).trim().toUpperCase() : ""
+                            num = val.score !== null && val.score !== undefined ? Number(val.score) : NaN
+                          } else if (typeof val === "number") {
+                            num = val
+                          } else {
+                            g = String(val).trim().toUpperCase()
+                            if (!isNaN(Number(g))) num = Number(g)
+                          }
+
+                          if (g === "C" || g.includes("CHƯA") || (!isNaN(num) && num < 5.0)) {
+                            anyC = true
+                            allT = false
+                          } else if (g === "H" || g.includes("HOÀN THÀNH") || (!isNaN(num) && num < 9.0)) {
+                            allT = false
+                          }
+                        })
+
+                        if (!hasVal) return null
+                        if (anyC) return "Chưa hoàn thành"
+                        if (allT) return "Hoàn thành xuất sắc"
+                        return "Hoàn thành tốt"
+                      }
+
+                      const computedKqgdHK1 = computePrimaryKqgd(subjectRows, "hk1")
+                      const computedKqgdHK2 = computePrimaryKqgd(subjectRows, "hk2")
+                      const computedKqgdCN = computePrimaryKqgd(subjectRows, "cn")
+
+                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || (hk1Summary?.reward ? hk1Summary.reward : null) || (isPrimary ? (computedKqgdHK1 || computedKqgdCN || "Hoàn thành xuất sắc") : null)
+                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (hk2Summary?.reward ? hk2Summary.reward : null) || (isPrimary ? computedKqgdHK2 : null)
+                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || (isPrimary ? (computedKqgdCN || computedKqgdHK1 || "Hoàn thành xuất sắc") : null) || finalKqgdHK2 || finalKqgdHK1
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
@@ -948,11 +1015,24 @@ export function StudentProfilesAdminClient({
                                             const renderGradeBadge = (val: any) => {
                         if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
                         let gStr = ""
+                        let scoreNum = NaN
                         if (typeof val === "object" && val !== null) {
                           gStr = val.grade ? String(val.grade).trim() : ""
+                          scoreNum = val.score !== null && val.score !== undefined ? Number(val.score) : NaN
+                        } else if (typeof val === "number") {
+                          scoreNum = val
                         } else {
                           gStr = String(val).trim()
+                          if (!isNaN(Number(gStr))) scoreNum = Number(gStr)
                         }
+
+                        // Infer Primary grade if missing but score is available
+                        if (!gStr && !isNaN(scoreNum)) {
+                          if (scoreNum >= 9.0) gStr = "T"
+                          else if (scoreNum >= 5.0) gStr = "H"
+                          else gStr = "C"
+                        }
+
                         if (gStr === "T" || gStr === "Tốt" || gStr === "Hoàn thành tốt") {
                           return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T (Tốt)</span>
                         }
