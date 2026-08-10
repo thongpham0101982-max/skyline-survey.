@@ -399,23 +399,35 @@ export async function POST(req: NextRequest) {
               // The client already only sends subject keys that were parsed from the file
 
               const val = s.subjects[subKey]
-              if (!val) continue
+              if (val === undefined || val === null || val === "") continue
 
               // Use dbSub.id as merge key so score+grade from two columns go to same upsert
               if (!subjectMergeMap.has(dbSub.id)) {
                 subjectMergeMap.set(dbSub.id, { score: null, grade: null, subjectId: dbSub.id })
               }
               const merged = subjectMergeMap.get(dbSub.id)!
-              if (val.score !== undefined && val.score !== null && val.score !== "") {
-                const num = parseFloat(val.score)
+
+              let rawScoreVal = null
+              let rawGradeVal = null
+
+              if (typeof val === "object" && val !== null) {
+                if (val.score !== undefined && val.score !== null && val.score !== "") rawScoreVal = val.score
+                if (val.grade !== undefined && val.grade !== null && val.grade !== "") rawGradeVal = val.grade
+              } else {
+                rawScoreVal = val
+              }
+
+              if (rawScoreVal !== null && rawScoreVal !== "") {
+                const num = parseFloat(String(rawScoreVal))
                 if (!isNaN(num)) {
-                  merged.score = val.score
+                  merged.score = num
                 } else {
-                  merged.grade = val.score
+                  merged.grade = String(rawScoreVal).trim()
                 }
               }
-              if (val.grade !== undefined && val.grade !== null && String(val.grade).trim() !== "") {
-                merged.grade = val.grade
+
+              if (rawGradeVal !== null && rawGradeVal !== "") {
+                merged.grade = String(rawGradeVal).trim()
               }
             }
 
