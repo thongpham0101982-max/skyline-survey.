@@ -843,8 +843,22 @@ export function StudentProfilesAdminClient({
 
                       const subjectMap = new Map()
                       rawScores.forEach((ts) => {
-                        const subName = ts.subject?.subjectName || "Môn học"
-                        const subCode = ts.subject?.subjectCode || ""
+                        let subName = ts.subject?.subjectName || "Môn học"
+                        let subCode = ts.subject?.subjectCode || ""
+
+                        if (isPrimary) {
+                          const lowerN = subName.toLowerCase()
+                          if (lowerN.includes("tiếng việt") || lowerN.includes("tieng viet")) subName = "Tiếng Việt"
+                          else if (lowerN.includes("toán") || lowerN.includes("toan")) subName = "Toán"
+                          else if (lowerN.includes("tiếng anh") || lowerN.includes("tieng anh")) subName = "Tiếng Anh"
+                          else if (lowerN.includes("đạo đức") || lowerN.includes("dao duc")) subName = "Đạo đức"
+                          else if (lowerN.includes("tn-xh") || lowerN.includes("tự nhiên") || lowerN.includes("tnxh")) subName = "TN-XH"
+                          else if (lowerN.includes("tin học") || lowerN.includes("công nghệ")) subName = "Tin học và Công nghệ"
+                          else if (lowerN.includes("âm nhạc") || lowerN.includes("am nhac")) subName = "Âm nhạc"
+                          else if (lowerN.includes("mĩ thuật") || lowerN.includes("mỹ thuật") || lowerN.includes("mi thuat")) subName = "Mĩ thuật"
+                          else if (lowerN.includes("thể chất") || lowerN.includes("gdc")) subName = "Giáo dục thể chất"
+                          else if (lowerN.includes("trải nghiệm") || lowerN.includes("hdtn")) subName = "Hoạt động trải nghiệm"
+                        }
                         const hasScore = ts.score !== null && ts.score !== undefined
                         const hasGrade = ts.evaluationGrade !== null && ts.evaluationGrade !== undefined && String(ts.evaluationGrade).trim() !== "" && ts.evaluationGrade !== "—"
                         const displayVal = (hasScore && hasGrade) ? { score: ts.score, grade: ts.evaluationGrade } : (hasScore ? ts.score : (ts.evaluationGrade || "—"))
@@ -874,7 +888,7 @@ export function StudentProfilesAdminClient({
                           }
                         }
 
-                        const key = ts.subjectId || subName
+                        const key = (isPrimary ? subName : (ts.subjectId || subName)).normalize("NFC").trim()
                         if (!subjectMap.has(key)) {
                           subjectMap.set(key, { id: key, name: subName, code: subCode, hk1: null, hk2: null, cn: null })
                         }
