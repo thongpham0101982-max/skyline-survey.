@@ -846,47 +846,23 @@ export function StudentProfilesAdminClient({
                         let subName = ts.subject?.subjectName || "Môn học"
                         let subCode = ts.subject?.subjectCode || ""
 
-                        if (isPrimary) {
-                          const lowerN = subName.toLowerCase()
-                          if (lowerN.includes("tiếng việt") || lowerN.includes("tieng viet")) subName = "Tiếng Việt"
+                                                if (isPrimary) {
+                          const lowerN = (subName + " " + subCode).toLowerCase()
+                          if (lowerN.includes("tiếng việt") || lowerN.includes("tieng viet") || lowerN.includes("tvi")) subName = "Tiếng Việt"
                           else if (lowerN.includes("toán") || lowerN.includes("toan")) subName = "Toán"
-                          else if (lowerN.includes("tiếng anh") || lowerN.includes("tieng anh")) subName = "Tiếng Anh"
-                          else if (lowerN.includes("đạo đức") || lowerN.includes("dao duc")) subName = "Đạo đức"
-                          else if (lowerN.includes("tn-xh") || lowerN.includes("tự nhiên") || lowerN.includes("tnxh")) subName = "TN-XH"
-                          else if (lowerN.includes("tin học") || lowerN.includes("công nghệ")) subName = "Tin học và Công nghệ"
-                          else if (lowerN.includes("âm nhạc") || lowerN.includes("am nhac")) subName = "Âm nhạc"
-                          else if (lowerN.includes("mĩ thuật") || lowerN.includes("mỹ thuật") || lowerN.includes("mi thuat")) subName = "Mĩ thuật"
-                          else if (lowerN.includes("thể chất") || lowerN.includes("gdc")) subName = "Giáo dục thể chất"
-                          else if (lowerN.includes("trải nghiệm") || lowerN.includes("hdtn")) subName = "Hoạt động trải nghiệm"
+                          else if (lowerN.includes("tiếng anh") || lowerN.includes("tieng anh") || lowerN.includes("esl") || lowerN.includes("eng")) subName = "Tiếng Anh"
+                          else if (lowerN.includes("đạo đức") || lowerN.includes("dao duc") || lowerN.includes("giáo dục công dân") || lowerN.includes("gcd")) subName = "Đạo đức"
+                          else if (lowerN.includes("tn-xh") || lowerN.includes("tự nhiên") || lowerN.includes("tnxh") || lowerN.includes("khoa học") || lowerN.includes("kht")) subName = "TN-XH / Khoa học"
+                          else if (lowerN.includes("tin học") || lowerN.includes("công nghệ") || lowerN.includes("tin")) subName = "Tin học và Công nghệ"
+                          else if (lowerN.includes("âm nhạc") || lowerN.includes("am nhac") || lowerN.includes("nth") || lowerN.includes("music")) subName = "Âm nhạc"
+                          else if (lowerN.includes("mĩ thuật") || lowerN.includes("mỹ thuật") || lowerN.includes("mi thuat") || lowerN.includes("art")) subName = "Mĩ thuật"
+                          else if (lowerN.includes("thể chất") || lowerN.includes("gdc") || lowerN.includes("gtc")) subName = "Giáo dục thể chất"
+                          else if (lowerN.includes("trải nghiệm") || lowerN.includes("hdtn") || lowerN.includes("hđtn")) subName = "Hoạt động trải nghiệm"
                         }
+
                         const hasScore = ts.score !== null && ts.score !== undefined
                         const hasGrade = ts.evaluationGrade !== null && ts.evaluationGrade !== undefined && String(ts.evaluationGrade).trim() !== "" && ts.evaluationGrade !== "—"
                         const displayVal = (hasScore && hasGrade) ? { score: ts.score, grade: ts.evaluationGrade } : (hasScore ? ts.score : (ts.evaluationGrade || "—"))
-
-                        // Extract Primary KQGD if applicable
-                        if (displayVal && displayVal !== "—") {
-                          const isHit = isCheckSymbol(displayVal) || String(displayVal).trim() === "T" || String(displayVal).trim() === "1"
-                          if (isHit) {
-                            let levelName = ""
-                            const normN = subName.trim().toLowerCase()
-                            const normC = subCode.trim().toUpperCase()
-                            if (normC === "HOAN_THANH_XUAT_SAC" || normN.includes("xuất sắc")) {
-                              levelName = "Hoàn thành xuất sắc"
-                            } else if (normC === "HOAN_THANH_TOT" || normN.includes("hoàn thành tốt")) {
-                              levelName = "Hoàn thành tốt"
-                            } else if (normC === "HOAN_THANH" || normN === "hoàn thành") {
-                              levelName = "Hoàn thành"
-                            } else if (normC === "CHUA_HOAN_THANH" || normN.includes("chưa hoàn thành")) {
-                              levelName = "Chưa hoàn thành"
-                            }
-
-                            if (levelName) {
-                              if (ts.semester === "CN") primaryKqgdCN = levelName
-                              else if (ts.semester === "HK2") primaryKqgdHK2 = levelName
-                              else if (ts.semester === "HK1") primaryKqgdHK1 = levelName
-                            }
-                          }
-                        }
 
                         const key = (isPrimary ? subName : (ts.subjectId || subName)).normalize("NFC").trim()
                         if (!subjectMap.has(key)) {
@@ -990,10 +966,13 @@ export function StudentProfilesAdminClient({
                       const computedKqgdHK2 = computePrimaryKqgd(subjectRows, "hk2")
                       const computedKqgdCN = computePrimaryKqgd(subjectRows, "cn")
 
-                      // Primary: HK1 & HK2 do NOT evaluate overall KQGD/Reward (only CN evaluates overall rating & rewards)
+                      // Primary: Dynamic Summary computation based on imported data without hardcoded defaults
                       const computedPrimaryCN = computePrimaryKqgd(subjectRows, "cn") || computePrimaryKqgd(subjectRows, "hk1")
-                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || computedPrimaryCN || "Hoàn thành xuất sắc"
-                      const finalRewardCN = cnSummary?.reward || (finalKqgdCN === "Hoàn thành xuất sắc" ? "Học sinh Hoàn thành xuất sắc" : "Học sinh Hoàn thành tốt")
+                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || computedKqgdHK1 || null
+                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || computedKqgdHK2 || null
+                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || computedPrimaryCN || null
+
+                      const finalRewardCN = cnSummary?.reward || (finalKqgdCN ? (finalKqgdCN === "Hoàn thành xuất sắc" ? "Học sinh Hoàn thành xuất sắc" : "Học sinh Hoàn thành tốt") : null)
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
@@ -1154,9 +1133,13 @@ return (
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
                                         <div className="space-y-2">
-                                          <div className="flex justify-between items-center text-slate-400 italic">
-                                            <span>Đánh giá KQGD:</span>
-                                            <span className="text-[11px]">Không đánh giá định kỳ HK1</span>
+                                          <div className="flex justify-between items-center">
+                                            <span className="font-bold text-slate-700">Đánh giá KQGD HK1:</span>
+                                            {finalKqgdHK1 ? (
+                                              <span className="font-black text-teal-800 bg-teal-50 px-2.5 py-0.5 rounded-lg border border-teal-200">{finalKqgdHK1}</span>
+                                            ) : (
+                                              <span className="text-[11px] text-slate-400 italic font-medium">Không đánh giá định kỳ HK1</span>
+                                            )}
                                           </div>
                                           <div className="flex justify-between items-center">
                                             <span>Số ngày nghỉ:</span>
@@ -1205,9 +1188,13 @@ return (
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
                                         <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                          <div className="flex justify-between items-center text-slate-400 italic">
-                                            <span>Đánh giá KQGD:</span>
-                                            <span className="text-[11px]">Không đánh giá định kỳ HK2</span>
+                                          <div className="flex justify-between items-center">
+                                            <span className="font-bold text-slate-700">Đánh giá KQGD HK2:</span>
+                                            {finalKqgdHK2 ? (
+                                              <span className="font-black text-indigo-800 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200">{finalKqgdHK2}</span>
+                                            ) : (
+                                              <span className="text-[11px] text-slate-400 italic font-medium">Không đánh giá định kỳ HK2</span>
+                                            )}
                                           </div>
                                           <div className="flex justify-between items-center">
                                             <span>Số ngày nghỉ:</span>
