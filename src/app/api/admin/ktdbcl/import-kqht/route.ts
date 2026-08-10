@@ -227,12 +227,11 @@ export async function POST(req: NextRequest) {
     const existingClasses = await prisma.class.findMany()
     const classMap = new Map<string, any>(existingClasses.map(c => [c.classCode.toUpperCase(), c]))
 
-    const allStudentCodes = classesData.flatMap(c => (c.students || []).map(s => String(s.studentCode).trim().toUpperCase())).filter(Boolean)
     const existingStudents = await prisma.student.findMany({
       where: {
-        studentCode: { in: allStudentCodes },
         academicYearId: academicYear.id
-      }
+      },
+      include: { class: true }
     })
     const studentMap = new Map<string, any>(existingStudents.map(s => [s.studentCode.toUpperCase(), s]))
 
@@ -325,6 +324,22 @@ export async function POST(req: NextRequest) {
             if (matchedStudent) {
               finalStudentCode = matchedStudent.studentCode
               console.log(`Auto-matched student by name and class: ${sName} (${sCode}) -> ${finalStudentCode}`)
+              try {
+                await prisma.studentCodeMapping.upsert({
+                  where: {
+                    markFileCode_academicYearId: {
+                      markFileCode: sCode,
+                      academicYearId: academicYear.id
+                    }
+                  },
+                  update: { databaseCode: matchedStudent.studentCode },
+                  create: {
+                    academicYearId: academicYear.id,
+                    markFileCode: sCode,
+                    databaseCode: matchedStudent.studentCode
+                  }
+                })
+              } catch (mapErr) {}
             }
           }
 
