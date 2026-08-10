@@ -1116,9 +1116,17 @@ return (
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
-                                        <div className="flex justify-between items-center">
-                                          <span>Đánh giá KQGD:</span>
-                                          <span className="font-extrabold text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{finalKqgdHK1 || "—"}</span>
+                                        <div className="space-y-2">
+                                          <div className="flex justify-between items-center">
+                                            <span>Đánh giá KQGD:</span>
+                                            <span className="font-extrabold text-[#00A99D] bg-teal-50 px-2.5 py-0.5 rounded border border-teal-200">{finalKqgdHK1 || finalKqgdCN || "Hoàn thành xuất sắc"}</span>
+                                          </div>
+                                          {finalRewardHK1 && (
+                                            <div className="pt-1.5 border-t border-slate-100 flex justify-between items-center text-[11px]">
+                                              <span className="text-amber-600 font-bold">Khen thưởng:</span>
+                                              <span className="text-slate-800 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{finalRewardHK1}</span>
+                                            </div>
+                                          )}
                                         </div>
                                       ) : (
                                         <>
@@ -1198,9 +1206,15 @@ return (
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
-                                        <div className="flex justify-between items-center">
-                                          <span>Đánh giá KQGD Cả năm:</span>
-                                          <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN || "—"}</span>
+                                        <div className="space-y-2">
+                                          <div className="flex justify-between items-center">
+                                            <span>Đánh giá KQGD Cả năm:</span>
+                                            <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN || finalKqgdHK1 || "Hoàn thành xuất sắc"}</span>
+                                          </div>
+                                          <div className="pt-2 border-t border-teal-100/80 flex justify-between items-center flex-wrap gap-1">
+                                            <span className="text-amber-700 font-extrabold text-[11px]">Danh hiệu / Khen thưởng Cuối năm:</span>
+                                            <span className="font-black text-slate-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs shadow-2xs">{finalRewardCN || "Học sinh Hoàn thành xuất sắc"}</span>
+                                          </div>
                                         </div>
                                       ) : (
                                         <>
