@@ -952,8 +952,11 @@ export function StudentProfilesAdminClient({
                       const computedKqgdCN = computePrimaryKqgd(subjectRows, "cn")
 
                       const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || (hk1Summary?.reward ? hk1Summary.reward : null) || (isPrimary ? (computedKqgdHK1 || computedKqgdCN || "Hoàn thành xuất sắc") : null)
-                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (hk2Summary?.reward ? hk2Summary.reward : null) || (isPrimary ? computedKqgdHK2 : null)
-                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || (isPrimary ? (computedKqgdCN || computedKqgdHK1 || "Hoàn thành xuất sắc") : null) || finalKqgdHK2 || finalKqgdHK1
+                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (hk2Summary?.reward ? hk2Summary.reward : null) || (isPrimary ? (computedKqgdHK2 || "Hoàn thành tốt") : null)
+                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || (isPrimary ? (computedKqgdCN || computedKqgdHK1 || "Hoàn thành xuất sắc") : null) || finalKqgdHK2 || finalKqgdHK1 || (isPrimary ? "Hoàn thành xuất sắc" : null)
+                      
+                      const finalRewardHK1 = hk1Summary?.reward || (isPrimary ? "Học sinh Hoàn thành xuất sắc" : null)
+                      const finalRewardCN = cnSummary?.reward || hk2Summary?.reward || hk1Summary?.reward || (isPrimary ? "Học sinh Hoàn thành xuất sắc" : null)
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
