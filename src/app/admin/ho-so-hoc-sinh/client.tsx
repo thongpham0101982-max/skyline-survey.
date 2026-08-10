@@ -865,7 +865,7 @@ export function StudentProfilesAdminClient({
                         else if (ts.semester === "CN") item.cn = displayVal
                       })
 
-                      // Primary full subjects catalog
+                      // Primary full subjects catalog & HK1 fallback
                       if (isPrimary) {
                         const standardPrimarySubjects = [
                           { code: "TVI", name: "Tiếng Việt" },
@@ -889,6 +889,12 @@ export function StudentProfilesAdminClient({
                           if (!existingKey) {
                             subjectMap.set(ps.code, { id: ps.code, name: ps.name, code: ps.code, hk1: null, hk2: null, cn: null })
                           }
+                        })
+
+                        // Cross-fill HK1 and CN for Primary if either is missing
+                        subjectMap.forEach(item => {
+                          if (item.hk1 === null && item.cn !== null) item.hk1 = item.cn
+                          if (item.cn === null && item.hk1 !== null) item.cn = item.hk1
                         })
                       }
 
