@@ -24,6 +24,25 @@ export function StudentProfilesAdminClient({
   activeYearId,
   activeYearName
 }: StudentProfilesAdminClientProps) {
+  const handleResetMOETData = async () => {
+    if (!confirm("Bạn có chắc chắn muốn RESET XÓA SẠCH toàn bộ dữ liệu Kết quả Học tập (MOET) năm học 2025-2026 không?\n\nThao tác này sẽ làm sạch cơ sở dữ liệu để bạn tải lên tệp Import hoàn toàn mới.")) return
+    try {
+      const res = await fetch("/api/admin/ktdbcl/reset-kqht", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ academicYear: "2025-2026" })
+      })
+      const data = await res.json()
+      if (data.success) {
+        alert(data.message || "Đã reset xong dữ liệu MOET 2025-2026!")
+        window.location.reload()
+      } else {
+        alert("Lỗi reset: " + data.message)
+      }
+    } catch (err: any) {
+      alert("Lỗi reset dữ liệu: " + err.message)
+    }
+  }
   // Filter States
   const [selectedYearId, setSelectedYearId] = useState(activeYearId)
   const [schoolBlock, setSchoolBlock] = useState<"k12" | "preschool">("k12")
@@ -1093,9 +1112,19 @@ return (
                               </h4>
                               <p className="text-[10px] text-slate-400 font-bold mt-0.5">Bảng điểm môn học &amp; Đánh giá xếp loại tổng kết định kỳ</p>
                             </div>
-                            <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                              Năm học: {selectedStudent.yearName || activeYearName}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleResetMOETData}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                title="Xóa sạch dữ liệu MOET năm 2025-2026 để Import mới"
+                              >
+                                <RotateCcw className="w-3 h-3 text-rose-600" /> Reset dữ liệu (2025-2026)
+                              </button>
+                              <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                                Năm học: {selectedStudent.yearName || activeYearName}
+                              </span>
+                            </div>
                           </div>
 
                           {!hasData ? (
