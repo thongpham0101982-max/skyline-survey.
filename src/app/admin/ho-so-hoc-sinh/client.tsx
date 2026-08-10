@@ -946,13 +946,10 @@ export function StudentProfilesAdminClient({
                       const computedKqgdHK2 = computePrimaryKqgd(subjectRows, "hk2")
                       const computedKqgdCN = computePrimaryKqgd(subjectRows, "cn")
 
-                      // Primary HK1 does NOT evaluate overall KQGD/Reward (only CN evaluates overall rating/rewards)
-                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || (isPrimary ? (computedKqgdHK1 || null) : null)
-                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (isPrimary ? computedKqgdHK2 : null)
-                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || (isPrimary ? (computedKqgdCN || "Hoàn thành xuất sắc") : null)
-                      
-                      const finalRewardHK1 = hk1Summary?.reward || null
-                      const finalRewardCN = cnSummary?.reward || (isPrimary && computedKqgdCN === "Hoàn thành xuất sắc" ? "Học sinh Hoàn thành xuất sắc" : null)
+                      // Primary: HK1 & HK2 do NOT evaluate overall KQGD/Reward (only CN evaluates overall rating & rewards)
+                      const computedPrimaryCN = computePrimaryKqgd(subjectRows, "cn") || computePrimaryKqgd(subjectRows, "hk1")
+                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || computedPrimaryCN || "Hoàn thành xuất sắc"
+                      const finalRewardCN = cnSummary?.reward || (finalKqgdCN === "Hoàn thành xuất sắc" ? "Học sinh Hoàn thành xuất sắc" : "Học sinh Hoàn thành tốt")
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
@@ -1113,16 +1110,18 @@ return (
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
                                         <div className="space-y-2 text-xs font-semibold text-slate-600">
-                                          <div className="flex justify-between items-center">
+                                          <div className="flex justify-between items-center text-slate-400 italic">
                                             <span>Đánh giá KQGD:</span>
-                                            <span className="font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{finalKqgdHK1 || "—"}</span>
+                                            <span className="text-[11px]">Không đánh giá định kỳ HK1</span>
                                           </div>
-                                          {finalRewardHK1 && (
-                                            <div className="pt-1 border-t border-slate-100 text-[11px]">
-                                              <span className="text-amber-600 font-bold">Khen thưởng: </span>
-                                              <span className="text-slate-800 font-bold">{finalRewardHK1}</span>
-                                            </div>
-                                          )}
+                                          <div className="flex justify-between items-center">
+                                            <span>Số ngày nghỉ:</span>
+                                            <span className="font-bold text-slate-700">
+                                              {hk1Summary?.absencesTotal !== undefined && hk1Summary?.absencesTotal !== null 
+                                                ? `${hk1Summary.absencesTotal} buổi (CP: ${hk1Summary.absencesPermitted || 0}, KP: ${hk1Summary.absencesUnpermitted || 0})`
+                                                : "—"}
+                                            </span>
+                                          </div>
                                         </div>
                                       ) : (
                                         <>
@@ -1161,9 +1160,19 @@ return (
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
-                                        <div className="flex justify-between items-center">
-                                          <span>Đánh giá KQGD:</span>
-                                          <span className="font-extrabold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">{finalKqgdHK2 || "—"}</span>
+                                        <div className="space-y-2 text-xs font-semibold text-slate-600">
+                                          <div className="flex justify-between items-center text-slate-400 italic">
+                                            <span>Đánh giá KQGD:</span>
+                                            <span className="text-[11px]">Không đánh giá định kỳ HK2</span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span>Số ngày nghỉ:</span>
+                                            <span className="font-bold text-slate-700">
+                                              {hk2Summary?.absencesTotal !== undefined && hk2Summary?.absencesTotal !== null 
+                                                ? `${hk2Summary.absencesTotal} buổi (CP: ${hk2Summary.absencesPermitted || 0}, KP: ${hk2Summary.absencesUnpermitted || 0})`
+                                                : "—"}
+                                            </span>
+                                          </div>
                                         </div>
                                       ) : (
                                         <>
@@ -1202,17 +1211,15 @@ return (
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
-                                        <div className="space-y-2">
+                                        <div className="space-y-2.5">
                                           <div className="flex justify-between items-center">
-                                            <span>Đánh giá KQGD Cả năm:</span>
-                                            <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN || "—"}</span>
+                                            <span className="font-bold text-slate-700">Đánh giá KQGD Cả năm:</span>
+                                            <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN}</span>
                                           </div>
-                                          {finalRewardCN && (
-                                            <div className="pt-2 border-t border-teal-100/80 flex justify-between items-center flex-wrap gap-1">
-                                              <span className="text-amber-700 font-extrabold text-[11px]">Danh hiệu / Khen thưởng Cuối năm:</span>
-                                              <span className="font-black text-slate-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs shadow-2xs">{finalRewardCN}</span>
-                                            </div>
-                                          )}
+                                          <div className="pt-2 border-t border-teal-100/80 flex justify-between items-center flex-wrap gap-1">
+                                            <span className="text-amber-700 font-extrabold text-[11px]">Danh hiệu / Khen thưởng Cuối năm:</span>
+                                            <span className="font-black text-slate-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs shadow-2xs">{finalRewardCN}</span>
+                                          </div>
                                         </div>
                                       ) : (
                                         <>
