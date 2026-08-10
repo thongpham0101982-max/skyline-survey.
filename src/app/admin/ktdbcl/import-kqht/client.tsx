@@ -1482,19 +1482,24 @@ export function ImportKQHTClient({
       // Map subject names to codes using our mapping list
       const mappedStudents = sheetStudents.map((s: any) => {
         const studentSubjectsMapped: Record<string, { score: any; grade: any }> = {}
-        Object.keys(s.subjects).forEach(key => {
+        Object.keys(s.subjects || {}).forEach(key => {
           const mapping = excelSubjects.find(m => m.excelHeader === key)
-          if (mapping && mapping.mappedSubjectCode && selectedSubjects[mapping.mappedSubjectCode]) {
-            const subjectCode = mapping.mappedSubjectCode
+          const targetCode = (mapping && mapping.mappedSubjectCode) ? mapping.mappedSubjectCode : key
+          const isSelected = selectedSubjects[targetCode] !== false && (mapping?.mappedSubjectCode ? selectedSubjects[mapping.mappedSubjectCode] !== false : true)
 
-            if (!studentSubjectsMapped[subjectCode]) {
-              studentSubjectsMapped[subjectCode] = { score: null, grade: null }
+          if (isSelected) {
+            if (!studentSubjectsMapped[targetCode]) {
+              studentSubjectsMapped[targetCode] = { score: null, grade: null }
             }
 
-            if (mapping.subType === "score") {
-              studentSubjectsMapped[subjectCode].score = s.subjects[key].score
-            } else {
-              studentSubjectsMapped[subjectCode].grade = s.subjects[key].grade
+            const valObj = s.subjects[key]
+            if (valObj) {
+              if (valObj.score !== null && valObj.score !== undefined && valObj.score !== "") {
+                studentSubjectsMapped[targetCode].score = valObj.score
+              }
+              if (valObj.grade !== null && valObj.grade !== undefined && valObj.grade !== "") {
+                studentSubjectsMapped[targetCode].grade = valObj.grade
+              }
             }
           }
         })
