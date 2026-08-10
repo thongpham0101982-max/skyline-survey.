@@ -985,11 +985,11 @@ export function StudentProfilesAdminClient({
 
                           let gradeBadge = null
                           if (gStr === "T" || gStr === "Tốt" || gStr === "Hoàn thành tốt") {
-                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T (Tốt)</span>
+                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T</span>
                           } else if (gStr === "H" || gStr === "Hoàn thành") {
-                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">H (Hoàn thành)</span>
+                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">HT</span>
                           } else if (gStr === "C" || gStr === "Chưa hoàn thành") {
-                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">C (Chưa HT)</span>
+                            gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">CHT</span>
                           } else if (gStr) {
                             gradeBadge = <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">{gStr}</span>
                           }
@@ -1017,13 +1017,13 @@ export function StudentProfilesAdminClient({
                           return <span className="inline-flex items-center justify-center bg-teal-50 text-[#00A99D] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
                         }
                         if (str === "T" || str === "Tốt") {
-                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T (Tốt)</span>
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T</span>
                         }
                         if (str === "H" || str === "Hoàn thành") {
-                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">H (Hoàn thành)</span>
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">HT</span>
                         }
                         if (str === "C" || str === "Chưa hoàn thành") {
-                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">C (Chưa HT)</span>
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">CHT</span>
                         }
                         const num = typeof val === "number" ? val : parseFloat(val)
                         if (!isNaN(num)) {
@@ -1059,13 +1059,13 @@ export function StudentProfilesAdminClient({
                         }
 
                         if (gStr === "T" || gStr === "Tốt" || gStr === "Hoàn thành tốt") {
-                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T (Tốt)</span>
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T</span>
                         }
                         if (gStr === "H" || gStr === "Hoàn thành") {
-                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">H (Hoàn thành)</span>
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-teal-50 text-teal-700 border border-teal-200">HT</span>
                         }
                         if (gStr === "C" || gStr === "Chưa hoàn thành") {
-                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">C (Chưa HT)</span>
+                          return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-rose-50 text-rose-700 border border-rose-200">CHT</span>
                         }
                         if (gStr && isNaN(Number(gStr))) {
                           return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">{gStr}</span>

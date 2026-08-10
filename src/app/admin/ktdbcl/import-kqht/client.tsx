@@ -1533,58 +1533,67 @@ export function ImportKQHTClient({
         ]
       }
 
-      try {
-        const res = await fetch("/api/admin/ktdbcl/import-kqht", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        })
+      let success = false
+      let attempts = 0
+      let lastErrText = ""
 
-        const result = await res.json()
-        if (res.ok && result.success) {
-          totalStudents += result.studentsCount || 0
-          totalScores += result.scoresCount || 0
-          totalSummaries += result.summariesCount || 0
-          if (Array.isArray(result.errors) && result.errors.length > 0) {
-            accumulatedErrors.push(...result.errors)
+      while (!success && attempts < 3) {
+        attempts++
+        try {
+          const res = await fetch("/api/admin/ktdbcl/import-kqht", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+          })
+
+          const result = await res.json()
+          if (res.ok && result.success) {
+            success = true
+            totalStudents += result.studentsCount || 0
+            totalScores += result.scoresCount || 0
+            totalSummaries += result.summariesCount || 0
+            if (Array.isArray(result.errors) && result.errors.length > 0) {
+              accumulatedErrors.push(...result.errors)
+            }
+            sheetStudents.forEach((st: any) => {
+              importedStudentsList.push({
+                studentCode: st.studentCode,
+                studentName: st.studentName,
+                classCode: sheetName,
+                status: "success"
+              })
+            })
+            setImportLogs(prev => [...prev, "Lớp " + sheetName + ": Thành công! + " + result.studentsCount + " học sinh, + " + result.scoresCount + " điểm số, + " + result.summariesCount + " đánh giá."])
+          } else {
+            lastErrText = result.error || "Lỗi không xác định"
+            if (attempts < 3) {
+              setImportLogs(prev => [...prev, "Lớp " + sheetName + " thử lại lần " + (attempts + 1) + "..."])
+              await new Promise(r => setTimeout(r, 1000))
+            }
           }
-          sheetStudents.forEach((st: any) => {
-            importedStudentsList.push({
-              studentCode: st.studentCode,
-              studentName: st.studentName,
-              classCode: sheetName,
-              status: "success"
-            })
-          })
-          setImportLogs(prev => [...prev, "Lớp " + sheetName + ": Thành công! + " + result.studentsCount + " học sinh, + " + result.scoresCount + " điểm số, + " + result.summariesCount + " đánh giá."])
-        } else {
-          const errText = result.error || "Lỗi không xác định"
-          accumulatedErrors.push("Lớp " + sheetName + ": " + errText)
-          sheetStudents.forEach((st: any) => {
-            importedStudentsList.push({
-              studentCode: st.studentCode,
-              studentName: st.studentName,
-              classCode: sheetName,
-              status: "error",
-              errorMsg: errText
-            })
-          })
-          setImportLogs(prev => [...prev, "Lớp " + sheetName + " thất bại: " + errText])
+        } catch (err: any) {
+          lastErrText = err.message || "Failed to fetch"
+          if (attempts < 3) {
+            setImportLogs(prev => [...prev, "Lớp " + sheetName + " gặp lỗi kết nối, tự động thử lại (Lần " + (attempts + 1) + ")..."])
+            await new Promise(r => setTimeout(r, 1000))
+          }
         }
-      } catch (err: any) {
-        accumulatedErrors.push("Lớp " + sheetName + ": " + err.message)
+      }
+
+      if (!success) {
+        accumulatedErrors.push("Lớp " + sheetName + ": " + lastErrText)
         sheetStudents.forEach((st: any) => {
           importedStudentsList.push({
             studentCode: st.studentCode,
             studentName: st.studentName,
             classCode: sheetName,
             status: "error",
-            errorMsg: err.message
+            errorMsg: lastErrText
           })
         })
-        setImportLogs(prev => [...prev, "Lớp " + sheetName + " lỗi kết nối: " + err.message])
+        setImportLogs(prev => [...prev, "Lớp " + sheetName + " thất bại sau 3 lần thử: " + lastErrText])
       }
 
       // Add a small pause between batches to ease DB workload
