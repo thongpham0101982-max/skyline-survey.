@@ -860,12 +860,18 @@ export function StudentProfilesAdminClient({
                           subjectMap.set(key, { id: key, name: subName, code: subCode, hk1: null, hk2: null, cn: null })
                         }
                         const item = subjectMap.get(key)
-                        if (ts.semester === "HK1") item.hk1 = displayVal
-                        else if (ts.semester === "HK2") item.hk2 = displayVal
-                        else if (ts.semester === "CN") item.cn = displayVal
+                        const normSem = String(ts.semester || "").trim().toUpperCase()
+                        const isHK1 = normSem === "HK1" || normSem === "HKI" || normSem.includes("HỌC KỲ 1") || normSem.includes("HỌC KÌ 1") || normSem.includes("HỌC KỲ I") || normSem === "1"
+                        const isHK2 = normSem === "HK2" || normSem === "HKII" || normSem.includes("HỌC KỲ 2") || normSem.includes("HỌC KÌ 2") || normSem.includes("HỌC KỲ II") || normSem === "2"
+                        const isCN = normSem === "CN" || normSem.includes("CẢ NĂM") || normSem.includes("CA NAM")
+
+                        if (isHK1) item.hk1 = displayVal
+                        else if (isHK2) item.hk2 = displayVal
+                        else if (isCN) item.cn = displayVal
+                        else item.hk1 = displayVal
                       })
 
-                      // Primary full subjects catalog & HK1 fallback
+                      // Primary full subjects catalog
                       if (isPrimary) {
                         const standardPrimarySubjects = [
                           { code: "TVI", name: "Tiếng Việt" },
@@ -882,15 +888,16 @@ export function StudentProfilesAdminClient({
                         standardPrimarySubjects.forEach(ps => {
                           const existingKey = Array.from(subjectMap.keys()).find((k: any) => {
                             const item = subjectMap.get(k)
-                            const n = (item?.name || "").toLowerCase()
-                            const c = (item?.code || "").toLowerCase()
-                            return n.includes(ps.name.toLowerCase().split(" ")[0]) || c === ps.code.toLowerCase()
+                            const n = (item?.name || "").normalize("NFC").toLowerCase().trim()
+                            const c = (item?.code || "").normalize("NFC").toLowerCase().trim()
+                            const targetN = ps.name.normalize("NFC").toLowerCase().trim()
+                            const targetC = ps.code.normalize("NFC").toLowerCase().trim()
+                            return n === targetN || c === targetC || n.includes(targetN.split(" ")[0]) || targetN.includes(n.split(" ")[0])
                           })
                           if (!existingKey) {
                             subjectMap.set(ps.code, { id: ps.code, name: ps.name, code: ps.code, hk1: null, hk2: null, cn: null })
                           }
                         })
-
                       }
 
                       const subjectRows = Array.from(subjectMap.values())
@@ -899,7 +906,11 @@ export function StudentProfilesAdminClient({
 
                       const summariesMap: Record<string, any> = {}
                       rawSummaries.forEach((s: any) => {
-                        if (s.semester) summariesMap[s.semester] = s
+                        const normS = String(s.semester || "").trim().toUpperCase()
+                        if (normS === "HK1" || normS === "HKI" || normS.includes("HỌC KỲ 1") || normS === "1") summariesMap["HK1"] = s
+                        else if (normS === "HK2" || normS === "HKII" || normS.includes("HỌC KỲ 2") || normS === "2") summariesMap["HK2"] = s
+                        else if (normS === "CN" || normS.includes("CẢ NĂM")) summariesMap["CN"] = s
+                        else if (s.semester) summariesMap[s.semester] = s
                       })
 
                       const hk1Summary = summariesMap["HK1"]
