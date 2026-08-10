@@ -367,10 +367,24 @@ export async function POST(req: NextRequest) {
             const subjectMergeMap = new Map<string, { score: any; grade: any; subjectId: string }>()
             for (const subKey of subKeys) {
               // Strip PRIMARY suffixes to get base subject name for DB lookup
-              const baseName = subKey
-                .replace(/[\s\-_]+(mức\s*đạt\s*được|điểm\s*ktđk|mức|điểm|diem|muc)/gi, "")
+              let baseName = subKey
+                .replace(/\s*\([A-Z0-9_\-]+\)\s*$/gi, "")
+                .replace(/[\s\-_]+(mức\s*đạt\s*được|điểm\s*ktđk|mức|điểm|diem|muc|đạt)/gi, "")
                 .replace(/\s*\([^)]*\)\s*$/gi, "")
                 .normalize("NFC").trim()
+
+              // Primary canonical name normalization
+              const lowerBase = baseName.toLowerCase()
+              if (lowerBase.includes("tiếng việt") || lowerBase.includes("tieng viet")) baseName = "Tiếng Việt"
+              else if (lowerBase.includes("toán") || lowerBase.includes("toan")) baseName = "Toán"
+              else if (lowerBase.includes("tiếng anh") || lowerBase.includes("tieng anh")) baseName = "Tiếng Anh"
+              else if (lowerBase.includes("đạo đức") || lowerBase.includes("dao duc")) baseName = "Đạo đức"
+              else if (lowerBase.includes("tn-xh") || lowerBase.includes("tự nhiên") || lowerBase.includes("tnxh")) baseName = "TN-XH"
+              else if (lowerBase.includes("tin học") || lowerBase.includes("công nghệ")) baseName = "Tin học và Công nghệ"
+              else if (lowerBase.includes("âm nhạc") || lowerBase.includes("am nhac")) baseName = "Âm nhạc"
+              else if (lowerBase.includes("mĩ thuật") || lowerBase.includes("mỹ thuật") || lowerBase.includes("mi thuat")) baseName = "Mĩ thuật"
+              else if (lowerBase.includes("thể chất") || lowerBase.includes("gdc")) baseName = "Giáo dục thể chất"
+              else if (lowerBase.includes("trải nghiệm") || lowerBase.includes("hdtn")) baseName = "Hoạt động trải nghiệm"
 
               const cleanSubKey = subKey.normalize("NFC").toLowerCase().trim()
               const cleanBaseName = baseName.normalize("NFC").toLowerCase().trim()
