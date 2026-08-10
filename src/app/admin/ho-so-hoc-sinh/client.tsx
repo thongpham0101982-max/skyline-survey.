@@ -578,7 +578,7 @@ export function StudentProfilesAdminClient({
                               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Student Comprehensive Profile & Portfolio</p>
                             </div>
                             <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5">
-                              <div>Năm học: <span className="text-slate-800 font-bold">{selectedStudent.yearName}</span></div>
+                              <div>Năm học: <span className="text-slate-800 font-bold">{selectedStudent?.yearName}</span></div>
                               <div>Cơ sở: <span className="text-slate-800 font-bold">{selectedStudent.campusName}</span></div>
                             </div>
                           </div>
@@ -592,7 +592,7 @@ export function StudentProfilesAdminClient({
                                   <User className="w-16 h-16" />
                                 </div>
                                 <div>
-                                  <h3 className="font-black text-base text-slate-800">{selectedStudent.studentName}</h3>
+                                  <h3 className="font-black text-base text-slate-800">{selectedStudent?.studentName}</h3>
                                   <p className="text-[10px] text-[#00A99D] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {selectedStudent.className || "N/A"}</p>
                                 </div>
                               </div>
@@ -601,7 +601,7 @@ export function StudentProfilesAdminClient({
                               <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2.5 text-xs text-slate-655 font-semibold">
                                 <div className="flex justify-between">
                                   <span>Mã học sinh:</span>
-                                  <span className="font-bold text-slate-805">{selectedStudent.studentCode}</span>
+                                  <span className="font-bold text-slate-805">{selectedStudent?.studentCode}</span>
                                 </div>
                                 <div className="flex justify-between">
                                   <span>Ngày sinh:</span>
@@ -1122,7 +1122,7 @@ return (
                                 <RotateCcw className="w-3 h-3 text-rose-600" /> Reset dữ liệu (2025-2026)
                               </button>
                               <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                                Năm học: {selectedStudent.yearName || activeYearName}
+                                Năm học: {selectedStudent?.yearName || activeYearName}
                               </span>
                             </div>
                           </div>
@@ -1149,7 +1149,7 @@ return (
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
-                                        <div className="space-y-2 text-xs font-semibold text-slate-600">
+                                        <div className="space-y-2">
                                           <div className="flex justify-between items-center text-slate-400 italic">
                                             <span>Đánh giá KQGD:</span>
                                             <span className="text-[11px]">Không đánh giá định kỳ HK1</span>
@@ -1173,21 +1173,21 @@ return (
                                             <span>Hạnh kiểm / Rèn luyện:</span>
                                             <span className="font-extrabold text-slate-800 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{hk1Summary?.conductRating || "—"}</span>
                                           </div>
+                                          <div className="flex justify-between items-center">
+                                            <span>Số ngày nghỉ:</span>
+                                            <span className="font-bold text-slate-700">
+                                              {hk1Summary?.absencesTotal !== undefined && hk1Summary?.absencesTotal !== null 
+                                                ? `${hk1Summary.absencesTotal} buổi (CP: ${hk1Summary.absencesPermitted || 0}, KP: ${hk1Summary.absencesUnpermitted || 0})`
+                                                : "—"}
+                                            </span>
+                                          </div>
+                                          {hk1Summary?.reward && (
+                                            <div className="pt-1 border-t border-slate-100 text-[11px]">
+                                              <span className="text-amber-600 font-bold">Khen thưởng: </span>
+                                              <span className="text-slate-800 font-bold">{hk1Summary.reward}</span>
+                                            </div>
+                                          )}
                                         </>
-                                      )}
-                                      <div className="flex justify-between items-center">
-                                        <span>Số ngày nghỉ:</span>
-                                        <span className="font-bold text-slate-700">
-                                          {hk1Summary?.absencesTotal !== undefined && hk1Summary?.absencesTotal !== null 
-                                            ? `${hk1Summary.absencesTotal} buổi (CP: ${hk1Summary.absencesPermitted || 0}, KP: ${hk1Summary.absencesUnpermitted || 0})`
-                                            : "—"}
-                                        </span>
-                                      </div>
-                                      {hk1Summary?.reward && (
-                                        <div className="pt-1 border-t border-slate-100 text-[11px]">
-                                          <span className="text-amber-600 font-bold">Khen thưởng: </span>
-                                          <span className="text-slate-800 font-bold">{hk1Summary.reward}</span>
-                                        </div>
                                       )}
                                     </div>
                                   </div>
