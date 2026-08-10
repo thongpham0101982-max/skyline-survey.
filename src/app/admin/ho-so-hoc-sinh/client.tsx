@@ -891,11 +891,6 @@ export function StudentProfilesAdminClient({
                           }
                         })
 
-                        // Cross-fill HK1 and CN for Primary if either is missing
-                        subjectMap.forEach(item => {
-                          if (item.hk1 === null && item.cn !== null) item.hk1 = item.cn
-                          if (item.cn === null && item.hk1 !== null) item.cn = item.hk1
-                        })
                       }
 
                       const subjectRows = Array.from(subjectMap.values())
@@ -951,12 +946,13 @@ export function StudentProfilesAdminClient({
                       const computedKqgdHK2 = computePrimaryKqgd(subjectRows, "hk2")
                       const computedKqgdCN = computePrimaryKqgd(subjectRows, "cn")
 
-                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || (hk1Summary?.reward ? hk1Summary.reward : null) || (isPrimary ? (computedKqgdHK1 || computedKqgdCN || "Hoàn thành xuất sắc") : null)
-                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (hk2Summary?.reward ? hk2Summary.reward : null) || (isPrimary ? (computedKqgdHK2 || "Hoàn thành tốt") : null)
-                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || (isPrimary ? (computedKqgdCN || computedKqgdHK1 || "Hoàn thành xuất sắc") : null) || finalKqgdHK2 || finalKqgdHK1 || (isPrimary ? "Hoàn thành xuất sắc" : null)
+                      // Primary HK1 does NOT evaluate overall KQGD/Reward (only CN evaluates overall rating/rewards)
+                      const finalKqgdHK1 = primaryKqgdHK1 || hk1Summary?.academicRating || (isPrimary ? (computedKqgdHK1 || null) : null)
+                      const finalKqgdHK2 = primaryKqgdHK2 || hk2Summary?.academicRating || (isPrimary ? computedKqgdHK2 : null)
+                      const finalKqgdCN = primaryKqgdCN || cnSummary?.academicRating || (cnSummary?.reward ? cnSummary.reward : null) || (isPrimary ? (computedKqgdCN || "Hoàn thành xuất sắc") : null)
                       
-                      const finalRewardHK1 = hk1Summary?.reward || (isPrimary ? "Học sinh Hoàn thành xuất sắc" : null)
-                      const finalRewardCN = cnSummary?.reward || hk2Summary?.reward || hk1Summary?.reward || (isPrimary ? "Học sinh Hoàn thành xuất sắc" : null)
+                      const finalRewardHK1 = hk1Summary?.reward || null
+                      const finalRewardCN = cnSummary?.reward || (isPrimary && computedKqgdCN === "Hoàn thành xuất sắc" ? "Học sinh Hoàn thành xuất sắc" : null)
 
                       const hasData = subjectRows.length > 0 || rawSummaries.length > 0 || !!finalKqgdCN
 
@@ -1116,15 +1112,15 @@ return (
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
-                                        <div className="space-y-2">
+                                        <div className="space-y-2 text-xs font-semibold text-slate-600">
                                           <div className="flex justify-between items-center">
                                             <span>Đánh giá KQGD:</span>
-                                            <span className="font-extrabold text-[#00A99D] bg-teal-50 px-2.5 py-0.5 rounded border border-teal-200">{finalKqgdHK1 || finalKqgdCN || "Hoàn thành xuất sắc"}</span>
+                                            <span className="font-bold text-slate-500 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">{finalKqgdHK1 || "—"}</span>
                                           </div>
                                           {finalRewardHK1 && (
-                                            <div className="pt-1.5 border-t border-slate-100 flex justify-between items-center text-[11px]">
-                                              <span className="text-amber-600 font-bold">Khen thưởng:</span>
-                                              <span className="text-slate-800 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{finalRewardHK1}</span>
+                                            <div className="pt-1 border-t border-slate-100 text-[11px]">
+                                              <span className="text-amber-600 font-bold">Khen thưởng: </span>
+                                              <span className="text-slate-800 font-bold">{finalRewardHK1}</span>
                                             </div>
                                           )}
                                         </div>
@@ -1209,12 +1205,14 @@ return (
                                         <div className="space-y-2">
                                           <div className="flex justify-between items-center">
                                             <span>Đánh giá KQGD Cả năm:</span>
-                                            <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN || finalKqgdHK1 || "Hoàn thành xuất sắc"}</span>
+                                            <span className="font-black text-teal-800 bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs">{finalKqgdCN || "—"}</span>
                                           </div>
-                                          <div className="pt-2 border-t border-teal-100/80 flex justify-between items-center flex-wrap gap-1">
-                                            <span className="text-amber-700 font-extrabold text-[11px]">Danh hiệu / Khen thưởng Cuối năm:</span>
-                                            <span className="font-black text-slate-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs shadow-2xs">{finalRewardCN || "Học sinh Hoàn thành xuất sắc"}</span>
-                                          </div>
+                                          {finalRewardCN && (
+                                            <div className="pt-2 border-t border-teal-100/80 flex justify-between items-center flex-wrap gap-1">
+                                              <span className="text-amber-700 font-extrabold text-[11px]">Danh hiệu / Khen thưởng Cuối năm:</span>
+                                              <span className="font-black text-slate-800 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-lg text-xs shadow-2xs">{finalRewardCN}</span>
+                                            </div>
+                                          )}
                                         </div>
                                       ) : (
                                         <>
