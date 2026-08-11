@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { Calendar, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronDown } from "lucide-react";
 
 export function AcademicYearSelector() {
   const pathname = usePathname();
@@ -70,7 +70,7 @@ export function AcademicYearSelector() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors border border-slate-200"
       >
-        <Calendar className="w-4 h-4 text-[#1E8B87]" />
+        <CalendarIcon className="w-4 h-4 text-[#1E8B87]" />
         <span className="text-xs font-semibold text-slate-700">{current.name}</span>
         <ChevronDown className={"w-3 h-3 text-slate-500 transition-transform "} />
       </button>

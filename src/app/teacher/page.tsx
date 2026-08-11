@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
 import {
   Users, Layers, BookOpen, CheckCircle2, Loader2, ArrowRight, Eye,
-  TrendingUp, Calendar, GraduationCap, Compass, Sparkles, Heart, ShieldCheck,
+  TrendingUp, Calendar as CalendarIcon, GraduationCap, Compass, Sparkles, Heart, ShieldCheck,
   AlertCircle, Clock, BarChart3, Award, FileText, ChevronRight
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
@@ -306,7 +306,7 @@ export default function TeacherDashboard() {
 
           <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-start sm:items-center lg:items-end xl:items-center gap-3 shrink-0">
             <div className="flex items-center gap-2.5 bg-white/10 backdrop-blur-md border border-white/20 px-4 py-2.5 rounded-2xl shadow-inner">
-              <Calendar className="w-4.5 h-4.5 text-teal-300 shrink-0" />
+              <CalendarIcon className="w-4.5 h-4.5 text-teal-300 shrink-0" />
               <div className="text-xs">
                 <p className="text-slate-300 font-medium text-[11px]">Năm học công tác</p>
                 <p className="font-extrabold text-white text-sm">{finalMetrics.academicYearName || "2026 - 2027"}</p>
