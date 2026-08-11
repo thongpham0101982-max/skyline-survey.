@@ -1685,3 +1685,35 @@ model SubjectGradeEntry {
   @@index([subjectId])
   @@index([academicYearId])
 }
+
+
+model TimetableSlot {
+  id               String   @id @default(cuid())
+  academicYearId   String?
+  campusId         String?
+  level            String   @default("TIEU_HOC")
+  grade            String   @default("K1")
+  classId          String?
+  className        String
+  dayOfWeek        String
+  session          String   @default("MORNING")
+  periodNumber     Int      @default(1)
+
+  subjectId        String?
+  subjectName      String?
+  teacherId        String?
+  teacherName      String?
+
+  weekType         String   @default("ALL")
+  altSubjectName   String?
+  altTeacherName   String?
+  colorCode        String?  @default("#3B82F6")
+
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([campusId])
+  @@index([classId])
+  @@index([academicYearId])
+}
