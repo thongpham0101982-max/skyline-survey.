@@ -3529,3 +3529,5 @@ export function ObservationClient(props: ObservationClientProps) {
       )}
 
     </div>
+  )
+}
