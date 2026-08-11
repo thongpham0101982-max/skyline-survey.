@@ -268,3 +268,68 @@ export async function clearTimetableSlot(slotId: string) {
     return { success: false, error: e.message }
   }
 }
+
+
+export async function batchSaveAllTimetableSlots(campusId: string, level: string, slotsData: any[]) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    let savedCount = 0
+    for (const slot of slotsData) {
+      if (!slot.classId || !slot.dayOfWeek) continue
+      const existing = await prisma.timetableSlot.findFirst({
+        where: {
+          campusId: campusId,
+          level: level,
+          classId: slot.classId,
+          dayOfWeek: slot.dayOfWeek,
+          session: slot.session || "MORNING",
+          periodNumber: slot.periodNumber || 1
+        }
+      })
+
+      if (existing) {
+        await prisma.timetableSlot.update({
+          where: { id: existing.id },
+          data: {
+            subjectName: slot.subjectName || null,
+            teacherName: slot.teacherName || null,
+            weekType: slot.weekType || "ALL",
+            altSubjectName: slot.altSubjectName || null,
+            altTeacherName: slot.altTeacherName || null,
+            colorCode: slot.colorCode || "#FEF08A"
+          }
+        })
+      } else if (slot.subjectName || slot.teacherName) {
+        await prisma.timetableSlot.create({
+          data: {
+            campusId: campusId,
+            level: level,
+            classId: slot.classId,
+            className: slot.className || "Class",
+            dayOfWeek: slot.dayOfWeek,
+            session: slot.session || "MORNING",
+            periodNumber: slot.periodNumber || 1,
+            subjectName: slot.subjectName || null,
+            teacherName: slot.teacherName || null,
+            weekType: slot.weekType || "ALL",
+            altSubjectName: slot.altSubjectName || null,
+            altTeacherName: slot.altTeacherName || null,
+            colorCode: slot.colorCode || "#FEF08A"
+          }
+        })
+      }
+      savedCount++
+    }
+
+    revalidatePath("/admin/thoi-khoa-bieu")
+    revalidatePath("/teacher/thoi-khoa-bieu")
+
+    return { success: true, savedCount }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}

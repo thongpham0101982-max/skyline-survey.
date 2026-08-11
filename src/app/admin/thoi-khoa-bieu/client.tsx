@@ -7,7 +7,7 @@ import {
   Grid, 
   Layers, 
   Plus, 
-  Download, 
+  Download, Save, CheckCircle, 
   Trash2, 
   Sparkles, 
   AlertCircle, 
@@ -21,7 +21,7 @@ import {
   Search,
   Filter
 } from "lucide-react"
-import { saveTimetableSlot, clearTimetableSlot } from "./actions"
+import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots } from "./actions"
 import * as XLSX from "xlsx"
 
 const DAYS = [
@@ -81,6 +81,23 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
   const [activeTab, setActiveTab] = useState<"SUBJECTS" | "TEACHERS">("SUBJECTS")
   const [searchSubject, setSearchSubject] = useState("")
   const [searchTeacher, setSearchTeacher] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleSaveAll = async () => {
+    setIsSaving(true)
+    try {
+      const res = await batchSaveAllTimetableSlots(currentCampusId, activeLevel, slots)
+      if (res.success) {
+        showToast("Đã lưu toàn bộ Thời khóa biểu thành công!", "success")
+      } else {
+        showToast(res.error || "Có lỗi xảy ra khi lưu!", "error")
+      }
+    } catch (e: any) {
+      showToast(e.message || "Không thể kết nối đến máy chủ!", "error")
+    } finally {
+      setIsSaving(false)
+    }
+  }
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" | "info" | "warning" } | null>(null)
 
   // Edit Modal State
@@ -393,6 +410,15 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={handleSaveAll}
+            disabled={isSaving}
+            className="px-5 py-2.5 bg-[#00A99D] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            {isSaving ? "Đang lưu toàn bộ..." : "LƯU THỜI KHÓA BIỂU"}
+          </button>
+          
           <button
             onClick={handleExportExcel}
             className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
