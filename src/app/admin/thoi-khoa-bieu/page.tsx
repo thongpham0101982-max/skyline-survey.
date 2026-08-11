@@ -1,33 +1,29 @@
+export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-import { Suspense } from "react"
-import TimetableClient from "./client"
-import { getTimetableMatrixData } from "./actions"
+import { auth } from "@/lib/auth"
+import { redirect } from "next/navigation"
+import TimetableClient from "@/app/admin/thoi-khoa-bieu/client"
+import { getTimetableMatrixData } from "@/app/admin/thoi-khoa-bieu/actions"
 
-async function TimetableDataLoader({ campusId, level }: { campusId?: string; level?: string }) {
-  const initialData = await getTimetableMatrixData(campusId, level || "TIEU_HOC")
-  return <TimetableClient initialData={initialData} />
-}
-
-export default async function TimetablePage({
-  searchParams
-}: {
+export default async function TimetablePage(props: {
   searchParams: Promise<{ campusId?: string; level?: string }>
 }) {
-  const params = await searchParams
+  const session = await auth()
+  if (!session) {
+    redirect("/login")
+  }
 
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-8">
-        <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-200 text-center space-y-4 max-w-sm">
-          <div className="w-12 h-12 rounded-2xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center mx-auto animate-spin">
-            ⏳
-          </div>
-          <p className="text-sm font-black text-slate-800">Đang tải ma trận Thời khóa biểu...</p>
-        </div>
+  const searchParams = await props.searchParams
+  const initialData = await getTimetableMatrixData(searchParams.campusId, searchParams.level || "TIEU_HOC")
+
+  if (!initialData.success) {
+    return (
+      <div className="p-6 bg-rose-50 border border-rose-200 rounded-2xl text-rose-700 font-bold text-xs">
+        Lỗi nạp dữ liệu Thời khóa biểu: {initialData.error || "Không thể tải ma trận Thời khóa biểu."}
       </div>
-    }>
-      <TimetableDataLoader campusId={params.campusId} level={params.level} />
-    </Suspense>
-  )
+    )
+  }
+
+  return <TimetableClient initialData={initialData} />
 }
