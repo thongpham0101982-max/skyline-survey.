@@ -577,33 +577,33 @@ export async function deleteObservationSlot(slotId: string) {
       return { success: false, error: "Unauthorized" }
     }
 
-    const currentTeacher = await prisma.teacher.findUnique({
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
+
+    let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
     })
-
-    if (!currentTeacher) {
-      return { success: false, error: "Teacher profile not found" }
-    }
 
     const slot = await prisma.observationSlot.findUnique({
       where: { id: slotId }
     })
 
     if (!slot) {
-      return { success: false, error: "Slot not found" }
+      return { success: false, error: "Không tìm thấy thông tin tiết dạy" }
     }
 
-    if (slot.teacherId !== currentTeacher.id) {
-      return { success: false, error: "You can only delete your own hosted slots" }
+    if (currentTeacher && slot.teacherId !== currentTeacher.id && !isAdmin) {
+      return { success: false, error: "Thầy/Cô chỉ có thể hủy tiết dạy do chính mình khởi tạo" }
     }
 
-    // Check if there are any registrations
-    const registrationCount = await prisma.observationRegistration.count({
+    // Delete evaluations & registrations linked to this slot first
+    await prisma.observationEvaluation.deleteMany({
+      where: { registration: { slotId } }
+    })
+
+    await prisma.observationRegistration.deleteMany({
       where: { slotId }
     })
-    if (registrationCount > 0) {
-      return { success: false, error: "Không thể xóa tiết dạy đã có giáo viên đăng ký dự giờ." }
-    }
 
     await prisma.observationSlot.delete({
       where: { id: slotId }
