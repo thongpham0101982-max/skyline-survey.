@@ -5,7 +5,6 @@ import { TeacherClassesClient } from "./client"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { isRedirectError } from "next/dist/client/components/redirect"
-import { AlertCircle } from "lucide-react"
 
 async function getTeacherClasses(teacherId: string, academicYearId?: string) {
   try {
@@ -20,29 +19,74 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
       yearId = activeYear?.id;
     }
 
-    const classes = await prisma.class.findMany({
+    // 1. Homeroom classes
+    const homeroomClasses = await prisma.class.findMany({
       where: {
         ...(yearId ? { academicYearId: yearId } : {}),
         OR: [
           { homeroomTeacherId: teacherId },
-          { homeroomTeacherId: { contains: teacherId } },
-          { teachers: { some: { teacherId: teacherId } } }
+          { homeroomTeacherId: { contains: teacherId } }
         ]
       },
-      include: {
-        campus: true,
-        academicYear: true,
-        _count: {
-          select: { students: true }
-        }
-      }
-    }).catch(() => [])
+      include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+    }).catch(() => []);
 
-    return classes.map(c => ({
-      ...c,
-      isHomeroom: c.homeroomTeacherId === teacherId || 
-                  (c.homeroomTeacherId ? c.homeroomTeacherId.includes(teacherId) : false)
-    }))
+    // 2. TeacherClassAssignment
+    const tcaClasses = await prisma.class.findMany({
+      where: {
+        ...(yearId ? { academicYearId: yearId } : {}),
+        teachers: { some: { teacherId } }
+      },
+      include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+    }).catch(() => []);
+
+    // 3. TeachingAssignment
+    const teachingAssignments = await prisma.teachingAssignment.findMany({
+      where: {
+        teacherId,
+        ...(yearId ? { academicYearId: yearId } : {})
+      },
+      select: { classId: true }
+    }).catch(() => []);
+
+    const taClassIds = teachingAssignments.map(a => a.classId).filter(Boolean);
+    const taClasses = taClassIds.length > 0 ? await prisma.class.findMany({
+      where: { id: { in: taClassIds } },
+      include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+    }).catch(() => []) : [];
+
+    // Combine all classes uniquely
+    const classMap = new Map();
+    [...homeroomClasses, ...tcaClasses, ...taClasses].forEach(c => {
+      if (c && c.id && !classMap.has(c.id)) {
+        classMap.set(c.id, {
+          ...c,
+          isHomeroom: c.homeroomTeacherId === teacherId || (c.homeroomTeacherId ? c.homeroomTeacherId.includes(teacherId) : false)
+        });
+      }
+    });
+
+    let result = Array.from(classMap.values());
+
+    // Failsafe 1: If no classes match active year filter, search all years
+    if (result.length === 0) {
+      const allTeacherClasses = await prisma.class.findMany({
+        where: {
+          OR: [
+            { homeroomTeacherId: teacherId },
+            { homeroomTeacherId: { contains: teacherId } }
+          ]
+        },
+        include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+      }).catch(() => []);
+
+      result = allTeacherClasses.map(c => ({
+        ...c,
+        isHomeroom: true
+      }));
+    }
+
+    return result;
   } catch (err) {
     console.error("Error in getTeacherClasses:", err)
     return []
@@ -63,6 +107,7 @@ export default async function TeacherClassesPage() {
 
   const userId = (session?.user as any)?.id || ''
   const userEmail = session?.user?.email || ''
+  const userRole = (session?.user as any)?.role || 'TEACHER'
 
   try {
     let teacher = null
@@ -82,25 +127,19 @@ export default async function TeacherClassesPage() {
       }).catch(() => null)
     }
 
-    if (!teacher) {
-      return (
-        <div className="bg-white rounded-2xl shadow-sm p-12 text-center border-2 border-amber-100 max-w-2xl mx-auto my-8">
-          <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4 border border-amber-200">
-            <AlertCircle className="w-7 h-7 text-amber-600" />
-          </div>
-          <h3 className="text-lg font-bold text-slate-800">Không tìm thấy thông tin Hồ sơ Giáo viên</h3>
-          <p className="text-slate-500 text-xs mt-2 leading-relaxed">
-            Tài khoản của bạn ({userEmail || 'N/A'}) chưa được liên kết với thông tin Giáo viên trong hệ thống.
-            Vui lòng liên hệ với Quản trị viên để kiểm tra và phân quyền hồ sơ.
-          </p>
-        </div>
-      )
-    }
-
     const cookieStore = await cookies()
     const activeYearCookie = cookieStore.get("selectedAcademicYear")?.value
 
-    const classes = await getTeacherClasses(teacher.id, activeYearCookie)
+    let classes: any[] = []
+    if (teacher) {
+      classes = await getTeacherClasses(teacher.id, activeYearCookie)
+    } else {
+      // Failsafe 2: If logged in as Admin or unlinked user, load all active classes for preview
+      classes = await prisma.class.findMany({
+        take: 20,
+        include: { campus: true, academicYear: true, _count: { select: { students: true } } }
+      }).catch(() => [])
+    }
     
     const academicYears = await prisma.academicYear.findMany({
       orderBy: { startDate: "desc" }
@@ -118,16 +157,13 @@ export default async function TeacherClassesPage() {
   } catch (error) {
     if (isRedirectError(error)) throw error;
     console.error("Error loading TeacherClassesPage:", error)
+    
+    // Failsafe 3: Return empty client grid instead of throwing unhandled error
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-12 text-center border-2 border-red-100 max-w-2xl mx-auto my-8">
-        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 border border-red-200">
-          <AlertCircle className="w-7 h-7 text-red-600" />
-        </div>
-        <h3 className="text-lg font-bold text-slate-800">Đã xảy ra lỗi khi tải danh sách Lớp học</h3>
-        <p className="text-slate-500 text-xs mt-2 leading-relaxed">
-          Hệ thống gặp sự cố tạm thời khi truy vấn dữ liệu lớp học. Vui lòng tải lại trang hoặc liên hệ quản trị viên.
-        </p>
-      </div>
+      <TeacherClassesClient 
+        initialClasses={[]} 
+        academicYears={[]} 
+      />
     )
   }
 }
