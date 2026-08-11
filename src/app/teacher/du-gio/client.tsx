@@ -228,6 +228,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST">("TEACHER_OPEN")
   
   // Request Observation Form States
+  const [reqCampusId, setReqCampusId] = useState("")
   const [reqDeptId, setReqDeptId] = useState("")
   const [reqTeacherId, setReqTeacherId] = useState("")
   const [reqSubjectId, setReqSubjectId] = useState("")
@@ -1489,12 +1490,12 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
 
           {creationMode === "OBSERVER_REQUEST" ? (
-            /* ===== FORM 2: GBMV XIN ĐĂNG KÝ DỰ GIỜ ===== */
+            /* ===== FORM 2: GVBM XIN ĐĂNG KÝ DỰ GIỜ ===== */
             <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100">
               <div className="bg-indigo-500/10 border border-indigo-200/60 rounded-xl p-3 flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                 <p className="text-[11px] text-indigo-900 leading-relaxed font-medium">
-                  <span className="font-extrabold">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên bạn muốn dự, cùng thời gian, tiết học và lớp học. Yêu cầu sẽ được gửi tới Giáo viên dạy để xác nhận & đồng ý.
+                  <span className="font-extrabold">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên bạn muốn dự, cùng Cơ sở, Cấp học, Khối lớp, Lớp học và Tiết học. Yêu cầu sẽ được gửi tới Giáo viên dạy để xác nhận & đồng ý.
                 </p>
               </div>
 
@@ -1562,34 +1563,81 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
               </div>
 
-              {/* Lớp học & Cấp/Khối */}
+              {/* Cơ sở & Cấp học */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">5. Chọn Lớp học *</label>
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">5. Chọn Cơ sở *</label>
                   <select
-                    value={reqClassId}
-                    onChange={e => {
-                      setReqClassId(e.target.value);
-                      const cls = classes.find(c => c.id === e.target.value);
-                      if (cls) {
-                        setReqLevel(cls.level || "");
-                        setReqGrade(cls.grade || "");
-                      }
-                    }}
+                    value={reqCampusId}
+                    onChange={e => { setReqCampusId(e.target.value); setReqClassId(""); }}
                     required
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
+                    <option value="">-- Chọn cơ sở --</option>
+                    {campuses.map((c: any) => (
+                      <option key={c.id} value={c.id}>{c.campusName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">6. Chọn Cấp học *</label>
+                  <select
+                    value={reqLevel}
+                    onChange={e => { setReqLevel(e.target.value); setReqGrade(""); setReqClassId(""); }}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  >
+                    <option value="">-- Chọn cấp học --</option>
+                    <option value="Mầm non">Mầm non</option>
+                    <option value="Tiểu học">Tiểu học</option>
+                    <option value="THCS">THCS</option>
+                    <option value="THPT">THPT</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Khối lớp & Lớp học */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">7. Chọn Khối lớp *</label>
+                  <select
+                    value={reqGrade}
+                    onChange={e => { setReqGrade(e.target.value); setReqClassId(""); }}
+                    required
+                    disabled={!reqLevel}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                  >
+                    <option value="">-- Chọn khối học --</option>
+                    {getGradesForLevel(reqLevel).map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">8. Chọn Lớp học *</label>
+                  <select
+                    value={reqClassId}
+                    onChange={e => setReqClassId(e.target.value)}
+                    required
+                    disabled={!reqGrade}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                  >
                     <option value="">-- Chọn lớp học --</option>
-                    {classes.map((c: any) => (
+                    {filteredReqClasses.map((c: any) => (
                       <option key={c.id} value={c.id}>
                         {c.className} ({c.level || c.grade})
                       </option>
                     ))}
                   </select>
                 </div>
+              </div>
 
+              {/* Tiết học & Ngày dạy */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">6. Chọn Tiết học dự *</label>
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">9. Chọn Tiết học dự *</label>
                   <select
                     value={reqPeriod}
                     onChange={e => setReqPeriod(e.target.value)}
@@ -1606,12 +1654,9 @@ export function ObservationClient(props: ObservationClientProps) {
                     <option value="Tiết 8">Tiết 8 (15:55 - 16:40)</option>
                   </select>
                 </div>
-              </div>
 
-              {/* Ngày dạy & Thứ trong tuần */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">7. Chọn Ngày dạy / Thứ trong tuần *</label>
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">10. Chọn Ngày dạy / Thứ trong tuần *</label>
                   <input
                     type="date"
                     value={reqDate}
@@ -1620,28 +1665,29 @@ export function ObservationClient(props: ObservationClientProps) {
                     className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
                   {reqDate && (
-                    <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-200 inline-block self-start">
+                    <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-200 inline-block self-start mt-1">
                       🗓️ {formatDateWithDayOfWeek(reqDate)}
                     </span>
                   )}
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">8. Ghi chú gửi Giáo viên dạy</label>
-                  <input
-                    type="text"
-                    placeholder="Ví dụ: Xin dự giờ học hỏi kinh nghiệm giảng dạy môn Toán..."
-                    value={reqNotes}
-                    onChange={e => setReqNotes(e.target.value)}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
-                  />
-                </div>
+              {/* Ghi chú */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">11. Ghi chú gửi Giáo viên dạy</label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Xin dự giờ học hỏi kinh nghiệm giảng dạy môn Toán..."
+                  value={reqNotes}
+                  onChange={e => setReqNotes(e.target.value)}
+                  className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" />
                 {submitting ? "Đang gửi yêu cầu..." : "+ GỬI YÊU CẦU XIN DỰ GIỜ (GVBM)"}
