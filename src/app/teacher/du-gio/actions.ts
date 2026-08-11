@@ -215,7 +215,7 @@ export async function getObservationSlots(filters: {
       : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
 
     const where: any = {
-      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED"] }
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN"] }
     }
 
     if (activeYear) {

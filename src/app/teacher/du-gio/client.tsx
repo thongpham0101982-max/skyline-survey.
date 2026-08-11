@@ -2406,13 +2406,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           <button 
                             type="button"
                             onClick={() => handleDeleteSlot(slot.id)}
-                            disabled={slot.registrations.length > 0}
-                            className={`px-2.5 py-1 border rounded-lg font-bold transition-all ${
-                              slot.registrations.length > 0
-                                ? "text-slate-400 bg-slate-100 border-slate-200 cursor-not-allowed"
-                                : "text-rose-600 bg-white border-rose-250 hover:bg-rose-50 cursor-pointer"
-                            }`}
-                            title={slot.registrations.length > 0 ? "Không thể hủy tiết đã có giáo viên đăng ký" : "Hủy tiết"}
+                            className="px-2.5 py-1 text-rose-600 bg-white border border-rose-250 hover:bg-rose-50 rounded-lg font-bold transition-all cursor-pointer"
                           >
                             Hủy tiết
                           </button>
