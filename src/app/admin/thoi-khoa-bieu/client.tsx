@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useMemo } from "react"
+import React, { useState, useTransition, useMemo, Fragment } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { 
   Calendar, 
@@ -490,10 +490,10 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   <th className="p-2 border-r border-teal-800 text-center sticky left-16 bg-teal-900 z-30"></th>
                   <th className="p-2 border-r border-teal-800 text-center sticky left-32 bg-teal-900 z-30"></th>
                   {classes.map((cls: any) => (
-                    <React.Fragment key={cls.id}>
+                    <Fragment key={cls.id}>
                       <th className="p-2 text-center border-r border-teal-800 bg-teal-950/40">MÔN</th>
                       <th className="p-2 text-center border-r border-teal-800 bg-teal-950/20">GVGD</th>
-                    </React.Fragment>
+                    </Fragment>
                   ))}
                 </tr>
               </thead>
@@ -543,7 +543,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                           const bgColor = slot?.colorCode || SUBJECT_COLORS[slot?.subjectName || ""] || "#FFFFFF"
 
                           return (
-                            <React.Fragment key={cls.id}>
+                            <Fragment key={cls.id}>
                               {/* Subject Cell */}
                               <td
                                 onDragOver={e => e.preventDefault()}
@@ -587,7 +587,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                                   </span>
                                 )}
                               </td>
-                            </React.Fragment>
+                            </Fragment>
                           )
                         })}
                       </tr>
