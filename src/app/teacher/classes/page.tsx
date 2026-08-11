@@ -19,7 +19,8 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
       yearId = activeYear?.id;
     }
 
-    const homeroomClasses = await prisma.class.findMany({
+    // Query strictly classes where teacher is assigned as Homeroom Teacher (GVCN)
+    let homeroomClasses = await prisma.class.findMany({
       where: {
         ...(yearId ? { academicYearId: yearId } : {}),
         OR: [
@@ -30,42 +31,9 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
       include: { campus: true, academicYear: true, _count: { select: { students: true } } }
     }).catch(() => []);
 
-    const tcaClasses = await prisma.class.findMany({
-      where: {
-        ...(yearId ? { academicYearId: yearId } : {}),
-        teachers: { some: { teacherId } }
-      },
-      include: { campus: true, academicYear: true, _count: { select: { students: true } } }
-    }).catch(() => []);
-
-    const teachingAssignments = await prisma.teachingAssignment.findMany({
-      where: {
-        teacherId,
-        ...(yearId ? { academicYearId: yearId } : {})
-      },
-      select: { classId: true }
-    }).catch(() => []);
-
-    const taClassIds = teachingAssignments.map(a => a.classId).filter(Boolean);
-    const taClasses = taClassIds.length > 0 ? await prisma.class.findMany({
-      where: { id: { in: taClassIds } },
-      include: { campus: true, academicYear: true, _count: { select: { students: true } } }
-    }).catch(() => []) : [];
-
-    const classMap = new Map();
-    [...homeroomClasses, ...tcaClasses, ...taClasses].forEach(c => {
-      if (c && c.id && !classMap.has(c.id)) {
-        classMap.set(c.id, {
-          ...c,
-          isHomeroom: c.homeroomTeacherId === teacherId || (c.homeroomTeacherId ? c.homeroomTeacherId.includes(teacherId) : false)
-        });
-      }
-    });
-
-    let result = Array.from(classMap.values());
-
-    if (result.length === 0) {
-      const allTeacherClasses = await prisma.class.findMany({
+    // Failsafe: If no homeroom classes match current active year filter, check all years for homeroom classes
+    if (homeroomClasses.length === 0) {
+      homeroomClasses = await prisma.class.findMany({
         where: {
           OR: [
             { homeroomTeacherId: teacherId },
@@ -74,14 +42,12 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
         },
         include: { campus: true, academicYear: true, _count: { select: { students: true } } }
       }).catch(() => []);
-
-      result = allTeacherClasses.map(c => ({
-        ...c,
-        isHomeroom: true
-      }));
     }
 
-    return result;
+    return homeroomClasses.map(c => ({
+      ...c,
+      isHomeroom: true
+    }));
   } catch (err) {
     console.error("Error in getTeacherClasses:", err)
     return []
@@ -128,10 +94,16 @@ export default async function TeacherClassesPage() {
     if (teacher) {
       classes = await getTeacherClasses(teacher.id, activeYearCookie)
     } else {
-      classes = await prisma.class.findMany({
-        take: 20,
+      // Admin / Staff preview: load classes that have homeroom teachers assigned
+      const previewClasses = await prisma.class.findMany({
+        where: {
+          homeroomTeacherId: { not: null }
+        },
+        take: 12,
         include: { campus: true, academicYear: true, _count: { select: { students: true } } }
       }).catch(() => [])
+
+      classes = previewClasses.map(c => ({ ...c, isHomeroom: true }))
     }
     
     const academicYears = await prisma.academicYear.findMany({
