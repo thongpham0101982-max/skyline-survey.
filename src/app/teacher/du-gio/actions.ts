@@ -218,7 +218,10 @@ export async function getObservationSlots(filters: {
     }
 
     if (activeYear) {
-      where.academicYearId = activeYear.id
+      where.OR = [
+        { academicYearId: activeYear.id },
+        { academicYearId: null }
+      ]
     }
 
     if (filters.level && filters.level !== "all") {
