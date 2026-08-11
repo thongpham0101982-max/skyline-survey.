@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node -e \"const fs=require('fs'); if(fs.existsSync('prisma/dev.db')) fs.copyFileSync('prisma/dev.db', 'dev.db');\" && prisma generate && next build",
+    "build": "node -e \"const fs=require('fs'); if(fs.existsSync('prisma/dev.db')) fs.copyFileSync('prisma/dev.db', 'dev.db');\" && prisma db push --accept-data-loss && prisma generate && next build",
     "start": "next start",
     "lint": "eslint"
   },
