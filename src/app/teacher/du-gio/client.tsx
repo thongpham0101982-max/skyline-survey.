@@ -1707,8 +1707,21 @@ export function ObservationClient(props: ObservationClientProps) {
                   />
                 </div>
 
-                {/* Subject Select */}
+                {/* 1. Cơ sở & Môn học */}
                 <div className="grid grid-cols-2 gap-3.5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Cơ sở *</label>
+                    <select 
+                      value={newCampusId || currentTeacher?.campusId || ""} 
+                      onChange={e => { setNewCampusId(e.target.value); setNewClassId(""); }} 
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850"
+                    >
+                      <option value="">Chọn cơ sở</option>
+                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                    </select>
+                  </div>
+
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Môn học *</label>
                     <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
@@ -1717,8 +1730,10 @@ export function ObservationClient(props: ObservationClientProps) {
                       {subjects.map(s => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
                     </select>
                   </div>
+                </div>
 
-                  {/* Level Select */}
+                {/* 2. Cấp học & Khối lớp */}
+                <div className="grid grid-cols-2 gap-3.5">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Cấp học *</label>
                     <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId(""); }} required
@@ -1730,10 +1745,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       <option value="THPT">THPT</option>
                     </select>
                   </div>
-                </div>
 
-                {/* Grade & Class Select */}
-                <div className="grid grid-cols-2 gap-3.5">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Khối lớp *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required disabled={!newLevel}
@@ -1742,17 +1754,18 @@ export function ObservationClient(props: ObservationClientProps) {
                       {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
+                </div>
 
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Lớp học *</label>
-                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
-                      <option value="">Chọn lớp</option>
-                      {filteredClassesForCreation.map(c => (
-                        <option key={c.id} value={c.id}>{c.className}</option>
-                      ))}
-                    </select>
-                  </div>
+                {/* 3. Lớp học */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Lớp học *</label>
+                  <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
+                    <option value="">Chọn lớp</option>
+                    {filteredClassesForCreation.map(c => (
+                      <option key={c.id} value={c.id}>{c.className}</option>
+                    ))}
+                  </select>
                 </div>
               </>
             )}
