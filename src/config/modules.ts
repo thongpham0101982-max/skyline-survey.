@@ -1,4 +1,5 @@
 import { 
+  ClipboardCheck,
   Eye,
   Shield, 
   Users, 
@@ -64,12 +65,6 @@ export const APP_CATEGORIES = [
         ]
       },
       {
-        code: "TONG_HOP_DU_GIO",
-        name: "Dự giờ đánh giá Giáo viên",
-        icon: Eye,
-        href: "/admin/du-gio"
-      },
-      {
         code: "KTDBCL_HUONG_NGHIEP",
         name: "QL Hướng nghiệp",
         icon: Compass,
@@ -105,6 +100,16 @@ export const APP_CATEGORIES = [
           { code: "EXP_ACT_REPORTS", name: "Thống kê", href: "/admin/experiential-activities/reports" }
         ]
       }
+    ]
+  },
+  {
+    id: "OBSERVATION",
+    name: "Quản lý Dự giờ",
+    color: "teal",
+    icon: Eye,
+    modules: [
+      { code: "TEACHER_DU_GIO", name: "Dự giờ đánh giá Giáo viên", icon: ClipboardCheck, href: "/admin/du-gio" },
+      { code: "TONG_HOP_DU_GIO", name: "Tổng hợp kết quả", icon: PieChart, href: "/admin/tong-hop-du-gio" }
     ]
   },
   {
