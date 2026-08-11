@@ -29,70 +29,10 @@ export async function getObservationData(academicYearId?: string) {
           }
         }
       }
-    }).catch(() => null)
+    })
 
-    if (!currentTeacher && session.user.email) {
-      currentTeacher = await prisma.teacher.findFirst({
-        where: {
-          OR: [
-            { email: session.user.email },
-            { teacherCode: session.user.email },
-            { teacherCode: session.user.email.split('@')[0] }
-          ]
-        },
-        include: {
-          departmentRel: true,
-          departmentAssignments: {
-            include: { department: true }
-          },
-          campus: true,
-          user: {
-            select: {
-              role: true
-            }
-          }
-        }
-      }).catch(() => null)
-    }
-
-    if (!currentTeacher && isAdmin) {
-      currentTeacher = {
-        id: "admin-" + session.user.id,
-        teacherName: session.user.name || "Administrator",
-        teacherCode: "ADMIN",
-        email: session.user.email || null,
-        departmentId: "",
-        campusId: "",
-        position: "ADMIN",
-        observerType: "Ban ĐHCM",
-        observeeType: "Giáo viên cũ",
-        requiredObserved: 0,
-        observedUnit: "tháng",
-        requiredTaught: 0,
-        taughtUnit: "tháng",
-        departmentRel: { id: "", code: "ADMIN", name: "Ban giám hiệu", blockCM: "" },
-        campus: { id: "", campusCode: "ADMIN", campusName: "Trụ sở chính" }
-      } as any
-    }
-
-    if (!currentTeacher) {
-      currentTeacher = {
-        id: session.user.id,
-        teacherName: session.user.name || "Giáo viên",
-        teacherCode: session.user.email ? session.user.email.split('@')[0] : "GV",
-        email: session.user.email || null,
-        departmentId: "",
-        campusId: "",
-        position: "GV",
-        observerType: "Giáo viên bộ môn",
-        observeeType: "Giáo viên cũ",
-        requiredObserved: 0,
-        observedUnit: "tháng",
-        requiredTaught: 0,
-        taughtUnit: "tháng",
-        departmentRel: null,
-        campus: null
-      } as any
+    if (!currentTeacher && !isAdmin) {
+      return { success: false, error: "Teacher profile not found" }
     }
 
     const rawAcademicYears = await prisma.academicYear.findMany({
@@ -262,42 +202,12 @@ export async function getObservationSlots(filters: {
     const roleCode = (session.user as any)?.role || "TEACHER"
     const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
-    let currentTeacher = await prisma.teacher.findUnique({
+    const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
-    }).catch(() => null)
+    })
 
-    if (!currentTeacher && session.user.email) {
-      currentTeacher = await prisma.teacher.findFirst({
-        where: {
-          OR: [
-            { email: session.user.email },
-            { teacherCode: session.user.email },
-            { teacherCode: session.user.email.split('@')[0] }
-          ]
-        }
-      }).catch(() => null)
-    }
-
-    if (!currentTeacher && isAdmin) {
-      currentTeacher = {
-        id: "admin-" + session.user.id,
-        teacherName: session.user.name || "Administrator",
-        teacherCode: "ADMIN",
-        email: session.user.email || null,
-        departmentId: null,
-        campusId: ""
-      } as any
-    }
-
-    if (!currentTeacher) {
-      currentTeacher = {
-        id: session.user.id,
-        teacherName: session.user.name || "Giáo viên",
-        teacherCode: session.user.email ? session.user.email.split('@')[0] : "GV",
-        email: session.user.email || null,
-        departmentId: null,
-        campusId: ""
-      } as any
+    if (!currentTeacher && !isAdmin) {
+      return { success: false, error: "Teacher profile not found" }
     }
 
     const activeYear = filters.academicYearId
