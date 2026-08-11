@@ -11,12 +11,12 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
   try {
     let yearId = academicYearId;
     if (yearId) {
-      const yearExists = await prisma.academicYear.findUnique({ where: { id: yearId } });
+      const yearExists = await prisma.academicYear.findUnique({ where: { id: yearId } }).catch(() => null);
       if (!yearExists) yearId = undefined;
     }
     
     if (!yearId) {
-      const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
+      const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } }).catch(() => null);
       yearId = activeYear?.id;
     }
 
@@ -36,7 +36,7 @@ async function getTeacherClasses(teacherId: string, academicYearId?: string) {
           select: { students: true }
         }
       }
-    })
+    }).catch(() => [])
 
     return classes.map(c => ({
       ...c,
@@ -62,9 +62,25 @@ export default async function TeacherClassesPage() {
   }
 
   const userId = (session?.user as any)?.id || ''
+  const userEmail = session?.user?.email || ''
 
   try {
-    const teacher = await prisma.teacher.findUnique({ where: { userId } })
+    let teacher = null
+    if (userId) {
+      teacher = await prisma.teacher.findUnique({ where: { userId } }).catch(() => null)
+    }
+
+    if (!teacher && userEmail) {
+      teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { email: userEmail },
+            { teacherCode: userEmail },
+            { teacherCode: userEmail.split('@')[0] }
+          ]
+        }
+      }).catch(() => null)
+    }
 
     if (!teacher) {
       return (
@@ -74,7 +90,7 @@ export default async function TeacherClassesPage() {
           </div>
           <h3 className="text-lg font-bold text-slate-800">Không tìm thấy thông tin Hồ sơ Giáo viên</h3>
           <p className="text-slate-500 text-xs mt-2 leading-relaxed">
-            Tài khoản của bạn ({session?.user?.email || 'N/A'}) chưa được liên kết với thông tin Giáo viên trong hệ thống.
+            Tài khoản của bạn ({userEmail || 'N/A'}) chưa được liên kết với thông tin Giáo viên trong hệ thống.
             Vui lòng liên hệ với Quản trị viên để kiểm tra và phân quyền hồ sơ.
           </p>
         </div>
@@ -88,7 +104,7 @@ export default async function TeacherClassesPage() {
     
     const academicYears = await prisma.academicYear.findMany({
       orderBy: { startDate: "desc" }
-    })
+    }).catch(() => [])
 
     const safeJson = (d: any) => JSON.parse(JSON.stringify(d || []))
 
