@@ -101,9 +101,6 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       return true
     })
 
-    
-    }
-
     const subjects = await prisma.subject.findMany({
       where: { status: "ACTIVE" },
       orderBy: { subjectName: "asc" }

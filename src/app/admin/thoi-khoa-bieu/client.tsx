@@ -137,16 +137,28 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
     })
   }
 
+  // Deduplicate classes strictly by unique className
+  const displayClasses = useMemo(() => {
+    if (!Array.isArray(classes)) return []
+    const seenNames = new Set<string>()
+    return classes.filter((c: any) => {
+      const nameKey = (c?.className || "").trim().toLowerCase()
+      if (!nameKey || seenNames.has(nameKey)) return false
+      seenNames.add(nameKey)
+      return true
+    })
+  }, [classes])
+
   // Group classes by Grade
   const groupedClasses = useMemo(() => {
     const map: Record<string, any[]> = {}
-    classes.forEach((c: any) => {
+    displayClasses.forEach((c: any) => {
       const g = c.grade || "Khác"
       if (!map[g]) map[g] = []
       map[g].push(c)
     })
     return map
-  }, [classes])
+  }, [displayClasses])
 
   // Get Slot for a specific cell
   const getSlot = (classId: string, dayOfWeek: string, session: string, periodNumber: number) => {
@@ -503,9 +515,9 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   <th className="p-3 border-r border-teal-800 text-center w-16 sticky left-0 bg-[#003B3A] z-30">Thứ</th>
                   <th className="p-3 border-r border-teal-800 text-center w-16 sticky left-16 bg-[#003B3A] z-30">Buổi</th>
                   <th className="p-3 border-r border-teal-800 text-center w-14 sticky left-32 bg-[#003B3A] z-30">Tiết</th>
-                  {classes.map((cls: any) => (
+                  {displayClasses.map((cls: any) => (
                     <th key={cls.id} colSpan={2} className="p-3 text-center border-r border-teal-800 min-w-[170px]">
-                      <div>Lớp {cls.className}</div>
+                      <div>{cls.className?.startsWith("Lớp") ? cls.className : `Lớp ${cls.className}`}</div>
                       <div className="text-[9px] font-medium text-teal-200 lowercase mt-0.5">{cls.level || cls.grade}</div>
                     </th>
                   ))}
@@ -515,7 +527,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   <th className="p-2 border-r border-teal-800 text-center sticky left-0 bg-teal-900 z-30"></th>
                   <th className="p-2 border-r border-teal-800 text-center sticky left-16 bg-teal-900 z-30"></th>
                   <th className="p-2 border-r border-teal-800 text-center sticky left-32 bg-teal-900 z-30"></th>
-                  {classes.map((cls: any) => (
+                  {displayClasses.map((cls: any) => (
                     <Fragment key={cls.id}>
                       <th className="p-2 text-center border-r border-teal-800 bg-teal-950/40">MÔN</th>
                       <th className="p-2 text-center border-r border-teal-800 bg-teal-950/20">GVGD</th>
@@ -563,7 +575,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                         </td>
 
                         {/* Class Slot Cells */}
-                        {classes.map((cls: any) => {
+                        {displayClasses.map((cls: any) => {
                           const slot = getSlot(cls.id, day.key, period.session, period.period)
                           const hasSlot = !!slot && (!!slot.subjectName || !!slot.teacherName)
                           const bgColor = slot?.colorCode || SUBJECT_COLORS[slot?.subjectName || ""] || "#FFFFFF"

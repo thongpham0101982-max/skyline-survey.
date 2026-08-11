@@ -2,62 +2,115 @@ import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { TeacherClassesClient } from "./client"
 import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { isRedirectError } from "next/dist/client/components/redirect"
+import { AlertCircle } from "lucide-react"
 
-async function getTeacherClasses(userId: string, academicYearId?: string) {
-  const teacher = await prisma.teacher.findUnique({ where: { userId } })
-  if (!teacher) return []
-
-  let yearId = academicYearId;
-  if (!yearId) {
-    const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
-    yearId = activeYear?.id;
-  }
-
-  const classes = await prisma.class.findMany({
-    where: {
-      ...(yearId ? { academicYearId: yearId } : {}),
-      OR: [
-        { homeroomTeacherId: teacher.id },
-        { homeroomTeacherId: { contains: teacher.id } },
-        { teachers: { some: { teacherId: teacher.id } } }
-      ]
-    },
-    include: {
-      campus: true,
-      academicYear: true,
-      _count: {
-        select: { students: true }
-      }
+async function getTeacherClasses(teacherId: string, academicYearId?: string) {
+  try {
+    let yearId = academicYearId;
+    if (yearId) {
+      const yearExists = await prisma.academicYear.findUnique({ where: { id: yearId } });
+      if (!yearExists) yearId = undefined;
     }
-  })
+    
+    if (!yearId) {
+      const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
+      yearId = activeYear?.id;
+    }
 
-  return classes.map(c => ({
-    ...c,
-    isHomeroom: c.homeroomTeacherId === teacher.id || 
-                (c.homeroomTeacherId ? c.homeroomTeacherId.includes(teacher.id) : false)
-  }))
+    const classes = await prisma.class.findMany({
+      where: {
+        ...(yearId ? { academicYearId: yearId } : {}),
+        OR: [
+          { homeroomTeacherId: teacherId },
+          { homeroomTeacherId: { contains: teacherId } },
+          { teachers: { some: { teacherId: teacherId } } }
+        ]
+      },
+      include: {
+        campus: true,
+        academicYear: true,
+        _count: {
+          select: { students: true }
+        }
+      }
+    })
+
+    return classes.map(c => ({
+      ...c,
+      isHomeroom: c.homeroomTeacherId === teacherId || 
+                  (c.homeroomTeacherId ? c.homeroomTeacherId.includes(teacherId) : false)
+    }))
+  } catch (err) {
+    console.error("Error in getTeacherClasses:", err)
+    return []
+  }
 }
 
 export default async function TeacherClassesPage() {
-  const session = await auth()
+  let session: any = null
+  try {
+    session = await auth()
+  } catch (err) {
+    console.error("Error authenticating TeacherClassesPage:", err)
+  }
+
+  if (!session) {
+    redirect("/login")
+  }
+
   const userId = (session?.user as any)?.id || ''
 
-  const cookieStore = await cookies()
-  const activeYearCookie = cookieStore.get("selectedAcademicYear")?.value
+  try {
+    const teacher = await prisma.teacher.findUnique({ where: { userId } })
 
-  const classes = await getTeacherClasses(userId, activeYearCookie)
-  
-  const academicYears = await prisma.academicYear.findMany({
-    orderBy: { startDate: "desc" }
-  })
+    if (!teacher) {
+      return (
+        <div className="bg-white rounded-2xl shadow-sm p-12 text-center border-2 border-amber-100 max-w-2xl mx-auto my-8">
+          <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-4 border border-amber-200">
+            <AlertCircle className="w-7 h-7 text-amber-600" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800">Không tìm thấy thông tin Hồ sơ Giáo viên</h3>
+          <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+            Tài khoản của bạn ({session?.user?.email || 'N/A'}) chưa được liên kết với thông tin Giáo viên trong hệ thống.
+            Vui lòng liên hệ với Quản trị viên để kiểm tra và phân quyền hồ sơ.
+          </p>
+        </div>
+      )
+    }
 
-  const safeJson = (d: any) => JSON.parse(JSON.stringify(d))
+    const cookieStore = await cookies()
+    const activeYearCookie = cookieStore.get("selectedAcademicYear")?.value
 
-  return (
-    <TeacherClassesClient 
-      initialClasses={safeJson(classes)} 
-      academicYears={safeJson(academicYears)} 
-      selectedYearCookie={activeYearCookie}
-    />
-  )
+    const classes = await getTeacherClasses(teacher.id, activeYearCookie)
+    
+    const academicYears = await prisma.academicYear.findMany({
+      orderBy: { startDate: "desc" }
+    })
+
+    const safeJson = (d: any) => JSON.parse(JSON.stringify(d || []))
+
+    return (
+      <TeacherClassesClient 
+        initialClasses={safeJson(classes)} 
+        academicYears={safeJson(academicYears)} 
+        selectedYearCookie={activeYearCookie}
+      />
+    )
+  } catch (error) {
+    if (isRedirectError(error)) throw error;
+    console.error("Error loading TeacherClassesPage:", error)
+    return (
+      <div className="bg-white rounded-2xl shadow-sm p-12 text-center border-2 border-red-100 max-w-2xl mx-auto my-8">
+        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4 border border-red-200">
+          <AlertCircle className="w-7 h-7 text-red-600" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-800">Đã xảy ra lỗi khi tải danh sách Lớp học</h3>
+        <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+          Hệ thống gặp sự cố tạm thời khi truy vấn dữ liệu lớp học. Vui lòng tải lại trang hoặc liên hệ quản trị viên.
+        </p>
+      </div>
+    )
+  }
 }
