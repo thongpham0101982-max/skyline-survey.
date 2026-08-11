@@ -26,11 +26,14 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       levelGradeFilter = {}
     }
 
-    let classes = await prisma.class.findMany({
+    const yearFilter = activeYear ? { academicYearId: activeYear.id } : {}
+
+    let rawClasses = await prisma.class.findMany({
       where: {
         status: "ACTIVE",
         ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
-        ...levelGradeFilter
+        ...levelGradeFilter,
+        ...yearFilter
       },
       select: {
         id: true,
@@ -47,11 +50,12 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       ]
     })
 
-    if (classes.length === 0 && selectedCampusId) {
-      classes = await prisma.class.findMany({
+    if (rawClasses.length === 0 && selectedCampusId) {
+      rawClasses = await prisma.class.findMany({
         where: {
           status: "ACTIVE",
-          campusId: selectedCampusId
+          campusId: selectedCampusId,
+          ...yearFilter
         },
         select: {
           id: true,
@@ -69,9 +73,9 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       })
     }
 
-    if (classes.length === 0) {
-      classes = await prisma.class.findMany({
-        where: { status: "ACTIVE" },
+    if (rawClasses.length === 0) {
+      rawClasses = await prisma.class.findMany({
+        where: { status: "ACTIVE", ...yearFilter },
         select: {
           id: true,
           className: true,
@@ -87,6 +91,17 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
         ],
         take: 15
       })
+    }
+
+    // Deduplicate classes by className to ensure no class appears twice
+    const seenClassNames = new Set()
+    const classes = rawClasses.filter(c => {
+      if (seenClassNames.has(c.className)) return false
+      seenClassNames.add(c.className)
+      return true
+    })
+
+    
     }
 
     const subjects = await prisma.subject.findMany({
