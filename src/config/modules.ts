@@ -102,16 +102,7 @@ export const APP_CATEGORIES = [
       }
     ]
   },
-  {
-    id: "OBSERVATION",
-    name: "Quản lý Dự giờ",
-    color: "teal",
-    icon: Eye,
-    modules: [
-      { code: "TEACHER_DU_GIO", name: "Dự giờ đánh giá Giáo viên", icon: ClipboardCheck, href: "/admin/du-gio" },
-      { code: "TONG_HOP_DU_GIO", name: "Tổng hợp kết quả", icon: PieChart, href: "/admin/tong-hop-du-gio" }
-    ]
-  },
+
   {
     id: "TRAINING",
     name: "Quản lý Đào tạo",

@@ -261,7 +261,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
             </div>
           )}
 
-          {role === "ADMIN" && APP_CATEGORIES.filter((c: any) => c.id !== "OBSERVATION").map((cat) => {
+          {role === "ADMIN" && APP_CATEGORIES.map((cat) => {
             const visibleModules = cat.modules.filter((m: any) => checkPermission(m.code, m.requiresAdmin, m.subModules))
             if (visibleModules.length === 0) return null
 
