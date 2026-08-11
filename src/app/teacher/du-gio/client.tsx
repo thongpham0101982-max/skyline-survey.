@@ -1433,14 +1433,38 @@ export function ObservationClient(props: ObservationClientProps) {
         
         {/* Panel 1: Khởi tạo tiết dạy của tôi */}
         <div className={`lg:col-span-7 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#00A99D]"}`}>
-          <div className="flex items-center justify-between border-b border-slate-150 pb-3">
-            <div className="flex items-center gap-2">
-              <Plus className={`w-5 h-5 ${isMamNonTeacher ? "text-amber-600" : "text-[#00A99D]"}`} />
-              <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">1. Khởi tạo tiết dạy của tôi</span>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-3">
+            <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200 shadow-inner-2xs w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setCreationMode("TEACHER_OPEN")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  creationMode === "TEACHER_OPEN"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                }`}
+              >
+                <Plus className="w-4 h-4" />
+                1. GV DẠY TỰ MỞ TIẾT
+              </button>
+              <button
+                type="button"
+                onClick={() => setCreationMode("OBSERVER_REQUEST")}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                  creationMode === "OBSERVER_REQUEST"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    : "text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100"
+                }`}
+              >
+                <Sparkles className="w-4 h-4 text-indigo-500" />
+                2. GBMV XIN DỰ GIỜ
+              </button>
             </div>
-            <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md ${isMamNonTeacher ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-[#E6F7F6] text-[#00A99D]"}`}>
-              Tháng {new Date().getMonth() + 1}: {monthlyLimitCount}/2
-            </span>
+            {creationMode === "TEACHER_OPEN" && (
+              <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg self-start sm:self-auto ${isMamNonTeacher ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-[#E6F7F6] text-[#00A99D]"}`}>
+                Tháng {new Date().getMonth() + 1}: {monthlyLimitCount}/2
+              </span>
+            )}
           </div>
 
           {creationMode === "OBSERVER_REQUEST" ? (
