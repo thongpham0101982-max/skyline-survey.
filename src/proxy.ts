@@ -32,14 +32,27 @@ export default auth((req) => {
     
     // 1. Teacher paths protection (/teacher/...)
     if (pathname.startsWith('/teacher')) {
-      const isTeacherOrStaff = ['TEACHER', 'GV_MN', 'ADMIN', 'SUPER_ADMIN', 'GDCS', 'BGH'].some(r => role.includes(r));
-      if (!isTeacherOrStaff) {
+      const isTeacher = ['TEACHER', 'GV_MN'].includes(role);
+      if (!isTeacher) {
+        // Redirect unauthorized users to their correct home page
         if (role === 'PARENT') return NextResponse.redirect(new URL('/parent', req.nextUrl))
         return NextResponse.redirect(new URL('/admin', req.nextUrl))
       }
     }
     
-    // 2. Parent paths protection (/parent/...)
+    // 2. Admin paths protection (/admin/...)
+    if (pathname.startsWith('/admin')) {
+      const isTeacher = ['TEACHER', 'GV_MN'].includes(role);
+      const isParent = role === 'PARENT';
+      if (isTeacher) {
+        return NextResponse.redirect(new URL('/teacher/classes', req.nextUrl))
+      }
+      if (isParent) {
+        return NextResponse.redirect(new URL('/parent', req.nextUrl))
+      }
+    }
+    
+    // 3. Parent paths protection (/parent/...)
     if (pathname.startsWith('/parent')) {
       const isParent = role === 'PARENT';
       if (!isParent) {
@@ -53,6 +66,7 @@ export default auth((req) => {
   return NextResponse.next()
 })
 
+// REMOVED 'hocsinh' FROM MATCHER - Middleware will not even trigger for student pages
 export const config = {
   matcher: ['/((?!api|hocsinh|_next/static|_next/image|favicon.ico|logo.png|logo-skyline.png|vercel.svg|next.svg).*)'],
 }

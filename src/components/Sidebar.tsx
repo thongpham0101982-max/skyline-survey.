@@ -34,8 +34,7 @@ interface SidebarProps {
 }
 
 function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false, isGVCN = false }: SidebarProps) {
-  const rawPathname = usePathname()
-  const pathname = rawPathname || ""
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const typeParam = searchParams?.get("type")
   const isSuperAdmin = actualRole === "ADMIN" || !permissionModules
@@ -85,7 +84,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
-    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'TONG_HOP_DU_GIO' || module === 'TEACHER_DU_GIO' || module === 'TIMETABLE') return true;
+    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'TONG_HOP_DU_GIO' || module === 'TEACHER_DU_GIO') return true;
     if (module === 'KTDBCL_HUONG_NGHIEP') return true;
       let hasParent = permissionModules?.includes(module) || false
       if (module === "KTDBCL_EXAMS") {
@@ -598,51 +597,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   </div>
                 )}
 
-                {/* Thời khóa biểu (Kéo & Thả) */}
-                <Link 
-                  href="/admin/thoi-khoa-bieu" 
-                  onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                    pathname.includes('/admin/thoi-khoa-bieu')
-                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10"
-                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                    pathname.includes('/admin/thoi-khoa-bieu')
-                      ? "bg-emerald-500/20 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]"
-                      : "bg-white/5 border border-white/10 group-hover:border-emerald-500/30"
-                  }`}>
-                    <Calendar className={`w-4 h-4 transition-all ${
-                      pathname.includes('/admin/thoi-khoa-bieu') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                    }`} />
-                  </div>
-                  {!isCollapsed && <span>Thời khóa biểu (Kéo & Thả)</span>}
-                </Link>
-
                 {/* 2. Dự giờ Giáo viên */}
-
-                {/* 2b. Thời khóa biểu (Kéo & Thả) */}
-                <Link 
-                  href="/teacher/thoi-khoa-bieu" 
-                  onClick={() => setIsOpen(false)} 
-                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
-                    pathname.startsWith('/teacher/thoi-khoa-bieu')
-                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
-                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
-                    pathname.startsWith('/teacher/thoi-khoa-bieu')
-                      ? "bg-emerald-500/20 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]"
-                      : "bg-white/5 border border-white/10 group-hover:border-emerald-500/30"
-                  }`}>
-                    <Calendar className={`w-4 h-4 transition-all ${
-                      pathname.startsWith('/teacher/thoi-khoa-bieu') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                    }`} />
-                  </div>
-                  {!isCollapsed && <span>Thời khóa biểu (Kéo & Thả)</span>}
-                </Link>
                 <Link 
                   href="/teacher/du-gio" 
                   onClick={() => setIsOpen(false)} 

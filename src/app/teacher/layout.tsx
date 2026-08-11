@@ -1,13 +1,12 @@
 export const dynamic = "force-dynamic"
-import { ChatBotWidget } from "@/components/ChatBotWidget"
+﻿import { ChatBotWidget } from "@/components/ChatBotWidget"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { Sidebar } from "@/components/Sidebar"
+import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { prisma } from "@/lib/db"
-import { redirect } from "next/navigation"
-
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   let session: any = null;
   try {
@@ -15,11 +14,6 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   } catch (e) {
     console.error("Auth fail in TeacherLayout:", e);
   }
-
-  if (!session) {
-    redirect("/login")
-  }
-
   const roleCode = (session?.user as any)?.role || "TEACHER"
 
   let isGVCN = false
@@ -68,3 +62,4 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     </div>
   )
 }
+
