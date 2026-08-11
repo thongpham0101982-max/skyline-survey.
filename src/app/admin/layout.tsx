@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"
 import { ChatBotWidget } from "@/components/ChatBotWidget"
 import { redirect } from "next/navigation"
 

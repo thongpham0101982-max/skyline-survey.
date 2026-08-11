@@ -4,14 +4,16 @@ import Link from "next/link"
 import { Users, Building2, CalendarDays, ClipboardList } from "lucide-react"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 
-export function TeacherClassesClient({ initialClasses = [], academicYears = [] }: { initialClasses?: any[], academicYears?: any[] }) {
-  const [selectedYearId, setSelectedYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "")
+export function TeacherClassesClient({ initialClasses, academicYears }: { initialClasses?: any[], academicYears?: any[] }) {
+  const safeYears = Array.isArray(academicYears) ? academicYears : []
+  const safeClasses = Array.isArray(initialClasses) ? initialClasses.filter(Boolean) : []
+
+  const [selectedYearId, setSelectedYearId] = useState(() => getDefaultAcademicYearClient(safeYears)?.id || "")
 
   const filteredClasses = useMemo(() => {
-    const list = Array.isArray(initialClasses) ? initialClasses : []
-    if (!selectedYearId) return list
-    return list.filter(c => c && c.academicYearId === selectedYearId)
-  }, [initialClasses, selectedYearId])
+    if (!selectedYearId) return safeClasses
+    return safeClasses.filter(c => c && c.academicYearId === selectedYearId)
+  }, [safeClasses, selectedYearId])
 
   return (
     <div className="space-y-6">
@@ -33,7 +35,7 @@ export function TeacherClassesClient({ initialClasses = [], academicYears = [] }
             onChange={e => setSelectedYearId(e.target.value)} 
             className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none"
           >
-            {academicYears.filter(ay => !ay.isOff).map(ay => (
+            {safeYears.filter(ay => ay && !ay.isOff).map(ay => (
               <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>
             ))}
           </select>
@@ -90,7 +92,7 @@ export function TeacherClassesClient({ initialClasses = [], academicYears = [] }
                   href={`/teacher/classes/${c.id}`} 
                   className="text-xs font-bold text-[#00A99D] hover:text-[#009085] transition-colors flex items-center gap-1.5"
                 >
-                  {c.isHomeroom ? "Xem chi tiết Lớp chủ nhiệm \u2192" : "Xem chi tiết k\u1ebft qu\u1ea3 kh\u1ea3o s\u00e1t \u2192"}
+                  {c.isHomeroom ? "Xem chi tiết Lớp chủ nhiệm →" : "Xem chi tiết kết quả khảo sát →"}
                 </Link>
               </div>
             </div>
