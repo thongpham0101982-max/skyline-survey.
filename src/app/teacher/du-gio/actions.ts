@@ -29,44 +29,10 @@ export async function getObservationData(academicYearId?: string) {
           }
         }
       }
-    }).catch(() => null)
+    })
 
-    if (!currentTeacher && session.user.email) {
-      currentTeacher = await prisma.teacher.findFirst({
-        where: {
-          OR: [
-            { email: session.user.email },
-            { teacherCode: session.user.email },
-            { teacherCode: session.user.email.split('@')[0] }
-          ]
-        },
-        include: {
-          departmentRel: true,
-          departmentAssignments: {
-            include: { department: true }
-          },
-          campus: true,
-          user: {
-            select: {
-              role: true
-            }
-          }
-        }
-      }).catch(() => null)
-    }
-
-    if (!currentTeacher) {
-      const defaultCampus = await prisma.campus.findFirst().catch(() => null);
-      currentTeacher = {
-        id: "staff-" + session.user.id,
-        teacherName: session.user.name || "Giáo viên / Quản lý",
-        teacherCode: "STAFF",
-        email: session.user.email || null,
-        departmentId: null,
-        campusId: defaultCampus?.id || "",
-        campus: defaultCampus,
-        user: { role: roleCode }
-      } as any
+    if (!currentTeacher && !isAdmin) {
+      return { success: false, error: "Teacher profile not found" }
     }
 
     const rawAcademicYears = await prisma.academicYear.findMany({
@@ -200,26 +166,9 @@ export async function getObservationData(academicYearId?: string) {
       orderBy: { className: "asc" }
     })
 
-    let teacherTimetableSlots: any[] = []
-    if (currentTeacher?.id || currentTeacher?.teacherName) {
-      try {
-        teacherTimetableSlots = await prisma.timetableSlot.findMany({
-          where: {
-            OR: [
-              ...(currentTeacher.id ? [{ teacherId: currentTeacher.id }] : []),
-              ...(currentTeacher.teacherName ? [{ teacherName: currentTeacher.teacherName }] : [])
-            ]
-          }
-        })
-      } catch (e) {
-        console.error("Error fetching teacherTimetableSlots:", e)
-      }
-    }
-
     return {
       success: true,
       currentTeacher,
-      teacherTimetableSlots,
       subjects,
       departments,
       teachers,
@@ -253,35 +202,12 @@ export async function getObservationSlots(filters: {
     const roleCode = (session.user as any)?.role || "TEACHER"
     const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
-    let currentTeacher = await prisma.teacher.findUnique({
+    const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
-    }).catch(() => null)
+    })
 
-    if (!currentTeacher && session.user.email) {
-      currentTeacher = await prisma.teacher.findFirst({
-        where: {
-          OR: [
-            { email: session.user.email },
-            { teacherCode: session.user.email },
-            { teacherCode: session.user.email.split('@')[0] }
-          ]
-        }
-      }).catch(() => null)
-    }
-
-    if (!currentTeacher && isAdmin) {
-      currentTeacher = {
-        id: "admin-" + session.user.id,
-        teacherName: session.user.name || "Administrator",
-        teacherCode: "ADMIN",
-        email: session.user.email || null,
-        departmentId: null,
-        campusId: ""
-      } as any
-    }
-
-    if (!currentTeacher) {
-      return { success: true, slots: [] }
+    if (!currentTeacher && !isAdmin) {
+      return { success: false, error: "Teacher profile not found" }
     }
 
     const activeYear = filters.academicYearId
@@ -1247,84 +1173,5 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
-  }
-}
-
-export async function getTeacherTimetableSchedule(teacherId?: string, teacherName?: string) {
-  try {
-    const session = await auth()
-    if (!session) return { success: false, error: "Unauthorized", slots: [], subjectSummary: [] }
-
-    let targetTeacherId = teacherId
-    let targetTeacherName = teacherName
-
-    if (!targetTeacherId && session.user?.id) {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } }).catch(() => null)
-      if (teacher) {
-        targetTeacherId = teacher.id
-        targetTeacherName = teacher.teacherName
-      }
-    }
-
-    if (!targetTeacherId && !targetTeacherName) {
-      return { success: true, slots: [], subjectSummary: [] }
-    }
-
-    const whereOr: any[] = []
-    if (targetTeacherId) whereOr.push({ teacherId: targetTeacherId })
-    if (targetTeacherName) {
-      whereOr.push({ teacherName: targetTeacherName })
-      whereOr.push({ teacherName: { contains: targetTeacherName } })
-    }
-
-    const rawSlots = await prisma.timetableSlot.findMany({
-      where: {
-        OR: whereOr,
-        status: "ACTIVE"
-      },
-      orderBy: [
-        { dayOfWeek: "asc" },
-        { periodNumber: "asc" }
-      ]
-    }).catch(() => [])
-
-    const dayTextMap: Record<string, string> = {
-      MONDAY: "Thứ 2",
-      TUESDAY: "Thứ 3",
-      WEDNESDAY: "Thứ 4",
-      THURSDAY: "Thứ 5",
-      FRIDAY: "Thứ 6",
-      SATURDAY: "Thứ 7"
-    }
-
-    const subjectMap = new Map<string, { subjectName: string; totalPeriods: number; classNames: Set<string> }>()
-    
-    rawSlots.forEach(s => {
-      const sName = s.subjectName || "Chưa xếp môn"
-      if (!subjectMap.has(sName)) {
-        subjectMap.set(sName, { subjectName: sName, totalPeriods: 0, classNames: new Set() })
-      }
-      const entry = subjectMap.get(sName)!
-      entry.totalPeriods += 1
-      if (s.className) entry.classNames.add(s.className)
-    })
-
-    const subjectSummary = Array.from(subjectMap.values()).map(e => ({
-      subjectName: e.subjectName,
-      totalPeriods: e.totalPeriods,
-      classes: Array.from(e.classNames).join(", ")
-    }))
-
-    return {
-      success: true,
-      slots: rawSlots.map(s => ({
-        ...s,
-        dayOfWeekText: dayTextMap[s.dayOfWeek?.toUpperCase()] || s.dayOfWeek || "Thứ 2"
-      })),
-      subjectSummary
-    }
-  } catch (err: any) {
-    console.error("Error in getTeacherTimetableSchedule:", err)
-    return { success: false, error: err.message, slots: [], subjectSummary: [] }
   }
 }
