@@ -225,9 +225,7 @@ export default function TeacherDashboard() {
             <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
               Tổng quan Công việc Giáo viên
             </h1>
-            <p className="text-xs text-slate-100 font-medium">
-              Theo dõi dữ liệu công tác giảng dạy, tiến độ đánh giá học sinh năm học <strong className="text-white font-bold">{finalMetrics.academicYearName || "2026 - 2027"}</strong>
-            </p>
+            
           </div>
 
           {currentDateStr && (
@@ -285,36 +283,7 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* Real Progress Section */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-[#00A99D]" />
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-              Tiến độ Thực hiện Đánh giá Khảo sát
-            </h3>
-          </div>
-          <span className="text-xs font-extrabold text-[#00A99D]">
-            {scoredPercent}% Hoàn thành
-          </span>
-        </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-            <span>Học sinh đã cập nhật kết quả đánh giá</span>
-            <span>{scoredStudents} / {totalStudents} học sinh</span>
-          </div>
-          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200">
-            <div
-              className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] h-full rounded-full transition-all duration-500"
-              style={{ width: `${scoredPercent}%` }}
-            />
-          </div>
-          <p className="text-[11px] text-slate-500 font-medium">
-            Dữ liệu được cập nhật tự động khi Giáo viên nhập kết quả đánh giá trên hệ thống.
-          </p>
-        </div>
-      </div>
+      
 
       {/* Category Action Center (2 Column Responsive Layout) */}
       <div className="space-y-4 pt-2">
