@@ -234,7 +234,7 @@ export default function TeacherDashboard() {
         {
           href: "/teacher/phan-cong-giang-day",
           title: "5. Phân công giảng dạy",
-          desc: "Tra cứu danh sách môn giảng dạy và thời khóa biểu theo phân công",
+          desc: "Tra cứu danh sách môn giảng dạy và phân công chuyên môn",
           icon: BookOpen,
           iconGradient: "from-purple-600 to-pink-500",
           badge: "Lịch dạy",
