@@ -1021,31 +1021,63 @@ export async function requestObservationSlot(data: {
 
     const slotDate = new Date(data.date)
 
-    const newSlot = await prisma.observationSlot.create({
-      data: {
-        teacherId: hostTeacher.id,
-        targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
-        classId: data.classId || null,
-        className: data.className || "Lớp chọn",
-        level: data.level || "ALL",
-        grade: data.grade || "Khối",
-        subjectId: data.subjectId || null,
-        subjectName: data.subjectName || "Môn học",
-        topic: data.topic || "Đề xuất xin dự giờ tiết học",
-        date: slotDate,
-        startTime: data.period || timeRange.start,
-        endTime: timeRange.end,
-        room: data.room || "Phòng học",
-        description: data.notes || "Yêu cầu xin dự giờ từ GBMV",
-        visibilityType: "PUBLIC",
-        maxSeats: 4,
-        status: "PENDING_TEACHER_APPROVAL",
-        requestOrigin: "OBSERVER_REQUEST",
-        academicYearId: activeYear?.id || null,
-        campusId: hostTeacher.campusId || null,
-        campusName: hostTeacher.campus?.campusName || null
+    let newSlot: any;
+    try {
+      newSlot = await prisma.observationSlot.create({
+        data: {
+          teacherId: hostTeacher.id,
+          targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+          classId: data.classId || null,
+          className: data.className || "Lớp chọn",
+          level: data.level || "ALL",
+          grade: data.grade || "Khối",
+          subjectId: data.subjectId || null,
+          subjectName: data.subjectName || "Môn học",
+          topic: data.topic || "Đề xuất xin dự giờ tiết học",
+          date: slotDate,
+          startTime: data.period || timeRange.start,
+          endTime: timeRange.end,
+          room: data.room || "Phòng học",
+          description: data.notes || "Yêu cầu xin dự giờ từ GVBM",
+          visibilityType: "PUBLIC",
+          maxSeats: 4,
+          status: "PENDING_TEACHER_APPROVAL",
+          requestOrigin: "OBSERVER_REQUEST",
+          academicYearId: activeYear?.id || null,
+          campusId: hostTeacher.campusId || null,
+          campusName: hostTeacher.campus?.campusName || null
+        }
+      });
+    } catch (createErr: any) {
+      if (createErr?.message?.includes("requestOrigin") || createErr?.message?.includes("no column named")) {
+        newSlot = await prisma.observationSlot.create({
+          data: {
+            teacherId: hostTeacher.id,
+            targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+            classId: data.classId || null,
+            className: data.className || "Lớp chọn",
+            level: data.level || "ALL",
+            grade: data.grade || "Khối",
+            subjectId: data.subjectId || null,
+            subjectName: data.subjectName || "Môn học",
+            topic: data.topic || "Đề xuất xin dự giờ tiết học",
+            date: slotDate,
+            startTime: data.period || timeRange.start,
+            endTime: timeRange.end,
+            room: data.room || "Phòng học",
+            description: (data.notes ? data.notes + " | " : "") + "[GVBM_XIN_DU_GIO]",
+            visibilityType: "PUBLIC",
+            maxSeats: 4,
+            status: "PENDING_TEACHER_APPROVAL",
+            academicYearId: activeYear?.id || null,
+            campusId: hostTeacher.campusId || null,
+            campusName: hostTeacher.campus?.campusName || null
+          }
+        });
+      } else {
+        throw createErr;
       }
-    })
+    }
 
     // Automatically register observer
     if (observerTeacher && observerTeacher.id && !observerTeacher.id.startsWith("admin-")) {
@@ -1100,13 +1132,26 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
         }
       })
     } else {
-      await prisma.observationSlot.update({
-        where: { id: slotId },
-        data: {
-          status: "REJECTED",
-          rejectionReason: reason || "Giáo viên từ chối"
+      try {
+        await prisma.observationSlot.update({
+          where: { id: slotId },
+          data: {
+            status: "REJECTED",
+            rejectionReason: reason || "Giáo viên từ chối"
+          }
+        })
+      } catch (err: any) {
+        if (err?.message?.includes("rejectionReason") || err?.message?.includes("no column named")) {
+          await prisma.observationSlot.update({
+            where: { id: slotId },
+            data: {
+              status: "REJECTED"
+            }
+          })
+        } else {
+          throw err;
         }
-      })
+      }
     }
 
     revalidatePath("/teacher/du-gio")
