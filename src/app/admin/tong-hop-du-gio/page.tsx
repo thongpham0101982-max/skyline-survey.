@@ -23,8 +23,9 @@ export default async function AdminTongHopPage(props: {
 
   const isTTCM = currentTeacher?.position === "TTCM" || (currentTeacher?.departmentAssignments || []).some((da: any) => da.position === "TTCM")
   const isBGHMN = roleCode === "BGH_MN" || roleCode === "BGH MN"
+  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
-  if (!isSuperAdmin && !isTTCM && !isBGHMN) {
+  if (!isSuperAdmin && !isTTCM && !isBGHMN && !isGDCS) {
     return (
       <div className="p-6 text-red-500 font-bold text-xs font-semibold">
         Bạn không có quyền truy cập trang này.
@@ -72,6 +73,7 @@ export default async function AdminTongHopPage(props: {
       initialFilters={{ level, grade, period, date, campusId, deptId, academicYearId }}
       isTTCM={isTTCM}
       isSuperAdmin={isSuperAdmin}
+      isGDCS={isGDCS}
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
     />

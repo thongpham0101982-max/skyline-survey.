@@ -26,6 +26,7 @@ interface AdminTongHopClientProps {
   initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string; academicYearId?: string }
   isTTCM: boolean
   isSuperAdmin: boolean
+  isGDCS?: boolean
   academicYears?: { id: string; name: string; status: string }[]
   selectedYearId?: string
 }
@@ -54,7 +55,7 @@ const preschoolLabels = [
 ];
 
 export function AdminTongHopClient({
-  initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin, academicYears, selectedYearId
+  initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, isTTCM, isSuperAdmin, isGDCS, academicYears, selectedYearId
 }: AdminTongHopClientProps) {
   const router = useRouter()
   const pathname = usePathname()

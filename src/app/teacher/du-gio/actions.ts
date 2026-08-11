@@ -13,7 +13,7 @@ export async function getObservationData(academicYearId?: string) {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(roleCode)
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
     let currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id },
@@ -199,7 +199,7 @@ export async function getObservationSlots(filters: {
     }
 
     const roleCode = (session.user as any)?.role || "TEACHER"
-    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL"].includes(roleCode)
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
     const currentTeacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
@@ -866,6 +866,7 @@ export async function updateTeacherObservationTargets(
 
     const roleCode = (session.user as any)?.role || "TEACHER"
     const isSuperAdmin = roleCode === "ADMIN"
+    const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
 
     // Also allow TTCM or the teacher themselves to update their own targets
     const currentTeacher = await prisma.teacher.findUnique({
@@ -876,7 +877,7 @@ export async function updateTeacherObservationTargets(
     const isTTCM = currentTeacher?.position === "TTCM"
     const isSelf = currentTeacher && currentTeacher.id === teacherId
 
-    if (!isSuperAdmin && !isTTCM && !isSelf) {
+    if (!isSuperAdmin && !isTTCM && !isSelf && !isGDCS) {
       return { success: false, error: "Bạn không có quyền cấu hình chỉ tiêu" }
     }
 

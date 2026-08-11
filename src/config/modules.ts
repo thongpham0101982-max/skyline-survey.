@@ -1,4 +1,5 @@
 import { 
+  Eye,
   Shield, 
   Users, 
   Building2, 
@@ -61,6 +62,12 @@ export const APP_CATEGORIES = [
           { code: "KTDBCL_EXAM_STUDENTS", name: "Đăng ký Dự thi", href: "/admin/ktdbcl/students" },
           { code: "KTDBCL_EXAM_RESULTS", name: "Nhập điểm & Kết quả", href: "/admin/ktdbcl/results" },
         ]
+      },
+      {
+        code: "TONG_HOP_DU_GIO",
+        name: "Dự giờ đánh giá Giáo viên",
+        icon: Eye,
+        href: "/admin/tong-hop-du-gio"
       },
       {
         code: "KTDBCL_HUONG_NGHIEP",

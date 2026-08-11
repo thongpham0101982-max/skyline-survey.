@@ -38,6 +38,8 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const searchParams = useSearchParams()
   const typeParam = searchParams?.get("type")
   const isSuperAdmin = actualRole === "ADMIN" || !permissionModules
+  const normalizedRole = (actualRole || "").toUpperCase()
+  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hasPreschool, setHasPreschool] = useState(false)
@@ -82,7 +84,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
-    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP') return true;
+    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'TONG_HOP_DU_GIO') return true;
     if (module === 'KTDBCL_HUONG_NGHIEP') return true;
       let hasParent = permissionModules?.includes(module) || false
       if (module === "KTDBCL_EXAMS") {
@@ -163,7 +165,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               {!isCollapsed && <span>Dashboard</span>}
             </Link>
           )}
-          {role === "ADMIN" && (isTTCM || isSuperAdmin) && (
+          {role === "ADMIN" && (isTTCM || isSuperAdmin || isGDCS) && (
             <div className="flex flex-col">
               {/* Parent label */}
               <button 
@@ -176,7 +178,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               >
                 <div className="flex items-center">
                   <PieChart className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60"}`} />
-                  {!isCollapsed && <span className="font-semibold">Tổng hợp dự giờ</span>}
+                  {!isCollapsed && <span className="font-semibold">Dự giờ đánh giá Giáo viên</span>}
                 </div>
                 {!isCollapsed && (
                   <ChevronDown className={`w-3.5 h-3.5 text-white/50 transition-transform duration-200 ${observesExpanded ? 'rotate-180' : ''}`} />
