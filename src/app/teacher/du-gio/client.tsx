@@ -216,8 +216,11 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [currentTeacher, isMamNonTeacher]);
 
   const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const activeTabParam = searchParams.get("tab") || "dang-ky"
+  let searchParams: any = null
+  try {
+    searchParams = useSearchParams()
+  } catch (e) {}
+  const activeTabParam = searchParams?.get ? (searchParams.get("tab") || "dang-ky") : "dang-ky"
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [slots, setSlots] = useState(initialSlots)
