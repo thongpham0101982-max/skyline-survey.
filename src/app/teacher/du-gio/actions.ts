@@ -1175,3 +1175,82 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
     return { success: false, error: e.message }
   }
 }
+
+export async function getTeacherTimetableSchedule(teacherId?: string, teacherName?: string) {
+  try {
+    const session = await auth()
+    if (!session) return { success: false, error: "Unauthorized", slots: [], subjectSummary: [] }
+
+    let targetTeacherId = teacherId
+    let targetTeacherName = teacherName
+
+    if (!targetTeacherId && session.user?.id) {
+      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } }).catch(() => null)
+      if (teacher) {
+        targetTeacherId = teacher.id
+        targetTeacherName = teacher.teacherName
+      }
+    }
+
+    if (!targetTeacherId && !targetTeacherName) {
+      return { success: true, slots: [], subjectSummary: [] }
+    }
+
+    const whereOr: any[] = []
+    if (targetTeacherId) whereOr.push({ teacherId: targetTeacherId })
+    if (targetTeacherName) {
+      whereOr.push({ teacherName: targetTeacherName })
+      whereOr.push({ teacherName: { contains: targetTeacherName } })
+    }
+
+    const rawSlots = await prisma.timetableSlot.findMany({
+      where: {
+        OR: whereOr,
+        status: "ACTIVE"
+      },
+      orderBy: [
+        { dayOfWeek: "asc" },
+        { periodNumber: "asc" }
+      ]
+    }).catch(() => [])
+
+    const dayTextMap: Record<string, string> = {
+      MONDAY: "Thứ 2",
+      TUESDAY: "Thứ 3",
+      WEDNESDAY: "Thứ 4",
+      THURSDAY: "Thứ 5",
+      FRIDAY: "Thứ 6",
+      SATURDAY: "Thứ 7"
+    }
+
+    const subjectMap = new Map<string, { subjectName: string; totalPeriods: number; classNames: Set<string> }>()
+    
+    rawSlots.forEach(s => {
+      const sName = s.subjectName || "Chưa xếp môn"
+      if (!subjectMap.has(sName)) {
+        subjectMap.set(sName, { subjectName: sName, totalPeriods: 0, classNames: new Set() })
+      }
+      const entry = subjectMap.get(sName)!
+      entry.totalPeriods += 1
+      if (s.className) entry.classNames.add(s.className)
+    })
+
+    const subjectSummary = Array.from(subjectMap.values()).map(e => ({
+      subjectName: e.subjectName,
+      totalPeriods: e.totalPeriods,
+      classes: Array.from(e.classNames).join(", ")
+    }))
+
+    return {
+      success: true,
+      slots: rawSlots.map(s => ({
+        ...s,
+        dayOfWeekText: dayTextMap[s.dayOfWeek?.toUpperCase()] || s.dayOfWeek || "Thứ 2"
+      })),
+      subjectSummary
+    }
+  } catch (err: any) {
+    console.error("Error in getTeacherTimetableSchedule:", err)
+    return { success: false, error: err.message, slots: [], subjectSummary: [] }
+  }
+}
