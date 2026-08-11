@@ -1,5 +1,6 @@
 import { cookies } from "next/headers"
 export const dynamic = "force-dynamic"
+export const revalidate = 0
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getObservationData, getObservationSlots } from "@/app/teacher/du-gio/actions"
