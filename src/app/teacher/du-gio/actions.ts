@@ -166,9 +166,26 @@ export async function getObservationData(academicYearId?: string) {
       orderBy: { className: "asc" }
     })
 
+    let teacherTimetableSlots: any[] = []
+    if (currentTeacher?.id || currentTeacher?.teacherName) {
+      try {
+        teacherTimetableSlots = await prisma.timetableSlot.findMany({
+          where: {
+            OR: [
+              ...(currentTeacher.id ? [{ teacherId: currentTeacher.id }] : []),
+              ...(currentTeacher.teacherName ? [{ teacherName: currentTeacher.teacherName }] : [])
+            ]
+          }
+        })
+      } catch (e) {
+        console.error("Error fetching teacherTimetableSlots:", e)
+      }
+    }
+
     return {
       success: true,
       currentTeacher,
+      teacherTimetableSlots,
       subjects,
       departments,
       teachers,
