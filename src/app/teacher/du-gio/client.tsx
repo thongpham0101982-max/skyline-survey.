@@ -263,6 +263,16 @@ export function ObservationClient(props: ObservationClientProps) {
   }
   const [showFilterPanel, setShowFilterPanel] = useState(true)
 
+  // Filter classes for GVBM request form based on Level and Grade
+  const filteredReqClasses = useMemo(() => {
+    return classes.filter((c: any) => {
+      if (reqLevel && reqLevel !== "all" && c.level !== reqLevel) return false;
+      if (reqGrade && reqGrade !== "all" && c.grade !== reqGrade) return false;
+      return true;
+    });
+  }, [classes, reqLevel, reqGrade]);
+
+
   // Filter teachers for request form by selected department
   const filteredTeachersForRequest = useMemo(() => {
     if (!reqDeptId) return teachers;
@@ -1457,7 +1467,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 }`}
               >
                 <Sparkles className="w-4 h-4 text-indigo-500" />
-                2. GBMV XIN DỰ GIỜ
+                2. GVBM XIN DỰ GIỜ
               </button>
             </div>
             {creationMode === "TEACHER_OPEN" && (
@@ -1623,7 +1633,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
               >
                 <Sparkles className="w-4 h-4" />
-                {submitting ? "Đang gửi yêu cầu..." : "+ GỬI YÊU CẦU XIN DỰ GIỜ GIÁO VIÊN"}
+                {submitting ? "Đang gửi yêu cầu..." : "+ GỬI YÊU CẦU XIN DỰ GIỜ (GVBM)"}
               </button>
             </form>
           ) : (
