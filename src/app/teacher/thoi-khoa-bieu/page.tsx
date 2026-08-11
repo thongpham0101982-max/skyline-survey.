@@ -6,7 +6,7 @@ import { redirect } from "next/navigation"
 import { isRedirectError } from "next/dist/client/components/redirect"
 import { getTimetableMatrixData } from "@/app/admin/thoi-khoa-bieu/actions"
 import TeacherTimetableLookupClient from "./client"
-import prisma from "@/lib/prisma"
+import { prisma } from "@/lib/db"
 
 export default async function TimetablePage(props: {
   searchParams: Promise<{ campusId?: string; level?: string }>
