@@ -263,83 +263,6 @@ export function ObservationClient(props: ObservationClientProps) {
     router.push(`${pathname}?${params.toString()}`)
   }
   const [showFilterPanel, setShowFilterPanel] = useState(true)
-  const [showTkbModal, setShowTkbModal] = useState(false)
-  const [tkbSearchQuery, setTkbSearchQuery] = useState("")
-
-  const myTkbSlots = useMemo(() => {
-    const raw = Array.isArray(teacherTimetableSlots) ? teacherTimetableSlots.filter(Boolean) : []
-    const dayMap: Record<string, string> = {
-      MONDAY: "Thứ 2",
-      TUESDAY: "Thứ 3",
-      WEDNESDAY: "Thứ 4",
-      THURSDAY: "Thứ 5",
-      FRIDAY: "Thứ 6",
-      SATURDAY: "Thứ 7",
-      SUNDAY: "Chủ Nhật"
-    }
-    return raw.map((slot: any) => ({
-      ...slot,
-      dayOfWeekText: dayMap[slot.dayOfWeek] || slot.dayOfWeek || "Thứ 2"
-    }))
-  }, [teacherTimetableSlots])
-
-  const myTkbSummary = useMemo(() => {
-    const map = new Map<string, { subjectName: string; totalPeriods: number; classNames: Set<string>; slots: any[] }>()
-    myTkbSlots.forEach((slot: any) => {
-      const sName = slot.subjectName || "Chưa phân môn"
-      if (!map.has(sName)) {
-        map.set(sName, { subjectName: sName, totalPeriods: 0, classNames: new Set(), slots: [] })
-      }
-      const item = map.get(sName)!
-      item.totalPeriods += 1
-      if (slot.className) item.classNames.add(slot.className)
-      item.slots.push(slot)
-    })
-    return Array.from(map.values())
-  }, [myTkbSlots])
-
-  const handleSelectTkbSlot = (slot: any) => {
-    if (!slot) return
-    
-    if (slot.campusId) {
-      setNewCampusId(slot.campusId)
-    }
-    
-    if (slot.subjectId) {
-      setNewSubjectId(slot.subjectId)
-    } else if (slot.subjectName) {
-      const foundSub = subjects.find(s => s && s.subjectName && s.subjectName.toLowerCase().trim() === slot.subjectName.toLowerCase().trim())
-      if (foundSub) setNewSubjectId(foundSub.id)
-    }
-    
-    if (slot.classId) {
-      const foundClass = classes.find(c => c && c.id === slot.classId)
-      if (foundClass) {
-        setNewLevel(foundClass.level)
-        setNewGrade(foundClass.grade)
-        setNewClassId(foundClass.id)
-      }
-    } else if (slot.className) {
-      const foundClass = classes.find(c => c && c.className && c.className.toLowerCase().trim() === slot.className.toLowerCase().trim())
-      if (foundClass) {
-        setNewLevel(foundClass.level)
-        setNewGrade(foundClass.grade)
-        setNewClassId(foundClass.id)
-      }
-    }
-
-    if (slot.periodNumber) {
-      setNewStartTime(`Tiết ${slot.periodNumber}`)
-      setNewEndTime(`Tiết ${slot.periodNumber}`)
-    }
-
-    setShowTkbModal(false)
-    const dayText = slot.dayOfWeekText || "Thứ 2"
-    setToast({
-      type: "success",
-      message: `✓ Đã tự động điền tiết dạy TKB: Lớp ${slot.className} - ${slot.subjectName || ''} (${dayText} - Tiết ${slot.periodNumber})`
-    })
-  }
 
   // All observation request slots targeted to current teacher (GV dạy được xin dự)
   const allRequestsForMySlot = useMemo(() => {
@@ -1527,55 +1450,6 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
       </div>
-      {/* Prominent Timetable Schedule Summary & Quick Selector Tool Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-emerald-950 text-white rounded-3xl p-5 shadow-xl border border-teal-500/30 transition-all hover:border-teal-400/50">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300 shrink-0 shadow-inner">
-              <Calendar className="w-6 h-6 animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-black uppercase tracking-wider text-teal-200">
-                  Thời khóa biểu phân công cá nhân
-                </h3>
-                <span className="bg-teal-500/30 text-teal-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-teal-400/30">Chính thức</span>
-              </div>
-              <p className="text-xs text-slate-300 font-medium mt-0.5">
-                {myTkbSlots.length > 0 
-                  ? `Đã trích xuất được ${myTkbSlots.length} tiết dạy theo Ma trận TKB. Bấm nút tra cứu để chọn tiết và tự động điền Form dự giờ 1-Click.`
-                  : "Chưa nạp tiết dạy trên Thời khóa biểu. Bấm nút tra cứu để xem chi tiết."}
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setShowTkbModal(true)}
-            className="w-full md:w-auto px-5 py-3 bg-gradient-to-r from-[#00A99D] to-teal-400 hover:from-teal-400 hover:to-[#00A99D] text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-teal-500/30 active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Tra cứu & Chọn tiết dạy TKB ({myTkbSlots.length})</span>
-          </button>
-        </div>
-
-        {/* Subject Period Count Badges */}
-        {myTkbSummary.length > 0 && (
-          <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-wrap gap-2 items-center text-xs">
-            <span className="font-extrabold text-teal-200 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
-              <CheckCircle className="w-4 h-4 text-teal-400" />
-              Thống kê tiết dạy theo môn:
-            </span>
-            {myTkbSummary.map((sub: any, idx: number) => (
-              <span key={idx} className="bg-slate-900/90 border border-teal-500/40 text-teal-100 px-3 py-1 rounded-xl font-bold shadow-sm flex items-center gap-1.5">
-                <span className="text-white font-extrabold">{sub.subjectName}:</span>
-                <span className="text-amber-300 font-black">{sub.totalPeriods} tiết/tuần</span>
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* ROW 1: 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
@@ -1821,52 +1695,6 @@ export function ObservationClient(props: ObservationClientProps) {
             </form>
           ) : (
             <form onSubmit={handleCreateSubmit} className="flex flex-col gap-4 text-xs font-semibold">
-              {/* Timetable Schedule Summary & Quick Selector Tool */}
-              <div className="bg-gradient-to-br from-emerald-950 via-teal-900 to-slate-900 text-white rounded-2xl p-4 shadow-lg border border-teal-500/30 transition-all hover:border-teal-400/50 mb-1">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300 shrink-0 shadow-inner">
-                      <Calendar className="w-5 h-5 animate-pulse" />
-                    </div>
-                    <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-teal-200 flex items-center gap-1.5">
-                        <span>Thời khóa biểu phân công cá nhân</span>
-                        <span className="bg-teal-500/30 text-teal-300 text-[9px] px-2 py-0.5 rounded-full border border-teal-400/30">Chính thức</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-300 font-medium mt-0.5">
-                        {myTkbSlots.length > 0 
-                          ? `Đã trích xuất được ${myTkbSlots.length} tiết dạy theo Ma trận TKB`
-                          : "Chưa nạp tiết dạy trên Thời khóa biểu"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowTkbModal(true)}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-[#00A99D] to-teal-400 hover:from-teal-400 hover:to-[#00A99D] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-teal-500/30 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Tra cứu & Chọn tiết dạy TKB ({myTkbSlots.length})</span>
-                  </button>
-                </div>
-
-                {/* Subject Period Count Badges */}
-                {myTkbSummary.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-2 items-center text-[10px]">
-                    <span className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5 text-teal-400" />
-                      Số tiết theo môn:
-                    </span>
-                    {myTkbSummary.map((sub: any, idx: number) => (
-                      <span key={idx} className="bg-teal-950/90 border border-teal-500/40 text-teal-200 px-2.5 py-1 rounded-lg font-bold shadow-sm flex items-center gap-1">
-                        <span className="text-white">{sub.subjectName}:</span>
-                        <span className="text-amber-300 font-extrabold">{sub.totalPeriods} tiết/tuần</span>
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
             {isMamNonTeacher ? (
               /* ===== INLINE MAM NON FORM ===== */
               <>
@@ -1912,54 +1740,7 @@ export function ObservationClient(props: ObservationClientProps) {
             ) : (
               /* ===== INLINE K12 FORM ===== */
               <>
-                {/* Timetable Schedule Summary & Quick Selector Tool */}
-            <div className="bg-gradient-to-br from-emerald-950 via-teal-900 to-slate-900 text-white rounded-2xl p-4 shadow-lg border border-teal-500/30 transition-all hover:border-teal-400/50 mb-2">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300 shrink-0 shadow-inner">
-                    <Calendar className="w-5 h-5 animate-pulse" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black uppercase tracking-wider text-teal-200 flex items-center gap-1.5">
-                      <span>Thời khóa biểu phân công cá nhân</span>
-                      <span className="bg-teal-500/30 text-teal-300 text-[9px] px-2 py-0.5 rounded-full border border-teal-400/30">Chính thức</span>
-                    </h4>
-                    <p className="text-[11px] text-slate-300 font-medium mt-0.5">
-                      {myTkbSlots.length > 0 
-                        ? `Đã trích xuất được ${myTkbSlots.length} tiết dạy theo Ma trận TKB`
-                        : "Chưa nạp tiết dạy trên Thời khóa biểu"}
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowTkbModal(true)}
-                  className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-[#00A99D] to-teal-400 hover:from-teal-400 hover:to-[#00A99D] text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all duration-300 shadow-md hover:shadow-teal-500/30 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Tra cứu & Chọn tiết dạy TKB ({myTkbSlots.length})</span>
-                </button>
-              </div>
-
-              {/* Subject Period Count Badges */}
-              {myTkbSummary.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-white/10 flex flex-wrap gap-2 items-center text-[10px]">
-                  <span className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                    <CheckCircle className="w-3.5 h-3.5 text-teal-400" />
-                    Số tiết theo môn:
-                  </span>
-                  {myTkbSummary.map((sub: any, idx: number) => (
-                    <span key={idx} className="bg-teal-950/90 border border-teal-500/40 text-teal-200 px-2.5 py-1 rounded-lg font-bold shadow-sm flex items-center gap-1">
-                      <span className="text-white">{sub.subjectName}:</span>
-                      <span className="text-amber-300 font-extrabold">{sub.totalPeriods} tiết/tuần</span>
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Topic Input */}
+                {/* Topic Input */}
                 <div className="flex flex-col gap-1.5">
                   <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Tên bài dạy / Chủ đề *</label>
                   <input 

@@ -49,7 +49,6 @@ export default async function ObservationPage(props: {
       <ObservationClient
         initialSlots={slotsResult.success ? (slotsResult.slots || []) : []}
         currentTeacher={refDataResult.currentTeacher || null}
-        teacherTimetableSlots={refDataResult.teacherTimetableSlots || []}
         subjects={refDataResult.subjects || []}
         departments={refDataResult.departments || []}
         teachers={refDataResult.teachers || []}
@@ -67,7 +66,6 @@ export default async function ObservationPage(props: {
       <ObservationClient
         initialSlots={[]}
         currentTeacher={null}
-        teacherTimetableSlots={[]}
         subjects={[]}
         departments={[]}
         teachers={[]}
