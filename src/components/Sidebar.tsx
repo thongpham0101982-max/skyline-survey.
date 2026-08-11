@@ -364,6 +364,27 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
           {role === "TEACHER" && (
             <>
+              {/* Dashboard Overview Link */}
+              <Link 
+                href="/teacher" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-3 ${
+                  pathname === '/teacher' 
+                    ? "bg-gradient-to-r from-teal-500/30 to-emerald-500/20 border border-teal-500/40 text-white shadow-md shadow-black/10" 
+                    : "text-white/80 hover:text-white hover:bg-white/10 hover:translate-x-1"
+                }`}
+              >
+                <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                  pathname === '/teacher'
+                    ? "bg-teal-500/30 border border-teal-400/50 shadow-[0_0_8px_rgba(20,184,166,0.35)]"
+                    : "bg-white/10 border border-white/15 group-hover:border-teal-500/40"
+                }`}>
+                  <LayoutDashboard className={`w-4 h-4 transition-all ${
+                    pathname === '/teacher' ? "text-teal-300" : "text-slate-300 group-hover:text-teal-300 group-hover:scale-110"
+                  }`} />
+                </div>
+                {!isCollapsed && <span>Tổng quan</span>}
+              </Link>
               {/* Category A. Công tác GVCN - Only show if isGVCN is true */}
               {isGVCN && (
                 <div className="mb-4">

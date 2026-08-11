@@ -21,7 +21,7 @@ export default auth((req) => {
   if (isLoggedIn && isOnLogin) {
     const role = (req.auth?.user as any)?.role || 'PARENT'
     if (role === 'PARENT') return NextResponse.redirect(new URL('/parent', req.nextUrl))
-    if (['TEACHER', 'GV_MN'].includes(role)) return NextResponse.redirect(new URL('/teacher/classes', req.nextUrl))
+    if (['TEACHER', 'GV_MN'].includes(role)) return NextResponse.redirect(new URL('/teacher', req.nextUrl))
     return NextResponse.redirect(new URL('/admin', req.nextUrl))
   }
 
@@ -40,7 +40,7 @@ export default auth((req) => {
       const isParent = role === 'PARENT';
       if (!isParent) {
         const isTeacher = ['TEACHER', 'GV_MN'].includes(role);
-        if (isTeacher) return NextResponse.redirect(new URL('/teacher/classes', req.nextUrl))
+        if (isTeacher) return NextResponse.redirect(new URL('/teacher', req.nextUrl))
         return NextResponse.redirect(new URL('/admin', req.nextUrl))
       }
     }

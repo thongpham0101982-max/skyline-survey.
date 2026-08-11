@@ -53,7 +53,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   // Redirect teachers without admin permissions to the teacher workspace
   const isTeacher = ['TEACHER', 'GV_MN'].includes(roleCode);
   if (isTeacher && roleCode !== "ADMIN" && readableModules.length === 0) {
-    redirect("/teacher/classes")
+    redirect("/teacher")
   }
 
   return (

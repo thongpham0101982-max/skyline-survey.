@@ -88,10 +88,26 @@ export function LoginClient() {
           setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
           addStep('Đăng nhập thành công! Đang chuyển trang...')
           
-          // Verify session before navigating to prevent race condition
-          await fetch('/api/auth/session').catch(() => {})
+          // Verify session and redirect directly to appropriate dashboard
+          const sessRes = await fetch('/api/auth/session').then(r => r.json()).catch(() => null)
+          const userRole = sessRes?.user?.role
+
           await new Promise(r => setTimeout(r, 300))
-          window.location.href = '/'
+
+          if (userRole === 'PARENT') {
+            window.location.href = '/parent'
+          } else if (userRole && ['TEACHER', 'GV_MN'].includes(userRole)) {
+            window.location.href = '/teacher'
+          } else if (userRole === 'STUDENT') {
+            window.location.href = '/hocsinh/hs-khaosat/danh-sach'
+          } else if (userRole === 'KT_DBCL') {
+            window.location.href = '/admin/surveys'
+          } else if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'GDCS' || userRole === 'BGH') {
+            window.location.href = '/admin'
+          } else {
+            // Default fallback for CBGV teacher login
+            window.location.href = '/teacher'
+          }
 
         } catch (err: any) {
           const errStr = String(err?.message || err?.type || err?.code || err || '')

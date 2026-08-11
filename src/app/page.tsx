@@ -13,7 +13,7 @@ export default async function Home() {
   if (role === "STUDENT") {
     redirect("/hocsinh/hs-khaosat/danh-sach")
   } else if (["TEACHER", "GV_MN"].includes(role)) {
-    redirect("/teacher/classes")
+    redirect("/teacher")
   } else if (role === "PARENT") {
     redirect("/parent")
   } else if (role === "KT_DBCL") {
@@ -24,7 +24,7 @@ export default async function Home() {
       const { prisma } = require("@/lib/db");
       const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
       if (teacher) {
-        redirect("/teacher/classes");
+        redirect("/teacher");
       }
     } catch (e) {
       console.error("Defensive teacher redirect check failed:", e);
