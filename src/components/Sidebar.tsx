@@ -620,6 +620,28 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 </Link>
 
                 {/* 2. Dự giờ Giáo viên */}
+
+                {/* 2b. Thời khóa biểu (Kéo & Thả) */}
+                <Link 
+                  href="/teacher/thoi-khoa-bieu" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2 rounded-xl transition-all duration-300 text-xs font-bold mb-1.5 ${
+                    pathname.startsWith('/teacher/thoi-khoa-bieu')
+                      ? "bg-gradient-to-r from-white/15 to-white/5 border border-white/10 text-white shadow-md shadow-black/10" 
+                      : "text-white/70 hover:text-white hover:bg-white/5 hover:translate-x-1"
+                  }`}
+                >
+                  <div className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${isCollapsed ? 'mx-auto' : 'mr-2.5'} ${
+                    pathname.startsWith('/teacher/thoi-khoa-bieu')
+                      ? "bg-emerald-500/20 border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.25)]"
+                      : "bg-white/5 border border-white/10 group-hover:border-emerald-500/30"
+                  }`}>
+                    <Calendar className={`w-4 h-4 transition-all ${
+                      pathname.startsWith('/teacher/thoi-khoa-bieu') ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                    }`} />
+                  </div>
+                  {!isCollapsed && <span>Thời khóa biểu (Kéo & Thả)</span>}
+                </Link>
                 <Link 
                   href="/teacher/du-gio" 
                   onClick={() => setIsOpen(false)} 
