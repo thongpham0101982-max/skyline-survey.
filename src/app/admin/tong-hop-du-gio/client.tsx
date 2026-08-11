@@ -1492,6 +1492,6 @@ export function AdminTongHopClient({
 
         </div>
       </div>
-    ) }
     </div>
   )
+}
