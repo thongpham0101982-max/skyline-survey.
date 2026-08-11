@@ -193,6 +193,7 @@ export async function getObservationSlots(filters: {
     academicYearId?: string
 }) {
   try {
+    await ensureDbColumns();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -951,6 +952,16 @@ export async function updateTeacherObservationTargets(
 
 
 
+
+async function ensureDbColumns() {
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "requestOrigin" TEXT DEFAULT 'TEACHER_OPEN';`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "rejectionReason" TEXT;`);
+  } catch (e) {}
+}
+
 export async function requestObservationSlot(data: {
   targetTeacherId: string
   targetDeptId?: string
@@ -1100,6 +1111,8 @@ export async function requestObservationSlot(data: {
 }
 
 export async function respondToObservationRequest(slotId: string, accept: boolean, reason?: string) {
+  // Ensure DB columns exist
+  await ensureDbColumns();
   try {
     const session = await auth()
     if (!session || !session.user) {
