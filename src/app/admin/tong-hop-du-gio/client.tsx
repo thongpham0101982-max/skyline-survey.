@@ -1,4 +1,5 @@
-﻿"use client"
+"use client"
+import { ObservationClient } from "@/app/teacher/du-gio/client"
 
 import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -60,6 +61,13 @@ export function AdminTongHopClient({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const viewModeParam = searchParams?.get("view") || "du-gio"
+  const [viewMode, setViewMode] = useState<"du-gio" | "tong-hop">(viewModeParam as any)
+
+  useEffect(() => {
+    if (viewModeParam === "tong-hop") setViewMode("tong-hop")
+    else setViewMode("du-gio")
+  }, [viewModeParam])
   const filterAcademicYearId = searchParams.get("academicYearId") || selectedYearId || ""
 
   const handleAcademicYearChange = (yearId: string) => {
@@ -1485,6 +1493,6 @@ export function AdminTongHopClient({
 
         </div>
       </div>
+    </>)}
     </div>
-  );
-}
+  )
