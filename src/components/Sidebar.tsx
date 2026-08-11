@@ -34,7 +34,8 @@ interface SidebarProps {
 }
 
 function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false, isGVCN = false }: SidebarProps) {
-  const pathname = usePathname()
+  const rawPathname = usePathname()
+  const pathname = rawPathname || ""
   const searchParams = useSearchParams()
   const typeParam = searchParams?.get("type")
   const isSuperAdmin = actualRole === "ADMIN" || !permissionModules

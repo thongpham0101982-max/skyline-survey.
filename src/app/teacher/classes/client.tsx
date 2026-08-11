@@ -1,17 +1,28 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Link from "next/link"
 import { Users, Building2, CalendarDays, ClipboardList } from "lucide-react"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 
-export function TeacherClassesClient({ initialClasses = [], academicYears = [] }: { initialClasses?: any[], academicYears?: any[] }) {
-  const [selectedYearId, setSelectedYearId] = useState(() => getDefaultAcademicYearClient(academicYears)?.id || "")
+export function TeacherClassesClient({ initialClasses, academicYears }: { initialClasses?: any[], academicYears?: any[] }) {
+  const safeYears = useMemo(() => Array.isArray(academicYears) ? academicYears : [], [academicYears])
+  const safeClasses = useMemo(() => Array.isArray(initialClasses) ? initialClasses.filter(Boolean) : [], [initialClasses])
+
+  const [selectedYearId, setSelectedYearId] = useState(() => getDefaultAcademicYearClient(safeYears)?.id || "")
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("selectedAcademicYear")
+      if (stored && safeYears.some(y => y && y.id === stored)) {
+        setSelectedYearId(stored)
+      }
+    }
+  }, [safeYears])
 
   const filteredClasses = useMemo(() => {
-    const list = Array.isArray(initialClasses) ? initialClasses : []
-    if (!selectedYearId) return list
-    return list.filter(c => c && c.academicYearId === selectedYearId)
-  }, [initialClasses, selectedYearId])
+    if (!selectedYearId) return safeClasses
+    return safeClasses.filter(c => c && c.academicYearId === selectedYearId)
+  }, [safeClasses, selectedYearId])
 
   return (
     <div className="space-y-6">
@@ -30,10 +41,16 @@ export function TeacherClassesClient({ initialClasses = [], academicYears = [] }
           <CalendarDays className="w-3.5 h-3.5 text-slate-400"/>
           <select 
             value={selectedYearId} 
-            onChange={e => setSelectedYearId(e.target.value)} 
+            onChange={e => {
+              setSelectedYearId(e.target.value)
+              if (typeof window !== "undefined") {
+                localStorage.setItem("selectedAcademicYear", e.target.value)
+                document.cookie = "selectedAcademicYear=" + e.target.value + "; path=/; max-age=31536000; SameSite=Lax"
+              }
+            }} 
             className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none"
           >
-            {academicYears.filter(ay => !ay.isOff).map(ay => (
+            {safeYears.filter(ay => ay && !ay.isOff).map(ay => (
               <option key={ay.id} value={ay.id}>Năm học {ay.name}</option>
             ))}
           </select>
@@ -90,7 +107,7 @@ export function TeacherClassesClient({ initialClasses = [], academicYears = [] }
                   href={`/teacher/classes/${c.id}`} 
                   className="text-xs font-bold text-[#00A99D] hover:text-[#009085] transition-colors flex items-center gap-1.5"
                 >
-                  {c.isHomeroom ? "Xem chi tiết Lớp chủ nhiệm \u2192" : "Xem chi tiết k\u1ebft qu\u1ea3 kh\u1ea3o s\u00e1t \u2192"}
+                  {c.isHomeroom ? "Xem chi tiết Lớp chủ nhiệm →" : "Xem chi tiết kết quả khảo sát →"}
                 </Link>
               </div>
             </div>

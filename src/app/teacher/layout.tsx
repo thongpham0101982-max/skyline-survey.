@@ -1,12 +1,13 @@
 export const dynamic = "force-dynamic"
-﻿import { ChatBotWidget } from "@/components/ChatBotWidget"
+import { ChatBotWidget } from "@/components/ChatBotWidget"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { Sidebar } from "@/components/Sidebar"
-import { NotificationBell } from "@/components/NotificationBell"
 import { auth } from "@/lib/auth"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { prisma } from "@/lib/db"
+import { redirect } from "next/navigation"
+
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   let session: any = null;
   try {
@@ -14,12 +15,17 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   } catch (e) {
     console.error("Auth fail in TeacherLayout:", e);
   }
+
+  if (!session) {
+    redirect("/login")
+  }
+
   const roleCode = (session?.user as any)?.role || "TEACHER"
 
   let isGVCN = false
   if (session?.user?.id) {
     try {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } })
+      const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } }).catch(() => null)
       if (teacher) {
         const homeroomClassesCount = await prisma.class.count({
           where: {
@@ -28,7 +34,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
               { homeroomTeacherId: { contains: teacher.id } }
             ]
           }
-        })
+        }).catch(() => 0)
         isGVCN = homeroomClassesCount > 0
       }
     } catch (err) {
@@ -40,7 +46,6 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     <div className="flex min-h-screen text-xs font-semibold">
       <Sidebar role="TEACHER" actualRole={roleCode} isGVCN={isGVCN} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
-        {/* Top Header */}
         <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
             <MobileMenuTrigger />
@@ -62,4 +67,3 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     </div>
   )
 }
-
