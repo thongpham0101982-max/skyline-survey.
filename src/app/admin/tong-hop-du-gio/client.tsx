@@ -1,6 +1,5 @@
 "use client"
 import { ObservationClient } from "@/app/teacher/du-gio/client"
-
 import { useState, useMemo, useEffect } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
@@ -1493,6 +1492,6 @@ export function AdminTongHopClient({
 
         </div>
       </div>
-    </>)}
+    ) }
     </div>
   )

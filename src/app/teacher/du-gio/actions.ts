@@ -453,6 +453,7 @@ export async function createObservationSlot(data: {
     })
 
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     return { success: true, slot: newSlot }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -514,6 +515,7 @@ export async function registerObservation(slotId: string) {
     })
 
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -557,6 +559,7 @@ export async function cancelObservation(slotId: string) {
     })
 
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -603,6 +606,7 @@ export async function deleteObservationSlot(slotId: string) {
     })
 
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -661,6 +665,7 @@ export async function approveRegistration(registrationId: string) {
 
     await prisma.observationRegistration.update({ where: { id: registrationId }, data: { isApproved: true, approvedAt: new Date() } })
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) { return { success: false, error: e.message } }
 }
@@ -738,6 +743,7 @@ export async function submitEvaluation(data: {
       })
     }
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     return { success: true }
   } catch (e: any) { return { success: false, error: e.message } }
 }
@@ -841,6 +847,7 @@ export async function updateObservationSlot(slotId: string, data: {
     })
 
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     return { success: true, slot: updatedSlot }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -931,6 +938,7 @@ export async function updateTeacherObservationTargets(
     })
 
     revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
     revalidatePath("/admin/tong-hop-du-gio")
     return { success: true }
   } catch (e: any) {

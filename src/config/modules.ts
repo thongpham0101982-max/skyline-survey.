@@ -67,7 +67,7 @@ export const APP_CATEGORIES = [
         code: "TONG_HOP_DU_GIO",
         name: "Dự giờ đánh giá Giáo viên",
         icon: Eye,
-        href: "/admin/tong-hop-du-gio"
+        href: "/admin/du-gio"
       },
       {
         code: "KTDBCL_HUONG_NGHIEP",

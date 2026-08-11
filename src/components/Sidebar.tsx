@@ -46,10 +46,10 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const [hasGeneral, setHasGeneral] = useState(false)
   const [loadingAssignments, setLoadingAssignments] = useState(true)
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
-  const [observesExpanded, setObservesExpanded] = useState(pathname.startsWith("/admin/tong-hop-du-gio"))
+  const [observesExpanded, setObservesExpanded] = useState(pathname.startsWith("/admin/du-gio"))
 
   useEffect(() => {
-    if (pathname.startsWith("/admin/tong-hop-du-gio")) {
+    if (pathname.startsWith("/admin/du-gio")) {
       setObservesExpanded(true)
     }
   }, [pathname])
@@ -171,13 +171,13 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <button 
                 onClick={() => setObservesExpanded(!observesExpanded)}
                 className={`flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-left w-full hover:bg-white/5 outline-none ${
-                  pathname.startsWith("/admin/tong-hop-du-gio") 
+                  pathname.startsWith("/admin/du-gio") 
                     ? "bg-white/20 text-white border border-[#135E5B]/30" 
                     : "text-white/70"
                 }`}
               >
                 <div className="flex items-center">
-                  <PieChart className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-[#1E8B87]" : "text-white/60"}`} />
+                  <PieChart className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/du-gio") ? "text-[#1E8B87]" : "text-white/60"}`} />
                   {!isCollapsed && <span className="font-semibold">Dự giờ đánh giá Giáo viên</span>}
                 </div>
                 {!isCollapsed && (
@@ -187,27 +187,27 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               {/* Sub-items */}
               {!isCollapsed && observesExpanded && (
                 <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3 animate-in slide-in-from-top-2 duration-200">
-                  <Link href="/admin/tong-hop-du-gio?block=k12" onClick={() => setIsOpen(false)}
+                  <Link href="/admin/du-gio?block=k12" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") !== "mammon" && searchParams?.get("block") !== "dieuhan"
+                      pathname.startsWith("/admin/du-gio") && searchParams?.get("block") !== "mammon" && searchParams?.get("block") !== "dieuhan"
                         ? "bg-indigo-500/20 text-white border border-indigo-500/30"
                         : "text-white/60 hover:text-white hover:bg-indigo-500/10"
                     }`}>
                     <span className="w-5 h-5 rounded-md bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-[9px] font-black text-indigo-300">K</span>
                     Phổ thông K-12
                   </Link>
-                  <Link href="/admin/tong-hop-du-gio?block=mammon" onClick={() => setIsOpen(false)}
+                  <Link href="/admin/du-gio?block=mammon" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") === "mammon"
+                      pathname.startsWith("/admin/du-gio") && searchParams?.get("block") === "mammon"
                         ? "bg-amber-500/20 text-white border border-amber-500/30"
                         : "text-white/60 hover:text-white hover:bg-amber-500/10"
                     }`}>
                     <span className="w-5 h-5 rounded-md bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-[9px] font-black text-amber-300">M</span>
                     Mầm non
                   </Link>
-                  <Link href="/admin/tong-hop-du-gio?block=dieuhan" onClick={() => setIsOpen(false)}
+                  <Link href="/admin/du-gio?block=dieuhan" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      pathname.startsWith("/admin/tong-hop-du-gio") && searchParams?.get("block") === "dieuhan"
+                      pathname.startsWith("/admin/du-gio") && searchParams?.get("block") === "dieuhan"
                         ? "bg-teal-500/20 text-white border border-teal-500/30"
                         : "text-white/60 hover:text-white hover:bg-teal-500/10"
                     }`}>
@@ -224,19 +224,19 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
             <div className="flex flex-col">
               {/* Parent label */}
               <div className={`flex items-center px-3 py-2.5 rounded-xl text-sm font-medium ${
-                pathname.startsWith("/admin/tong-hop-du-gio") 
+                pathname.startsWith("/admin/du-gio") 
                   ? "bg-amber-500/20 text-white border border-amber-500/30"
                   : "text-white/70"
               }`}>
-                <Eye className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/tong-hop-du-gio") ? "text-amber-400" : "text-white/60"}`} />
+                <Eye className={`w-4 h-4 ${isCollapsed ? 'mx-auto' : 'mr-3'} ${pathname.startsWith("/admin/du-gio") ? "text-amber-400" : "text-white/60"}`} />
                 {!isCollapsed && <span className="font-semibold">Dự giờ đánh giá Giáo viên</span>}
               </div>
               {/* Sub-item: only Mầm non for BGH_MN */}
               {!isCollapsed && (
                 <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/10 pl-3">
-                  <Link href="/admin/tong-hop-du-gio?block=mammon" onClick={() => setIsOpen(false)}
+                  <Link href="/admin/du-gio?block=mammon" onClick={() => setIsOpen(false)}
                     className={`group flex items-center gap-2 px-2.5 py-2 rounded-xl text-xs font-bold transition-all duration-200 ${
-                      pathname.startsWith("/admin/tong-hop-du-gio")
+                      pathname.startsWith("/admin/du-gio")
                         ? "bg-amber-500/20 text-white border border-amber-500/30"
                         : "text-white/60 hover:text-white hover:bg-amber-500/10"
                     }`}>
