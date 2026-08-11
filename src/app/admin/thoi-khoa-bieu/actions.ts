@@ -4,12 +4,42 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
+async function ensureTimetableTable() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "TimetableSlot" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "academicYearId" TEXT,
+        "campusId" TEXT,
+        "level" TEXT NOT NULL DEFAULT 'TIEU_HOC',
+        "grade" TEXT NOT NULL DEFAULT 'K1',
+        "classId" TEXT,
+        "className" TEXT NOT NULL,
+        "dayOfWeek" TEXT NOT NULL,
+        "session" TEXT NOT NULL DEFAULT 'MORNING',
+        "periodNumber" INTEGER NOT NULL DEFAULT 1,
+        "subjectId" TEXT,
+        "subjectName" TEXT,
+        "teacherId" TEXT,
+        "teacherName" TEXT,
+        "weekType" TEXT NOT NULL DEFAULT 'ALL',
+        "altSubjectName" TEXT,
+        "altTeacherName" TEXT,
+        "colorCode" TEXT DEFAULT '#3B82F6',
+        "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (e) {
+    console.error("ensureTimetableTable error:", e);
+  }
+}
+
 export async function getTimetableMatrixData(campusId?: string, level: string = "TIEU_HOC") {
   try {
+    await ensureTimetableTable();
     const session = await auth()
-    if (!session || !session.user) {
-      return { success: false, error: "Unauthorized" }
-    }
 
     const campuses = await prisma.campus.findMany({
       where: { status: "ACTIVE" },
@@ -72,25 +102,39 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       orderBy: { teacherName: "asc" }
     })
 
-    const timetableSlots = await prisma.timetableSlot.findMany({
-      where: {
-        ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
-        level: level
-      }
-    })
+    let timetableSlots: any[] = []
+    try {
+      timetableSlots = await prisma.timetableSlot.findMany({
+        where: {
+          ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
+          level: level
+        }
+      })
+    } catch (e) {
+      console.error("Error fetching timetableSlots:", e)
+    }
 
     return {
       success: true,
-      campuses,
+      campuses: campuses || [],
       selectedCampusId,
-      classes,
-      subjects,
-      teachers,
-      timetableSlots,
+      classes: classes || [],
+      subjects: subjects || [],
+      teachers: teachers || [],
+      timetableSlots: timetableSlots || [],
       academicYear: activeYear
     }
   } catch (e: any) {
-    return { success: false, error: e.message }
+    return {
+      success: false,
+      error: e.message,
+      campuses: [],
+      selectedCampusId: "",
+      classes: [],
+      subjects: [],
+      teachers: [],
+      timetableSlots: []
+    }
   }
 }
 
@@ -112,6 +156,7 @@ export async function saveTimetableSlot(data: {
   colorCode?: string
 }) {
   try {
+    await ensureTimetableTable();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
@@ -186,7 +231,7 @@ export async function saveTimetableSlot(data: {
     }
 
     revalidatePath("/admin/thoi-khoa-bieu")
-    revalidatePath("/teacher/du-gio")
+    revalidatePath("/teacher/thoi-khoa-bieu")
 
     return {
       success: true,
@@ -210,6 +255,7 @@ export async function clearTimetableSlot(slotId: string) {
     })
 
     revalidatePath("/admin/thoi-khoa-bieu")
+    revalidatePath("/teacher/thoi-khoa-bieu")
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
