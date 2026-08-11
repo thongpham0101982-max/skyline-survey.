@@ -1054,6 +1054,8 @@ model ObservationSlot {
   targetDeptId   String?
   maxSeats       Int      @default(4)
   status         String   @default("ACTIVE")
+  requestOrigin  String?  @default("TEACHER_OPEN")
+  rejectionReason String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   campusId       String?

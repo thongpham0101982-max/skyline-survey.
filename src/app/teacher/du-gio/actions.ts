@@ -214,7 +214,7 @@ export async function getObservationSlots(filters: {
       : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
 
     const where: any = {
-      status: "ACTIVE"
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED"] }
     }
 
     if (activeYear) {
@@ -947,3 +947,170 @@ export async function updateTeacherObservationTargets(
 }
 
 
+
+export async function requestObservationSlot(data: {
+  targetTeacherId: string
+  targetDeptId?: string
+  classId?: string
+  className?: string
+  level?: string
+  grade?: string
+  subjectId?: string
+  subjectName?: string
+  topic?: string
+  date: string
+  period?: string
+  room?: string
+  notes?: string
+  academicYearId?: string
+}) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const roleCode = (session.user as any)?.role || "TEACHER"
+    const isAdmin = ["ADMIN", "ADMINISTRATOR", "KT_DBCL", "GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(roleCode)
+
+    let observerTeacher = await prisma.teacher.findUnique({
+      where: { userId: session.user.id }
+    })
+
+    if (!observerTeacher && isAdmin) {
+      observerTeacher = {
+        id: "admin-" + session.user.id,
+        teacherName: session.user.name || "Administrator",
+        teacherCode: "ADMIN",
+        email: session.user.email || null
+      } as any
+    }
+
+    if (!observerTeacher) {
+      return { success: false, error: "Tài khoản của bạn chưa được gắn với hồ sơ Nhân sự/Giáo viên." }
+    }
+
+    const hostTeacher = await prisma.teacher.findUnique({
+      where: { id: data.targetTeacherId },
+      include: { campus: true, departmentRel: true }
+    })
+
+    if (!hostTeacher) {
+      return { success: false, error: "Không tìm thấy thông tin Giáo viên dạy." }
+    }
+
+    const activeYear = data.academicYearId
+      ? await prisma.academicYear.findUnique({ where: { id: data.academicYearId } })
+      : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
+
+    const periodMap: Record<string, { start: string; end: string }> = {
+      "Tiết 1": { start: "07:30", end: "08:15" },
+      "Tiết 2": { start: "08:25", end: "09:10" },
+      "Tiết 3": { start: "09:30", end: "10:15" },
+      "Tiết 4": { start: "10:25", end: "11:10" },
+      "Tiết 5": { start: "13:00", end: "13:45" },
+      "Tiết 6": { start: "13:55", end: "14:40" },
+      "Tiết 7": { start: "15:00", end: "15:45" },
+      "Tiết 8": { start: "15:55", end: "16:40" }
+    }
+
+    const timeRange = periodMap[data.period || "Tiết 1"] || { start: "07:30", end: "08:15" }
+
+    const slotDate = new Date(data.date)
+
+    const newSlot = await prisma.observationSlot.create({
+      data: {
+        teacherId: hostTeacher.id,
+        targetDeptId: data.targetDeptId || hostTeacher.departmentId || null,
+        classId: data.classId || null,
+        className: data.className || "Lớp chọn",
+        level: data.level || "ALL",
+        grade: data.grade || "Khối",
+        subjectId: data.subjectId || null,
+        subjectName: data.subjectName || "Môn học",
+        topic: data.topic || "Đề xuất xin dự giờ tiết học",
+        date: slotDate,
+        startTime: data.period || timeRange.start,
+        endTime: timeRange.end,
+        room: data.room || "Phòng học",
+        description: data.notes || "Yêu cầu xin dự giờ từ GBMV",
+        visibilityType: "PUBLIC",
+        maxSeats: 4,
+        status: "PENDING_TEACHER_APPROVAL",
+        requestOrigin: "OBSERVER_REQUEST",
+        academicYearId: activeYear?.id || null,
+        campusId: hostTeacher.campusId || null,
+        campusName: hostTeacher.campus?.campusName || null
+      }
+    })
+
+    // Automatically register observer
+    if (observerTeacher && observerTeacher.id && !observerTeacher.id.startsWith("admin-")) {
+      await prisma.observationRegistration.create({
+        data: {
+          slotId: newSlot.id,
+          teacherId: observerTeacher.id,
+          isApproved: false
+        }
+      })
+    }
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
+
+    return { success: true, slot: newSlot }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
+
+export async function respondToObservationRequest(slotId: string, accept: boolean, reason?: string) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const slot = await prisma.observationSlot.findUnique({
+      where: { id: slotId },
+      include: { registrations: true }
+    })
+
+    if (!slot) {
+      return { success: false, error: "Không tìm thấy thông tin tiết dự giờ." }
+    }
+
+    if (accept) {
+      await prisma.observationSlot.update({
+        where: { id: slotId },
+        data: {
+          status: "ACTIVE"
+        }
+      })
+
+      // Approve registrations
+      await prisma.observationRegistration.updateMany({
+        where: { slotId },
+        data: {
+          isApproved: true,
+          approvedAt: new Date()
+        }
+      })
+    } else {
+      await prisma.observationSlot.update({
+        where: { id: slotId },
+        data: {
+          status: "REJECTED",
+          rejectionReason: reason || "Giáo viên từ chối"
+        }
+      })
+    }
+
+    revalidatePath("/teacher/du-gio")
+    revalidatePath("/admin/du-gio")
+
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}

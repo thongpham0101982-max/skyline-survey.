@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation,
+  requestObservationSlot, respondToObservationRequest,
   deleteObservationSlot, getCreatedCountInMonth, getObservationSlots,
   approveRegistration, submitEvaluation, updateTeacherObservationTargets
 } from "./actions"
@@ -224,6 +225,21 @@ export function ObservationClient(props: ObservationClientProps) {
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST">("TEACHER_OPEN")
+  
+  // Request Observation Form States
+  const [reqDeptId, setReqDeptId] = useState("")
+  const [reqTeacherId, setReqTeacherId] = useState("")
+  const [reqSubjectId, setReqSubjectId] = useState("")
+  const [reqLevel, setReqLevel] = useState("")
+  const [reqGrade, setReqGrade] = useState("")
+  const [reqClassId, setReqClassId] = useState("")
+  const [reqDate, setReqDate] = useState("")
+  const [reqPeriod, setReqPeriod] = useState("Tiết 1")
+  const [reqTopic, setReqTopic] = useState("")
+  const [reqNotes, setReqNotes] = useState("")
+  const [declineReason, setDeclineReason] = useState("")
+  const [decliningSlotId, setDecliningSlotId] = useState<string | null>(null)
   const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
   const [myScheduleMonth, setMyScheduleMonth] = useState<string>("ALL");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
@@ -246,6 +262,28 @@ export function ObservationClient(props: ObservationClientProps) {
     router.push(`${pathname}?${params.toString()}`)
   }
   const [showFilterPanel, setShowFilterPanel] = useState(true)
+
+  // Filter teachers for request form by selected department
+  const filteredTeachersForRequest = useMemo(() => {
+    if (!reqDeptId) return teachers;
+    return teachers.filter((t: any) => t.departmentId === reqDeptId);
+  }, [teachers, reqDeptId]);
+
+  // Pending slots waiting for my approval (I am host teacher)
+  const pendingRequestsForMe = useMemo(() => {
+    return slots.filter((s: any) => s.teacherId === currentTeacher?.id && s.status === "PENDING_TEACHER_APPROVAL");
+  }, [slots, currentTeacher?.id]);
+
+  // Helper to format date with Day of Week
+  const formatDateWithDayOfWeek = (dateStr: string) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+    const dayName = days[d.getDay()];
+    const dateFormatted = d.toLocaleDateString("vi-VN");
+    return `${dayName}, ${dateFormatted}`;
+  };
+
   const autoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Create form states
@@ -872,6 +910,67 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }
 
+  const handleRequestSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!reqTeacherId) {
+      showToast("Vui lòng chọn Giáo viên dạy!", "error")
+      return
+    }
+    if (!reqDate) {
+      showToast("Vui lòng chọn ngày dạy!", "error")
+      return
+    }
+
+    const selectedClass = classes.find(c => c.id === reqClassId)
+    const selectedSub = subjects.find(s => s.id === reqSubjectId)
+
+    setSubmitting(true)
+    startTransition(async () => {
+      const res = await requestObservationSlot({
+        targetTeacherId: reqTeacherId,
+        targetDeptId: reqDeptId,
+        classId: reqClassId,
+        className: selectedClass ? selectedClass.className : undefined,
+        level: reqLevel || (selectedClass ? selectedClass.level : "ALL"),
+        grade: reqGrade || (selectedClass ? selectedClass.grade : "Khối"),
+        subjectId: reqSubjectId,
+        subjectName: selectedSub ? selectedSub.subjectName : "Môn học",
+        topic: reqTopic || "Yêu cầu dự giờ",
+        date: reqDate,
+        period: reqPeriod,
+        notes: reqNotes,
+        academicYearId: filterAcademicYearId
+      })
+      setSubmitting(false)
+      if (res.success) {
+        showToast("Đã gửi yêu cầu xin dự giờ thành công! Chờ GV dạy xác nhận.", "success")
+        setReqTeacherId("")
+        setReqTopic("")
+        setReqNotes("")
+        setReqDate("")
+        refreshSlots()
+      } else {
+        showToast(res.error || "Không thể gửi yêu cầu!", "error")
+      }
+    })
+  }
+
+  const handleRespondRequest = async (slotId: string, accept: boolean, reason?: string) => {
+    setSubmitting(true)
+    startTransition(async () => {
+      const res = await respondToObservationRequest(slotId, accept, reason)
+      setSubmitting(false)
+      if (res.success) {
+        showToast(accept ? "Đã xác nhận & đồng ý cho dự giờ!" : "Đã từ chối yêu cầu dự giờ.", accept ? "success" : "info")
+        setDecliningSlotId(null)
+        setDeclineReason("")
+        refreshSlots()
+      } else {
+        showToast(res.error || "Thao tác thất bại!", "error")
+      }
+    })
+  }
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const isMN = isMamNonTeacher || newLevel === "Mầm non";
@@ -1344,7 +1443,167 @@ export function ObservationClient(props: ObservationClientProps) {
             </span>
           </div>
 
-          <form onSubmit={handleCreateSubmit} className="flex flex-col gap-4 text-xs font-semibold">
+          {creationMode === "OBSERVER_REQUEST" ? (
+            /* ===== FORM 2: GBMV XIN ĐĂNG KÝ DỰ GIỜ ===== */
+            <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100">
+              <div className="bg-indigo-500/10 border border-indigo-200/60 rounded-xl p-3 flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-indigo-900 leading-relaxed font-medium">
+                  <span className="font-extrabold">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên bạn muốn dự, cùng thời gian, tiết học và lớp học. Yêu cầu sẽ được gửi tới Giáo viên dạy để xác nhận & đồng ý.
+                </p>
+              </div>
+
+              {/* Tổ chuyên môn & Giáo viên dạy */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
+                  <select
+                    value={reqDeptId}
+                    onChange={e => { setReqDeptId(e.target.value); setReqTeacherId(""); }}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  >
+                    <option value="">Tất cả các Tổ chuyên môn</option>
+                    {departments.map((d: any) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">2. Chọn Giáo viên dạy *</label>
+                  <select
+                    value={reqTeacherId}
+                    onChange={e => setReqTeacherId(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  >
+                    <option value="">-- Chọn Giáo viên dạy --</option>
+                    {filteredTeachersForRequest.map((t: any) => (
+                      <option key={t.id} value={t.id}>
+                        {t.teacherName} ({t.teacherCode}) {t.departmentRel?.name ? `- ${t.departmentRel.name}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Môn học & Chủ đề/Tên bài dạy */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">3. Chọn Môn học *</label>
+                  <select
+                    value={reqSubjectId}
+                    onChange={e => setReqSubjectId(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  >
+                    <option value="">-- Chọn môn học --</option>
+                    {subjects.map((s: any) => (
+                      <option key={s.id} value={s.id}>{s.subjectName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Cấp số cộng, Sự nảy mầm của hạt..."
+                    value={reqTopic}
+                    onChange={e => setReqTopic(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  />
+                </div>
+              </div>
+
+              {/* Lớp học & Cấp/Khối */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">5. Chọn Lớp học *</label>
+                  <select
+                    value={reqClassId}
+                    onChange={e => {
+                      setReqClassId(e.target.value);
+                      const cls = classes.find(c => c.id === e.target.value);
+                      if (cls) {
+                        setReqLevel(cls.level || "");
+                        setReqGrade(cls.grade || "");
+                      }
+                    }}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  >
+                    <option value="">-- Chọn lớp học --</option>
+                    {classes.map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        {c.className} ({c.level || c.grade})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">6. Chọn Tiết học dự *</label>
+                  <select
+                    value={reqPeriod}
+                    onChange={e => setReqPeriod(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 font-extrabold text-indigo-900"
+                  >
+                    <option value="Tiết 1">Tiết 1 (07:30 - 08:15)</option>
+                    <option value="Tiết 2">Tiết 2 (08:25 - 09:10)</option>
+                    <option value="Tiết 3">Tiết 3 (09:30 - 10:15)</option>
+                    <option value="Tiết 4">Tiết 4 (10:25 - 11:10)</option>
+                    <option value="Tiết 5">Tiết 5 (13:00 - 13:45)</option>
+                    <option value="Tiết 6">Tiết 6 (13:55 - 14:40)</option>
+                    <option value="Tiết 7">Tiết 7 (15:00 - 15:45)</option>
+                    <option value="Tiết 8">Tiết 8 (15:55 - 16:40)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Ngày dạy & Thứ trong tuần */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">7. Chọn Ngày dạy / Thứ trong tuần *</label>
+                  <input
+                    type="date"
+                    value={reqDate}
+                    onChange={e => setReqDate(e.target.value)}
+                    required
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  />
+                  {reqDate && (
+                    <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-200 inline-block self-start">
+                      🗓️ {formatDateWithDayOfWeek(reqDate)}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">8. Ghi chú gửi Giáo viên dạy</label>
+                  <input
+                    type="text"
+                    placeholder="Ví dụ: Xin dự giờ học hỏi kinh nghiệm giảng dạy môn Toán..."
+                    value={reqNotes}
+                    onChange={e => setReqNotes(e.target.value)}
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                {submitting ? "Đang gửi yêu cầu..." : "+ GỬI YÊU CẦU XIN DỰ GIỜ GIÁO VIÊN"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleCreateSubmit} className="flex flex-col gap-4 text-xs font-semibold">
             {isMamNonTeacher ? (
               /* ===== INLINE MAM NON FORM ===== */
               <>
@@ -1509,6 +1768,7 @@ export function ObservationClient(props: ObservationClientProps) {
               {submitting ? "Đang xử lý..." : "Khởi tạo lịch dạy"}
             </button>
           </form>
+          )}
         </div>
 
         {/* Panel 2: Đăng ký nhanh tiết dạy gợi ý */}
