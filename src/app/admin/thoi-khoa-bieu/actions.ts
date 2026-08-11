@@ -4,43 +4,8 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 
-async function ensureTimetableTable() {
-  try {
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "TimetableSlot" (
-        "id" TEXT NOT NULL PRIMARY KEY,
-        "academicYearId" TEXT,
-        "campusId" TEXT,
-        "level" TEXT NOT NULL DEFAULT 'TIEU_HOC',
-        "grade" TEXT NOT NULL DEFAULT 'K1',
-        "classId" TEXT,
-        "className" TEXT NOT NULL,
-        "dayOfWeek" TEXT NOT NULL,
-        "session" TEXT NOT NULL DEFAULT 'MORNING',
-        "periodNumber" INTEGER NOT NULL DEFAULT 1,
-        "subjectId" TEXT,
-        "subjectName" TEXT,
-        "teacherId" TEXT,
-        "teacherName" TEXT,
-        "weekType" TEXT NOT NULL DEFAULT 'ALL',
-        "altSubjectName" TEXT,
-        "altTeacherName" TEXT,
-        "colorCode" TEXT DEFAULT '#3B82F6',
-        "status" TEXT NOT NULL DEFAULT 'ACTIVE',
-        "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  } catch (e) {
-    console.error("ensureTimetableTable error:", e);
-  }
-}
-
 export async function getTimetableMatrixData(campusId?: string, level: string = "TIEU_HOC") {
   try {
-    await ensureTimetableTable();
-    const session = await auth()
-
     const campuses = await prisma.campus.findMany({
       where: { status: "ACTIVE" },
       orderBy: { campusName: "asc" }
@@ -61,7 +26,7 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       levelGradeFilter = {}
     }
 
-        let classes = await prisma.class.findMany({
+    let classes = await prisma.class.findMany({
       where: {
         status: "ACTIVE",
         ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
@@ -120,7 +85,7 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
           { grade: "asc" },
           { className: "asc" }
         ],
-        take: 10
+        take: 15
       })
     }
 
@@ -167,6 +132,7 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       academicYear: activeYear
     }
   } catch (e: any) {
+    console.error("getTimetableMatrixData error:", e)
     return {
       success: false,
       error: e.message,
@@ -198,7 +164,6 @@ export async function saveTimetableSlot(data: {
   colorCode?: string
 }) {
   try {
-    await ensureTimetableTable();
     const session = await auth()
     if (!session || !session.user) {
       return { success: false, error: "Unauthorized" }
