@@ -346,15 +346,17 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
 
   // Filtered lists for sidebar
   const filteredSubjects = useMemo(() => {
+    if (!Array.isArray(subjects)) return [];
     return subjects.filter((s: any) => 
-      s.subjectName.toLowerCase().includes(searchSubject.toLowerCase())
+      (s?.subjectName || "").toLowerCase().includes((searchSubject || "").toLowerCase())
     )
   }, [subjects, searchSubject])
 
   const filteredTeachers = useMemo(() => {
+    if (!Array.isArray(teachers)) return [];
     return teachers.filter((t: any) => 
-      t.teacherName.toLowerCase().includes(searchTeacher.toLowerCase()) ||
-      (t.teacherCode && t.teacherCode.toLowerCase().includes(searchTeacher.toLowerCase()))
+      (t?.teacherName || "").toLowerCase().includes((searchTeacher || "").toLowerCase()) ||
+      (t?.teacherCode || "").toLowerCase().includes((searchTeacher || "").toLowerCase())
     )
   }, [teachers, searchTeacher])
 

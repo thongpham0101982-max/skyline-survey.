@@ -61,7 +61,7 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       levelGradeFilter = {}
     }
 
-    const classes = await prisma.class.findMany({
+        let classes = await prisma.class.findMany({
       where: {
         status: "ACTIVE",
         ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
@@ -81,6 +81,48 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
         { className: "asc" }
       ]
     })
+
+    if (classes.length === 0 && selectedCampusId) {
+      classes = await prisma.class.findMany({
+        where: {
+          status: "ACTIVE",
+          campusId: selectedCampusId
+        },
+        select: {
+          id: true,
+          className: true,
+          level: true,
+          grade: true,
+          homeroomTeacherId: true,
+          campusId: true,
+          academicYearId: true
+        },
+        orderBy: [
+          { grade: "asc" },
+          { className: "asc" }
+        ]
+      })
+    }
+
+    if (classes.length === 0) {
+      classes = await prisma.class.findMany({
+        where: { status: "ACTIVE" },
+        select: {
+          id: true,
+          className: true,
+          level: true,
+          grade: true,
+          homeroomTeacherId: true,
+          campusId: true,
+          academicYearId: true
+        },
+        orderBy: [
+          { grade: "asc" },
+          { className: "asc" }
+        ],
+        take: 10
+      })
+    }
 
     const subjects = await prisma.subject.findMany({
       where: { status: "ACTIVE" },
