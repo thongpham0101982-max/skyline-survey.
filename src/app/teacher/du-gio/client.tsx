@@ -1527,6 +1527,55 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
       </div>
+      {/* Prominent Timetable Schedule Summary & Quick Selector Tool Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-emerald-950 text-white rounded-3xl p-5 shadow-xl border border-teal-500/30 transition-all hover:border-teal-400/50">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-teal-500/20 border border-teal-400/40 flex items-center justify-center text-teal-300 shrink-0 shadow-inner">
+              <Calendar className="w-6 h-6 animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-black uppercase tracking-wider text-teal-200">
+                  Thời khóa biểu phân công cá nhân
+                </h3>
+                <span className="bg-teal-500/30 text-teal-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-teal-400/30">Chính thức</span>
+              </div>
+              <p className="text-xs text-slate-300 font-medium mt-0.5">
+                {myTkbSlots.length > 0 
+                  ? `Đã trích xuất được ${myTkbSlots.length} tiết dạy theo Ma trận TKB. Bấm nút tra cứu để chọn tiết và tự động điền Form dự giờ 1-Click.`
+                  : "Chưa nạp tiết dạy trên Thời khóa biểu. Bấm nút tra cứu để xem chi tiết."}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowTkbModal(true)}
+            className="w-full md:w-auto px-5 py-3 bg-gradient-to-r from-[#00A99D] to-teal-400 hover:from-teal-400 hover:to-[#00A99D] text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider transition-all duration-300 shadow-lg hover:shadow-teal-500/30 active:scale-95 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Tra cứu & Chọn tiết dạy TKB ({myTkbSlots.length})</span>
+          </button>
+        </div>
+
+        {/* Subject Period Count Badges */}
+        {myTkbSummary.length > 0 && (
+          <div className="mt-4 pt-3.5 border-t border-white/10 flex flex-wrap gap-2 items-center text-xs">
+            <span className="font-extrabold text-teal-200 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
+              <CheckCircle className="w-4 h-4 text-teal-400" />
+              Thống kê tiết dạy theo môn:
+            </span>
+            {myTkbSummary.map((sub: any, idx: number) => (
+              <span key={idx} className="bg-slate-900/90 border border-teal-500/40 text-teal-100 px-3 py-1 rounded-xl font-bold shadow-sm flex items-center gap-1.5">
+                <span className="text-white font-extrabold">{sub.subjectName}:</span>
+                <span className="text-amber-300 font-black">{sub.totalPeriods} tiết/tuần</span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* ROW 1: 3-Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
