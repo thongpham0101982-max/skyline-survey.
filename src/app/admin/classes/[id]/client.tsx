@@ -17,7 +17,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
   const [showAssignModal, setShowAssignModal] = useState(false)
   const [selectedSurveyId, setSelectedSurveyId] = useState("")
   const [assigningStudent, setAssigningStudent] = useState<any>(null)
-  const [formData, setFormData] = useState({ studentCode: "", studentName: "", gender: "Nam", dateOfBirth: "", status: "ACTIVE" })
+  const [formData, setFormData] = useState({ studentCode: "", vnEduCode: "", studentName: "", gender: "Nam", dateOfBirth: "", status: "ACTIVE" })
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -41,8 +41,8 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
 
   const handleDownloadTemplate = () => {
     const ws = xlsx.utils.json_to_sheet([
-      { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010" },
-      { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Họ và Tên *": "Trần Thị B", "Giới tính": "Nữ", "Ngày sinh": "15/12/2010" }
+      { "STT": 1, "Mã học sinh *": "HS-10A1-001", "Mã VNEdu": "2500839484", "Họ và Tên *": "Nguyễn Văn A", "Giới tính": "Nam", "Ngày sinh": "20/05/2010" },
+      { "STT": 2, "Mã học sinh *": "HS-10A1-002", "Mã VNEdu": "2500839485", "Họ và Tên *": "Trần Thị B", "Giới tính": "Nữ", "Ngày sinh": "15/12/2010" }
     ])
     ws["!cols"] = [{ wch: 5 }, { wch: 25 }, { wch: 30 }, { wch: 12 }, { wch: 18 }]
     const wb = xlsx.utils.book_new()
@@ -123,11 +123,13 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           }
 
           const studentCode = String(findVal(row, ["mã học sinh", "mã hs", "ma hs", "studentcode"]) || "").trim() || ("HS-" + Date.now() + "-" + Math.floor(Math.random()*1000));
+          const vnEduCode = String(findVal(row, ["mã vnedu", "mã vnedu", "vnedu", "vneducode", "ma vnedu"]) || "").trim();
           const studentName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "studentname", "full name"]) || "").trim() || "Unnamed";
           const gender = String(findVal(row, ["giới tính", "gioi tinh", "gender"]) || "Nam").trim();
 
           return {
             studentCode,
+            vnEduCode,
             studentName,
             gender,
             dateOfBirth: parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate : null
@@ -222,6 +224,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
     setEditingStudent(s)
     setFormData({
       studentCode: s.studentCode,
+      vnEduCode: s.vnEduCode !== "—" ? s.vnEduCode || "" : "",
       studentName: s.studentName,
       gender: s.gender || "Nam",
       dateOfBirth: s.dateOfBirth ? new Date(s.dateOfBirth).toISOString().split("T")[0] : "", status: s.status || "ACTIVE"
@@ -231,7 +234,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
 
   const openAdd = () => {
     setEditingStudent(null)
-    setFormData({ studentCode: "", studentName: "", gender: "Nam", dateOfBirth: "" })
+    setFormData({ studentCode: "", vnEduCode: "", studentName: "", gender: "Nam", dateOfBirth: "" })
     setShowAddModal(true)
   }
 
@@ -275,9 +278,15 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-slate-200 rounded-full transition-colors"><X className="w-5 h-5 text-slate-500" /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
-               <div>
-                 <label className="block text-sm font-semibold text-slate-700 mb-1">Mã học sinh *</label>
-                 <input required value={formData.studentCode} onChange={e => setFormData({ ...formData, studentCode: e.target.value })} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+               <div className="grid grid-cols-2 gap-4">
+                 <div>
+                   <label className="block text-sm font-semibold text-slate-700 mb-1">Mã học sinh *</label>
+                   <input required value={formData.studentCode} onChange={e => setFormData({ ...formData, studentCode: e.target.value })} className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                 </div>
+                 <div>
+                   <label className="block text-sm font-semibold text-slate-700 mb-1">Mã VNEdu</label>
+                   <input value={formData.vnEduCode} onChange={e => setFormData({ ...formData, vnEduCode: e.target.value })} placeholder="Ví dụ: 2500839484" className="w-full border rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                 </div>
                </div>
                <div>
                  <label className="block text-sm font-semibold text-slate-700 mb-1">Họ và Tên *</label>
@@ -360,6 +369,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
               </th>
               <th className="px-6 py-4 border-r border-slate-200 w-16 text-center">STT</th>
               <th className="px-6 py-4 border-r border-slate-200">Mã HS</th>
+              <th className="px-6 py-4 border-r border-slate-200">Mã VNEdu</th>
               <th className="px-6 py-4 border-r border-slate-200 cursor-pointer select-none group" onClick={() => setIsAlphaSorted(!isAlphaSorted)}> 
                 <div className="flex items-center gap-1.5">
                   <span>Họ và Tên</span>
@@ -376,7 +386,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           <tbody className="divide-y divide-slate-200">
             {displayStudents.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center py-10 text-slate-400 font-medium text-xs">
+                <td colSpan={10} className="text-center py-10 text-slate-400 font-medium text-xs">
                   <UserCircle2 className="w-12 h-12 mx-auto mb-4 opacity-20" />
                   Chưa có học sinh nào. Hãy import hoặc thêm mới.
                 </td>
@@ -402,6 +412,7 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   </td>
                   <td className="px-6 py-4 text-slate-900 font-bold border-r border-slate-200 text-center">{idx + 1}</td>
                   <td className="px-6 py-4 text-slate-500 font-mono text-xs border-r border-slate-200">{student.studentCode}</td>
+                  <td className="px-6 py-4 text-slate-600 font-mono text-xs border-r border-slate-200">{student.vnEduCode || "—"}</td>
                   <td className="px-6 py-4 font-semibold text-slate-800 border-r border-slate-200 flex items-center justify-between">
                     <div className="flex items-center">
                       <UserCircle2 className="w-5 h-5 text-slate-300 mr-2" />

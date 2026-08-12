@@ -35,7 +35,7 @@ export default async function AdminClassDetailPage({ params }: any) {
   // Pre-fetch candidate student codes from Input Assessment tables
   const studentCodes = (classInfo.students || []).map(s => s.studentCode).filter(Boolean);
 
-  const [generalCandidates, preschoolCandidates] = await Promise.all([
+  const [generalCandidates, preschoolCandidates, codeMappings] = await Promise.all([
     prisma.inputAssessmentStudent.findMany({
       where: {
         OR: [
@@ -55,23 +55,32 @@ export default async function AdminClassDetailPage({ params }: any) {
         ]
       },
       select: { studentCode: true, enrollmentCode: true, fullName: true, enrollmentClassId: true }
+    }),
+    prisma.studentCodeMapping.findMany({
+      where: {
+        academicYearId: classInfo.academicYearId,
+        databaseCode: { in: studentCodes }
+      }
     })
   ]);
 
   const allCandidates = [...generalCandidates, ...preschoolCandidates];
+  const vnEduMap = new Map(codeMappings.map(m => [m.databaseCode, m.markFileCode]));
 
   const studentsWithEnrollmentType = (classInfo.students || []).map(student => {
     const hasTransferIn = student.studentTransfers && student.studentTransfers.some((t: any) => t.type === 'IN');
     
-    const isCandidate = allCandidates.some(c => 
+    const matchedCandidate = allCandidates.find(c => 
       (c.studentCode && (c.studentCode === student.studentCode || c.enrollmentCode === student.studentCode)) ||
       (c.enrollmentClassId === classId && c.fullName && c.fullName.trim().toLowerCase() === student.studentName.trim().toLowerCase())
     );
 
-    const isFromSurvey = hasTransferIn || isCandidate;
+    const isFromSurvey = hasTransferIn || !!matchedCandidate;
+    const vnEduCode = vnEduMap.get(student.studentCode) || matchedCandidate?.enrollmentCode || "—";
 
     return {
       ...student,
+      vnEduCode,
       enrollmentType: isFromSurvey ? "KS" : "Trực tiếp",
       isSurveyStudent: isFromSurvey
     };

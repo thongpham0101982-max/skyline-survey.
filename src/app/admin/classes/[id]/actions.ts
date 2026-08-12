@@ -58,7 +58,10 @@ export async function importStudentsAction(classId: string, data: any[]) {
               academicYearId: cls.academicYearId,
               status: "ACTIVE"
             }
-          })
+          });
+          if (item.vnEduCode) {
+            await upsertCodeMapping(cls.academicYearId, sCode, item.vnEduCode);
+          }
         }
         count++
       } catch(e: any) {
@@ -83,6 +86,31 @@ export async function importStudentsAction(classId: string, data: any[]) {
     return { success: false, error: "Lỗi lưu dữ liệu: " + (errorMsg || "Không rõ nguyên nhân") + ". Skpped: " + skipped }
   }
   return { success: true, count, skipped, warnings }
+}
+
+
+async function upsertCodeMapping(academicYearId: string, databaseCode: string, vnEduCode?: string) {
+  if (!vnEduCode || !databaseCode) return;
+  const markCode = String(vnEduCode).trim().toUpperCase();
+  if (!markCode) return;
+  try {
+    await prisma.studentCodeMapping.upsert({
+      where: {
+        academicYearId_databaseCode: {
+          academicYearId,
+          databaseCode: databaseCode.trim().toUpperCase()
+        }
+      },
+      update: { markFileCode: markCode },
+      create: {
+        academicYearId,
+        databaseCode: databaseCode.trim().toUpperCase(),
+        markFileCode: markCode
+      }
+    });
+  } catch (e) {
+    console.error("Error upserting code mapping:", e);
+  }
 }
 
 export async function addStudentAction(classId: string, data: any) {
@@ -128,6 +156,9 @@ export async function addStudentAction(classId: string, data: any) {
       { studentCode, studentName: data.studentName, classId }
     )
     await syncAssessmentStudentInfoWithMasterAction(studentCode, data.studentName, data.gender, data.dateOfBirth);
+    if (data.vnEduCode) {
+      await upsertCodeMapping(cls.academicYearId, studentCode, data.vnEduCode);
+    }
     revalidatePath(`/admin/classes/${classId}`)
     return { success: true }
   } catch (e: any) {
