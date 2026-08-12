@@ -2014,8 +2014,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       </div>
                     );
                   })}
-                </div>
-            
+                </div>); })()}
     </div>
         </div>
 
