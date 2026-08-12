@@ -2167,8 +2167,8 @@ export function ObservationClient(props: ObservationClientProps) {
                     )}
                   </div>
                 );
-              
-    </div>
+              })()}
+            </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-slate-150">
               <table className="w-full text-left text-xs border-collapse">
