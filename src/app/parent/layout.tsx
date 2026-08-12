@@ -26,6 +26,7 @@ export default async function ParentLayout({ children }: { children: React.React
           </div>
           <div className="flex items-center gap-4">
              <AcademicYearSelector />
+             <NotificationBell />
              <UserMenu session={session} />
           </div>
         </header>

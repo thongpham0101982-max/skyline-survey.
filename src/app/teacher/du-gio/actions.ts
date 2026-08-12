@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
+import { sendEmail } from "@/lib/mail"
 
 export async function getObservationData(academicYearId?: string) {
   try {
@@ -458,6 +459,63 @@ export async function createObservationSlot(data: {
 
     revalidatePath("/teacher/du-gio")
     revalidatePath("/admin/du-gio")
+    
+    // Notify host teacher about observation request from GVBM
+    try {
+      if (hostTeacher.user?.id) {
+        const formattedDate = new Date(data.date).toLocaleDateString("vi-VN");
+        const notifTitle = `Thông báo đăng ký tiết dạy`;
+        const notifMsg = `Thầy/Cô ${observerTeacher.teacherName} vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.`;
+
+        await prisma.notification.create({
+          data: {
+            userId: hostTeacher.user.id,
+            title: notifTitle,
+            message: notifMsg,
+            link: "/teacher/du-gio",
+            isRead: false
+          }
+        });
+
+        const hostEmail = hostTeacher.email || hostTeacher.user.email;
+        if (hostEmail && hostEmail.includes("@")) {
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+              <h2 style="color: #00A99D; margin-top: 0;">Thông Báo Đề Xuất Xin Dự Giờ</h2>
+              <p>Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
+              <p>Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tên bài dạy / Chủ đề:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Môn học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.subjectName || "Môn học"}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Cấp học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.level || "N/A"}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Khối lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.grade || "N/A"}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.className || "N/A"}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Ngày dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${formattedDate}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.period || "Tiết 1"}</td></tr>
+              </table>
+              <p>Thầy/Cô vui lòng truy cập hệ thống Skyline để phê duyệt hoặc xem chi tiết yêu cầu.</p>
+              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+                Hệ thống Quản lý Dự giờ Skyline
+              </div>
+            </div>
+          `;
+
+          try {
+            await sendEmail({
+              to: hostEmail,
+              subject: `[Skyline - Dự giờ] Thầy/Cô ${observerTeacher.teacherName} vừa đăng ký tiết dạy của bạn`,
+              html: emailHtml
+            });
+          } catch (mailErr) {
+            console.error("Failed to send email for requestObservationSlot:", mailErr);
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.error("Error sending requestObservationSlot notification:", notifErr);
+    }
+
     return { success: true, slot: newSlot }
   } catch (e: any) {
     return { success: false, error: e.message }
@@ -481,7 +539,7 @@ export async function registerObservation(slotId: string) {
 
     const slot = await prisma.observationSlot.findUnique({
       where: { id: slotId },
-      include: { registrations: true }
+      include: { registrations: true, teacher: { include: { user: true } } }
     })
 
     if (!slot) {
@@ -517,6 +575,62 @@ export async function registerObservation(slotId: string) {
         teacherId: currentTeacher.id
       }
     })
+
+    // Notify host teacher about new observation registration
+    try {
+      if (slot.teacher?.user?.id) {
+        const formattedDate = new Date(slot.date).toLocaleDateString("vi-VN");
+        const notifTitle = `Thông báo đăng ký tiết dạy`;
+        const notifMsg = `Thầy/Cô ${currentTeacher.teacherName} vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.`;
+
+        await prisma.notification.create({
+          data: {
+            userId: slot.teacher.user.id,
+            title: notifTitle,
+            message: notifMsg,
+            link: "/teacher/du-gio",
+            isRead: false
+          }
+        });
+
+        const hostEmail = slot.teacher.email || slot.teacher.user.email;
+        if (hostEmail && hostEmail.includes("@")) {
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+              <h2 style="color: #00A99D; margin-top: 0;">Thông Báo Đăng Ký Dự Giờ</h2>
+              <p>Kính gửi Thầy/Cô <strong>${slot.teacher.teacherName}</strong>,</p>
+              <p>Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.</p>
+              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tên bài dạy / Chủ đề:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.topic}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Môn học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.subjectName}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Cấp học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.level}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Khối lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.grade}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.className || "Chưa chọn"}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Ngày dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${formattedDate}</td></tr>
+                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${slot.startTime} - ${slot.endTime}</td></tr>
+              </table>
+              <p>Thầy/Cô vui lòng kiểm tra danh sách người tham dự trên hệ thống Skyline.</p>
+              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
+                Hệ thống Quản lý Dự giờ Skyline
+              </div>
+            </div>
+          `;
+
+          try {
+            await sendEmail({
+              to: hostEmail,
+              subject: `[Skyline - Dự giờ] Thầy/Cô ${currentTeacher.teacherName} vừa đăng ký tiết dạy của bạn`,
+              html: emailHtml
+            });
+          } catch (mailErr) {
+            console.error("Failed to send email to host teacher:", mailErr);
+          }
+        }
+      }
+    } catch (notifErr) {
+      console.error("Error sending registerObservation notification:", notifErr);
+    }
 
     revalidatePath("/teacher/du-gio")
     revalidatePath("/admin/du-gio")

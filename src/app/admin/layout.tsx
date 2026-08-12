@@ -77,6 +77,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           </div>
           <div className="flex items-center gap-4">
             <AcademicYearSelector />
+            <NotificationBell />
             <UserMenu session={session} />
           </div>
         </header>

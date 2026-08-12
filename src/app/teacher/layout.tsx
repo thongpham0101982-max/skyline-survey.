@@ -3,6 +3,7 @@ import { ChatBotWidget } from "@/components/ChatBotWidget"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
 import { Sidebar } from "@/components/Sidebar"
 import { auth } from "@/lib/auth"
+import { NotificationBell } from "@/components/NotificationBell"
 import { UserMenu } from "@/components/UserMenu"
 import { AcademicYearSelector } from "@/components/AcademicYearSelector"
 import { prisma } from "@/lib/db"
@@ -55,6 +56,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           </div>
           <div className="flex items-center gap-4">
              <AcademicYearSelector />
+             <NotificationBell />
              <UserMenu session={session} />
           </div>
         </header>
