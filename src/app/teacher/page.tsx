@@ -146,42 +146,6 @@ export default function TeacherDashboard() {
     }
   ]
 
-  // Evaluation breakdown progress items
-  const evaluationProgressItems = [
-    {
-      title: "Khảo sát Đầu vào Học sinh (K-12)",
-      href: "/teacher/input-assessments?type=general",
-      percent: scoredPercent,
-      countText: `${scoredStudents}/${totalStudents}`,
-      statusBadge: "Đang mở",
-      badgeColor: "bg-teal-50 text-[#003B3A] border-teal-200"
-    },
-    {
-      title: "Đánh giá Sự phát triển Mầm non",
-      href: "/teacher/input-assessments?type=mam-non",
-      percent: 0,
-      countText: `0/${totalStudents}`,
-      statusBadge: "Định kỳ",
-      badgeColor: "bg-sky-50 text-sky-700 border-sky-200"
-    },
-    {
-      title: "Sổ điểm & Nhận xét Định kỳ",
-      href: "/teacher/so-diem-nhan-xet",
-      percent: 0,
-      countText: "Cập nhật thường xuyên",
-      statusBadge: "Thường xuyên",
-      badgeColor: "bg-purple-50 text-purple-700 border-purple-200"
-    },
-    {
-      title: "Đánh giá Hoạt động Trải nghiệm",
-      href: "/teacher/experiential-activities",
-      percent: 0,
-      countText: "Theo sự kiện",
-      statusBadge: "Theo đợt",
-      badgeColor: "bg-amber-50 text-amber-700 border-amber-200"
-    }
-  ]
-
   const categorySections = [
     {
       categoryName: "A. CÔNG TÁC GVCN",
@@ -373,114 +337,35 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* 2 Main Dashboard Columns: Evaluation Progress & Students Support */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2-Column Wide Card: Tiến độ Đánh giá & Khảo sát Chuẩn hóa */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="border-b border-slate-100 pb-3.5 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-xl bg-teal-50 text-[#00A99D] border border-teal-100">
-                <Target className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">
-                  TIẾN ĐỘ ĐÁNH GIÁ & KHẢO SÁT CHUẨN HÓA
-                </h3>
-                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                  Đo lường mức độ hoàn thành nhiệm vụ chuyên môn năm học
-                </p>
-              </div>
-            </div>
-
-            <span className="hidden sm:inline-flex px-3 py-1 rounded-full text-[11px] font-extrabold bg-teal-50 text-[#003B3A] border border-teal-200">
-              Tổng thể: {scoredPercent}%
-            </span>
+      {/* Học sinh cần bồi dưỡng & Chú ý Card Banner */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 shrink-0">
+            <Heart className="w-6 h-6" />
           </div>
-
-          {/* List of Progress Items */}
-          <div className="space-y-3.5">
-            {evaluationProgressItems.map((item, i) => (
-              <Link
-                key={i}
-                href={item.href}
-                className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-slate-50/80 hover:bg-teal-50/40 border border-slate-100 hover:border-teal-200 transition-all duration-200 gap-3"
-              >
-                <div className="space-y-1 flex-1">
-                  <div className="flex items-center justify-between pr-2">
-                    <span className="text-xs font-extrabold text-slate-800 group-hover:text-[#003B3A] transition-colors flex items-center gap-1.5">
-                      {item.title}
-                      <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#00A99D] transition-colors opacity-0 group-hover:opacity-100" />
-                    </span>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${item.badgeColor}`}>
-                      {item.statusBadge}
-                    </span>
-                  </div>
-
-                  {/* Progress bar line */}
-                  <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden mt-2">
-                    <div
-                      className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] h-full rounded-full transition-all duration-500"
-                      style={{ width: `${item.percent}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 sm:pl-4">
-                  <span className="text-xs font-black text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
-                    {item.percent}% <span className="text-[10px] text-slate-400 font-semibold">({item.countText})</span>
-                  </span>
-                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#00A99D] group-hover:translate-x-1 transition-all" />
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Right 1-Column Card: Học sinh cần bồi dưỡng & Chú ý */}
-        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-4">
-          <div className="space-y-4">
-            <div className="border-b border-slate-100 pb-3.5 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-100">
-                  <Heart className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                    HỌC SINH CẦN BỒI DƯỠNG & CHÚ Ý
-                  </h3>
-                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                    Cảnh báo hỗ trợ rèn luyện
-                  </p>
-                </div>
-              </div>
-
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                HỌC SINH CẦN BỒI DƯỠNG & CHÚ Ý
+              </h3>
               <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
                 {finalMetrics.remedialStudentsCount || 0} Trường hợp
               </span>
             </div>
-
-            {/* Empty State Banner */}
-            <div className="bg-emerald-50/60 border border-emerald-200/70 rounded-2xl p-5 text-center space-y-2">
-              <div className="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                <CheckCircle className="w-5 h-5" />
-              </div>
-              <h4 className="text-xs font-extrabold text-emerald-900">
-                Tình hình rèn luyện ổn định
-              </h4>
-              <p className="text-[11px] text-emerald-700/90 font-medium leading-relaxed">
-                Chưa ghi nhận học sinh trong diện cảnh báo bồi dưỡng đặc biệt.
-              </p>
-            </div>
+            <p className="text-[11px] text-emerald-700 font-medium mt-0.5 flex items-center gap-1.5">
+              <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Tình hình rèn luyện ổn định. Chưa ghi nhận học sinh trong diện cảnh báo bồi dưỡng đặc biệt.</span>
+            </p>
           </div>
-
-          <Link
-            href="/teacher/ho-tro-hoc-tap"
-            className="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-200 text-slate-700 hover:text-[#003B3A] text-xs font-extrabold flex items-center justify-center gap-2 transition-all group"
-          >
-            <span>Quản lý danh sách hỗ trợ</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform text-[#00A99D]" />
-          </Link>
         </div>
+
+        <Link
+          href="/teacher/ho-tro-hoc-tap"
+          className="py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-200 text-slate-700 hover:text-[#003B3A] text-xs font-extrabold flex items-center gap-2 transition-all group shrink-0"
+        >
+          <span>Quản lý danh sách hỗ trợ</span>
+          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform text-[#00A99D]" />
+        </Link>
       </div>
 
       {/* Category Action Center (2 Column Responsive Layout) */}
