@@ -80,6 +80,8 @@ model Teacher {
   achievements               Achievement[]
   activityRecords            ActivityRecord[]
   learningSupportAssignments LearningSupportAssignment[]
+  academicConsultationLogs   AcademicConsultationLog[]
+  studentHelpRequests        StudentHelpRequest[]
 
   @@index([campusId])
   @@index([departmentId])
@@ -143,6 +145,11 @@ model AcademicYear {
   subjectGradeConfigs             SubjectGradeConfig[]
   subjectGradeEntries             SubjectGradeEntry[]
   careerOrientations             StudentCareerOrientation[]
+  studentGoals                   StudentGoal[]
+  consultationLogs               AcademicConsultationLog[]
+  reflections                    StudentReflection[]
+  helpRequests                   StudentHelpRequest[]
+  advisoryStatuses               StudentAdvisoryStatus[]
 }
 
 model Class {
@@ -212,6 +219,13 @@ model Student {
   termScores             StudentTermScore[]
   termSummaries          StudentTermSummary[]
   subjectGradeEntries    SubjectGradeEntry[]
+
+  // Co Van Hoc Tap & Ho So 360
+  goals                  StudentGoal[]
+  consultationLogs       AcademicConsultationLog[]
+  reflections            StudentReflection[]
+  helpRequests           StudentHelpRequest[]
+  advisoryStatuses       StudentAdvisoryStatus[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -1716,4 +1730,177 @@ model TimetableSlot {
   @@index([campusId])
   @@index([classId])
   @@index([academicYearId])
+}
+
+
+// ==========================================
+// Co Van Hoc Tap & Ho So Hoc Sinh 360
+// ==========================================
+
+model StudentGoal {
+  id             String   @id @default(cuid())
+  studentId      String
+  academicYearId String
+  semester       String   @default("CA_NAM") // "HK1", "HK2", "CA_NAM"
+  gradeLevel     String   // "K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8", "K9", "K10", "K11", "K12"
+  category       String   // "HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT", "DINH_HUONG"
+  
+  targetText     String   // Muc tieu cua em
+  presetId       String?  // Id preset neu co cho K1-K3
+  
+  // Cot ho tro cho K6-K8 va K9-K12
+  teacherSupportRequest String? // Em mong muon thay co/ban be ho tro minh nhu the nao?
+  parentSupportRequest  String? // Em mong muon ba me ho tro minh nhu the nao?
+  
+  // SMART fields cho K9-K12
+  smartSpecific   String?
+  smartMeasurable String?
+  smartAchievable String?
+  smartRelevant   String?
+  smartTimeBound  String?
+  
+  checkpointDate   DateTime?
+  achievementLevel String?   @default("DANG_TIEN_TRIEN") // "DAT", "DANG_TIEN_TRIEN", "CHUA_DAT"
+  status           String    @default("IN_PROGRESS") // "NOT_STARTED", "IN_PROGRESS", "COMPLETED", "PARTIAL"
+  
+  studentCommitment String?  // Loi cam ket cua em
+  parentMessage     String?  // Loi nhan gui cua Phu huynh
+  teacherComment    String?  // Nhan xet cua GVCN / CVHT
+  
+  signedByStudent Boolean   @default(false)
+  signedByParent  Boolean   @default(false)
+  signedByTeacher Boolean   @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear  @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  actions      StudentGoalAction[]
+
+  @@index([studentId])
+  @@index([academicYearId])
+  @@index([gradeLevel])
+}
+
+model StudentGoalAction {
+  id         String   @id @default(cuid())
+  goalId     String
+  actionText String   // Em se lam gi de dat duoc?
+  status     String   @default("PENDING") // "PENDING", "COMPLETED"
+  deadline   DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  goal StudentGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+model AcademicConsultationLog {
+  id             String   @id @default(cuid())
+  studentId      String
+  teacherId      String
+  academicYearId String
+  meetingDate    DateTime @default(now())
+  
+  content        String   // Noi dung trao doi
+  difficulties   String?  // Kho khan ghi nhan
+  nextActions    String?  // Hanh dong tiep theo
+  deadline       DateTime? // Thoi han
+  notes          String?  // Ghi chu
+  status         String   @default("COMPLETED") // "PENDING", "COMPLETED"
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher      Teacher      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([academicYearId])
+}
+
+model StudentReflection {
+  id             String   @id @default(cuid())
+  studentId      String
+  academicYearId String
+  period         String   // "TUAN_1", "THANG_9", "HK1"...
+  feeling        String?  // Emoji ("HAPPY", "NORMAL", "STRESSED", "EXCITED")
+  reflectionText String   // Noi dung tu danh gia
+  selfRating     Int?     @default(5)
+  difficulties   String?
+  helpNeededText String?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([academicYearId])
+}
+
+model StudentHelpRequest {
+  id             String   @id @default(cuid())
+  studentId      String
+  academicYearId String
+  teacherId      String?  // GVCN / CVHT tiep nhan
+  
+  category       String   @default("HOC_TAP") // "HOC_TAP", "TAM_LY_BAN_BE", "SUC_KHOE", "KHAC"
+  content        String   // Noi dung can ho tro
+  urgency        String   @default("MEDIUM") // "LOW", "MEDIUM", "HIGH", "URGENT"
+  status         String   @default("PENDING") // "PENDING", "PROCESSING", "RESOLVED"
+  
+  responseNotes  String?  // Phan hoi tu GVCN
+  resolvedAt     DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher      Teacher?     @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@index([academicYearId])
+}
+
+model StudentAdvisoryStatus {
+  id             String   @id @default(cuid())
+  studentId      String
+  academicYearId String
+  
+  statusColor    String   @default("GREEN") // "GREEN", "YELLOW", "RED"
+  reasonCategory String?  // "HOC_TAP", "CHUYEN_CAN", "TAM_LY", "KHAC"
+  reasonDetail   String?  // Chi tiet ly do canh bao
+  
+  updatedById    String?
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, academicYearId])
+  @@index([studentId])
+  @@index([academicYearId])
+}
+
+model GoalPreset {
+  id           String   @id @default(cuid())
+  gradeGroup   String   // "K1", "K2", "K3", "K4_5"
+  category     String   // "HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT"
+  goalText     String   // Muc tieu mau
+  actionPreset String?  // Goi y hanh dong
+  sortOrder    Int      @default(0)
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([gradeGroup, category])
 }
