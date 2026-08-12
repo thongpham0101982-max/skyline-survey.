@@ -1296,31 +1296,6 @@ export function ObservationClient(props: ObservationClientProps) {
   const taughtProgress = taughtTarget > 0 ? Math.min(100, Math.round((myTaught / taughtTarget) * 100)) : 0;
 
   
-  const renderEvalModal = () => {
-    if (!evalModal) return null;
-    
-        const isReadOnly = !!evalModal.registration.evaluation;
-        return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-            <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
-              <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
-                  {evalOverall && (() => {
-                    const isK12 = evalModal.slot.level !== "Mầm non";
-                    const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
-                    const passed = isK12
-                      ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
-                      : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
-                    return passed ? (
-                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
-                    ) : (
-                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">CHƯA ĐẠT</span>
-                    );
-                  
-  };
-
   return (
     <div className="flex flex-col gap-6 relative pb-12 text-slate-800 bg-slate-50/50 min-h-screen p-1 font-sans">
       {/* Toast Notification */}
@@ -2041,8 +2016,8 @@ export function ObservationClient(props: ObservationClientProps) {
                   })}
                 </div>
               );
-            })()}
-          </div>
+            
+    </div>
         </div>
 
       </div>
@@ -2101,8 +2076,8 @@ export function ObservationClient(props: ObservationClientProps) {
                     </button>
                   </>
                 );
-              })()}
-            </div>
+              
+    </div>
           </div>
 
           {/* Advanced filters inputs block */}
@@ -2193,8 +2168,8 @@ export function ObservationClient(props: ObservationClientProps) {
                     )}
                   </div>
                 );
-              })()}
-            </div>
+              
+    </div>
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-slate-150">
               <table className="w-full text-left text-xs border-collapse">
@@ -2451,8 +2426,8 @@ export function ObservationClient(props: ObservationClientProps) {
                   })}
                 </div>
               );
-            })()}
-          </div>
+            
+    </div>
         </div>
 
         <hr className="border-slate-100 my-1" />
@@ -2564,8 +2539,8 @@ export function ObservationClient(props: ObservationClientProps) {
                   })}
                 </div>
               );
-            })()}
-          </div>
+            
+    </div>
         </div>
       </div>
 
@@ -3075,8 +3050,8 @@ export function ObservationClient(props: ObservationClientProps) {
                     {isExpired ? "Đã hết hạn" : "Xác nhận Đăng ký"}
                   </button>
                 );
-              })()}
-            </div>
+              
+    </div>
           </div>
         </div>
       )}
@@ -3329,8 +3304,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       ) : (
                         <span className="text-rose-700 text-[10px] font-black uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
                       );
-                    })()}
-                  </div>
+                    
+    </div>
                   {evalModal.slot.level !== "Mầm non" ? (
                     <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
                       Tự động gợi ý: {calculateK12Ranking(evalK12Scores)}
@@ -3365,8 +3340,9 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
             </div>
           </div>
-        );
-      })()}
+        )
+      )}
+      <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
     </div>
   )
 }
