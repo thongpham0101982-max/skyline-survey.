@@ -167,9 +167,16 @@ export default function TeacherDashboard() {
           iconBg: "bg-emerald-500/10 text-emerald-600"
         },
         {
+          href: "/teacher/co-van-hoc-tap",
+          title: "3. Cố vấn Học tập & Nhật ký Check-in",
+          desc: "Quản lý mục tiêu K1-K12, ghi nhật ký tham vấn, theo dõi cảnh báo 🟢🟡🔴 và hỗ trợ SOS",
+          icon: Compass,
+          iconBg: "bg-teal-500/10 text-[#00A99D]"
+        },
+        {
           href: "/teacher/ho-so-hoc-sinh",
-          title: "3. Hồ sơ Học sinh",
-          desc: "Tra cứu lý lịch, kết quả học tập và tổng hợp rèn luyện học sinh",
+          title: "4. Hồ sơ Học sinh 360°",
+          desc: "Tra cứu thông tin 360°, điểm số, phiếu mục tiêu, lịch sử tham vấn & xuất PDF",
           icon: FileText,
           iconBg: "bg-blue-500/10 text-blue-600"
         },

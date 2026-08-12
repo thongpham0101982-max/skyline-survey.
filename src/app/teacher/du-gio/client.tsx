@@ -1,6 +1,5 @@
 "use client"
 
-import { ObservationVideoGuideModal } from "@/components/ObservationVideoGuideModal"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
@@ -223,8 +222,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [slots, setSlots] = useState(initialSlots)
-  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState(activeTabParam)
+    const [activeTab, setActiveTab] = useState(activeTabParam)
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -1325,13 +1323,7 @@ export function ObservationClient(props: ObservationClientProps) {
         
         {/* Profile Card right */}
         <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-          <button 
-            onClick={() => setIsVideoModalOpen(true)}
-            className="bg-amber-400 hover:bg-amber-300 text-slate-950 px-4 py-2.5 rounded-2xl text-xs font-black shadow-xl shadow-amber-400/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-amber-300/50"
-          >
-            <Tv className="w-4 h-4 text-slate-950" /> 🎬 Xem Video Hướng Dẫn Tương Tác
-          </button>
-          <div className="flex items-center gap-3.5 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
+                    <div className="flex items-center gap-3.5 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-black text-lg shadow-md border-2 border-white/20">
             {currentTeacher?.teacherName?.charAt(0) || "N"}
           </div>
@@ -3067,8 +3059,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* Evaluation Modal */}
       {renderEvalModal()}
-      <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
-    </div>
+          </div>
     </div>
   )
 }
