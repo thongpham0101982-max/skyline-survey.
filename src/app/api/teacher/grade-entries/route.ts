@@ -29,11 +29,6 @@ export async function GET(request: Request) {
           where: academicYearId ? { teacherId: teacher.id, academicYearId } : { teacherId: teacher.id },
           include: { class: true, subject: true }
         })
-      } else {
-        teachingAssignments = await prisma.teachingAssignment.findMany({
-          where: academicYearId ? { academicYearId } : {},
-          include: { class: true, subject: true }
-        })
       }
 
       if (teachingAssignments.length > 0) {
@@ -45,21 +40,8 @@ export async function GET(request: Request) {
         })
         availableClasses = Array.from(classMap.values())
         availableSubjects = Array.from(subjectMap.values())
-      } else {
-        let activeYearId = academicYearId;
-        if (!activeYearId || activeYearId === "all") {
-          const activeYear = await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } });
-          activeYearId = activeYear?.id;
-        }
-        availableClasses = await prisma.class.findMany({
-          where: { status: "ACTIVE", ...(activeYearId ? { academicYearId: activeYearId } : {}) },
-          orderBy: { className: "asc" }
-        })
-        availableSubjects = await prisma.subject.findMany({
-          where: { status: "ACTIVE" },
-          orderBy: { subjectName: "asc" }
-        })
       }
+      // Strictly enforce Teaching Assignments: Return empty if teacher has no assignments
 
       return NextResponse.json({
         success: true,
@@ -74,6 +56,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, students: [], config: null, entries: [] })
     }
 
+    // Verify teacher assignment for this class & subject if teacher exists
+    if (teacher) {
+      const isAssigned = await prisma.teachingAssignment.findFirst({
+        where: {
+          teacherId: teacher.id,
+          classId,
+          subjectId,
+          ...(academicYearId ? { academicYearId } : {})
+        }
+      })
+      if (!isAssigned) {
+        return NextResponse.json({ success: true, students: [], config: null, entries: [], unassigned: true })
+      }
+    }
+
     const targetClass = await prisma.class.findUnique({ where: { id: classId } })
     if (!targetClass) {
       return NextResponse.json({ success: false, error: "Lớp học không tồn tại" }, { status: 404 })
@@ -82,7 +79,7 @@ export async function GET(request: Request) {
     const classGrade = targetClass.grade || targetClass.className || "ALL"
     const targetAcademicYearId = academicYearId || targetClass.academicYearId
 
-    // Extract normalized grade numbers for accurate matching across "6", "Khối 6", "6/1"
+    // Extract normalized grade numbers for accurate matching
     let rawGrade = (targetClass.grade || "").trim()
     if (!rawGrade && targetClass.className) {
       const match = targetClass.className.match(/^(\d+)/)
@@ -98,88 +95,55 @@ export async function GET(request: Request) {
       "ALL"
     ].filter(Boolean)))
 
-    const allConfigs = await prisma.subjectGradeConfig.findMany({
+    // Fetch evaluation column configuration
+    const configs = await prisma.evaluationColumnConfig.findMany({
       where: {
         academicYearId: targetAcademicYearId,
+        evaluationPeriod,
+        subjectId,
         grade: { in: candidateGrades }
-      },
-      orderBy: { createdAt: "desc" }
+      }
     })
 
-    // Strict priority hierarchy matching:
-    // Priority 1: Exact subjectId + Exact Grade + Exact evaluationPeriod
-    let config = allConfigs.find(c =>
-      c.grade !== "ALL" &&
-      c.subjectId === subjectId &&
-      c.evaluationPeriod === evaluationPeriod
-    )
-    // Priority 2: Exact subjectId + Exact Grade + Period ALL
-    if (!config) {
-      config = allConfigs.find(c =>
-        c.grade !== "ALL" &&
-        c.subjectId === subjectId &&
-        (c.evaluationPeriod === "ALL" || !c.evaluationPeriod)
-      )
-    }
-    // Priority 3: General Subject (null) + Exact Grade + Exact evaluationPeriod
-    if (!config) {
-      config = allConfigs.find(c =>
-        c.grade !== "ALL" &&
-        !c.subjectId &&
-        c.evaluationPeriod === evaluationPeriod
-      )
-    }
-    // Priority 4: General Subject (null) + Exact Grade + Period ALL
-    if (!config) {
-      config = allConfigs.find(c =>
-        c.grade !== "ALL" &&
-        !c.subjectId &&
-        (c.evaluationPeriod === "ALL" || !c.evaluationPeriod)
-      )
-    }
-    // Priority 5: Grade ALL fallback
-    if (!config) {
-      config = allConfigs.find(c => c.grade === "ALL")
-    }
+    let config = configs.find(c => c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) || configs.find(c => c.grade === "ALL") || configs[0] || null
 
     if (!config) {
-      config = {
-        id: "default",
-        academicYearId: targetAcademicYearId,
-        grade: classGrade,
-        subjectId,
-        evaluationPeriod,
-        columnCount: 3,
-        columnNames: JSON.stringify(["Cột 1", "Cột 2", "Cột 3"]),
-        hasCompositeColumn: true,
-        hasRemarkColumn: true,
-        formula: "AVERAGE",
-        status: "ACTIVE"
-      } as any
+      const generalConfigs = await prisma.evaluationColumnConfig.findMany({
+        where: {
+          academicYearId: targetAcademicYearId,
+          evaluationPeriod,
+          grade: { in: candidateGrades }
+        }
+      })
+      config = generalConfigs.find(c => c.grade === rawGrade || c.grade === `Khối ${gradeNum}`) || generalConfigs.find(c => c.grade === "ALL") || generalConfigs[0] || null
     }
 
+    // Get students in this class
     const students = await prisma.student.findMany({
       where: { classId, status: "ACTIVE" },
-      orderBy: { studentName: "asc" }
+      orderBy: { studentName: "asc" },
+      select: { id: true, studentCode: true, studentName: true, gender: true }
     })
 
-    const entries = await prisma.subjectGradeEntry.findMany({
+    // Get existing grade entries
+    const entries = await prisma.gradeEntry.findMany({
       where: {
+        academicYearId: targetAcademicYearId,
         classId,
         subjectId,
-        evaluationPeriod,
-        academicYearId: targetAcademicYearId
+        evaluationPeriod
       }
     })
 
     return NextResponse.json({
       success: true,
-      classInfo: targetClass,
       config,
       students,
       entries
     })
+
   } catch (error: any) {
+    console.error("Lỗi lấy sổ điểm:", error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }
@@ -188,66 +152,67 @@ export async function POST(request: Request) {
   try {
     const session = await auth()
     const body = await request.json()
-    const { classId, subjectId, evaluationPeriod, academicYearId, entries } = body
+    const { academicYearId, classId, subjectId, evaluationPeriod, entries } = body
 
-    if (!classId || !subjectId || !evaluationPeriod || !academicYearId || !Array.isArray(entries)) {
-      return NextResponse.json({ success: false, error: "Dữ liệu gửi lên không hợp lệ" }, { status: 400 })
+    if (!classId || !subjectId || !evaluationPeriod || !Array.isArray(entries)) {
+      return NextResponse.json({ success: false, error: "Thiếu dữ liệu sổ điểm" }, { status: 400 })
     }
 
     let teacherId = null
-    if ((session?.user as any)?.id) {
-      const teacher = await prisma.teacher.findUnique({ where: { userId: (session.user as any).id } })
+    const userId = (session?.user as any)?.id
+    if (userId) {
+      const teacher = await prisma.teacher.findUnique({ where: { userId } })
       if (teacher) teacherId = teacher.id
     }
 
-    const savedResults = []
-    for (const item of entries) {
-      const { studentId, componentScores, compositeScore, remark } = item
+    // Save or update each grade entry
+    for (const entry of entries) {
+      const { studentId, componentScores, compositeScore, remark } = entry
       if (!studentId) continue
 
-      const componentScoresStr = typeof componentScores === "object" ? JSON.stringify(componentScores) : componentScores
+      const parsedComposite = compositeScore !== "" && compositeScore !== null && compositeScore !== undefined ? parseFloat(compositeScore) : null
 
-      const existing = await prisma.subjectGradeEntry.findFirst({
+      const existing = await prisma.gradeEntry.findFirst({
         where: {
-          studentId,
+          academicYearId,
+          classId,
           subjectId,
           evaluationPeriod,
-          academicYearId
+          studentId
         }
       })
 
-      let entryRecord
       if (existing) {
-        entryRecord = await prisma.subjectGradeEntry.update({
+        await prisma.gradeEntry.update({
           where: { id: existing.id },
           data: {
-            classId,
-            teacherId,
-            componentScores: componentScoresStr,
-            compositeScore: compositeScore !== undefined && compositeScore !== null && compositeScore !== "" ? Number(compositeScore) : null,
-            remark: remark || null
+            componentScores: JSON.stringify(componentScores || {}),
+            compositeScore: isNaN(parsedComposite as any) ? null : parsedComposite,
+            remark: remark || "",
+            teacherId: teacherId || existing.teacherId
           }
         })
       } else {
-        entryRecord = await prisma.subjectGradeEntry.create({
+        await prisma.gradeEntry.create({
           data: {
-            studentId,
-            subjectId,
-            classId,
             academicYearId,
+            classId,
+            subjectId,
             evaluationPeriod,
+            studentId,
             teacherId,
-            componentScores: componentScoresStr,
-            compositeScore: compositeScore !== undefined && compositeScore !== null && compositeScore !== "" ? Number(compositeScore) : null,
-            remark: remark || null
+            componentScores: JSON.stringify(componentScores || {}),
+            compositeScore: isNaN(parsedComposite as any) ? null : parsedComposite,
+            remark: remark || ""
           }
         })
       }
-      savedResults.push(entryRecord)
     }
 
-    return NextResponse.json({ success: true, count: savedResults.length })
+    return NextResponse.json({ success: true, message: "Lưu sổ điểm thành công" })
+
   } catch (error: any) {
+    console.error("Lỗi lưu sổ điểm:", error)
     return NextResponse.json({ success: false, error: error.message }, { status: 500 })
   }
 }

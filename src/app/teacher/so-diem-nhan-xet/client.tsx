@@ -22,8 +22,6 @@ const INTL_OPTIONS = [
   { code: "U", label: "U - Unsatisfactory (Chưa đạt)" }
 ]
 
-
-
 import { useState, useEffect, useMemo, useRef } from "react"
 import * as XLSX from "xlsx"
 import { 
@@ -38,47 +36,107 @@ import {
   Award,
   CheckCircle2,
   Calendar,
-  Sparkles
+  Sparkles,
+  AlertCircle,
+  Clock
 } from "lucide-react"
 
 interface Props {
   academicYears: any[]
   activeYearId: string
+  initialAssignments?: any[]
   initialClasses: any[]
   initialSubjects: any[]
   teacherName: string
 }
 
 const EVAL_PERIODS = [
-  { code: "KSĐN", name: "Khảo sát đầu năm (KSĐN)" },
-  { code: "GK1", name: "Giữa kỳ 1 (GK1)" },
-  { code: "CK1", name: "Cuối kỳ 1 (CK1)" },
-  { code: "GK2", name: "Giữa kỳ 2 (GK2)" },
-  { code: "CK2", name: "Cuối kỳ 2 (CK2)" }
+  { code: "KSĐN", name: "Khảo sát đầu năm (KSĐN)", semester: 1 },
+  { code: "GK1", name: "Giữa kỳ 1 (GK1)", semester: 1 },
+  { code: "CK1", name: "Cuối kỳ 1 (CK1)", semester: 1 },
+  { code: "GK2", name: "Giữa kỳ 2 (GK2)", semester: 2 },
+  { code: "CK2", name: "Cuối kỳ 2 (CK2)", semester: 2 }
 ]
 
-export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialClasses, initialSubjects, teacherName }: Props) {
+export function DiemNhanXetTeacherClient({
+  academicYears,
+  activeYearId,
+  initialAssignments = [],
+  initialClasses,
+  initialSubjects,
+  teacherName
+}: Props) {
   const [selectedYearId, setSelectedYearId] = useState(activeYearId || (academicYears[0]?.id || ""))
+  const [assignments, setAssignments] = useState<any[]>(initialAssignments)
   const [classes, setClasses] = useState<any[]>(initialClasses)
   const [subjects, setSubjects] = useState<any[]>(initialSubjects)
 
-    // Level and Grade filters
+  // Level, Grade, System filters
   const [selectedLevelFilter, setSelectedLevelFilter] = useState("ALL")
   const [selectedGradeFilter, setSelectedGradeFilter] = useState("ALL")
   const [selectedSystemFilter, setSelectedSystemFilter] = useState("ALL")
 
-    const educationSystemOptions = useMemo(() => {
+  const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
+
+  // Target semester based on selected period
+  const targetSemester = useMemo(() => {
+    return ["GK2", "CK2"].includes(selectedPeriod) ? 2 : 1
+  }, [selectedPeriod])
+
+  // Filter assignments matching current Year and Semester (or no semester constraint)
+  const filteredAssignments = useMemo(() => {
+    return assignments.filter(a => {
+      if (selectedYearId && a.academicYearId && a.academicYearId !== selectedYearId) return false
+      if (a.semester && a.semester !== targetSemester) return false
+      return true
+    })
+  }, [assignments, selectedYearId, targetSemester])
+
+  // Computed assigned classes for current year & semester
+  const assignedClasses = useMemo(() => {
+    const map = new Map()
+    filteredAssignments.forEach(a => {
+      if (a.class) map.set(a.class.id, a.class)
+    })
+    // Fallback: if no assignments array passed, use classes state
+    if (map.size === 0 && assignments.length === 0 && classes.length > 0) {
+      classes.forEach(c => map.set(c.id, c))
+    }
+    return Array.from(map.values())
+  }, [filteredAssignments, assignments.length, classes])
+
+  // Computed assigned subjects for current year, semester, and selected class
+  const [selectedClassId, setSelectedClassId] = useState<string>("")
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("")
+
+  const assignedSubjects = useMemo(() => {
+    const map = new Map()
+    filteredAssignments.forEach(a => {
+      if (a.subject) {
+        if (!selectedClassId || a.classId === selectedClassId) {
+          map.set(a.subject.id, a.subject)
+        }
+      }
+    })
+    // Fallback if no assignments list available
+    if (map.size === 0 && assignments.length === 0 && subjects.length > 0) {
+      subjects.forEach(s => map.set(s.id, s))
+    }
+    return Array.from(map.values())
+  }, [filteredAssignments, selectedClassId, assignments.length, subjects])
+
+  const educationSystemOptions = useMemo(() => {
     const set = new Set<string>()
-    classes.forEach(c => {
+    assignedClasses.forEach(c => {
       if (c.educationSystem && c.educationSystem.trim()) {
         set.add(c.educationSystem.trim())
       }
     })
     return Array.from(set).sort()
-  }, [classes])
+  }, [assignedClasses])
 
   const filteredClasses = useMemo(() => {
-    return classes.filter(c => {
+    return assignedClasses.filter(c => {
       if (selectedLevelFilter !== "ALL") {
         const cLevel = (c.level || "").toLowerCase()
         const cGrade = (c.grade || "").toLowerCase()
@@ -119,19 +177,36 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
         if (cSys !== targetSys && !cSys.includes(targetSys)) return false
       }
 
+      // If a subject is selected, class must be in assignment with that subject
+      if (selectedSubjectId && filteredAssignments.length > 0) {
+        const hasAssignment = filteredAssignments.some(a => a.classId === c.id && a.subjectId === selectedSubjectId)
+        if (!hasAssignment) return false
+      }
+
       return true
     })
-  }, [classes, selectedLevelFilter, selectedGradeFilter, selectedSystemFilter])
+  }, [assignedClasses, selectedLevelFilter, selectedGradeFilter, selectedSystemFilter, selectedSubjectId, filteredAssignments])
 
+  // Sync selectedClassId and selectedSubjectId when filters change
   useEffect(() => {
-    if (filteredClasses.length > 0 && !filteredClasses.some(c => c.id === selectedClassId)) {
-      setSelectedClassId(filteredClasses[0].id)
+    if (filteredClasses.length > 0) {
+      if (!filteredClasses.some(c => c.id === selectedClassId)) {
+        setSelectedClassId(filteredClasses[0].id)
+      }
+    } else {
+      setSelectedClassId("")
     }
   }, [filteredClasses])
 
-  const [selectedClassId, setSelectedClassId] = useState(initialClasses[0]?.id || "")
-  const [selectedSubjectId, setSelectedSubjectId] = useState(initialSubjects[0]?.id || "")
-  const [selectedPeriod, setSelectedPeriod] = useState("KSĐN")
+  useEffect(() => {
+    if (assignedSubjects.length > 0) {
+      if (!assignedSubjects.some(s => s.id === selectedSubjectId)) {
+        setSelectedSubjectId(assignedSubjects[0].id)
+      }
+    } else {
+      setSelectedSubjectId("")
+    }
+  }, [assignedSubjects])
 
   const [gradeSheetData, setGradeSheetData] = useState<{
     config: any
@@ -153,25 +228,25 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
       .then(res => res.json())
       .then(data => {
         if (data.success) {
-          if (data.classes && data.classes.length > 0) setClasses(data.classes)
-          if (data.subjects && data.subjects.length > 0) setSubjects(data.subjects)
-          if (data.classes && data.classes.length > 0 && !data.classes.some((c: any) => c.id === selectedClassId)) {
-            setSelectedClassId(data.classes[0].id)
+          if (Array.isArray(data.assignments)) {
+            setAssignments(data.assignments)
           }
-          if (data.subjects && data.subjects.length > 0 && !data.subjects.some((s: any) => s.id === selectedSubjectId)) {
-            setSelectedSubjectId(data.subjects[0].id)
-          }
+          setClasses(data.classes || [])
+          setSubjects(data.subjects || [])
         }
       })
       .catch(console.error)
   }, [selectedYearId])
 
   const fetchGradeSheet = async () => {
-    if (!selectedClassId || !selectedSubjectId) return
+    if (!selectedClassId || !selectedSubjectId) {
+      setGradeSheetData({ config: null, students: [], entries: {} })
+      return
+    }
     try {
       setLoadingSheet(true)
       const res = await fetch(
-        `api/teacher/grade-entries?academicYearId=${selectedYearId}&classId=${selectedClassId}&subjectId=${selectedSubjectId}&evaluationPeriod=${selectedPeriod}`.replace('api/', '/api/')
+        `/api/teacher/grade-entries?academicYearId=${selectedYearId}&classId=${selectedClassId}&subjectId=${selectedSubjectId}&evaluationPeriod=${selectedPeriod}`
       )
       const data = await res.json()
       if (data.success) {
@@ -218,17 +293,6 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
       return ["Cột 1"]
     }
   }, [gradeSheetData.config])
-
-  const activeColTypes = useMemo(() => {
-    if (!gradeSheetData.config) return activeColNames.map(() => "SCORE_10")
-    try {
-      return typeof gradeSheetData.config.columnTypes === "string"
-        ? JSON.parse(gradeSheetData.config.columnTypes)
-        : gradeSheetData.config.columnTypes || activeColNames.map(() => "SCORE_10")
-    } catch (_) {
-      return activeColNames.map(() => "SCORE_10")
-    }
-  }, [gradeSheetData.config, activeColNames])
 
   const handleScoreChange = (studentId: string, colIndex: number, val: string) => {
     setGradeSheetData(prev => {
@@ -282,6 +346,10 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
   }
 
   const handleSaveGradeSheet = async () => {
+    if (!selectedClassId || !selectedSubjectId) {
+      alert("Chưa chọn lớp và môn học!")
+      return
+    }
     try {
       setSavingEntries(true)
       const entriesList = Object.entries(gradeSheetData.entries).map(([studentId, data]) => ({
@@ -316,8 +384,8 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
   }
 
   const handleExportExcel = () => {
-    const currentClass = classes.find(c => c.id === selectedClassId)
-    const currentSubject = subjects.find(s => s.id === selectedSubjectId)
+    const currentClass = filteredClasses.find(c => c.id === selectedClassId)
+    const currentSubject = assignedSubjects.find(s => s.id === selectedSubjectId)
 
     const headers = ["STT", "Mã HS", "Họ tên", "Môn học"]
     activeColNames.forEach((colName: string) => headers.push(colName))
@@ -421,8 +489,9 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
     e.target.value = ""
   }
 
-  const currentClass = classes.find(c => c.id === selectedClassId)
-  const currentSubject = subjects.find(s => s.id === selectedSubjectId)
+  const currentClass = filteredClasses.find(c => c.id === selectedClassId)
+  const currentSubject = assignedSubjects.find(s => s.id === selectedSubjectId)
+  const hasNoAssignments = filteredClasses.length === 0 || assignedSubjects.length === 0
 
   return (
     <div className="space-y-6">
@@ -436,7 +505,7 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Sổ điểm & Nhận xét</h1>
             <p className="text-teal-100 text-xs md:text-sm mt-1">
-              Xin chào <strong className="text-white">{teacherName}</strong>, vui lòng chọn Lớp học, Môn học và Kỳ đánh giá (KSĐN, GK1, CK1, GK2, CK2) để tiến hành nhập điểm và nhận xét.
+              Xin chào <strong className="text-white">{teacherName}</strong>, danh sách môn và lớp giảng dạy tự động bám sát theo <strong className="text-amber-300">Phân công giảng dạy</strong> được giao.
             </p>
           </div>
 
@@ -517,11 +586,16 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+              disabled={filteredClasses.length === 0}
+              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none disabled:bg-slate-100 disabled:text-slate-400"
             >
-              {filteredClasses.map(c => (
-                <option key={c.id} value={c.id}>{c.className} ({c.grade || c.level})</option>
-              ))}
+              {filteredClasses.length === 0 ? (
+                <option value="">-- Đang chờ phân công --</option>
+              ) : (
+                filteredClasses.map(c => (
+                  <option key={c.id} value={c.id}>{c.className} ({c.grade || c.level})</option>
+                ))
+              )}
             </select>
           </div>
 
@@ -530,11 +604,16 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
             <select
               value={selectedSubjectId}
               onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none"
+              disabled={assignedSubjects.length === 0}
+              className="w-full bg-white text-slate-800 font-bold rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-teal-300 outline-none disabled:bg-slate-100 disabled:text-slate-400"
             >
-              {subjects.map(s => (
-                <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
-              ))}
+              {assignedSubjects.length === 0 ? (
+                <option value="">-- Đang chờ phân công --</option>
+              ) : (
+                assignedSubjects.map(s => (
+                  <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
+                ))
+              )}
             </select>
           </div>
 
@@ -562,145 +641,172 @@ export function DiemNhanXetTeacherClient({ academicYears, activeYearId, initialC
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800">
-                Sổ điểm Lớp {currentClass?.className || "Lớp"} - Môn {currentSubject?.subjectName || "Môn"}
+                {hasNoAssignments
+                  ? "Sổ điểm & Nhận xét"
+                  : `Sổ điểm Lớp ${currentClass?.className || "Lớp"} - Môn ${currentSubject?.subjectName || "Môn"}`}
               </h2>
               <p className="text-xs text-slate-500 font-medium">
-                Đang làm việc tại Kỳ: <strong className="text-teal-700">{selectedPeriod}</strong> | Tổng số học sinh: <strong>{gradeSheetData.students.length}</strong>
+                Đang làm việc tại Kỳ: <strong className="text-teal-700">{selectedPeriod} (Học kỳ {targetSemester})</strong> | Tổng số học sinh: <strong>{gradeSheetData.students.length}</strong>
               </p>
             </div>
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImportExcel}
-              accept=".xlsx, .xls"
-              className="hidden"
-            />
+          {!hasNoAssignments && (
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImportExcel}
+                accept=".xlsx, .xls"
+                className="hidden"
+              />
 
-            <button
-              type="button"
-              onClick={handleExportExcel}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Xuất Excel Mẫu
-            </button>
+              <button
+                type="button"
+                onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Xuất Excel Mẫu
+              </button>
 
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              Upload Excel
-            </button>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 rounded-xl text-xs font-bold transition-all"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Upload Excel
+              </button>
 
-            <button
-              type="button"
-              onClick={handleSaveGradeSheet}
-              disabled={savingEntries}
-              className="flex items-center gap-1.5 px-5 py-2 bg-[#00A99D] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
-            >
-              {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              Lưu Sổ Điểm
-            </button>
-          </div>
-        </div>
-
-        {/* Table view */}
-        <div className="overflow-x-auto border border-slate-200 rounded-2xl">
-          {loadingSheet ? (
-            <div className="text-center py-12 text-slate-400 text-xs">Đang tải dữ liệu sổ điểm...</div>
-          ) : gradeSheetData.students.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 text-xs">Chưa có danh sách học sinh cho lớp học này</div>
-          ) : (
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-800 text-white font-bold">
-                  <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
-                  <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
-                  <th className="py-3 px-3 w-48 border-r border-slate-700">Họ và tên</th>
-                  <th className="py-3 px-3 w-32 border-r border-slate-700">Môn học</th>
-                  
-                  {activeColNames.map((colName: string, idx: number) => (
-                    <th key={idx} className="py-3 px-3 text-center border-r border-slate-700 bg-slate-700/60 min-w-[90px]">
-                      {colName}
-                    </th>
-                  ))}
-
-                  {gradeSheetData.config?.hasCompositeColumn !== false && (
-                    <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px]">
-                      Điểm thành phần
-                    </th>
-                  )}
-
-                  {gradeSheetData.config?.hasRemarkColumn !== false && (
-                    <th className="py-3 px-3 border-slate-700 bg-indigo-950 min-w-[200px]">
-                      Nhận xét của GVBM
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {gradeSheetData.students.map((st, sIdx) => {
-                  const entry = gradeSheetData.entries[st.id] || { componentScores: {}, compositeScore: "", remark: "" }
-
-                  return (
-                    <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-2.5 px-3 text-center font-bold text-slate-500 border-r border-slate-200">
-                        {sIdx + 1}
-                      </td>
-                      <td className="py-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200">
-                        {st.studentCode}
-                      </td>
-                      <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200">
-                        {st.studentName}
-                      </td>
-                      <td className="py-2.5 px-3 text-slate-600 font-medium border-r border-slate-200">
-                        {currentSubject?.subjectName || "Môn"}
-                      </td>
-
-                      {activeColNames.map((_: any, cIdx: number) => (
-                        <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200">
-                          <input
-                            type="text"
-                            value={entry.componentScores[`col${cIdx}`] ?? ""}
-                            onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                            className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none"
-                            placeholder="0-10"
-                          />
-                        </td>
-                      ))}
-
-                      {gradeSheetData.config?.hasCompositeColumn !== false && (
-                        <td className="py-2 px-2 text-center border-r border-slate-200 bg-teal-50/50">
-                          <span className="font-black text-sm text-[#00A99D]">
-                            {entry.compositeScore || "-"}
-                          </span>
-                        </td>
-                      )}
-
-                      {gradeSheetData.config?.hasRemarkColumn !== false && (
-                        <td className="py-2 px-2">
-                          <input
-                            type="text"
-                            value={entry.remark ?? ""}
-                            onChange={(e) => handleRemarkChange(st.id, e.target.value)}
-                            className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
-                            placeholder="Nhập nhận xét..."
-                          />
-                        </td>
-                      )}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+              <button
+                type="button"
+                onClick={handleSaveGradeSheet}
+                disabled={savingEntries}
+                className="flex items-center gap-1.5 px-5 py-2 bg-[#00A99D] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
+              >
+                {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                Lưu Sổ Điểm
+              </button>
+            </div>
           )}
         </div>
+
+        {/* Empty State when teacher has no assignments for this semester/year */}
+        {hasNoAssignments ? (
+          <div className="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-10 text-center space-y-3.5 my-4">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center shadow-xs">
+              <Clock className="w-7 h-7" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-extrabold text-amber-900 uppercase tracking-wider">
+                Đang chờ phân công giảng dạy
+              </h3>
+              <p className="text-xs text-amber-800/90 max-w-md mx-auto font-medium leading-relaxed">
+                Chưa ghi nhận dữ liệu phân công môn học và lớp giảng dạy cho Giáo viên trong <strong>{EVAL_PERIODS.find(p => p.code === selectedPeriod)?.name}</strong> (Học kỳ {targetSemester}).
+              </p>
+            </div>
+            <div className="pt-2">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-amber-200 text-[11px] font-bold text-amber-800 shadow-2xs">
+                <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                Vui lòng liên hệ BGH / Ban Chuyên môn để cập nhật Phân công giảng dạy
+              </span>
+            </div>
+          </div>
+        ) : (
+          /* Table view */
+          <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+            {loadingSheet ? (
+              <div className="text-center py-12 text-slate-400 text-xs font-semibold animate-pulse">Đang tải dữ liệu sổ điểm...</div>
+            ) : gradeSheetData.students.length === 0 ? (
+              <div className="text-center py-12 text-slate-400 text-xs font-semibold">Chưa có danh sách học sinh cho lớp học này</div>
+            ) : (
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-800 text-white font-bold">
+                    <th className="py-3 px-3 w-12 text-center border-r border-slate-700">STT</th>
+                    <th className="py-3 px-3 w-28 border-r border-slate-700">Mã HS</th>
+                    <th className="py-3 px-3 w-48 border-r border-slate-700">Họ và tên</th>
+                    <th className="py-3 px-3 w-32 border-r border-slate-700">Môn học</th>
+                    
+                    {activeColNames.map((colName: string, idx: number) => (
+                      <th key={idx} className="py-3 px-3 text-center border-r border-slate-700 bg-slate-700/60 min-w-[90px]">
+                        {colName}
+                      </th>
+                    ))}
+
+                    {gradeSheetData.config?.hasCompositeColumn !== false && (
+                      <th className="py-3 px-3 text-center border-r border-slate-700 bg-teal-800 min-w-[110px]">
+                        Điểm thành phần
+                      </th>
+                    )}
+
+                    {gradeSheetData.config?.hasRemarkColumn !== false && (
+                      <th className="py-3 px-3 border-slate-700 bg-indigo-950 min-w-[200px]">
+                        Nhận xét của GVBM
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {gradeSheetData.students.map((st, sIdx) => {
+                    const entry = gradeSheetData.entries[st.id] || { componentScores: {}, compositeScore: "", remark: "" }
+
+                    return (
+                      <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-2.5 px-3 text-center font-bold text-slate-500 border-r border-slate-200">
+                          {sIdx + 1}
+                        </td>
+                        <td className="py-2.5 px-3 font-semibold text-slate-700 border-r border-slate-200">
+                          {st.studentCode}
+                        </td>
+                        <td className="py-2.5 px-3 font-bold text-slate-900 border-r border-slate-200">
+                          {st.studentName}
+                        </td>
+                        <td className="py-2.5 px-3 text-slate-600 font-medium border-r border-slate-200">
+                          {currentSubject?.subjectName || "Môn"}
+                        </td>
+
+                        {activeColNames.map((_: any, cIdx: number) => (
+                          <td key={cIdx} className="py-2 px-2 text-center border-r border-slate-200">
+                            <input
+                              type="text"
+                              value={entry.componentScores[`col${cIdx}`] ?? ""}
+                              onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
+                              className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none"
+                              placeholder="0-10"
+                            />
+                          </td>
+                        ))}
+
+                        {gradeSheetData.config?.hasCompositeColumn !== false && (
+                          <td className="py-2 px-2 text-center border-r border-slate-200 bg-teal-50/50">
+                            <span className="font-black text-sm text-[#00A99D]">
+                              {entry.compositeScore || "-"}
+                            </span>
+                          </td>
+                        )}
+
+                        {gradeSheetData.config?.hasRemarkColumn !== false && (
+                          <td className="py-2 px-2">
+                            <input
+                              type="text"
+                              value={entry.remark ?? ""}
+                              onChange={(e) => handleRemarkChange(st.id, e.target.value)}
+                              className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                              placeholder="Nhập nhận xét..."
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

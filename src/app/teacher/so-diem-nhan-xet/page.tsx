@@ -40,15 +40,14 @@ export default async function TeacherDiemNhanXetPage() {
     })
     classes = Array.from(classMap.values())
     subjects = Array.from(subjectMap.values())
-  } else {
-    classes = await prisma.class.findMany({ where: { status: "ACTIVE", ...(activeYear ? { academicYearId: activeYear.id } : {}) }, orderBy: { className: "asc" } })
-    subjects = await prisma.subject.findMany({ where: { status: "ACTIVE" }, orderBy: { subjectName: "asc" } })
   }
+  // Strictly enforce Teaching Assignments: No fallback to all school classes/subjects
 
   return (
     <DiemNhanXetTeacherClient
       academicYears={JSON.parse(JSON.stringify(academicYears))}
       activeYearId={activeYear?.id || ""}
+      initialAssignments={JSON.parse(JSON.stringify(assignments))}
       initialClasses={JSON.parse(JSON.stringify(classes))}
       initialSubjects={JSON.parse(JSON.stringify(subjects))}
       teacherName={teacher?.teacherName || session?.user?.name || "Giáo viên"}
