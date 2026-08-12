@@ -2425,8 +2425,8 @@ export function ObservationClient(props: ObservationClientProps) {
                   })}
                 </div>
               );
-            
-    </div>
+            })()}
+          </div>
         </div>
 
         <hr className="border-slate-100 my-1" />
