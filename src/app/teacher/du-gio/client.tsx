@@ -1304,7 +1304,7 @@ export function ObservationClient(props: ObservationClientProps) {
           {toast.type === "success" && <Check className="w-5 h-5 shrink-0" />}
           {toast.type === "error" && <AlertCircle className="w-5 h-5 shrink-0" />}
           {toast.type === "info" && <Info className="w-5 h-5 shrink-0" />}
-          <span className="text-sm font-bold tracking-wide">${toast.message}</span>
+          <span className="text-sm font-bold tracking-wide">{toast.message}</span>
         </div>
       )}
 
