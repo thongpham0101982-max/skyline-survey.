@@ -2074,6 +2074,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     </button>
                   </>
                 );
+              })()}
               
     </div>
           </div>
