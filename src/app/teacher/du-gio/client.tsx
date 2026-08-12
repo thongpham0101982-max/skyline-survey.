@@ -1,6 +1,5 @@
 "use client"
 
-
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { 
@@ -181,19 +180,19 @@ export function ObservationClient(props: ObservationClientProps) {
     const slotDeptIds = new Set<string>();
     const slotDeptNames = new Set<string>();
 
-    if (slotTeacher?.departmentId) slotDeptIds.add(slotTeacher?.departmentId);
-    if (slotTeacher?.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher?.departmentRel.name));
+    if (slotTeacher.departmentId) slotDeptIds.add(slotTeacher.departmentId);
+    if (slotTeacher.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher.departmentRel.name));
     if (slot.targetDeptId) slotDeptIds.add(slot.targetDeptId);
 
-    if (slotTeacher?.departmentAssignments && Array.isArray(slotTeacher?.departmentAssignments)) {
-      slotTeacher?.departmentAssignments.forEach((da: any) => {
+    if (slotTeacher.departmentAssignments && Array.isArray(slotTeacher.departmentAssignments)) {
+      slotTeacher.departmentAssignments.forEach((da: any) => {
         if (da.departmentId) slotDeptIds.add(da.departmentId);
         if (da.department?.name) slotDeptNames.add(normDept(da.department.name));
       });
     }
 
     if (isMamNonTeacher) {
-      const slotMN = slot.level === "Mầm non" || (slotTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+      const slotMN = slot.level === "Mầm non" || (slotTeacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
       if (!slotMN) return false;
       if (myDeptNames.size === 0) return true;
       for (const name of slotDeptNames) {
@@ -222,7 +221,7 @@ export function ObservationClient(props: ObservationClientProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [slots, setSlots] = useState(initialSlots)
-    const [activeTab, setActiveTab] = useState(activeTabParam)
+  const [activeTab, setActiveTab] = useState(activeTabParam)
   const [isPending, startTransition] = useTransition()
   const [isSearching, setIsSearching] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -272,7 +271,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   // All observation request slots created by current teacher (GVBM xin dự)
   const myCreatedObserverRequests = useMemo(() => {
-    return slots.filter((s: any) => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id) && s.requestOrigin === "OBSERVER_REQUEST");
+    return slots.filter((s: any) => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id) && s.requestOrigin === "OBSERVER_REQUEST");
   }, [slots, currentTeacher?.id]);
 
 
@@ -764,7 +763,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const handleDeleteSlot = async (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot && slot.registrations && (slot.registrations || []).length > 0) {
+    if (slot && slot.registrations && slot.registrations.length > 0) {
       showToast("Không thể xóa tiết dạy đã có giáo viên đăng ký!", "error");
       return;
     }
@@ -1068,7 +1067,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const key = `${year}-${month.toString().padStart(2, "0")}`;
       
       const isHost = slot.teacherId === currentTeacher?.id;
-      const isObserverApproved = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+      const isObserverApproved = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
       
       if (!stats[key]) {
         stats[key] = {
@@ -1083,7 +1082,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
         // Chỉ tính tiết dạy khi tất cả GV đã được duyệt đều đã điền phiếu đánh giá
-        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved);
+        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
         const allEvaluated = approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation);
         if (allEvaluated) {
           stats[key].taughtCount += countWeight;
@@ -1091,7 +1090,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       if (isObserverApproved) {
         // Chỉ tính tiết dự khi GV dự đã điền phiếu đánh giá
-        const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+        const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
         if (myReg && myReg.evaluation) {
           stats[key].observedCount += countWeight;
         }
@@ -1105,7 +1104,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const list: any[] = [];
     slots.forEach(slot => {
       if (slot.teacherId === currentTeacher?.id) {
-        (slot.registrations || []).forEach((reg: any) => {
+        slot.registrations.forEach((reg: any) => {
           if (reg.evaluation) {
             list.push({
               slot,
@@ -1124,7 +1123,7 @@ export function ObservationClient(props: ObservationClientProps) {
     slots.forEach(slot => {
       if (slot.teacherId === currentTeacher?.id) {
         const evals: any[] = [];
-        (slot.registrations || []).forEach((reg: any) => {
+        slot.registrations.forEach((reg: any) => {
           if (reg.evaluation) {
             evals.push({
               registration: reg,
@@ -1169,14 +1168,14 @@ export function ObservationClient(props: ObservationClientProps) {
     slots.forEach((slot: any) => {
       // 1. Taught count (Host)
       if (statsMap[slot.teacherId]) {
-        const hasEvaluations = (slot.registrations || []).some((r: any) => r.evaluation !== null);
+        const hasEvaluations = slot.registrations.some((r: any) => r.evaluation !== null);
         if (hasEvaluations) {
           statsMap[slot.teacherId].taughtCount += (slot.isDoublePeriod ? 2 : 1);
         }
       }
 
       // 2. Observed count (Observer)
-      (slot.registrations || []).forEach((reg: any) => {
+      slot.registrations.forEach((reg: any) => {
         if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
           statsMap[reg.teacherId].observedCount += (slot.isDoublePeriod ? 2 : 1);
         }
@@ -1188,7 +1187,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const getSlotAverageScore = (slot: any) => {
     const isK12 = !["Mầm non"].includes(slot.level);
-    const passedEvals = (slot.registrations || []).filter((r: any) => {
+    const passedEvals = slot.registrations.filter((r: any) => {
       if (!r.evaluation) return false;
       const passed = isK12
         ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
@@ -1207,7 +1206,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const now = new Date()
     return slots.filter(slot => {
       const isHost = slot.teacherId === currentTeacher?.id
-      const isObserver = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)
+      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
       if (activeTab === "dang-ky") {
         if (isHost || isObserver) return false;
         const isMyDept = checkIsMyDept(slot);
@@ -1265,7 +1264,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Compute available months for Section 4 (Lịch dạy & dự giờ của tôi)
   const availableScheduleMonths = useMemo(() => {
     const myTaught = slots.filter(s => s.teacherId === currentTeacher?.id);
-    const myRegistered = slots.filter(s => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id));
+    const myRegistered = slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
     const allMySlots = [...myTaught, ...myRegistered];
     
     const monthMap = new Map<string, string>();
@@ -1294,7 +1293,6 @@ export function ObservationClient(props: ObservationClientProps) {
   const obsProgress = obsTarget > 0 ? Math.min(100, Math.round((myObserved / obsTarget) * 100)) : 0;
   const taughtProgress = taughtTarget > 0 ? Math.min(100, Math.round((myTaught / taughtTarget) * 100)) : 0;
 
-  
   return (
     <div className="flex flex-col gap-6 relative pb-12 text-slate-800 bg-slate-50/50 min-h-screen p-1 font-sans">
       {/* Toast Notification */}
@@ -1303,7 +1301,7 @@ export function ObservationClient(props: ObservationClientProps) {
           {toast.type === "success" && <Check className="w-5 h-5 shrink-0" />}
           {toast.type === "error" && <AlertCircle className="w-5 h-5 shrink-0" />}
           {toast.type === "info" && <Info className="w-5 h-5 shrink-0" />}
-          <span className="text-sm font-bold tracking-wide">{toast.message}</span>
+          <span className="text-sm font-bold tracking-wide">${toast.message}</span>
         </div>
       )}
 
@@ -1322,8 +1320,7 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
         
         {/* Profile Card right */}
-        <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-                    <div className="flex items-center gap-3.5 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
+        <div className="flex items-center gap-3.5 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner self-start md:self-auto">
           <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-black text-lg shadow-md border-2 border-white/20">
             {currentTeacher?.teacherName?.charAt(0) || "N"}
           </div>
@@ -1894,7 +1891,7 @@ export function ObservationClient(props: ObservationClientProps) {
             
             {(() => {
               const suggested = slots
-                .filter(s => s.teacherId !== currentTeacher?.id && !(s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
+                .filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
                 .sort((a, b) => {
                   const getScore = (slot: any) => {
                     let score = 0;
@@ -1976,8 +1973,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   <span>Lớp: {slot.className || "Lớp"}</span>
                                 </p>
                               </div>
-                            )
-
+                            );
                           })() : (
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
@@ -2008,8 +2004,10 @@ export function ObservationClient(props: ObservationClientProps) {
                       </div>
                     );
                   })}
-                </div>); })()}
-    </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
 
       </div>
@@ -2038,7 +2036,7 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Department tabs selector */}
             <div className="flex flex-wrap items-center gap-2">
               {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !(s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id));
+                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
                 const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
                 const otherDeptCount = openSlots.filter(s => !checkIsMyDept(s)).length;
                 const allCount = openSlots.length;
@@ -2067,11 +2065,9 @@ export function ObservationClient(props: ObservationClientProps) {
                       </span>
                     </button>
                   </>
-                )
-
+                );
               })()}
-              
-    </div>
+            </div>
           </div>
 
           {/* Advanced filters inputs block */}
@@ -2145,7 +2141,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="flex flex-col items-center justify-center py-16 text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
               <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
               {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !(s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id));
+                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
                 const otherCount = openSlots.filter(s => !checkIsMyDept(s)).length;
                 return (
                   <div className="text-center space-y-1.5">
@@ -2161,8 +2157,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       </button>
                     )}
                   </div>
-                )
-
+                );
               })()}
             </div>
           ) : (
@@ -2181,9 +2176,9 @@ export function ObservationClient(props: ObservationClientProps) {
                 <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
                   {tabFilteredSlots.map(slot => {
                     const isHost = slot.teacherId === currentTeacher?.id;
-                    const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
                     const isRegistered = !!myReg;
-                    const observerCount = (slot.registrations || []).length;
+                    const observerCount = slot.registrations.length;
                     const slotDate = new Date(slot.date);
                     
                     // Expired (Hết hạn) check compared to today's date
@@ -2214,8 +2209,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
                                 </p>
                               </div>
-                            )
-
+                            );
                           })() : (
                             <>
                               <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
@@ -2350,8 +2344,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Gv dạy: {slot.teacher.teacherName}
                                 </p>
                               </div>
-                            )
-
+                            );
                           })() : (
                             <>
                               <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
@@ -2368,14 +2361,14 @@ export function ObservationClient(props: ObservationClientProps) {
                         {/* Host's Observers list block */}
                         <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
                           <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
-                            GV đăng ký dự giờ ({(slot.registrations || []).length}/4):
+                            GV đăng ký dự giờ ({slot.registrations.length}/4):
                           </span>
-                          {(slot.registrations || []).length === 0 ? (
+                          {slot.registrations.length === 0 ? (
                             <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
                           ) : (
                             <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
-                              {(slot.registrations || []).map((reg: any) => {
-                                const approvedCount = (slot.registrations || []).filter((r: any) => r.isApproved).length;
+                              {slot.registrations.map((reg: any) => {
+                                const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
                                 return (
                                   <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
                                     <div className="min-w-0 flex-1">
@@ -2422,8 +2415,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     );
                   })}
                 </div>
-              )
-
+              );
             })()}
           </div>
         </div>
@@ -2435,13 +2427,13 @@ export function ObservationClient(props: ObservationClientProps) {
           <div className="flex items-center gap-2 border-l-4 border-l-[#00A99D] pl-3">
             <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết đã đăng ký dự giờ</span>
             <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#E6F7F6] text-[#00A99D] rounded-md border border-teal-100">
-              {slots.filter(s => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)).length} tiết
+              {slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)).length} tiết
             </span>
           </div>
 
           <div className="overflow-y-auto max-h-[350px] space-y-3 custom-scrollbar pr-1">
             {(() => {
-              const myObservedSlots = slots.filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
+              const myObservedSlots = slots.filter(slot => slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
               if (myObservedSlots.length === 0) {
@@ -2457,7 +2449,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   {myObservedSlots.map(slot => {
                     const isHost = false;
                     const slotDate = new Date(slot.date);
-                    const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
+                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
                     const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                     
                     return (
@@ -2494,8 +2486,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Gv dạy: {slot.teacher.teacherName}
                                 </p>
                               </div>
-                            )
-
+                            );
                           })() : (
                             <>
                               <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
@@ -2537,9 +2528,9 @@ export function ObservationClient(props: ObservationClientProps) {
                     );
                   })}
                 </div>
-              )
-              })()}
-    </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
 
@@ -2602,8 +2593,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Hoạt động: <span className="text-amber-800">{hoatDong}</span> • Lớp: {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
                                 </p>
                               </div>
-                            )
-
+                            );
                           })() : (
                             <>
                               <p className="font-extrabold text-[#003B3A]">{evalItem.evaluation?.topic || evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
@@ -2975,8 +2965,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       </div>
                     </div>
                   </>
-                )
-
+                );
               })() : (
                 <>
                   <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
@@ -3050,16 +3039,318 @@ export function ObservationClient(props: ObservationClientProps) {
                   >
                     {isExpired ? "Đã hết hạn" : "Xác nhận Đăng ký"}
                   </button>
-                )
+                );
               })()}
-    </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* Evaluation Modal */}
-      {renderEvalModal()}
+      {evalModal && (() => {
+        const isReadOnly = !!evalModal.registration.evaluation;
+        return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+            <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
+                  {evalOverall && (() => {
+                    const isK12 = evalModal.slot.level !== "Mầm non";
+                    const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
+                    const passed = isK12
+                      ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
+                      : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
+                    return passed ? (
+                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
+                    ) : (
+                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">CHƯA ĐẠT</span>
+                    );
+                  })()}
+                </div>
+                {evalModal.slot.level === "Mầm non" ? (() => {
+                  const parts = (evalModal.slot.subjectName || "").split(" | ");
+                  const chuDe = parts[0] || "";
+                  const hoatDong = parts[1] || "";
+                  const deTai = evalModal.slot.topic || "";
+                  return (
+                    <p className="text-white/70 text-xs mt-0.5">
+                      Đề tài: <span className="font-extrabold text-white">{deTai}</span> • Chủ đề: <span className="font-extrabold text-white">{chuDe}</span> • Hoạt động: <span className="font-extrabold text-white">{hoatDong}</span>
+                    </p>
+                  );
+                })() : (
+                  <p className="text-white/70 text-xs mt-0.5">Bài dạy: {evalModal.slot.topic}</p>
+                )}
+              </div>
+              <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              {/* Evaluation Form Sections */}
+              {evalModal.slot.level !== "Mầm non" ? (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 text-xs font-semibold">
+                    <span className="text-xs font-black text-violet-800 uppercase tracking-wide">Tổng điểm tự động tính:</span>
+                    <span className="text-base font-black text-violet-900 bg-white px-4 py-1.5 rounded-xl shadow-sm border border-violet-100">
+                      {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
+                    </span>
+                  </div>
+                  {K12_SECTIONS.map((sec, sIdx) => {
+                    // Calculate starting index of requirements for this section
+                    let reqStartIdx = 0;
+                    for (let i = 0; i < sIdx; i++) {
+                      reqStartIdx += K12_SECTIONS[i].requirements.length;
+                    }
+
+                    return (
+                      <div key={sIdx} className="space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+                          <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">{sIdx + 1}</span>
+                          {sec.name}
+                        </h4>
+                        <div className="space-y-3">
+                          {sec.requirements.map((req, rSubIdx) => {
+                            const globalIdx = reqStartIdx + rSubIdx;
+                            // Generate options from 0 to req.max with step 0.25
+                            const options = [];
+                            for (let v = 0; v <= req.max; v += 0.25) {
+                              options.push(Math.round(v * 100) / 100);
+                            }
+
+                            return (
+                              <div key={req.id} className="p-4 bg-slate-50/60 hover:bg-slate-50 rounded-2xl border border-slate-100 transition-all duration-200 flex flex-col md:flex-row md:items-start justify-between gap-4 text-xs font-semibold">
+                                <div className="space-y-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                    <span className="text-[10px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                  </div>
+                                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
+                                  
+                                  {/* Warning message for core requirements (1, 3, 6, 7) */}
+                                  {[1, 3, 6, 7].includes(req.id) && (
+                                    <div className={`mt-2 p-2 rounded-xl text-[10px] font-bold border transition-all ${
+                                      (() => {
+                                        const score = evalK12Scores[globalIdx] || 0;
+                                        if (req.id === 1) {
+                                          return score === 1.5 
+                                            ? "bg-emerald-50 border-emerald-200/60 text-emerald-700" 
+                                            : "bg-amber-50 border-amber-200/60 text-amber-700";
+                                        }
+                                        if (req.id === 3 || req.id === 6) {
+                                          if (score < 1.0) return "bg-rose-50 border-rose-200/60 text-rose-700";
+                                          if (score < 2.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
+                                          return "bg-emerald-50 border-emerald-200/60 text-emerald-700";
+                                        }
+                                        if (req.id === 7) {
+                                          if (score < 1.0) return "bg-rose-50 border-rose-200/60 text-rose-700";
+                                          if (score < 2.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
+                                          if (score < 3.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
+                                          return "bg-emerald-50 border-emerald-200/60 text-emerald-700";
+                                        }
+                                        return "";
+                                      })()
+                                    }`}>
+                                      <div className="flex items-center gap-1.5">
+                                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                                        <span>
+                                          {(() => {
+                                            const score = evalK12Scores[globalIdx] || 0;
+                                            if (req.id === 1) {
+                                              return score === 1.5
+                                                ? "Yêu cầu chốt chặn: Đã đạt điểm tối đa (1.50đ) để xếp loại Giỏi."
+                                                : "Yêu cầu chốt chặn: Điểm chưa đạt tối đa (1.50đ). Tiết dạy không thể xếp loại Giỏi.";
+                                            }
+                                            if (req.id === 3 || req.id === 6) {
+                                              const label = req.id === 3 ? "Yêu cầu 3" : "Yêu cầu 6";
+                                              if (score < 1.0) return `${label} chốt chặn: Điểm dưới 1.0đ. Tiết dạy sẽ bị Không xếp loại (cần tối thiểu 1.0đ cho loại Trung bình).`;
+                                              if (score < 2.0) return `${label} chốt chặn: Điểm dưới 2.0đ. Tiết dạy chỉ có thể xếp loại Trung bình (cần tối thiểu 2.0đ cho loại Khá/Giỏi).`;
+                                              return `${label} chốt chặn: Đã đạt điểm tối đa (2.00đ) để xếp loại Khá/Giỏi.`;
+                                            }
+                                            if (req.id === 7) {
+                                              if (score < 1.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 1.0đ. Tiết dạy sẽ bị Không xếp loại (cần tối thiểu 1.0đ cho loại Trung bình).";
+                                              if (score < 2.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 2.0đ. Tiết dạy chỉ có thể xếp loại Trung bình (cần tối thiểu 2.0đ cho loại Khá/Giỏi).";
+                                              if (score < 3.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 3.0đ. Tiết dạy tối đa chỉ xếp loại Khá (cần tối đa 3.0đ cho loại Giỏi).";
+                                              return "Yêu cầu 7 chốt chặn: Đã đạt điểm tối đa (3.00đ) để xếp loại Giỏi.";
+                                            }
+                                            return "";
+                                          })()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                  <span className="text-xs font-extrabold text-slate-500">Điểm:</span>
+                                  <select
+                                    value={evalK12Scores[globalIdx]}
+                                    onChange={(e) => {
+                                      const nextScores = [...evalK12Scores];
+                                      nextScores[globalIdx] = parseFloat(e.target.value);
+                                      setEvalK12Scores(nextScores);
+                                      const nextRank = calculateK12Ranking(nextScores);
+                                      setEvalOverall(nextRank);
+                                    }}
+                                    disabled={isReadOnly} className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none w-28 shadow-sm disabled:opacity-75 disabled:bg-slate-150"
+                                  >
+                                    {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                  </select>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 text-xs font-semibold">
+                    <span className="text-xs font-black text-amber-800 uppercase tracking-wide">Tổng điểm tự động tính:</span>
+                    <span className="text-base font-black text-amber-900 bg-white px-4 py-1.5 rounded-xl shadow-sm border border-amber-100">
+                      {evalCriteria.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00 điểm
+                    </span>
+                  </div>
+                  {MAMNON_SECTIONS.map((sec, sIdx) => {
+                    let reqStartIdx = 0;
+                    for (let i = 0; i < sIdx; i++) {
+                      reqStartIdx += MAMNON_SECTIONS[i].requirements.length;
+                    }
+
+                    return (
+                      <div key={sIdx} className="space-y-4">
+                        <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+                          <span className="w-5 h-5 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center text-[10px] font-black">{sIdx + 1}</span>
+                          {sec.name}
+                        </h4>
+                        <div className="space-y-3">
+                          {sec.requirements.map((req, rSubIdx) => {
+                            const globalIdx = reqStartIdx + rSubIdx;
+                            const options = [];
+                            for (let v = 0; v <= req.max; v += 0.25) {
+                              options.push(Math.round(v * 100) / 100);
+                            }
+
+                            return (
+                              <div key={req.id} className="p-4 flex flex-col md:flex-row md:items-start justify-between gap-4 text-xs font-semibold">
+                                <div className="space-y-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                    <span className="text-[10px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                  </div>
+                                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                  <span className="text-xs font-extrabold text-slate-500">Điểm:</span>
+                                  <select
+                                    value={evalCriteria[globalIdx]}
+                                    onChange={(e) => {
+                                      const nextCriteria = [...evalCriteria];
+                                      nextCriteria[globalIdx] = parseFloat(e.target.value);
+                                      setEvalCriteria(nextCriteria);
+                                      const nextRank = calculateMamNonRanking(nextCriteria);
+                                      setEvalOverall(nextRank);
+                                    }}
+                                    disabled={isReadOnly} className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none w-28 shadow-sm disabled:opacity-75 disabled:bg-slate-150"
+                                  >
+                                    {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                  </select>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Text Fields */}
+              <div className="space-y-4">
+                <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">
+                    {evalModal.slot.level !== "Mầm non" ? "5" : "2"}
+                  </span>
+                  Nhận xét chi tiết
+                </h4>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-extrabold text-slate-700">Ưu điểm nổi bật của tiết dạy</label>
+                  <textarea placeholder="Những điểm mạnh, sáng tạo, hiệu quả của tiết dạy..." rows={3} value={evalStrengths} onChange={e => setEvalStrengths(e.target.value)}
+                    disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-extrabold text-slate-700">Góp ý cải thiện / xây dựng</label>
+                  <textarea placeholder="Những điểm có thể cải thiện, gợi ý phương pháp thay thế..." rows={3} value={evalImprovements} onChange={e => setEvalImprovements(e.target.value)}
+                    disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-extrabold text-slate-700">Nhận xét chung</label>
+                  <textarea placeholder="Tổng thể nhận xét của bạn về tiết dự giờ..." rows={2} value={evalGeneral} onChange={e => setEvalGeneral(e.target.value)}
+                    disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
+                </div>
+              </div>
+
+              {/* Overall Rating */}
+              <div className="flex flex-col gap-3 p-4 text-xs font-semibold">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
+                    {evalModal.slot.level !== "Mầm non" && (
+                      <span className="text-xs font-black text-violet-700 text-xs font-semibold">
+                        Tổng điểm: {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)}/20đ
+                      </span>
+                    )}
+                    {evalOverall && (() => {
+                      const isK12 = evalModal.slot.level !== "Mầm non";
+                      const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
+                      const passed = isK12
+                        ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
+                        : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
+                      return passed ? (
+                        <span className="text-emerald-700 text-[10px] font-black uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
+                      ) : (
+                        <span className="text-rose-700 text-[10px] font-black uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
+                      );
+                    })()}
+                  </div>
+                  {evalModal.slot.level !== "Mầm non" ? (
+                    <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
+                      Tự động gợi ý: {calculateK12Ranking(evalK12Scores)}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">
+                      Tự động gợi ý: {calculateMamNonRanking(evalCriteria)}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {(evalModal.slot.level !== "Mầm non"
+                    ? [["Giỏi","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Không xếp loại","bg-rose-500"]]
+                    : [["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Đạt","bg-amber-400"],["Không đạt","bg-rose-500"]]
+                  ).map(([r, color]) => (
+                    <button key={r} type="button" onClick={() => { if (!isReadOnly) setEvalOverall(r); }} disabled={isReadOnly}
+                      className={`py-2.5 rounded-xl border-2 text-xs font-extrabold transition-all ${evalOverall === r ? `${color} border-transparent text-white shadow-md` : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Actions */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button type="button" onClick={() => setEvalModal(null)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Đóng</button>
+                {!isReadOnly && (
+                  <button type="button" onClick={handleSubmitEval} disabled={evalSubmitting}
+                    className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm">
+                    {evalSubmitting ? "Đang nộp..." : "Nộp phiếu đánh giá"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
+        </div>
+        );
+      })()}
     </div>
   )
 }
