@@ -1,3 +1,4 @@
+import { ObservationVideoGuideModal } from "@/components/ObservationVideoGuideModal"
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -3360,6 +3361,7 @@ export function ObservationClient(props: ObservationClientProps) {
         );
       })()}
     
+      <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
       <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
 </div>
   )
