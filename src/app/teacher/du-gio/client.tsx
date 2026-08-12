@@ -1295,6 +1295,32 @@ export function ObservationClient(props: ObservationClientProps) {
   const obsProgress = obsTarget > 0 ? Math.min(100, Math.round((myObserved / obsTarget) * 100)) : 0;
   const taughtProgress = taughtTarget > 0 ? Math.min(100, Math.round((myTaught / taughtTarget) * 100)) : 0;
 
+  
+  const renderEvalModal = () => {
+    if (!evalModal) return null;
+    
+        const isReadOnly = !!evalModal.registration.evaluation;
+        return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
+            <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
+              <div>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
+                  {evalOverall && (() => {
+                    const isK12 = evalModal.slot.level !== "Mầm non";
+                    const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
+                    const passed = isK12
+                      ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
+                      : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
+                    return passed ? (
+                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
+                    ) : (
+                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">CHƯA ĐẠT</span>
+                    );
+                  
+  };
+
   return (
     <div className="flex flex-col gap-6 relative pb-12 text-slate-800 bg-slate-50/50 min-h-screen p-1 font-sans">
       {/* Toast Notification */}
@@ -3058,27 +3084,7 @@ export function ObservationClient(props: ObservationClientProps) {
       <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
 
       {/* Evaluation Modal */}
-      {evalModal && (() => {
-        const isReadOnly = !!evalModal.registration.evaluation;
-        return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-            <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
-              <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
-                  {evalOverall && (() => {
-                    const isK12 = evalModal.slot.level !== "Mầm non";
-                    const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
-                    const passed = isK12
-                      ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
-                      : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
-                    return passed ? (
-                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
-                    ) : (
-                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">CHƯA ĐẠT</span>
-                    );
-                  })()}
+      {renderEvalModal()}
                 </div>
                 {evalModal.slot.level === "Mầm non" ? (() => {
                   const parts = (evalModal.slot.subjectName || "").split(" | ");
