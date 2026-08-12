@@ -1297,6 +1297,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   
   return (
+    <>
     <div className="flex flex-col gap-6 relative pb-12 text-slate-800 bg-slate-50/50 min-h-screen p-1 font-sans">
       {/* Toast Notification */}
       {toast && (
@@ -3352,5 +3353,6 @@ export function ObservationClient(props: ObservationClientProps) {
       )}
       <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
     </div>
+    </>
   )
 }
