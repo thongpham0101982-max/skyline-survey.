@@ -3048,8 +3048,8 @@ export function ObservationClient(props: ObservationClientProps) {
                   >
                     {isExpired ? "Đã hết hạn" : "Xác nhận Đăng ký"}
                   </button>
-                );
-              })();
+                )
+              })()
     </div>
           </div>
         </div>
