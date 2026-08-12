@@ -1983,7 +1983,8 @@ export function ObservationClient(props: ObservationClientProps) {
                                   <span>Lớp: {slot.className || "Lớp"}</span>
                                 </p>
                               </div>
-                            );
+                            )
+
                           })() : (
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
@@ -2073,7 +2074,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       </span>
                     </button>
                   </>
-                );
+                )
+
               })()}
               
     </div>
@@ -2166,7 +2168,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       </button>
                     )}
                   </div>
-                );
+                )
+
               })()}
             </div>
           ) : (
@@ -2218,7 +2221,8 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
                                 </p>
                               </div>
-                            );
+                            )
+
                           })() : (
                             <>
                               <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
@@ -2353,7 +2357,8 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Gv dạy: {slot.teacher.teacherName}
                                 </p>
                               </div>
-                            );
+                            )
+
                           })() : (
                             <>
                               <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
@@ -2424,7 +2429,8 @@ export function ObservationClient(props: ObservationClientProps) {
                     );
                   })}
                 </div>
-              );
+              )
+
             })()}
           </div>
         </div>
@@ -2495,7 +2501,8 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Gv dạy: {slot.teacher.teacherName}
                                 </p>
                               </div>
-                            );
+                            )
+
                           })() : (
                             <>
                               <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
@@ -2602,7 +2609,8 @@ export function ObservationClient(props: ObservationClientProps) {
                                   Hoạt động: <span className="text-amber-800">{hoatDong}</span> • Lớp: {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
                                 </p>
                               </div>
-                            );
+                            )
+
                           })() : (
                             <>
                               <p className="font-extrabold text-[#003B3A]">{evalItem.evaluation?.topic || evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
@@ -2974,7 +2982,8 @@ export function ObservationClient(props: ObservationClientProps) {
                       </div>
                     </div>
                   </>
-                );
+                )
+
               })() : (
                 <>
                   <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
@@ -3069,7 +3078,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <p className="text-white/70 text-xs mt-0.5">
                       Đề tài: <span className="font-extrabold text-white">{deTai}</span> • Chủ đề: <span className="font-extrabold text-white">{chuDe}</span> • Hoạt động: <span className="font-extrabold text-white">{hoatDong}</span>
                     </p>
-                  );
+                  )
                 })() : (
                   <p className="text-white/70 text-xs mt-0.5">Bài dạy: {evalModal.slot.topic}</p>
                 )}
