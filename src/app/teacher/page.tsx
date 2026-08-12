@@ -5,7 +5,8 @@ import { useSession } from "next-auth/react"
 import {
   Users, Layers, BookOpen, CheckCircle2, Loader2, ArrowRight, Eye,
   TrendingUp, Calendar as CalendarIcon, GraduationCap, Compass, Sparkles, Heart, ShieldCheck,
-  AlertCircle, Clock, BarChart3, Award, FileText, ChevronRight, ClipboardCheck, BookMarked
+  AlertCircle, Clock, BarChart3, Award, FileText, ChevronRight, ClipboardCheck, BookMarked,
+  Target, Activity, CheckCircle, ArrowUpRight
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
 import Link from "next/link"
@@ -75,48 +76,109 @@ export default function TeacherDashboard() {
     ? Math.min(100, Math.round((scoredStudents / totalStudents) * 100))
     : 0
 
+  const activeAcademicYear = finalMetrics.academicYearName || "2026-2027"
+
+  // 6 KPI Metric Cards matching system & user screenshot design
   const statCards = [
     {
-      label: "Lớp phụ trách",
+      label: "LỚP PHỤ TRÁCH",
       value: finalMetrics.totalClasses,
       subtext: "Lớp chủ nhiệm & bộ môn",
       icon: Layers,
-      iconBg: "bg-teal-50 text-[#00A99D] border-teal-200",
-      borderColor: "border-slate-200 hover:border-teal-300",
+      iconBg: "bg-emerald-50 text-[#00A99D] border-emerald-100",
+      borderColor: "hover:border-[#00A99D]/40",
       badge: "Đang dạy",
-      badgeColor: "bg-teal-50 text-[#003B3A] border-teal-200"
+      badgeStyle: "bg-emerald-50 text-[#003B3A] border-emerald-200"
     },
     {
-      label: "Tổng học sinh",
+      label: "TỔNG HỌC SINH",
       value: totalStudents,
-      subtext: "Học sinh trong danh sách",
+      subtext: "Học sinh được quản lý",
       icon: Users,
-      iconBg: "bg-blue-50 text-blue-600 border-blue-200",
-      borderColor: "border-slate-200 hover:border-blue-300",
+      iconBg: "bg-sky-50 text-sky-600 border-sky-100",
+      borderColor: "hover:border-sky-300",
       badge: "Hồ sơ",
-      badgeColor: "bg-blue-50 text-blue-700 border-blue-200"
+      badgeStyle: "bg-sky-50 text-sky-700 border-sky-200"
     },
     {
-      label: "Phân công giảng dạy",
+      label: "PHÂN CÔNG MÔN HỌC",
       value: finalMetrics.totalAssignments,
-      subtext: "Môn & nhiệm vụ phân công",
+      subtext: "Môn giảng dạy được giao",
       icon: BookOpen,
-      iconBg: "bg-purple-50 text-purple-600 border-purple-200",
-      borderColor: "border-slate-200 hover:border-purple-300",
+      iconBg: "bg-purple-50 text-purple-600 border-purple-100",
+      borderColor: "hover:border-purple-300",
       badge: "Môn học",
-      badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
+      badgeStyle: "bg-purple-50 text-purple-700 border-purple-200",
       href: "/teacher/phan-cong-giang-day"
     },
     {
-      label: "Tiến độ đánh giá",
+      label: "TIẾN ĐỘ ĐÁNH GIÁ",
       value: scoredPercent + "%",
-      subtext: `${scoredStudents}/${totalStudents} học sinh hoàn thành`,
+      subtext: `${scoredStudents}/${totalStudents} học sinh`,
       icon: CheckCircle2,
-      iconBg: "bg-emerald-50 text-emerald-600 border-emerald-200",
-      borderColor: "border-slate-200 hover:border-emerald-300",
-      badge: scoredPercent === 100 ? "Hoàn thành" : "Thực tế",
-      badgeColor: scoredPercent === 100 ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-slate-100 text-slate-700 border-slate-200",
+      iconBg: "bg-teal-50 text-teal-600 border-teal-100",
+      borderColor: "hover:border-teal-300",
+      badge: scoredPercent === 100 ? "Hoàn thành" : "Đang tiến hành",
+      badgeStyle: scoredPercent === 100 ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-teal-50 text-teal-700 border-teal-200",
       progress: scoredPercent
+    },
+    {
+      label: "TIẾT DỰ GIỜ",
+      value: finalMetrics.totalObservedLessons || 0,
+      subtext: "Phiếu dự giờ chuyên môn",
+      icon: Eye,
+      iconBg: "bg-amber-50 text-amber-600 border-amber-100",
+      borderColor: "hover:border-amber-300",
+      badge: "Chuyên môn",
+      badgeStyle: "bg-amber-50 text-amber-700 border-amber-200",
+      href: "/teacher/du-gio"
+    },
+    {
+      label: "HỌC SINH CẦN BỒI DƯỠNG",
+      value: finalMetrics.remedialStudentsCount || 0,
+      subtext: "Đề xuất hỗ trợ & bồi dưỡng",
+      icon: Heart,
+      iconBg: "bg-rose-50 text-rose-600 border-rose-100",
+      borderColor: "hover:border-rose-300",
+      badge: "Ổn định",
+      badgeStyle: "bg-rose-50 text-rose-700 border-rose-200",
+      href: "/teacher/ho-tro-hoc-tap"
+    }
+  ]
+
+  // Evaluation breakdown progress items
+  const evaluationProgressItems = [
+    {
+      title: "Khảo sát Đầu vào Học sinh (K-12)",
+      href: "/teacher/input-assessments?type=general",
+      percent: scoredPercent,
+      countText: `${scoredStudents}/${totalStudents}`,
+      statusBadge: "Đang mở",
+      badgeColor: "bg-teal-50 text-[#003B3A] border-teal-200"
+    },
+    {
+      title: "Đánh giá Sự phát triển Mầm non",
+      href: "/teacher/input-assessments?type=mam-non",
+      percent: 0,
+      countText: `0/${totalStudents}`,
+      statusBadge: "Định kỳ",
+      badgeColor: "bg-sky-50 text-sky-700 border-sky-200"
+    },
+    {
+      title: "Sổ điểm & Nhận xét Định kỳ",
+      href: "/teacher/so-diem-nhan-xet",
+      percent: 0,
+      countText: "Cập nhật thường xuyên",
+      statusBadge: "Thường xuyên",
+      badgeColor: "bg-purple-50 text-purple-700 border-purple-200"
+    },
+    {
+      title: "Đánh giá Hoạt động Trải nghiệm",
+      href: "/teacher/experiential-activities",
+      percent: 0,
+      countText: "Theo sự kiện",
+      statusBadge: "Theo đợt",
+      badgeColor: "bg-amber-50 text-amber-700 border-amber-200"
     }
   ]
 
@@ -209,64 +271,92 @@ export default function TeacherDashboard() {
 
   return (
     <div className="space-y-6 pb-12 font-sans text-slate-800 max-w-7xl mx-auto">
-      {/* Welcome Alert Header */}
+      {/* Welcome Greeting Alert Header */}
       <WelcomeAlert name={userName} />
 
-      {/* Hero Header Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-3xl p-6 sm:p-7 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-extrabold bg-white/15 border border-white/20 text-teal-100 uppercase tracking-wider backdrop-blur-md">
-              <Sparkles className="w-3.5 h-3.5 text-teal-300" />
-              <span>Hệ thống Quản trị Giáo dục Sky-Line</span>
+      {/* Modern Sky-Line SQMS Hero Banner */}
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-3xl p-6 sm:p-7 text-white shadow-xl relative overflow-hidden">
+        {/* Glow Effects */}
+        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-80 h-80 bg-teal-400/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute left-1/3 bottom-0 translate-y-12 w-64 h-64 bg-emerald-400/15 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2.5 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-black bg-white/15 border border-white/20 text-teal-100 uppercase tracking-wider backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-teal-300 animate-pulse" />
+              <span>HỆ THỐNG QUẢN TRỊ CHẤT LƯỢNG GIÁO DỤC SKY-LINE (SQMS)</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              Tổng quan Công việc Giáo viên
+
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Tổng quan Công việc & Chuẩn hóa Đo lường
             </h1>
-            
+
+            <p className="text-xs sm:text-sm text-teal-100/90 font-medium leading-relaxed">
+              Theo dõi toàn bộ KPI lớp học, tiến độ đánh giá khảo sát năng lực và danh mục bồi dưỡng học sinh theo tiêu chuẩn giáo dục quốc tế.
+            </p>
           </div>
 
-          {currentDateStr && (
-            <div className="flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2.5 rounded-2xl text-xs font-bold shrink-0 self-start md:self-auto backdrop-blur-md">
-              <Clock className="w-4 h-4 text-teal-300" />
-              <span>{currentDateStr}</span>
+          <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-2.5 shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 bg-white/15 border border-white/20 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white backdrop-blur-md">
+                <CalendarIcon className="w-4 h-4 text-teal-300" />
+                <span>Năm học công tác <strong className="text-amber-300 font-extrabold">{activeAcademicYear}</strong></span>
+              </div>
+
+              <div className="flex items-center gap-2 bg-white/15 border border-white/20 px-3.5 py-1.5 rounded-xl text-xs font-bold text-emerald-200 backdrop-blur-md">
+                <ShieldCheck className="w-4 h-4 text-emerald-300" />
+                <span>Chuẩn hóa dữ liệu</span>
+              </div>
             </div>
-          )}
+
+            {currentDateStr && (
+              <div className="flex items-center gap-2 bg-black/20 border border-white/15 px-3.5 py-1.5 rounded-xl text-xs font-semibold text-teal-200 backdrop-blur-md">
+                <Clock className="w-3.5 h-3.5 text-teal-300" />
+                <span>Hôm nay: <strong className="text-white font-bold">{currentDateStr}</strong></span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 pt-3 border-t border-white/15 flex items-center justify-between text-[11px] text-teal-200/80 font-bold uppercase tracking-widest">
+          <span>Sky-Line International Education Standard</span>
+          <span className="hidden sm:inline">SQMS Real-time Analytics</span>
         </div>
       </div>
 
-      {/* 4 Real Metric KPI Cards */}
+      {/* 6 Real Metric KPI Cards */}
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-[#00A99D]" />
-            <span>Chỉ số Thống kê Thực tế</span>
+            <span>CHỈ SỐ CÔNG TÁC & ĐO LƯỜNG ĐÁNH GIÁ</span>
           </h2>
-          <span className="text-[11px] font-semibold text-slate-400">Trực tiếp từ Cơ sở dữ liệu</span>
+          <span className="text-[11px] font-semibold text-slate-400">Cập nhật theo thời gian thực</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5">
           {statCards.map((card, idx) => {
             const Icon = card.icon
             const CardContent = (
-              <div className={`bg-white border ${card.borderColor} rounded-2xl p-5 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full group`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">{card.label}</p>
-                    <p className="text-2xl font-black text-slate-900 tracking-tight mt-1">{card.value}</p>
+              <div className={`bg-white border border-slate-200 ${card.borderColor} rounded-2xl p-4 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between h-full group`}>
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black border ${card.badgeStyle}`}>
+                      {card.badge}
+                    </span>
+                    <div className={`p-2 rounded-xl border ${card.iconBg} group-hover:scale-110 transition-transform`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
                   </div>
-                  <div className={`p-3 rounded-xl border ${card.iconBg} group-hover:scale-105 transition-transform`}>
-                    <Icon className="w-5 h-5" />
+
+                  <div>
+                    <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider line-clamp-1">{card.label}</p>
+                    <p className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">{card.value}</p>
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-[11px] font-medium text-slate-500">{card.subtext}</span>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${card.badgeColor}`}>
-                    {card.badge}
-                  </span>
+                <div className="mt-3 pt-2.5 border-t border-slate-100">
+                  <p className="text-[11px] font-medium text-slate-500 line-clamp-1">{card.subtext}</p>
                 </div>
               </div>
             )
@@ -283,7 +373,115 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      
+      {/* 2 Main Dashboard Columns: Evaluation Progress & Students Support */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left 2-Column Wide Card: Tiến độ Đánh giá & Khảo sát Chuẩn hóa */}
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="border-b border-slate-100 pb-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 rounded-xl bg-teal-50 text-[#00A99D] border border-teal-100">
+                <Target className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">
+                  TIẾN ĐỘ ĐÁNH GIÁ & KHẢO SÁT CHUẨN HÓA
+                </h3>
+                <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                  Đo lường mức độ hoàn thành nhiệm vụ chuyên môn năm học
+                </p>
+              </div>
+            </div>
+
+            <span className="hidden sm:inline-flex px-3 py-1 rounded-full text-[11px] font-extrabold bg-teal-50 text-[#003B3A] border border-teal-200">
+              Tổng thể: {scoredPercent}%
+            </span>
+          </div>
+
+          {/* List of Progress Items */}
+          <div className="space-y-3.5">
+            {evaluationProgressItems.map((item, i) => (
+              <Link
+                key={i}
+                href={item.href}
+                className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-slate-50/80 hover:bg-teal-50/40 border border-slate-100 hover:border-teal-200 transition-all duration-200 gap-3"
+              >
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center justify-between pr-2">
+                    <span className="text-xs font-extrabold text-slate-800 group-hover:text-[#003B3A] transition-colors flex items-center gap-1.5">
+                      {item.title}
+                      <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#00A99D] transition-colors opacity-0 group-hover:opacity-100" />
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${item.badgeColor}`}>
+                      {item.statusBadge}
+                    </span>
+                  </div>
+
+                  {/* Progress bar line */}
+                  <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden mt-2">
+                    <div
+                      className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] h-full rounded-full transition-all duration-500"
+                      style={{ width: `${item.percent}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 sm:pl-4">
+                  <span className="text-xs font-black text-slate-700 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                    {item.percent}% <span className="text-[10px] text-slate-400 font-semibold">({item.countText})</span>
+                  </span>
+                  <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#00A99D] group-hover:translate-x-1 transition-all" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Right 1-Column Card: Học sinh cần bồi dưỡng & Chú ý */}
+        <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-4">
+            <div className="border-b border-slate-100 pb-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-xl bg-rose-50 text-rose-600 border border-rose-100">
+                  <Heart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                    HỌC SINH CẦN BỒI DƯỠNG & CHÚ Ý
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    Cảnh báo hỗ trợ rèn luyện
+                  </p>
+                </div>
+              </div>
+
+              <span className="px-2.5 py-0.5 rounded-md text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
+                {finalMetrics.remedialStudentsCount || 0} Trường hợp
+              </span>
+            </div>
+
+            {/* Empty State Banner */}
+            <div className="bg-emerald-50/60 border border-emerald-200/70 rounded-2xl p-5 text-center space-y-2">
+              <div className="w-10 h-10 mx-auto rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <h4 className="text-xs font-extrabold text-emerald-900">
+                Tình hình rèn luyện ổn định
+              </h4>
+              <p className="text-[11px] text-emerald-700/90 font-medium leading-relaxed">
+                Chưa ghi nhận học sinh trong diện cảnh báo bồi dưỡng đặc biệt.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/teacher/ho-tro-hoc-tap"
+            className="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-200 text-slate-700 hover:text-[#003B3A] text-xs font-extrabold flex items-center justify-center gap-2 transition-all group"
+          >
+            <span>Quản lý danh sách hỗ trợ</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform text-[#00A99D]" />
+          </Link>
+        </div>
+      </div>
 
       {/* Category Action Center (2 Column Responsive Layout) */}
       <div className="space-y-4 pt-2">
