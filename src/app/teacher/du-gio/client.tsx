@@ -1,5 +1,6 @@
-import { ObservationVideoGuideModal } from "@/components/ObservationVideoGuideModal"
 "use client"
+
+import { ObservationVideoGuideModal } from "@/components/ObservationVideoGuideModal"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
