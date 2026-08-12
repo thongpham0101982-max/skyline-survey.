@@ -3359,6 +3359,8 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
         );
       })()}
-    </div>
+    
+      <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
+</div>
   )
 }
