@@ -3055,6 +3055,8 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
       )}
 
+      <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
+
       {/* Evaluation Modal */}
       {evalModal && (() => {
         const isReadOnly = !!evalModal.registration.evaluation;
@@ -3359,7 +3361,6 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         );
       })()}
-      <ObservationVideoGuideModal isOpen={isVideoModalOpen} onClose={() => setIsVideoModalOpen(false)} />
     </div>
   )
 }
