@@ -76,7 +76,8 @@ export default async function AdminClassDetailPage({ params }: any) {
     );
 
     const isFromSurvey = hasTransferIn || !!matchedCandidate;
-    const vnEduCode = vnEduMap.get(student.studentCode) || matchedCandidate?.enrollmentCode || "—";
+    const mappedVnEdu = vnEduMap.get(student.studentCode);
+    const vnEduCode = mappedVnEdu || null;
 
     return {
       ...student,

@@ -1,6 +1,7 @@
+import Link from "next/link"
 "use client"
 import { useState, useRef, useMemo } from "react"
-import { Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send, RefreshCw, ArrowUpDown, Layers } from "lucide-react"
+import { Upload, Download, UserCircle2, Plus, Trash2, Edit2, X, Save, Send, RefreshCw, ArrowUpDown, Layers, ExternalLink, FileCode } from "lucide-react"
 import * as xlsx from "xlsx"
 import { importStudentsAction, addStudentAction, updateStudentAction, deleteStudentsAction, assignSurveyToStudentAction, syncClassStudentsWithSurveysAction } from "./actions"
 import { sortVietnameseStudents } from "@/lib/vietnameseSort"
@@ -350,6 +351,9 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
           <button onClick={openAdd} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-3.5 rounded-md transition-colors shadow-sm text-xs">
             <Plus className="w-4 h-4 mr-1.5" /> Thêm Học Sinh
           </button>
+          <Link href="/admin/ktdbcl/import-mapping" className="flex items-center bg-purple-50 hover:bg-purple-100 text-purple-700 font-semibold py-2 px-3 rounded-md transition-colors border border-purple-200 text-xs" title="Chuyển tới trang Quản lý Ánh xạ Mã Học sinh - Mã vnEdu">
+            <FileCode className="w-4 h-4 mr-1.5" /> Import Ánh Xạ
+          </Link>
           <button onClick={handleDownloadTemplate} className="flex items-center text-blue-600 hover:text-blue-700 hover:bg-blue-100 font-semibold py-2 px-3 rounded-md transition-colors text-xs">
             <Download className="w-4 h-4 mr-1.5" /> Tải File Mẫu
           </button>
@@ -412,7 +416,20 @@ export function AdminClassStudentsClient({ classId, initialStudents, activeSurve
                   </td>
                   <td className="px-6 py-4 text-slate-900 font-bold border-r border-slate-200 text-center">{idx + 1}</td>
                   <td className="px-6 py-4 text-slate-500 font-mono text-xs border-r border-slate-200">{student.studentCode}</td>
-                  <td className="px-6 py-4 text-slate-600 font-mono text-xs border-r border-slate-200">{student.vnEduCode || "—"}</td>
+                  <td className="px-6 py-4 border-r border-slate-200">
+                    {student.vnEduCode ? (
+                      <span className="text-slate-700 font-mono text-xs font-semibold">{student.vnEduCode}</span>
+                    ) : (
+                      <Link 
+                        href="/admin/ktdbcl/import-mapping" 
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full transition-colors"
+                        title="Chưa có ánh xạ Mã vnEdu trên hệ thống. Nhấp để chuyển sang trang Import Ánh xạ Mã"
+                      >
+                        <span>Chưa ánh xạ</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </Link>
+                    )}
+                  </td>
                   <td className="px-6 py-4 font-semibold text-slate-800 border-r border-slate-200 flex items-center justify-between">
                     <div className="flex items-center">
                       <UserCircle2 className="w-5 h-5 text-slate-300 mr-2" />
