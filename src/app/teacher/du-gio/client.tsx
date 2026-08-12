@@ -181,19 +181,19 @@ export function ObservationClient(props: ObservationClientProps) {
     const slotDeptIds = new Set<string>();
     const slotDeptNames = new Set<string>();
 
-    if (slotTeacher.departmentId) slotDeptIds.add(slotTeacher.departmentId);
-    if (slotTeacher.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher.departmentRel.name));
+    if (slotTeacher?.departmentId) slotDeptIds.add(slotTeacher?.departmentId);
+    if (slotTeacher?.departmentRel?.name) slotDeptNames.add(normDept(slotTeacher?.departmentRel.name));
     if (slot.targetDeptId) slotDeptIds.add(slot.targetDeptId);
 
-    if (slotTeacher.departmentAssignments && Array.isArray(slotTeacher.departmentAssignments)) {
-      slotTeacher.departmentAssignments.forEach((da: any) => {
+    if (slotTeacher?.departmentAssignments && Array.isArray(slotTeacher?.departmentAssignments)) {
+      slotTeacher?.departmentAssignments.forEach((da: any) => {
         if (da.departmentId) slotDeptIds.add(da.departmentId);
         if (da.department?.name) slotDeptNames.add(normDept(da.department.name));
       });
     }
 
     if (isMamNonTeacher) {
-      const slotMN = slot.level === "Mầm non" || (slotTeacher.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+      const slotMN = slot.level === "Mầm non" || (slotTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
       if (!slotMN) return false;
       if (myDeptNames.size === 0) return true;
       for (const name of slotDeptNames) {
@@ -272,7 +272,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   // All observation request slots created by current teacher (GVBM xin dự)
   const myCreatedObserverRequests = useMemo(() => {
-    return slots.filter((s: any) => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id) && s.requestOrigin === "OBSERVER_REQUEST");
+    return slots.filter((s: any) => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id) && s.requestOrigin === "OBSERVER_REQUEST");
   }, [slots, currentTeacher?.id]);
 
 
@@ -764,7 +764,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const handleDeleteSlot = async (slotId: string) => {
     const slot = slots.find(s => s.id === slotId);
-    if (slot && slot.registrations && slot.registrations.length > 0) {
+    if (slot && slot.registrations && (slot.registrations || []).length > 0) {
       showToast("Không thể xóa tiết dạy đã có giáo viên đăng ký!", "error");
       return;
     }
@@ -1068,7 +1068,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const key = `${year}-${month.toString().padStart(2, "0")}`;
       
       const isHost = slot.teacherId === currentTeacher?.id;
-      const isObserverApproved = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+      const isObserverApproved = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
       
       if (!stats[key]) {
         stats[key] = {
@@ -1083,7 +1083,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
         // Chỉ tính tiết dạy khi tất cả GV đã được duyệt đều đã điền phiếu đánh giá
-        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
+        const approvedRegs = (slot.registrations || []).filter((r: any) => r.isApproved);
         const allEvaluated = approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation);
         if (allEvaluated) {
           stats[key].taughtCount += countWeight;
@@ -1091,7 +1091,7 @@ export function ObservationClient(props: ObservationClientProps) {
       }
       if (isObserverApproved) {
         // Chỉ tính tiết dự khi GV dự đã điền phiếu đánh giá
-        const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
+        const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
         if (myReg && myReg.evaluation) {
           stats[key].observedCount += countWeight;
         }
@@ -1105,7 +1105,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const list: any[] = [];
     slots.forEach(slot => {
       if (slot.teacherId === currentTeacher?.id) {
-        slot.registrations.forEach((reg: any) => {
+        (slot.registrations || []).forEach((reg: any) => {
           if (reg.evaluation) {
             list.push({
               slot,
@@ -1124,7 +1124,7 @@ export function ObservationClient(props: ObservationClientProps) {
     slots.forEach(slot => {
       if (slot.teacherId === currentTeacher?.id) {
         const evals: any[] = [];
-        slot.registrations.forEach((reg: any) => {
+        (slot.registrations || []).forEach((reg: any) => {
           if (reg.evaluation) {
             evals.push({
               registration: reg,
@@ -1169,14 +1169,14 @@ export function ObservationClient(props: ObservationClientProps) {
     slots.forEach((slot: any) => {
       // 1. Taught count (Host)
       if (statsMap[slot.teacherId]) {
-        const hasEvaluations = slot.registrations.some((r: any) => r.evaluation !== null);
+        const hasEvaluations = (slot.registrations || []).some((r: any) => r.evaluation !== null);
         if (hasEvaluations) {
           statsMap[slot.teacherId].taughtCount += (slot.isDoublePeriod ? 2 : 1);
         }
       }
 
       // 2. Observed count (Observer)
-      slot.registrations.forEach((reg: any) => {
+      (slot.registrations || []).forEach((reg: any) => {
         if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
           statsMap[reg.teacherId].observedCount += (slot.isDoublePeriod ? 2 : 1);
         }
@@ -1188,7 +1188,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const getSlotAverageScore = (slot: any) => {
     const isK12 = !["Mầm non"].includes(slot.level);
-    const passedEvals = slot.registrations.filter((r: any) => {
+    const passedEvals = (slot.registrations || []).filter((r: any) => {
       if (!r.evaluation) return false;
       const passed = isK12
         ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
@@ -1207,7 +1207,7 @@ export function ObservationClient(props: ObservationClientProps) {
     const now = new Date()
     return slots.filter(slot => {
       const isHost = slot.teacherId === currentTeacher?.id
-      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
+      const isObserver = (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)
       if (activeTab === "dang-ky") {
         if (isHost || isObserver) return false;
         const isMyDept = checkIsMyDept(slot);
@@ -1265,7 +1265,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Compute available months for Section 4 (Lịch dạy & dự giờ của tôi)
   const availableScheduleMonths = useMemo(() => {
     const myTaught = slots.filter(s => s.teacherId === currentTeacher?.id);
-    const myRegistered = slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+    const myRegistered = slots.filter(s => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id));
     const allMySlots = [...myTaught, ...myRegistered];
     
     const monthMap = new Map<string, string>();
@@ -1894,7 +1894,7 @@ export function ObservationClient(props: ObservationClientProps) {
             
             {(() => {
               const suggested = slots
-                .filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
+                .filter(s => s.teacherId !== currentTeacher?.id && !(s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
                 .sort((a, b) => {
                   const getScore = (slot: any) => {
                     let score = 0;
@@ -2038,7 +2038,7 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Department tabs selector */}
             <div className="flex flex-wrap items-center gap-2">
               {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !(s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id));
                 const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
                 const otherDeptCount = openSlots.filter(s => !checkIsMyDept(s)).length;
                 const allCount = openSlots.length;
@@ -2145,7 +2145,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="flex flex-col items-center justify-center py-16 text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
               <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
               {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !(s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id));
                 const otherCount = openSlots.filter(s => !checkIsMyDept(s)).length;
                 return (
                   <div className="text-center space-y-1.5">
@@ -2181,9 +2181,9 @@ export function ObservationClient(props: ObservationClientProps) {
                 <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
                   {tabFilteredSlots.map(slot => {
                     const isHost = slot.teacherId === currentTeacher?.id;
-                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                    const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
                     const isRegistered = !!myReg;
-                    const observerCount = slot.registrations.length;
+                    const observerCount = (slot.registrations || []).length;
                     const slotDate = new Date(slot.date);
                     
                     // Expired (Hết hạn) check compared to today's date
@@ -2368,14 +2368,14 @@ export function ObservationClient(props: ObservationClientProps) {
                         {/* Host's Observers list block */}
                         <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
                           <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
-                            GV đăng ký dự giờ ({slot.registrations.length}/4):
+                            GV đăng ký dự giờ ({(slot.registrations || []).length}/4):
                           </span>
-                          {slot.registrations.length === 0 ? (
+                          {(slot.registrations || []).length === 0 ? (
                             <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
                           ) : (
                             <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
-                              {slot.registrations.map((reg: any) => {
-                                const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
+                              {(slot.registrations || []).map((reg: any) => {
+                                const approvedCount = (slot.registrations || []).filter((r: any) => r.isApproved).length;
                                 return (
                                   <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
                                     <div className="min-w-0 flex-1">
@@ -2435,13 +2435,13 @@ export function ObservationClient(props: ObservationClientProps) {
           <div className="flex items-center gap-2 border-l-4 border-l-[#00A99D] pl-3">
             <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết đã đăng ký dự giờ</span>
             <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#E6F7F6] text-[#00A99D] rounded-md border border-teal-100">
-              {slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)).length} tiết
+              {slots.filter(s => (s.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id)).length} tiết
             </span>
           </div>
 
           <div className="overflow-y-auto max-h-[350px] space-y-3 custom-scrollbar pr-1">
             {(() => {
-              const myObservedSlots = slots.filter(slot => slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
+              const myObservedSlots = slots.filter(slot => (slot.registrations || []).some((r: any) => r.teacherId === currentTeacher?.id))
                 .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
               if (myObservedSlots.length === 0) {
@@ -2457,7 +2457,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   {myObservedSlots.map(slot => {
                     const isHost = false;
                     const slotDate = new Date(slot.date);
-                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                    const myReg = (slot.registrations || []).find((r: any) => r.teacherId === currentTeacher?.id);
                     const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                     
                     return (

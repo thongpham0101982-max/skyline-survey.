@@ -32,7 +32,7 @@ export default function TeacherStudentProfilePage() {
 
   const [selectedStudentId, setSelectedStudentId] = useState("")
   const [selectedStudent, setSelectedStudent] = useState<any>(null)
-  const [activeTab, setActiveTab] = useState("cv")
+  const [activeTab, setActiveTab] = useState("advisory_360")
   const [entranceSubTab, setEntranceSubTab] = useState<"results" | "admin" | "academic">("results")
   const [loadingStudents, setLoadingStudents] = useState(true)
   const [loadingProfile, setLoadingProfile] = useState(false)
@@ -359,6 +359,7 @@ export default function TeacherStudentProfilePage() {
   }
 
     const tabs = [
+    { id: "advisory_360", label: "Cố vấn & Mục tiêu 360°", icon: Compass },
     { id: "cv", label: "Xem chi tiết HSHS", icon: User },
     { id: "academic", label: "Kết quả Học tập (MOET)", icon: FileText },
     { id: "entrance", label: "Khảo sát đầu vào", icon: ClipboardCheck },
