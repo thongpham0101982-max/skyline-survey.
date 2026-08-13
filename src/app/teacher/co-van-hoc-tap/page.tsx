@@ -95,7 +95,7 @@ export default function TeacherAdvisoryPage() {
   // Auto-fetch students when class changes
   useEffect(() => {
     if (!selectedClassId) return
-    const url = `/api/students/search?classId=${selectedClassId}${academicYearId ? `&academicYearId=${academicYearId}` : ''}`
+    const url = "/api/students/search?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "")
     
     fetch(url)
       .then(r => r.json())
@@ -131,7 +131,7 @@ export default function TeacherAdvisoryPage() {
   async function loadClassConsultations() {
     if (!selectedClassId) return
     try {
-      const res = await fetch(`/api/advisory/consultations?classId=${selectedClassId}&academicYearId=${academicYearId}`)
+      const res = await fetch("/api/advisory/consultations?classId=" + selectedClassId + "&academicYearId=" + academicYearId)
       if (res.ok) {
         setConsultations(await res.json())
       }
@@ -179,10 +179,10 @@ export default function TeacherAdvisoryPage() {
 
       const standardCats = getStandardCategories(studentGrade, studentClassName)
 
-      const goalRes = await fetch(`/api/advisory/goals?studentId=${st.id}&academicYearId=${academicYearId}`)
+      const goalRes = await fetch("/api/advisory/goals?studentId=" + st.id + "&academicYearId=" + academicYearId)
       const goalData = goalRes.ok ? await goalRes.json() : null
 
-      const trackRes = await fetch(`/api/advisory/tracking?studentId=${st.id}&academicYearId=${academicYearId}&checkPoint=${checkPoint}`)
+      const trackRes = await fetch("/api/advisory/tracking?studentId=" + st.id + "&academicYearId=" + academicYearId + "&checkPoint=" + checkPoint)
       const existingLogs = trackRes.ok ? await trackRes.json() : []
 
       const rows: any[] = []
@@ -230,7 +230,7 @@ export default function TeacherAdvisoryPage() {
 
   async function loadSingleStudentData() {
     try {
-      const evalRes = await fetch(`/api/advisory/term-evaluations?studentId=${selectedStudentId}&academicYearId=${academicYearId}`)
+      const evalRes = await fetch("/api/advisory/term-evaluations?studentId=" + selectedStudentId + "&academicYearId=" + academicYearId)
       if (evalRes.ok) {
         const evals = await evalRes.json()
         const matchedEval = evals.find((e: any) => e.term === evalTerm)
@@ -265,7 +265,7 @@ export default function TeacherAdvisoryPage() {
       })
 
       if (res.ok) {
-        setToastMessage(`Đã lưu Bảng Theo dõi tiến độ cho học sinh ${activeStudent?.studentName} thành công!`)
+        setToastMessage("Đã lưu Bảng Theo dõi tiến độ cho học sinh " + (activeStudent?.studentName || "") + " thành công!")
         setTimeout(() => setToastMessage(""), 4000)
       }
     } catch (e) {
@@ -354,7 +354,7 @@ export default function TeacherAdvisoryPage() {
   async function handleDeleteConsultation(id: string) {
     if (!confirm("Bạn có chắc chắn muốn xóa nhật ký tham vấn này?")) return
     try {
-      const res = await fetch(`/api/advisory/consultations?id=${id}`, { method: "DELETE" })
+      const res = await fetch("/api/advisory/consultations?id=" + id, { method: "DELETE" })
       if (res.ok) {
         setToastMessage("Đã xóa nhật ký tham vấn!")
         loadClassConsultations()
@@ -447,11 +447,11 @@ export default function TeacherAdvisoryPage() {
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/15">
           <button
             onClick={() => setActiveTab("tracking")}
-            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
+            className={
               activeTab === "tracking"
-                ? "bg-white text-[#003B3A] shadow-md"
-                : "bg-white/15 text-white hover:bg-white/25"
-            }`}
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
           >
             <TrendingUp className="w-4 h-4 text-teal-600" />
             <span>1. Theo Dõi Mục Tiêu Theo Học Sinh</span>
@@ -459,11 +459,11 @@ export default function TeacherAdvisoryPage() {
 
           <button
             onClick={() => setActiveTab("rubric_eval")}
-            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
+            className={
               activeTab === "rubric_eval"
-                ? "bg-white text-[#003B3A] shadow-md"
-                : "bg-white/15 text-white hover:bg-white/25"
-            }`}
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
           >
             <Award className="w-4 h-4 text-amber-500" />
             <span>2. Đánh Giá Kỳ theo Rubric</span>
@@ -471,11 +471,11 @@ export default function TeacherAdvisoryPage() {
 
           <button
             onClick={() => setActiveTab("consultations")}
-            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
+            className={
               activeTab === "consultations"
-                ? "bg-white text-[#003B3A] shadow-md"
-                : "bg-white/15 text-white hover:bg-white/25"
-            }`}
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
           >
             <MessageSquare className="w-4 h-4 text-blue-500" />
             <span>3. Nhật Ký Tham Vấn ({consultations.length})</span>
@@ -483,11 +483,11 @@ export default function TeacherAdvisoryPage() {
 
           <button
             onClick={() => setActiveTab("sos")}
-            className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
+            className={
               activeTab === "sos"
-                ? "bg-white text-[#003B3A] shadow-md"
-                : "bg-white/15 text-white hover:bg-white/25"
-            }`}
+                ? "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white text-[#003B3A] shadow-md"
+                : "px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all bg-white/15 text-white hover:bg-white/25"
+            }
           >
             <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
             <span>4. Yêu Cầu SOS ({helpRequests.length})</span>
@@ -541,11 +541,11 @@ export default function TeacherAdvisoryPage() {
                   <button
                     key={st.id}
                     onClick={() => setSelectedStudentId(st.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 border ${
+                    className={
                       isSelected
-                        ? "bg-[#003B3A] text-white border-[#003B3A] shadow-md scale-105"
-                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
-                    }`}
+                        ? "px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 border bg-[#003B3A] text-white border-[#003B3A] shadow-md scale-105"
+                        : "px-3 py-1.5 rounded-xl text-xs font-black whitespace-nowrap transition-all flex items-center gap-2 border bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }
                   >
                     <span>{idx + 1}. {st.studentName}</span>
                   </button>
@@ -578,11 +578,11 @@ export default function TeacherAdvisoryPage() {
                   <button
                     key={cp.id}
                     onClick={() => setCheckPoint(cp.id as any)}
-                    className={`px-3 py-1 rounded-lg text-xs font-black transition-all ${
+                    className={
                       checkPoint === cp.id
-                        ? "bg-[#003B3A] text-white shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
+                        ? "px-3 py-1 rounded-lg text-xs font-black transition-all bg-[#003B3A] text-white shadow-xs"
+                        : "px-3 py-1 rounded-lg text-xs font-black transition-all text-slate-600 hover:text-slate-900"
+                    }
                   >
                     {cp.label}
                   </button>
@@ -645,13 +645,13 @@ export default function TeacherAdvisoryPage() {
                             updated[idx].progressStatus = e.target.value
                             setSingleStudentTrackingRows(updated)
                           }}
-                          className={`w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer ${
+                          className={
                             item.progressStatus === "DAT"
-                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                              ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-emerald-100 text-emerald-800 border-emerald-300"
                               : item.progressStatus === "CHUA_DAT"
-                              ? "bg-rose-100 text-rose-800 border-rose-300"
-                              : "bg-amber-100 text-amber-800 border-amber-300"
-                          }`}
+                              ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-rose-100 text-rose-800 border-rose-300"
+                              : "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-amber-100 text-amber-800 border-amber-300"
+                          }
                         >
                           <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
                           <option value="DAT">🟢 Đạt</option>
@@ -702,7 +702,7 @@ export default function TeacherAdvisoryPage() {
               className="px-6 py-3 rounded-2xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-lg transition-all transform hover:-translate-y-0.5"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? "Đang lưu..." : `Lưu Tiến Độ Mục Tiêu Em ${activeStudent?.studentName || ""}`}</span>
+              <span>{saving ? "Đang lưu..." : ("Lưu Tiến Độ Mục Tiêu Em " + (activeStudent?.studentName || ""))}</span>
             </button>
           </div>
         </div>
@@ -1026,9 +1026,9 @@ export default function TeacherAdvisoryPage() {
                       {/* 1. Học sinh */}
                       <td className="p-3.5 border-r border-slate-200 bg-slate-50/50 align-top space-y-1">
                         <span className="font-black text-slate-900 block text-sm">{req.student?.studentName || "Học sinh"}</span>
-                        {req.student?.studentCode && (
+                        {req.student?.studentCode ? (
                           <span className="text-[11px] text-teal-800 font-bold block">Mã HS: {req.student?.studentCode}</span>
-                        )}
+                        ) : null}
                         <span className="inline-block px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-extrabold">
                           Lớp {req.student?.class?.className || selectedClass?.className}
                         </span>
@@ -1039,15 +1039,15 @@ export default function TeacherAdvisoryPage() {
 
                       {/* 2. Phân loại nội dung cần giúp đỡ */}
                       <td className="p-3.5 border-r border-slate-200 align-top">
-                        <span className={`px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs ${
+                        <span className={
                           req.category === "HOC_TAP"
-                            ? "bg-blue-100 text-blue-900 border border-blue-200"
+                            ? "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-blue-100 text-blue-900 border border-blue-200"
                             : req.category === "TAM_LY_BAN_BE"
-                            ? "bg-pink-100 text-pink-900 border border-pink-200"
+                            ? "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-pink-100 text-pink-900 border border-pink-200"
                             : req.category === "SUC_KHOE"
-                            ? "bg-emerald-100 text-emerald-900 border border-emerald-200"
-                            : "bg-purple-100 text-purple-900 border border-purple-200"
-                        }`}>
+                            ? "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-emerald-100 text-emerald-900 border border-emerald-200"
+                            : "px-2.5 py-1 rounded-xl text-xs font-black block text-center uppercase shadow-2xs bg-purple-100 text-purple-900 border border-purple-200"
+                        }>
                           {req.category === "HOC_TAP"
                             ? "📚 Học tập & Bài vở"
                             : req.category === "TAM_LY_BAN_BE"
@@ -1060,11 +1060,11 @@ export default function TeacherAdvisoryPage() {
 
                       {/* 3. Mức độ khẩn cấp */}
                       <td className="p-3.5 border-r border-slate-200 align-top">
-                        <span className={`px-3 py-1 rounded-full text-xs font-black block text-center uppercase shadow-2xs ${
+                        <span className={
                           req.urgency === "HIGH" || req.urgency === "URGENT"
-                            ? "bg-rose-100 text-rose-800 border border-rose-300 animate-pulse"
-                            : "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                        }`}>
+                            ? "px-3 py-1 rounded-full text-xs font-black block text-center uppercase shadow-2xs bg-rose-100 text-rose-800 border border-rose-300 animate-pulse"
+                            : "px-3 py-1 rounded-full text-xs font-black block text-center uppercase shadow-2xs bg-emerald-100 text-emerald-800 border border-emerald-300"
+                        }>
                           {req.urgency === "HIGH" || req.urgency === "URGENT" ? "🔴 Cần hỗ trợ ngay" : "🟢 Cần hỗ trợ sớm"}
                         </span>
                       </td>
@@ -1093,13 +1093,13 @@ export default function TeacherAdvisoryPage() {
                                 .then(r => r.json())
                                 .then(d => { if (Array.isArray(d)) setHelpRequests(d) })
                             }}
-                            className={`w-full p-2 rounded-xl text-xs font-black border focus:outline-none cursor-pointer ${
+                            className={
                               req.status === "RESOLVED"
-                                ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                                ? "w-full p-2 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-emerald-100 text-emerald-900 border-emerald-300"
                                 : req.status === "PROCESSING"
-                                ? "bg-amber-100 text-amber-900 border-amber-300"
-                                : "bg-slate-100 text-slate-800 border-slate-300"
-                            }`}
+                                ? "w-full p-2 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-amber-100 text-amber-900 border-amber-300"
+                                : "w-full p-2 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-slate-100 text-slate-800 border-slate-300"
+                            }
                           >
                             <option value="PENDING">🟡 Chờ phản hồi</option>
                             <option value="PROCESSING">🔵 Đang hỗ trợ</option>
@@ -1128,11 +1128,11 @@ export default function TeacherAdvisoryPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
