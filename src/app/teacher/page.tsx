@@ -81,7 +81,7 @@ export default function TeacherDashboard() {
 
   const activeAcademicYear = finalMetrics.academicYearName || "2026-2027"
 
-  // 6 KPI Metric Cards matching system & user screenshot design
+            Theo dòi toàn bộ KPI lớp học, tiến độ đánh giá khảo sÁt năng lực và danh mục bồi dường học sinh.
   const statCards = [
     {
       label: "LỚP PHỤ TRÁCH",
@@ -266,7 +266,7 @@ export default function TeacherDashboard() {
             </h1>
 
             <p className="text-xs sm:text-sm text-teal-100/90 font-medium leading-relaxed">
-              Theo dõi toàn bộ KPI lớp học, tiến độ đánh giá khảo sát năng lực và danh mục bồi dưỡng học sinh theo tiêu chuẩn giáo dục quốc tế.
+              Theo dõi toàn bộ KPI lớp học, tiến độ đánh giá khảo sát năng lực và danh mục bồi dưỡng học sinh.
             </p>
           </div>
 
@@ -298,7 +298,7 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* 6 Real Metric KPI Cards */}
+            Theo dòi toàn bộ KPI lớp học, tiến độ đánh giá khảo sÁt năng lực và danh mục bồi dường học sinh.
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
