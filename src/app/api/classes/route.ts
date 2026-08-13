@@ -22,20 +22,20 @@ export async function GET(req: Request) {
       whereCondition.academicYearId = activeYearId;
     }
 
-    // Filter by GVCN assignment if teacher is logged in or if isGVCN=true
-    if (session && session.user) {
+    // STRICT GVCN FILTERING WHEN isGVCN=true OR WHEN TEACHER LOGGED IN
+    if (session && session.user && isGVCNOnly) {
       const teacher = await prisma.teacher.findUnique({
         where: { userId: session.user.id }
       });
 
-      if (teacher && (isGVCNOnly || (session.user as any).role === "TEACHER")) {
-        // Find classes where teacher is homeroom teacher
+      if (teacher) {
         const homeroomClasses = await prisma.class.findMany({
           where: {
             ...whereCondition,
             OR: [
               { homeroomTeacherId: teacher.id },
-              { homeroomTeacherId: { contains: teacher.id } }
+              { homeroomTeacherId: { contains: teacher.id } },
+              { teachers: { some: { teacherId: teacher.id, roleInClass: "GVCN" } } }
             ]
           },
           orderBy: [
@@ -45,14 +45,12 @@ export async function GET(req: Request) {
           ]
         });
 
-        // If teacher has homeroom classes assigned, return them
-        if (homeroomClasses.length > 0) {
-          return NextResponse.json(homeroomClasses);
-        }
+        // Strictly return ONLY homeroom classes of this teacher (No fallback to other classes)
+        return NextResponse.json(homeroomClasses);
       }
     }
 
-    // Fallback: Return all classes in the academic year
+    // Default general query (for Admin or system dropdowns)
     const classes = await prisma.class.findMany({
       where: whereCondition,
       orderBy: [
