@@ -57,12 +57,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Không tìm thấy thông tin học sinh" }, { status: 404 })
     }
 
+    let targetAyId = academicYearId || student?.academicYearId
+    if (!targetAyId) {
+      const activeAy = await prisma.academicYear.findFirst({
+        where: { status: "ACTIVE" }
+      }).catch(() => null)
+      const firstAy = activeAy || await prisma.academicYear.findFirst().catch(() => null)
+      targetAyId = firstAy?.id || "default_ay"
+    }
+
     const teacherId = student?.class?.homeroomTeacherId || null
 
     const newRequest = await prisma.studentHelpRequest.create({
       data: {
         studentId,
-        academicYearId: academicYearId || student?.academicYearId || "",
+        academicYearId: targetAyId,
         teacherId,
         category: category || "HOC_TAP",
         content,
