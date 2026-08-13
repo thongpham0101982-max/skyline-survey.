@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import {
   Compass, Plus, Search, Calendar, User, MessageSquare, AlertTriangle,
   CheckCircle2, Clock, Filter, Save, Trash2, Heart, Sparkles, AlertCircle,
-  TrendingUp, Award, Table, BookOpen, Layers, Info, ChevronRight, ChevronLeft, FileText
+  TrendingUp, Award, Table, BookOpen, Layers, Info, ChevronRight, ChevronLeft, FileText, X, Edit3
 } from "lucide-react"
 
 export default function TeacherAdvisoryPage() {
@@ -23,7 +23,7 @@ export default function TeacherAdvisoryPage() {
   const [consultations, setConsultations] = useState<any[]>([])
   const [helpRequests, setHelpRequests] = useState<any[]>([])
   
-  // 1. Student-Focused Goal Progress Tracking State (FOR CURRENTLY SELECTED STUDENT)
+  // 1. Student-Focused Goal Progress Tracking State
   const [checkPoint, setCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
   const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([])
 
@@ -34,6 +34,19 @@ export default function TeacherAdvisoryPage() {
     initiativeLevel: 4,
     participationAttitude: 5,
     recommendations: ""
+  })
+
+  // 3. Consultation Log Modal States (Matching Excel)
+  const [showConsultationModal, setShowConsultationModal] = useState(false)
+  const [editingConsultationId, setEditingConsultationId] = useState<string | null>(null)
+  const [consultationForm, setConsultationForm] = useState({
+    meetingDate: new Date().toISOString().split("T")[0],
+    studentId: "",
+    content: "",
+    difficulties: "",
+    nextActions: "",
+    deadline: "",
+    notes: ""
   })
 
   // Rubric Definitions matching Excel
@@ -89,7 +102,10 @@ export default function TeacherAdvisoryPage() {
       .then(data => {
         if (Array.isArray(data)) {
           setStudents(data)
-          if (data.length > 0) setSelectedStudentId(data[0].id)
+          if (data.length > 0) {
+            setSelectedStudentId(data[0].id)
+            setConsultationForm(prev => ({ ...prev, studentId: data[0].id }))
+          }
         }
       })
       .catch(console.error)
@@ -100,6 +116,8 @@ export default function TeacherAdvisoryPage() {
         if (Array.isArray(data)) setHelpRequests(data)
       })
       .catch(console.error)
+
+    loadClassConsultations()
   }, [selectedClassId, academicYearId])
 
   // Load Goal Tracking & Rubric Data for currently selected student
@@ -107,7 +125,20 @@ export default function TeacherAdvisoryPage() {
     if (!selectedStudentId) return
     loadStudentTracking()
     loadSingleStudentData()
+    setConsultationForm(prev => ({ ...prev, studentId: selectedStudentId }))
   }, [selectedStudentId, checkPoint, evalTerm, academicYearId])
+
+  async function loadClassConsultations() {
+    if (!selectedClassId) return
+    try {
+      const res = await fetch(`/api/advisory/consultations?classId=${selectedClassId}&academicYearId=${academicYearId}`)
+      if (res.ok) {
+        setConsultations(await res.json())
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   async function loadStudentTracking() {
     try {
@@ -117,7 +148,6 @@ export default function TeacherAdvisoryPage() {
       const studentGrade = st.class?.grade || selectedClass?.grade || ""
       const studentClassName = st.class?.className || selectedClass?.className || ""
 
-      // Standard category templates per grade group
       const getStandardCategories = (gradeStr: string, classNameStr: string) => {
         const str = (gradeStr + " " + classNameStr).toUpperCase()
         const isK13 = str.includes("K1") || str.includes("K2") || str.includes("K3") || str.startsWith("1.") || str.startsWith("2.") || str.startsWith("3.") || str.startsWith("LỚP 1") || str.startsWith("LỚP 2") || str.startsWith("LỚP 3")
@@ -149,11 +179,9 @@ export default function TeacherAdvisoryPage() {
 
       const standardCats = getStandardCategories(studentGrade, studentClassName)
 
-      // Fetch goals entered by student
       const goalRes = await fetch(`/api/advisory/goals?studentId=${st.id}&academicYearId=${academicYearId}`)
       const goalData = goalRes.ok ? await goalRes.json() : null
 
-      // Fetch existing tracking logs for current checkPoint
       const trackRes = await fetch(`/api/advisory/tracking?studentId=${st.id}&academicYearId=${academicYearId}&checkPoint=${checkPoint}`)
       const existingLogs = trackRes.ok ? await trackRes.json() : []
 
@@ -202,7 +230,6 @@ export default function TeacherAdvisoryPage() {
 
   async function loadSingleStudentData() {
     try {
-      // Load Term Evaluation
       const evalRes = await fetch(`/api/advisory/term-evaluations?studentId=${selectedStudentId}&academicYearId=${academicYearId}`)
       if (evalRes.ok) {
         const evals = await evalRes.json()
@@ -216,16 +243,12 @@ export default function TeacherAdvisoryPage() {
           })
         }
       }
-
-      // Load Consultation logs
-      const consRes = await fetch(`/api/advisory/consultations?studentId=${selectedStudentId}&academicYearId=${academicYearId}`)
-      if (consRes.ok) setConsultations(await consRes.json())
     } catch (e) {
       console.error(e)
     }
   }
 
-  // Save Progress Tracking For Selected Student
+  // Save Progress Tracking
   async function handleSaveStudentTracking() {
     if (!selectedStudentId) return
     try {
@@ -277,6 +300,84 @@ export default function TeacherAdvisoryPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  // Save Consultation Log (Create or Edit)
+  async function handleSaveConsultation() {
+    if (!consultationForm.studentId || !consultationForm.content) {
+      alert("Vui lòng chọn Học sinh và nhập Nội dung trao đổi!")
+      return
+    }
+
+    try {
+      setSaving(true)
+      const res = await fetch("/api/advisory/consultations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingConsultationId || undefined,
+          studentId: consultationForm.studentId,
+          academicYearId,
+          meetingDate: consultationForm.meetingDate,
+          content: consultationForm.content,
+          difficulties: consultationForm.difficulties,
+          nextActions: consultationForm.nextActions,
+          deadline: consultationForm.deadline || undefined,
+          notes: consultationForm.notes
+        })
+      })
+
+      if (res.ok) {
+        setToastMessage("Đã lưu Nhật ký tham vấn thành công!")
+        setShowConsultationModal(false)
+        setEditingConsultationId(null)
+        setConsultationForm({
+          meetingDate: new Date().toISOString().split("T")[0],
+          studentId: selectedStudentId,
+          content: "",
+          difficulties: "",
+          nextActions: "",
+          deadline: "",
+          notes: ""
+        })
+        loadClassConsultations()
+        setTimeout(() => setToastMessage(""), 4000)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // Delete Consultation Log
+  async function handleDeleteConsultation(id: string) {
+    if (!confirm("Bạn có chắc chắn muốn xóa nhật ký tham vấn này?")) return
+    try {
+      const res = await fetch(`/api/advisory/consultations?id=${id}`, { method: "DELETE" })
+      if (res.ok) {
+        setToastMessage("Đã xóa nhật ký tham vấn!")
+        loadClassConsultations()
+        setTimeout(() => setToastMessage(""), 4000)
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  // Edit Consultation Log
+  function handleOpenEditConsultation(log: any) {
+    setEditingConsultationId(log.id)
+    setConsultationForm({
+      meetingDate: log.meetingDate ? new Date(log.meetingDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      studentId: log.studentId,
+      content: log.content || "",
+      difficulties: log.difficulties || "",
+      nextActions: log.nextActions || "",
+      deadline: log.deadline ? new Date(log.deadline).toISOString().split("T")[0] : "",
+      notes: log.notes || ""
+    })
+    setShowConsultationModal(true)
   }
 
   // Navigate Previous / Next Student
@@ -377,7 +478,7 @@ export default function TeacherAdvisoryPage() {
             }`}
           >
             <MessageSquare className="w-4 h-4 text-blue-500" />
-            <span>3. Nhật Ký Tham Vấn</span>
+            <span>3. Nhật Ký Tham Vấn ({consultations.length})</span>
           </button>
 
           <button
@@ -490,7 +591,7 @@ export default function TeacherAdvisoryPage() {
             </div>
           </div>
 
-          {/* Goal Progress Table — DISPLAY FOR CURRENTLY SELECTED STUDENT */}
+          {/* Goal Progress Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse border border-slate-200">
               <thead>
@@ -775,30 +876,240 @@ export default function TeacherAdvisoryPage() {
         </div>
       )}
 
-      {/* ----------------- TAB 3: NHẬT KÝ THAM VẤN ----------------- */}
+      {/* ----------------- TAB 3: NHẬT KÝ THAM VẤN (100% THEO MẪU EXCEL SỔ QUAN SÁT GVCN) ----------------- */}
       {activeTab === "consultations" && (
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-          <h3 className="text-sm font-black text-[#003B3A]">Nhật Ký Tham Vấn Cố Vấn Học Tập</h3>
-          <p className="text-xs text-slate-500 font-medium">Danh sách các buổi gặp tham vấn cá nhân giữa Thầy/Cô và Học sinh.</p>
-          {consultations.length === 0 ? (
-            <p className="text-xs text-slate-400 font-medium text-center py-6">Chưa có nhật ký tham vấn nào.</p>
-          ) : (
-            <div className="space-y-3">
-              {consultations.map(c => (
-                <div key={c.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-700">
-                    <span>📅 Ngày gặp: {new Date(c.meetingDate).toLocaleDateString("vi-VN")}</span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-teal-100 text-teal-800 text-[10px] font-black uppercase">
-                      {c.status}
-                    </span>
-                  </div>
-                  <p className="text-xs font-bold text-slate-900">Nội dung: {c.content}</p>
-                  {c.difficulties && <p className="text-xs text-slate-600 font-medium">Khó khăn: {c.difficulties}</p>}
-                  {c.nextActions && <p className="text-xs text-teal-700 font-semibold">Hành động tiếp theo: {c.nextActions}</p>}
-                </div>
-              ))}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-base font-black text-[#003B3A] flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-blue-600" />
+                <span>Nhật Ký Tham Vấn Cố Vấn Học Tập — Lớp {selectedClass?.className}</span>
+              </h3>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">
+                Nhật ký lưu trữ các buổi gặp tham vấn cá nhân (Khớp 100% theo mẫu Sổ quan sát GVCN).
+              </p>
             </div>
-          )}
+
+            <button
+              onClick={() => {
+                setEditingConsultationId(null)
+                setConsultationForm({
+                  meetingDate: new Date().toISOString().split("T")[0],
+                  studentId: selectedStudentId || (students[0]?.id || ""),
+                  content: "",
+                  difficulties: "",
+                  nextActions: "",
+                  deadline: "",
+                  notes: ""
+                })
+                setShowConsultationModal(true)
+              }}
+              className="px-4 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md transition-all"
+            >
+              <Plus className="w-4 h-4 text-teal-300" />
+              <span>+ Thêm Mới Nhật Ký Tham Vấn</span>
+            </button>
+          </div>
+
+          {/* Table matching Excel Sheet: Nhật ký tham vấn */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left border-collapse border border-slate-200">
+              <thead>
+                <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                  <th className="p-3 border-r border-slate-200 w-12 text-center">STT</th>
+                  <th className="p-3 border-r border-slate-200 w-28">Ngày gặp</th>
+                  <th className="p-3 border-r border-slate-200 w-1/5">Học sinh</th>
+                  <th className="p-3 border-r border-slate-200">Nội dung trao đổi</th>
+                  <th className="p-3 border-r border-slate-200">Khó khăn ghi nhận</th>
+                  <th className="p-3 border-r border-slate-200">Hành động tiếp theo</th>
+                  <th className="p-3 border-r border-slate-200 w-28">Thời hạn</th>
+                  <th className="p-3 border-r border-slate-200 w-32">Ghi chú</th>
+                  <th className="p-3 text-center w-24">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
+                {consultations.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-slate-400 font-medium">
+                      Chưa có nhật ký tham vấn nào trong lớp {selectedClass?.className}. Vui lòng bấm "+ Thêm Mới Nhật Ký Tham Vấn" để tạo mới.
+                    </td>
+                  </tr>
+                ) : (
+                  consultations.map((c, idx) => (
+                    <tr key={c.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 border-r border-slate-200 text-center font-bold text-slate-500">{idx + 1}</td>
+                      <td className="p-3 border-r border-slate-200 font-bold text-slate-900 whitespace-nowrap">
+                        {c.meetingDate ? new Date(c.meetingDate).toLocaleDateString("vi-VN") : "—"}
+                      </td>
+                      <td className="p-3 border-r border-slate-200 font-black text-slate-900 bg-slate-50/50">
+                        {c.student?.studentName || "N/A"}
+                        {c.student?.studentCode && <span className="block text-[10px] text-slate-500 font-medium">({c.student?.studentCode})</span>}
+                      </td>
+                      <td className="p-3 border-r border-slate-200 text-slate-800 font-medium leading-relaxed">{c.content}</td>
+                      <td className="p-3 border-r border-slate-200 text-amber-900 font-medium">{c.difficulties || "—"}</td>
+                      <td className="p-3 border-r border-slate-200 text-teal-900 font-semibold">{c.nextActions || "—"}</td>
+                      <td className="p-3 border-r border-slate-200 font-bold text-slate-700 whitespace-nowrap">
+                        {c.deadline ? new Date(c.deadline).toLocaleDateString("vi-VN") : "—"}
+                      </td>
+                      <td className="p-3 border-r border-slate-200 text-slate-600 font-normal">{c.notes || "—"}</td>
+                      <td className="p-3 text-center space-x-1 whitespace-nowrap">
+                        <button
+                          onClick={() => handleOpenEditConsultation(c)}
+                          className="p-1.5 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteConsultation(c.id)}
+                          className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ----------------- MODAL THÊM MỚI / CHỈNH SỬA NHẬT KÝ THAM VẤN ----------------- */}
+      {showConsultationModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-teal-50 text-teal-700">
+                  <MessageSquare className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#003B3A]">
+                    {editingConsultationId ? "Chỉnh Sửa Nhật Ký Tham Vấn" : "Thêm Mới Nhật Ký Tham Vấn Cố Vấn Học Tập"}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Theo mẫu Excel Sổ quan sát GVCN</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConsultationModal(false)}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold text-slate-700">
+              
+              {/* Ngày gặp */}
+              <div>
+                <label className="block mb-1 font-bold text-slate-800">📅 Ngày gặp (*):</label>
+                <input
+                  type="date"
+                  value={consultationForm.meetingDate}
+                  onChange={(e) => setConsultationForm({ ...consultationForm, meetingDate: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
+                />
+              </div>
+
+              {/* Học sinh */}
+              <div>
+                <label className="block mb-1 font-bold text-slate-800">👤 Học sinh (*):</label>
+                <select
+                  value={consultationForm.studentId}
+                  onChange={(e) => setConsultationForm({ ...consultationForm, studentId: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
+                >
+                  {students.map(s => (
+                    <option key={s.id} value={s.id}>
+                      {s.studentName} ({s.studentCode})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Nội dung trao đổi */}
+              <div className="sm:col-span-2">
+                <label className="block mb-1 font-bold text-slate-800">💬 Nội dung trao đổi (*):</label>
+                <textarea
+                  rows={2}
+                  value={consultationForm.content}
+                  onChange={(e) => setConsultationForm({ ...consultationForm, content: e.target.value })}
+                  placeholder="Ví dụ: Trao đổi về mục tiêu tuần, tình hình học môn Toán..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
+                />
+              </div>
+
+              {/* Khó khăn ghi nhận */}
+              <div className="sm:col-span-2">
+                <label className="block mb-1 font-bold text-slate-800">⚠️ Khó khăn ghi nhận:</label>
+                <textarea
+                  rows={2}
+                  value={consultationForm.difficulties}
+                  onChange={(e) => setConsultationForm({ ...consultationForm, difficulties: e.target.value })}
+                  placeholder="Ví dụ: Chưa sắp xếp được thời gian tự học buổi tối..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
+                />
+              </div>
+
+              {/* Hành động tiếp theo */}
+              <div className="sm:col-span-2">
+                <label className="block mb-1 font-bold text-slate-800">🚀 Hành động tiếp theo:</label>
+                <textarea
+                  rows={2}
+                  value={consultationForm.nextActions}
+                  onChange={(e) => setConsultationForm({ ...consultationForm, nextActions: e.target.value })}
+                  placeholder="Ví dụ: Cùng lập thời gian biểu buổi tối, kiểm tra lại sau 1 tuần..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
+                />
+              </div>
+
+              {/* Thời hạn */}
+              <div>
+                <label className="block mb-1 font-bold text-slate-800">⏰ Thời hạn:</label>
+                <input
+                  type="date"
+                  value={consultationForm.deadline}
+                  onChange={(e) => setConsultationForm({ ...consultationForm, deadline: e.target.value })}
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-bold text-xs bg-slate-50"
+                />
+              </div>
+
+              {/* Ghi chú */}
+              <div>
+                <label className="block mb-1 font-bold text-slate-800">📝 Ghi chú:</label>
+                <input
+                  type="text"
+                  value={consultationForm.notes}
+                  onChange={(e) => setConsultationForm({ ...consultationForm, notes: e.target.value })}
+                  placeholder="Nhập ghi chú bổ sung..."
+                  className="w-full p-2.5 rounded-xl border border-slate-200 font-medium text-xs"
+                />
+              </div>
+
+            </div>
+
+            {/* Buttons */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                onClick={() => setShowConsultationModal(false)}
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleSaveConsultation}
+                disabled={saving}
+                className="px-6 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md"
+              >
+                <Save className="w-4 h-4" />
+                <span>{saving ? "Đang lưu..." : "Lưu Nhật Ký Tham Vấn"}</span>
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
 
