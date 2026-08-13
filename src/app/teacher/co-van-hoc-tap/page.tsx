@@ -27,7 +27,7 @@ export default function TeacherAdvisoryPage() {
   
   // 1. Student-Focused Goal Progress Tracking State
   const [checkPoint, setCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
-  const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([]); const [activeStudentCommitment, setActiveStudentCommitment] = useState<string>("")
+  const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([]); const [viewMode, setViewMode] = useState<"card" | "table">("card"); const [activeStudentCommitment, setActiveStudentCommitment] = useState<string>("")
 
   // 2. Term Evaluation Rubric States
   const [evalTerm, setEvalTerm] = useState<"HK1" | "HK2">("HK1")
@@ -591,97 +591,69 @@ export default function TeacherAdvisoryPage() {
             </div>
           )}
 
-          {/* Goal Progress Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse border border-slate-200">
-              <thead>
-                <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                  <th className="p-3.5 border-r border-slate-200 w-1/5">Học sinh</th>
-                  <th className="p-3.5 border-r border-slate-200 w-52">Nhóm mục tiêu</th>
-                  <th className="p-3.5 border-r border-slate-200">Mục tiêu cụ thể (Dữ liệu Học sinh nhập)</th>
-                  <th className="p-3.5 border-r border-slate-200 w-28">Mốc kiểm tra</th>
-                  <th className="p-3.5 border-r border-slate-200 w-44">Mức độ đạt</th>
-                  <th className="p-3.5">Ghi chú của GVCN / CVHT</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 font-semibold">
-                {singleStudentTrackingRows.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
-                      Đang tải mục tiêu của học sinh...
-                    </td>
-                  </tr>
-                ) : (
-                  singleStudentTrackingRows.map((item, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                      {idx === 0 && (
-                        <td
-                          rowSpan={singleStudentTrackingRows.length}
-                          className="p-4 border-r border-slate-200 font-black text-slate-900 bg-slate-50/80 align-top"
-                        >
-                          <div className="sticky top-4 space-y-1">
-                            <span className="text-sm block">{activeStudent?.studentName}</span>
-                            <span className="text-xs text-teal-700 font-bold block">({activeStudent?.studentCode})</span>
-                            <span className="inline-block mt-2 px-2.5 py-1 rounded-full bg-teal-100 text-teal-800 text-[10px] font-black">
-                              Lớp {selectedClass?.className}
-                            </span>
-                          </div>
-                        </td>
-                      )}
-                      <td className="p-3.5 border-r border-slate-200 align-top bg-slate-50/40">
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 block text-left">
-    {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
-  </span>
-                      </td>
-                      <td className="p-3.5 border-r border-slate-200 text-slate-800 align-top">
-  {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
-    <div className="space-y-2.5 text-xs">
-      {/* 📌 Mục tiêu cụ thể & ⚡ Hành động */}
-      <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-        <div>
-          <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-0.5">
-            📌 Các mục tiêu cụ thể của em:
-          </span>
-          <p className="font-bold text-slate-900 leading-relaxed text-xs">{item.targetText}</p>
-        </div>
-
-        {item.actionText && (
-          <div className="pt-2 border-t border-slate-200/80">
-            <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block mb-0.5">
-              ⚡ Em sẽ làm gì để đạt mục tiêu này:
+          {/* View Mode Switcher & Goal Tracking Cards */}
+          <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-2xl border border-slate-200 mb-4">
+            <span className="text-xs font-black text-slate-700 uppercase tracking-wider pl-2 flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-teal-600" />
+              <span>Chế độ hiển thị:</span>
             </span>
-            <p className="font-semibold text-slate-800 leading-relaxed text-xs">{item.actionText}</p>
+
+            <div className="inline-flex rounded-xl bg-white p-1 border border-slate-200 shadow-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("card")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                  viewMode === "card"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Thẻ Dashboard Khoa Học</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 ${
+                  viewMode === "table"
+                    ? "bg-[#003B3A] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Table className="w-3.5 h-3.5" />
+                <span>Bảng Tổng Quan Gọn</span>
+              </button>
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* 💬 Mong muốn hỗ trợ (Trình bày 2 cột gọn gàng) */}
-      {(item.teacherSupportRequest || item.parentSupportRequest) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-          {item.teacherSupportRequest && (
-            <div className="p-2.5 rounded-xl bg-sky-50/80 border border-sky-200/70 space-y-0.5">
-              <span className="font-black text-sky-900 block">💬 Thầy/Cô & Bạn bè hỗ trợ:</span>
-              <p className="font-medium text-slate-800 leading-snug">{item.teacherSupportRequest}</p>
-            </div>
-          )}
+          {/* CARD DASHBOARD VIEW (KHOA HỌC, TIỆN QUAN SÁT) */}
+          {viewMode === "card" && (
+            <div className="grid grid-cols-1 gap-4">
+              {singleStudentTrackingRows.length === 0 ? (
+                <div className="p-8 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  Đang nạp mục tiêu của học sinh...
+                </div>
+              ) : (
+                singleStudentTrackingRows.map((item, idx) => (
+                  <div key={idx} className="bg-white rounded-3xl border-2 border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden">
+                    {/* Card Header (Category Title + Progress Status + Notes) */}
+                    <div className="bg-slate-50 p-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-8 h-8 rounded-2xl bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                          0{idx + 1}
+                        </span>
+                        <h4 className="font-black text-sm text-slate-900">
+                          {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
+                        </h4>
+                      </div>
 
-          {item.parentSupportRequest && (
-            <div className="p-2.5 rounded-xl bg-rose-50/80 border border-rose-200/70 space-y-0.5">
-              <span className="font-black text-rose-900 block">🏡 Ba/Mẹ hỗ trợ:</span>
-              <p className="font-medium text-slate-800 leading-snug">{item.parentSupportRequest}</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  ) : (
-    <span className="text-xs font-semibold text-slate-400 italic">Em chưa điền nội dung mục tiêu nhóm này</span>
-  )}
-</td>
-                      <td className="p-3.5 border-r border-slate-200 font-bold text-slate-600">
-                        {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
-                      </td>
-                      <td className="p-3.5 border-r border-slate-200">
+                      {/* Controls Row */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-600 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
+                          Mốc: {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
+                        </span>
+
                         <select
                           value={item.progressStatus}
                           onChange={(e) => {
@@ -689,20 +661,19 @@ export default function TeacherAdvisoryPage() {
                             updated[idx].progressStatus = e.target.value
                             setSingleStudentTrackingRows(updated)
                           }}
-                          className={
+                          className={`px-3 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
                             item.progressStatus === "DAT"
-                              ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-emerald-100 text-emerald-800 border-emerald-300"
+                              ? "bg-emerald-500 text-white border-emerald-600"
                               : item.progressStatus === "CHUA_DAT"
-                              ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-rose-100 text-rose-800 border-rose-300"
-                              : "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-amber-100 text-amber-800 border-amber-300"
-                          }
+                              ? "bg-rose-500 text-white border-rose-600"
+                              : "bg-amber-400 text-amber-950 border-amber-500"
+                          }`}
                         >
-                          <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
-                          <option value="DAT">🟢 Đạt</option>
-                          <option value="CHUA_DAT">🔴 Chưa Đạt</option>
+                          <option value="TIEN_TRIEN" className="bg-white text-slate-900">🟡 Đang tiến triển</option>
+                          <option value="DAT" className="bg-white text-slate-900">🟢 Đạt</option>
+                          <option value="CHUA_DAT" className="bg-white text-slate-900">🔴 Chưa Đạt</option>
                         </select>
-                      </td>
-                      <td className="p-3.5">
+
                         <input
                           type="text"
                           value={item.teacherNotes}
@@ -711,16 +682,171 @@ export default function TeacherAdvisoryPage() {
                             updated[idx].teacherNotes = e.target.value
                             setSingleStudentTrackingRows(updated)
                           }}
-                          placeholder="Nhập ghi chú theo dõi..."
-                          className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:border-teal-500"
+                          placeholder="Ghi chú nhận xét từ GVCN..."
+                          className="p-1.5 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:border-teal-500 focus:outline-none w-full md:w-56"
                         />
+                      </div>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="p-4 sm:p-5">
+                      {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          
+                          {/* Left Box: Mục tiêu cụ thể & Kế hoạch */}
+                          <div className="space-y-3 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80">
+                            <div>
+                              <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-teal-500 inline-block" />
+                                Mục tiêu cụ thể:
+                              </span>
+                              <p className="font-bold text-slate-900 leading-relaxed text-xs">{item.targetText}</p>
+                            </div>
+
+                            {item.actionText && (
+                              <div className="pt-2.5 border-t border-slate-200">
+                                <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                                  Em sẽ làm gì để đạt mục tiêu này:
+                                </span>
+                                <p className="font-semibold text-slate-800 leading-relaxed text-xs">{item.actionText}</p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Right Box: Yêu cầu Hỗ trợ */}
+                          <div className="space-y-2.5">
+                            {item.teacherSupportRequest && (
+                              <div className="p-3.5 rounded-2xl bg-sky-50/90 border border-sky-200/80 space-y-1">
+                                <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
+                                  💬 Thầy/Cô & Bạn bè hỗ trợ:
+                                </span>
+                                <p className="font-medium text-slate-800 text-xs leading-relaxed">{item.teacherSupportRequest}</p>
+                              </div>
+                            )}
+
+                            {item.parentSupportRequest && (
+                              <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200/80 space-y-1">
+                                <span className="font-black text-rose-950 text-xs flex items-center gap-1.5">
+                                  🏡 Ba/Mẹ hỗ trợ:
+                                </span>
+                                <p className="font-medium text-slate-800 text-xs leading-relaxed">{item.parentSupportRequest}</p>
+                              </div>
+                            )}
+                          </div>
+
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-slate-400 font-bold text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                          Học sinh chưa điền nội dung mục tiêu nhóm này
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {/* TABLE VIEW (TABLE GỌN) */}
+          {viewMode === "table" && (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left border-collapse border border-slate-200">
+                <thead>
+                  <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                    <th className="p-3.5 border-r border-slate-200 w-1/5">Học sinh</th>
+                    <th className="p-3.5 border-r border-slate-200 w-52">Nhóm mục tiêu</th>
+                    <th className="p-3.5 border-r border-slate-200">Mục tiêu cụ thể</th>
+                    <th className="p-3.5 border-r border-slate-200 w-28">Mốc kiểm tra</th>
+                    <th className="p-3.5 border-r border-slate-200 w-44">Mức độ đạt</th>
+                    <th className="p-3.5">Ghi chú của GVCN / CVHT</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 font-semibold">
+                  {singleStudentTrackingRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
+                        Đang tải mục tiêu của học sinh...
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    singleStudentTrackingRows.map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        {idx === 0 && (
+                          <td
+                            rowSpan={singleStudentTrackingRows.length}
+                            className="p-4 border-r border-slate-200 font-black text-slate-900 bg-slate-50/80 align-top"
+                          >
+                            <div className="sticky top-4 space-y-1">
+                              <span className="text-sm block">{activeStudent?.studentName}</span>
+                              <span className="text-xs text-teal-700 font-bold block">({activeStudent?.studentCode})</span>
+                              <span className="inline-block mt-2 px-2.5 py-1 rounded-full bg-teal-100 text-teal-800 text-[10px] font-black">
+                                Lớp {selectedClass?.className}
+                              </span>
+                            </div>
+                          </td>
+                        )}
+                        <td className="p-3.5 border-r border-slate-200 align-top bg-slate-50/40">
+                          <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 block text-left">
+                            {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
+                          </span>
+                        </td>
+                        <td className="p-3.5 border-r border-slate-200 text-slate-800 align-top">
+                          {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
+                            <div className="space-y-2 text-xs">
+                              <p className="font-bold text-slate-900">{item.targetText}</p>
+                              {item.actionText && (
+                                <p className="font-semibold text-slate-700 text-[11px]">👉 Việc làm: {item.actionText}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs font-semibold text-slate-400 italic">Em chưa điền nội dung mục tiêu nhóm này</span>
+                          )}
+                        </td>
+                        <td className="p-3.5 border-r border-slate-200 font-bold text-slate-600 align-top">
+                          {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
+                        </td>
+                        <td className="p-3.5 border-r border-slate-200 align-top">
+                          <select
+                            value={item.progressStatus}
+                            onChange={(e) => {
+                              const updated = [...singleStudentTrackingRows]
+                              updated[idx].progressStatus = e.target.value
+                              setSingleStudentTrackingRows(updated)
+                            }}
+                            className={
+                              item.progressStatus === "DAT"
+                                ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : item.progressStatus === "CHUA_DAT"
+                                ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-rose-100 text-rose-800 border-rose-300"
+                                : "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-amber-100 text-amber-800 border-amber-300"
+                            }
+                          >
+                            <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
+                            <option value="DAT">🟢 Đạt</option>
+                            <option value="CHUA_DAT">🔴 Chưa Đạt</option>
+                          </select>
+                        </td>
+                        <td className="p-3.5 align-top">
+                          <input
+                            type="text"
+                            value={item.teacherNotes}
+                            onChange={(e) => {
+                              const updated = [...singleStudentTrackingRows]
+                              updated[idx].teacherNotes = e.target.value
+                              setSingleStudentTrackingRows(updated)
+                            }}
+                            placeholder="Nhập ghi chú theo dõi..."
+                            className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:border-teal-500"
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
             <div className="flex items-center gap-2">
