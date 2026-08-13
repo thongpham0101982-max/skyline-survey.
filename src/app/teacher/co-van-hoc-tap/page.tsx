@@ -82,7 +82,7 @@ export default function TeacherAdvisoryPage() {
 
   useEffect(() => {
     if (!selectedClassId) return
-    fetch("/api/students/search?classId=" + selectedClassId)
+    fetch(`/api/students/search?classId=${selectedClassId}${academicYearId ? `&academicYearId=${academicYearId}` : ''}`)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {

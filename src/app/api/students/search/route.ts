@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic"
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -8,14 +10,13 @@ export async function GET(req: Request) {
     const q = searchParams.get('q');
     const classId = searchParams.get('classId');
 
-    if (!academicYearId) {
-      return NextResponse.json({ error: "Missing academicYearId" }, { status: 400 });
-    }
-
     const where: any = {
-      academicYearId,
       status: 'ACTIVE'
     };
+
+    if (academicYearId) {
+      where.academicYearId = academicYearId;
+    }
 
     if (classId) {
       where.classId = classId;
@@ -23,8 +24,8 @@ export async function GET(req: Request) {
 
     if (q) {
       where.OR = [
-        { studentName: { contains: q, mode: 'insensitive' } },
-        { studentCode: { contains: q, mode: 'insensitive' } }
+        { studentName: { contains: q } },
+        { studentCode: { contains: q } }
       ];
     }
 
@@ -33,13 +34,13 @@ export async function GET(req: Request) {
       include: {
         class: true
       },
-      take: classId ? 1000 : 20,
+      take: classId ? 1000 : 100,
       orderBy: { studentName: 'asc' }
     });
 
-    return NextResponse.json(students.map(s => ({...s, name: s.studentName, code: s.studentCode})));
-  } catch (error) {
+    return NextResponse.json(students.map(s => ({ ...s, name: s.studentName, code: s.studentCode })));
+  } catch (error: any) {
     console.error("Error searching students:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
   }
 }
