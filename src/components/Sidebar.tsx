@@ -754,6 +754,18 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               </div>
             </>
           )}
+          {role === "PARENT" && (
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <Link 
+                href="/parent/children/advisory" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold text-teal-300 hover:bg-white/10`}
+              >
+                <Compass className="w-4 h-4 mr-2.5 text-teal-400" />
+                {!isCollapsed && <span>Cố Vấn & Mục Tiêu Đồng Hành</span>}
+              </Link>
+            </div>
+          )}
         </nav>
         
         <div className="mt-auto pt-4 flex flex-col gap-2">
