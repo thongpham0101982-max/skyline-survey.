@@ -9,58 +9,61 @@ import {
 } from "lucide-react"
 
 function parseGradeNumber(className: string): string {
-  if (!className) return "5"
+  if (!className) return "11"
   const str = className.toUpperCase().trim()
   const match = str.match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
   if (match && match[1]) {
     const num = parseInt(match[1], 10)
     if (num >= 1 && num <= 12) return String(num)
   }
-  return "5"
+  return "11"
 }
 
 export default function StudentPortalHomePage() {
-  const [studentName, setStudentName] = useState("Học sinh Sky-Line")
-  const [className, setClassName] = useState("Lớp 5.1_CS1")
+  const [studentName, setStudentName] = useState("")
+  const [className, setClassName] = useState("")
   const [studentCode, setStudentCode] = useState("")
-  const [gradeNum, setGradeNum] = useState("5")
+  const [gradeNum, setGradeNum] = useState("")
   const [campusName, setCampusName] = useState("")
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("currentStudent")
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored)
-          setStudentName(parsed.studentName || parsed.fullName || "Học sinh Sky-Line")
-          const cName = parsed.class?.className || parsed.className || "Lớp 5.1_CS1"
-          setClassName(cName)
-          setStudentCode(parsed.studentCode || "")
-          setCampusName(parsed.campusName || parsed.campus?.campusName || "")
-          setGradeNum(parseGradeNumber(cName))
-        } catch (e) {}
-      } else {
-        fetch("/api/students/search?limit=1")
-          .then(r => r.json())
-          .then(data => {
-            if (Array.isArray(data) && data.length > 0) {
-              setStudentName(data[0].studentName)
-              const cName = data[0].class?.className || "Lớp 5.1_CS1"
-              setClassName(cName)
-              setStudentCode(data[0].studentCode)
-              setCampusName(data[0].campus?.campusName || "")
-              setGradeNum(parseGradeNumber(cName))
-            }
-          })
-          .catch(() => {})
-      }
-    }
+    // ALWAYS fetch authenticated student session from /api/hocsinh/me
+    fetch("/api/hocsinh/me")
+      .then(r => {
+        if (!r.ok) {
+          window.location.href = "/login"
+          return null
+        }
+        return r.json()
+      })
+      .then(data => {
+        if (data && data.studentCode) {
+          setStudentName(data.studentName)
+          setStudentCode(data.studentCode)
+          setClassName(data.className || "Lớp của Em")
+          setCampusName(data.campusName || "")
+          setGradeNum(data.grade || parseGradeNumber(data.className))
+          localStorage.setItem("currentStudent", JSON.stringify(data))
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }, [])
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto p-12 text-center text-teal-800 font-extrabold text-sm animate-pulse space-y-2">
+        <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p>Đang nạp thông tin tài khoản học sinh...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 font-sans text-slate-800 pb-20">
       
-      {/* Header Banner - Sky-Line Branded */}
+      {/* Header Banner - Dynamic for currently logged in student */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] p-6 sm:p-8 text-white shadow-2xl">
         <div className="absolute -right-10 -top-10 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute right-20 -bottom-10 w-60 h-60 bg-teal-400/20 rounded-full blur-2xl pointer-events-none" />
@@ -111,14 +114,14 @@ export default function StudentPortalHomePage() {
         </div>
       </div>
 
-      {/* 2 CHỨC NĂNG CHÍNH DÀNH CHO HỌC SINH (KHẢO SÁT & SỔ MỤC TIÊU 360°) */}
+      {/* 2 CHỨC NĂNG CHÍNH DÀNH CHO HỌC SINH */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-[#003B3A] flex items-center gap-2">
             <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
             <span>HAI CHỨC NĂNG CHÍNH DÀNH CHO HỌC SINH</span>
           </h2>
-          <span className="text-xs font-bold text-slate-400">Giao diện đồng bộ theo tài khoản Lớp {className} (Khối {gradeNum})</span>
+          <span className="text-xs font-bold text-slate-400">Tài khoản: {studentName} (Mã HS: {studentCode})</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -143,7 +146,7 @@ export default function StudentPortalHomePage() {
                   Khảo Sát Học Sinh
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
-                  Tham gia thực hiện các bài khảo sát trải nghiệm học tập, phản hồi ý kiến cho Thầy Cô và Nhà trường.
+                  Tham gia thực hiện các bài khảo sát trải nghiệm học tập phân công cho Lớp {className}.
                 </p>
               </div>
             </div>
@@ -182,7 +185,7 @@ export default function StudentPortalHomePage() {
             </div>
 
             <div className="pt-6 relative z-10 flex items-center justify-between border-t border-slate-100 mt-6">
-              <span className="text-xs font-extrabold text-amber-600">Vào Sổ Mục Tiêu</span>
+              <span className="text-xs font-extrabold text-amber-600">Vào Sổ Mục Tiêu Khối {gradeNum}</span>
               <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all">
                 <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
               </div>
@@ -226,7 +229,7 @@ export default function StudentPortalHomePage() {
               <h4 className="text-xs font-black text-slate-900 group-hover:text-rose-600 transition-colors">
                 Em Cần Hỗ Trợ (SOS)
               </h4>
-              <p className="text-[10px] text-slate-500 font-medium">Gửi yêu cầu giúp đỡ tới Thầy Cô GVCN Lớp {className}</p>
+              <p className="text-[10px] text-slate-500 font-medium">Gửi yêu cầu giúp đỡ tới GVCN Lớp {className}</p>
             </div>
           </Link>
 
