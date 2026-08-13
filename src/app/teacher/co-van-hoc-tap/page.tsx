@@ -154,7 +154,7 @@ export default function TeacherAdvisoryPage() {
         { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀" }
       ]
 
-      const goalRes = await fetch("/api/advisory/goals?studentId=" + st.id + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" })
+      const goalRes = await fetch("/api/advisory/goals?studentId=" + st.id + "&studentCode=" + (st.studentCode || "") + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" })
       const goalData = goalRes.ok ? await goalRes.json() : null
 
       setActiveStudentCommitment(goalData?.existingSheet?.studentCommitment || "")
@@ -630,8 +630,8 @@ export default function TeacherAdvisoryPage() {
                       )}
                       <td className="p-3.5 border-r border-slate-200">
                         <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 block text-left">
-                          {item.category}
-                        </span>
+    {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
+  </span>
                       </td>
                       <td className="p-3.5 border-r border-slate-200 text-slate-800 space-y-2">
   {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (

@@ -110,29 +110,32 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const targetStudentId = searchParams.get("studentId") || studentSess?.studentId
+    const targetStudentCode = searchParams.get("studentCode")
     let academicYearId = searchParams.get("academicYearId") || ""
     const gradeLevel = searchParams.get("gradeLevel") || "K8"
 
-    if (!targetStudentId) {
-      return jsonResponse({ error: "Thiếu studentId" }, 400)
-    }
-
-    if (!academicYearId) {
-      const defaultAY = await getDefaultAcademicYear(prisma)
-      academicYearId = defaultAY?.id || ""
+    if (!targetStudentId && !targetStudentCode) {
+      return jsonResponse({ error: "Thiếu studentId hoặc studentCode" }, 400)
     }
 
     await ensureTablesExist()
 
-    let targetStudentIds = [targetStudentId]
+    let targetStudentIds: string[] = []
+    if (targetStudentId) targetStudentIds.push(targetStudentId)
+
     try {
-      const stObj = await prisma.student.findUnique({
-        where: { id: targetStudentId },
-        select: { studentCode: true }
-      })
-      if (stObj && stObj.studentCode) {
+      let codeToLookup = targetStudentCode
+      if (!codeToLookup && targetStudentId) {
+        const stObj = await prisma.student.findUnique({
+          where: { id: targetStudentId },
+          select: { studentCode: true }
+        })
+        codeToLookup = stObj?.studentCode
+      }
+
+      if (codeToLookup) {
         const sameCodeStudents = await prisma.student.findMany({
-          where: { studentCode: stObj.studentCode },
+          where: { studentCode: codeToLookup },
           select: { id: true }
         })
         if (sameCodeStudents.length > 0) {
@@ -153,8 +156,7 @@ export async function GET(req: Request) {
 
     const trackingLogs = await prisma.studentGoalTrackingLog.findMany({
       where: { 
-        studentId: { in: targetStudentIds },
-        ...(academicYearId ? { academicYearId } : {})
+        studentId: { in: targetStudentIds }
       },
       orderBy: { createdAt: "desc" }
     }).catch(() => [])
