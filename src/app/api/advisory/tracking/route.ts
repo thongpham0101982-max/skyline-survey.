@@ -4,6 +4,12 @@ import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
+function jsonResponse(data: any, status = 200) {
+  const res = NextResponse.json(data, { status })
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  return res
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const studentId = searchParams.get("studentId")
@@ -11,7 +17,7 @@ export async function GET(req: Request) {
   const checkPoint = searchParams.get("checkPoint")
 
   if (!studentId) {
-    return NextResponse.json({ error: "Missing studentId" }, { status: 400 })
+    return jsonResponse({ error: "Missing studentId" }, 400)
   }
 
   try {
@@ -24,23 +30,23 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" }
     })
 
-    return NextResponse.json(logs)
+    return jsonResponse(logs)
   } catch (error: any) {
     console.error("GET /api/advisory/tracking error:", error)
-    return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })
+    return jsonResponse({ error: error.message || "Server error" }, 500)
   }
 }
 
 export async function POST(req: Request) {
   const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (!session) return jsonResponse({ error: "Unauthorized" }, 401)
 
   try {
     const body = await req.json()
     const { studentId, academicYearId, items, checkPoint } = body
 
     if (!studentId || !Array.isArray(items)) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+      return jsonResponse({ error: "Invalid payload" }, 400)
     }
 
     const createdRecords = []
@@ -62,9 +68,9 @@ export async function POST(req: Request) {
       createdRecords.push(record)
     }
 
-    return NextResponse.json({ success: true, count: createdRecords.length })
+    return jsonResponse({ success: true, count: createdRecords.length })
   } catch (error: any) {
     console.error("POST /api/advisory/tracking error:", error)
-    return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })
+    return jsonResponse({ error: error.message || "Server error" }, 500)
   }
 }
