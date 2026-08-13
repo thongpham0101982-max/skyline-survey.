@@ -62,7 +62,7 @@ export function LoginClient() {
         addStep('Đăng nhập thành công! Đang chuyển trang...')
         await new Promise(r => setTimeout(r, 500))
         document.cookie = 'hs_token=' + data.token + '; path=/; max-age=' + (rememberMe ? 30 * 24 * 60 * 60 : 2 * 24 * 60 * 60) + '; SameSite=Lax'
-        window.location.href = '/hocsinh/hs-khaosat/danh-sach'
+        window.location.href = '/hocsinh/portal'
       } else {
         setLoadingSteps([{ text: 'Đang xác thực tài khoản...', done: false }])
         await new Promise(r => setTimeout(r, 300))

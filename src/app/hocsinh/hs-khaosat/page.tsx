@@ -21,7 +21,7 @@ export default function HsLoginPage() {
     })
     const d = await res.json()
     if (!res.ok) { setErr(d.error || 'Dang nhap that bai'); setLoading(false); return }
-    if (d.formId) window.location.assign('/hocsinh/hs-khaosat/lam/' + d.formId); else window.location.assign('/hocsinh/hs-khaosat/danh-sach');
+    if (d.formId) window.location.assign('/hocsinh/hs-khaosat/lam/' + d.formId); else window.location.assign('/hocsinh/portal');
   }
 
   return (
