@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import {
   Sparkles, Save, Heart, CheckCircle2, Compass, Send, BookOpen, User,
   Check, Info, CheckSquare, HelpCircle, Award, Feather, FileText, ArrowRight,
-  ShieldCheck, Edit3, History, Clock, MessageSquare, AlertCircle, Users
+  ShieldCheck, Edit3, History, Clock, MessageSquare, AlertCircle, Users, Lock
 } from "lucide-react"
 import Link from "next/link"
 
@@ -23,7 +23,7 @@ export default function StudentGoalPortalPage() {
   const [submittedAt, setSubmittedAt] = useState<string | null>(null)
   const [trackingLogs, setTrackingLogs] = useState<any[]>([])
 
-  // Goal Form Data States - Strictly 4 Categories as per official Word/PDF template
+  // Goal Form Data States - Strictly 4 Categories
   const [selectedPresetGoals, setSelectedPresetGoals] = useState<Record<string, boolean>>({})
   const [customGoals, setCustomGoals] = useState<Record<string, any>>({
     HOC_TAP: { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" },
@@ -98,7 +98,6 @@ export default function StudentGoalPortalPage() {
           data.existingSheet.goals.forEach((g: any) => {
             if (g.presetId) presetMap[g.presetId] = true
             
-            // Map legacy category keys if any
             let catKey = g.category
             if (catKey === "THOI_QUEN_SUC_KHOE") catKey = "THOI_QUEN"
             if (catKey === "KY_NANG_SO_THICH" || catKey === "PHAM_CHAT") catKey = "KY_NANG_CAM_XUC"
@@ -124,6 +123,11 @@ export default function StudentGoalPortalPage() {
   }
 
   async function handleSaveGoals() {
+    if (submittedAt) {
+      alert("Phiếu mục tiêu đã được gửi cho GVCN nên không thể chỉnh sửa.")
+      return
+    }
+
     if (!studentId) {
       alert("Chưa xác định được thông tin học sinh. Vui lòng đăng nhập lại.")
       return
@@ -147,7 +151,7 @@ export default function StudentGoalPortalPage() {
         })
       }
 
-      // 2. Collect custom inputs for all 4 categories
+      // 2. Collect custom inputs for 4 categories
       Object.keys(customGoals).forEach(cat => {
         const item = customGoals[cat]
         if (item.targetText && item.targetText.trim()) {
@@ -193,6 +197,7 @@ export default function StudentGoalPortalPage() {
   }
 
   const isK1ToK3 = ["K1", "K2", "K3"].includes(gradeLevel)
+  const isSubmitted = !!submittedAt
 
   // 4 Target Categories matching official Word/PDF Form Template
   const secondaryCategories = [
@@ -242,7 +247,7 @@ export default function StudentGoalPortalPage() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
       
-      {/* Top Banner Header - SKY-LINE Official Theme */}
+      {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-sky-600 via-teal-600 to-[#003B3A] rounded-3xl p-6 text-white shadow-xl space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 pb-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-white/20 uppercase tracking-wider">
@@ -274,19 +279,39 @@ export default function StudentGoalPortalPage() {
 
         {/* Submission Status Badge */}
         <div className="flex items-center gap-2 pt-2 flex-wrap">
-          {submittedAt ? (
-            <span className="px-3.5 py-1 rounded-full bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-sm">
+          {isSubmitted ? (
+            <span className="px-3.5 py-1.5 rounded-full bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-sm border border-emerald-300">
               <CheckCircle2 className="w-4 h-4 text-emerald-950" />
               <span>ĐÃ LƯU & GỬI CHO GVCN VÀ QUẢN LÝ CỐ VẤN ({submittedAt})</span>
             </span>
           ) : (
-            <span className="px-3.5 py-1 rounded-full bg-amber-400 text-amber-950 font-black text-xs flex items-center gap-1.5 shadow-sm">
+            <span className="px-3.5 py-1.5 rounded-full bg-amber-400 text-amber-950 font-black text-xs flex items-center gap-1.5 shadow-sm">
               <Clock className="w-4 h-4" />
               <span>ĐANG DỰ THẢO — CHƯA GỬI</span>
             </span>
           )}
         </div>
       </div>
+
+      {/* Lock Notice Banner when Submitted */}
+      {isSubmitted && (
+        <div className="bg-amber-50 border-2 border-amber-300 rounded-3xl p-5 text-amber-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 shadow-sm">
+              <Lock className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm uppercase text-amber-950">PHIẾU MỤC TIÊU ĐÃ GỬI CHO GVCN — CHẾ ĐỘ CHỈ XEM</h3>
+              <p className="text-xs text-amber-800 font-medium">
+                Phiếu mục tiêu năm học đã được gửi chính thức ngày <strong className="text-amber-950 font-black">{submittedAt}</strong>. Học sinh chỉ có thể xem lại và theo dõi nhật ký đánh giá từ GVCN, không thể chỉnh sửa.
+              </p>
+            </div>
+          </div>
+          <span className="px-3.5 py-1.5 bg-amber-200 text-amber-950 rounded-2xl font-black text-xs shrink-0 border border-amber-300 shadow-xs">
+            🔒 ĐÃ KHÓA CHỈNH SỬA
+          </span>
+        </div>
+      )}
 
       {/* Toast Notification */}
       {toastMessage && (
@@ -309,9 +334,6 @@ export default function StudentGoalPortalPage() {
                 <p className="text-xs text-sky-700 font-medium">Em hãy nhấn vào ô vuông để tích chọn mục tiêu có sẵn, hoặc gõ thêm lời cam kết của em bên dưới nhé!</p>
               </div>
             </div>
-            <span className="px-3 py-1 bg-sky-200 text-sky-800 rounded-full font-black text-[10px] uppercase">
-              KHỐI {gradeLevel} MỞ NHẬP LIỆU
-            </span>
           </div>
 
           {/* Preset Checkbox Categories */}
@@ -335,11 +357,17 @@ export default function StudentGoalPortalPage() {
                       return (
                         <div
                           key={p.id}
-                          onClick={() => setSelectedPresetGoals(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
-                          className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
+                          onClick={() => {
+                            if (!isSubmitted) {
+                              setSelectedPresetGoals(prev => ({ ...prev, [p.id]: !prev[p.id] }))
+                            }
+                          }}
+                          className={`p-4 rounded-2xl border-2 transition-all flex items-start gap-3 ${
+                            isSubmitted ? "cursor-not-allowed opacity-90" : "cursor-pointer"
+                          } ${
                             isChecked
                               ? "bg-teal-50 border-teal-500 shadow-sm"
-                              : "bg-slate-50 border-slate-200 hover:border-slate-300"
+                              : "bg-slate-50 border-slate-200"
                           }`}
                         >
                           <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 ${
@@ -370,13 +398,16 @@ export default function StudentGoalPortalPage() {
                   </label>
                   <input
                     type="text"
+                    readOnly={isSubmitted}
                     value={customGoals[cat]?.targetText || ""}
-                    onChange={(e) => setCustomGoals(prev => ({
+                    onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
                       ...prev,
                       [cat]: { ...prev[cat], targetText: e.target.value }
                     }))}
                     placeholder="Gõ mục tiêu riêng của em tại đây..."
-                    className="w-full p-3 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none"
+                    className={`w-full p-3 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
+                      isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
+                    }`}
                   />
                 </div>
               </div>
@@ -432,13 +463,16 @@ export default function StudentGoalPortalPage() {
                     </label>
                     <textarea
                       rows={4}
+                      readOnly={isSubmitted}
                       value={item.targetText || ""}
-                      onChange={(e) => setCustomGoals(prev => ({
+                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
                         ...prev,
                         [catObj.key]: { ...prev[catObj.key], targetText: e.target.value }
                       }))}
                       placeholder={catObj.placeholderTarget}
-                      className="w-full p-3.5 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none transition-colors"
+                      className={`w-full p-3.5 rounded-2xl border-2 text-xs font-semibold focus:outline-none transition-colors ${
+                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
+                      }`}
                     />
                   </div>
 
@@ -450,13 +484,16 @@ export default function StudentGoalPortalPage() {
                     </label>
                     <textarea
                       rows={4}
+                      readOnly={isSubmitted}
                       value={item.actionText || ""}
-                      onChange={(e) => setCustomGoals(prev => ({
+                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
                         ...prev,
                         [catObj.key]: { ...prev[catObj.key], actionText: e.target.value }
                       }))}
                       placeholder={catObj.placeholderAction}
-                      className="w-full p-3.5 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none transition-colors"
+                      className={`w-full p-3.5 rounded-2xl border-2 text-xs font-semibold focus:outline-none transition-colors ${
+                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
+                      }`}
                     />
                   </div>
                 </div>
@@ -472,13 +509,16 @@ export default function StudentGoalPortalPage() {
                     </label>
                     <input
                       type="text"
+                      readOnly={isSubmitted}
                       value={item.teacherSupport || ""}
-                      onChange={(e) => setCustomGoals(prev => ({
+                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
                         ...prev,
                         [catObj.key]: { ...prev[catObj.key], teacherSupport: e.target.value }
                       }))}
                       placeholder="Thầy cô/bạn bè hỗ trợ em..."
-                      className="w-full p-3 rounded-2xl border-2 border-teal-100 text-xs font-semibold focus:border-teal-500 focus:outline-none bg-teal-50/40"
+                      className={`w-full p-3 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
+                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-teal-100 bg-teal-50/40 focus:border-teal-500"
+                      }`}
                     />
                   </div>
 
@@ -490,13 +530,16 @@ export default function StudentGoalPortalPage() {
                     </label>
                     <input
                       type="text"
+                      readOnly={isSubmitted}
                       value={item.parentSupport || ""}
-                      onChange={(e) => setCustomGoals(prev => ({
+                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
                         ...prev,
                         [catObj.key]: { ...prev[catObj.key], parentSupport: e.target.value }
                       }))}
                       placeholder="Ba mẹ hỗ trợ em..."
-                      className="w-full p-3 rounded-2xl border-2 border-amber-100 text-xs font-semibold focus:border-amber-500 focus:outline-none bg-amber-50/40"
+                      className={`w-full p-3 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
+                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-amber-100 bg-amber-50/40 focus:border-amber-500"
+                      }`}
                     />
                   </div>
                 </div>
@@ -507,7 +550,7 @@ export default function StudentGoalPortalPage() {
         </div>
       )}
 
-      {/* ------------------- LỜI CAM KẾT & XÁC NHẬN ĐỒNG HÀNH (CAM KẾT SẼ & 3 CHỮ KÝ) ------------------- */}
+      {/* ------------------- LỜI CAM KẾT & XÁC NHẬN ĐỒNG HÀNH ------------------- */}
       <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-md space-y-5">
         <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-teal-600" />
@@ -521,22 +564,26 @@ export default function StudentGoalPortalPage() {
           </label>
           <textarea
             rows={3}
+            readOnly={isSubmitted}
             value={studentCommitment}
-            onChange={(e) => setStudentCommitment(e.target.value)}
+            onChange={(e) => !isSubmitted && setStudentCommitment(e.target.value)}
             placeholder="Chủ động và nghiêm túc thực hiện những mục tiêu đã đề ra, duy trì kỷ luật, thói quen tự học..."
-            className="w-full p-4 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none"
+            className={`w-full p-4 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
+              isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
+            }`}
           />
         </div>
-
-        {/* Confirmation Button Block */}
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border-2 border-slate-200">
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setFingerprintStamped(!fingerprintStamped)}
+              disabled={isSubmitted}
+              onClick={() => !isSubmitted && setFingerprintStamped(!fingerprintStamped)}
               className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all shadow-md ${
-                fingerprintStamped
+                isSubmitted
+                  ? "bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
+                  : fingerprintStamped
                   ? "bg-rose-500 text-white shadow-rose-200 scale-105"
                   : "bg-white text-slate-400 border-2 border-dashed border-slate-300 hover:border-rose-400"
               }`}
@@ -547,17 +594,32 @@ export default function StudentGoalPortalPage() {
               <p className="text-xs font-black text-slate-800">
                 {fingerprintStamped ? "🔴 Đã đóng dấu vân tay xác nhận cam kết!" : "Chưa đóng dấu ấn vân tay"}
               </p>
-              <p className="text-[11px] text-slate-500 font-medium">Nhấn vào dấu tay để xác nhận cam kết cá nhân</p>
+              <p className="text-[11px] text-slate-500 font-medium">
+                {isSubmitted ? "Phiếu đã được đóng dấu cam kết và gửi về GVCN" : "Nhấn vào dấu tay để xác nhận cam kết cá nhân"}
+              </p>
             </div>
           </div>
 
           <button
             onClick={handleSaveGoals}
-            disabled={saving}
-            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#003B3A] hover:bg-[#002D2C] text-white font-black text-xs shadow-lg shadow-teal-950/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+            disabled={saving || isSubmitted}
+            className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 ${
+              isSubmitted
+                ? "bg-slate-400 text-slate-100 cursor-not-allowed shadow-none"
+                : "bg-[#003B3A] hover:bg-[#002D2C] text-white shadow-teal-950/20 hover:scale-105 active:scale-95"
+            }`}
           >
-            <Send className="w-4 h-4 text-teal-300" />
-            <span>{saving ? "Đang gửi..." : "LƯU & GỬI PHIẾU MỤC TIÊU CHO GVCN"}</span>
+            {isSubmitted ? (
+              <>
+                <Lock className="w-4 h-4 text-slate-200" />
+                <span>ĐÃ GỬI CHO GVCN (KHÔNG THỂ SỬA)</span>
+              </>
+            ) : (
+              <>
+                <Send className="w-4 h-4 text-teal-300" />
+                <span>{saving ? "Đang gửi..." : "LƯU & GỬI PHIẾU MỤC TIÊU CHO GVCN"}</span>
+              </>
+            )}
           </button>
         </div>
       </div>
