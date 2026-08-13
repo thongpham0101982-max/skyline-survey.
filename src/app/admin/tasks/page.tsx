@@ -4,7 +4,7 @@ import { TasksClient } from "./client"
 import { auth } from "@/lib/auth"
 import { checkAndNotifyOverdueTasks, checkAndNotifyUpcomingTasks } from "./actions"
 
-export const metadata = { title: "Dieu hanh Cong viec | Admin Portal" }
+export const metadata = { title: "Điều hành Công việc | Admin Portal" }
 export const dynamic = "force-dynamic"
 
 export default async function TasksPage() {
@@ -20,7 +20,6 @@ export default async function TasksPage() {
 
   let whereClause: any = {}
   if (role !== "ADMIN") {
-    // Find user's department and subject details
     const userTeacher = await prisma.teacher.findUnique({
       where: { userId },
       select: {
@@ -45,22 +44,21 @@ export default async function TasksPage() {
     }
   }
 
-  const [tasks, years, roles, initialDbCategories] = await Promise.all([
+  const [tasks, years, departments, initialDbCategories] = await Promise.all([
     prisma.workTask.findMany({
       where: whereClause,
       orderBy: { createdAt: "desc" },
       include: {
-        assignedBy: { select: { fullName: true } },
+        assignedBy: { select: { id: true, fullName: true, email: true } },
         assignedToUser: { select: { id: true, fullName: true, email: true } },
-        academicYear: { select: { name: true } }
+        academicYear: { select: { id: true, name: true } }
       }
     }),
     prisma.academicYear.findMany({
       orderBy: { startDate: "desc" },
-      select: { id: true, name: true }
+      select: { id: true, name: true, isOff: true }
     }),
     prisma.department.findMany({
-      where: { name: "KT&ĐBCL" },
       select: { code: true, name: true }
     }).then(depts => depts.length > 0 ? depts.map(d => ({ code: d.name, name: d.name })) : [{ code: "KT&ĐBCL", name: "KT&ĐBCL" }]),
     prisma.taskCategory.findMany({
@@ -90,15 +88,15 @@ export default async function TasksPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <Suspense fallback={<div className="p-8 text-center text-slate-500">Đang tải dữ liệu Điều hành Công việc...</div>}>
       <TasksClient
         initialTasks={JSON.parse(JSON.stringify(tasks))}
         years={years}
-        roles={roles}
+        roles={departments}
         dbCategories={JSON.parse(JSON.stringify(dbCategories))}
         currentRole={role}
         currentUserId={userId}
       />
-    </div>
+    </Suspense>
   )
 }
