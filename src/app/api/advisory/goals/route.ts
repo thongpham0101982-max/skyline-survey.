@@ -12,6 +12,80 @@ function jsonResponse(data: any, status = 200) {
   return res
 }
 
+async function ensureTablesExist() {
+  const ddlList = [
+    `CREATE TABLE IF NOT EXISTS "StudentGoal" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "studentId" TEXT NOT NULL,
+      "academicYearId" TEXT NOT NULL,
+      "gradeLevel" TEXT NOT NULL DEFAULT 'K8',
+      "semester" TEXT NOT NULL DEFAULT 'CA_NAM',
+      "category" TEXT NOT NULL DEFAULT 'HOC_TAP',
+      "targetText" TEXT NOT NULL,
+      "presetId" TEXT,
+      "teacherSupportRequest" TEXT,
+      "parentSupportRequest" TEXT,
+      "smartSpecific" TEXT,
+      "smartMeasurable" TEXT,
+      "smartAchievable" TEXT,
+      "smartRelevant" TEXT,
+      "smartTimeBound" TEXT,
+      "checkpointDate" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "achievementLevel" TEXT NOT NULL DEFAULT 'DANG_TIEN_TRIEN',
+      "status" TEXT NOT NULL DEFAULT 'DRAFT',
+      "studentCommitment" TEXT,
+      "parentMessage" TEXT,
+      "teacherComment" TEXT,
+      "signedByStudent" BOOLEAN NOT NULL DEFAULT false,
+      "signedByParent" BOOLEAN NOT NULL DEFAULT false,
+      "signedByTeacher" BOOLEAN NOT NULL DEFAULT false,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "StudentGoalAction" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "goalId" TEXT NOT NULL,
+      "actionText" TEXT NOT NULL,
+      "status" TEXT NOT NULL DEFAULT 'PENDING',
+      "targetDate" DATETIME,
+      "completedAt" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "StudentGoalTrackingLog" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "studentId" TEXT NOT NULL,
+      "academicYearId" TEXT NOT NULL,
+      "goalId" TEXT,
+      "category" TEXT NOT NULL DEFAULT 'HOC_TAP',
+      "targetText" TEXT NOT NULL,
+      "checkPoint" TEXT NOT NULL DEFAULT 'DAU_NAM',
+      "progressStatus" TEXT NOT NULL DEFAULT 'TIEN_TRIEN',
+      "teacherNotes" TEXT,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`,
+    `CREATE TABLE IF NOT EXISTS "GoalPreset" (
+      "id" TEXT NOT NULL PRIMARY KEY,
+      "gradeGroup" TEXT NOT NULL,
+      "category" TEXT NOT NULL,
+      "goalText" TEXT NOT NULL,
+      "actionPreset" TEXT,
+      "status" TEXT NOT NULL DEFAULT 'ACTIVE',
+      "sortOrder" INTEGER NOT NULL DEFAULT 0,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );`
+  ]
+  for (const ddl of ddlList) {
+    try {
+      await prisma.$executeRawUnsafe(ddl)
+    } catch (e) {
+      console.error("DDL init error:", e)
+    }
+  }
+}
+
 export async function GET(req: Request) {
   try {
     const session = await auth()
@@ -33,6 +107,8 @@ export async function GET(req: Request) {
       const defaultAY = await getDefaultAcademicYear(prisma)
       academicYearId = defaultAY?.id || ""
     }
+
+    await ensureTablesExist()
 
     const goals = await prisma.studentGoal.findMany({
       where: { 
@@ -62,7 +138,7 @@ export async function GET(req: Request) {
           OR: [{ gradeGroup }, { status: "ACTIVE" }]
         },
         orderBy: { sortOrder: "asc" }
-      })
+      }).catch(() => [])
     }
 
     const existingSheet = goals.length > 0 ? {
@@ -114,12 +190,14 @@ export async function POST(req: Request) {
       yearId = defaultAY?.id || ""
     }
 
+    await ensureTablesExist()
+
     await prisma.studentGoal.deleteMany({
       where: { 
         studentId: targetStudentId,
         ...(yearId ? { academicYearId: yearId } : {})
       }
-    })
+    }).catch(() => {})
 
     const createdGoals = []
     for (const item of goals) {
