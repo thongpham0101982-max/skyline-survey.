@@ -754,7 +754,7 @@ export default function TeacherAdvisoryPage() {
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3.5 border-r border-slate-200 w-1/5">Học sinh</th>
+                    
                     <th className="p-3.5 border-r border-slate-200 w-52">Nhóm mục tiêu</th>
                     <th className="p-3.5 border-r border-slate-200">Mục tiêu cụ thể</th>
                     <th className="p-3.5 border-r border-slate-200 w-28">Mốc kiểm tra</th>
@@ -765,27 +765,14 @@ export default function TeacherAdvisoryPage() {
                 <tbody className="divide-y divide-slate-200 font-semibold">
                   {singleStudentTrackingRows.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
+                      <td colSpan={5} className="p-8 text-center text-slate-400 font-bold">
                         Đang tải mục tiêu của học sinh...
                       </td>
                     </tr>
                   ) : (
                     singleStudentTrackingRows.map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                        {idx === 0 && (
-                          <td
-                            rowSpan={singleStudentTrackingRows.length}
-                            className="p-4 border-r border-slate-200 font-black text-slate-900 bg-slate-50/80 align-top"
-                          >
-                            <div className="sticky top-4 space-y-1">
-                              <span className="text-sm block">{activeStudent?.studentName}</span>
-                              <span className="text-xs text-teal-700 font-bold block">({activeStudent?.studentCode})</span>
-                              <span className="inline-block mt-2 px-2.5 py-1 rounded-full bg-teal-100 text-teal-800 text-[10px] font-black">
-                                Lớp {selectedClass?.className}
-                              </span>
-                            </div>
-                          </td>
-                        )}
+                        
                         <td className="p-3.5 border-r border-slate-200 align-top bg-slate-50/40">
                           <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 block text-left">
                             {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
