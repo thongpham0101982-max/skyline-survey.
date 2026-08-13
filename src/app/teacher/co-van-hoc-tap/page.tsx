@@ -114,7 +114,7 @@ export default function TeacherAdvisoryPage() {
     loadSingleStudentData()
   }, [selectedStudentId, evalTerm, academicYearId])
 
-    async function loadAllClassTracking() {
+  async function loadAllClassTracking() {
     try {
       const allRows: any[] = []
 
@@ -203,7 +203,6 @@ export default function TeacherAdvisoryPage() {
     } catch (e) {
       console.error(e)
     }
-  }
   }
 
   async function loadSingleStudentData() {
@@ -408,7 +407,7 @@ export default function TeacherAdvisoryPage() {
                 <span>Bảng Theo Dõi Tiến Độ Mục Tiêu Của Học Sinh — Lớp {selectedClass?.className}</span>
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
-                Tự động hiển thị toàn bộ {students.length} học sinh trong lớp cùng dữ liệu mục tiêu cá nhân đã điền.
+                Tự động hiển thị đầy đủ 4 nhóm mục tiêu cho toàn bộ {students.length} học sinh trong lớp.
               </p>
             </div>
 
@@ -444,7 +443,7 @@ export default function TeacherAdvisoryPage() {
               <thead>
                 <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
                   <th className="p-3 border-r border-slate-200 w-1/6">Học sinh</th>
-                  <th className="p-3 border-r border-slate-200 w-44">Nhóm mục tiêu</th>
+                  <th className="p-3 border-r border-slate-200 w-48">Nhóm mục tiêu</th>
                   <th className="p-3 border-r border-slate-200">Mục tiêu cụ thể (Dữ liệu Học sinh nhập)</th>
                   <th className="p-3 border-r border-slate-200 w-28">Mốc kiểm tra</th>
                   <th className="p-3 border-r border-slate-200 w-44">Mức độ đạt</th>
@@ -466,7 +465,7 @@ export default function TeacherAdvisoryPage() {
                         {item.studentCode && <span className="block text-[10px] text-slate-500 font-medium">({item.studentCode})</span>}
                       </td>
                       <td className="p-3 border-r border-slate-200">
-                        <span className="px-2 py-1 rounded text-[10px] font-black bg-teal-100 text-teal-800 block text-center">
+                        <span className="px-2 py-1 rounded text-[10px] font-black bg-teal-100 text-teal-800 block text-left">
                           {item.category}
                         </span>
                       </td>
