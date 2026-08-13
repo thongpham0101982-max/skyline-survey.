@@ -37,28 +37,40 @@ export default function StudentGoalPortalPage() {
   const [showSmartGuideModal, setShowSmartGuideModal] = useState(false)
   const [smartChecklist, setSmartChecklist] = useState<Record<number, boolean>>({})
 
-    useEffect(() => {
+      useEffect(() => {
+    // ALWAYS fetch authenticated student session from /api/hocsinh/me
+    fetch("/api/hocsinh/me")
+      .then(r => {
+        if (!r.ok) {
+          window.location.href = "/login"
+          return null
+        }
+        return r.json()
+      })
+      .then(data => {
+        if (data && data.studentCode) {
+          setStudentId(data.id || data.studentId)
+          setStudentName(data.studentName)
+          
+          let parsedGrade = "K5"
+          if (data.grade) {
+            const gNum = String(data.grade).replace(/[^0-9]/g, "")
+            if (gNum) parsedGrade = "K" + gNum
+          } else if (data.className) {
+            const match = data.className.toUpperCase().match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
+            if (match && match[1]) parsedGrade = "K" + match[1]
+          }
+
+          setStudentGrade(parsedGrade)
+          setGradeLevel(parsedGrade)
+          localStorage.setItem("currentStudent", JSON.stringify(data))
+        }
+      })
+      .catch(console.error)
+
     if (typeof window !== "undefined") {
       const storedYear = localStorage.getItem("selectedAcademicYear") || ""
       setAcademicYearId(storedYear)
-
-      const storedStudent = localStorage.getItem("currentStudent")
-      if (storedStudent) {
-        try {
-          const parsed = JSON.parse(storedStudent)
-          setStudentId(parsed.id || "")
-          setStudentName(parsed.studentName || "Học sinh Sky-Line")
-          const cName = parsed.class?.className || parsed.className || ""
-          if (cName) {
-            const match = cName.toUpperCase().match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
-            if (match && match[1]) {
-              const gVal = "K" + match[1]
-              setStudentGrade(gVal)
-              setGradeLevel(gVal)
-            }
-          }
-        } catch (e) {}
-      }
     }
   }, [])
 
@@ -211,18 +223,9 @@ export default function StudentGoalPortalPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-teal-100 hidden sm:inline">Khối của em: {studentGrade}</span>
-            <select
-              value={gradeLevel}
-              onChange={(e) => setGradeLevel(e.target.value)}
-              className="px-3 py-1 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
-            >
-              {["K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8", "K9", "K10", "K11", "K12"].map(g => (
-                <option key={g} value={g} className="text-slate-800">
-                  {g === studentGrade ? `Khối ${g} (Lớp của Em)` : `Xem Phiếu Khối ${g}`}
-                </option>
-              ))}
-            </select>
+            <span className="px-3.5 py-1.5 rounded-xl bg-white/20 text-white font-black text-xs flex items-center gap-1.5 border border-white/30 shadow-xs">
+              🎓 Khối của em: Khối {gradeLevel.replace("K", "")} ({studentName})
+            </span>
 
             <Link
               href="/hocsinh/portal/ho-tro"
