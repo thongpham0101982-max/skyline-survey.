@@ -628,41 +628,49 @@ export default function TeacherAdvisoryPage() {
                           </div>
                         </td>
                       )}
-                      <td className="p-3.5 border-r border-slate-200">
+                      <td className="p-3.5 border-r border-slate-200 align-top bg-slate-50/40">
                         <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 block text-left">
     {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
   </span>
                       </td>
-                      <td className="p-3.5 border-r border-slate-200 text-slate-800 space-y-2">
+                      <td className="p-3.5 border-r border-slate-200 text-slate-800 align-top">
   {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
-    <div className="space-y-2 text-xs">
-      <div className="bg-teal-50/80 p-3 rounded-2xl border border-teal-200/60 space-y-1">
-        <span className="text-[11px] font-black text-teal-800 uppercase flex items-center gap-1.5">
-          📌 Các mục tiêu cụ thể:
-        </span>
-        <p className="font-bold text-slate-900 leading-relaxed text-xs">{item.targetText}</p>
+    <div className="space-y-2.5 text-xs">
+      {/* 📌 Mục tiêu cụ thể & ⚡ Hành động */}
+      <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+        <div>
+          <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-0.5">
+            📌 Các mục tiêu cụ thể của em:
+          </span>
+          <p className="font-bold text-slate-900 leading-relaxed text-xs">{item.targetText}</p>
+        </div>
+
+        {item.actionText && (
+          <div className="pt-2 border-t border-slate-200/80">
+            <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block mb-0.5">
+              ⚡ Em sẽ làm gì để đạt mục tiêu này:
+            </span>
+            <p className="font-semibold text-slate-800 leading-relaxed text-xs">{item.actionText}</p>
+          </div>
+        )}
       </div>
 
-      {item.actionText && (
-        <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200/60 space-y-1">
-          <span className="text-[11px] font-black text-amber-800 uppercase flex items-center gap-1.5">
-            ⚡ Em sẽ làm gì để đạt mục tiêu này:
-          </span>
-          <p className="font-semibold text-slate-800 leading-relaxed text-xs">{item.actionText}</p>
-        </div>
-      )}
+      {/* 💬 Mong muốn hỗ trợ (Trình bày 2 cột gọn gàng) */}
+      {(item.teacherSupportRequest || item.parentSupportRequest) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+          {item.teacherSupportRequest && (
+            <div className="p-2.5 rounded-xl bg-sky-50/80 border border-sky-200/70 space-y-0.5">
+              <span className="font-black text-sky-900 block">💬 Thầy/Cô & Bạn bè hỗ trợ:</span>
+              <p className="font-medium text-slate-800 leading-snug">{item.teacherSupportRequest}</p>
+            </div>
+          )}
 
-      {item.teacherSupportRequest && (
-        <div className="bg-sky-50/80 p-2.5 rounded-xl border border-sky-200/60 text-xs">
-          <span className="font-black text-sky-900">💬 Mong muốn Thầy/Cô & Bạn bè hỗ trợ: </span>
-          <span className="font-semibold text-slate-800">{item.teacherSupportRequest}</span>
-        </div>
-      )}
-
-      {item.parentSupportRequest && (
-        <div className="bg-rose-50/80 p-2.5 rounded-xl border border-rose-200/60 text-xs">
-          <span className="font-black text-rose-900">🏡 Mong muốn Ba/Mẹ hỗ trợ: </span>
-          <span className="font-semibold text-slate-800">{item.parentSupportRequest}</span>
+          {item.parentSupportRequest && (
+            <div className="p-2.5 rounded-xl bg-rose-50/80 border border-rose-200/70 space-y-0.5">
+              <span className="font-black text-rose-900 block">🏡 Ba/Mẹ hỗ trợ:</span>
+              <p className="font-medium text-slate-800 leading-snug">{item.parentSupportRequest}</p>
+            </div>
+          )}
         </div>
       )}
     </div>
