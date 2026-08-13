@@ -1,4 +1,7 @@
-﻿import { useState, useEffect } from "react"
+"use client";
+
+
+import { useState, useEffect } from "react"
 import { X, ShieldAlert, KeyRound, CheckCircle2, Bell } from "lucide-react"
 import { ChangePasswordModal } from "./ChangePasswordModal"
 

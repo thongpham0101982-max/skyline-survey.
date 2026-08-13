@@ -286,3 +286,51 @@ export async function POST(req: Request) {
     return jsonResponse({ error: error.message || "Server error" }, 500)
   }
 }
+
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await auth()
+    if (!session) {
+      return jsonResponse({ error: "Chưa đăng nhập" }, 401)
+    }
+
+    const body = await req.json()
+    const { studentId, parentMessage, signedByParent } = body
+
+    if (!studentId) {
+      return jsonResponse({ error: "Thiếu studentId" }, 400)
+    }
+
+    const stObj = await prisma.student.findUnique({
+      where: { id: studentId },
+      select: { studentCode: true }
+    })
+
+    let targetStudentIds = [studentId]
+    if (stObj?.studentCode) {
+      const sameCodeStudents = await prisma.student.findMany({
+        where: { studentCode: stObj.studentCode },
+        select: { id: true }
+      })
+      if (sameCodeStudents.length > 0) {
+        targetStudentIds = sameCodeStudents.map(s => s.id)
+      }
+    }
+
+    await prisma.studentGoal.updateMany({
+      where: {
+        studentId: { in: targetStudentIds }
+      },
+      data: {
+        parentMessage: parentMessage || "",
+        signedByParent: Boolean(signedByParent)
+      }
+    })
+
+    return jsonResponse({ success: true, message: "Cập nhật lời dặn và ký cam kết đồng hành Phụ huynh thành công!" })
+  } catch (error: any) {
+    console.error("PATCH /api/advisory/goals error:", error)
+    return jsonResponse({ error: error.message || "Server error" }, 500)
+  }
+}

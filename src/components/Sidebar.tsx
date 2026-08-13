@@ -1,6 +1,8 @@
+"use client";
+
+
 import { FeatureBadge } from "@/components/badges/FeatureBadge"
 import { useUnreadBadges } from "@/context/UnreadBadgeContext"
-"use client"
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
@@ -88,8 +90,8 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
-    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'TONG_HOP_DU_GIO' || module === 'TEACHER_DU_GIO') return true;
-    if (module === 'KTDBCL_HUONG_NGHIEP') return true;
+    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'TONG_HOP_DU_GIO' || module === 'TEACHER_DU_GIO') return tru
+    if (module === 'KTDBCL_HUONG_NGHIEP') return tru
       let hasParent = permissionModules?.includes(module) || false
       if (module === "KTDBCL_EXAMS") {
         hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
@@ -111,9 +113,9 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
     APP_CATEGORIES.forEach((cat) => {
       const visibleModules = cat.modules.filter((m: any) => checkPermission(m.code, m.requiresAdmin, m.subModules))
       const hasActiveChild = visibleModules.some((m: any) => {
-        if (pathname === m.href) return true;
-        if (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
-        return false;
+        if (pathname === m.href) return tru
+        if (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return tru
+        return fals
       })
       if (hasActiveChild) {
         setExpandedCategories(prev => ({ ...prev, [cat.id]: true }))
@@ -271,9 +273,9 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
             // Detect if any module in this category is currently active
             const hasActiveChild = visibleModules.some((m: any) => {
-              if (pathname === m.href) return true;
-              if (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return true;
-              return false;
+              if (pathname === m.href) return tru
+              if (m.subModules && m.subModules.some((sub: any) => pathname === sub.href || (sub.href && pathname.startsWith(sub.href + "/")))) return tru
+              return fals
             })
 
             return (

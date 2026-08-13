@@ -2,7 +2,7 @@ import { getDefaultAcademicYear } from "@/lib/academicYear"
 ﻿import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getParentChildren } from "@/services/dashboard"
-import { LayoutGrid, Users, Settings2, ArrowRight, ClipboardList, Info, LogOut, GraduationCap, CalendarDays } from "lucide-react"
+import { LayoutGrid, Users, BookOpen, Settings2, ArrowRight, ClipboardList, Info, LogOut, GraduationCap, CalendarDays } from "lucide-react"
 import Link from "next/link"
 
 export default async function ParentDashboard() {

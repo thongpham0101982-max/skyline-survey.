@@ -1,6 +1,10 @@
+"use client";
+
+
+
+
 import { FeatureBadge } from "@/components/badges/FeatureBadge"
 import { useUnreadBadges } from "@/context/UnreadBadgeContext"
-"use client"
 
 import { useEffect, useState } from "react"
 import { useSession } from "next-auth/react"
