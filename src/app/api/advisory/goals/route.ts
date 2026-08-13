@@ -124,9 +124,28 @@ export async function GET(req: Request) {
 
     await ensureTablesExist()
 
+    let targetStudentIds = [targetStudentId]
+    try {
+      const stObj = await prisma.student.findUnique({
+        where: { id: targetStudentId },
+        select: { studentCode: true }
+      })
+      if (stObj && stObj.studentCode) {
+        const sameCodeStudents = await prisma.student.findMany({
+          where: { studentCode: stObj.studentCode },
+          select: { id: true }
+        })
+        if (sameCodeStudents.length > 0) {
+          targetStudentIds = sameCodeStudents.map(s => s.id)
+        }
+      }
+    } catch (e) {
+      console.error("Lookup student ids error:", e)
+    }
+
     const goals = await prisma.studentGoal.findMany({
       where: { 
-        studentId: targetStudentId,
+        studentId: { in: targetStudentIds },
         ...(academicYearId ? { academicYearId } : {})
       },
       include: { actions: true },
@@ -135,7 +154,7 @@ export async function GET(req: Request) {
 
     const trackingLogs = await prisma.studentGoalTrackingLog.findMany({
       where: { 
-        studentId: targetStudentId,
+        studentId: { in: targetStudentIds },
         ...(academicYearId ? { academicYearId } : {})
       },
       orderBy: { createdAt: "desc" }
