@@ -81,7 +81,6 @@ export default function TeacherDashboard() {
 
   const activeAcademicYear = finalMetrics.academicYearName || "2026-2027"
 
-            Theo dòi toàn bộ KPI lớp học, tiến độ đánh giá khảo sÁt năng lực và danh mục bồi dường học sinh.
   const statCards = [
     {
       label: "LỚP PHỤ TRÁCH",
@@ -293,12 +292,11 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="mt-5 pt-3 border-t border-white/15 flex items-center justify-between text-[11px] text-teal-200/80 font-bold uppercase tracking-widest">
-          <span>Sky-Line International Education Standard</span>
+          <span>Sky-Line Education System</span>
           <span className="hidden sm:inline">SQMS Real-time Analytics</span>
         </div>
       </div>
 
-            Theo dòi toàn bộ KPI lớp học, tiến độ đánh giá khảo sÁt năng lực và danh mục bồi dường học sinh.
       <div className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
