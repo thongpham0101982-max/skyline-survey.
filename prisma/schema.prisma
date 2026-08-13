@@ -150,6 +150,8 @@ model AcademicYear {
   reflections                    StudentReflection[]
   helpRequests                   StudentHelpRequest[]
   advisoryStatuses               StudentAdvisoryStatus[]
+  goalTrackings                  StudentGoalTrackingLog[]
+  termEvaluations                StudentTermEvaluation[]
 }
 
 model Class {
@@ -226,6 +228,8 @@ model Student {
   reflections            StudentReflection[]
   helpRequests           StudentHelpRequest[]
   advisoryStatuses       StudentAdvisoryStatus[]
+  goalTrackings          StudentGoalTrackingLog[]
+  termEvaluations        StudentTermEvaluation[]
 
   @@unique([studentCode, academicYearId])
   @@index([classId])
@@ -1903,4 +1907,52 @@ model GoalPreset {
   updatedAt    DateTime @updatedAt
 
   @@index([gradeGroup, category])
+}
+
+
+model StudentGoalTrackingLog {
+  id             String   @id @default(cuid())
+  studentId      String
+  academicYearId String
+  goalId         String?
+  
+  category       String   // Nhom muc tieu (Hoc tap, Thoi quen, Ky nang, Pham chat, Dinh huong)
+  targetText     String   // Muc tieu cu the can cu vao du lieu nhap cua Hoc sinh
+  checkPoint     String   @default("GIUA_KY_1") // "GIUA_KY_1", "CUOI_KY_1", "GIUA_KY_2", "CUOI_KY_2"
+  progressStatus String   @default("TIEN_TRIEN") // "TIEN_TRIEN" (Dang tien trien), "DAT" (Dat), "CHUA_DAT" (Chua Dat)
+  teacherNotes   String?  // Ghi chu danh gia cua GVCN / CVHT
+  
+  evaluatedById  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([academicYearId])
+  @@index([checkPoint])
+}
+
+model StudentTermEvaluation {
+  id                    String   @id @default(cuid())
+  studentId             String
+  academicYearId        String
+  term                  String   @default("HK1") // "HK1" (Hoc ky I), "HK2" (Hoc ky II)
+  
+  goalCompletionLevel   Int      @default(3) // Muc hoan thanh muc tieu (1-5)
+  initiativeLevel       Int      @default(3) // Muc do chu dong (1-5)
+  participationAttitude Int      @default(3) // Thai do tham gia (1-5)
+  recommendations       String?  // Khuyen nghi cho phu huynh / giao vien bo mon
+  
+  evaluatedById         String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, academicYearId, term])
+  @@index([studentId])
+  @@index([academicYearId])
 }
