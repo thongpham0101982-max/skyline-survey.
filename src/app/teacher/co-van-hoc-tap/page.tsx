@@ -22,11 +22,10 @@ export default function TeacherAdvisoryPage() {
   // Data States
   const [consultations, setConsultations] = useState<any[]>([])
   const [helpRequests, setHelpRequests] = useState<any[]>([])
-  const [warningStatusMap, setWarningStatusMap] = useState<Record<string, string>>({})
   
-  // 1. Goal Progress Tracking States
+  // 1. Class-wide Goal Progress Tracking State (ALL STUDENTS IN CLASS)
   const [checkPoint, setCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
-  const [trackingList, setTrackingList] = useState<any[]>([])
+  const [classTrackingRows, setClassTrackingRows] = useState<any[]>([])
 
   // 2. Term Evaluation Rubric States
   const [evalTerm, setEvalTerm] = useState<"HK1" | "HK2">("HK1")
@@ -80,9 +79,12 @@ export default function TeacherAdvisoryPage() {
       .finally(() => setLoading(false))
   }, [])
 
+  // Auto-fetch students when class changes
   useEffect(() => {
     if (!selectedClassId) return
-    fetch(`/api/students/search?classId=${selectedClassId}${academicYearId ? `&academicYearId=${academicYearId}` : ''}`)
+    const url = `/api/students/search?classId=${selectedClassId}${academicYearId ? `&academicYearId=${academicYearId}` : ''}`
+    
+    fetch(url)
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -98,46 +100,83 @@ export default function TeacherAdvisoryPage() {
         if (Array.isArray(data)) setHelpRequests(data)
       })
       .catch(console.error)
-  }, [selectedClassId])
+  }, [selectedClassId, academicYearId])
 
+  // Load All Class Students Goal Tracking Data
+  useEffect(() => {
+    if (students.length === 0) return
+    loadAllClassTracking()
+  }, [students, checkPoint, academicYearId])
+
+  // Load Single Selected Student Data for Rubric / Consultations
   useEffect(() => {
     if (!selectedStudentId) return
-    loadStudentData()
-  }, [selectedStudentId, checkPoint, evalTerm, academicYearId])
+    loadSingleStudentData()
+  }, [selectedStudentId, evalTerm, academicYearId])
 
-  async function loadStudentData() {
+  async function loadAllClassTracking() {
     try {
-      // 1. Load Student Goals for Tracking
-      const goalRes = await fetch(`/api/advisory/goals?studentId=${selectedStudentId}&academicYearId=${academicYearId}`)
-      const goalData = goalRes.ok ? await goalRes.json() : null
+      const allRows: any[] = []
 
-      // Load existing tracking logs for current checkPoint
-      const trackRes = await fetch(`/api/advisory/tracking?studentId=${selectedStudentId}&academicYearId=${academicYearId}&checkPoint=${checkPoint}`)
-      const existingTrackLogs = trackRes.ok ? await trackRes.json() : []
+      for (const st of students) {
+        // Fetch goals entered by student
+        const goalRes = await fetch(`/api/advisory/goals?studentId=${st.id}&academicYearId=${academicYearId}`)
+        const goalData = goalRes.ok ? await goalRes.json() : null
 
-      if (goalData && goalData.goals && goalData.goals.length > 0) {
-        const list = goalData.goals.map((g: any) => {
-          const matched = existingTrackLogs.find((t: any) => t.targetText === g.targetText || t.goalId === g.id)
-          return {
-            goalId: g.id,
-            category: g.category || "HOC_TAP",
-            targetText: g.targetText,
-            progressStatus: matched?.progressStatus || "TIEN_TRIEN",
-            teacherNotes: matched?.teacherNotes || ""
-          }
-        })
-        setTrackingList(list)
-      } else if (existingTrackLogs.length > 0) {
-        setTrackingList(existingTrackLogs)
-      } else {
-        setTrackingList([
-          { category: "HOC_TAP", targetText: "Học tập & Môn học", progressStatus: "TIEN_TRIEN", teacherNotes: "" },
-          { category: "THOI_QUEN_SUC_KHOE", targetText: "Kỷ luật & Thói quen tự học", progressStatus: "TIEN_TRIEN", teacherNotes: "" },
-          { category: "KY_NANG_SO_THICH", targetText: "Kỹ năng giao tiếp & hợp tác", progressStatus: "TIEN_TRIEN", teacherNotes: "" }
-        ])
+        // Fetch existing tracking logs for current checkPoint
+        const trackRes = await fetch(`/api/advisory/tracking?studentId=${st.id}&academicYearId=${academicYearId}&checkPoint=${checkPoint}`)
+        const existingLogs = trackRes.ok ? await trackRes.json() : []
+
+        if (goalData && goalData.goals && goalData.goals.length > 0) {
+          goalData.goals.forEach((g: any) => {
+            const matched = existingLogs.find((t: any) => t.targetText === g.targetText || t.goalId === g.id)
+            allRows.push({
+              studentId: st.id,
+              studentName: st.studentName,
+              studentCode: st.studentCode,
+              goalId: g.id,
+              category: g.category || "HOC_TAP",
+              targetText: g.targetText,
+              progressStatus: matched?.progressStatus || "TIEN_TRIEN",
+              teacherNotes: matched?.teacherNotes || ""
+            })
+          })
+        } else if (existingLogs.length > 0) {
+          existingLogs.forEach((l: any) => {
+            allRows.push({
+              studentId: st.id,
+              studentName: st.studentName,
+              studentCode: st.studentCode,
+              goalId: l.goalId,
+              category: l.category || "HOC_TAP",
+              targetText: l.targetText,
+              progressStatus: l.progressStatus || "TIEN_TRIEN",
+              teacherNotes: l.teacherNotes || ""
+            })
+          })
+        } else {
+          // Default placeholder rows if student hasn't filled yet
+          allRows.push({
+            studentId: st.id,
+            studentName: st.studentName,
+            studentCode: st.studentCode,
+            category: "HOC_TAP",
+            targetText: "Học tập & Môn học",
+            progressStatus: "TIEN_TRIEN",
+            teacherNotes: ""
+          })
+        }
       }
 
-      // 2. Load Term Evaluation
+      setClassTrackingRows(allRows)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  async function loadSingleStudentData() {
+    try {
+      // Load Term Evaluation
       const evalRes = await fetch(`/api/advisory/term-evaluations?studentId=${selectedStudentId}&academicYearId=${academicYearId}`)
       if (evalRes.ok) {
         const evals = await evalRes.json()
@@ -152,35 +191,40 @@ export default function TeacherAdvisoryPage() {
         }
       }
 
-      // 3. Load Consultation logs
+      // Load Consultation logs
       const consRes = await fetch(`/api/advisory/consultations?studentId=${selectedStudentId}&academicYearId=${academicYearId}`)
       if (consRes.ok) setConsultations(await consRes.json())
-
     } catch (e) {
       console.error(e)
     }
   }
 
-  // Save Progress Tracking
-  async function handleSaveTracking() {
-    if (!selectedStudentId) return
+  // Save Progress Tracking For ALL Students in Class
+  async function handleSaveClassTracking() {
     try {
       setSaving(true)
-      const res = await fetch("/api/advisory/tracking", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          studentId: selectedStudentId,
-          academicYearId,
-          checkPoint,
-          items: trackingList
-        })
+      // Group payload by studentId
+      const grouped: Record<string, any[]> = {}
+      classTrackingRows.forEach(row => {
+        if (!grouped[row.studentId]) grouped[row.studentId] = []
+        grouped[row.studentId].push(row)
       })
 
-      if (res.ok) {
-        setToastMessage("Đã lưu bảng Theo dõi mục tiêu thành công!")
-        setTimeout(() => setToastMessage(""), 4000)
+      for (const stId of Object.keys(grouped)) {
+        await fetch("/api/advisory/tracking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            studentId: stId,
+            academicYearId,
+            checkPoint,
+            items: grouped[stId]
+          })
+        })
       }
+
+      setToastMessage("Đã lưu Bảng Theo dõi tiến độ cho TOÀN BỘ học sinh trong lớp thành công!")
+      setTimeout(() => setToastMessage(""), 4000)
     } catch (e) {
       console.error(e)
     } finally {
@@ -216,9 +260,10 @@ export default function TeacherAdvisoryPage() {
   }
 
   const activeStudent = students.find(s => s.id === selectedStudentId)
+  const selectedClass = classes.find(c => c.id === selectedClassId)
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
+    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
       
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-3xl p-6 text-white shadow-xl space-y-3">
@@ -230,10 +275,11 @@ export default function TeacherAdvisoryPage() {
 
           {/* Class & Student Filter Selectors */}
           <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-bold text-teal-100">Chọn Lớp:</span>
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
             >
               {classes.map(c => (
                 <option key={c.id} value={c.id} className="text-slate-800">Lớp: {c.className}</option>
@@ -243,7 +289,7 @@ export default function TeacherAdvisoryPage() {
             <select
               value={selectedStudentId}
               onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
+              className="px-3.5 py-1.5 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
             >
               {students.map(s => (
                 <option key={s.id} value={s.id} className="text-slate-800">HS: {s.studentName} ({s.studentCode})</option>
@@ -254,10 +300,10 @@ export default function TeacherAdvisoryPage() {
 
         <div>
           <h1 className="text-2xl sm:text-3xl font-black">
-            Cố Vấn Học Tập — {activeStudent?.studentName || "Chọn Học Sinh"}
+            Cố Vấn Học Tập — Lớp {selectedClass?.className || "Chủ Nhiệm"} ({students.length} Học Sinh)
           </h1>
           <p className="text-xs text-teal-100 font-medium mt-1">
-            Theo dõi mục tiêu định kỳ (Giữa kỳ / Cuối kỳ), nhật ký tham vấn và Đánh giá kỳ theo bộ Tiêu chí Rubric chuẩn.
+            Theo dõi tiến độ mục tiêu toàn bộ học sinh theo lớp, nhật ký tham vấn và Đánh giá kỳ theo Rubric.
           </p>
         </div>
 
@@ -272,7 +318,7 @@ export default function TeacherAdvisoryPage() {
             }`}
           >
             <TrendingUp className="w-4 h-4 text-teal-600" />
-            <span>1. Theo Dõi Mục Tiêu (Định Kỳ)</span>
+            <span>1. Theo Dõi Mục Tiêu Lớp ({students.length} HS)</span>
           </button>
 
           <button
@@ -296,7 +342,7 @@ export default function TeacherAdvisoryPage() {
             }`}
           >
             <MessageSquare className="w-4 h-4 text-blue-500" />
-            <span>3. Nhật Ký Tham Vấn ({consultations.length})</span>
+            <span>3. Nhật Ký Tham Vấn</span>
           </button>
 
           <button
@@ -320,17 +366,17 @@ export default function TeacherAdvisoryPage() {
         </div>
       )}
 
-      {/* ----------------- TAB 1: THEO DÕI MỤC TIÊU (ĐỊNH KỲ) ----------------- */}
+      {/* ----------------- TAB 1: THEO DÕI MỤC TIÊU TOÀN BỘ HỌC SINH THEO LỚP ----------------- */}
       {activeTab === "tracking" && (
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div>
               <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-teal-600" />
-                <span>Bảng Theo Dõi Tiến Độ Mục Tiêu Của Học Sinh</span>
+                <span>Bảng Theo Dõi Tiến Độ Mục Tiêu Của Học Sinh — Lớp {selectedClass?.className}</span>
               </h3>
               <p className="text-[11px] text-slate-500 font-medium">
-                Mục tiêu cụ thể căn cứ vào dữ liệu nhập của Học sinh ({activeStudent?.studentName})
+                Tự động hiển thị toàn bộ {students.length} học sinh trong lớp cùng dữ liệu mục tiêu cá nhân đã điền.
               </p>
             </div>
 
@@ -360,80 +406,91 @@ export default function TeacherAdvisoryPage() {
             </div>
           </div>
 
-          {/* Goal Progress Table */}
+          {/* Goal Progress Table — DISPLAY ALL STUDENTS IN CLASS */}
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
+            <table className="w-full text-xs text-left border-collapse border border-slate-200">
               <thead>
-                <tr className="bg-slate-100/80 text-slate-700 font-black border-b border-slate-200">
-                  <th className="p-3">Học sinh</th>
-                  <th className="p-3">Nhóm mục tiêu</th>
-                  <th className="p-3">Mục tiêu cụ thể (Dữ liệu Học sinh nhập)</th>
-                  <th className="p-3">Mốc kiểm tra</th>
-                  <th className="p-3">Mức độ đạt</th>
+                <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                  <th className="p-3 border-r border-slate-200 w-1/6">Học sinh</th>
+                  <th className="p-3 border-r border-slate-200 w-32">Nhóm mục tiêu</th>
+                  <th className="p-3 border-r border-slate-200">Mục tiêu cụ thể (Dữ liệu Học sinh nhập)</th>
+                  <th className="p-3 border-r border-slate-200 w-28">Mốc kiểm tra</th>
+                  <th className="p-3 border-r border-slate-200 w-44">Mức độ đạt</th>
                   <th className="p-3">Ghi chú của GVCN / CVHT</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 font-semibold">
-                {trackingList.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="p-3 font-bold text-slate-900">{activeStudent?.studentName || "N/A"}</td>
-                    <td className="p-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-black bg-teal-100 text-teal-800 uppercase">
-                        {item.category}
-                      </span>
-                    </td>
-                    <td className="p-3 text-slate-800 font-bold max-w-xs">{item.targetText}</td>
-                    <td className="p-3 font-bold text-slate-600">
-                      {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
-                    </td>
-                    <td className="p-3">
-                      <select
-                        value={item.progressStatus}
-                        onChange={(e) => {
-                          const updated = [...trackingList]
-                          updated[idx].progressStatus = e.target.value
-                          setTrackingList(updated)
-                        }}
-                        className={`px-2.5 py-1 rounded-xl font-black text-xs border focus:outline-none ${
-                          item.progressStatus === "DAT"
-                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                            : item.progressStatus === "CHUA_DAT"
-                            ? "bg-rose-100 text-rose-800 border-rose-300"
-                            : "bg-amber-100 text-amber-800 border-amber-300"
-                        }`}
-                      >
-                        <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
-                        <option value="DAT">🟢 Đạt</option>
-                        <option value="CHUA_DAT">🔴 Chưa Đạt</option>
-                      </select>
-                    </td>
-                    <td className="p-3">
-                      <input
-                        type="text"
-                        value={item.teacherNotes}
-                        onChange={(e) => {
-                          const updated = [...trackingList]
-                          updated[idx].teacherNotes = e.target.value
-                          setTrackingList(updated)
-                        }}
-                        placeholder="Nhập ghi chú theo dõi..."
-                        className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
-                      />
+                {classTrackingRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
+                      Đang tải danh sách mục tiêu của lớp...
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  classTrackingRows.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                      <td className="p-3 border-r border-slate-200 font-black text-slate-900 bg-slate-50/50">
+                        {item.studentName}
+                        {item.studentCode && <span className="block text-[10px] text-slate-500 font-medium">({item.studentCode})</span>}
+                      </td>
+                      <td className="p-3 border-r border-slate-200">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-teal-100 text-teal-800 uppercase">
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="p-3 border-r border-slate-200 text-slate-800 font-bold">{item.targetText}</td>
+                      <td className="p-3 border-r border-slate-200 font-bold text-slate-600">
+                        {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
+                      </td>
+                      <td className="p-3 border-r border-slate-200">
+                        <select
+                          value={item.progressStatus}
+                          onChange={(e) => {
+                            const updated = [...classTrackingRows]
+                            updated[idx].progressStatus = e.target.value
+                            setClassTrackingRows(updated)
+                          }}
+                          className={`w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer ${
+                            item.progressStatus === "DAT"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                              : item.progressStatus === "CHUA_DAT"
+                              ? "bg-rose-100 text-rose-800 border-rose-300"
+                              : "bg-amber-100 text-amber-800 border-amber-300"
+                          }`}
+                        >
+                          <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
+                          <option value="DAT">🟢 Đạt</option>
+                          <option value="CHUA_DAT">🔴 Chưa Đạt</option>
+                        </select>
+                      </td>
+                      <td className="p-3">
+                        <input
+                          type="text"
+                          value={item.teacherNotes}
+                          onChange={(e) => {
+                            const updated = [...classTrackingRows]
+                            updated[idx].teacherNotes = e.target.value
+                            setClassTrackingRows(updated)
+                          }}
+                          placeholder="Nhập ghi chú theo dõi..."
+                          className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:border-teal-500"
+                        />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
           <div className="flex justify-end pt-3">
             <button
-              onClick={handleSaveTracking}
+              onClick={handleSaveClassTracking}
               disabled={saving}
-              className="px-6 py-2.5 rounded-xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-md"
+              className="px-6 py-3 rounded-2xl bg-[#003B3A] text-white text-xs font-black flex items-center gap-2 hover:bg-[#004D4A] shadow-lg transition-all transform hover:-translate-y-0.5"
             >
               <Save className="w-4 h-4" />
-              <span>{saving ? "Đang lưu..." : "Lưu Bảng Theo Dõi Mục Tiêu"}</span>
+              <span>{saving ? "Đang lưu..." : `Lưu Bảng Theo Dõi Tiến Độ Lớp ${selectedClass?.className || ""}`}</span>
             </button>
           </div>
         </div>
@@ -550,7 +607,7 @@ export default function TeacherAdvisoryPage() {
             </div>
           </div>
 
-          {/* Bảng Tra Cứu Rubric Đánh Giá (Chuẩn 100% Theo Mẫu Excel Image 2) */}
+          {/* Bảng Tra Cứu Rubric Đánh Giá */}
           <div className="bg-amber-50/70 rounded-3xl p-6 border border-amber-200 space-y-4">
             <div>
               <h3 className="text-sm font-black text-amber-900 flex items-center gap-2">
