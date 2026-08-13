@@ -4,11 +4,12 @@ import { useState, useEffect, useMemo } from "react"
 import { 
   FileText, Plus, Trash2, Save, Send, Calendar, MessageSquare, 
   CheckCircle2, Clock, AlertTriangle, MinusCircle, User, BarChart3, 
-  Users, TrendingUp, ClipboardList, Table2, Bell, Download, Copy, Sparkles, Check
+  Users, TrendingUp, ClipboardList, Table2, Bell, Download, Copy, History, Edit3, Eye, Search, Filter, X
 } from "lucide-react"
 import { 
   getWeeklyReport, getAllWeeklyReports, saveWeeklyReport, addManagerComment, 
-  addManagerItemNote, getConsolidatedReports, getDashboardStats, sendWeeklyReportEmailReminders 
+  addManagerItemNote, getConsolidatedReports, getDashboardStats, sendWeeklyReportEmailReminders,
+  getUserReportHistory, deleteWeeklyReport
 } from "./actions"
 import * as XLSX from "xlsx"
 
@@ -44,7 +45,7 @@ interface ReportItem { id?: string; mainTask: string; workContent: string; progr
 
 export function WeeklyReportClient({ currentRole, currentUserId, currentUserName, years, staffUsers, roles }: any) {
   const now = new Date()
-  const [activeTab, setActiveTab] = useState<"personal"|"consolidated"|"dashboard">("dashboard")
+  const [activeTab, setActiveTab] = useState<"personal"|"consolidated"|"dashboard"|"history">("dashboard")
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [year, setYear] = useState(now.getFullYear())
   const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
@@ -63,10 +64,16 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
   const [itemNoteText, setItemNoteText] = useState("")
   const [toastMsg, setToastMsg] = useState<{msg: string, type: string} | null>(null)
 
-  // Consolidated
+  // History State
+  const [historyReports, setHistoryReports] = useState<any[]>([])
+  const [historySearch, setHistorySearch] = useState("")
+  const [viewingHistoryReport, setViewingHistoryReport] = useState<any|null>(null)
+
+  // Consolidated State
   const [selectedRoleCode, setSelectedRoleCode] = useState("ALL")
   const [consolidatedData, setConsolidatedData] = useState<any[]>([])
-  // Dashboard
+  
+  // Dashboard State
   const [stats, setStats] = useState<any>({ totalTasks: 0, completed: 0, overdue: 0, inProgress: 0, pending: 0 })
   const [chartData, setChartData] = useState<any>({})
 
@@ -90,6 +97,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
   useEffect(() => { if (activeTab === "personal") loadReport() }, [selectedWeek, month, year, viewUserId, activeTab])
   useEffect(() => { if (activeTab === "consolidated") loadConsolidated() }, [selectedRoleCode, selectedWeek, month, year, activeTab])
   useEffect(() => { if (activeTab === "dashboard") loadDashboard() }, [month, year, activeTab])
+  useEffect(() => { if (activeTab === "history") loadHistory() }, [viewUserId, activeTab])
 
   const loadReport = async () => {
     setLoading(true)
@@ -108,7 +116,6 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
       setReportStatus(res.report.status)
       setManagerComment(res.report.managerComment || "")
     } else { 
-      // Initial default 3 empty rows if no report
       setItems([
         { mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: "" },
         { mainTask: "", workContent: "", progress: "NOT_STARTED", proposedSolution: "" },
@@ -133,6 +140,37 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
     const res = await getDashboardStats(month, year)
     if (res.success) { setStats(res.stats); setChartData(res.chartData) }
     setLoading(false)
+  }
+
+  const loadHistory = async () => {
+    setLoading(true)
+    const uid = isAdmin ? viewUserId : currentUserId
+    const res = await getUserReportHistory(uid)
+    if (res.success) setHistoryReports(res.reports)
+    setLoading(false)
+  }
+
+  // Edit / Re-open Past Report
+  const handleEditPastReport = (report: any) => {
+    setMonth(report.month)
+    setYear(report.year)
+    setSelectedWeek(report.weekNumber)
+    setActiveTab("personal")
+    setToastMsg({ 
+      msg: `✏️ Đã mở báo cáo Tuần ${report.weekNumber} (Tháng ${report.month}/${report.year}) để hiệu chỉnh!`, 
+      type: "success" 
+    })
+    setTimeout(() => setToastMsg(null), 4000)
+  }
+
+  const handleDeleteReport = async (rptId: string) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa báo cáo này không?")) return
+    const res = await deleteWeeklyReport(rptId)
+    if (res.success) {
+      setToastMsg({ msg: "🗑️ Đã xóa báo cáo thành công!", type: "success" })
+      setTimeout(() => setToastMsg(null), 3000)
+      loadHistory()
+    } else alert("Lỗi: " + res.error)
   }
 
   // Row Manipulation helpers
@@ -245,6 +283,17 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
     XLSX.writeFile(wb, `BaoCaoTuan_Tuan${selectedWeek}_Thang${month}_${year}.xlsx`)
   }
 
+  const filteredHistory = useMemo(() => {
+    if (!historySearch.trim()) return historyReports
+    const q = historySearch.toLowerCase()
+    return historyReports.filter(r => 
+      `tuần ${r.weekNumber}`.includes(q) ||
+      `tháng ${r.month}`.includes(q) ||
+      `${r.year}`.includes(q) ||
+      r.items.some((i: any) => i.mainTask?.toLowerCase().includes(q) || i.workContent?.toLowerCase().includes(q))
+    )
+  }, [historyReports, historySearch])
+
   const maxWeeks = Math.max(...Object.values(chartData as Record<string, any>).map((u: any) => Math.max(...Object.keys(u.weeks || {}).map(Number), 0)), 0)
 
   return (
@@ -262,6 +311,89 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
         </div>
       )}
 
+      {/* Detail View Modal for History */}
+      {viewingHistoryReport && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-[#00A99D]" />
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-800">
+                    Báo cáo Tuần {viewingHistoryReport.weekNumber} - Tháng {viewingHistoryReport.month}/{viewingHistoryReport.year}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Người thực hiện: {viewingHistoryReport.user?.fullName || currentUserName}
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setViewingHistoryReport(null)}
+                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-xl"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 flex-1">
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 border-b text-slate-600 font-extrabold uppercase">
+                      <th className="p-3 text-center w-10">STT</th>
+                      <th className="p-3 min-w-[140px]">Task chính</th>
+                      <th className="p-3 min-w-[240px]">Nội dung công việc</th>
+                      <th className="p-3 w-28">Tiến độ</th>
+                      <th className="p-3 min-w-[180px]">Đề xuất giải pháp</th>
+                      <th className="p-3 min-w-[180px]">Nhận xét QL</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y font-medium">
+                    {viewingHistoryReport.items.map((item: any, idx: number) => {
+                      const prog = PROGRESS.find(p => p.value === item.progress) || PROGRESS[0]
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50">
+                          <td className="p-3 text-center text-slate-400 font-bold">{idx + 1}</td>
+                          <td className="p-3 font-bold text-indigo-900">{item.mainTask}</td>
+                          <td className="p-3 text-slate-700 leading-relaxed break-words">{item.workContent}</td>
+                          <td className="p-3">
+                            <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
+                              {prog.label}
+                            </span>
+                          </td>
+                          <td className="p-3 text-slate-500 italic break-words">{item.proposedSolution || "-"}</td>
+                          <td className="p-3 text-slate-700 break-words">{item.managerNote || "-"}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {viewingHistoryReport.managerComment && (
+                <div className="p-4 bg-teal-50 border border-teal-200 rounded-2xl">
+                  <p className="text-xs font-bold text-teal-800 mb-1">💬 Nhận xét chỉ đạo của Ban Quản Lý:</p>
+                  <p className="text-xs text-slate-700 whitespace-pre-wrap">{viewingHistoryReport.managerComment}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t bg-slate-50 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  const rpt = viewingHistoryReport
+                  setViewingHistoryReport(null)
+                  handleEditPastReport(rpt)
+                }}
+                className="bg-[#00A99D] hover:bg-[#007A72] text-white px-5 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-sm"
+              >
+                <Edit3 className="w-4 h-4" /> Hiệu chỉnh báo cáo này
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Bar */}
       <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -273,7 +405,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
               Báo cáo Tuần Giáo viên & Nhân viên
             </h1>
             <p className="text-xs text-slate-400 mt-0.5">
-              Lập báo cáo tuần, mở rộng dòng linh hoạt, duyệt & tổng hợp toàn hệ thống
+              Lập báo cáo tuần, xem lại lịch sử, hiệu chỉnh linh hoạt, duyệt & tổng hợp toàn hệ thống
             </p>
           </div>
         </div>
@@ -302,125 +434,126 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
       </div>
 
       {/* Tab Navigation */}
-      {isAdmin && (
-        <div className="flex bg-white rounded-2xl shadow-sm border border-slate-200 p-1.5 gap-1.5">
-          {[
-            { key: "dashboard", label: "Dashboard Thống kê", icon: BarChart3 },
-            { key: "consolidated", label: "Tổng hợp Toàn Hệ Thống", icon: Table2 },
-            { key: "personal", label: "Xem & Lập Báo cáo Chi tiết", icon: User },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key as any)}
-              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
-                activeTab === tab.key
-                  ? "bg-[#00A99D] text-white shadow-md"
-                  : "text-slate-500 hover:text-teal-700 hover:bg-teal-50/50"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" /> {tab.label}
-            </button>
-          ))}
+      <div className="flex bg-white rounded-2xl shadow-sm border border-slate-200 p-1.5 gap-1.5 flex-wrap">
+        {[
+          ...(isAdmin ? [{ key: "dashboard", label: "Dashboard Thống kê", icon: BarChart3 }] : []),
+          ...(isAdmin ? [{ key: "consolidated", label: "Tổng hợp Toàn Hệ Thống", icon: Table2 }] : []),
+          { key: "personal", label: "Lập & Hiệu chỉnh Báo cáo", icon: Edit3 },
+          { key: "history", label: "📜 Lịch sử Báo cáo đã nộp", icon: History },
+        ].map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key as any)}
+            className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-extrabold transition-all ${
+              activeTab === tab.key
+                ? "bg-[#00A99D] text-white shadow-md"
+                : "text-slate-500 hover:text-teal-700 hover:bg-teal-50/50"
+            }`}
+          >
+            <tab.icon className="w-4 h-4" /> {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Filters Bar (For Personal, Consolidated, Dashboard) */}
+      {activeTab !== "history" && (
+        <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">Tháng</label>
+              <select
+                value={month}
+                onChange={e => setMonth(+e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                  <option key={m} value={m}>Tháng {m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">Năm</label>
+              <select
+                value={year}
+                onChange={e => setYear(+e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
+              >
+                {[2024, 2025, 2026, 2027].map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">Năm học</label>
+              <select
+                value={academicYearId}
+                onChange={e => setAcademicYearId(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
+              >
+                {(years || []).filter((y: any) => !y.isOff).map((y: any) => (
+                  <option key={y.id} value={y.id}>{y.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-600 mb-1.5">Tuần báo cáo</label>
+              <select
+                value={selectedWeek}
+                onChange={e => setSelectedWeek(+e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
+              >
+                {weeks.map(w => (
+                  <option key={w.weekNum} value={w.weekNum}>{w.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {(activeTab === "personal" || activeTab === "history") && isAdmin && (
+            <div className="pt-3 border-t border-slate-100">
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                <User className="w-3.5 h-3.5 text-[#00A99D]" /> Chọn nhân viên để Lập / Xem / Hiệu chỉnh báo cáo
+              </label>
+              <select
+                value={viewUserId}
+                onChange={e => setViewUserId(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-white text-indigo-900"
+              >
+                {Object.entries(groupedStaff).map(([roleName, users]) => (
+                  <optgroup key={roleName} label={roleName}>
+                    {users.map((u: any) => (
+                      <option key={u.id} value={u.id}>
+                        {u.fullName} ({u.email}) - {roleName}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {activeTab === "consolidated" && isAdmin && (
+            <div className="pt-3 border-t border-slate-100">
+              <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                <Users className="w-3.5 h-3.5 text-[#00A99D]" /> Lọc theo Tổ / Nhóm quyền
+              </label>
+              <select
+                value={selectedRoleCode}
+                onChange={e => setSelectedRoleCode(e.target.value)}
+                className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
+              >
+                <option value="ALL">-- Tất cả bộ phận --</option>
+                {(roles || []).map((r: any) => (
+                  <option key={r.code} value={r.code}>{r.name} ({r.code})</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Filters Bar */}
-      <div className="bg-white border border-slate-100 rounded-3xl p-4 sm:p-5 shadow-sm space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1.5">Tháng</label>
-            <select
-              value={month}
-              onChange={e => setMonth(+e.target.value)}
-              className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                <option key={m} value={m}>Tháng {m}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1.5">Năm</label>
-            <select
-              value={year}
-              onChange={e => setYear(+e.target.value)}
-              className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
-            >
-              {[2024, 2025, 2026, 2027].map(y => (
-                <option key={y} value={y}>{y}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1.5">Năm học</label>
-            <select
-              value={academicYearId}
-              onChange={e => setAcademicYearId(e.target.value)}
-              className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
-            >
-              {(years || []).filter((y: any) => !y.isOff).map((y: any) => (
-                <option key={y.id} value={y.id}>{y.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1.5">Tuần báo cáo</label>
-            <select
-              value={selectedWeek}
-              onChange={e => setSelectedWeek(+e.target.value)}
-              className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
-            >
-              {weeks.map(w => (
-                <option key={w.weekNum} value={w.weekNum}>{w.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {activeTab === "personal" && isAdmin && (
-          <div className="pt-3 border-t border-slate-100">
-            <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-              <User className="w-3.5 h-3.5 text-[#00A99D]" /> Chọn nhân viên để Lập / Xem / Lưu báo cáo
-            </label>
-            <select
-              value={viewUserId}
-              onChange={e => setViewUserId(e.target.value)}
-              className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-white text-indigo-900"
-            >
-              {Object.entries(groupedStaff).map(([roleName, users]) => (
-                <optgroup key={roleName} label={roleName}>
-                  {users.map((u: any) => (
-                    <option key={u.id} value={u.id}>
-                      {u.fullName} ({u.email}) - {roleName}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {activeTab === "consolidated" && isAdmin && (
-          <div className="pt-3 border-t border-slate-100">
-            <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
-              <Users className="w-3.5 h-3.5 text-[#00A99D]" /> Lọc theo Tổ / Nhóm quyền
-            </label>
-            <select
-              value={selectedRoleCode}
-              onChange={e => setSelectedRoleCode(e.target.value)}
-              className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-slate-50/50"
-            >
-              <option value="ALL">-- Tất cả bộ phận --</option>
-              {(roles || []).map((r: any) => (
-                <option key={r.code} value={r.code}>{r.name} ({r.code})</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
@@ -428,6 +561,161 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
         </div>
       ) : (
         <>
+          {/* ============ HISTORY TAB ============ */}
+          {activeTab === "history" && (
+            <div className="space-y-5">
+              {isAdmin && (
+                <div className="bg-white border border-slate-100 rounded-3xl p-4 shadow-sm">
+                  <label className="block text-xs font-bold text-slate-600 mb-1.5 flex items-center gap-1">
+                    <User className="w-3.5 h-3.5 text-[#00A99D]" /> Xem Lịch sử Báo cáo của Nhân viên
+                  </label>
+                  <select
+                    value={viewUserId}
+                    onChange={e => setViewUserId(e.target.value)}
+                    className="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-white text-indigo-900"
+                  >
+                    {Object.entries(groupedStaff).map(([roleName, users]) => (
+                      <optgroup key={roleName} label={roleName}>
+                        {users.map((u: any) => (
+                          <option key={u.id} value={u.id}>
+                            {u.fullName} ({u.email}) - {roleName}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="bg-white border border-slate-100 rounded-3xl p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                      <History className="w-5 h-5 text-[#00A99D]" /> Lịch sử Báo cáo Tuần đã gửi
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {isAdmin ? `Đang xem lịch sử của: ${staffUsers.find((u: any) => u.id === viewUserId)?.fullName || currentUserName}` : `Tổng cộng ${historyReports.length} báo cáo tuần đã lưu`}
+                    </p>
+                  </div>
+
+                  <div className="relative w-full sm:w-64">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                    <input
+                      type="text"
+                      value={historySearch}
+                      onChange={e => setHistorySearch(e.target.value)}
+                      placeholder="Tìm kiếm công việc, tuần..."
+                      className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-[#00A99D]"
+                    />
+                  </div>
+                </div>
+
+                {filteredHistory.length === 0 ? (
+                  <div className="text-center py-16 text-slate-400">
+                    <History className="w-12 h-12 mx-auto mb-2 opacity-30" />
+                    <p className="font-bold">Không tìm thấy báo cáo tuần nào trong lịch sử</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredHistory.map((rpt: any) => {
+                      const completedCount = rpt.items.filter((i: any) => i.progress === "COMPLETED").length
+                      const doingCount = rpt.items.filter((i: any) => i.progress === "DOING").length
+                      const notCompCount = rpt.items.filter((i: any) => i.progress !== "COMPLETED" && i.progress !== "DOING").length
+
+                      return (
+                        <div 
+                          key={rpt.id} 
+                          className="bg-slate-50/70 border border-slate-200 rounded-3xl p-5 hover:shadow-md transition-all space-y-4 flex flex-col justify-between"
+                        >
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="bg-amber-100 text-amber-900 border border-amber-200 font-extrabold px-3 py-1 rounded-full text-xs">
+                                Tuần {rpt.weekNumber} (T{rpt.month}/{rpt.year})
+                              </span>
+                              <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                                rpt.status === "REVIEWED" ? "bg-emerald-100 text-emerald-800" : "bg-blue-100 text-blue-800"
+                              }`}>
+                                {rpt.status === "REVIEWED" ? "✅ Đã duyệt" : "📝 Đã nộp"}
+                              </span>
+                            </div>
+
+                            <div className="text-xs text-slate-500 font-medium">
+                              Cập nhật lúc: {new Date(rpt.updatedAt || rpt.createdAt).toLocaleDateString("vi-VN")} {new Date(rpt.updatedAt || rpt.createdAt).toLocaleTimeString("vi-VN", {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+
+                            {/* Summary Progress Pills */}
+                            <div className="flex items-center gap-2 text-[11px] flex-wrap font-bold pt-1">
+                              <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg border border-emerald-100">
+                                ✓ {completedCount} hoàn thành
+                              </span>
+                              <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-lg border border-blue-100">
+                                ⏳ {doingCount} đang làm
+                              </span>
+                              {notCompCount > 0 && (
+                                <span className="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-lg border border-amber-100">
+                                  ! {notCompCount} chưa xong
+                                </span>
+                              )}
+                            </div>
+
+                            {/* First 2 items preview */}
+                            <div className="bg-white p-3 rounded-2xl border border-slate-100 text-xs space-y-1.5">
+                              <div className="font-bold text-slate-700 border-b pb-1">Các công việc chính:</div>
+                              {rpt.items.slice(0, 2).map((item: any, idx: number) => (
+                                <div key={idx} className="text-slate-600 truncate font-medium">
+                                  • <span className="font-bold text-indigo-900">{item.mainTask}:</span> {item.workContent}
+                                </div>
+                              ))}
+                              {rpt.items.length > 2 && (
+                                <div className="text-[11px] text-slate-400 italic">
+                                  + và {rpt.items.length - 2} công việc khác...
+                                </div>
+                              )}
+                            </div>
+
+                            {rpt.managerComment && (
+                              <div className="bg-teal-50 border border-teal-100 p-2.5 rounded-2xl text-xs text-teal-900">
+                                <span className="font-bold">Nhận xét QL:</span> {rpt.managerComment}
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
+                            <button
+                              onClick={() => setViewingHistoryReport(rpt)}
+                              className="text-xs text-slate-600 hover:text-slate-900 font-bold px-3 py-1.5 rounded-xl border bg-white hover:bg-slate-100 flex items-center gap-1"
+                            >
+                              <Eye className="w-3.5 h-3.5 text-[#00A99D]" /> Xem
+                            </button>
+
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleEditPastReport(rpt)}
+                                className="bg-[#00A99D] hover:bg-[#007A72] text-white font-extrabold px-3.5 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" /> Hiệu chỉnh
+                              </button>
+
+                              {isAdmin && (
+                                <button
+                                  onClick={() => handleDeleteReport(rpt.id)}
+                                  className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl"
+                                  title="Xóa báo cáo này"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ============ DASHBOARD TAB ============ */}
           {activeTab === "dashboard" && isAdmin && (
             <div className="space-y-6">
@@ -524,7 +812,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
           {/* ============ CONSOLIDATED TAB ============ */}
           {activeTab === "consolidated" && isAdmin && (
             <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden space-y-4 p-5">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                 <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
                   <Table2 className="w-5 h-5 text-[#00A99D]" /> Tổng hợp báo cáo Tuần {selectedWeek} - Tháng {month}/{year}
                 </h3>
@@ -534,17 +822,17 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
               </div>
 
               <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl shadow-sm">
-                <table className="w-full text-left text-xs border-collapse table-auto">
+                <table className="w-full text-left text-xs border-collapse table-fixed min-w-[850px]">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider">
-                      <th className="p-3 text-center w-10 whitespace-nowrap">STT</th>
-                      <th className="p-3 whitespace-nowrap w-28">Tài khoản</th>
-                      <th className="p-3 whitespace-nowrap w-36">Họ và Tên</th>
-                      <th className="p-3 whitespace-normal break-words min-w-[140px] max-w-[180px]">Task chính</th>
-                      <th className="p-3 whitespace-normal break-words min-w-[240px]">Nội dung công việc</th>
-                      <th className="p-3 whitespace-nowrap w-28">Tiến độ</th>
-                      <th className="p-3 whitespace-normal break-words min-w-[160px]">Đề xuất giải pháp</th>
-                      <th className="p-3 whitespace-normal break-words min-w-[160px]">Nhận xét của QL</th>
+                      <th className="p-3 text-center w-[5%] whitespace-nowrap">STT</th>
+                      <th className="p-3 whitespace-nowrap w-[11%]">Mã NV</th>
+                      <th className="p-3 whitespace-nowrap w-[14%]">Họ và Tên</th>
+                      <th className="p-3 whitespace-normal break-words w-[18%]">Task chính</th>
+                      <th className="p-3 whitespace-normal break-words w-[28%]">Nội dung công việc</th>
+                      <th className="p-3 whitespace-nowrap w-[10%]">Tiến độ</th>
+                      <th className="p-3 whitespace-normal break-words w-[12%]">Đề xuất giải pháp</th>
+                      <th className="p-3 whitespace-normal break-words w-[12%]">Nhận xét QL</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
@@ -572,15 +860,15 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                               <td className="p-3 whitespace-nowrap">
                                 {isFirst && <span className="font-bold text-slate-800">{report.user?.fullName}</span>}
                               </td>
-                              <td className="p-3 font-bold text-indigo-900 whitespace-normal break-words min-w-[140px] max-w-[180px]">{item.mainTask}</td>
-                              <td className="p-3 whitespace-normal break-words leading-relaxed text-slate-700 min-w-[240px]">{item.workContent}</td>
+                              <td className="p-3 font-bold text-indigo-900 whitespace-normal break-words align-top">{item.mainTask}</td>
+                              <td className="p-3 whitespace-normal break-words leading-relaxed text-slate-700 align-top">{item.workContent}</td>
                               <td className="p-3 whitespace-nowrap">
                                 <span className={`text-[11px] px-2.5 py-1 rounded-full font-bold border ${prog.color}`}>
                                   {prog.label}
                                 </span>
                               </td>
-                              <td className="p-3 whitespace-normal break-words text-slate-500 italic min-w-[200px]">{item.proposedSolution || "-"}</td>
-                              <td className="p-3 whitespace-normal break-words min-w-[200px]">
+                              <td className="p-3 whitespace-normal break-words text-slate-500 italic min-w-[160px]">{item.proposedSolution || "-"}</td>
+                              <td className="p-3 whitespace-normal break-words min-w-[160px]">
                                 {item.managerNote ? (
                                   <span className="text-xs text-indigo-700 bg-teal-50 border border-teal-100 p-2 rounded-xl block font-medium">{item.managerNote}</span>
                                 ) : (
@@ -599,7 +887,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
           )}
 
           {/* ============ PERSONAL / EDIT TAB ============ */}
-          {(activeTab === "personal" || !isAdmin) && (
+          {activeTab === "personal" && (
             <div className="space-y-5">
               {/* Week Banner & Status Header */}
               {weeks.find(w => w.weekNum === selectedWeek) && (
@@ -672,16 +960,16 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
               {/* Weekly Report Form Table */}
               <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                 <div className="overflow-x-auto w-full border border-slate-200 rounded-2xl shadow-sm">
-                  <table className="w-full text-left text-xs border-collapse table-auto">
+                  <table className="w-full text-left text-xs border-collapse table-fixed min-w-[850px]">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-extrabold uppercase tracking-wider">
-                        <th className="p-3 text-center w-10 whitespace-nowrap">STT</th>
-                        <th className="p-3 whitespace-normal break-words min-w-[140px] max-w-[180px]">Task chính *</th>
-                        <th className="p-3 whitespace-normal break-words min-w-[240px]">Nội dung công việc *</th>
-                        <th className="p-3 whitespace-nowrap w-28">Tiến độ *</th>
-                        <th className="p-3 whitespace-normal break-words min-w-[160px]">Đề xuất giải pháp</th>
-                        <th className="p-3 whitespace-normal break-words min-w-[160px]">Nhận xét của QL</th>
-                        <th className="p-3 text-center whitespace-nowrap w-20">Thao tác</th>
+                        <th className="p-3 text-center w-[5%] whitespace-nowrap">STT</th>
+                        <th className="p-3 whitespace-normal break-words w-[18%]">Task chính *</th>
+                        <th className="p-3 whitespace-normal break-words w-[32%]">Nội dung công việc *</th>
+                        <th className="p-3 whitespace-nowrap w-[12%]">Tiến độ *</th>
+                        <th className="p-3 whitespace-normal break-words w-[13%]">Đề xuất giải pháp</th>
+                        <th className="p-3 whitespace-normal break-words w-[14%]">Nhận xét QL</th>
+                        <th className="p-3 text-center whitespace-nowrap w-[6%]">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
@@ -703,7 +991,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                             <td className="p-3 text-center text-slate-400 font-bold whitespace-nowrap">{i + 1}</td>
 
                             {/* Task chính */}
-                            <td className="p-3 whitespace-normal break-words min-w-[140px] max-w-[180px]">
+                            <td className="p-3 whitespace-normal break-words align-top">
                               <textarea
                                 value={item.mainTask}
                                 onChange={e => updateItem(i, "mainTask", e.target.value)}
@@ -714,7 +1002,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                             </td>
 
                             {/* Nội dung công việc (Multiline) */}
-                            <td className="p-3 whitespace-normal break-words min-w-[240px]">
+                            <td className="p-3 whitespace-normal break-words align-top">
                               <textarea
                                 value={item.workContent}
                                 onChange={e => updateItem(i, "workContent", e.target.value)}
@@ -738,18 +1026,18 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                             </td>
 
                             {/* Đề xuất giải pháp (Multiline) */}
-                            <td className="p-3 whitespace-normal min-w-[200px]">
+                            <td className="p-3 whitespace-normal min-w-[160px]">
                               <textarea
                                 value={item.proposedSolution}
                                 onChange={e => updateItem(i, "proposedSolution", e.target.value)}
                                 rows={2}
-                                placeholder="Nhập đề xuất, kiến nghị nếu có..."
+                                placeholder="Nhập đề xuất, kiến nghị..."
                                 className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-medium outline-none focus:ring-2 focus:ring-[#00A99D] resize-none leading-relaxed bg-white"
                               />
                             </td>
 
                             {/* Nhận xét Quản lý */}
-                            <td className="p-3 whitespace-normal min-w-[200px]">
+                            <td className="p-3 whitespace-normal min-w-[160px]">
                               {isAdmin ? (
                                 editingItemNote === (item.id || String(i)) ? (
                                   <div className="flex flex-col gap-1.5">
@@ -834,7 +1122,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
                     disabled={saving}
                     className="bg-gradient-to-r from-amber-600 to-amber-700 text-white font-extrabold px-8 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-lg hover:opacity-95 disabled:opacity-50 transition-all"
                   >
-                    <Save className="w-4 h-4" /> {saving ? "Đang lưu..." : isAdmin ? "Lưu Báo Cáo Cho Nhân Viên" : "Lưu Báo Cáo Tuần"}
+                    <Save className="w-4 h-4" /> {saving ? "Đang lưu..." : isAdmin ? "Lưu Báo Cáo Cho Nhân Viên" : "Lưu / Hiệu Chỉnh Báo Cáo"}
                   </button>
                 </div>
               </div>

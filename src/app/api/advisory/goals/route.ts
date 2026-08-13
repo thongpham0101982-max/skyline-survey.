@@ -3,8 +3,21 @@ import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 import { getStudentSession } from "@/lib/student-session"
 import { getDefaultAcademicYear } from "@/lib/academicYear"
+import { createClient } from "@libsql/client/web"
 
 export const dynamic = "force-dynamic"
+
+let rawUrl = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || "").trim()
+if (!rawUrl || (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://") && !rawUrl.startsWith("libsql://"))) {
+  rawUrl = "https://skyline-survey-thongpham0101982-max.aws-ap-northeast-1.turso.io"
+}
+const TURSO_URL = rawUrl.replace(/^libsql:\/\//, 'https://')
+const TURSO_TOKEN = (process.env.TURSO_AUTH_TOKEN || "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJleHAiOjE4MDc5NjcwNjEsImlhdCI6MTc3NjQzMTA2MSwiaWQiOiIwMTlkOWEzYS1mMjAxLTczODgtYTY5ZC1jN2MwMTA1NGFmMzQiLCJyaWQiOiIyNDkwM2JhMC02N2Y3LTQ3YzgtYjdiZC1mMWJiZjc3MTA3N2QifQ.fb-srs0AEaF5lVeCM0Xjk06ItbIfuCqEaOWbKxrUv0kzJNcLbZEvwp_Kw4rtScLG8VTZqNUm0buXKjtAE_ZAw").trim()
+
+const libsqlClient = createClient({
+  url: TURSO_URL,
+  authToken: TURSO_TOKEN,
+})
 
 function jsonResponse(data: any, status = 200) {
   const res = NextResponse.json(data, { status })
@@ -79,7 +92,7 @@ async function ensureTablesExist() {
   ]
   for (const ddl of ddlList) {
     try {
-      await prisma.$executeRawUnsafe(ddl)
+      await libsqlClient.execute(ddl)
     } catch (e) {
       console.error("DDL init error:", e)
     }
@@ -117,7 +130,7 @@ export async function GET(req: Request) {
       },
       include: { actions: true },
       orderBy: { createdAt: "asc" }
-    })
+    }).catch(() => [])
 
     const trackingLogs = await prisma.studentGoalTrackingLog.findMany({
       where: { 
@@ -125,7 +138,7 @@ export async function GET(req: Request) {
         ...(academicYearId ? { academicYearId } : {})
       },
       orderBy: { createdAt: "desc" }
-    })
+    }).catch(() => [])
 
     let presets: any[] = []
     if (goals.length === 0) {

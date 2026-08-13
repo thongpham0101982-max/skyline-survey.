@@ -395,3 +395,52 @@ export async function getDashboardStats(month: number, year: number) {
     return { success: false, stats: { totalTasks: 0, completed: 0, overdue: 0, inProgress: 0, pending: 0 }, chartData: {}, error: e.message }
   }
 }
+
+export async function getUserReportHistory(targetUserId?: string) {
+  try {
+    const session = await auth()
+    if (!session?.user?.id) return { success: false, error: "Chưa đăng nhập", reports: [] }
+    const currentUserId = session.user.id
+    const currentRole = (session.user as any).role
+
+    let userId = currentUserId
+    if (targetUserId && currentRole === "ADMIN") {
+      userId = targetUserId
+    }
+
+    const reports = await prisma.weeklyReport.findMany({
+      where: { userId },
+      include: {
+        items: { orderBy: { createdAt: "asc" } },
+        user: { select: { fullName: true, email: true, role: true } }
+      },
+      orderBy: [
+        { year: "desc" },
+        { month: "desc" },
+        { weekNumber: "desc" },
+        { updatedAt: "desc" }
+      ]
+    })
+
+    return { success: true, reports: JSON.parse(JSON.stringify(reports)) }
+  } catch (e: any) {
+    return { success: false, reports: [], error: e.message }
+  }
+}
+
+export async function deleteWeeklyReport(reportId: string) {
+  try {
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Chưa đăng nhập" }
+    
+    await prisma.$transaction([
+      prisma.weeklyReportItem.deleteMany({ where: { reportId } }),
+      prisma.weeklyReport.delete({ where: { id: reportId } })
+    ])
+    
+    revalidatePath("/admin/weekly-reports")
+    return { success: true }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}
