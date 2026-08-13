@@ -124,9 +124,9 @@ export default function StudentGoalPortalPage() {
     }
   }
 
-  async function handleSaveGoals() {
+    async function handleSaveGoals() {
     if (!studentId) {
-      alert("Chưa xác định được thông tin học sinh.")
+      alert("Chưa xác định được thông tin học sinh. Vui lòng đăng nhập lại.")
       return
     }
 
@@ -180,16 +180,19 @@ export default function StudentGoalPortalPage() {
         })
       })
 
-      if (res.ok) {
+      const resData = await res.json().catch(() => ({}))
+
+      if (res.ok && resData.success) {
         setSubmittedAt(new Date().toLocaleDateString("vi-VN"))
         setToastMessage("Đã LƯU & GỬI PHIẾU MỤC TIÊU Khối " + gradeLevel.replace("K","") + " về Quản lý Cố Vấn Học Tập & GVCN thành công!")
         setTimeout(() => setToastMessage(""), 5000)
         fetchGoalsForStudent(studentId, gradeLevel)
       } else {
-        alert("Lỗi khi lưu phiếu mục tiêu.")
+        alert(resData.error || "Lỗi khi lưu phiếu mục tiêu. Vui lòng thử lại.")
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
+      alert("Lỗi kết nối khi lưu phiếu: " + (e.message || "Vui lòng thử lại."))
     } finally {
       setSaving(false)
     }

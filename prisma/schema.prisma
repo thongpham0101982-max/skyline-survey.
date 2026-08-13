@@ -526,6 +526,9 @@ model WorkTask {
   startDate        DateTime
   endDate          DateTime
   progress         String           @default("PENDING")
+  acceptanceStatus String           @default("WAITING_CONFIRMATION")
+  acceptedAt       DateTime?
+  rejectionReason  String?
   month            Int?
   academicYearId   String?
   isImportant      Boolean          @default(false)
