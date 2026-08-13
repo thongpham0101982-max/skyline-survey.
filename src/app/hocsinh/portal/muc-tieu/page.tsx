@@ -528,32 +528,7 @@ export default function StudentGoalPortalPage() {
           />
         </div>
 
-        {/* 3 Confirmation Roles (Học sinh - Phụ huynh - GVCN) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-          <div className="p-3.5 rounded-2xl bg-teal-50/70 border border-teal-200 text-center space-y-1">
-            <p className="text-xs font-black text-teal-900">Học sinh</p>
-            <p className="text-[10px] text-teal-700 italic font-semibold">(Ký, ghi rõ họ tên / Vân tay)</p>
-            <span className="inline-block px-2 py-0.5 bg-teal-200 text-teal-900 text-[10px] font-black rounded-md">
-              {studentName}
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 text-center space-y-1">
-            <p className="text-xs font-black text-amber-900">Phụ huynh</p>
-            <p className="text-[10px] text-amber-700 italic font-semibold">(Ký, ghi rõ họ tên)</p>
-            <span className="inline-block px-2 py-0.5 bg-amber-200 text-amber-900 text-[10px] font-black rounded-md">
-              Đồng hành cùng em
-            </span>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-sky-50/70 border border-sky-200 text-center space-y-1">
-            <p className="text-xs font-black text-sky-900">Giáo viên chủ nhiệm</p>
-            <p className="text-[10px] text-sky-700 italic font-semibold">(Ký, ghi rõ họ tên)</p>
-            <span className="inline-block px-2 py-0.5 bg-sky-200 text-sky-900 text-[10px] font-black rounded-md">
-              Thầy/Cô GVCN {className}
-            </span>
-          </div>
-        </div>
+        {/* Confirmation Button Block */}
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border-2 border-slate-200">
           <div className="flex items-center gap-3">
