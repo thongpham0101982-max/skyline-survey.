@@ -145,8 +145,7 @@ export async function GET(req: Request) {
 
     const goals = await prisma.studentGoal.findMany({
       where: { 
-        studentId: { in: targetStudentIds },
-        ...(academicYearId ? { academicYearId } : {})
+        studentId: { in: targetStudentIds }
       },
       include: { actions: true },
       orderBy: { createdAt: "asc" }
