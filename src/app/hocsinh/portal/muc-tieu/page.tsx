@@ -36,7 +36,7 @@ export default function StudentGoalPortalPage() {
   const [fingerprintStamped, setFingerprintStamped] = useState(false)
 
   useEffect(() => {
-    fetch("/api/hocsinh/me")
+    fetch("/api/hocsinh/me", { cache: "no-store" })
       .then(r => {
         if (!r.ok) {
           window.location.href = "/login"
@@ -80,7 +80,7 @@ export default function StudentGoalPortalPage() {
     if (!sId) return
     try {
       setLoading(true)
-      const res = await fetch(`/api/advisory/goals?studentId=${sId}&academicYearId=${academicYearId}&gradeLevel=${gLevel}`)
+      const res = await fetch(`/api/advisory/goals?studentId=${sId}&academicYearId=${academicYearId}&gradeLevel=${gLevel}&_t=${Date.now()}`, { cache: "no-store" })
       if (res.ok) {
         const data = await res.json()
         setPresets(data.presets || [])

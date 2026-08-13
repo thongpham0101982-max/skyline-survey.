@@ -4,11 +4,17 @@ import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
+function jsonResponse(data: any, status = 200) {
+  const res = NextResponse.json(data, { status })
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  return res
+}
+
 export async function GET() {
   try {
     const session = await getStudentSession()
     if (!session || !session.studentId) {
-      return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 })
+      return jsonResponse({ error: 'Chưa đăng nhập' }, 401)
     }
 
     const student = await prisma.student.findUnique({
@@ -17,21 +23,21 @@ export async function GET() {
     })
 
     if (!student) {
-      return NextResponse.json({
+      return jsonResponse({
         id: session.studentId,
         studentId: session.studentId,
         studentCode: session.studentCode,
         studentName: session.studentName,
         className: session.className || '',
         campusName: session.campusName || '',
-        grade: session.className ? (session.className.match(/\d+/) || ['11'])[0] : '11'
+        grade: session.className ? (session.className.match(/\d+/) || ['8'])[0] : '8'
       })
     }
 
     const cName = student.class?.className || session.className || ''
-    const gradeVal = student.class?.grade || (cName ? (cName.match(/\d+/) || ['11'])[0] : '11')
+    const gradeVal = student.class?.grade || (cName ? (cName.match(/\d+/) || ['8'])[0] : '8')
 
-    return NextResponse.json({
+    return jsonResponse({
       id: student.id,
       studentId: student.id,
       studentCode: student.studentCode,
@@ -42,6 +48,6 @@ export async function GET() {
     })
   } catch (error: any) {
     console.error("GET /api/hocsinh/me error:", error)
-    return NextResponse.json({ error: error.message || 'Lỗi server' }, { status: 500 })
+    return jsonResponse({ error: error.message || 'Lỗi server' }, 500)
   }
 }

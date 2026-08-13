@@ -6,12 +6,18 @@ import { getDefaultAcademicYear } from "@/lib/academicYear"
 
 export const dynamic = "force-dynamic"
 
+function jsonResponse(data: any, status = 200) {
+  const res = NextResponse.json(data, { status })
+  res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  return res
+}
+
 export async function GET(req: Request) {
   try {
     const session = await auth()
     const studentSess = await getStudentSession()
     if (!session && !studentSess) {
-      return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 })
+      return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
     const { searchParams } = new URL(req.url)
@@ -20,7 +26,7 @@ export async function GET(req: Request) {
     const gradeLevel = searchParams.get("gradeLevel") || "K8"
 
     if (!targetStudentId) {
-      return NextResponse.json({ error: "Thiếu studentId" }, { status: 400 })
+      return jsonResponse({ error: "Thiếu studentId" }, 400)
     }
 
     if (!academicYearId) {
@@ -37,7 +43,6 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "asc" }
     })
 
-    // Fetch tracking logs evaluated by GVCN
     const trackingLogs = await prisma.studentGoalTrackingLog.findMany({
       where: { 
         studentId: targetStudentId,
@@ -46,7 +51,6 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" }
     })
 
-    // Fetch presets if goals are empty
     let presets: any[] = []
     if (goals.length === 0) {
       let gradeGroup = "K4_K8"
@@ -68,10 +72,10 @@ export async function GET(req: Request) {
       goals
     } : null
 
-    return NextResponse.json({ goals, presets, existingSheet, trackingLogs })
+    return jsonResponse({ goals, presets, existingSheet, trackingLogs })
   } catch (error: any) {
     console.error("GET /api/advisory/goals error:", error)
-    return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })
+    return jsonResponse({ error: error.message || "Server error" }, 500)
   }
 }
 
@@ -80,7 +84,7 @@ export async function POST(req: Request) {
     const session = await auth()
     const studentSess = await getStudentSession()
     if (!session && !studentSess) {
-      return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 })
+      return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
     const body = await req.json()
@@ -101,7 +105,7 @@ export async function POST(req: Request) {
     const targetStudentId = studentId || studentSess?.studentId
 
     if (!targetStudentId) {
-      return NextResponse.json({ error: "Thiếu thông tin ID Học sinh" }, { status: 400 })
+      return jsonResponse({ error: "Thiếu thông tin ID Học sinh" }, 400)
     }
 
     let yearId = academicYearId
@@ -110,7 +114,6 @@ export async function POST(req: Request) {
       yearId = defaultAY?.id || ""
     }
 
-    // Delete existing goals for this student to overwrite/update cleanly
     await prisma.studentGoal.deleteMany({
       where: { 
         studentId: targetStudentId,
@@ -131,11 +134,6 @@ export async function POST(req: Request) {
           presetId: item.presetId || null,
           teacherSupportRequest: item.teacherSupportRequest || null,
           parentSupportRequest: item.parentSupportRequest || null,
-          smartSpecific: item.smartSpecific || null,
-          smartMeasurable: item.smartMeasurable || null,
-          smartAchievable: item.smartAchievable || null,
-          smartRelevant: item.smartRelevant || null,
-          smartTimeBound: item.smartTimeBound || null,
           checkpointDate: new Date(),
           achievementLevel: "DANG_TIEN_TRIEN",
           status: "SUBMITTED",
@@ -156,7 +154,6 @@ export async function POST(req: Request) {
       })
       createdGoals.push(created)
 
-      // Auto-sync initial record to StudentGoalTrackingLog for GVCN
       await prisma.studentGoalTrackingLog.create({
         data: {
           studentId: targetStudentId,
@@ -171,9 +168,9 @@ export async function POST(req: Request) {
       }).catch(() => {})
     }
 
-    return NextResponse.json({ success: true, goals: createdGoals })
+    return jsonResponse({ success: true, goals: createdGoals })
   } catch (error: any) {
     console.error("POST /api/advisory/goals error:", error)
-    return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })
+    return jsonResponse({ error: error.message || "Server error" }, 500)
   }
 }
