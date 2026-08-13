@@ -114,11 +114,26 @@ export default function TeacherAdvisoryPage() {
     loadSingleStudentData()
   }, [selectedStudentId, evalTerm, academicYearId])
 
-  async function loadAllClassTracking() {
+    async function loadAllClassTracking() {
     try {
       const allRows: any[] = []
 
+      // Helper to map category label by grade
+      const getCategoryLabel = (cat: string, grade: string) => {
+        const isK13 = ["K1", "K2", "K3"].includes(grade)
+        const isK912 = ["K9", "K10", "K11", "K12"].includes(grade)
+
+        if (cat === "HOC_TAP") return isK13 ? "1. Mục tiêu học tập 📚" : isK912 ? "1. Mục tiêu học tập (SMART)" : "1. Mục tiêu học tập"
+        if (cat === "THOI_QUEN_SUC_KHOE") return isK13 ? "2. Thói quen & Sức khỏe ⏰" : "2. Mục tiêu thói quen"
+        if (cat === "KY_NANG_SO_THICH") return isK13 ? "3. Kỹ năng & Sở thích 🎨" : "3. Mục tiêu kỹ năng & cảm xúc"
+        if (cat === "PHAM_CHAT") return isK13 ? "4. Phẩm chất & Đạo đức 💖" : "4. Mục tiêu phẩm chất"
+        if (cat === "DINH_HUONG") return "4. Định hướng nghề nghiệp 🚀"
+        return cat
+      }
+
       for (const st of students) {
+        const studentGrade = (st.class?.grade || "K1").toUpperCase()
+
         // Fetch goals entered by student
         const goalRes = await fetch(`/api/advisory/goals?studentId=${st.id}&academicYearId=${academicYearId}`)
         const goalData = goalRes.ok ? await goalRes.json() : null
@@ -135,8 +150,8 @@ export default function TeacherAdvisoryPage() {
               studentName: st.studentName,
               studentCode: st.studentCode,
               goalId: g.id,
-              category: g.category || "HOC_TAP",
-              targetText: g.targetText,
+              category: getCategoryLabel(g.category || "HOC_TAP", studentGrade),
+              targetText: g.targetText || "Mục tiêu đã chọn",
               progressStatus: matched?.progressStatus || "TIEN_TRIEN",
               teacherNotes: matched?.teacherNotes || ""
             })
@@ -148,22 +163,25 @@ export default function TeacherAdvisoryPage() {
               studentName: st.studentName,
               studentCode: st.studentCode,
               goalId: l.goalId,
-              category: l.category || "HOC_TAP",
+              category: getCategoryLabel(l.category || "HOC_TAP", studentGrade),
               targetText: l.targetText,
               progressStatus: l.progressStatus || "TIEN_TRIEN",
               teacherNotes: l.teacherNotes || ""
             })
           })
         } else {
-          // Default placeholder rows if student hasn't filled yet
-          allRows.push({
-            studentId: st.id,
-            studentName: st.studentName,
-            studentCode: st.studentCode,
-            category: "HOC_TAP",
-            targetText: "Học tập & Môn học",
-            progressStatus: "TIEN_TRIEN",
-            teacherNotes: ""
+          // Default placeholder rows for the 4 categories if student hasn't entered goals yet
+          const defaultCategories = ["HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT"]
+          defaultCategories.forEach(cat => {
+            allRows.push({
+              studentId: st.id,
+              studentName: st.studentName,
+              studentCode: st.studentCode,
+              category: getCategoryLabel(cat, studentGrade),
+              targetText: `Em chưa điền nội dung mục tiêu nhóm này (Khối ${studentGrade})`,
+              progressStatus: "TIEN_TRIEN",
+              teacherNotes: ""
+            })
           })
         }
       }
@@ -172,6 +190,7 @@ export default function TeacherAdvisoryPage() {
     } catch (e) {
       console.error(e)
     }
+  }
   }
 
   async function loadSingleStudentData() {
