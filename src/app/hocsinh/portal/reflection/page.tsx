@@ -33,14 +33,7 @@ export default function StudentReflectionPortalPage() {
   }, [])
 
   useEffect(() => {
-    if (!studentId) {
-      fetch("/api/students/search?limit=1")
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) setStudentId(data[0].id)
-        })
-        .catch(() => {})
-    } else {
+    if (studentId) {
       loadReflections()
     }
   }, [studentId])

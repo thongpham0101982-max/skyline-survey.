@@ -38,19 +38,7 @@ export default function StudentHelpPortalPage() {
   }, [])
 
   useEffect(() => {
-    if (!studentId) {
-      // Fallback search if studentId not in localStorage
-      fetch("/api/students/search?limit=1")
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            setStudentId(data[0].id)
-            setStudentName(data[0].studentName)
-          }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false))
-    } else {
+    if (studentId) {
       loadRequests()
     }
   }, [studentId])

@@ -11,8 +11,8 @@ import Link from "next/link"
 export default function StudentGoalPortalPage() {
   const [studentId, setStudentId] = useState("")
   const [studentName, setStudentName] = useState("Học sinh Sky-Line")
-  const [studentGrade, setStudentGrade] = useState("K1")
-  const [gradeLevel, setGradeLevel] = useState("K1")
+  const [studentGrade, setStudentGrade] = useState("K11")
+  const [gradeLevel, setGradeLevel] = useState("K11")
   const [academicYearId, setAcademicYearId] = useState("")
   
   const [loading, setLoading] = useState(true)
@@ -37,8 +37,7 @@ export default function StudentGoalPortalPage() {
   const [showSmartGuideModal, setShowSmartGuideModal] = useState(false)
   const [smartChecklist, setSmartChecklist] = useState<Record<number, boolean>>({})
 
-      useEffect(() => {
-    // ALWAYS fetch authenticated student session from /api/hocsinh/me
+  useEffect(() => {
     fetch("/api/hocsinh/me")
       .then(r => {
         if (!r.ok) {
@@ -49,10 +48,11 @@ export default function StudentGoalPortalPage() {
       })
       .then(data => {
         if (data && data.studentCode) {
-          setStudentId(data.id || data.studentId)
+          const sId = data.id || data.studentId
+          setStudentId(sId)
           setStudentName(data.studentName)
           
-          let parsedGrade = "K5"
+          let parsedGrade = "K11"
           if (data.grade) {
             const gNum = String(data.grade).replace(/[^0-9]/g, "")
             if (gNum) parsedGrade = "K" + gNum
@@ -64,9 +64,12 @@ export default function StudentGoalPortalPage() {
           setStudentGrade(parsedGrade)
           setGradeLevel(parsedGrade)
           localStorage.setItem("currentStudent", JSON.stringify(data))
+
+          fetchGoalsForStudent(sId, parsedGrade)
         }
       })
       .catch(console.error)
+      .finally(() => setLoading(false))
 
     if (typeof window !== "undefined") {
       const storedYear = localStorage.getItem("selectedAcademicYear") || ""
@@ -74,45 +77,21 @@ export default function StudentGoalPortalPage() {
     }
   }, [])
 
-  useEffect(() => {
-    if (!studentId) {
-      fetch("/api/students/search?limit=1")
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            setStudentId(data[0].id)
-            setStudentName(data[0].studentName)
-            if (data[0].class?.grade) {
-              const gr = data[0].class.grade.toUpperCase()
-              setStudentGrade(gr)
-              setGradeLevel(gr)
-            }
-          }
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false))
-    } else {
-      loadGoals()
-    }
-  }, [studentId, gradeLevel, academicYearId])
-
-  async function loadGoals() {
-    if (!studentId) return
+  async function fetchGoalsForStudent(sId: string, gLevel: string) {
+    if (!sId) return
     try {
       setLoading(true)
-      const res = await fetch(`/api/advisory/goals?studentId=${studentId}&academicYearId=${academicYearId}&gradeLevel=${gradeLevel}`)
+      const res = await fetch(`/api/advisory/goals?studentId=${sId}&academicYearId=${academicYearId}&gradeLevel=${gLevel}`)
       if (res.ok) {
         const data = await res.json()
         setPresets(data.presets || [])
-        if (data.goals && data.goals.length > 0) {
-          const first = data.goals[0]
-          setStudentCommitment(first.studentCommitment || "")
-          setFingerprintStamped(first.signedByStudent || false)
-
+        if (data.existingSheet) {
+          setStudentCommitment(data.existingSheet.studentCommitment || "")
+          setFingerprintStamped(!!data.existingSheet.signedByStudent)
           const presetMap: Record<string, boolean> = {}
-          const customMap: any = { ...customGoals }
+          const customMap = { ...customGoals }
 
-          data.goals.forEach((g: any) => {
+          data.existingSheet.goals.forEach((g: any) => {
             if (g.presetId) presetMap[g.presetId] = true
             if (g.category && customMap[g.category]) {
               customMap[g.category] = {
@@ -212,14 +191,24 @@ export default function StudentGoalPortalPage() {
   const isK6ToK8 = ["K6", "K7", "K8"].includes(gradeLevel)
   const isHighSchool = ["K9", "K10", "K11", "K12"].includes(gradeLevel)
 
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto p-12 text-center text-teal-800 font-extrabold text-sm animate-pulse space-y-2">
+        <div className="w-10 h-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p>Đang nạp Sổ Mục Tiêu Năm Học cho {studentName}...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
+      
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-sky-500 via-teal-500 to-[#003B3A] rounded-3xl p-6 text-white shadow-xl space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/20 uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
-            <span>PHIẾU MỤC TIÊU ĐẦU NĂM HỌC — KHỐI {gradeLevel}</span>
+            <span>PHIẾU MỤC TIÊU ĐẦU NĂM HỌC — KHỐI {gradeLevel.replace("K", "")}</span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -237,115 +226,90 @@ export default function StudentGoalPortalPage() {
           </div>
         </div>
 
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black">Bảng Mục Tiêu Năm Học — {studentName}</h1>
-          <p className="text-xs text-teal-100 font-medium mt-1">
-            Hệ thống đã tự động chọn Phiếu mục tiêu phù hợp với <strong>Khối {gradeLevel}</strong> của em. Hãy tích chọn mục tiêu và ghi rõ việc làm cụ thể nhé!
-          </p>
-        </div>
+        <h1 className="text-2xl sm:text-3xl font-black">Bảng Mục Tiêu Năm Học — {studentName}</h1>
+        <p className="text-xs sm:text-sm text-teal-100 font-medium">
+          Hệ thống đã tự động chọn Phiếu mục tiêu phù hợp với <strong className="text-white">Khối {gradeLevel.replace("K", "")}</strong> của em. Hãy tích chọn mục tiêu và ghi rõ việc làm cụ thể nhé!
+        </p>
 
-        {/* Portal Tabs */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/15">
-          <Link
-            href="/hocsinh/portal/muc-tieu"
-            className="px-4 py-1.5 rounded-xl bg-white text-[#003B3A] text-xs font-black flex items-center gap-1.5 shadow-xs"
-          >
-            <Compass className="w-3.5 h-3.5 text-teal-600" />
-            <span>1. Phiếu Mục Tiêu (Khối {gradeLevel})</span>
+        {/* Tab Indicator */}
+        <div className="flex items-center gap-2 pt-2">
+          <span className="px-3 py-1 rounded-full bg-white text-[#003B3A] font-black text-xs flex items-center gap-1 shadow-sm">
+            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" /> 1. Phiếu Mục Tiêu (Khối {gradeLevel})
+          </span>
+          <Link href="/hocsinh/portal/reflection" className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1">
+            2. Tự Đánh Giá (Reflection)
           </Link>
-          <Link
-            href="/hocsinh/portal/reflection"
-            className="px-4 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-extrabold flex items-center gap-1.5"
-          >
-            <Feather className="w-3.5 h-3.5 text-amber-300" />
-            <span>2. Tự Đánh Giá (Reflection)</span>
+          <Link href="/hocsinh/portal/ho-tro" className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1">
+            3. Yêu Cầu Hỗ Trợ (SOS)
           </Link>
-          <Link
-            href="/hocsinh/portal/ho-tro"
-            className="px-4 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-extrabold flex items-center gap-1.5"
-          >
-            <Heart className="w-3.5 h-3.5 text-rose-300" />
-            <span>3. Yêu Cầu Hỗ Trợ (SOS)</span>
-          </Link>
-
-          {(isK6ToK8 || isHighSchool) && (
-            <button
-              onClick={() => setShowSmartGuideModal(true)}
-              className="ml-auto px-3.5 py-1.5 rounded-xl bg-amber-400 text-slate-900 text-xs font-black flex items-center gap-1 hover:bg-amber-500 transition-all"
-            >
-              <Info className="w-3.5 h-3.5" />
-              <span>Hướng Dẫn SMART</span>
-            </button>
-          )}
         </div>
       </div>
 
+      {/* Toast Notification */}
       {toastMessage && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-extrabold flex items-center gap-3 animate-bounce">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span>{toastMessage}</span>
+        <div className="p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl text-emerald-800 font-black text-xs flex items-center justify-between animate-bounce">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <span>{toastMessage}</span>
+          </div>
         </div>
       )}
 
-      {/* Main Goal Form Container */}
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
-
-        {/* ----------------- K1 - K3 INTERACTIVE CHECKBOXES & ENTRY FORM ----------------- */}
-        {isK1ToK3 && (
-          <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="text-3xl">🐧</div>
-                <div>
-                  <h4 className="text-xs font-black text-sky-900 uppercase">Chế độ Nhập Liệu Trực Tiếp — Khối {gradeLevel}</h4>
-                  <p className="text-[11px] text-sky-800 font-medium">
-                    Em hãy nhấn vào ô vuông để tích chọn mục tiêu có sẵn, hoặc gõ thêm lời cam kết của em bên dưới nhé!
-                  </p>
-                </div>
+      {/* ------------------- FORM KHỐI 1 - KHỐI 3 (CHECKBOXES) ------------------- */}
+      {isK1ToK3 && (
+        <div className="space-y-6">
+          <div className="bg-sky-50 border-2 border-sky-200 rounded-3xl p-5 text-sky-900 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-3xl">🐧</div>
+              <div>
+                <h3 className="font-black text-sm uppercase">CHẾ ĐỘ NHẬP LIỆU TRỰC TIẾP — KHỐI {gradeLevel}</h3>
+                <p className="text-xs text-sky-700 font-medium">Em hãy nhấn vào ô vuông để tích chọn mục tiêu có sẵn, hoặc gõ thêm lời cam kết của em bên dưới nhé!</p>
               </div>
-              <span className="px-3 py-1 rounded-full bg-sky-200 text-sky-900 text-[10px] font-black uppercase shrink-0">
-                Khối {gradeLevel} Mở Nhập Liệu
-              </span>
             </div>
+            <span className="px-3 py-1 bg-sky-200 text-sky-800 rounded-full font-black text-[10px] uppercase">
+              KHỐI {gradeLevel} MỞ NHẬP LIỆU
+            </span>
+          </div>
 
-            {/* Render Presets by Category */}
-            {["HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT"].map((catKey) => {
-              const catTitle =
-                catKey === "HOC_TAP" ? "1. Mục tiêu học tập 📚" :
-                catKey === "THOI_QUEN_SUC_KHOE" ? "2. Thói quen & Sức khỏe ⏰" :
-                catKey === "KY_NANG_SO_THICH" ? "3. Kỹ năng & Sở thích 🎨" : "4. Phẩm chất & Đạo đức 💖"
+          {/* Preset Checkbox Categories */}
+          {["HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT"].map((cat, idx) => {
+            const catTitles: Record<string, string> = {
+              HOC_TAP: "1. MỤC TIÊU HỌC TẬP 📚",
+              THOI_QUEN_SUC_KHOE: "2. THÓI QUEN & SỨC KHỎE ⏰",
+              KY_NANG_SO_THICH: "3. KỸ NĂNG & SỞ THÍCH 🎨",
+              PHAM_CHAT: "4. PHẨM CHẤT & THÁI ĐỘ 💖"
+            }
+            const catPresets = presets.filter(p => p.category === cat)
 
-              const categoryPresets = presets.filter(p => p.category === catKey)
-              const curCustom = customGoals[catKey] || {}
-
-              return (
-                <div key={catKey} className="space-y-3 p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200">
-                  <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">{catTitle}</h3>
-
-                  {/* Preset Checkbox Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {categoryPresets.map((p) => {
-                      const isChecked = Boolean(selectedPresetGoals[p.id])
+            return (
+              <div key={cat} className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
+                <h3 className="text-base font-black text-slate-800 border-b border-slate-100 pb-3">{catTitles[cat]}</h3>
+                
+                {/* List Checkboxes */}
+                {catPresets.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {catPresets.map(p => {
+                      const isChecked = !!selectedPresetGoals[p.id]
                       return (
                         <div
                           key={p.id}
-                          onClick={() => setSelectedPresetGoals({ ...selectedPresetGoals, [p.id]: !isChecked })}
-                          className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
+                          onClick={() => setSelectedPresetGoals(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
+                          className={`p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3 ${
                             isChecked
-                              ? "bg-teal-50 border-teal-500 text-teal-900 shadow-xs font-bold"
-                              : "bg-white border-slate-200 hover:border-teal-300 text-slate-700 font-semibold"
+                              ? "bg-teal-50 border-teal-500 shadow-sm"
+                              : "bg-slate-50 border-slate-200 hover:border-slate-300"
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                            isChecked ? "bg-[#003B3A] border-[#003B3A] text-white" : "border-slate-300 bg-white"
+                          <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 ${
+                            isChecked ? "bg-teal-500 border-teal-500 text-white" : "bg-white border-slate-300"
                           }`}>
                             {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                           </div>
-                          <div>
-                            <p className="text-xs leading-relaxed">{p.goalText}</p>
+                          <div className="space-y-1">
+                            <p className="text-xs font-black text-slate-800">{p.goalText}</p>
                             {p.actionPreset && (
-                              <p className="text-[10px] text-teal-700 font-medium mt-1">
-                                Việc cần làm: {p.actionPreset.replace(/\|/g, " • ")}
+                              <p className="text-[11px] text-teal-700 font-bold bg-teal-100/60 px-2 py-0.5 rounded-md inline-block">
+                                👉 Việc làm: {p.actionPreset}
                               </p>
                             )}
                           </div>
@@ -353,228 +317,272 @@ export default function StudentGoalPortalPage() {
                       )
                     })}
                   </div>
+                ) : (
+                  <p className="text-xs text-slate-400 italic">Chưa có danh mục mẫu có sẵn cho phần này.</p>
+                )}
 
-                  {/* Custom Extra Text Input for K1-K3 */}
-                  <div className="pt-2">
-                    <label className="text-[11px] font-extrabold text-slate-600 block mb-1">
-                      ✏️ Ý kiến bổ sung / Mục tiêu khác của em (nếu có):
-                    </label>
-                    <input
-                      type="text"
-                      value={curCustom.targetText}
-                      onChange={(e) => setCustomGoals({
-                        ...customGoals,
-                        [catKey]: { ...curCustom, targetText: e.target.value }
-                      })}
-                      placeholder="Gõ mục tiêu riêng của em tại đây..."
-                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:outline-none focus:border-teal-500"
+                {/* Additional Custom Goal for K1-K3 */}
+                <div className="pt-3 border-t border-slate-100 space-y-2">
+                  <label className="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Ý kiến bổ sung / Mục tiêu khác của em (nếu có):</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={customGoals[cat]?.targetText || ""}
+                    onChange={(e) => setCustomGoals(prev => ({
+                      ...prev,
+                      [cat]: { ...prev[cat], targetText: e.target.value }
+                    }))}
+                    placeholder="Gõ mục tiêu riêng của em tại đây..."
+                    className="w-full p-3 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* ------------------- FORM KHỐI 4 - KHỐI 12 (NHẬP LIỆU CHI TIẾT & SMART) ------------------- */}
+      {!isK1ToK3 && (
+        <div className="space-y-6">
+          <div className="bg-teal-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-900 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-3xl">🎯</div>
+              <div>
+                <h3 className="font-black text-sm uppercase">PHIẾU ĐIỀN MỤC TIÊU NĂM HỌC — KHỐI {gradeLevel}</h3>
+                <p className="text-xs text-teal-700 font-medium">Em hãy tự thiết lập mục tiêu cá nhân, hành động cụ thể và mong muốn nhận được sự hỗ trợ từ Thầy Cô & Gia đình!</p>
+              </div>
+            </div>
+            {isHighSchool && (
+              <button
+                onClick={() => setShowSmartGuideModal(true)}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-black text-xs shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
+              >
+                <Award className="w-4 h-4" />
+                <span>Hướng dẫn SMART (5 Tiêu Chí)</span>
+              </button>
+            )}
+          </div>
+
+          {/* Detailed Input Categories */}
+          {[
+            { key: "HOC_TAP", title: "1. MỤC TIÊU HỌC TẬP & NĂNG LỰC 📚", placeholder: "Ví dụ: Đạt học sinh giỏi, nâng cao kỹ năng Tiếng Anh..." },
+            { key: "THOI_QUEN_SUC_KHOE", title: "2. THÓI QUEN & SỨC KHỎE ⏰", placeholder: "Ví dụ: Thức dậy đúng 6h sáng, tập thể dục 30 phút/ngày..." },
+            { key: "KY_NANG_SO_THICH", title: "3. KỸ NĂNG & HOẠT ĐỘNG TRẢI NGHIỆM 🎨", placeholder: "Ví dụ: Tham gia CLB Âm nhạc, rèn luyện kỹ năng thuyết trình..." },
+            { key: "PHAM_CHAT", title: "4. PHẨM CHẤT & THÁI ĐỘ SỐNG 💖", placeholder: "Ví dụ: Tích cực giúp đỡ bạn bè, luôn trung thực và tự giác..." },
+            { key: "DINH_HUONG", title: "5. ĐỊNH HƯỚNG BẢN THÂN 🚀", placeholder: "Ví dụ: Định hướng nghề nghiệp tương lai, học sinh tiêu biểu hệ thống..." }
+          ].map((catObj) => {
+            const item = customGoals[catObj.key] || {}
+            return (
+              <div key={catObj.key} className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
+                <h3 className="text-base font-black text-slate-800 border-b border-slate-100 pb-3">{catObj.title}</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-700">📌 Mục tiêu cụ thể em muốn đạt được:</label>
+                    <textarea
+                      rows={3}
+                      value={item.targetText || ""}
+                      onChange={(e) => setCustomGoals(prev => ({
+                        ...prev,
+                        [catObj.key]: { ...prev[catObj.key], targetText: e.target.value }
+                      }))}
+                      placeholder={catObj.placeholder}
+                      className="w-full p-3 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-slate-700">⚡ Hành động / Việc làm cụ thể hàng ngày:</label>
+                    <textarea
+                      rows={3}
+                      value={item.actionText || ""}
+                      onChange={(e) => setCustomGoals(prev => ({
+                        ...prev,
+                        [catObj.key]: { ...prev[catObj.key], actionText: e.target.value }
+                      }))}
+                      placeholder="Ghi rõ từng bước em sẽ thực hiện..."
+                      className="w-full p-3 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none"
                     />
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        )}
 
-        {/* ----------------- K4 - K12 FORM ----------------- */}
-        {!isK1ToK3 && (
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
-                <FileText className="w-4 h-4 text-teal-600" />
-                <span>Viết Mục Tiêu & Việc Làm Cụ Thể (Chuẩn Khối {gradeLevel})</span>
-              </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-teal-800 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-teal-600" />
+                      <span>Điều em muốn Thầy/Cô hỗ trợ:</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={item.teacherSupport || ""}
+                      onChange={(e) => setCustomGoals(prev => ({
+                        ...prev,
+                        [catObj.key]: { ...prev[catObj.key], teacherSupport: e.target.value }
+                      }))}
+                      placeholder="Thầy cô cố vấn giúp em..."
+                      className="w-full p-3 rounded-2xl border-2 border-teal-100 text-xs font-semibold focus:border-teal-500 focus:outline-none bg-teal-50/40"
+                    />
+                  </div>
 
-              {["HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "DINH_HUONG"].map((catKey) => {
-                const label =
-                  catKey === "HOC_TAP" ? "1. Mục tiêu học tập (Môn học, điểm số, phương pháp học)" :
-                  catKey === "THOI_QUEN_SUC_KHOE" ? "2. Mục tiêu thói quen (Kỷ luật, tự học, giờ giấc)" :
-                  catKey === "KY_NANG_SO_THICH" ? "3. Mục tiêu kỹ năng & cảm xúc (Giao tiếp, làm việc nhóm, cảm xúc)" :
-                  "4. Mục tiêu định hướng (Ngành nghề, khối thi, lộ trình tương lai)"
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-amber-800 flex items-center gap-1.5">
+                      <Heart className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Điều em muốn Ba/Mẹ hỗ trợ:</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={item.parentSupport || ""}
+                      onChange={(e) => setCustomGoals(prev => ({
+                        ...prev,
+                        [catObj.key]: { ...prev[catObj.key], parentSupport: e.target.value }
+                      }))}
+                      placeholder="Ba mẹ nhắc nhở em..."
+                      className="w-full p-3 rounded-2xl border-2 border-amber-100 text-xs font-semibold focus:border-amber-500 focus:outline-none bg-amber-50/40"
+                    />
+                  </div>
+                </div>
 
-                const cur = customGoals[catKey] || {}
+                {/* SMART Criteria inputs for K9-K12 */}
+                {isHighSchool && catObj.key === "HOC_TAP" && (
+                  <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
+                        <Award className="w-4 h-4 text-amber-600" /> Tiêu chuẩn SMART dành cho Học sinh Trung học (K9 - K12)
+                      </span>
+                      <span className="text-[10px] font-black text-amber-700 bg-amber-200/60 px-2 py-0.5 rounded-full uppercase">
+                        Khuôn Khổ SMART
+                      </span>
+                    </div>
 
-                return (
-                  <div key={catKey} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
-                    <h4 className="text-xs font-black text-[#003B3A] uppercase">{label}</h4>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       <div>
-                        <label className="text-[11px] font-extrabold text-slate-600">Các mục tiêu cụ thể của em *</label>
-                        <textarea
-                          rows={2}
-                          value={cur.targetText}
-                          onChange={(e) => setCustomGoals({
-                            ...customGoals,
-                            [catKey]: { ...cur, targetText: e.target.value }
-                          })}
-                          placeholder="Nhập mục tiêu của em..."
-                          className="w-full mt-1 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
+                        <label className="text-[11px] font-bold text-slate-700">Specific (Cụ thể):</label>
+                        <input
+                          type="text"
+                          value={item.smartSpecific || ""}
+                          onChange={(e) => setCustomGoals(prev => ({
+                            ...prev,
+                            [catObj.key]: { ...prev[catObj.key], smartSpecific: e.target.value }
+                          }))}
+                          placeholder="Mục tiêu cụ thể là gì?"
+                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
                         />
                       </div>
-
                       <div>
-                        <label className="text-[11px] font-extrabold text-slate-600">Em sẽ làm gì để đạt được?</label>
-                        <textarea
-                          rows={2}
-                          value={cur.actionText}
-                          onChange={(e) => setCustomGoals({
-                            ...customGoals,
-                            [catKey]: { ...cur, actionText: e.target.value }
-                          })}
-                          placeholder="Liệt kê 2-3 việc làm cụ thể hằng ngày..."
-                          className="w-full mt-1 p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
+                        <label className="text-[11px] font-bold text-slate-700">Measurable (Đo lường được):</label>
+                        <input
+                          type="text"
+                          value={item.smartMeasurable || ""}
+                          onChange={(e) => setCustomGoals(prev => ({
+                            ...prev,
+                            [catObj.key]: { ...prev[catObj.key], smartMeasurable: e.target.value }
+                          }))}
+                          placeholder="Con số / Kết quả đo?"
+                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700">Achievable (Khả thi):</label>
+                        <input
+                          type="text"
+                          value={item.smartAchievable || ""}
+                          onChange={(e) => setCustomGoals(prev => ({
+                            ...prev,
+                            [catObj.key]: { ...prev[catObj.key], smartAchievable: e.target.value }
+                          }))}
+                          placeholder="Làm sao để đạt được?"
+                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700">Relevant (Thực tế):</label>
+                        <input
+                          type="text"
+                          value={item.smartRelevant || ""}
+                          onChange={(e) => setCustomGoals(prev => ({
+                            ...prev,
+                            [catObj.key]: { ...prev[catObj.key], smartRelevant: e.target.value }
+                          }))}
+                          placeholder="Ý nghĩa với bản thân?"
+                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-700">Time-bound (Thời hạn):</label>
+                        <input
+                          type="text"
+                          value={item.smartTimeBound || ""}
+                          onChange={(e) => setCustomGoals(prev => ({
+                            ...prev,
+                            [catObj.key]: { ...prev[catObj.key], smartTimeBound: e.target.value }
+                          }))}
+                          placeholder="Hạn chót hoàn thành?"
+                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
                         />
                       </div>
                     </div>
-
-                    {(isK6ToK8 || isHighSchool) && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-200/60">
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500">Thầy cô / bạn bè hỗ trợ như thế nào?</label>
-                          <input
-                            type="text"
-                            value={cur.teacherSupport}
-                            onChange={(e) => setCustomGoals({
-                              ...customGoals,
-                              [catKey]: { ...cur, teacherSupport: e.target.value }
-                            })}
-                            placeholder="Mong muốn hỗ trợ từ thầy cô..."
-                            className="w-full mt-1 p-2 rounded-xl border border-slate-200 text-xs font-medium bg-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-bold text-slate-500">Ba mẹ hỗ trợ như thế nào?</label>
-                          <input
-                            type="text"
-                            value={cur.parentSupport}
-                            onChange={(e) => setCustomGoals({
-                              ...customGoals,
-                              [catKey]: { ...cur, parentSupport: e.target.value }
-                            })}
-                            placeholder="Mong muốn hỗ trợ từ ba mẹ..."
-                            className="w-full mt-1 p-2 rounded-xl border border-slate-200 text-xs font-medium bg-white"
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
 
-        {/* ----------------- LỜI CAM KẾT & DẤU ẤN VÂN TAY (K1-K12) ----------------- */}
-        <div className="p-5 rounded-2xl bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 space-y-4">
-          <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-            <Feather className="w-4 h-4 text-teal-600" />
-            <span>Lời Cam Kết Của Em</span>
-          </h3>
+      {/* ------------------- LOI CAM KET & DONG DAU AN VAN TAY ------------------- */}
+      <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
+        <h3 className="text-base font-black text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-teal-600" />
+          <span>LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️</span>
+        </h3>
 
+        <div className="space-y-2">
+          <label className="text-xs font-black text-slate-700">Lời cam kết nỗ lực của em trong năm học này:</label>
           <textarea
             rows={3}
             value={studentCommitment}
             onChange={(e) => setStudentCommitment(e.target.value)}
-            placeholder="Viết lời cam kết của em (Ví dụ: Em cam kết sẽ nỗ lực thực hiện các mục tiêu mỗi ngày, rèn luyện 5 trụ cột phát triển Sky-Line...)"
-            className="w-full p-3 rounded-xl border border-teal-200 text-xs font-semibold bg-white focus:outline-none focus:border-teal-500"
+            placeholder="Em xin cam kết sẽ quyết tâm thực hiện đầy đủ các mục tiêu đã đề ra..."
+            className="w-full p-4 rounded-2xl border-2 border-slate-200 text-xs font-semibold focus:border-teal-500 focus:outline-none"
           />
-
-          {/* Interactive Digital Fingerprint Button for Primary Grades */}
-          {isK1ToK3 && (
-            <div className="pt-2 flex flex-col items-center justify-center space-y-2">
-              <button
-                type="button"
-                onClick={() => setFingerprintStamped(!fingerprintStamped)}
-                className={`p-4 rounded-full border-2 transition-all transform hover:scale-105 flex items-center justify-center gap-3 shadow-md cursor-pointer ${
-                  fingerprintStamped
-                    ? "bg-rose-500 border-rose-600 text-white animate-pulse"
-                    : "bg-white border-teal-400 text-teal-700 hover:bg-teal-50"
-                }`}
-              >
-                <div className="text-2xl">👆</div>
-                <span className="text-xs font-black">
-                  {fingerprintStamped ? "✓ Đã Đóng Dấu Ấn Vân Tay Cam Kết!" : "Bấm Đóng Dấu Ấn Vân Tay Cam Kết Tại Đây"}
-                </span>
-              </button>
-              <p className="text-[10px] text-slate-500 font-bold">Em/Ba mẹ chạm vào đây để xác nhận dấu ấn vân tay cam kết</p>
-            </div>
-          )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+        {/* Fingerprint Stamping Simulation */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border-2 border-slate-200">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setFingerprintStamped(!fingerprintStamped)}
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all shadow-md ${
+                fingerprintStamped
+                  ? "bg-rose-500 text-white shadow-rose-200 scale-105"
+                  : "bg-white text-slate-400 border-2 border-dashed border-slate-300 hover:border-rose-400"
+              }`}
+            >
+              👉
+            </button>
+            <div>
+              <p className="text-xs font-black text-slate-800">
+                {fingerprintStamped ? "🔴 Đã đóng dấu vân tay xác nhận cam kết!" : "Chưa đóng dấu ấn vân tay"}
+              </p>
+              <p className="text-[11px] text-slate-500 font-medium">Nhấn vào dấu tay để xác nhận cam kết cá nhân</p>
+            </div>
+          </div>
+
           <button
             onClick={handleSaveGoals}
             disabled={saving}
-            className="px-6 py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#003B3A] hover:bg-[#002D2C] text-white font-black text-xs shadow-lg shadow-teal-950/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <Save className="w-4 h-4" />
-            <span>{saving ? "Đang lưu..." : `Lưu & Gửi Phiếu Mục Tiêu Khối ${gradeLevel}`}</span>
+            <Save className="w-4 h-4 text-teal-300" />
+            <span>{saving ? "Đang lưu..." : "LƯU PHIẾU MỤC TIÊU NĂM HỌC"}</span>
           </button>
         </div>
       </div>
 
-      {/* SMART Guide Modal */}
-      {showSmartGuideModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>HƯỚNG DẪN ĐẶT MỤC TIÊU THEO CHUẨN SMART</span>
-              </h3>
-              <button onClick={() => setShowSmartGuideModal(false)} className="text-slate-400 hover:text-slate-600">
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
-                <h4 className="font-extrabold text-amber-900">1. SMART là gì?</h4>
-                <ul className="space-y-1 text-slate-700 font-medium">
-                  <li><strong>S (Specific - Cụ thể):</strong> Mục tiêu rõ ràng.</li>
-                  <li><strong>M (Measurable - Đo lường được):</strong> Dựa vào con số/kết quả để kiểm tra.</li>
-                  <li><strong>A (Achievable - Vừa sức):</strong> Phù hợp với năng lực thực tế.</li>
-                  <li><strong>R (Relevant - Phù hợp):</strong> Phù hợp với sở thích & định hướng.</li>
-                  <li><strong>T (Time-bound - Có thời hạn):</strong> Mốc hoàn thành cụ thể.</li>
-                </ul>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-extrabold text-slate-800">2. Checklist tự kiểm tra mục tiêu của em:</h4>
-                {[
-                  "1. Mục tiêu có nêu rõ điều cụ thể muốn đạt được không?",
-                  "2. Em có thể đo được kết quả bằng con số / điểm số không?",
-                  "3. Mục tiêu này có vừa sức và khả thi không?",
-                  "4. Mục tiêu có phù hợp với định hướng cá nhân không?",
-                  "5. Em đã xác định mốc thời gian hoàn thành chưa?",
-                  "6. Em đã liệt kê được 2-3 việc làm cụ thể để đạt mục tiêu chưa?"
-                ].map((item, idx) => (
-                  <label key={idx} className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-slate-50">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(smartChecklist[idx])}
-                      onChange={(e) => setSmartChecklist({ ...smartChecklist, [idx]: e.target.checked })}
-                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-500"
-                    />
-                    <span className="font-semibold text-slate-700">{item}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setShowSmartGuideModal(false)}
-                className="px-5 py-2 rounded-xl bg-[#003B3A] text-white text-xs font-bold"
-              >
-                Hiểu Rồi & Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
