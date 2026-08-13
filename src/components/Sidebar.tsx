@@ -1,3 +1,5 @@
+import { FeatureBadge } from "@/components/badges/FeatureBadge"
+import { useUnreadBadges } from "@/context/UnreadBadgeContext"
 "use client"
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
@@ -34,6 +36,7 @@ interface SidebarProps {
 }
 
 function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, isTTCM = false, isGVCN = false }: SidebarProps) {
+  const { badges, markAsRead } = useUnreadBadges()
   const rawPathname = usePathname()
   const pathname = rawPathname || ""
   const searchParams = useSearchParams()

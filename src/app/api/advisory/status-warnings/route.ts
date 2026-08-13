@@ -1,3 +1,4 @@
+import { triggerFeatureBadgeUpdate } from "@/lib/badge-service"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"

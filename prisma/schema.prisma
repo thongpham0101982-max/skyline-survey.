@@ -36,6 +36,7 @@ model User {
   inputAssessmentBatches           InputAssessmentBatch[]                      @relation("BatchAssignee")
   studentTransfers                 StudentTransfer[]
   managedCampuses                  Campus[]                                    @relation("CampusManager")
+  featureBadges                   UserFeatureBadge[]
 }
 
 model Parent {
@@ -1958,4 +1959,22 @@ model StudentTermEvaluation {
   @@unique([studentId, academicYearId, term])
   @@index([studentId])
   @@index([academicYearId])
+}
+
+model UserFeatureBadge {
+  id                   String    @id @default(cuid())
+  userId               String
+  featureKey           String
+  badgeType            String    @default("NEW")
+  unreadCount          Int      @default(1)
+  title                String?
+  lastUpdatedContentAt DateTime @default(now())
+  lastViewedAt        DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, featureKey])
+  @@index([userId])
 }

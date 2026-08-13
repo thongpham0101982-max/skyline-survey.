@@ -1,3 +1,5 @@
+import { FeatureBadge } from "@/components/badges/FeatureBadge"
+import { useUnreadBadges } from "@/context/UnreadBadgeContext"
 "use client"
 
 import { useEffect, useState } from "react"
@@ -12,6 +14,7 @@ import { WelcomeAlert } from "@/components/WelcomeAlert"
 import Link from "next/link"
 
 export default function TeacherDashboard() {
+  const { badges, markAsRead } = useUnreadBadges()
   const { data: session, status } = useSession()
   const [metrics, setMetrics] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -153,42 +156,42 @@ export default function TeacherDashboard() {
       badgeStyle: "bg-teal-50 text-[#003B3A] border-teal-200",
       items: [
         {
-          href: "/teacher/classes",
+          href: "/teacher/classes", featureKey: "GVCN_CLASSES",
           title: "1. Lớp chủ nhiệm",
           desc: "Xem danh sách học sinh, sơ đồ lớp và thông tin lớp chủ nhiệm",
           icon: Layers,
           iconBg: "bg-teal-500/10 text-[#00A99D]"
         },
         {
-          href: "/teacher/nps",
+          href: "/teacher/nps", featureKey: "GVCN_SURVEYS",
           title: "2. NPS Khảo sát",
           desc: "Theo dõi chỉ số hài lòng và phản hồi khảo sát của phụ huynh",
           icon: BarChart3,
           iconBg: "bg-emerald-500/10 text-emerald-600"
         },
         {
-          href: "/teacher/co-van-hoc-tap",
+          href: "/teacher/co-van-hoc-tap", featureKey: "GVCN_ADVISORY",
           title: "3. Cố vấn Học tập & Nhật ký Check-in",
           desc: "Quản lý mục tiêu K1-K12, ghi nhật ký tham vấn, theo dõi cảnh báo 🟢🟡🔴 và hỗ trợ SOS",
           icon: Compass,
           iconBg: "bg-teal-500/10 text-[#00A99D]"
         },
         {
-          href: "/teacher/ho-so-hoc-sinh",
+          href: "/teacher/ho-so-hoc-sinh", featureKey: "GVCN_STUDENT_PROFILES",
           title: "4. Hồ sơ Học sinh 360°",
           desc: "Tra cứu thông tin 360°, điểm số, phiếu mục tiêu, lịch sử tham vấn & xuất PDF",
           icon: FileText,
           iconBg: "bg-blue-500/10 text-blue-600"
         },
         {
-          href: "/teacher/ho-tro-hoc-tap",
+          href: "/teacher/ho-tro-hoc-tap", featureKey: "GVCN_ACADEMIC_SUPPORT",
           title: "4. Phụ đạo, bồi dưỡng Học sinh",
           desc: "Đề xuất phụ đạo văn hóa, hỗ trợ tâm lý & theo dõi sự tiến bộ",
           icon: Heart,
           iconBg: "bg-rose-500/10 text-rose-600"
         },
         {
-          href: "/teacher/orientation",
+          href: "/teacher/orientation", featureKey: "GVCN_CAREER_GUIDANCE",
           title: "5. Sổ theo dõi Hướng nghiệp",
           desc: "Cập nhật định hướng nghề nghiệp và tư vấn học tập cho học sinh",
           icon: Compass,
@@ -202,35 +205,35 @@ export default function TeacherDashboard() {
       badgeStyle: "bg-indigo-50 text-indigo-700 border-indigo-200",
       items: [
         {
-          href: "/teacher/input-assessments?type=general",
+          href: "/teacher/input-assessments?type=general", featureKey: "GVBM_INPUT_ASSESSMENT",
           title: "1. Khảo sát đầu vào",
           desc: "Cập nhật điểm số và nhận xét năng lực đầu vào học sinh",
           icon: TrendingUp,
           iconBg: "bg-teal-500/10 text-[#00A99D]"
         },
         {
-          href: "/teacher/du-gio",
+          href: "/teacher/du-gio", featureKey: "GVBM_TEACHER_OBSERVATION",
           title: "2. Dự giờ đánh giá Giáo viên",
           desc: "Đăng ký tiết dạy, lập phiếu dự giờ chuyên môn đồng nghiệp",
           icon: Eye,
           iconBg: "bg-indigo-500/10 text-indigo-600"
         },
         {
-          href: "/teacher/experiential-activities",
+          href: "/teacher/experiential-activities", featureKey: "GVBMEXPERIENTIAL_ACT",
           title: "3. Hoạt động trải nghiệm",
           desc: "Quản lý bài thu hoạch trải nghiệm thực tế và báo cáo",
           icon: GraduationCap,
           iconBg: "bg-amber-500/10 text-amber-600"
         },
         {
-          href: "/teacher/so-diem-nhan-xet",
+          href: "/teacher/so-diem-nhan-xet", featureKey: "GVBM_GRADING_NOTES",
           title: "4. Sổ điểm / Nhận xét",
           desc: "Cập nhật sổ điểm môn học và nhận xét quá trình học tập",
           icon: ClipboardCheck,
           iconBg: "bg-teal-500/10 text-[#00A99D]"
         },
         {
-          href: "/teacher/phan-cong-giang-day",
+          href: "/teacher/phan-cong-giang-day", featureKey: "GVBM_TEACHING_ASSIGNMENTS",
           title: "5. Phân công giảng dạy",
           desc: "Tra cứu danh sách môn giảng dạy và phân công chuyên môn",
           icon: BookMarked,
@@ -416,9 +419,17 @@ export default function TeacherDashboard() {
                           <Icon className="w-4 h-4" />
                         </div>
                         <div>
-                          <h4 className="text-xs font-extrabold text-slate-800 group-hover:text-[#003B3A] transition-colors">
-                            {item.title}
-                          </h4>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-extrabold text-slate-800 group-hover:text-[#003B3A] transition-colors">
+                              {item.title}
+                            </h4>
+                            {(item as any).featureKey && badges[(item as any).featureKey] && (
+                              <FeatureBadge
+                                badgeType={badges[(item as any).featureKey].badgeType}
+                                unreadCount={badges[(item as any).featureKey].unreadCount} title={badges[(item as any).featureKey].title}
+                              />
+                            )}
+                          </div>
                           <p className="text-[11px] text-slate-500 font-medium line-clamp-1">
                             {item.desc}
                           </p>
