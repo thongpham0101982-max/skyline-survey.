@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react"
 import {
   Sparkles, Save, Heart, CheckCircle2, Compass, Send, BookOpen, User,
-  Check, Info, CheckSquare, HelpCircle, Award, Feather, FileText, ArrowRight
+  Check, Info, CheckSquare, HelpCircle, Award, Feather, FileText, ArrowRight,
+  ShieldCheck, Edit3
 } from "lucide-react"
 import Link from "next/link"
 
 export default function StudentGoalPortalPage() {
   const [studentId, setStudentId] = useState("")
   const [studentName, setStudentName] = useState("Học sinh Sky-Line")
+  const [studentGrade, setStudentGrade] = useState("K1")
   const [gradeLevel, setGradeLevel] = useState("K1")
   const [academicYearId, setAcademicYearId] = useState("")
   
@@ -20,7 +22,6 @@ export default function StudentGoalPortalPage() {
 
   // Goal Form Data States
   const [selectedPresetGoals, setSelectedPresetGoals] = useState<Record<string, boolean>>({})
-  const [selectedPresetActions, setSelectedPresetActions] = useState<Record<string, boolean>>({})
   const [customGoals, setCustomGoals] = useState<Record<string, any>>({
     HOC_TAP: { targetText: "", actionText: "", teacherSupport: "", parentSupport: "", smartSpecific: "", smartMeasurable: "", smartAchievable: "", smartRelevant: "", smartTimeBound: "" },
     THOI_QUEN_SUC_KHOE: { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" },
@@ -48,7 +49,9 @@ export default function StudentGoalPortalPage() {
           setStudentId(parsed.id || "")
           setStudentName(parsed.studentName || "Học sinh Sky-Line")
           if (parsed.class?.grade) {
-            setGradeLevel(parsed.class.grade.toUpperCase())
+            const gr = parsed.class.grade.toUpperCase()
+            setStudentGrade(gr)
+            setGradeLevel(gr)
           }
         } catch (e) {}
       }
@@ -63,7 +66,11 @@ export default function StudentGoalPortalPage() {
           if (Array.isArray(data) && data.length > 0) {
             setStudentId(data[0].id)
             setStudentName(data[0].studentName)
-            if (data[0].class?.grade) setGradeLevel(data[0].class.grade.toUpperCase())
+            if (data[0].class?.grade) {
+              const gr = data[0].class.grade.toUpperCase()
+              setStudentGrade(gr)
+              setGradeLevel(gr)
+            }
           }
         })
         .catch(() => {})
@@ -87,7 +94,6 @@ export default function StudentGoalPortalPage() {
           setFingerprintStamped(first.signedByStudent || false)
 
           const presetMap: Record<string, boolean> = {}
-          const actionMap: Record<string, boolean> = {}
           const customMap: any = { ...customGoals }
 
           data.goals.forEach((g: any) => {
@@ -119,7 +125,7 @@ export default function StudentGoalPortalPage() {
 
   async function handleSaveGoals() {
     if (!studentId) {
-      alert("Chưa xác định được học sinh.")
+      alert("Chưa xác định được thông tin học sinh.")
       return
     }
 
@@ -127,8 +133,8 @@ export default function StudentGoalPortalPage() {
       setSaving(true)
       const goalListPayload: any[] = []
 
+      // 1. Collect checked preset goals for K1-K3
       if (["K1", "K2", "K3"].includes(gradeLevel)) {
-        // Collect checked preset goals
         presets.forEach(p => {
           if (selectedPresetGoals[p.id]) {
             goalListPayload.push({
@@ -141,7 +147,7 @@ export default function StudentGoalPortalPage() {
         })
       }
 
-      // Collect custom inputs for all grades
+      // 2. Collect custom inputs for all grades (including K1-K3 if filled)
       Object.keys(customGoals).forEach(cat => {
         const item = customGoals[cat]
         if (item.targetText.trim()) {
@@ -174,10 +180,10 @@ export default function StudentGoalPortalPage() {
       })
 
       if (res.ok) {
-        setToastMessage("Đã lưu Phiếu Mục Tiêu thành công! Thầy Cô & Ba Mẹ sẽ đồng hành cùng em.")
+        setToastMessage("Đã lưu thành công Phiếu Mục Tiêu Khối " + gradeLevel + "! Thầy Cô & Ba Mẹ sẽ đồng hành cùng em.")
         setTimeout(() => setToastMessage(""), 4000)
       } else {
-        alert("Có lỗi khi lưu phiếu mục tiêu.")
+        alert("Lỗi khi lưu phiếu mục tiêu.")
       }
     } catch (e) {
       console.error(e)
@@ -186,14 +192,13 @@ export default function StudentGoalPortalPage() {
     }
   }
 
-  const isPrimary = ["K1", "K2", "K3", "K4", "K5"].includes(gradeLevel)
   const isK1ToK3 = ["K1", "K2", "K3"].includes(gradeLevel)
   const isK6ToK8 = ["K6", "K7", "K8"].includes(gradeLevel)
   const isHighSchool = ["K9", "K10", "K11", "K12"].includes(gradeLevel)
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
-      {/* Top Banner Navigation */}
+      {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-sky-500 via-teal-500 to-[#003B3A] rounded-3xl p-6 text-white shadow-xl space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/20 uppercase tracking-wider">
@@ -202,13 +207,16 @@ export default function StudentGoalPortalPage() {
           </div>
 
           <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold text-teal-100 hidden sm:inline">Khối của em: {studentGrade}</span>
             <select
               value={gradeLevel}
               onChange={(e) => setGradeLevel(e.target.value)}
-              className="px-3 py-1 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30"
+              className="px-3 py-1 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
             >
               {["K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8", "K9", "K10", "K11", "K12"].map(g => (
-                <option key={g} value={g} className="text-slate-800">Chế độ xem Khối {g}</option>
+                <option key={g} value={g} className="text-slate-800">
+                  {g === studentGrade ? `Khối ${g} (Lớp của Em)` : `Xem Phiếu Khối ${g}`}
+                </option>
               ))}
             </select>
 
@@ -225,18 +233,18 @@ export default function StudentGoalPortalPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black">Bảng Mục Tiêu Năm Học — {studentName}</h1>
           <p className="text-xs text-teal-100 font-medium mt-1">
-            "Em hãy dành thời gian suy nghĩ và viết những mục tiêu tuyệt vời nhất cho năm học này. Mục tiêu tốt cần rõ ràng, đo lường được và có việc làm cụ thể đi kèm."
+            Hệ thống đã tự động chọn Phiếu mục tiêu phù hợp với <strong>Khối {gradeLevel}</strong> của em. Hãy tích chọn mục tiêu và ghi rõ việc làm cụ thể nhé!
           </p>
         </div>
 
         {/* Portal Tabs */}
-        <div className="flex items-center gap-2 pt-2 border-t border-white/15">
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/15">
           <Link
             href="/hocsinh/portal/muc-tieu"
             className="px-4 py-1.5 rounded-xl bg-white text-[#003B3A] text-xs font-black flex items-center gap-1.5 shadow-xs"
           >
             <Compass className="w-3.5 h-3.5 text-teal-600" />
-            <span>1. Phiếu Mục Tiêu ({gradeLevel})</span>
+            <span>1. Phiếu Mục Tiêu (Khối {gradeLevel})</span>
           </Link>
           <Link
             href="/hocsinh/portal/reflection"
@@ -275,14 +283,22 @@ export default function StudentGoalPortalPage() {
       {/* Main Goal Form Container */}
       <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
 
-        {/* ----------------- K1 - K3 INTERACTIVE CHECKBOXES FORM ----------------- */}
+        {/* ----------------- K1 - K3 INTERACTIVE CHECKBOXES & ENTRY FORM ----------------- */}
         {isK1ToK3 && (
           <div className="space-y-6">
-            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-100 flex items-center gap-3">
-              <div className="text-3xl">🐧</div>
-              <p className="text-xs text-sky-900 font-bold leading-relaxed">
-                Chào em! Bạn Chim cánh cụt Sky-Line đồng hành cùng em nhé! Hãy tích chọn những mục tiêu và việc làm em muốn cố gắng nhất trong năm học này!
-              </p>
+            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">🐧</div>
+                <div>
+                  <h4 className="text-xs font-black text-sky-900 uppercase">Chế độ Nhập Liệu Trực Tiếp — Khối {gradeLevel}</h4>
+                  <p className="text-[11px] text-sky-800 font-medium">
+                    Em hãy nhấn vào ô vuông để tích chọn mục tiêu có sẵn, hoặc gõ thêm lời cam kết của em bên dưới nhé!
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-sky-200 text-sky-900 text-[10px] font-black uppercase shrink-0">
+                Khối {gradeLevel} Mở Nhập Liệu
+              </span>
             </div>
 
             {/* Render Presets by Category */}
@@ -293,10 +309,13 @@ export default function StudentGoalPortalPage() {
                 catKey === "KY_NANG_SO_THICH" ? "3. Kỹ năng & Sở thích 🎨" : "4. Phẩm chất & Đạo đức 💖"
 
               const categoryPresets = presets.filter(p => p.category === catKey)
+              const curCustom = customGoals[catKey] || {}
 
               return (
-                <div key={catKey} className="space-y-3 p-4 rounded-2xl bg-slate-50/80 border border-slate-200">
+                <div key={catKey} className="space-y-3 p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200">
                   <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">{catTitle}</h3>
+
+                  {/* Preset Checkbox Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {categoryPresets.map((p) => {
                       const isChecked = Boolean(selectedPresetGoals[p.id])
@@ -304,22 +323,22 @@ export default function StudentGoalPortalPage() {
                         <div
                           key={p.id}
                           onClick={() => setSelectedPresetGoals({ ...selectedPresetGoals, [p.id]: !isChecked })}
-                          className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
+                          className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start gap-3 ${
                             isChecked
-                              ? "bg-teal-50 border-teal-500 text-teal-900 shadow-xs"
-                              : "bg-white border-slate-200 hover:border-teal-300 text-slate-700"
+                              ? "bg-teal-50 border-teal-500 text-teal-900 shadow-xs font-bold"
+                              : "bg-white border-slate-200 hover:border-teal-300 text-slate-700 font-semibold"
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 ${
+                          <div className={`w-5 h-5 rounded-md border flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
                             isChecked ? "bg-[#003B3A] border-[#003B3A] text-white" : "border-slate-300 bg-white"
                           }`}>
                             {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                           </div>
                           <div>
-                            <p className="text-xs font-black">{p.goalText}</p>
+                            <p className="text-xs leading-relaxed">{p.goalText}</p>
                             {p.actionPreset && (
-                              <p className="text-[10px] text-slate-500 font-medium mt-1">
-                                行動: {p.actionPreset.replace(/\|/g, " • ")}
+                              <p className="text-[10px] text-teal-700 font-medium mt-1">
+                                Việc cần làm: {p.actionPreset.replace(/\|/g, " • ")}
                               </p>
                             )}
                           </div>
@@ -327,13 +346,30 @@ export default function StudentGoalPortalPage() {
                       )
                     })}
                   </div>
+
+                  {/* Custom Extra Text Input for K1-K3 */}
+                  <div className="pt-2">
+                    <label className="text-[11px] font-extrabold text-slate-600 block mb-1">
+                      ✏️ Ý kiến bổ sung / Mục tiêu khác của em (nếu có):
+                    </label>
+                    <input
+                      type="text"
+                      value={curCustom.targetText}
+                      onChange={(e) => setCustomGoals({
+                        ...customGoals,
+                        [catKey]: { ...curCustom, targetText: e.target.value }
+                      })}
+                      placeholder="Gõ mục tiêu riêng của em tại đây..."
+                      className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:outline-none focus:border-teal-500"
+                    />
+                  </div>
                 </div>
               )
             })}
           </div>
         )}
 
-        {/* ----------------- K4 - K12 FORM (TABLE / CARDS) ----------------- */}
+        {/* ----------------- K4 - K12 FORM ----------------- */}
         {!isK1ToK3 && (
           <div className="space-y-6">
             <div className="space-y-4">
@@ -443,7 +479,7 @@ export default function StudentGoalPortalPage() {
               <button
                 type="button"
                 onClick={() => setFingerprintStamped(!fingerprintStamped)}
-                className={`p-4 rounded-full border-2 transition-all transform hover:scale-105 flex items-center justify-center gap-3 shadow-md ${
+                className={`p-4 rounded-full border-2 transition-all transform hover:scale-105 flex items-center justify-center gap-3 shadow-md cursor-pointer ${
                   fingerprintStamped
                     ? "bg-rose-500 border-rose-600 text-white animate-pulse"
                     : "bg-white border-teal-400 text-teal-700 hover:bg-teal-50"
@@ -451,10 +487,10 @@ export default function StudentGoalPortalPage() {
               >
                 <div className="text-2xl">👆</div>
                 <span className="text-xs font-black">
-                  {fingerprintStamped ? "✓ Đã Bấm Ấn Dấu Tay Cam Kết!" : "Bấm Ấn Dấu Tay Cam Kết Tại Đây"}
+                  {fingerprintStamped ? "✓ Đã Đóng Dấu Ấn Vân Tay Cam Kết!" : "Bấm Đóng Dấu Ấn Vân Tay Cam Kết Tại Đây"}
                 </span>
               </button>
-              <p className="text-[10px] text-slate-500 font-bold">Chạm để đóng dấu tay cam kết cố gắng thực hiện mục tiêu</p>
+              <p className="text-[10px] text-slate-500 font-bold">Em/Ba mẹ chạm vào đây để xác nhận dấu ấn vân tay cam kết</p>
             </div>
           )}
         </div>
@@ -464,15 +500,15 @@ export default function StudentGoalPortalPage() {
           <button
             onClick={handleSaveGoals}
             disabled={saving}
-            className="px-6 py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
+            className="px-6 py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center gap-2 shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>{saving ? "Đang lưu..." : "Lưu & Gửi Phiếu Mục Tiêu"}</span>
+            <span>{saving ? "Đang lưu..." : `Lưu & Gửi Phiếu Mục Tiêu Khối ${gradeLevel}`}</span>
           </button>
         </div>
       </div>
 
-      {/* SMART Guide Modal for K6-K12 */}
+      {/* SMART Guide Modal */}
       {showSmartGuideModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
@@ -490,7 +526,7 @@ export default function StudentGoalPortalPage() {
               <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
                 <h4 className="font-extrabold text-amber-900">1. SMART là gì?</h4>
                 <ul className="space-y-1 text-slate-700 font-medium">
-                  <li><strong>S (Specific - Cụ thể):</strong> Mục tiêu rõ ràng (VD: "Đạt 8.0 môn Toán" thay vì "Học giỏi hơn").</li>
+                  <li><strong>S (Specific - Cụ thể):</strong> Mục tiêu rõ ràng.</li>
                   <li><strong>M (Measurable - Đo lường được):</strong> Dựa vào con số/kết quả để kiểm tra.</li>
                   <li><strong>A (Achievable - Vừa sức):</strong> Phù hợp với năng lực thực tế.</li>
                   <li><strong>R (Relevant - Phù hợp):</strong> Phù hợp với sở thích & định hướng.</li>
