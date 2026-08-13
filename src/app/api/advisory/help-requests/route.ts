@@ -6,8 +6,6 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
   const { searchParams } = new URL(req.url)
   const studentId = searchParams.get("studentId")
   const classId = searchParams.get("classId")
@@ -27,7 +25,8 @@ export async function GET(req: Request) {
     const requests = await prisma.studentHelpRequest.findMany({
       where: whereCondition,
       include: {
-        student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } }
+        student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } },
+        teacher: { select: { id: true, teacherName: true } }
       },
       orderBy: { createdAt: "desc" }
     })
@@ -40,15 +39,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const session = await auth()
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
   try {
     const body = await req.json()
     const { studentId, academicYearId, category, content, urgency } = body
 
     if (!studentId || !content) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json({ error: "Vui lòng nhập đầy đủ nội dung yêu cầu hỗ trợ" }, { status: 400 })
     }
 
     // Find student's homeroom teacher to assign request
@@ -56,6 +52,10 @@ export async function POST(req: Request) {
       where: { id: studentId },
       include: { class: true }
     })
+
+    if (!student) {
+      return NextResponse.json({ error: "Không tìm thấy thông tin học sinh" }, { status: 404 })
+    }
 
     const teacherId = student?.class?.homeroomTeacherId || null
 
