@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import {
   Sparkles, Save, Heart, CheckCircle2, Compass, Send, BookOpen, User,
   Check, Info, CheckSquare, HelpCircle, Award, Feather, FileText, ArrowRight,
-  ShieldCheck, Edit3
+  ShieldCheck, Edit3, History, Clock, MessageSquare, AlertCircle
 } from "lucide-react"
 import Link from "next/link"
 
@@ -19,6 +19,8 @@ export default function StudentGoalPortalPage() {
   const [saving, setSaving] = useState(false)
   const [toastMessage, setToastMessage] = useState("")
   const [presets, setPresets] = useState<any[]>([])
+  const [submittedAt, setSubmittedAt] = useState<string | null>(null)
+  const [trackingLogs, setTrackingLogs] = useState<any[]>([])
 
   // Goal Form Data States
   const [selectedPresetGoals, setSelectedPresetGoals] = useState<Record<string, boolean>>({})
@@ -35,7 +37,6 @@ export default function StudentGoalPortalPage() {
 
   // SMART Modal State for K6-K12
   const [showSmartGuideModal, setShowSmartGuideModal] = useState(false)
-  const [smartChecklist, setSmartChecklist] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
     fetch("/api/hocsinh/me")
@@ -85,9 +86,14 @@ export default function StudentGoalPortalPage() {
       if (res.ok) {
         const data = await res.json()
         setPresets(data.presets || [])
+        setTrackingLogs(data.trackingLogs || [])
+
         if (data.existingSheet) {
           setStudentCommitment(data.existingSheet.studentCommitment || "")
           setFingerprintStamped(!!data.existingSheet.signedByStudent)
+          if (data.existingSheet.submittedAt) {
+            setSubmittedAt(new Date(data.existingSheet.submittedAt).toLocaleDateString("vi-VN"))
+          }
           const presetMap: Record<string, boolean> = {}
           const customMap = { ...customGoals }
 
@@ -142,10 +148,10 @@ export default function StudentGoalPortalPage() {
         })
       }
 
-      // 2. Collect custom inputs for all grades (including K1-K3 if filled)
+      // 2. Collect custom inputs for all grades
       Object.keys(customGoals).forEach(cat => {
         const item = customGoals[cat]
-        if (item.targetText.trim()) {
+        if (item.targetText && item.targetText.trim()) {
           goalListPayload.push({
             category: cat,
             targetText: item.targetText,
@@ -175,8 +181,10 @@ export default function StudentGoalPortalPage() {
       })
 
       if (res.ok) {
-        setToastMessage("Đã lưu thành công Phiếu Mục Tiêu Khối " + gradeLevel + "! Thầy Cô & Ba Mẹ sẽ đồng hành cùng em.")
-        setTimeout(() => setToastMessage(""), 4000)
+        setSubmittedAt(new Date().toLocaleDateString("vi-VN"))
+        setToastMessage("Đã LƯU & GỬI PHIẾU MỤC TIÊU Khối " + gradeLevel.replace("K","") + " về Quản lý Cố Vấn Học Tập & GVCN thành công!")
+        setTimeout(() => setToastMessage(""), 5000)
+        fetchGoalsForStudent(studentId, gradeLevel)
       } else {
         alert("Lỗi khi lưu phiếu mục tiêu.")
       }
@@ -188,7 +196,6 @@ export default function StudentGoalPortalPage() {
   }
 
   const isK1ToK3 = ["K1", "K2", "K3"].includes(gradeLevel)
-  const isK6ToK8 = ["K6", "K7", "K8"].includes(gradeLevel)
   const isHighSchool = ["K9", "K10", "K11", "K12"].includes(gradeLevel)
 
   if (loading) {
@@ -228,26 +235,28 @@ export default function StudentGoalPortalPage() {
 
         <h1 className="text-2xl sm:text-3xl font-black">Bảng Mục Tiêu Năm Học — {studentName}</h1>
         <p className="text-xs sm:text-sm text-teal-100 font-medium">
-          Hệ thống đã tự động chọn Phiếu mục tiêu phù hợp với <strong className="text-white">Khối {gradeLevel.replace("K", "")}</strong> của em. Hãy tích chọn mục tiêu và ghi rõ việc làm cụ thể nhé!
+          Hệ thống đã tự động chọn Phiếu mục tiêu phù hợp với <strong className="text-white">Khối {gradeLevel.replace("K", "")}</strong> của em. Hãy điền mục tiêu và nhấn nút Lưu & Gửi về Thầy/Cô Cố vấn nhé!
         </p>
 
-        {/* Tab Indicator */}
-        <div className="flex items-center gap-2 pt-2">
-          <span className="px-3 py-1 rounded-full bg-white text-[#003B3A] font-black text-xs flex items-center gap-1 shadow-sm">
-            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" /> 1. Phiếu Mục Tiêu (Khối {gradeLevel})
-          </span>
-          <Link href="/hocsinh/portal/reflection" className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1">
-            2. Tự Đánh Giá (Reflection)
-          </Link>
-          <Link href="/hocsinh/portal/ho-tro" className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center gap-1">
-            3. Yêu Cầu Hỗ Trợ (SOS)
-          </Link>
+        {/* Submission Status Badge */}
+        <div className="flex items-center gap-2 pt-2 flex-wrap">
+          {submittedAt ? (
+            <span className="px-3.5 py-1 rounded-full bg-emerald-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-sm">
+              <CheckCircle2 className="w-4 h-4 text-emerald-950" />
+              <span>ĐÃ LƯU & GỬI CHO GVCN VÀ QUẢN LÝ CỐ VẤN ({submittedAt})</span>
+            </span>
+          ) : (
+            <span className="px-3.5 py-1 rounded-full bg-amber-400 text-amber-950 font-black text-xs flex items-center gap-1.5 shadow-sm">
+              <Clock className="w-4 h-4" />
+              <span>ĐANG DỰ THẢO — CHƯA GỬI</span>
+            </span>
+          )}
         </div>
       </div>
 
       {/* Toast Notification */}
       {toastMessage && (
-        <div className="p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl text-emerald-800 font-black text-xs flex items-center justify-between animate-bounce">
+        <div className="p-4 bg-emerald-50 border-2 border-emerald-400 rounded-2xl text-emerald-800 font-black text-xs flex items-center justify-between animate-bounce shadow-md">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             <span>{toastMessage}</span>
@@ -272,7 +281,7 @@ export default function StudentGoalPortalPage() {
           </div>
 
           {/* Preset Checkbox Categories */}
-          {["HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT"].map((cat, idx) => {
+          {["HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT"].map((cat) => {
             const catTitles: Record<string, string> = {
               HOC_TAP: "1. MỤC TIÊU HỌC TẬP 📚",
               THOI_QUEN_SUC_KHOE: "2. THÓI QUEN & SỨC KHỎE ⏰",
@@ -285,7 +294,6 @@ export default function StudentGoalPortalPage() {
               <div key={cat} className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
                 <h3 className="text-base font-black text-slate-800 border-b border-slate-100 pb-3">{catTitles[cat]}</h3>
                 
-                {/* List Checkboxes */}
                 {catPresets.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {catPresets.map(p => {
@@ -321,7 +329,6 @@ export default function StudentGoalPortalPage() {
                   <p className="text-xs text-slate-400 italic">Chưa có danh mục mẫu có sẵn cho phần này.</p>
                 )}
 
-                {/* Additional Custom Goal for K1-K3 */}
                 <div className="pt-3 border-t border-slate-100 space-y-2">
                   <label className="text-xs font-black text-slate-700 flex items-center gap-1.5">
                     <Edit3 className="w-3.5 h-3.5 text-amber-500" />
@@ -355,18 +362,8 @@ export default function StudentGoalPortalPage() {
                 <p className="text-xs text-teal-700 font-medium">Em hãy tự thiết lập mục tiêu cá nhân, hành động cụ thể và mong muốn nhận được sự hỗ trợ từ Thầy Cô & Gia đình!</p>
               </div>
             </div>
-            {isHighSchool && (
-              <button
-                onClick={() => setShowSmartGuideModal(true)}
-                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-black text-xs shadow-md hover:scale-105 transition-transform flex items-center gap-1.5"
-              >
-                <Award className="w-4 h-4" />
-                <span>Hướng dẫn SMART (5 Tiêu Chí)</span>
-              </button>
-            )}
           </div>
 
-          {/* Detailed Input Categories */}
           {[
             { key: "HOC_TAP", title: "1. MỤC TIÊU HỌC TẬP & NĂNG LỰC 📚", placeholder: "Ví dụ: Đạt học sinh giỏi, nâng cao kỹ năng Tiếng Anh..." },
             { key: "THOI_QUEN_SUC_KHOE", title: "2. THÓI QUEN & SỨC KHỎE ⏰", placeholder: "Ví dụ: Thức dậy đúng 6h sáng, tập thể dục 30 phút/ngày..." },
@@ -444,95 +441,13 @@ export default function StudentGoalPortalPage() {
                     />
                   </div>
                 </div>
-
-                {/* SMART Criteria inputs for K9-K12 */}
-                {isHighSchool && catObj.key === "HOC_TAP" && (
-                  <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                        <Award className="w-4 h-4 text-amber-600" /> Tiêu chuẩn SMART dành cho Học sinh Trung học (K9 - K12)
-                      </span>
-                      <span className="text-[10px] font-black text-amber-700 bg-amber-200/60 px-2 py-0.5 rounded-full uppercase">
-                        Khuôn Khổ SMART
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-700">Specific (Cụ thể):</label>
-                        <input
-                          type="text"
-                          value={item.smartSpecific || ""}
-                          onChange={(e) => setCustomGoals(prev => ({
-                            ...prev,
-                            [catObj.key]: { ...prev[catObj.key], smartSpecific: e.target.value }
-                          }))}
-                          placeholder="Mục tiêu cụ thể là gì?"
-                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-700">Measurable (Đo lường được):</label>
-                        <input
-                          type="text"
-                          value={item.smartMeasurable || ""}
-                          onChange={(e) => setCustomGoals(prev => ({
-                            ...prev,
-                            [catObj.key]: { ...prev[catObj.key], smartMeasurable: e.target.value }
-                          }))}
-                          placeholder="Con số / Kết quả đo?"
-                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-700">Achievable (Khả thi):</label>
-                        <input
-                          type="text"
-                          value={item.smartAchievable || ""}
-                          onChange={(e) => setCustomGoals(prev => ({
-                            ...prev,
-                            [catObj.key]: { ...prev[catObj.key], smartAchievable: e.target.value }
-                          }))}
-                          placeholder="Làm sao để đạt được?"
-                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-700">Relevant (Thực tế):</label>
-                        <input
-                          type="text"
-                          value={item.smartRelevant || ""}
-                          onChange={(e) => setCustomGoals(prev => ({
-                            ...prev,
-                            [catObj.key]: { ...prev[catObj.key], smartRelevant: e.target.value }
-                          }))}
-                          placeholder="Ý nghĩa với bản thân?"
-                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-700">Time-bound (Thời hạn):</label>
-                        <input
-                          type="text"
-                          value={item.smartTimeBound || ""}
-                          onChange={(e) => setCustomGoals(prev => ({
-                            ...prev,
-                            [catObj.key]: { ...prev[catObj.key], smartTimeBound: e.target.value }
-                          }))}
-                          placeholder="Hạn chót hoàn thành?"
-                          className="w-full p-2.5 rounded-xl border border-amber-300 text-xs bg-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })}
         </div>
       )}
 
-      {/* ------------------- LOI CAM KET & DONG DAU AN VAN TAY ------------------- */}
+      {/* ------------------- LỜI CAM KẾT & LƯU PHIẾU GỬI CHO GVCN ------------------- */}
       <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
         <h3 className="text-base font-black text-slate-800 border-b border-slate-100 pb-3 flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-teal-600" />
@@ -550,7 +465,6 @@ export default function StudentGoalPortalPage() {
           />
         </div>
 
-        {/* Fingerprint Stamping Simulation */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border-2 border-slate-200">
           <div className="flex items-center gap-3">
             <button
@@ -577,10 +491,71 @@ export default function StudentGoalPortalPage() {
             disabled={saving}
             className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-[#003B3A] hover:bg-[#002D2C] text-white font-black text-xs shadow-lg shadow-teal-950/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
-            <Save className="w-4 h-4 text-teal-300" />
-            <span>{saving ? "Đang lưu..." : "LƯU PHIẾU MỤC TIÊU NĂM HỌC"}</span>
+            <Send className="w-4 h-4 text-teal-300" />
+            <span>{saving ? "Đang gửi..." : "LƯU & GỬI PHIẾU MỤC TIÊU CHO GVCN"}</span>
           </button>
         </div>
+      </div>
+
+      {/* ------------------- BẢNG LỊCH SỬ PHIẾU & THEO DÕI ĐÁNH GIÁ CỦA GVCN ------------------- */}
+      <div className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <h3 className="text-base font-black text-slate-800 flex items-center gap-2">
+            <History className="w-5 h-5 text-teal-600" />
+            <span>LỊCH SỬ PHIẾU & NHẬT KÝ THEO DÕI ĐÁNH GIÁ CỦA GVCN</span>
+          </h3>
+          <span className="text-xs font-black text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
+            {trackingLogs.length} Nhật ký ghi nhận
+          </span>
+        </div>
+
+        {trackingLogs.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-slate-50 text-slate-700 uppercase font-black">
+                <tr>
+                  <th className="p-3 rounded-l-xl">Mốc kiểm tra</th>
+                  <th className="p-3">Nội dung mục tiêu</th>
+                  <th className="p-3">Trạng thái tiến độ</th>
+                  <th className="p-3 rounded-r-xl">Nhận xét của GVCN / Thầy Cô</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {trackingLogs.map((log: any, idx: number) => {
+                  const checkPointNames: Record<string, string> = {
+                    DAU_NAM: "1. Mốc Đầu Năm Học",
+                    GIUA_KY_1: "2. Mốc Giữa Học Kỳ 1",
+                    CUOI_KY_1: "3. Mốc Cuối Học Kỳ 1",
+                    GIUA_KY_2: "4. Mốc Giữa Học Kỳ 2",
+                    CUOI_NAM: "5. Mốc Cuối Năm Học"
+                  }
+                  return (
+                    <tr key={log.id || idx} className="hover:bg-slate-50/80">
+                      <td className="p-3 font-bold text-slate-900">
+                        {checkPointNames[log.checkPoint] || log.checkPoint}
+                      </td>
+                      <td className="p-3 font-medium text-slate-800">{log.targetText}</td>
+                      <td className="p-3">
+                        <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-teal-100 text-teal-800 border border-teal-200">
+                          {log.progressStatus || "TIẾN TRIỂN TỐT"}
+                        </span>
+                      </td>
+                      <td className="p-3 font-semibold text-slate-700 bg-amber-50/40 rounded-xl">
+                        {log.teacherNotes || "Chờ Thầy Cô nhận xét"}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+            <MessageSquare className="w-8 h-8 text-slate-300 mx-auto" />
+            <p className="text-xs font-bold text-slate-500">Chưa có nhật ký theo dõi từ GVCN</p>
+            <p className="text-[11px] text-slate-400">Sau khi em nhấn "LƯU & GỬI PHIẾU MỤC TIÊU", Thầy Cô GVCN sẽ theo dõi và gửi nhận xét động viên em tại đây!</p>
+          </div>
+        )}
       </div>
 
     </div>
