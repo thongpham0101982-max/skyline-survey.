@@ -51,7 +51,8 @@ const ddlList = [
     "status" TEXT NOT NULL DEFAULT 'PENDING',
     "targetDate" DATETIME,
     "completedAt" DATETIME,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "deadline" DATETIME,
+      "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
   );`,
   `CREATE TABLE IF NOT EXISTS "StudentGoalTrackingLog" (

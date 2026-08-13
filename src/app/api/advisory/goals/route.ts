@@ -62,6 +62,7 @@ async function ensureTablesExist() {
       "status" TEXT NOT NULL DEFAULT 'PENDING',
       "targetDate" DATETIME,
       "completedAt" DATETIME,
+      "deadline" DATETIME,
       "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     );`,
