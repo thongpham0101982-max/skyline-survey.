@@ -411,16 +411,7 @@ export function WeeklyReportClient({ currentRole, currentUserId, currentUserName
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {isAdmin && (
-            <button
-              onClick={handleSendReminder}
-              disabled={reminding}
-              className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 text-white px-4 py-2.5 rounded-xl hover:opacity-95 transition-all shadow-md font-bold text-xs disabled:opacity-50"
-            >
-              <Bell className="w-4 h-4 animate-bounce" />
-              {reminding ? "Đang gửi Email nhắc..." : "🔔 Nhắc nộp BC Tuần qua Email (Thứ 5 - 14h00)"}
-            </button>
-          )}
+
 
           {activeTab === "consolidated" && isAdmin && (
             <button

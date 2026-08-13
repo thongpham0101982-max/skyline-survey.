@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { WeeklyReportClient } from "./client"
-import { sendWeeklyReportEmailReminders } from "./actions"
 
 export const metadata = { title: "Báo cáo Tuần | SQMS" }
 export const dynamic = "force-dynamic"
@@ -13,11 +12,7 @@ export default async function WeeklyReportsPage() {
   const role = user?.role || "ADMIN"
   const userId = user?.id || ""
 
-  // Auto trigger Thursday 14:00 reminder check if today is Thursday after 14:00
-  const now = new Date()
-  if (now.getDay() === 4 && now.getHours() >= 14) {
-    sendWeeklyReportEmailReminders().catch(() => {})
-  }
+
 
   const [years, staffUsers, roles] = await Promise.all([
     prisma.academicYear.findMany({

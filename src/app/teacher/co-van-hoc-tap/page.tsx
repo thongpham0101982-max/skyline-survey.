@@ -25,7 +25,7 @@ export default function TeacherAdvisoryPage() {
   
   // 1. Student-Focused Goal Progress Tracking State
   const [checkPoint, setCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
-  const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([])
+  const [singleStudentTrackingRows, setSingleStudentTrackingRows] = useState<any[]>([]); const [activeStudentCommitment, setActiveStudentCommitment] = useState<string>("")
 
   // 2. Term Evaluation Rubric States
   const [evalTerm, setEvalTerm] = useState<"HK1" | "HK2">("HK1")
@@ -145,44 +145,19 @@ export default function TeacherAdvisoryPage() {
       const st = students.find(s => s.id === selectedStudentId)
       if (!st) return
 
-      const studentGrade = st.class?.grade || selectedClass?.grade || ""
-      const studentClassName = st.class?.className || selectedClass?.className || ""
+      const standardCats = [
+        { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚" },
+        { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰" },
+        { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨" },
+        { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀" }
+      ]
 
-      const getStandardCategories = (gradeStr: string, classNameStr: string) => {
-        const str = (gradeStr + " " + classNameStr).toUpperCase()
-        const isK13 = str.includes("K1") || str.includes("K2") || str.includes("K3") || str.startsWith("1.") || str.startsWith("2.") || str.startsWith("3.") || str.startsWith("LỚP 1") || str.startsWith("LỚP 2") || str.startsWith("LỚP 3")
-        const isK912 = str.includes("K9") || str.includes("K10") || str.includes("K11") || str.includes("K12") || str.startsWith("9.") || str.startsWith("10.") || str.startsWith("11.") || str.startsWith("12.")
-
-        if (isK13) {
-          return [
-            { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚" },
-            { key: "THOI_QUEN_SUC_KHOE", label: "2. Thói quen & Sức khỏe ⏰" },
-            { key: "KY_NANG_SO_THICH", label: "3. Kỹ năng & Sở thích 🎨" },
-            { key: "PHAM_CHAT", label: "4. Phẩm chất & Đạo đức 💖" }
-          ]
-        } else if (isK912) {
-          return [
-            { key: "HOC_TAP", label: "1. Mục tiêu học tập (SMART)" },
-            { key: "THOI_QUEN_SUC_KHOE", label: "2. Mục tiêu thói quen" },
-            { key: "KY_NANG_SO_THICH", label: "3. Kỹ năng & Cảm xúc" },
-            { key: "DINH_HUONG", label: "4. Định hướng nghề nghiệp 🚀" }
-          ]
-        } else {
-          return [
-            { key: "HOC_TAP", label: "1. Mục tiêu học tập" },
-            { key: "THOI_QUEN_SUC_KHOE", label: "2. Mục tiêu thói quen" },
-            { key: "KY_NANG_SO_THICH", label: "3. Mục tiêu kỹ năng & cảm xúc" },
-            { key: "PHAM_CHAT", label: "4. Mục tiêu phẩm chất / hỗ trợ" }
-          ]
-        }
-      }
-
-      const standardCats = getStandardCategories(studentGrade, studentClassName)
-
-      const goalRes = await fetch("/api/advisory/goals?studentId=" + st.id + "&academicYearId=" + academicYearId)
+      const goalRes = await fetch("/api/advisory/goals?studentId=" + st.id + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" })
       const goalData = goalRes.ok ? await goalRes.json() : null
 
-      const trackRes = await fetch("/api/advisory/tracking?studentId=" + st.id + "&academicYearId=" + academicYearId + "&checkPoint=" + checkPoint)
+      setActiveStudentCommitment(goalData?.existingSheet?.studentCommitment || "")
+
+      const trackRes = await fetch("/api/advisory/tracking?studentId=" + st.id + "&academicYearId=" + academicYearId + "&checkPoint=" + checkPoint + "&_t=" + Date.now(), { cache: "no-store" })
       const existingLogs = trackRes.ok ? await trackRes.json() : []
 
       const rows: any[] = []
@@ -190,6 +165,8 @@ export default function TeacherAdvisoryPage() {
       standardCats.forEach(catObj => {
         const studentGoalsInCat = goalData?.goals?.filter((g: any) => {
           if (g.category === catObj.key) return true
+          if (catObj.key === "THOI_QUEN" && (g.category === "THOI_QUEN" || g.category === "THOI_QUEN_SUC_KHOE")) return true
+          if (catObj.key === "KY_NANG_CAM_XUC" && (g.category === "KY_NANG_CAM_XUC" || g.category === "KY_NANG_SO_THICH")) return true
           if (catObj.key === "DINH_HUONG" && (g.category === "DINH_HUONG" || g.category === "PHAM_CHAT")) return true
           return false
         }) || []
@@ -203,7 +180,10 @@ export default function TeacherAdvisoryPage() {
               studentCode: st.studentCode,
               goalId: g.id,
               category: catObj.label,
-              targetText: g.targetText || "Mục tiêu đã điền",
+              targetText: g.targetText || "",
+              actionText: g.actions?.[0]?.actionText || "",
+              teacherSupportRequest: g.teacherSupportRequest || "",
+              parentSupportRequest: g.parentSupportRequest || "",
               progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
               teacherNotes: matchedLog?.teacherNotes || ""
             })
@@ -216,6 +196,9 @@ export default function TeacherAdvisoryPage() {
             studentCode: st.studentCode,
             category: catObj.label,
             targetText: matchedLog?.targetText || "Em chưa điền nội dung mục tiêu nhóm này",
+            actionText: "",
+            teacherSupportRequest: "",
+            parentSupportRequest: "",
             progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
             teacherNotes: matchedLog?.teacherNotes || ""
           })
@@ -591,6 +574,21 @@ export default function TeacherAdvisoryPage() {
             </div>
           </div>
 
+          {/* Student Commitment Banner */}
+          {activeStudentCommitment && (
+            <div className="p-4 bg-teal-50 border-2 border-teal-200 rounded-2xl text-teal-950 space-y-1 shadow-xs">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4.5 h-4.5 text-teal-700 shrink-0" />
+                <span className="text-xs font-black uppercase text-teal-900">
+                  LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ({activeStudent?.studentName}):
+                </span>
+              </div>
+              <p className="text-xs font-bold text-teal-800 italic pl-6">
+                "{activeStudentCommitment}"
+              </p>
+            </div>
+          )}
+
           {/* Goal Progress Table */}
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left border-collapse border border-slate-200">
@@ -633,7 +631,43 @@ export default function TeacherAdvisoryPage() {
                           {item.category}
                         </span>
                       </td>
-                      <td className="p-3.5 border-r border-slate-200 text-slate-800 font-bold">{item.targetText}</td>
+                      <td className="p-3.5 border-r border-slate-200 text-slate-800 space-y-2">
+  {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
+    <div className="space-y-2 text-xs">
+      <div className="bg-teal-50/80 p-3 rounded-2xl border border-teal-200/60 space-y-1">
+        <span className="text-[11px] font-black text-teal-800 uppercase flex items-center gap-1.5">
+          📌 Các mục tiêu cụ thể:
+        </span>
+        <p className="font-bold text-slate-900 leading-relaxed text-xs">{item.targetText}</p>
+      </div>
+
+      {item.actionText && (
+        <div className="bg-amber-50/80 p-3 rounded-2xl border border-amber-200/60 space-y-1">
+          <span className="text-[11px] font-black text-amber-800 uppercase flex items-center gap-1.5">
+            ⚡ Em sẽ làm gì để đạt mục tiêu này:
+          </span>
+          <p className="font-semibold text-slate-800 leading-relaxed text-xs">{item.actionText}</p>
+        </div>
+      )}
+
+      {item.teacherSupportRequest && (
+        <div className="bg-sky-50/80 p-2.5 rounded-xl border border-sky-200/60 text-xs">
+          <span className="font-black text-sky-900">💬 Mong muốn Thầy/Cô & Bạn bè hỗ trợ: </span>
+          <span className="font-semibold text-slate-800">{item.teacherSupportRequest}</span>
+        </div>
+      )}
+
+      {item.parentSupportRequest && (
+        <div className="bg-rose-50/80 p-2.5 rounded-xl border border-rose-200/60 text-xs">
+          <span className="font-black text-rose-900">🏡 Mong muốn Ba/Mẹ hỗ trợ: </span>
+          <span className="font-semibold text-slate-800">{item.parentSupportRequest}</span>
+        </div>
+      )}
+    </div>
+  ) : (
+    <span className="text-xs font-semibold text-slate-400 italic">Em chưa điền nội dung mục tiêu nhóm này</span>
+  )}
+</td>
                       <td className="p-3.5 border-r border-slate-200 font-bold text-slate-600">
                         {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
                       </td>
