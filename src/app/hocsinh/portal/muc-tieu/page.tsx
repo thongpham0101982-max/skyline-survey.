@@ -181,7 +181,7 @@ export default function StudentGoalPortalPage() {
       }
     } catch (e) {
       console.error(e)
-    } font-sans finally {
+    } finally {
       setSaving(false)
     }
   }
