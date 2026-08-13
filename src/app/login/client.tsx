@@ -61,6 +61,9 @@ export function LoginClient() {
         setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
         addStep('Đăng nhập thành công! Đang chuyển trang...')
         await new Promise(r => setTimeout(r, 500))
+                if (data.student) {
+          localStorage.setItem('currentStudent', JSON.stringify(data.student))
+        }
         document.cookie = 'hs_token=' + data.token + '; path=/; max-age=' + (rememberMe ? 30 * 24 * 60 * 60 : 2 * 24 * 60 * 60) + '; SameSite=Lax'
         window.location.href = '/hocsinh/portal'
       } else {

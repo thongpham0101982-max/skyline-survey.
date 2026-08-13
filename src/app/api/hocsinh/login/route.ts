@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         campusId: true,
         academicYearId: true,
         status: true, 
-        class: { select: { className: true } }, 
+        class: { select: { className: true, grade: true } }, 
         campus: { select: { campusName: true } } 
       }
     }) || await prisma.student.findFirst({
@@ -42,28 +42,12 @@ export async function POST(req: NextRequest) {
         campusId: true,
         academicYearId: true,
         status: true, 
-        class: { select: { className: true } }, 
+        class: { select: { className: true, grade: true } }, 
         campus: { select: { campusName: true } } 
       }
     });
     
     if (!student) return NextResponse.json({ error: 'Mã học sinh không đúng.' }, { status: 401 })
-    
-    // Tìm đợt khảo sát đang hoạt động cho học sinh
-    const activePeriod = await prisma.surveyPeriod.findFirst({
-      where: {
-        status: 'ACTIVE',
-        OR: [
-          { targetAudience: 'HocSinh' },
-          { targetAudience: 'HS' },
-          { targetAudience: 'Học sinh' },
-          { targetAudience: 'hocsinh' }
-        ]
-      },
-      orderBy: { endDate: 'desc' }
-    })
-
-    const formId = null;
     
     const token = signStudentToken({
       studentId: student.id, 
@@ -75,11 +59,21 @@ export async function POST(req: NextRequest) {
       exp: Date.now() + 2 * 24 * 60 * 60 * 1000
     })
     
+    const studentPayload = {
+      id: student.id,
+      studentCode: student.studentCode,
+      studentName: student.studentName,
+      classId: student.classId,
+      className: student.class?.className || '',
+      grade: student.class?.grade || '',
+      campusName: student.campus?.campusName || ''
+    }
+
     const res = NextResponse.json({ 
       ok: true, 
       token, 
-      formId: formId,
-      studentName: student.studentName 
+      studentName: student.studentName,
+      student: studentPayload
     })
     
     res.cookies.set('hs_token', token, { path: '/', maxAge: 2 * 24 * 60 * 60 })

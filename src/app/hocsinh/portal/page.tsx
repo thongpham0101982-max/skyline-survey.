@@ -4,13 +4,14 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   ClipboardCheck, Compass, Feather, Heart, Sparkles, ArrowRight,
-  User, Award, Star, CheckCircle2, MessageSquare, Camera, ShieldCheck
+  User, Award, Star, CheckCircle2, MessageSquare, Camera, ShieldCheck,
+  BookOpen
 } from "lucide-react"
 
 function parseGradeNumber(className: string): string {
   if (!className) return "5"
   const str = className.toUpperCase().trim()
-  const match = str.match(/(?:KHỐI|LỚP|K)?s*(d{1,2})/)
+  const match = str.match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
   if (match && match[1]) {
     const num = parseInt(match[1], 10)
     if (num >= 1 && num <= 12) return String(num)
@@ -23,6 +24,7 @@ export default function StudentPortalHomePage() {
   const [className, setClassName] = useState("Lớp 5.1_CS1")
   const [studentCode, setStudentCode] = useState("")
   const [gradeNum, setGradeNum] = useState("5")
+  const [campusName, setCampusName] = useState("")
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -34,10 +36,10 @@ export default function StudentPortalHomePage() {
           const cName = parsed.class?.className || parsed.className || "Lớp 5.1_CS1"
           setClassName(cName)
           setStudentCode(parsed.studentCode || "")
+          setCampusName(parsed.campusName || parsed.campus?.campusName || "")
           setGradeNum(parseGradeNumber(cName))
         } catch (e) {}
       } else {
-        // Fetch fallback
         fetch("/api/students/search?limit=1")
           .then(r => r.json())
           .then(data => {
@@ -46,6 +48,7 @@ export default function StudentPortalHomePage() {
               const cName = data[0].class?.className || "Lớp 5.1_CS1"
               setClassName(cName)
               setStudentCode(data[0].studentCode)
+              setCampusName(data[0].campus?.campusName || "")
               setGradeNum(parseGradeNumber(cName))
             }
           })
@@ -57,7 +60,7 @@ export default function StudentPortalHomePage() {
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 font-sans text-slate-800 pb-20">
       
-      {/* Dynamic Welcome Hero Banner */}
+      {/* Header Banner - Sky-Line Branded */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] p-6 sm:p-8 text-white shadow-2xl">
         <div className="absolute -right-10 -top-10 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute right-20 -bottom-10 w-60 h-60 bg-teal-400/20 rounded-full blur-2xl pointer-events-none" />
@@ -66,11 +69,11 @@ export default function StudentPortalHomePage() {
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-white/15 text-teal-200 border border-white/20 uppercase tracking-widest backdrop-blur-md">
               <Sparkles className="w-4 h-4 text-amber-300 animate-spin" />
-              <span>CỔNG THÔNG TIN HỌC SINH SKY-LINE</span>
+              <span>TRANG CHỦ HỌC SINH SKY-LINE</span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
-              Chào mừng em, <span className="text-teal-200 underline decoration-amber-400 decoration-wavy underline-offset-8">{studentName}</span>!
+              Xin chào: <span className="text-teal-200 underline decoration-amber-400 decoration-wavy underline-offset-8">Học sinh {studentName}</span>
             </h1>
 
             <p className="text-xs sm:text-sm text-teal-100 font-medium leading-relaxed">
@@ -78,44 +81,49 @@ export default function StudentPortalHomePage() {
             </p>
 
             <div className="flex flex-wrap items-center gap-2.5 pt-2">
-              <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black flex items-center gap-1.5 border border-white/20">
-                🏫 Lớp được gán quyền: {className}
+              <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black flex items-center gap-1.5 border border-white/20 shadow-2xs">
+                🏫 Lớp: {className}
               </span>
-              <span className="px-3 py-1 rounded-xl bg-amber-400/30 text-amber-200 text-xs font-black flex items-center gap-1.5 border border-amber-300/30">
+              <span className="px-3 py-1 rounded-xl bg-amber-400/30 text-amber-200 text-xs font-black flex items-center gap-1.5 border border-amber-300/30 shadow-2xs">
                 🎓 Khối {gradeNum}
               </span>
               {studentCode && (
-                <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black flex items-center gap-1.5 border border-white/20">
+                <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black flex items-center gap-1.5 border border-white/20 shadow-2xs">
                   🆔 Mã HS: {studentCode}
+                </span>
+              )}
+              {campusName && (
+                <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black flex items-center gap-1.5 border border-white/20 shadow-2xs">
+                  📍 {campusName}
                 </span>
               )}
             </div>
           </div>
 
-          {/* Penguin Mascot Card */}
-          <div className="bg-white/15 backdrop-blur-md p-4 sm:p-5 rounded-3xl border border-white/20 text-center shrink-0 w-full md:w-auto flex flex-col items-center justify-center space-y-2">
+          {/* Sky-Line Mascot Badge */}
+          <div className="bg-white/15 backdrop-blur-md p-5 rounded-3xl border border-white/20 text-center shrink-0 w-full md:w-auto flex flex-col items-center justify-center space-y-2">
             <div className="text-5xl animate-bounce">🐧</div>
             <p className="text-xs font-black text-white">Sky-Line Penguin</p>
-            <span className="text-[10px] text-teal-200 font-bold px-2 py-0.5 rounded-full bg-white/20">
-              Bạn đồng hành 5 Trụ Cột
+            <span className="text-[10px] text-teal-200 font-bold px-2.5 py-0.5 rounded-full bg-white/20">
+              Đồng hành 5 Trụ Cột
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2 MAIN FEATURE HERO CARDS */}
+      {/* 2 CHỨC NĂNG CHÍNH DÀNH CHO HỌC SINH (KHẢO SÁT & SỔ MỤC TIÊU 360°) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-[#003B3A] flex items-center gap-2">
             <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
             <span>HAI CHỨC NĂNG CHÍNH DÀNH CHO HỌC SINH</span>
           </h2>
-          <span className="text-xs font-bold text-slate-400">Tài khoản tự động gán quyền theo Lớp {className}</span>
+          <span className="text-xs font-bold text-slate-400">Giao diện đồng bộ theo tài khoản Lớp {className} (Khối {gradeNum})</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          {/* CARD 1: KHẢO SÁT HỌC SINH */}
+          {/* CHỨC NĂNG 1: KHẢO SÁT HỌC SINH */}
           <Link
             href="/hocsinh/hs-khaosat/danh-sach"
             className="group relative overflow-hidden bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200 hover:border-teal-500 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col justify-between"
@@ -135,20 +143,20 @@ export default function StudentPortalHomePage() {
                   Khảo Sát Học Sinh
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
-                  Tham gia thực hiện các bài khảo sát được phân công riêng cho Lớp {className} (Khối {gradeNum}).
+                  Tham gia thực hiện các bài khảo sát trải nghiệm học tập, phản hồi ý kiến cho Thầy Cô và Nhà trường.
                 </p>
               </div>
             </div>
 
             <div className="pt-6 relative z-10 flex items-center justify-between border-t border-slate-100 mt-6">
-              <span className="text-xs font-extrabold text-teal-600">Thực hiện khảo sát Lớp {className}</span>
+              <span className="text-xs font-extrabold text-teal-600">Thực hiện khảo sát</span>
               <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center group-hover:bg-teal-600 group-hover:text-white transition-all">
                 <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
               </div>
             </div>
           </Link>
 
-          {/* CARD 2: SỔ MỤC TIÊU NĂM HỌC */}
+          {/* CHỨC NĂNG 2: SỔ MỤC TIÊU NĂM HỌC (360°) */}
           <Link
             href="/hocsinh/portal/muc-tieu"
             className="group relative overflow-hidden bg-white rounded-3xl p-6 sm:p-8 border-2 border-slate-200 hover:border-amber-500 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1.5 flex flex-col justify-between"
@@ -168,13 +176,13 @@ export default function StudentPortalHomePage() {
                   Sổ Mục Tiêu Năm Học (360°)
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
-                  Tự động tải Phiếu Mục Tiêu Khối {gradeNum} phù hợp với Lớp {className} của em.
+                  Thiết lập phiếu mục tiêu năm học Khối {gradeNum}, tích chọn checkboxes, đóng dấu ấn vân tay & rèn luyện chuẩn SMART.
                 </p>
               </div>
             </div>
 
             <div className="pt-6 relative z-10 flex items-center justify-between border-t border-slate-100 mt-6">
-              <span className="text-xs font-extrabold text-amber-600">Vào Sổ Mục Tiêu Khối {gradeNum}</span>
+              <span className="text-xs font-extrabold text-amber-600">Vào Sổ Mục Tiêu</span>
               <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all">
                 <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
               </div>
@@ -184,7 +192,7 @@ export default function StudentPortalHomePage() {
         </div>
       </div>
 
-      {/* QUICK ACCESS GRID */}
+      {/* CÁC TIỆN ÍCH ĐỒNG HÀNH KHÁC */}
       <div className="space-y-4">
         <h3 className="text-sm font-black text-[#003B3A]">CÁC TIỆN ÍCH ĐỒNG HÀNH KHÁC</h3>
 
@@ -218,7 +226,7 @@ export default function StudentPortalHomePage() {
               <h4 className="text-xs font-black text-slate-900 group-hover:text-rose-600 transition-colors">
                 Em Cần Hỗ Trợ (SOS)
               </h4>
-              <p className="text-[10px] text-slate-500 font-medium">Gửi yêu cầu tới GVCN Lớp {className}</p>
+              <p className="text-[10px] text-slate-500 font-medium">Gửi yêu cầu giúp đỡ tới Thầy Cô GVCN Lớp {className}</p>
             </div>
           </Link>
 
