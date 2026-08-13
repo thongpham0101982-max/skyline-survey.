@@ -114,25 +114,44 @@ export default function TeacherAdvisoryPage() {
     loadSingleStudentData()
   }, [selectedStudentId, evalTerm, academicYearId])
 
-  async function loadAllClassTracking() {
+    async function loadAllClassTracking() {
     try {
       const allRows: any[] = []
 
-      // Helper to map category label by grade
-      const getCategoryLabel = (cat: string, grade: string) => {
-        const isK13 = ["K1", "K2", "K3"].includes(grade)
-        const isK912 = ["K9", "K10", "K11", "K12"].includes(grade)
+      // Standard category templates per grade group
+      const getStandardCategories = (gradeStr: string, classNameStr: string) => {
+        const str = (gradeStr + " " + classNameStr).toUpperCase()
+        const isK13 = str.includes("K1") || str.includes("K2") || str.includes("K3") || str.startsWith("1.") || str.startsWith("2.") || str.startsWith("3.") || str.startsWith("LỚP 1") || str.startsWith("LỚP 2") || str.startsWith("LỚP 3")
+        const isK912 = str.includes("K9") || str.includes("K10") || str.includes("K11") || str.includes("K12") || str.startsWith("9.") || str.startsWith("10.") || str.startsWith("11.") || str.startsWith("12.")
 
-        if (cat === "HOC_TAP") return isK13 ? "1. Mục tiêu học tập 📚" : isK912 ? "1. Mục tiêu học tập (SMART)" : "1. Mục tiêu học tập"
-        if (cat === "THOI_QUEN_SUC_KHOE") return isK13 ? "2. Thói quen & Sức khỏe ⏰" : "2. Mục tiêu thói quen"
-        if (cat === "KY_NANG_SO_THICH") return isK13 ? "3. Kỹ năng & Sở thích 🎨" : "3. Mục tiêu kỹ năng & cảm xúc"
-        if (cat === "PHAM_CHAT") return isK13 ? "4. Phẩm chất & Đạo đức 💖" : "4. Mục tiêu phẩm chất"
-        if (cat === "DINH_HUONG") return "4. Định hướng nghề nghiệp 🚀"
-        return cat
+        if (isK13) {
+          return [
+            { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚" },
+            { key: "THOI_QUEN_SUC_KHOE", label: "2. Thói quen & Sức khỏe ⏰" },
+            { key: "KY_NANG_SO_THICH", label: "3. Kỹ năng & Sở thích 🎨" },
+            { key: "PHAM_CHAT", label: "4. Phẩm chất & Đạo đức 💖" }
+          ]
+        } else if (isK912) {
+          return [
+            { key: "HOC_TAP", label: "1. Mục tiêu học tập (SMART)" },
+            { key: "THOI_QUEN_SUC_KHOE", label: "2. Mục tiêu thói quen" },
+            { key: "KY_NANG_SO_THICH", label: "3. Kỹ năng & Cảm xúc" },
+            { key: "DINH_HUONG", label: "4. Định hướng nghề nghiệp 🚀" }
+          ]
+        } else {
+          return [
+            { key: "HOC_TAP", label: "1. Mục tiêu học tập" },
+            { key: "THOI_QUEN_SUC_KHOE", label: "2. Mục tiêu thói quen" },
+            { key: "KY_NANG_SO_THICH", label: "3. Mục tiêu kỹ năng & cảm xúc" },
+            { key: "PHAM_CHAT", label: "4. Mục tiêu phẩm chất / hỗ trợ" }
+          ]
+        }
       }
 
       for (const st of students) {
-        const studentGrade = (st.class?.grade || "K1").toUpperCase()
+        const studentGrade = st.class?.grade || selectedClass?.grade || ""
+        const studentClassName = st.class?.className || selectedClass?.className || ""
+        const standardCats = getStandardCategories(studentGrade, studentClassName)
 
         // Fetch goals entered by student
         const goalRes = await fetch(`/api/advisory/goals?studentId=${st.id}&academicYearId=${academicYearId}`)
@@ -142,54 +161,49 @@ export default function TeacherAdvisoryPage() {
         const trackRes = await fetch(`/api/advisory/tracking?studentId=${st.id}&academicYearId=${academicYearId}&checkPoint=${checkPoint}`)
         const existingLogs = trackRes.ok ? await trackRes.json() : []
 
-        if (goalData && goalData.goals && goalData.goals.length > 0) {
-          goalData.goals.forEach((g: any) => {
-            const matched = existingLogs.find((t: any) => t.targetText === g.targetText || t.goalId === g.id)
+        standardCats.forEach(catObj => {
+          // Find student entered goals for this category key
+          const studentGoalsInCat = goalData?.goals?.filter((g: any) => {
+            if (g.category === catObj.key) return true
+            if (catObj.key === "DINH_HUONG" && (g.category === "DINH_HUONG" || g.category === "PHAM_CHAT")) return true
+            return false
+          }) || []
+
+          if (studentGoalsInCat.length > 0) {
+            studentGoalsInCat.forEach((g: any) => {
+              const matchedLog = existingLogs.find((t: any) => t.targetText === g.targetText || t.goalId === g.id)
+              allRows.push({
+                studentId: st.id,
+                studentName: st.studentName,
+                studentCode: st.studentCode,
+                goalId: g.id,
+                category: catObj.label,
+                targetText: g.targetText || "Mục tiêu đã điền",
+                progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
+                teacherNotes: matchedLog?.teacherNotes || ""
+              })
+            })
+          } else {
+            // Find existing log fallback for this category
+            const matchedLog = existingLogs.find((l: any) => l.category === catObj.key || l.category === catObj.label)
             allRows.push({
               studentId: st.id,
               studentName: st.studentName,
               studentCode: st.studentCode,
-              goalId: g.id,
-              category: getCategoryLabel(g.category || "HOC_TAP", studentGrade),
-              targetText: g.targetText || "Mục tiêu đã chọn",
-              progressStatus: matched?.progressStatus || "TIEN_TRIEN",
-              teacherNotes: matched?.teacherNotes || ""
+              category: catObj.label,
+              targetText: matchedLog?.targetText || "Em chưa điền nội dung mục tiêu nhóm này",
+              progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
+              teacherNotes: matchedLog?.teacherNotes || ""
             })
-          })
-        } else if (existingLogs.length > 0) {
-          existingLogs.forEach((l: any) => {
-            allRows.push({
-              studentId: st.id,
-              studentName: st.studentName,
-              studentCode: st.studentCode,
-              goalId: l.goalId,
-              category: getCategoryLabel(l.category || "HOC_TAP", studentGrade),
-              targetText: l.targetText,
-              progressStatus: l.progressStatus || "TIEN_TRIEN",
-              teacherNotes: l.teacherNotes || ""
-            })
-          })
-        } else {
-          // Default placeholder rows for the 4 categories if student hasn't entered goals yet
-          const defaultCategories = ["HOC_TAP", "THOI_QUEN_SUC_KHOE", "KY_NANG_SO_THICH", "PHAM_CHAT"]
-          defaultCategories.forEach(cat => {
-            allRows.push({
-              studentId: st.id,
-              studentName: st.studentName,
-              studentCode: st.studentCode,
-              category: getCategoryLabel(cat, studentGrade),
-              targetText: `Em chưa điền nội dung mục tiêu nhóm này (Khối ${studentGrade})`,
-              progressStatus: "TIEN_TRIEN",
-              teacherNotes: ""
-            })
-          })
-        }
+          }
+        })
       }
 
       setClassTrackingRows(allRows)
     } catch (e) {
       console.error(e)
     }
+  }
   }
 
   async function loadSingleStudentData() {
