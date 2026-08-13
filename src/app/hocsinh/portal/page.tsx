@@ -4,13 +4,25 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   ClipboardCheck, Compass, Feather, Heart, Sparkles, ArrowRight,
-  User, Award, Star, CheckCircle2, MessageSquare, Camera
+  User, Award, Star, CheckCircle2, MessageSquare, Camera, ShieldCheck
 } from "lucide-react"
+
+function parseGradeNumber(className: string): string {
+  if (!className) return "5"
+  const str = className.toUpperCase().trim()
+  const match = str.match(/(?:KHỐI|LỚP|K)?s*(d{1,2})/)
+  if (match && match[1]) {
+    const num = parseInt(match[1], 10)
+    if (num >= 1 && num <= 12) return String(num)
+  }
+  return "5"
+}
 
 export default function StudentPortalHomePage() {
   const [studentName, setStudentName] = useState("Học sinh Sky-Line")
-  const [className, setClassName] = useState("Lớp của Em")
+  const [className, setClassName] = useState("Lớp 5.1_CS1")
   const [studentCode, setStudentCode] = useState("")
+  const [gradeNum, setGradeNum] = useState("5")
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -19,8 +31,10 @@ export default function StudentPortalHomePage() {
         try {
           const parsed = JSON.parse(stored)
           setStudentName(parsed.studentName || parsed.fullName || "Học sinh Sky-Line")
-          setClassName(parsed.class?.className || parsed.className || "Lớp của Em")
+          const cName = parsed.class?.className || parsed.className || "Lớp 5.1_CS1"
+          setClassName(cName)
           setStudentCode(parsed.studentCode || "")
+          setGradeNum(parseGradeNumber(cName))
         } catch (e) {}
       } else {
         // Fetch fallback
@@ -29,8 +43,10 @@ export default function StudentPortalHomePage() {
           .then(data => {
             if (Array.isArray(data) && data.length > 0) {
               setStudentName(data[0].studentName)
-              setClassName(data[0].class?.className || "Lớp của Em")
+              const cName = data[0].class?.className || "Lớp 5.1_CS1"
+              setClassName(cName)
               setStudentCode(data[0].studentCode)
+              setGradeNum(parseGradeNumber(cName))
             }
           })
           .catch(() => {})
@@ -61,12 +77,15 @@ export default function StudentPortalHomePage() {
               Chúc em một ngày học tập tràn đầy năng lượng, tích cực trải nghiệm và sẵn sàng chinh phục các mục tiêu năm học!
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black">
-                🏫 Lớp: {className}
+            <div className="flex flex-wrap items-center gap-2.5 pt-2">
+              <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black flex items-center gap-1.5 border border-white/20">
+                🏫 Lớp được gán quyền: {className}
+              </span>
+              <span className="px-3 py-1 rounded-xl bg-amber-400/30 text-amber-200 text-xs font-black flex items-center gap-1.5 border border-amber-300/30">
+                🎓 Khối {gradeNum}
               </span>
               {studentCode && (
-                <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black">
+                <span className="px-3 py-1 rounded-xl bg-white/20 text-white text-xs font-black flex items-center gap-1.5 border border-white/20">
                   🆔 Mã HS: {studentCode}
                 </span>
               )}
@@ -84,14 +103,14 @@ export default function StudentPortalHomePage() {
         </div>
       </div>
 
-      {/* 2 MAIN FEATURE HERO CARDS (RÕ RÀNG & TRỰC QUAN NHẤT) */}
+      {/* 2 MAIN FEATURE HERO CARDS */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-black text-[#003B3A] flex items-center gap-2">
             <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
             <span>HAI CHỨC NĂNG CHÍNH DÀNH CHO HỌC SINH</span>
           </h2>
-          <span className="text-xs font-bold text-slate-400">Chọn dịch vụ để bắt đầu</span>
+          <span className="text-xs font-bold text-slate-400">Tài khoản tự động gán quyền theo Lớp {className}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -116,13 +135,13 @@ export default function StudentPortalHomePage() {
                   Khảo Sát Học Sinh
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
-                  Tham gia thực hiện các bài khảo sát trải nghiệm học tập, phản hồi ý kiến cho Thầy Cô và Nhà trường.
+                  Tham gia thực hiện các bài khảo sát được phân công riêng cho Lớp {className} (Khối {gradeNum}).
                 </p>
               </div>
             </div>
 
             <div className="pt-6 relative z-10 flex items-center justify-between border-t border-slate-100 mt-6">
-              <span className="text-xs font-extrabold text-teal-600">Thực hiện khảo sát</span>
+              <span className="text-xs font-extrabold text-teal-600">Thực hiện khảo sát Lớp {className}</span>
               <div className="w-10 h-10 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center group-hover:bg-teal-600 group-hover:text-white transition-all">
                 <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
               </div>
@@ -149,13 +168,13 @@ export default function StudentPortalHomePage() {
                   Sổ Mục Tiêu Năm Học (360°)
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
-                  Thiết lập phiếu mục tiêu năm học K1-K12, tích chọn checkboxes, đóng dấu ấn vân tay & rèn luyện chuẩn SMART.
+                  Tự động tải Phiếu Mục Tiêu Khối {gradeNum} phù hợp với Lớp {className} của em.
                 </p>
               </div>
             </div>
 
             <div className="pt-6 relative z-10 flex items-center justify-between border-t border-slate-100 mt-6">
-              <span className="text-xs font-extrabold text-amber-600">Vào Sổ Mục Tiêu</span>
+              <span className="text-xs font-extrabold text-amber-600">Vào Sổ Mục Tiêu Khối {gradeNum}</span>
               <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition-all">
                 <ArrowRight className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" />
               </div>
@@ -165,7 +184,7 @@ export default function StudentPortalHomePage() {
         </div>
       </div>
 
-      {/* QUICK ACCESS GRID (REFLECTION & SOS) */}
+      {/* QUICK ACCESS GRID */}
       <div className="space-y-4">
         <h3 className="text-sm font-black text-[#003B3A]">CÁC TIỆN ÍCH ĐỒNG HÀNH KHÁC</h3>
 
@@ -199,7 +218,7 @@ export default function StudentPortalHomePage() {
               <h4 className="text-xs font-black text-slate-900 group-hover:text-rose-600 transition-colors">
                 Em Cần Hỗ Trợ (SOS)
               </h4>
-              <p className="text-[10px] text-slate-500 font-medium">Gửi yêu cầu giúp đỡ tới Thầy Cô GVCN</p>
+              <p className="text-[10px] text-slate-500 font-medium">Gửi yêu cầu tới GVCN Lớp {className}</p>
             </div>
           </Link>
 

@@ -37,7 +37,7 @@ export default function StudentGoalPortalPage() {
   const [showSmartGuideModal, setShowSmartGuideModal] = useState(false)
   const [smartChecklist, setSmartChecklist] = useState<Record<number, boolean>>({})
 
-  useEffect(() => {
+    useEffect(() => {
     if (typeof window !== "undefined") {
       const storedYear = localStorage.getItem("selectedAcademicYear") || ""
       setAcademicYearId(storedYear)
@@ -48,10 +48,14 @@ export default function StudentGoalPortalPage() {
           const parsed = JSON.parse(storedStudent)
           setStudentId(parsed.id || "")
           setStudentName(parsed.studentName || "Học sinh Sky-Line")
-          if (parsed.class?.grade) {
-            const gr = parsed.class.grade.toUpperCase()
-            setStudentGrade(gr)
-            setGradeLevel(gr)
+          const cName = parsed.class?.className || parsed.className || ""
+          if (cName) {
+            const match = cName.toUpperCase().match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
+            if (match && match[1]) {
+              const gVal = "K" + match[1]
+              setStudentGrade(gVal)
+              setGradeLevel(gVal)
+            }
           }
         } catch (e) {}
       }
