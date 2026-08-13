@@ -68,7 +68,7 @@ export default function TeacherAdvisoryPage() {
       setAcademicYearId(storedYear)
     }
 
-    fetch("/api/classes")
+    fetch("/api/classes?isGVCN=true")
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
