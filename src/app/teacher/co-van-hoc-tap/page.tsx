@@ -114,7 +114,7 @@ export default function TeacherAdvisoryPage() {
     loadSingleStudentData()
   }, [selectedStudentId, evalTerm, academicYearId])
 
-    async function loadAllClassTracking() {
+  async function loadAllClassTracking() {
     try {
       const allRows: any[] = []
 
@@ -190,7 +190,6 @@ export default function TeacherAdvisoryPage() {
     } catch (e) {
       console.error(e)
     }
-  }
   }
 
   async function loadSingleStudentData() {
@@ -431,7 +430,7 @@ export default function TeacherAdvisoryPage() {
               <thead>
                 <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
                   <th className="p-3 border-r border-slate-200 w-1/6">Học sinh</th>
-                  <th className="p-3 border-r border-slate-200 w-32">Nhóm mục tiêu</th>
+                  <th className="p-3 border-r border-slate-200 w-44">Nhóm mục tiêu</th>
                   <th className="p-3 border-r border-slate-200">Mục tiêu cụ thể (Dữ liệu Học sinh nhập)</th>
                   <th className="p-3 border-r border-slate-200 w-28">Mốc kiểm tra</th>
                   <th className="p-3 border-r border-slate-200 w-44">Mức độ đạt</th>
@@ -453,7 +452,7 @@ export default function TeacherAdvisoryPage() {
                         {item.studentCode && <span className="block text-[10px] text-slate-500 font-medium">({item.studentCode})</span>}
                       </td>
                       <td className="p-3 border-r border-slate-200">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-teal-100 text-teal-800 uppercase">
+                        <span className="px-2 py-1 rounded text-[10px] font-black bg-teal-100 text-teal-800 block text-center">
                           {item.category}
                         </span>
                       </td>
