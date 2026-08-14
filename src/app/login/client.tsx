@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { GraduationCap, CheckCircle2, Loader2 } from 'lucide-react'
-import { LoginForm, FeatureOverview, PageFooter } from './components'
+import { LoginForm, PageFooter, SchoolLineArt, SkyLineSwooshBg, FeatureDrawer } from './components'
 
 export function LoginClient() {
   const [role, setRole] = useState('STAFF')
@@ -61,7 +61,7 @@ export function LoginClient() {
         setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
         addStep('Đăng nhập thành công! Đang chuyển trang...')
         await new Promise(r => setTimeout(r, 500))
-                if (data.student) {
+        if (data.student) {
           localStorage.setItem('currentStudent', JSON.stringify(data.student))
         }
         document.cookie = 'hs_token=' + data.token + '; path=/; max-age=' + (rememberMe ? 30 * 24 * 60 * 60 : 2 * 24 * 60 * 60) + '; SameSite=Lax'
@@ -91,7 +91,6 @@ export function LoginClient() {
           setLoadingSteps((prev: any[]) => prev.map(s => ({ ...s, done: true })))
           addStep('Đăng nhập thành công! Đang chuyển trang...')
           
-          // Verify session and redirect directly to appropriate dashboard
           const sessRes = await fetch('/api/auth/session').then(r => r.json()).catch(() => null)
           const userRole = sessRes?.user?.role
 
@@ -108,7 +107,6 @@ export function LoginClient() {
           } else if (userRole === 'ADMIN' || userRole === 'SUPER_ADMIN' || userRole === 'GDCS' || userRole === 'BGH') {
             window.location.href = '/admin'
           } else {
-            // Default fallback for CBGV teacher login
             window.location.href = '/teacher'
           }
 
@@ -146,28 +144,28 @@ export function LoginClient() {
 
   return (
     <>
-      {/* Loading modal */}
+      {/* Loading Step Modal */}
       {loading && loadingSteps.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,31,30,0.9)', backdropFilter: 'blur(8px)' }}>
-          <div className="bg-white rounded-[24px] p-8 shadow-2xl max-w-sm w-full mx-6 border border-slate-100 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#001D1C]/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-sm w-full border border-slate-100 animate-in zoom-in-95 duration-200">
             <div className="flex justify-center mb-6">
               <div className="relative w-16 h-16">
-                <div className="absolute inset-0 rounded-full border-4 border-slate-50" />
+                <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
                 <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#00A99D] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-[#00A99D]" />
+                  <GraduationCap className="w-7 h-7 text-[#00A99D]" />
                 </div>
               </div>
             </div>
-            <h3 className="text-center text-lg font-bold text-[#17383D] mb-1">Đang đăng nhập</h3>
-            <p className="text-center text-xs text-[#00A99D] font-extrabold mb-6 uppercase tracking-wider">{roleLabel}</p>
+            <h3 className="text-center text-lg font-extrabold text-[#003B3A] mb-0.5">Đang đăng nhập</h3>
+            <p className="text-center text-xs text-[#00A99D] font-black mb-6 uppercase tracking-wider">{roleLabel}</p>
             <div className="space-y-3">
               {(loadingSteps as any[]).map((step: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 px-2">
                   {step.done
-                    ? <CheckCircle2 className="w-5 h-5 text-[#21875A] shrink-0" />
+                    ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
                     : <Loader2 className="w-5 h-5 text-[#00A99D] shrink-0 animate-spin" />}
-                  <span className={`text-xs font-semibold ${step.done ? 'text-slate-400 line-through opacity-60' : 'text-[#17383D]'}`}>
+                  <span className={`text-xs font-semibold ${step.done ? 'text-slate-400 line-through opacity-70' : 'text-[#003B3A]'}`}>
                     {step.text}
                   </span>
                 </div>
@@ -177,69 +175,110 @@ export function LoginClient() {
         </div>
       )}
 
-      {/* Main layout */}
-      <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F5F8F8] font-sans">
+      {/* Main split-screen layout (Image 2 style) */}
+      <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F7FAFA] font-sans selection:bg-[#00A99D] selection:text-white relative overflow-hidden">
 
-        {/* LEFT: Features */}
-        <div className="hidden md:flex md:w-[50%] xl:w-[58%] flex-col justify-between p-8 lg:p-12 xl:p-16 bg-[#003B3A] relative select-none">
-          <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] rounded-full bg-[#00A99D]/12 blur-[130px] pointer-events-none" />
-          <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-teal-500/8 blur-[110px] pointer-events-none" />
-          <div className="absolute inset-0 opacity-[0.025] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        {/* LEFT PANEL: Ultra-sleek Image 2 Brand Showcase */}
+        <div className="w-full md:w-[48%] xl:w-[50%] flex flex-col justify-between p-8 sm:p-12 xl:p-16 bg-[#003B3A] relative select-none overflow-hidden min-h-[380px] md:min-h-screen">
+          
+          {/* Dot Matrix Pattern Overlay (Top Left, Image 2 style) */}
+          <div className="absolute top-8 left-8 w-48 h-48 opacity-20 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #00D2C4 1.5px, transparent 1.5px)', backgroundSize: '18px 18px' }} />
+          
+          {/* Fluid Swoosh Wave (Bottom Left, Image 2 style) */}
+          <SkyLineSwooshBg />
 
-          <div className="relative z-10 w-full">
-            <div className="flex flex-col items-start">
-              <img src="/logo.png" alt="Sky-Line Logo" className="h-10 w-auto object-contain brightness-0 invert opacity-95 pointer-events-none" />
+          {/* School Building & Sky-Line Checkmark Watermark (Bottom Right, Image 2 style) */}
+          <div className="absolute bottom-0 right-0 w-[90%] md:w-[85%] h-[60%] text-[#00A99D]/25 opacity-70 pointer-events-none flex items-end justify-end">
+            <SchoolLineArt className="w-full h-full object-contain" />
+          </div>
+
+          {/* Top spacer */}
+          <div />
+
+          {/* Center Brand Title Section (Image 2 style) */}
+          <div className="relative z-10 flex flex-col items-start my-auto py-8">
+            {/* White Brand Logo */}
+            <div className="mb-6 flex items-center gap-3">
+              <img
+                src="/logo.png"
+                alt="Sky-Line Logo"
+                className="h-12 md:h-14 w-auto object-contain brightness-0 invert opacity-95 pointer-events-none drop-shadow-md"
+              />
             </div>
-            <div className="mt-8 lg:mt-10">
-              <FeatureOverview />
+
+            {/* Main Title: SQMS Portal */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none drop-shadow-sm">
+              SQMS Portal
+            </h1>
+
+            {/* Accent Line Underneath */}
+            <div className="w-16 h-1 bg-[#00D2C4] rounded-full mt-4 mb-3 shadow-md shadow-[#00D2C4]/40" />
+
+            {/* 3 Glowing Status Dots (Image 2 style) */}
+            <div className="flex items-center gap-2 mt-1">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00D2C4] animate-pulse" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00A99D]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#007068]" />
+            </div>
+
+            {/* Feature Drawer for Mobile/Tablet inside Left Panel */}
+            <div className="w-full max-w-md hidden sm:block md:hidden">
+              <FeatureDrawer />
             </div>
           </div>
 
-          <div className="relative z-10 border-t border-white/5 pt-4 mt-6 flex flex-wrap items-center justify-between gap-2 text-[9px] font-extrabold tracking-wider text-teal-100/30 select-none">
-            {['DỮ LIỆU CHÍNH XÁC', 'QUẢN TRỊ MINH BẠCH', 'THEO DÕI LIÊN TỤC', 'ĐỒNG HÀNH PHÁT TRIỂN'].map(t => (
-              <span key={t} className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00A99D] inline-block" />
-                {t}
-              </span>
-            ))}
+          {/* Bottom spacer */}
+          <div className="relative z-10 text-[10px] font-bold text-teal-100/40 uppercase tracking-widest">
+            Sky-Line Education System
           </div>
         </div>
 
-        {/* RIGHT: Login */}
-        <div className="w-full md:w-[50%] xl:w-[42%] bg-[#F5F8F8] flex flex-col justify-center p-4 sm:p-6 md:p-8 relative z-10">
+        {/* RIGHT PANEL: Clean Elevated Floating Login Card (Image 2 style) */}
+        <div className="w-full md:w-[52%] xl:w-[50%] bg-[#F7FAFA] flex flex-col justify-center items-center p-4 sm:p-8 md:p-12 relative z-10 min-h-[calc(100vh-380px)] md:min-h-screen">
 
-          {/* Premium Sky-Line, Earthy Yellow, and Tím Than Gradient Border Wrapper */}
-          <div className="bg-gradient-to-tr from-[#00A99D] via-[#D97706] to-[#251b4b] p-[1.5px] rounded-3xl shadow-[0_16px_40px_rgba(0,31,30,0.06)] max-w-[440px] w-full mx-auto transition-all duration-300">
-            <div className="bg-white rounded-[23px] p-6 sm:p-8 md:p-10 w-full">
+          {/* Soft background Swoosh vector lines */}
+          <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none" viewBox="0 0 1000 1000" fill="none">
+            <path d="M400 -100 C 700 200, 900 600, 1100 1100" stroke="#00A99D" strokeWidth="60" opacity="0.03" strokeLinecap="round" />
+            <path d="M600 -100 C 850 300, 950 700, 1150 1100" stroke="#00D2C4" strokeWidth="40" opacity="0.04" strokeLinecap="round" />
+          </svg>
 
-              {/* Brand */}
-              <div className="mb-6 flex flex-col items-start select-none">
-                <img src="/logo.png" alt="Sky-Line" className="h-10 w-auto object-contain mb-3 pointer-events-none" />
-                <h2 className="text-[22px] font-black text-[#003B3A] tracking-tight leading-tight">Đăng nhập hệ thống</h2>
-                <p className="text-xs text-[#8FA5AE] mt-1 font-semibold">Truy cập hệ thống theo tài khoản được cấp</p>
-              </div>
-
-              {/* Form */}
-              <LoginForm
-                role={role} setRole={setRole}
-                identifier={identifier} setIdentifier={setIdentifier}
-                password={password} setPassword={setPassword}
-                rememberMe={rememberMe} setRememberMe={setRememberMe}
-                error={error} setError={setError}
-                loading={loading}
-                onSubmit={handleSubmit}
-                onForgotPassword={handleForgotPassword}
+          {/* Elevated Floating White Card (Image 2 style) */}
+          <div className="bg-white rounded-[28px] sm:rounded-[32px] p-8 sm:p-10 md:p-12 shadow-[0_20px_60px_rgba(0,31,30,0.06)] border border-slate-100/90 max-w-[420px] w-full mx-auto transition-all duration-300 relative z-10 hover:shadow-[0_24px_70px_rgba(0,31,30,0.09)]">
+            
+            {/* Header: Sky-Line Logo + "Đăng nhập" (Image 2 style) */}
+            <div className="flex flex-col items-center justify-center mb-8 select-none">
+              <img
+                src="/logo.png"
+                alt="Sky-Line"
+                className="h-10 sm:h-11 w-auto object-contain mb-5 pointer-events-none"
               />
-
-              <div className="mt-6 border-t border-slate-100/60 pt-4">
-                <PageFooter />
-              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-[#003B3A] tracking-tight">
+                Đăng nhập
+              </h2>
             </div>
+
+            {/* LoginForm */}
+            <LoginForm
+              role={role} setRole={setRole}
+              identifier={identifier} setIdentifier={setIdentifier}
+              password={password} setPassword={setPassword}
+              rememberMe={rememberMe} setRememberMe={setRememberMe}
+              error={error} setError={setError}
+              loading={loading}
+              onSubmit={handleSubmit}
+              onForgotPassword={handleForgotPassword}
+            />
+
+            {/* Footer with side dividers (Image 2 style) */}
+            <div className="mt-8">
+              <PageFooter />
+            </div>
+
           </div>
 
-          {/* Mobile: Feature overview below form */}
-          <div className="block md:hidden mt-6 bg-[#003B3A] rounded-2xl p-6 shadow-sm border border-teal-950/20">
-            <FeatureOverview />
+          {/* Feature Drawer for Mobile (screen < 640px) */}
+          <div className="w-full max-w-[420px] sm:hidden">
+            <FeatureDrawer />
           </div>
 
         </div>

@@ -4,126 +4,86 @@ import React, { useState } from 'react'
 import {
   User, Lock, GraduationCap, Users,
   Eye, EyeOff, AlertCircle, ArrowRight,
-  FileText, ShieldCheck, TrendingUp, AlertTriangle, ChevronDown, ChevronUp,
-  BookOpen, Heart, Trophy, Compass, BarChart3, Microscope,
-  ClipboardList, Clock, Medal, BrainCircuit, Target, Lightbulb
+  ChevronDown, ChevronUp, Sparkles, Microscope, Clock, Medal,
+  BrainCircuit, Target, Lightbulb, BookOpen, Heart, ClipboardList,
+  BarChart3, Trophy, Compass, ShieldCheck, TrendingUp, AlertTriangle, FileText
 } from 'lucide-react'
 
-// ─── FeatureCard ──────────────────────────────────────────────────────────────
-interface FeatureCardProps {
-  index: string
-  title: string
-  description: string
-  icon: React.ComponentType<any>
-  gradientFrom: string
-  gradientTo: string
+// ─── SVG Artwork Components ──────────────────────────────────────────────────
+export function SchoolLineArt({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 600 400" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      {/* Clock tower & main building facade */}
+      <path d="M260 380V160L300 110L340 160V380" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="300" cy="190" r="22" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M300 178V190H308" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M285 240H315V290H285V240Z" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M300 110V70" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M300 70L324 82H300" fill="currentColor" opacity="0.6" />
+      
+      {/* Left wing */}
+      <path d="M120 380V210H260" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M145 235H180V275H145V235Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M198 235H233V275H198V235Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M145 300H180V340H145V300Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M198 300H233V340H198V300Z" stroke="currentColor" strokeWidth="1.2" />
+
+      {/* Right wing */}
+      <path d="M340 210H480V380" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M367 235H402V275H367V235Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M420 235H455V275H420V235Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M367 300H402V340H367V300Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M420 300H455V340H420V300Z" stroke="currentColor" strokeWidth="1.2" />
+
+      {/* Ground baseline */}
+      <path d="M40 380H560" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+
+      {/* Trees & greenery */}
+      <path d="M70 380V310" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M70 310C50 310 40 270 70 250C70 230 100 230 100 250C120 270 110 310 70 310Z" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M530 380V310" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M530 310C510 310 500 270 530 250C530 230 560 230 560 250C580 270 570 310 530 310Z" stroke="currentColor" strokeWidth="1.2" />
+
+      {/* Sky-Line checkmark swoosh backdrop watermark overlaying the building (Image 2 style) */}
+      <path d="M140 180C260 70 420 80 540 20C480 90 340 190 140 180Z" fill="currentColor" opacity="0.18" />
+      <path d="M320 100C410 40 500 20 560 0C520 50 430 130 330 140Z" fill="currentColor" opacity="0.12" />
+    </svg>
+  )
 }
 
-export function FeatureCard({ index, title, description, icon: Icon, gradientFrom, gradientTo }: FeatureCardProps) {
+export function SkyLineSwooshBg() {
   return (
-    <div className="bg-white/5 backdrop-blur-sm border border-white/8 rounded-2xl p-3.5 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 group select-none shadow-sm hover:shadow-md">
-      <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[10px] font-extrabold text-[#00A99D] tracking-widest">{index}</span>
-        <div
-          className="w-8.5 h-8.5 rounded-xl flex items-center justify-center shadow-md shrink-0 pointer-events-none group-hover:scale-105 transition-transform"
-          style={{ background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})` }}
-        >
-          <Icon className="w-3.5 h-3.5 text-white" />
-        </div>
-      </div>
-      <h3 className="text-[11px] font-bold text-white leading-tight">{title}</h3>
-      <p className="text-[10px] text-teal-100/60 leading-relaxed mt-1">{description}</p>
+    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 select-none">
+      {/* Top right large dark radial gradient glow (Image 2 style) */}
+      <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full bg-radial from-[#00D2C4]/20 via-[#004F4D]/10 to-transparent blur-3xl pointer-events-none" />
+
+      {/* Bottom fluid swoosh wave curve (Image 2 style) */}
+      <svg className="absolute -bottom-12 -left-12 w-[135%] h-[48%] text-[#00A99D]" viewBox="0 0 1000 350" fill="none">
+        <path d="M-50 280 Q 220 80, 580 220 T 1150 160 L 1150 400 L -50 400 Z" fill="url(#image2-swoosh-grad)" />
+        <defs>
+          <linearGradient id="image2-swoosh-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#00E5D5" stopOpacity="0.45" />
+            <stop offset="40%" stopColor="#00A99D" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#003B3A" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* Secondary swoosh layer */}
+      <svg className="absolute -bottom-8 -left-8 w-[120%] h-[38%]" viewBox="0 0 1000 300" fill="none">
+        <path d="M-50 290 Q 320 110, 680 240 T 1150 190 L 1150 350 L -50 350 Z" fill="url(#image2-swoosh-grad2)" />
+        <defs>
+          <linearGradient id="image2-swoosh-grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#00A99D" stopOpacity="0.35" />
+            <stop offset="100%" stopColor="#10B981" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+      </svg>
     </div>
   )
 }
 
-// ─── StudentProfileHighlight ──────────────────────────────────────────────────
-export function StudentProfileHighlight() {
-  const badges = [
-    { text: 'Kết quả học tập', icon: BookOpen },
-    { text: 'Hỗ trợ & tâm lý', icon: Heart },
-    { text: 'Trải nghiệm & dự án', icon: ClipboardList },
-    { text: 'Khảo sát đầu vào', icon: BarChart3 },
-    { text: 'Thành tích kỳ thi', icon: Trophy },
-    { text: 'Hướng nghiệp', icon: Compass },
-    { text: 'Chuẩn đầu ra', icon: ShieldCheck },
-    { text: 'Tiến bộ học tập', icon: TrendingUp },
-    { text: 'Cảnh báo sớm', icon: AlertTriangle }
-  ]
-  return (
-    <div className="bg-white/5 backdrop-blur-sm border border-white/8 rounded-2xl p-4.5 mt-4 select-none">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-        <div className="flex-shrink-0 w-[80px] h-[64px] bg-[#00A99D]/10 border border-[#00A99D]/20 rounded-xl flex items-center justify-center group">
-          <div className="w-11 h-8 bg-[#00A99D]/20 border border-[#00A99D]/40 rounded-lg relative flex items-center justify-center transition-all duration-300 group-hover:scale-105 pointer-events-none">
-            <FileText className="w-4.5 h-4.5 text-[#00A99D]" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 border border-[#003B3A]">
-              <div className="w-full h-full rounded-full bg-emerald-300 animate-ping opacity-60" />
-            </div>
-          </div>
-        </div>
-        <div className="flex-1">
-          <h3 className="text-xs font-black text-white tracking-wide uppercase">Hồ sơ học tập điện tử học sinh</h3>
-          <p className="text-[10px] text-teal-100/50 leading-relaxed mt-1">
-            Tổng hợp toàn bộ quá trình học tập, rèn luyện và phát triển của học sinh qua từng năm học.
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-3">
-            {badges.map((badge, idx) => {
-              const BIcon = badge.icon
-              return (
-                <div key={idx} className="flex items-center gap-1.5 bg-white/5 border border-white/5 rounded-md px-2 py-1 text-[9px] font-bold text-teal-100/80">
-                  <BIcon className="w-2.5 h-2.5 text-[#00A99D] shrink-0 pointer-events-none" />
-                  <span className="truncate">{badge.text}</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── FeatureOverview ──────────────────────────────────────────────────────────
-export function FeatureOverview() {
-  const [expanded, setExpanded] = useState(false)
-  const modules = [
-    { index: '01', title: 'Khảo sát năng lực đầu vào', description: 'Tổ chức khảo sát, nhập kết quả, phân tích năng lực, hỗ trợ tuyển sinh và xếp lớp.', icon: Microscope, gradientFrom: '#00A99D', gradientTo: '#10B981' },
-    { index: '02', title: 'Quản lý dự giờ giáo viên', description: 'Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn.', icon: Clock, gradientFrom: '#009085', gradientTo: '#0EA5E9' },
-    { index: '03', title: 'Thành tích và kỳ thi học sinh', description: 'Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích.', icon: Medal, gradientFrom: '#D97706', gradientTo: '#F59E0B' },
-    { index: '04', title: 'Hỗ trợ học tập và tâm lý', description: 'Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập và tư vấn tâm lý.', icon: BrainCircuit, gradientFrom: '#BE185D', gradientTo: '#EC4899' },
-    { index: '05', title: 'Hướng nghiệp & tài chính', description: 'Quản lý hoạt động hướng nghiệp, định hướng nghề nghiệp và thông tin tài chính theo phân quyền.', icon: Target, gradientFrom: '#6D28D9', gradientTo: '#8B5CF6' },
-    { index: '06', title: 'Kết quả học tập & dự án', description: 'Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ và mức độ tham gia.', icon: Lightbulb, gradientFrom: '#007068', gradientTo: '#14B8A6' }
-  ]
-  return (
-    <div className="relative z-10 w-full">
-      <div className="md:hidden flex items-center justify-between border-t border-b border-white/5 py-3 mb-4 select-none">
-        <span className="text-xs font-bold text-teal-100/80">Khám phá các phân hệ SQMS</span>
-        <button type="button" onClick={() => setExpanded(!expanded)} className="flex items-center gap-1.5 text-xs font-bold text-[#00A99D] bg-white/5 px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/10 active:scale-95 transition-all">
-          <span>{expanded ? 'Thu gọn' : 'Xem chi tiết'}</span>
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
-      </div>
-      <div className={`transition-all duration-300 overflow-hidden md:block ${expanded ? 'max-h-[1200px] opacity-100' : 'max-h-0 opacity-0 md:max-h-none md:opacity-100'}`}>
-        <div className="mb-5 md:mb-6">
-          <h1 className="text-xl lg:text-2xl font-black text-white leading-tight tracking-wide">
-            HỆ THỐNG QUẢN TRỊ<br />CHẤT LƯỢNG GIÁO DỤC SKY-LINE
-          </h1>
-          <p className="text-xs text-teal-100/60 leading-relaxed max-w-xl mt-2.5">
-            Nền tảng quản trị tập trung dữ liệu người học, người dạy và các hoạt động giáo dục trong toàn Hệ thống Sky-Line.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
-          {modules.map((m) => (
-            <FeatureCard key={m.index} index={m.index} title={m.title} description={m.description} icon={m.icon} gradientFrom={m.gradientFrom} gradientTo={m.gradientTo} />
-          ))}
-        </div>
-        <StudentProfileHighlight />
-      </div>
-    </div>
-  )
-}
-
-// ─── RoleSelector (compact, horizontal pill-style) ───────────────────────────
+// ─── RoleSelector (Pill Segmented Switcher, Image 2 style) ────────────────────
 interface RoleSelectorProps {
   role: string
   setRole: (role: string) => void
@@ -136,10 +96,10 @@ export function RoleSelector({ role, setRole, setError }: RoleSelectorProps) {
     { id: 'PARENT', label: 'Phụ huynh', icon: Users },
     { id: 'STUDENT', label: 'Học sinh', icon: GraduationCap }
   ]
+
   return (
     <div className="select-none">
-      <p className="text-[10px] font-bold text-[#8FA5AE] uppercase tracking-widest mb-2">Vai trò</p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-1.5 bg-[#F1F5F9] p-1.5 rounded-2xl border border-slate-200/70">
         {roles.map((r) => {
           const Icon = r.icon
           const isActive = role === r.id
@@ -148,14 +108,14 @@ export function RoleSelector({ role, setRole, setError }: RoleSelectorProps) {
               key={r.id}
               type="button"
               onClick={() => { setRole(r.id); setError('') }}
-              className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border text-[11px] font-bold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A99D]/40 ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A99D]/40 ${
                 isActive
-                  ? 'bg-[#E6F6F5] border-[#00A99D] text-[#00A99D]'
-                  : 'bg-[#F5F8F8] border-[#E2ECF0] text-[#8FA5AE] hover:border-[#00A99D]/50 hover:text-[#003B3A]'
+                  ? 'bg-[#00A99D] text-white shadow-md shadow-teal-600/30 scale-[1.02]'
+                  : 'bg-transparent text-[#64748B] hover:text-[#003B3A] hover:bg-slate-200/50'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 shrink-0 pointer-events-none ${isActive ? 'text-[#00A99D]' : 'text-[#9DB8C0]'}`} aria-hidden="true" />
-              <span className="pointer-events-none truncate">{r.label}</span>
+              <Icon className={`w-3.5 h-3.5 shrink-0 pointer-events-none ${isActive ? 'text-white' : 'text-[#64748B]'}`} aria-hidden="true" />
+              <span className="pointer-events-none truncate font-bold">{r.label}</span>
             </button>
           )
         })}
@@ -168,25 +128,72 @@ export function RoleSelector({ role, setRole, setError }: RoleSelectorProps) {
 interface LoginAlertProps { message: string }
 export function LoginAlert({ message }: LoginAlertProps) {
   return (
-    <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-200 rounded-xl text-[#D64545] animate-in fade-in duration-200" aria-live="assertive">
-      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 pointer-events-none" aria-hidden="true" />
-      <p className="text-xs font-semibold leading-relaxed">{message}</p>
+    <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200/90 rounded-2xl text-[#DC2626] animate-in fade-in zoom-in-95 duration-200 shadow-sm" aria-live="assertive">
+      <AlertCircle className="w-4.5 h-4.5 shrink-0 mt-0.5 pointer-events-none text-[#DC2626]" aria-hidden="true" />
+      <p className="text-xs font-bold leading-relaxed">{message}</p>
     </div>
   )
 }
 
-// ─── PageFooter ───────────────────────────────────────────────────────────────
+// ─── PageFooter (Image 2 style with side dividers) ───────────────────────────
 export function PageFooter() {
   return (
-    <footer className="w-full pt-4 text-center text-[10px] font-semibold text-slate-400/80 select-none">
-      <span className="tracking-wide">SQMS PORTAL V2.5</span>
-      <span className="mx-2 text-slate-300">|</span>
-      <span>© 2026 Sky-Line Education</span>
+    <footer className="w-full flex items-center justify-center gap-3 select-none text-[11px] font-bold text-slate-400">
+      <div className="h-[1px] flex-1 bg-slate-200/80" />
+      <span className="tracking-wide text-slate-400 font-bold whitespace-nowrap">SQMS Portal v2.5</span>
+      <div className="h-[1px] flex-1 bg-slate-200/80" />
     </footer>
   )
 }
 
-// ─── LoginForm (compact, no Microsoft button) ─────────────────────────────────
+// ─── FeatureDrawer (Optional expandable modules drawer for Mobile/Tablet) ───
+export function FeatureDrawer() {
+  const [expanded, setExpanded] = useState(false)
+  const modules = [
+    { index: '01', title: 'Khảo sát năng lực đầu vào', description: 'Tổ chức khảo sát, nhập kết quả, phân tích năng lực, hỗ trợ tuyển sinh và xếp lớp.', icon: Microscope },
+    { index: '02', title: 'Quản lý dự giờ giáo viên', description: 'Đăng ký tiết dạy, phân công dự giờ, đánh giá, phê duyệt và theo dõi năng lực chuyên môn.', icon: Clock },
+    { index: '03', title: 'Thành tích và kỳ thi học sinh', description: 'Quản lý kỳ thi, cuộc thi, giải thưởng, huy chương, xếp hạng và lịch sử thành tích.', icon: Medal },
+    { index: '04', title: 'Hỗ trợ học tập và tâm lý', description: 'Theo dõi học sinh cần hỗ trợ, kế hoạch phụ đạo, cam kết học tập và tư vấn tâm lý.', icon: BrainCircuit },
+    { index: '05', title: 'Hướng nghiệp & tài chính', description: 'Quản lý hoạt động hướng nghiệp, định hướng nghề nghiệp và thông tin tài chính theo phân quyền.', icon: Target },
+    { index: '06', title: 'Kết quả học tập & dự án', description: 'Tổng hợp kết quả môn học, hoạt động trải nghiệm, câu lạc bộ và mức độ tham gia.', icon: Lightbulb }
+  ]
+
+  return (
+    <div className="w-full mt-6 select-none">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between bg-white/10 border border-white/15 backdrop-blur-md px-4 py-3 rounded-2xl text-xs font-bold text-teal-100 hover:bg-white/15 transition-all cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-[#00D2C4]" />
+          <span>Khám phá phân hệ SQMS</span>
+        </div>
+        {expanded ? <ChevronUp className="w-4 h-4 text-[#00D2C4]" /> : <ChevronDown className="w-4 h-4 text-[#00D2C4]" />}
+      </button>
+
+      <div className={`transition-all duration-300 overflow-hidden ${expanded ? 'max-h-[1200px] opacity-100 mt-3' : 'max-h-0 opacity-0'}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-black/20 p-4 rounded-2xl border border-white/10 backdrop-blur-md">
+          {modules.map((m) => {
+            const MIcon = m.icon
+            return (
+              <div key={m.index} className="bg-white/5 border border-white/10 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-extrabold text-[#00D2C4]">{m.index}</span>
+                  <MIcon className="w-3.5 h-3.5 text-[#00D2C4]" />
+                </div>
+                <h4 className="text-xs font-bold text-white">{m.title}</h4>
+                <p className="text-[10px] text-teal-100/60 mt-1 leading-relaxed">{m.description}</p>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── LoginForm ────────────────────────────────────────────────────────────────
 interface LoginFormProps {
   role: string
   setRole: (role: string) => void
@@ -210,50 +217,39 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
 
-  const inputBase = "w-full h-[48px] rounded-xl border bg-white text-sm font-semibold text-[#003B3A] placeholder-[#B0C4CB] outline-none transition-all duration-200 hover:border-[#ACCFCF] focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/15"
+  const inputBase = "w-full h-[48px] rounded-2xl border bg-white text-sm font-semibold text-[#003B3A] placeholder-[#94A3B8] outline-none transition-all duration-200 hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/15 shadow-sm"
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-3.5">
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
 
-      {/* Role Selector */}
+      {/* Role Switcher */}
       <RoleSelector role={role} setRole={setRole} setError={setError} />
 
-      {/* Error alert (stable height prevents layout shift) */}
-      <div className="min-h-[36px]">
-        {error && <LoginAlert message={error} />}
-      </div>
+      {/* Alert Container */}
+      {error && <LoginAlert message={error} />}
 
       {/* Account */}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="identifier" className="text-[10px] font-bold text-[#8FA5AE] uppercase tracking-widest ml-0.5">
-          Tài khoản
-        </label>
-        <div className="relative flex items-center">
-          {/* Icon — always absolute, pointer-events-none, vertically centered */}
-          <span className="absolute left-4 z-10 flex items-center justify-center pointer-events-none">
-            <User className="w-4 h-4 text-[#9DB8C0]" aria-hidden="true" />
-          </span>
-          <input
-            id="identifier"
-            type="text"
-            required
-            value={identifier}
-            onChange={e => setIdentifier(e.target.value)}
-            placeholder="Nhập tài khoản"
-            autoComplete="username"
-            className={`${inputBase} !pl-11 pr-3 border-[#D7E2E5]`}
-          />
-        </div>
+      <div className="relative flex items-center">
+        <span className="absolute left-4 z-10 flex items-center justify-center pointer-events-none">
+          <User className="w-4 h-4 text-slate-400" aria-hidden="true" />
+        </span>
+        <input
+          id="identifier"
+          type="text"
+          required
+          value={identifier}
+          onChange={e => setIdentifier(e.target.value)}
+          placeholder="Tài khoản"
+          autoComplete="username"
+          className={`${inputBase} !pl-11 pr-4 border-slate-200/90`}
+        />
       </div>
 
       {/* Password */}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-[10px] font-bold text-[#8FA5AE] uppercase tracking-widest ml-0.5">
-          Mật khẩu
-        </label>
+      <div className="flex flex-col gap-1">
         <div className="relative flex items-center">
           <span className="absolute left-4 z-10 flex items-center justify-center pointer-events-none">
-            <Lock className="w-4 h-4 text-[#9DB8C0]" aria-hidden="true" />
+            <Lock className="w-4 h-4 text-slate-400" aria-hidden="true" />
           </span>
           <input
             id="password"
@@ -261,59 +257,59 @@ export function LoginForm({
             required={role !== 'STUDENT'}
             value={password}
             onChange={e => setPassword(e.target.value)}
-            placeholder="Nhập mật khẩu"
+            placeholder="Mật khẩu"
             autoComplete="current-password"
-            className={`${inputBase} !pl-11 !pr-11 border-[#D7E2E5]`}
+            className={`${inputBase} !pl-11 !pr-11 border-slate-200/90`}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3.5 z-10 flex items-center justify-center text-[#9DB8C0] hover:text-[#00A99D] transition-colors focus-visible:outline-none"
+            className="absolute right-4 z-10 flex items-center justify-center text-slate-400 hover:text-[#00A99D] transition-colors focus-visible:outline-none cursor-pointer"
             aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
         {role === 'STUDENT' && (
-          <p className="text-[10px] text-[#9DB8C0] ml-0.5 italic">* Mật khẩu mặc định là mã học sinh</p>
+          <p className="text-[11px] text-[#00A99D] font-bold ml-1 italic mt-0.5">* Mật khẩu mặc định là mã học sinh</p>
         )}
       </div>
 
-      {/* Remember me & Forgot */}
-      <div className="flex items-center justify-between select-none">
-        <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-500">
+      {/* Remember me & Forgot Password */}
+      <div className="flex items-center justify-between select-none pt-0.5">
+        <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-600 font-bold">
           <input
             type="checkbox"
             checked={rememberMe}
             onChange={e => setRememberMe(e.target.checked)}
-            className="w-3.5 h-3.5 rounded border-[#D7E2E5] text-[#00A99D] focus:ring-[#00A99D]/20 cursor-pointer"
+            className="w-4 h-4 rounded border-slate-300 text-[#00A99D] focus:ring-[#00A99D]/20 cursor-pointer accent-[#00A99D]"
           />
-          <span className="text-[11px] font-semibold">Ghi nhớ đăng nhập</span>
+          <span>Ghi nhớ</span>
         </label>
         <button
           type="button"
           onClick={onForgotPassword}
-          className="text-[11px] font-semibold text-[#00A99D] hover:text-[#009085] hover:underline cursor-pointer transition-colors"
+          className="text-xs font-extrabold text-[#00A99D] hover:text-[#009085] hover:underline cursor-pointer transition-colors"
         >
           Quên mật khẩu?
         </button>
       </div>
 
-      {/* Submit */}
+      {/* Submit Button (Image 2 style) */}
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-[48px] bg-gradient-to-r from-[#00A99D] via-[#00A99D] to-[#009085] hover:from-[#00A99D] hover:via-[#D97706] hover:to-[#251b4b] text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-md hover:shadow-teal-500/10 flex items-center justify-center gap-2 hover:-translate-y-px active:translate-y-0 transition-all duration-300 disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A99D]/40"
+        className="w-full h-[50px] mt-1 bg-[#00A99D] hover:bg-[#009085] active:scale-[0.99] text-white rounded-2xl text-sm font-extrabold shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/35 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00A99D]/30 cursor-pointer"
       >
         {loading ? (
           <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin pointer-events-none" />
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin pointer-events-none" />
             <span>Đang đăng nhập...</span>
           </>
         ) : (
           <>
-            <span>Đăng nhập</span>
-            <ArrowRight className="w-4 h-4 pointer-events-none" />
+            <span className="text-base font-black tracking-wide">Đăng nhập</span>
+            <ArrowRight className="w-5 h-5 pointer-events-none stroke-[2.5]" />
           </>
         )}
       </button>
