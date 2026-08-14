@@ -68,6 +68,12 @@ export async function GET(req: Request) {
       })
     }
 
+    // Query Input Assessment data by studentCode from database
+    const inputAssessment = await prisma.inputAssessmentStudent.findFirst({
+      where: { studentCode: student.studentCode },
+      orderBy: { createdAt: "desc" }
+    }).catch(() => null)
+
     const currentStatusColor = student.advisoryStatuses[0]?.statusColor || "GREEN"
     const currentStatusReason = student.advisoryStatuses[0]?.reasonDetail || "Ổn định"
 
@@ -76,6 +82,7 @@ export async function GET(req: Request) {
       currentStatusColor,
       currentStatusReason,
       goals,
+      inputAssessment,
       consultationLogs: student.consultationLogs,
       reflections: student.reflections,
       helpRequests: student.helpRequests,
