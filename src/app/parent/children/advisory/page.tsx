@@ -35,6 +35,14 @@ export default function ParentAdvisoryPortalPage() {
       setAcademicYearId(storedYear)
     }
 
+    const handleYearChange = () => {
+      if (typeof window !== "undefined") {
+        const storedYear = localStorage.getItem("selectedAcademicYear") || ""
+        setAcademicYearId(storedYear)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+
     async function loadChildren() {
       try {
         setLoading(true)
@@ -62,9 +70,13 @@ export default function ParentAdvisoryPortalPage() {
       }
     }
     loadChildren()
+
+    return () => {
+      window.removeEventListener("academicYearChanged", handleYearChange)
+    }
   }, [])
 
-  // 2. Fetch 360 profile when selectedStudentId changes
+  // 2. Fetch 360 profile when selectedStudentId or academicYearId changes
   useEffect(() => {
     if (!selectedStudentId) {
       setLoading(false)
@@ -96,7 +108,7 @@ export default function ParentAdvisoryPortalPage() {
   }, [selectedStudentId, academicYearId])
 
   async function handleSaveParentCommitment() {
-    if (!selectedStudentId || !profile) return
+    if (!selectedStudentId) return
     try {
       setSaving(true)
       const res = await fetch("/api/advisory/goals", {
@@ -105,8 +117,8 @@ export default function ParentAdvisoryPortalPage() {
         body: JSON.stringify({
           studentId: selectedStudentId,
           academicYearId,
-          gradeLevel: profile.student?.class?.grade || "K1",
-          goals: (profile.goals || []).map((g: any) => ({
+          gradeLevel: profile?.student?.class?.grade || "K1",
+          goals: (profile?.goals || []).map((g: any) => ({
             category: g.category,
             targetText: g.targetText
           })),
@@ -127,7 +139,8 @@ export default function ParentAdvisoryPortalPage() {
     }
   }
 
-  const student = profile?.student || {}
+  const selectedStudent = childrenList.find(c => c.id === selectedStudentId) || {}
+  const student = profile?.student || selectedStudent
   const statusColor = profile?.currentStatusColor || "GREEN"
 
   return (
@@ -210,9 +223,9 @@ export default function ParentAdvisoryPortalPage() {
               </div>
             </div>
 
-            <div className="sm:text-right text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-0.5">
-              <p className="font-extrabold text-[#003B3A]">Học sinh: {student.studentName || "N/A"}</p>
-              <p className="text-slate-500 font-semibold">Lớp: {student.class?.className || "N/A"} • Mã HS: {student.studentCode || "N/A"}</p>
+            <div className="sm:text-right text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-0.5 min-w-[220px]">
+              <p className="font-extrabold text-[#003B3A]">Học sinh: {student.studentName || selectedStudent.studentName || "N/A"}</p>
+              <p className="text-slate-500 font-semibold">Lớp: {student.class?.className || selectedStudent.class?.className || "N/A"} • Mã HS: {student.studentCode || selectedStudent.studentCode || "N/A"}</p>
               <p className="text-slate-400 font-medium">GVCN: {student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Thầy/Cô Chủ Nhiệm"}</p>
             </div>
           </div>

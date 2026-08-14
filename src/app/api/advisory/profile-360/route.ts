@@ -58,6 +58,16 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Student not found" }, { status: 404 })
     }
 
+    let goals = student.goals || []
+    if (goals.length === 0 && academicYearId) {
+      // Fallback: fetch all goals for this student if year filter returned empty
+      goals = await prisma.studentGoal.findMany({
+        where: { studentId: student.id },
+        include: { actions: true },
+        orderBy: { createdAt: 'desc' }
+      })
+    }
+
     const currentStatusColor = student.advisoryStatuses[0]?.statusColor || "GREEN"
     const currentStatusReason = student.advisoryStatuses[0]?.reasonDetail || "Ổn định"
 
@@ -65,7 +75,7 @@ export async function GET(req: Request) {
       student,
       currentStatusColor,
       currentStatusReason,
-      goals: student.goals,
+      goals,
       consultationLogs: student.consultationLogs,
       reflections: student.reflections,
       helpRequests: student.helpRequests,

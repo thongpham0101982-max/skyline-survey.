@@ -31,6 +31,14 @@ export default function ParentStudentProfilePage() {
       setAcademicYearId(storedYear)
     }
 
+    const handleYearChange = () => {
+      if (typeof window !== "undefined") {
+        const storedYear = localStorage.getItem("selectedAcademicYear") || ""
+        setAcademicYearId(storedYear)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
+
     async function loadChildren() {
       try {
         setLoading(true)
@@ -58,6 +66,10 @@ export default function ParentStudentProfilePage() {
       }
     }
     loadChildren()
+
+    return () => {
+      window.removeEventListener("academicYearChanged", handleYearChange)
+    }
   }, [])
 
   useEffect(() => {
@@ -83,7 +95,8 @@ export default function ParentStudentProfilePage() {
     load360Profile()
   }, [selectedStudentId, academicYearId])
 
-  const student = profile?.student || {}
+  const selectedStudent = childrenList.find(c => c.id === selectedStudentId) || {}
+  const student = profile?.student || selectedStudent
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 font-sans text-slate-800 pb-16">
@@ -150,20 +163,20 @@ export default function ParentStudentProfilePage() {
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-2xl font-black text-slate-900">{student.studentName || "N/A"}</h2>
+                    <h2 className="text-2xl font-black text-slate-900">{student.studentName || selectedStudent.studentName || "N/A"}</h2>
                     <span className="bg-sky-100 text-sky-800 text-[10px] font-black px-2.5 py-0.5 rounded-md uppercase">
-                      Mã HS: {student.studentCode || "N/A"}
+                      Mã HS: {student.studentCode || selectedStudent.studentCode || "N/A"}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 mt-1">
                     <span className="flex items-center gap-1">
                       <School className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Lớp: <strong>{student.class?.className || "N/A"}</strong></span>
+                      <span>Lớp: <strong>{student.class?.className || selectedStudent.class?.className || "N/A"}</strong></span>
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-teal-600" />
-                      <span>{student.class?.campus?.campusName || "N/A"}</span>
+                      <span>{student.class?.campus?.campusName || selectedStudent.class?.campus?.campusName || "N/A"}</span>
                     </span>
                   </div>
                 </div>
@@ -172,7 +185,7 @@ export default function ParentStudentProfilePage() {
               <div className="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100 min-w-[220px]">
                 <div>
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Giới tính</span>
-                  <span className="font-extrabold text-slate-700">{student.gender || "Nam/Nữ"}</span>
+                  <span className="font-extrabold text-slate-700">{student.gender || selectedStudent.gender || "Nam/Nữ"}</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Ngày sinh</span>
@@ -325,7 +338,7 @@ export default function ParentStudentProfilePage() {
 
           {/* Tab Content 3: Khen thưởng & Hoạt động */}
           {activeTab === "ACHIEVEMENTS" && (
-            <div className="bg-[#003B3A]/5 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-500" />
                 <span>Danh Hiệu Khen Thưởng & Hoạt Động Trải Nghiệm</span>
