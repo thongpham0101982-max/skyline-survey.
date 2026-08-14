@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { LinkStudentModal } from "@/components/LinkStudentModal"
 import { 
   GraduationCap, 
   User, 
@@ -132,7 +133,8 @@ export default function ParentStudentProfilePage() {
             <Users className="w-4 h-4 text-sky-600" />
             <span>Chọn con em xem hồ sơ (Năm học hiện tại):</span>
           </span>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <LinkStudentModal onSuccess={() => window.location.reload()} />
             {childrenList.map((c: any) => (
               <button
                 key={c.id}
@@ -161,9 +163,12 @@ export default function ParentStudentProfilePage() {
             <Users className="w-8 h-8" />
           </div>
           <h3 className="text-lg font-bold text-slate-800">Chưa gắn thông tin con em</h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto">
-            Tài khoản Phụ huynh hiện chưa được liên kết với mã học sinh. Vui lòng liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
+          <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
+            Tài khoản Phụ huynh hiện chưa được liên kết với mã học sinh. Vui lòng bổ sung mã học sinh hoặc liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
           </p>
+          <div className="pt-2 flex justify-center">
+            <LinkStudentModal onSuccess={() => window.location.reload()} buttonText="Bổ sung mã Học sinh ngay" />
+          </div>
         </div>
       ) : (
         <div className="space-y-6">

@@ -21,6 +21,7 @@ import {
   Heart
 } from "lucide-react"
 import Link from "next/link"
+import { LinkStudentModal } from "@/components/LinkStudentModal"
 
 export default async function ParentDashboard() {
   const session = await auth()
@@ -127,6 +128,7 @@ export default async function ParentDashboard() {
             <Users className="w-5 h-5 text-[#00A99D]" />
             <span>Thông tin Con em đồng hành ({children.length})</span>
           </h2>
+          <LinkStudentModal />
         </div>
 
         {children.length === 0 ? (
@@ -135,9 +137,12 @@ export default async function ParentDashboard() {
               <Users className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-slate-800">Chưa liên kết thông tin học sinh</h3>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
-              Tài khoản Phụ huynh chưa gắn mã học sinh. Vui lòng liên hệ Văn phòng Nhà trường để hỗ trợ liên kết.
+            <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
+              Tài khoản Phụ huynh chưa gắn mã học sinh. Vui lòng bổ sung mã học sinh hoặc liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
             </p>
+            <div className="pt-2 flex justify-center">
+              <LinkStudentModal buttonText="Bổ sung mã Học sinh ngay" />
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
