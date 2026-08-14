@@ -92,7 +92,8 @@ export default function ParentAdvisoryClient() {
     async function loadData() {
       try {
         setLoading(true)
-        const stCode = selectedStudent?.studentCode || ""
+        const currentChild = childrenList.find(c => c.id === selectedStudentId)
+        const stCode = currentChild?.studentCode || ""
         const [res360, resGoals] = await Promise.all([
           fetch(`/api/advisory/profile-360?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }),
           fetch(`/api/advisory/goals?studentId=${selectedStudentId}&studentCode=${stCode}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null)
@@ -130,7 +131,7 @@ export default function ParentAdvisoryClient() {
       }
     }
     loadData()
-  }, [selectedStudentId, academicYearId])
+  }, [selectedStudentId, academicYearId, childrenList])
 
   async function handleSaveCommitment() {
     if (!selectedStudentId) return
