@@ -1,4 +1,16 @@
 "use client"
+
+function getCategoryBadgeStyle(catName: string) {
+  const name = catName?.toLowerCase() || ""
+  if (name.includes("kỳ thi") || name.includes("đầu ra")) return "bg-teal-50 text-[#00A99D] border-teal-200"
+  if (name.includes("mầm non") || name.includes("mn")) return "bg-amber-50 text-amber-700 border-amber-200"
+  if (name.includes("phổ thông") || name.includes("pt")) return "bg-sky-50 text-sky-700 border-sky-200"
+  if (name.includes("quốc tế")) return "bg-indigo-50 text-indigo-700 border-indigo-200"
+  if (name.includes("định kì") || name.includes("kiểm tra")) return "bg-emerald-50 text-emerald-700 border-emerald-200"
+  if (name.includes("khảo sát")) return "bg-purple-50 text-purple-700 border-purple-200"
+  return "bg-slate-100 text-slate-700 border-slate-200"
+}
+
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
@@ -849,7 +861,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                       )}
                       <td className="p-3 text-center text-slate-400 font-bold whitespace-nowrap">{i + 1}</td>
                       <td className="p-3 whitespace-nowrap">
-                        <span className="bg-teal-50 text-[#00A99D] border border-teal-100 font-bold px-2.5 py-1 rounded-full text-[11px]">
+                        <span className={`border font-extrabold px-3 py-1 rounded-full text-[11px] inline-block shadow-2xs whitespace-nowrap ${getCategoryBadgeStyle(t.category)}`}>
                           {t.category || "Công việc"}
                         </span>
                       </td>
