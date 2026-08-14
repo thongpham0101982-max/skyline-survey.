@@ -754,15 +754,37 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               </div>
             </>
           )}
-          {role === "PARENT" && (
-            <div className="mt-4 pt-4 border-t border-white/10">
+                    {role === "PARENT" && (
+            <div className="mt-4 pt-4 border-t border-white/10 space-y-1">
+              <Link 
+                href="/parent/surveys" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                  pathname.startsWith('/parent/surveys') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <ClipboardList className="w-4 h-4 mr-2.5 text-amber-400" />
+                {!isCollapsed && <span>Khảo Sát Định Kỳ</span>}
+              </Link>
               <Link 
                 href="/parent/children/advisory" 
                 onClick={() => setIsOpen(false)} 
-                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold text-teal-300 hover:bg-white/10`}
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                  pathname.startsWith('/parent/children/advisory') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
               >
-                <Compass className="w-4 h-4 mr-2.5 text-teal-400" />
+                <Compass className="w-4 h-4 mr-2.5 text-teal-300" />
                 {!isCollapsed && <span>Cố Vấn & Mục Tiêu Đồng Hành</span>}
+              </Link>
+              <Link 
+                href="/parent/children/profile" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                  pathname.startsWith('/parent/children/profile') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <GraduationCap className="w-4 h-4 mr-2.5 text-sky-300" />
+                {!isCollapsed && <span>Hồ Sơ Học Sinh 360°</span>}
               </Link>
             </div>
           )}
