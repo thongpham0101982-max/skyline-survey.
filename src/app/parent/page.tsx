@@ -155,7 +155,7 @@ export default async function ParentDashboard() {
             <div className="space-y-1">
               <h3 className="text-base font-black text-slate-900">Tài khoản chưa gắn Mã Học sinh</h3>
               <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-                Nhấn vào nút bên dưới để bổ sung Mã học sinh của con. Hệ thống sẽ tự động cập nhật ngay sau khi Văn phòng Nhà trường đối soát.
+                Nhấn nút "+ Bổ sung mã Học sinh" ở góc phải để thêm mã học sinh. Hệ thống sẽ tự động cập nhật ngay sau khi Văn phòng Nhà trường đối soát.
               </p>
             </div>
             <div className="pt-1 flex justify-center">

@@ -1,3 +1,4 @@
+import Link from "next/link"
 "use client"
 
 import { useState, useEffect } from "react"
@@ -176,11 +177,14 @@ export default function ParentStudentProfilePage() {
           <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
             <Users className="w-8 h-8" />
           </div>
-          <h3 className="text-lg font-bold text-slate-800">Chưa gắn thông tin con em</h3>
+          <h3 className="text-lg font-bold text-slate-800">Chưa có dữ liệu con em</h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
-            Tài khoản Phụ huynh hiện chưa được liên kết với mã học sinh. Vui lòng bổ sung mã học sinh hoặc liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
+            Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng quay lại trang Tổng quan để thực hiện bổ sung mã học sinh.
           </p>
           <div className="pt-2 flex justify-center">
+            <Link href="/parent" className="px-5 py-2.5 rounded-2xl bg-[#003B3A] text-white text-xs font-bold hover:bg-[#004D4A] transition-all">
+              Chuyển sang trang Tổng quan
+            </Link>
           </div>
         </div>
       ) : (
