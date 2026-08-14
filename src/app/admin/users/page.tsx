@@ -1,4 +1,4 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { UsersClient } from "./client"
 import { getAdminSession } from "@/lib/session"
 
@@ -8,23 +8,21 @@ export const dynamic = "force-dynamic"
 export default async function UsersPage() {
   const session = await getAdminSession()
 
-  // Load all users but filter them based on campus scope if restricted
+  // Load staff/teacher/admin users only (exclude PARENT role and Parent records)
   const users = await prisma.user.findMany({
+    where: {
+      role: { not: "PARENT" },
+      parent: { is: null }
+    },
     orderBy: { createdAt: "desc" },
     include: {
       campusAssignments: true,
-      parent: {
-        include: {
-          students: {
-            include: { student: true }
-          }
-        }
-      },
       teacher: true
     }
   })
   
   const roles = await prisma.role.findMany({
+    where: { code: { not: "PARENT" } },
     orderBy: { name: "asc" }
   })
   
@@ -39,13 +37,6 @@ export default async function UsersPage() {
   const mappedUsers = users.map((u: any) => {
     const campusIds: string[] = u.campusAssignments.map((a: any) => a.campusId);
     if (u.teacher && u.teacher.campusId) campusIds.push(u.teacher.campusId);
-    if (u.parent) {
-      u.parent.students.forEach((link: any) => {
-        if (link.student.campusId && !campusIds.includes(link.student.campusId)) {
-          campusIds.push(link.student.campusId);
-        }
-      })
-    }
     return {
       id: u.id,
       email: u.email,
@@ -54,10 +45,7 @@ export default async function UsersPage() {
       campusIds
     }
   }).filter((u: any) => {
-    // If ADMIN, see everyone
     if (session.isFullAccess) return true;
-    // If restricted, only see users who belong to the same campus(es)
-    // or system users (no campus) if the admin role allows (but usually GDCS only manages their campus)
     return u.campusIds.some((cid: string) => session.allowedCampusIds.includes(cid));
   })
 
