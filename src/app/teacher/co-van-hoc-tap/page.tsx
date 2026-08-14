@@ -13,7 +13,7 @@ export default function TeacherAdvisoryPage() {
   const [academicYearId, setAcademicYearId] = useState("")
   const [classes, setClasses] = useState<any[]>([])
   const [selectedClassId, setSelectedClassId] = useState("")
-  const [students, setStudents] = useState<any[]>([])
+  const [students, setStudents] = useState<any[]>([]); const [submittedStudentCodes, setSubmittedStudentCodes] = useState<string[]>([]); const [submissionFilter, setSubmissionFilter] = useState<"ALL" | "SUBMITTED" | "NOT_SUBMITTED">("ALL")
   const [selectedStudentId, setSelectedStudentId] = useState("")
   
   const [activeTab, setActiveTab] = useState<"consultations" | "sos" | "tracking" | "rubric_eval">("tracking")
@@ -99,6 +99,16 @@ export default function TeacherAdvisoryPage() {
     if (!selectedClassId) return
     const url = "/api/students/search?classId=" + selectedClassId + (academicYearId ? "&academicYearId=" + academicYearId : "")
     
+        // Fetch class submission status
+    fetch("/api/advisory/goals?classId=" + selectedClassId + "&_t=" + Date.now(), { cache: "no-store" })
+      .then(r => r.json())
+      .then(data => {
+        if (data && Array.isArray(data.submittedStudentCodes)) {
+          setSubmittedStudentCodes(data.submittedStudentCodes)
+        }
+      })
+      .catch(console.error)
+
     fetch(url)
       .then(r => r.json())
       .then(data => {
@@ -381,6 +391,17 @@ export default function TeacherAdvisoryPage() {
       setSelectedStudentId(students[activeStudentIndex + 1].id)
     }
   }
+
+    const filteredStudents = students.filter(st => {
+    const isSubmitted = submittedStudentCodes.includes(st.studentCode)
+    if (submissionFilter === "SUBMITTED") return isSubmitted
+    if (submissionFilter === "NOT_SUBMITTED") return !isSubmitted
+    return true
+  })
+  
+  const submittedCount = students.filter(st => submittedStudentCodes.includes(st.studentCode)).length
+  const notSubmittedCount = students.length - submittedCount
+  const submissionPercent = students.length > 0 ? Math.round((submittedCount / students.length) * 100) : 0
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">

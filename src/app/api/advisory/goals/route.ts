@@ -109,6 +109,35 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url)
+    const targetClassId = searchParams.get("classId")
+    if (targetClassId) {
+      const classStudents = await prisma.student.findMany({
+        where: { classId: targetClassId },
+        select: { id: true, studentCode: true, studentName: true }
+      })
+      const studentIdsInClass = classStudents.map(s => s.id)
+      
+      const goalsInClass = await prisma.studentGoal.findMany({
+        where: { studentId: { in: studentIdsInClass } },
+        select: { studentId: true }
+      }).catch(() => [])
+      
+      const submittedStudentIds = Array.from(new Set(goalsInClass.map(g => g.studentId)))
+      const submittedStudentCodes = Array.from(new Set(
+        classStudents
+          .filter(s => submittedStudentIds.includes(s.id))
+          .map(s => s.studentCode)
+          .filter(Boolean)
+      ))
+
+      return jsonResponse({
+        classId: targetClassId,
+        totalStudents: classStudents.length,
+        submittedCount: submittedStudentCodes.length,
+        submittedStudentIds,
+        submittedStudentCodes
+      })
+    }
     const targetStudentId = searchParams.get("studentId") || studentSess?.studentId
     const targetStudentCode = searchParams.get("studentCode")
     let academicYearId = searchParams.get("academicYearId") || ""
