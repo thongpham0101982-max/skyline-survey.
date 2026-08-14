@@ -162,7 +162,6 @@ export default function ParentStudentProfilePage() {
                 {c.studentName} ({c.class?.className || 'Lớp hiện tại'})
               </button>
             ))}
-            <LinkStudentModal onSuccess={() => window.location.reload()} />
           </div>
         </div>
       )}
@@ -182,7 +181,6 @@ export default function ParentStudentProfilePage() {
             Tài khoản Phụ huynh hiện chưa được liên kết với mã học sinh. Vui lòng bổ sung mã học sinh hoặc liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
           </p>
           <div className="pt-2 flex justify-center">
-            <LinkStudentModal onSuccess={() => window.location.reload()} buttonText="Bổ sung mã Học sinh ngay" />
           </div>
         </div>
       ) : (

@@ -177,7 +177,6 @@ export default function ParentAdvisoryPortalPage() {
             <span>Chọn con em theo dõi (Năm học hiện tại):</span>
           </span>
           <div className="flex items-center gap-2">
-            <LinkStudentModal onSuccess={() => window.location.reload()} />
             {childrenList.map((c: any) => (
               <button
                 key={c.id}
@@ -210,7 +209,6 @@ export default function ParentAdvisoryPortalPage() {
             Tài khoản Phụ huynh hiện chưa được liên kết với mã học sinh. Vui lòng bổ sung mã học sinh hoặc liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
           </p>
           <div className="pt-2 flex justify-center">
-            <LinkStudentModal onSuccess={() => window.location.reload()} buttonText="Bổ sung mã Học sinh ngay" />
           </div>
         </div>
       ) : (
