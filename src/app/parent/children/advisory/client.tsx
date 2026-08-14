@@ -15,7 +15,9 @@ import {
   Smile,
   Zap,
   Clock,
-  AlertCircle
+  Sparkles,
+  Award,
+  GraduationCap
 } from "lucide-react"
 import Link from "next/link"
 
@@ -172,43 +174,96 @@ export default function ParentAdvisoryClient() {
       ? profile.goals
       : []
 
-  // Class & Grade info
+  // Class & Grade Parsing for 6 Separate Grade Form Types
   const classNameStr = student.class?.className || selectedStudent.class?.className || "8.3_CS1"
   let gradeNum = "8"
   const matchNum = classNameStr.match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
   if (matchNum && matchNum[1]) gradeNum = matchNum[1]
 
-  // 4 Target Categories matching exact Khối 6-8 Form Requirements
-  const categoriesK68 = [
-    {
-      key: "HOC_TAP",
-      number: "1",
-      title: "1. Mục tiêu học tập",
-      hint: "Gợi ý: Môn học, phương pháp học, điểm số...",
-      altKeys: ["ACADEMIC", "HỌC TẬP"]
-    },
-    {
-      key: "THOI_QUEN",
-      number: "2",
-      title: "2. Mục tiêu thói quen",
-      hint: "Gợi ý: Kỷ luật, tự học, hoàn thành nhiệm vụ đúng thời hạn, thói quen ăn uống, nghỉ ngơi...",
-      altKeys: ["THOI_QUEN_SUC_KHOE", "HEALTH", "SỨC KHỎE", "THÓI QUEN"]
-    },
-    {
-      key: "KY_NANG_CAM_XUC",
-      number: "3",
-      title: "3. Mục tiêu kỹ năng, cảm xúc",
-      hint: "Gợi ý: Giao tiếp, thuyết trình, làm việc nhóm, tư duy phản biện, quản lý cảm xúc...",
-      altKeys: ["KY_NANG_SO_THICH", "SKILLS", "CẢM XÚC", "KỸ NĂNG"]
-    },
-    {
-      key: "DINH_HUONG",
-      number: "4",
-      title: "4. Mục tiêu định hướng",
-      hint: "Gợi ý: Khám phá bản thân, ngành nghề, lộ trình tương lai...",
-      altKeys: ["DINH_HUONG_CAM_KET", "ORIENTATION", "ĐỊNH HƯỚNG"]
+  const gVal = parseInt(gradeNum, 10) || 8
+
+  // Grade Form Configuration:
+  // 1: Khối 1
+  // 2: Khối 2
+  // 3: Khối 3
+  // 4-5: Khối 4 đến 5
+  // 6-8: Khối 6 đến 8
+  // 9-12: Khối 9 đến 12
+  let formType = "6-8"
+  let formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI " + gradeNum
+  let formSub = "Bảng lập mục tiêu năm học gồm đúng 4 Nhóm mục tiêu chuẩn theo biểu mẫu của Hệ thống Trường Sky-Line."
+
+  if (gVal === 1) {
+    formType = "1"
+    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI 1"
+    formSub = "Bảng lập mục tiêu khởi đầu Tiểu học dành riêng cho học sinh Khối 1."
+  } else if (gVal === 2) {
+    formType = "2"
+    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI 2"
+    formSub = "Bảng lập mục tiêu rèn luyện tự giác dành riêng cho học sinh Khối 2."
+  } else if (gVal === 3) {
+    formType = "3"
+    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI 3"
+    formSub = "Bảng lập mục tiêu phát triển kỹ năng tự học dành riêng cho học sinh Khối 3."
+  } else if (gVal === 4 || gVal === 5) {
+    formType = "4-5"
+    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI " + gradeNum
+    formSub = "Bảng lập mục tiêu nâng cao năng lực & tự học dành riêng cho Khối 4 - 5."
+  } else if (gVal >= 9) {
+    formType = "9-12"
+    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC (SMART) — KHỐI " + gradeNum
+    formSub = "Bảng lập mục tiêu định hướng tương lai SMART dành riêng cho Khối 9 - 12."
+  }
+
+  // 6 Separate Form Definitions
+  const getCategoriesForForm = () => {
+    if (formType === "1") {
+      return [
+        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập 📚", hint: "Gợi ý: Học đọc, học viết, tính toán cơ bản, tập trung trên lớp...", altKeys: ["HOC_TAP", "ACADEMIC"] },
+        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen ⏰", hint: "Gợi ý: Ngủ đúng giờ, chuẩn bị đồ dùng học tập, tự cất gọn gàng...", altKeys: ["THOI_QUEN", "HEALTH"] },
+        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc 🎨", hint: "Gợi ý: Lễ phép chào hỏi, biết cảm ơn, xin lỗi, hòa đồng với bạn...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
+        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu ước mơ & sở thích 🌟", hint: "Gợi ý: Môn học yêu thích, ước mơ nhỏ của bé...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
+      ]
+    } else if (formType === "2") {
+      return [
+        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập 📚", hint: "Gợi ý: Rèn chữ đẹp, đọc hiểu tốt, làm bài tập đầy đủ...", altKeys: ["HOC_TAP", "ACADEMIC"] },
+        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen ⏰", hint: "Gợi ý: Tự giác học bài, tập thể dục, ăn uống khoa học...", altKeys: ["THOI_QUEN", "HEALTH"] },
+        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc 🎨", hint: "Gợi ý: Giao tiếp tự tin, biết lắng nghe, giúp đỡ bạn bè...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
+        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu ước mơ & năng khiếu 🚀", hint: "Gợi ý: Phát triển môn năng khiếu, hoạt động trải nghiệm yêu thích...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
+      ]
+    } else if (formType === "3") {
+      return [
+        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập 📚", hint: "Gợi ý: Nâng cao điểm số các môn, từ vựng Tiếng Anh, toán tư duy...", altKeys: ["HOC_TAP", "ACADEMIC"] },
+        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen ⏰", hint: "Gợi ý: Tự lập kế hoạch học tập, thói quen đọc sách mỗi ngày...", altKeys: ["THOI_QUEN", "HEALTH"] },
+        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc 🎨", hint: "Gợi ý: Thuyết trình ngắn, làm việc nhóm nhỏ, quản lý cảm xúc...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
+        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu khám phá & định hướng 🚀", hint: "Gợi ý: Khám phá các lĩnh vực mới, dự án cá nhân nhỏ...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
+      ]
+    } else if (formType === "4-5") {
+      return [
+        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập", hint: "Gợi ý: Môn học, phương pháp tự học, kết quả học tập kỳ vọng...", altKeys: ["HOC_TAP", "ACADEMIC"] },
+        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen & tự học", hint: "Gợi ý: Kỷ luật tự học, quản lý thời gian, sinh hoạt điều độ...", altKeys: ["THOI_QUEN", "HEALTH"] },
+        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng & cảm xúc", hint: "Gợi ý: Thuyết trình, làm việc nhóm, tư duy phản biện nhẹ...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
+        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu năng khiếu & trải nghiệm", hint: "Gợi ý: CLB ngoại khóa, năng khiếu, dự án học tập...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
+      ]
+    } else if (formType === "9-12") {
+      return [
+        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập & Thi cử (SMART)", hint: "Gợi ý: Điểm thi IELTS/SAT, thi Chuyên/Đại học target, điểm TB môn...", altKeys: ["HOC_TAP", "ACADEMIC"] },
+        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu rèn luyện & Thói quen SMART", hint: "Gợi ý: Quản lý thời gian, kỷ luật bản thân, thể chất & sức khỏe...", altKeys: ["THOI_QUEN", "HEALTH"] },
+        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng & Hồ sơ ngoại khóa", hint: "Gợi ý: Dự án cộng đồng, vai trò lãnh đạo, kỹ năng mềm...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
+        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu định hướng nghề nghiệp & Lộ trình", hint: "Gợi ý: Chọn ngành, chọn trường Đại học, kế hoạch săn học bổng...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
+      ]
+    } else {
+      // Khối 6 đến 8
+      return [
+        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập", hint: "Gợi ý: Môn học, phương pháp học, điểm số...", altKeys: ["HOC_TAP", "ACADEMIC"] },
+        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen", hint: "Gợi ý: Kỷ luật, tự học, hoàn thành nhiệm vụ đúng thời hạn, thói quen ăn uống, nghỉ ngơi...", altKeys: ["THOI_QUEN", "HEALTH"] },
+        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc", hint: "Gợi ý: Giao tiếp, thuyết trình, làm việc nhóm, tư duy phản biện, quản lý cảm xúc...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
+        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu định hướng", hint: "Gợi ý: Khám phá bản thân, ngành nghề, lộ trình tương lai...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
+      ]
     }
-  ]
+  }
+
+  const currentCategories = getCategoriesForForm()
 
   // Find goal item entered for category
   const findCategoryGoal = (catKey: string, altKeys: string[]) => {
@@ -236,7 +291,7 @@ export default function ParentAdvisoryClient() {
           Theo Dõi Cố Vấn & Mục Tiêu Đồng Hành
         </h1>
         <p className="text-xs sm:text-sm text-teal-100 font-medium max-w-3xl leading-relaxed">
-          Theo dõi sát sao Form Đăng Ký Mục Tiêu Năm Học do con em nhập theo 4 Nhóm mục tiêu chuẩn Khối {gradeNum}, gửi lời nhắn & ký cam kết đồng hành từ Gia đình.
+          Theo dõi sát sao Form Đăng Ký Mục Tiêu Năm Học do con em trực tiếp nhập theo biểu mẫu riêng của Khối {gradeNum}, gửi lời nhắn & ký cam kết đồng hành từ Gia đình.
         </p>
       </div>
 
@@ -268,7 +323,7 @@ export default function ParentAdvisoryClient() {
       {loading ? (
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
           <Compass className="w-8 h-8 mx-auto text-teal-500 animate-spin" />
-          <p>Đang nạp Phiếu Mục Tiêu Căn Bản Của Học Sinh...</p>
+          <p>Đang nạp Phiếu Mục Tiêu Khối {gradeNum} Của Học Sinh...</p>
         </div>
       ) : childrenList.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
@@ -312,7 +367,7 @@ export default function ParentAdvisoryClient() {
             </div>
           </div>
 
-          {/* Form Banner Header matching Student Grade Form */}
+          {/* Form Banner Header matching Exact Student Grade Form */}
           <div className="bg-teal-50/60 rounded-3xl p-5 border border-teal-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-[#00A99D] text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -320,10 +375,10 @@ export default function ParentAdvisoryClient() {
               </div>
               <div>
                 <h2 className="text-base font-black text-slate-900 uppercase">
-                  PHIẾU MỤC TIÊU NĂM HỌC — KHỐI {gradeNum}
+                  {formTitle}
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  Bảng lập mục tiêu năm học gồm đúng 4 Nhóm mục tiêu chuẩn theo biểu mẫu của Hệ thống Trường Sky-Line.
+                  {formSub}
                 </p>
               </div>
             </div>
@@ -332,9 +387,9 @@ export default function ParentAdvisoryClient() {
             </div>
           </div>
 
-          {/* RENDER THE EXACT 4 CATEGORIES FORM FOR KHỐI 6 ĐẾN 8 */}
+          {/* RENDER THE EXACT 4 CATEGORIES FORM FOR SPECIFIC GRADE */}
           <div className="space-y-6">
-            {categoriesK68.map((catDef) => {
+            {currentCategories.map((catDef) => {
               const g = findCategoryGoal(catDef.key, catDef.altKeys)
               const actionTextStr = g?.actions && g.actions.length > 0 
                 ? g.actions.map((a: any) => a.actionText).join("; ")
