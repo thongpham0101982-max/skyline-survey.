@@ -1,6 +1,6 @@
-﻿import { prisma } from "@/lib/db"
+import { prisma } from "@/lib/db"
 import { ParentAccountsClient } from "./client"
-import { ShieldCheck } from "lucide-react"
+import { ShieldCheck, UserCheck } from "lucide-react"
 import { getAdminSession } from "@/lib/session"
 
 export default async function ParentAccountsPage() {
@@ -26,26 +26,30 @@ export default async function ParentAccountsPage() {
   })
 
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto animate-in slide-in-from-bottom-4 duration-1000">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-4 sm:px-0">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-0.5 w-6 text-xs font-semibold" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Hệ thống quản trị</span>
+    <div className="space-y-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
+      
+      {/* HEADER TITLE BAR */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#00A99D]" />
+            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Hệ thống quản trị Sky-Line</span>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight leading-none">Danh Mục Tài Khoản PHHS</h1>
-          <p className="text-slate-400 font-bold text-sm">Kho lưu trữ và khởi tạo quyền truy cập dành cho Phụ huynh học sinh.</p>
+          <h1 className="text-3xl font-black text-[#003B3A] tracking-tight">Danh Mục Tài Khoản PHHS</h1>
+          <p className="text-slate-500 font-medium text-xs">Kho lưu trữ, quản lý liên kết Phụ huynh - Học sinh & khởi tạo quyền truy cập hệ thống.</p>
         </div>
-        <div className="flex items-center gap-4 bg-white/60 backdrop-blur-md p-4 rounded-3xl border border-white shadow-xl shadow-slate-200/20">
-           <div className="w-12 h-12 flex items-center justify-center text-emerald-500 shadow-inner text-xs font-semibold">
+
+        <div className="flex items-center gap-4 bg-teal-50/60 p-4 rounded-2xl border border-teal-100">
+           <div className="w-12 h-12 rounded-xl bg-[#003B3A] text-emerald-400 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-6 h-6" />
            </div>
-           <div className="pr-4">
-              <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] leading-none mb-1.5">Trạng thái bảo mật</p>
-              <p className="text-sm font-black text-slate-700">Mã hóa chuẩn AES-256</p>
+           <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bảo mật tài khoản</p>
+              <p className="text-xs font-bold text-[#003B3A]">Mã hóa bcrypt & Chuẩn AES-256</p>
            </div>
         </div>
       </div>
+
       <ParentAccountsClient 
         classes={classes} 
         years={years} 
