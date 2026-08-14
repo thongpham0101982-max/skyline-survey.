@@ -148,20 +148,15 @@ export default async function ParentDashboard() {
         </div>
 
         {children.length === 0 ? (
-          <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-slate-200/90 shadow-sm space-y-4 max-w-xl mx-auto">
+          <div className="bg-white rounded-3xl p-8 sm:p-10 text-center border border-slate-200/90 shadow-sm space-y-3 max-w-xl mx-auto">
             <div className="w-14 h-14 bg-teal-50 text-[#00A99D] rounded-2xl flex items-center justify-center mx-auto">
               <Users className="w-7 h-7" />
             </div>
             <div className="space-y-1">
               <h3 className="text-base font-black text-slate-900">Tài khoản chưa gắn Mã Học sinh</h3>
               <p className="text-xs text-slate-500 font-medium max-w-sm mx-auto leading-relaxed">
-                Nhấn nút "+ Bổ sung mã Học sinh" ở góc phải để thêm mã học sinh. Hệ thống sẽ tự động cập nhật ngay sau khi Văn phòng Nhà trường đối soát.
+                Vui lòng nhấn nút <strong className="text-[#00A99D]">+ Bổ sung mã Học sinh</strong> ở góc trên bên phải để nhập mã con em. Hệ thống sẽ tự động đối soát và cập nhật ngay sau khi Văn phòng phê duyệt.
               </p>
-            </div>
-            <div className="pt-1 flex justify-center">
-              <span className="text-[11px] font-extrabold text-[#00A99D] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
-                👆 Nhấn nút "+ Bổ sung mã Học sinh" ở góc phải để thêm mã con
-              </span>
             </div>
           </div>
         ) : (
