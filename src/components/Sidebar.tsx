@@ -759,6 +759,16 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                     {role === "PARENT" && (
             <div className="space-y-1">
               <Link 
+                href="/parent" 
+                onClick={() => setIsOpen(false)} 
+                className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
+                  pathname === '/parent' ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4 mr-2.5 text-teal-300 shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Tổng quan</span>}
+              </Link>
+              <Link 
                 href="/parent/surveys" 
                 onClick={() => setIsOpen(false)} 
                 className={`group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold ${
@@ -785,7 +795,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                   pathname.startsWith('/parent/children/advisory') ? "bg-white/20 text-white border border-[#135E5B]/30" : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
               >
-                <Compass className="w-4 h-4 mr-2.5 text-teal-300 shrink-0" />
+                <Compass className="w-4 h-4 mr-2.5 text-emerald-300 shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Theo Dõi Cố Vấn & Mục Tiêu Đồng Hành</span>}
               </Link>
             </div>

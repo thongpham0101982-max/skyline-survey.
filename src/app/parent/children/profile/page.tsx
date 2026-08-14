@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LinkStudentModal } from "@/components/LinkStudentModal"
 import { 
   GraduationCap, 
   User, 
@@ -16,8 +15,15 @@ import {
   Users,
   Sparkles,
   TrendingUp,
-  FileText
+  FileText,
+  Compass,
+  Phone,
+  Mail,
+  ShieldCheck,
+  Building2,
+  Printer
 } from "lucide-react"
+import { LinkStudentModal } from "@/components/LinkStudentModal"
 
 export default function ParentStudentProfilePage() {
   const [childrenList, setChildrenList] = useState<any[]>([])
@@ -25,7 +31,7 @@ export default function ParentStudentProfilePage() {
   const [academicYearId, setAcademicYearId] = useState("")
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<"ACADEMIC" | "INPUT_ASSESSMENT" | "ACHIEVEMENTS">("ACADEMIC")
+  const [activeTab, setActiveTab] = useState<"INFO" | "ACADEMIC" | "INPUT_ASSESSMENT" | "ACHIEVEMENTS" | "ADVISORY">("INFO")
 
   useEffect(() => {
     let year = ""
@@ -107,10 +113,13 @@ export default function ParentStudentProfilePage() {
   const termScores = profile?.termScores || []
   const inputAssessment = profile?.inputAssessment || null
   const achievements = profile?.achievements || []
+  const goals = profile?.goals || []
+  const advisoryStatuses = profile?.advisoryStatuses || []
 
   const hk1Summary = termSummaries.find((s: any) => s.semester === "HK1" || s.semester === 1)
   const hk2Summary = termSummaries.find((s: any) => s.semester === "HK2" || s.semester === 2)
   const homeroomTeacherName = selectedStudent.homeroomTeacherName || student.homeroomTeacherName || (student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Chưa phân công")
+  const currentStatusColor = profile?.currentStatusColor || "GREEN"
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 font-sans text-slate-800 pb-16">
@@ -120,9 +129,9 @@ export default function ParentStudentProfilePage() {
           <GraduationCap className="w-3.5 h-3.5" />
           <span>PARENT PORTAL — HỒ SƠ HỌC SINH 360°</span>
         </div>
-        <h1 className="text-3xl font-black tracking-tight">Hồ Sơ Học Tập & Rèn Luyện Toàn Diện</h1>
+        <h1 className="text-3xl font-black tracking-tight">Chi Tiết Hồ Sơ Học Sinh 360°</h1>
         <p className="text-xs sm:text-sm text-sky-100 font-medium max-w-2xl leading-relaxed">
-          Theo dõi tổng quan thông tin cá nhân, kết quả học tập, rèn luyện đạo đức, kết quả khảo sát đầu vào và các danh hiệu khen thưởng thực tế từ cơ sở dữ liệu.
+          Xem thông tin chi tiết lý lịch cá nhân, kết quả học tập rèn luyện, khảo sát đầu vào, khen thưởng và cố vấn tự học đồng bộ từ hệ thống Quản lý Học sinh Admin.
         </p>
       </div>
 
@@ -131,10 +140,9 @@ export default function ParentStudentProfilePage() {
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between gap-4">
           <span className="text-xs font-black text-slate-600 flex items-center gap-2">
             <Users className="w-4 h-4 text-sky-600" />
-            <span>Chọn con em xem hồ sơ (Năm học hiện tại):</span>
+            <span>Chọn con em xem hồ sơ chi tiết:</span>
           </span>
           <div className="flex items-center gap-2">
-            <LinkStudentModal onSuccess={() => window.location.reload()} />
             {childrenList.map((c: any) => (
               <button
                 key={c.id}
@@ -148,6 +156,7 @@ export default function ParentStudentProfilePage() {
                 {c.studentName} ({c.class?.className || 'Chưa xếp lớp'})
               </button>
             ))}
+            <LinkStudentModal onSuccess={() => window.location.reload()} />
           </div>
         </div>
       )}
@@ -155,7 +164,7 @@ export default function ParentStudentProfilePage() {
       {loading ? (
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
           <GraduationCap className="w-8 h-8 mx-auto text-sky-500 animate-bounce" />
-          <p>Đang tải Hồ sơ học sinh 360°...</p>
+          <p>Đang tải Chi tiết Hồ sơ Học sinh 360°...</p>
         </div>
       ) : childrenList.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
@@ -172,7 +181,7 @@ export default function ParentStudentProfilePage() {
         </div>
       ) : (
         <div className="space-y-6">
-          {/* Thông tin Cá nhân & Lớp học thực tế */}
+          {/* Thẻ Thông tin Tổng quan Học sinh */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs relative overflow-hidden">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
@@ -186,14 +195,14 @@ export default function ParentStudentProfilePage() {
                       Mã HS: {student.studentCode || selectedStudent.studentCode || "N/A"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 mt-1">
+                  <div className="flex flex-wrap items-center gap-3 text-xs font-semibold text-slate-500 mt-1">
                     <span className="flex items-center gap-1">
                       <School className="w-3.5 h-3.5 text-sky-600" />
                       <span>Lớp: <strong>{student.class?.className || selectedStudent.class?.className || "N/A"}</strong></span>
                     </span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                      <Building2 className="w-3.5 h-3.5 text-teal-600" />
                       <span>{student.class?.campus?.campusName || selectedStudent.class?.campus?.campusName || "N/A"}</span>
                     </span>
                     <span>•</span>
@@ -219,49 +228,130 @@ export default function ParentStudentProfilePage() {
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="flex border-b border-slate-200 gap-6 text-xs font-black">
+          {/* Nav Tabs Chi tiết Hồ sơ (Matching Admin HSHS) */}
+          <div className="flex border-b border-slate-200 gap-4 sm:gap-6 text-xs font-black overflow-x-auto">
+            <button
+              onClick={() => setActiveTab("INFO")}
+              className={"pb-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition-all " + (
+                activeTab === "INFO"
+                  ? "border-sky-600 text-sky-600"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <User className="w-4 h-4" />
+              <span>1. LÝ LỊCH VÀ THÔNG TIN CÁ NHÂN</span>
+            </button>
+
             <button
               onClick={() => setActiveTab("ACADEMIC")}
-              className={"pb-3 flex items-center gap-2 border-b-2 transition-all " + (
+              className={"pb-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition-all " + (
                 activeTab === "ACADEMIC"
                   ? "border-sky-600 text-sky-600"
                   : "border-transparent text-slate-400 hover:text-slate-600"
               )}
             >
               <TrendingUp className="w-4 h-4" />
-              <span>KẾT QUẢ HỌC TẬP & RÈN LUYỆN</span>
+              <span>2. KẾT QUẢ HỌC TẬP & RÈN LUYỆN</span>
             </button>
 
             <button
               onClick={() => setActiveTab("INPUT_ASSESSMENT")}
-              className={"pb-3 flex items-center gap-2 border-b-2 transition-all " + (
+              className={"pb-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition-all " + (
                 activeTab === "INPUT_ASSESSMENT"
                   ? "border-sky-600 text-sky-600"
                   : "border-transparent text-slate-400 hover:text-slate-600"
               )}
             >
               <ClipboardCheck className="w-4 h-4" />
-              <span>KHẢO SÁT ĐẦU VÀO</span>
+              <span>3. KHẢO SÁT ĐẦU VÀO</span>
             </button>
 
             <button
               onClick={() => setActiveTab("ACHIEVEMENTS")}
-              className={"pb-3 flex items-center gap-2 border-b-2 transition-all " + (
+              className={"pb-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition-all " + (
                 activeTab === "ACHIEVEMENTS"
                   ? "border-sky-600 text-sky-600"
                   : "border-transparent text-slate-400 hover:text-slate-600"
               )}
             >
               <Award className="w-4 h-4" />
-              <span>KHEN THƯỞNG & HOẠT ĐỘNG</span>
+              <span>4. KHEN THƯỞNG & THÀNH TÍCH</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("ADVISORY")}
+              className={"pb-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition-all " + (
+                activeTab === "ADVISORY"
+                  ? "border-sky-600 text-sky-600"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <Compass className="w-4 h-4" />
+              <span>5. CỐ VẤN TỰ HỌC & MỤC TIÊU</span>
             </button>
           </div>
 
-          {/* Tab Content 1: Kết quả Học tập & Rèn luyện từ DB */}
+          {/* Tab 1: Lý lịch và Thông tin Cá nhân */}
+          {activeTab === "INFO" && (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
+              <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2 border-b border-slate-100 pb-3">
+                <User className="w-4 h-4 text-sky-600" />
+                <span>Chi Tiết Lý Lịch Học Sinh & Thông Tin Liên Hệ</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Thông tin học đường</span>
+                  <div className="space-y-2 font-semibold">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Họ và tên:</span>
+                      <span className="font-extrabold text-slate-900">{student.studentName || selectedStudent.studentName || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Mã học sinh:</span>
+                      <span className="font-bold text-sky-700">{student.studentCode || selectedStudent.studentCode || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Lớp học:</span>
+                      <span className="font-bold text-slate-800">{student.class?.className || selectedStudent.class?.className || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Cơ sở học tập:</span>
+                      <span className="font-bold text-slate-800">{student.class?.campus?.campusName || selectedStudent.class?.campus?.campusName || "N/A"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Giáo viên chủ nhiệm:</span>
+                      <span className="font-bold text-teal-700">{homeroomTeacherName}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-3">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Thông tin liên hệ gia đình</span>
+                  <div className="space-y-2 font-semibold">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Giới tính:</span>
+                      <span className="font-bold text-slate-800">{student.gender || selectedStudent.gender || "Nam/Nữ"}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Ngày sinh:</span>
+                      <span className="font-bold text-slate-800">
+                        {student.dateOfBirth ? new Date(student.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Trạng thái hồ sơ:</span>
+                      <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Hoạt động / Chính thức</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: Kết quả Học tập & Rèn luyện */}
           {activeTab === "ACADEMIC" && (
             <div className="space-y-6">
-              {/* Summary Score Box */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-2">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kết quả Học kỳ I</span>
@@ -286,11 +376,10 @@ export default function ParentStudentProfilePage() {
                 </div>
               </div>
 
-              {/* General Subject Table Overview from DB */}
               <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
                 <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-sky-600" />
-                  <span>Bảng Tổng Hợp Nhận Xét Các Môn Học</span>
+                  <span>Bảng Tổng Hợp Nhận Xét & Điểm Số Các Môn Học</span>
                 </h3>
 
                 {termScores.length === 0 ? (
@@ -326,7 +415,7 @@ export default function ParentStudentProfilePage() {
             </div>
           )}
 
-          {/* Tab Content 2: Khảo sát đầu vào từ DB */}
+          {/* Tab 3: Khảo sát đầu vào */}
           {activeTab === "INPUT_ASSESSMENT" && (
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
@@ -362,12 +451,12 @@ export default function ParentStudentProfilePage() {
             </div>
           )}
 
-          {/* Tab Content 3: Khen thưởng & Hoạt động từ DB */}
+          {/* Tab 4: Khen thưởng & Danh hiệu */}
           {activeTab === "ACHIEVEMENTS" && (
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-500" />
-                <span>Danh Hiệu Khen Thưởng & Hoạt Động Trải Nghiệm</span>
+                <span>Danh Hiệu Khen Thưởng & Kỷ Yếu Thành Tích</span>
               </h3>
 
               {achievements.length === 0 ? (
@@ -386,6 +475,45 @@ export default function ParentStudentProfilePage() {
                         <h4 className="text-xs font-black text-slate-900">{item.achievement?.title || item.achievement?.name || "Khen thưởng danh hiệu học tập"}</h4>
                         <p className="text-[11px] text-slate-500 font-semibold">{item.achievement?.category || "Cấp Trường"} • {item.achievement?.awardLevel || "Đạt danh hiệu"}</p>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab 5: Cố vấn Tự học & Mục tiêu */}
+          {activeTab === "ADVISORY" && (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+              <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
+                <Compass className="w-4 h-4 text-teal-600" />
+                <span>Bảng Mục Tiêu Phát Triển & Tín Hiệu Cố Vấn</span>
+              </h3>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-600">Tín hiệu theo dõi tự học:</span>
+                <span className={"px-3.5 py-1 rounded-full text-xs font-black uppercase border " + (
+                  currentStatusColor === "RED" ? "bg-rose-100 text-rose-800 border-rose-300" :
+                  currentStatusColor === "YELLOW" ? "bg-amber-100 text-amber-800 border-amber-300" :
+                  "bg-emerald-100 text-emerald-800 border-emerald-300"
+                )}>
+                  {currentStatusColor === "RED" ? "🔴 Cần hỗ trợ đặc biệt" : currentStatusColor === "YELLOW" ? "🟡 Cần theo dõi thêm" : "🟢 Ổn định & Phát triển tốt"}
+                </span>
+              </div>
+
+              {goals.length === 0 ? (
+                <div className="py-8 text-center text-slate-400 text-xs font-medium">
+                  <FileText className="w-8 h-8 mx-auto text-slate-300 mb-2" />
+                  <p>Con chưa khởi tạo bảng mục tiêu cá nhân cho năm học này.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {goals.map((g: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-2">
+                      <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-teal-100 text-teal-800 uppercase inline-block">
+                        {g.category}
+                      </span>
+                      <h4 className="text-xs font-black text-slate-900">{g.targetText}</h4>
                     </div>
                   ))}
                 </div>
