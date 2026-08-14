@@ -382,7 +382,7 @@ export default function ParentAdvisoryClient() {
             </div>
           </div>
 
-          {/* RENDER THE EXACT CATEGORIES & ALL ENTERED GOALS FOR SPECIFIC GRADE */}
+          {/* RENDER THE EXACT CATEGORIES & ALL ENTERED GOALS FOR SPECIFIC GRADE (NO WARNING CARD) */}
           <div className="space-y-6">
             {currentCategories.map((catDef) => {
               const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
@@ -399,9 +399,6 @@ export default function ParentAdvisoryClient() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="bg-teal-100 text-teal-800 text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full">
-                        {catGoalsList.length} Mục tiêu đã nhập
-                      </span>
                       <span className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-3 py-1 rounded-md tracking-wider">
                         NHÓM {catDef.number}
                       </span>
@@ -409,8 +406,25 @@ export default function ParentAdvisoryClient() {
                   </div>
 
                   {catGoalsList.length === 0 ? (
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-xs text-slate-400 font-medium italic text-center">
-                      (Học sinh chưa nhập mục tiêu cho nhóm này)
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-teal-500" />
+                          <span>Các mục tiêu cụ thể của em:</span>
+                        </label>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
+                          (Học sinh chưa nhập nội dung mục tiêu này)
+                        </div>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
+                        </label>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
+                          (Học sinh chưa nhập nội dung kế hoạch hành động)
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="space-y-6">
