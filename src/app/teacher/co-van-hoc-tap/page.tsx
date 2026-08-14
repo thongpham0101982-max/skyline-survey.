@@ -82,7 +82,7 @@ export default function TeacherAdvisoryPage() {
       setAcademicYearId(storedYear)
     }
 
-    fetch("/api/classes?isGVCN=true")
+    fetch("/api/classes?isGVCN=true&_v=" + Date.now(), { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
@@ -109,7 +109,7 @@ export default function TeacherAdvisoryPage() {
       })
       .catch(console.error)
 
-    fetch(url)
+    fetch(url + "&_v=" + Date.now(), { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -122,7 +122,7 @@ export default function TeacherAdvisoryPage() {
       })
       .catch(console.error)
 
-    fetch("/api/advisory/help-requests?classId=" + selectedClassId)
+    fetch("/api/advisory/help-requests?classId=" + selectedClassId + "&_v=" + Date.now(), { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) setHelpRequests(data)
