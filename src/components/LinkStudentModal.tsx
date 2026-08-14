@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { UserPlus, X, CheckCircle2, AlertCircle, Loader2, Plus, Check } from "lucide-react"
 
 interface LinkStudentModalProps {
@@ -18,6 +18,17 @@ export function LinkStudentModal({ onSuccess, buttonText = "Bổ sung mã Học 
   const [errorMsg, setErrorMsg] = useState("")
   const [successMsg, setSuccessMsg] = useState("")
   const [showMultiChildPrompt, setShowMultiChildPrompt] = useState(false)
+
+  useEffect(() => {
+    const handleOpen = () => {
+      setIsOpen(true);
+      setShowMultiChildPrompt(false);
+      setErrorMsg("");
+      setSuccessMsg("");
+    };
+    window.addEventListener("openLinkStudentModal", handleOpen);
+    return () => window.removeEventListener("openLinkStudentModal", handleOpen);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()

@@ -22,7 +22,8 @@ import {
   Compass,
   BookOpen,
   Eye,
-  Bell
+  Bell,
+  UserPlus
 } from "lucide-react"
 import { APP_CATEGORIES } from "@/config/modules"
 
@@ -768,6 +769,21 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <LayoutDashboard className="w-4 h-4 mr-2.5 text-teal-300 shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Tổng quan</span>}
               </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('openLinkStudentModal'));
+                  }
+                }}
+                className={`w-full text-left group relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl transition-all text-xs font-bold text-amber-300 hover:text-white hover:bg-white/10` }
+              >
+                <UserPlus className="w-4 h-4 mr-2.5 text-amber-400 shrink-0" />
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Thêm tài khoản Học sinh</span>}
+              </button>
+
               <Link 
                 href="/parent/surveys" 
                 onClick={() => setIsOpen(false)} 
@@ -778,6 +794,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <ClipboardList className="w-4 h-4 mr-2.5 text-amber-400 shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Khảo sát định kỳ</span>}
               </Link>
+
               <Link 
                 href="/parent/children/profile" 
                 onClick={() => setIsOpen(false)} 
@@ -788,6 +805,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <GraduationCap className="w-4 h-4 mr-2.5 text-sky-300 shrink-0" />
                 {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Hồ sơ học sinh</span>}
               </Link>
+
               <Link 
                 href="/parent/children/advisory" 
                 onClick={() => setIsOpen(false)} 
@@ -796,7 +814,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <Compass className="w-4 h-4 mr-2.5 text-emerald-300 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Theo Dõi Cố Vấn & Mục Tiêu Đồng Hành</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Cố vấn học tập</span>}
               </Link>
             </div>
           )}
