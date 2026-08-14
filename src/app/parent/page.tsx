@@ -132,7 +132,7 @@ export default async function ParentDashboard() {
               <div className="text-[10px] font-extrabold text-teal-200 uppercase tracking-wider">Số con đang theo học</div>
               <div className="text-lg font-black text-white">{children.length} học sinh</div>
             </div>
-            <LinkStudentModal />
+            
           </div>
         </div>
       </div>
@@ -144,6 +144,7 @@ export default async function ParentDashboard() {
             <Users className="w-5 h-5 text-[#00A99D]" />
             <span>Danh sách Con em ({children.length})</span>
           </h2>
+          <LinkStudentModal />
         </div>
 
         {children.length === 0 ? (
@@ -158,7 +159,9 @@ export default async function ParentDashboard() {
               </p>
             </div>
             <div className="pt-1 flex justify-center">
-              <LinkStudentModal buttonText="Bổ sung mã Học sinh ngay" />
+              <span className="text-[11px] font-extrabold text-[#00A99D] bg-teal-50 px-3 py-1 rounded-full border border-teal-100">
+                👆 Nhấn nút "+ Bổ sung mã Học sinh" ở góc phải để thêm mã con
+              </span>
             </div>
           </div>
         ) : (
