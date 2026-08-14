@@ -15,8 +15,7 @@ import {
   Smile,
   Zap,
   Clock,
-  AlertCircle,
-  Sparkles
+  AlertCircle
 } from "lucide-react"
 import Link from "next/link"
 
@@ -168,17 +167,14 @@ export default function ParentAdvisoryClient() {
     ? profile.goals 
     : (goalsData?.goals || [])
 
-  // Detect grade level
-  const classNameStr = student.class?.className || selectedStudent.class?.className || "K8"
-  let parsedGradeNum = "8"
+  // Class & Grade info
+  const classNameStr = student.class?.className || selectedStudent.class?.className || "8.3_CS1"
+  let gradeNum = "8"
   const matchNum = classNameStr.match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
-  if (matchNum && matchNum[1]) parsedGradeNum = matchNum[1]
+  if (matchNum && matchNum[1]) gradeNum = matchNum[1]
 
-  const isK1ToK3 = ["1", "2", "3"].includes(parsedGradeNum)
-  const isK9ToK12 = ["9", "10", "11", "12"].includes(parsedGradeNum)
-
-  // 4 Target Categories matching official Student Portal Form
-  const categoriesDef = [
+  // 4 Target Categories matching exact Khối 6-8 Form Requirements
+  const categoriesK68 = [
     {
       key: "HOC_TAP",
       number: "1",
@@ -209,24 +205,18 @@ export default function ParentAdvisoryClient() {
     }
   ]
 
-  // Filter goals entered for a category
-  const getCategoryGoals = (catKey: string, altKeys: string[]) => {
-    return allGoals.filter((g: any) => {
+  // Find goal item entered for category
+  const findCategoryGoal = (catKey: string, altKeys: string[]) => {
+    return allGoals.find((g: any) => {
       const c = (g.category || "").toUpperCase()
       return c === catKey.toUpperCase() || altKeys.some(k => c.includes(k.toUpperCase()))
     })
   }
 
-  // Student commitment text & signature status
+  // Student Commitment Text
   const studentCommitmentText = goalsData?.existingSheet?.studentCommitment || 
     profile?.learningCommitment?.studentCommitment || 
     allGoals.find((g: any) => g.studentCommitment)?.studentCommitment || ""
-
-  const signedByStudent = goalsData?.existingSheet?.signedByStudent ?? 
-    profile?.learningCommitment?.signedByStudent ?? 
-    allGoals.some((g: any) => g.signedByStudent)
-
-  const hasGoalsInDb = allGoals.length > 0
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 font-sans text-slate-800 pb-16">
@@ -241,7 +231,7 @@ export default function ParentAdvisoryClient() {
           Theo Dõi Cố Vấn & Mục Tiêu Đồng Hành
         </h1>
         <p className="text-xs sm:text-sm text-teal-100 font-medium max-w-3xl leading-relaxed">
-          Theo dõi sát sao Phiếu Mục Tiêu Năm Học do con em trực tiếp nhập từ Cổng Học Sinh, tham gia gửi lời nhắn & ký cam kết đồng hành cùng con.
+          Theo dõi sát sao Form Đăng Ký Mục Tiêu Năm Học do con em nhập theo 4 Nhóm mục tiêu chuẩn Khối {gradeNum}, gửi lời nhắn & ký cam kết đồng hành từ Gia đình.
         </p>
       </div>
 
@@ -273,7 +263,7 @@ export default function ParentAdvisoryClient() {
       {loading ? (
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
           <Compass className="w-8 h-8 mx-auto text-teal-500 animate-spin" />
-          <p>Đang nạp Phiếu Mục Tiêu Của Học Sinh...</p>
+          <p>Đang nạp Phiếu Mục Tiêu Căn Bản Của Học Sinh...</p>
         </div>
       ) : childrenList.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
@@ -325,168 +315,133 @@ export default function ParentAdvisoryClient() {
               </div>
               <div>
                 <h2 className="text-base font-black text-slate-900 uppercase">
-                  PHIẾU MỤC TIÊU NĂM HỌC — KHỐI {parsedGradeNum}
+                  PHIẾU MỤC TIÊU NĂM HỌC — KHỐI {gradeNum}
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  {isK1ToK3 ? "Mẫu biểu chọn mục tiêu tiêu chuẩn Khối 1-3" : isK9ToK12 ? "Mẫu biểu mục tiêu định hướng SMART Khối 9-12" : "Mẫu biểu mục tiêu 4 Nhóm tiêu chuẩn Khối 4-8"}
+                  Bảng lập mục tiêu năm học gồm đúng 4 Nhóm mục tiêu chuẩn theo biểu mẫu của Hệ thống Trường Sky-Line.
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="bg-[#003B3A] text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full shrink-0">
-                Mẫu biểu chuẩn Khối {parsedGradeNum}
-              </span>
-              <span className={"text-[11px] font-extrabold px-3 py-1.5 rounded-full border " + (
-                hasGoalsInDb ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-amber-100 text-amber-800 border-amber-300"
-              )}>
-                {hasGoalsInDb ? `✓ Đã gửi (${allGoals.length} mục tiêu)` : "⚠️ Chưa gửi phiếu mục tiêu"}
-              </span>
+            <div className="bg-[#003B3A] text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full shrink-0">
+              Mẫu biểu chuẩn Khối {gradeNum}
             </div>
           </div>
 
-          {/* IF STUDENT HAS NOT CREATED GOALS IN DB */}
-          {!hasGoalsInDb ? (
-            <div className="bg-amber-50/70 border-2 border-amber-200 rounded-3xl p-8 text-center space-y-3">
-              <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto text-amber-600">
-                <Clock className="w-7 h-7" />
-              </div>
-              <h3 className="text-base font-black text-amber-950 uppercase">
-                Học sinh chưa tạo hoặc gửi Phiếu Mục Tiêu Năm Học
-              </h3>
-              <p className="text-xs text-amber-800 max-w-lg mx-auto font-medium leading-relaxed">
-                Học sinh <strong className="text-amber-950">{student.studentName || selectedStudent.studentName}</strong> chưa lập phiếu mục tiêu cá nhân cho năm học này. Quý Phụ huynh / Thầy Cô có thể nhắc nhở học sinh đăng nhập vào Cổng Học Sinh (<code className="bg-amber-200/60 px-1.5 py-0.5 rounded text-amber-950">/hocsinh/portal/muc-tieu</code>) để thực hiện.
-              </p>
-            </div>
-          ) : (
-            /* RENDER ACTUAL STUDENT ENTERED GOALS BY CATEGORY */
-            <div className="space-y-6">
-              {categoriesDef.map((catDef) => {
-                const catGoals = getCategoryGoals(catDef.key, catDef.altKeys)
+          {/* RENDER THE EXACT 4 CATEGORIES FORM FOR KHỐI 6 ĐẾN 8 */}
+          <div className="space-y-6">
+            {categoriesK68.map((catDef) => {
+              const g = findCategoryGoal(catDef.key, catDef.altKeys)
+              const actionTextStr = g?.actions && g.actions.length > 0 
+                ? g.actions.map((a: any) => a.actionText).join("; ")
+                : g?.actionText || ""
 
-                return (
-                  <div key={catDef.key} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-5">
-                    <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                      <div>
-                        <h3 className="text-base font-black text-slate-900 uppercase">
-                          {catDef.title}
-                        </h3>
-                        <p className="text-xs text-slate-400 italic font-medium mt-0.5">
-                          {catDef.hint}
-                        </p>
+              return (
+                <div key={catDef.key} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div>
+                      <h3 className="text-base font-black text-slate-900 uppercase">
+                        {catDef.title}
+                      </h3>
+                      <p className="text-xs text-slate-400 italic font-medium mt-0.5">
+                        {catDef.hint}
+                      </p>
+                    </div>
+                    <span className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-3 py-1 rounded-md tracking-wider">
+                      NHÓM {catDef.number}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Field 1: Target */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-teal-500" />
+                          <span>Các mục tiêu cụ thể của em:</span>
+                        </label>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
+                          {g?.targetText ? (
+                            <span>{g.targetText}</span>
+                          ) : (
+                            <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung mục tiêu này)</span>
+                          )}
+                        </div>
                       </div>
-                      <span className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-3 py-1 rounded-md tracking-wider">
-                        NHÓM {catDef.number}
-                      </span>
+
+                      {/* Field 2: Actions */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-amber-500" />
+                          <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
+                        </label>
+                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
+                          {actionTextStr ? (
+                            <span>{actionTextStr}</span>
+                          ) : (
+                            <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung kế hoạch hành động)</span>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {catGoals.length === 0 ? (
-                      <p className="text-xs text-slate-400 font-medium italic py-2">
-                        (Học sinh chưa nhập mục tiêu cho nhóm này)
-                      </p>
-                    ) : (
-                      <div className="space-y-6">
-                        {catGoals.map((g: any, gIdx: number) => {
-                          const actionTextStr = g.actions && g.actions.length > 0 
-                            ? g.actions.map((a: any) => a.actionText).join("; ")
-                            : g.actionText || ""
-
-                          return (
-                            <div key={gIdx} className="space-y-4 pt-1">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Field 1: Target */}
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-teal-500" />
-                                    <span>Các mục tiêu cụ thể của em:</span>
-                                  </label>
-                                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
-                                    {g.targetText ? (
-                                      <span>{g.targetText}</span>
-                                    ) : (
-                                      <span className="text-slate-400 font-normal italic">(Học sinh không nhập nội dung này)</span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Field 2: Actions */}
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                    <span className="w-2 h-2 rounded-full bg-amber-500" />
-                                    <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
-                                  </label>
-                                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
-                                    {actionTextStr ? (
-                                      <span>{actionTextStr}</span>
-                                    ) : (
-                                      <span className="text-slate-400 font-normal italic">(Học sinh không nhập nội dung này)</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* Field 3: Teacher support */}
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-bold text-[#00A99D] flex items-center gap-1.5">
-                                    <Users className="w-3.5 h-3.5" />
-                                    <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
-                                  </label>
-                                  <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
-                                    {g.teacherSupportRequest ? (
-                                      <span>{g.teacherSupportRequest}</span>
-                                    ) : (
-                                      <span className="text-slate-400 font-normal italic">(Học sinh không nhập nội dung này)</span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Field 4: Parent support */}
-                                <div className="space-y-1.5">
-                                  <label className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
-                                    <Heart className="w-3.5 h-3.5 fill-rose-100" />
-                                    <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
-                                  </label>
-                                  <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
-                                    {g.parentSupportRequest ? (
-                                      <span>{g.parentSupportRequest}</span>
-                                    ) : (
-                                      <span className="text-slate-400 font-normal italic">(Học sinh không nhập nội dung này)</span>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Field 3: Teacher support */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-[#00A99D] flex items-center gap-1.5">
+                          <Users className="w-3.5 h-3.5" />
+                          <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
+                        </label>
+                        <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
+                          {g?.teacherSupportRequest ? (
+                            <span>{g.teacherSupportRequest}</span>
+                          ) : (
+                            <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )
-              })}
 
-              {/* LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️ */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-3">
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                  <ShieldCheck className="w-5 h-5 text-[#00A99D]" />
-                  <span>LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️</span>
-                </h3>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-teal-500" />
-                    <span>Em cam kết sẽ:</span>
-                  </label>
-                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed">
-                    {studentCommitmentText ? (
-                      <span>{studentCommitmentText}</span>
-                    ) : (
-                      <span className="text-slate-400 font-normal italic">(Chưa có lời cam kết từ học sinh)</span>
-                    )}
+                      {/* Field 4: Parent support */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
+                          <Heart className="w-3.5 h-3.5 fill-rose-100" />
+                          <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
+                        </label>
+                        <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
+                          {g?.parentSupportRequest ? (
+                            <span>{g.parentSupportRequest}</span>
+                          ) : (
+                            <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )
+            })}
 
+            {/* LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️ */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-3">
+              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-[#00A99D]" />
+                <span>LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️</span>
+              </h3>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-teal-500" />
+                  <span>Em cam kết sẽ:</span>
+                </label>
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed">
+                  {studentCommitmentText ? (
+                    <span>{studentCommitmentText}</span>
+                  ) : (
+                    <span className="text-slate-400 font-normal italic">(Chưa có lời cam kết từ học sinh)</span>
+                  )}
+                </div>
+              </div>
             </div>
-          )}
+
+          </div>
 
           {/* LỜI NHẮN GỬI & KÝ CAM KẾT ĐỒNG HÀNH TỪ GIA ĐÌNH */}
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-teal-200 shadow-sm space-y-4 font-sans">
