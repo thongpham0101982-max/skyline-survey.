@@ -111,22 +111,24 @@ export default async function ParentDashboard() {
   const parentDisplayName = rawName ? `Quý Phụ huynh ${rawName}` : "Quý Phụ huynh"
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 font-sans text-slate-800 pb-16">
+    <div className="max-w-7xl mx-auto space-y-8 font-sans text-slate-800 pb-16 pt-2">
       
-      {/* 1. Header Banner Chào Mừng Hiện Đại */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A99D] p-6 sm:p-8 text-white shadow-xl">
+      {/* 1. Header Banner Chào Mừng Đẳng Cấp & Chuẩn Bố Cục */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A99D] p-6 sm:p-8 lg:p-10 text-white shadow-xl">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="absolute left-1/3 bottom-0 -mb-16 w-60 h-60 rounded-full bg-teal-400/10 blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
+          <div className="space-y-3 max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-bold text-teal-100">
               <Sparkles className="w-4 h-4 text-amber-300" />
               <span>CỔNG THÔNG TIN PHỤ HUYNH • SKYLINE ACADEMY</span>
             </div>
             
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white leading-tight">
-              Xin chào {parentDisplayName}! 👋
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight text-white leading-normal flex flex-wrap items-center gap-2">
+              <span>Xin chào</span>
+              <span className="text-amber-300 font-black">{parentDisplayName}</span>
+              <span>! 👋</span>
             </h1>
             
             <p className="text-xs sm:text-sm text-teal-100 font-medium leading-relaxed">
@@ -135,10 +137,10 @@ export default async function ParentDashboard() {
           </div>
 
           {/* Right Badge Box */}
-          <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 shrink-0 bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl">
+          <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3 shrink-0 bg-white/15 backdrop-blur-md border border-white/25 p-4 rounded-2xl shadow-sm">
             <div className="text-left md:text-right space-y-0.5">
               <div className="text-[10px] font-extrabold text-teal-200 uppercase tracking-widest">Học sinh liên kết</div>
-              <div className="text-2xl font-black text-white">{children.length} con em</div>
+              <div className="text-2xl font-black text-white">{children.length} học sinh</div>
             </div>
             <div className="text-right hidden sm:block">
               <span className="text-[10px] font-bold text-amber-300 bg-amber-400/20 px-2.5 py-1 rounded-full border border-amber-300/30">
@@ -151,7 +153,7 @@ export default async function ParentDashboard() {
 
       {/* 2. Danh Sách Con Em Đồng Hành */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
               <Users className="w-5 h-5 text-[#00A99D]" />
@@ -302,7 +304,7 @@ export default async function ParentDashboard() {
 
             <Link 
               href="/parent/surveys"
-              className="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+              className="w-full py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
             >
               <span>Xem & Làm khảo sát</span>
               <ArrowRight className="w-4 h-4" />
@@ -328,7 +330,7 @@ export default async function ParentDashboard() {
 
             <Link 
               href="/parent/children/advisory"
-              className="w-full py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+              className="w-full py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
             >
               <span>Theo dõi Cố vấn</span>
               <ArrowRight className="w-4 h-4" />
@@ -354,7 +356,7 @@ export default async function ParentDashboard() {
 
             <Link 
               href="/parent/children/profile"
-              className="w-full py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+              className="w-full py-3 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95 text-center"
             >
               <span>Xem Hồ sơ 360°</span>
               <ArrowRight className="w-4 h-4" />
