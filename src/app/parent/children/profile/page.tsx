@@ -33,23 +33,39 @@ export default function ParentStudentProfilePage() {
 
     async function loadChildren() {
       try {
-        const res = await fetch("/api/students/search?limit=10")
+        setLoading(true)
+        const res = await fetch("/api/parent/children")
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
             setChildrenList(data)
             setSelectedStudentId(data[0].id)
+          } else {
+            setChildrenList([])
+            setSelectedStudentId("")
+            setLoading(false)
           }
+        } else {
+          setChildrenList([])
+          setSelectedStudentId("")
+          setLoading(false)
         }
       } catch (e) {
-        console.error(e)
+        console.error("Error loading parent children:", e)
+        setChildrenList([])
+        setSelectedStudentId("")
+        setLoading(false)
       }
     }
     loadChildren()
   }, [])
 
   useEffect(() => {
-    if (!selectedStudentId) return
+    if (!selectedStudentId) {
+      setLoading(false)
+      return
+    }
+
     async function load360Profile() {
       try {
         setLoading(true)
@@ -59,7 +75,7 @@ export default function ParentStudentProfilePage() {
           setProfile(data)
         }
       } catch (e) {
-        console.error(e)
+        console.error("Error loading 360 profile:", e)
       } finally {
         setLoading(false)
       }
@@ -112,6 +128,16 @@ export default function ParentStudentProfilePage() {
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
           <GraduationCap className="w-8 h-8 mx-auto text-sky-500 animate-bounce" />
           <p>Đang tải Hồ sơ học sinh 360°...</p>
+        </div>
+      ) : childrenList.length === 0 ? (
+        <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
+          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+            <Users className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800">Chưa gắn thông tin con em</h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            Tài khoản Phụ huynh hiện chưa được liên kết với mã học sinh. Vui lòng liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -299,7 +325,7 @@ export default function ParentStudentProfilePage() {
 
           {/* Tab Content 3: Khen thưởng & Hoạt động */}
           {activeTab === "ACHIEVEMENTS" && (
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+            <div className="bg-[#003B3A]/5 bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
                 <Award className="w-4 h-4 text-amber-500" />
                 <span>Danh Hiệu Khen Thưởng & Hoạt Động Trải Nghiệm</span>

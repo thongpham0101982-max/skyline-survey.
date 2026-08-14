@@ -1,7 +1,20 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Heart, Save, CheckCircle2, ShieldCheck, Compass, FileText, UserCheck, Sparkles, GraduationCap, Users, MessageSquare } from "lucide-react"
+import { 
+  Heart, 
+  Save, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Compass, 
+  FileText, 
+  UserCheck, 
+  Sparkles, 
+  GraduationCap, 
+  Users, 
+  MessageSquare,
+  AlertCircle
+} from "lucide-react"
 
 export default function ParentAdvisoryPortalPage() {
   const [childrenList, setChildrenList] = useState<any[]>([])
@@ -15,7 +28,7 @@ export default function ParentAdvisoryPortalPage() {
   const [saving, setSaving] = useState(false)
   const [toastMessage, setToastMessage] = useState("")
 
-  // 1. Fetch academic year and parent's children list
+  // 1. Fetch academic year and parent's linked children
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedYear = localStorage.getItem("selectedAcademicYear") || ""
@@ -24,24 +37,40 @@ export default function ParentAdvisoryPortalPage() {
 
     async function loadChildren() {
       try {
-        const res = await fetch("/api/students/search?limit=10")
+        setLoading(true)
+        const res = await fetch("/api/parent/children")
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
             setChildrenList(data)
             setSelectedStudentId(data[0].id)
+          } else {
+            setChildrenList([])
+            setSelectedStudentId("")
+            setLoading(false)
           }
+        } else {
+          setChildrenList([])
+          setSelectedStudentId("")
+          setLoading(false)
         }
       } catch (e) {
-        console.error(e)
+        console.error("Error loading parent children:", e)
+        setChildrenList([])
+        setSelectedStudentId("")
+        setLoading(false)
       }
     }
     loadChildren()
   }, [])
 
-  // 2. Fetch 360 profile when studentId changes
+  // 2. Fetch 360 profile when selectedStudentId changes
   useEffect(() => {
-    if (!selectedStudentId) return
+    if (!selectedStudentId) {
+      setLoading(false)
+      return
+    }
+
     async function load360Profile() {
       try {
         setLoading(true)
@@ -58,7 +87,7 @@ export default function ParentAdvisoryPortalPage() {
           }
         }
       } catch (e) {
-        console.error(e)
+        console.error("Error loading profile-360:", e)
       } finally {
         setLoading(false)
       }
@@ -92,7 +121,7 @@ export default function ParentAdvisoryPortalPage() {
         setTimeout(() => setToastMessage(""), 4000)
       }
     } catch (e) {
-      console.error(e)
+      console.error("Error saving parent commitment:", e)
     } finally {
       setSaving(false)
     }
@@ -151,6 +180,16 @@ export default function ParentAdvisoryPortalPage() {
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
           <Compass className="w-8 h-8 mx-auto text-teal-500 animate-spin" />
           <p>Đang tải dữ liệu Cố vấn học tập của con...</p>
+        </div>
+      ) : childrenList.length === 0 ? (
+        <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
+          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto text-slate-400">
+            <Users className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800">Chưa gắn thông tin con em</h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto">
+            Tài khoản Phụ huynh hiện chưa được liên kết với mã học sinh. Vui lòng liên hệ Văn phòng Nhà trường để hỗ trợ kích hoạt liên kết.
+          </p>
         </div>
       ) : (
         <div className="space-y-6">
