@@ -71,13 +71,28 @@ export async function GET(req: Request) {
     }
 
     let goals = student.goals || []
-    if (goals.length === 0 && academicYearId) {
-      // Fallback: fetch all goals for this student if year filter returned empty
+    if (goals.length === 0) {
+      // Fallback 1: fetch all goals for this studentId
       goals = await prisma.studentGoal.findMany({
         where: { studentId: student.id },
         include: { actions: true },
         orderBy: { createdAt: 'desc' }
       }).catch(() => [])
+    }
+    if (goals.length === 0 && student.studentCode) {
+      // Fallback 2: fetch goals for any student record matching same studentCode
+      const sameCodeStudents = await prisma.student.findMany({
+        where: { studentCode: student.studentCode },
+        select: { id: true }
+      }).catch(() => [])
+      const ids = sameCodeStudents.map(s => s.id)
+      if (ids.length > 0) {
+        goals = await prisma.studentGoal.findMany({
+          where: { studentId: { in: ids } },
+          include: { actions: true },
+          orderBy: { createdAt: 'desc' }
+        }).catch(() => [])
+      }
     }
 
     // Query Input Assessment data by studentCode from database

@@ -94,13 +94,35 @@ export default function ParentAdvisoryPage() {
     async function load360Profile() {
       try {
         setLoading(true)
-        const res = await fetch(`/api/advisory/profile-360?studentId=${selectedStudentId}&academicYearId=${academicYearId}`)
-        if (res.ok) {
-          const data = await res.json()
-          setProfile(data)
-          if (data.learningCommitment) {
-            setParentMessage(data.learningCommitment.parentMessage || "")
-            setSigned(!!data.learningCommitment.signedByParent)
+        const [res360, resGoals] = await Promise.all([
+          fetch(`/api/advisory/profile-360?studentId=${selectedStudentId}&academicYearId=${academicYearId}`),
+          fetch(`/api/advisory/goals?studentId=${selectedStudentId}&academicYearId=${academicYearId}`).catch(() => null)
+        ])
+        
+        let data360: any = null
+        let dataGoals: any = null
+
+        if (res360 && res360.ok) {
+          data360 = await res360.json()
+        }
+        if (resGoals && resGoals.ok) {
+          dataGoals = await resGoals.json()
+        }
+
+        if (data360) {
+          const mergedGoals = (data360.goals && data360.goals.length > 0) 
+            ? data360.goals 
+            : (dataGoals?.goals || [])
+          
+          data360.goals = mergedGoals
+          setProfile(data360)
+
+          if (data360.learningCommitment) {
+            setParentMessage(data360.learningCommitment.parentMessage || "")
+            setSigned(!!data360.learningCommitment.signedByParent)
+          } else if (dataGoals?.existingSheet) {
+            setParentMessage(dataGoals.existingSheet.parentMessage || "")
+            setSigned(!!dataGoals.existingSheet.signedByParent)
           } else {
             setParentMessage("")
             setSigned(false)
