@@ -69,19 +69,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
         }
 
-        // 3. Parent Code Match (P + Mã HS or parentCode)
+        // 3. Parent Code Match (P + Mã HS or parentCode or P-Mã HS)
         if (!user) {
-          const parentCodeVariation = rawIdentifier.toUpperCase().startsWith('P') 
-            ? rawIdentifier.toUpperCase() 
-            : 'P' + rawIdentifier.toUpperCase();
+          const rawUpper = rawIdentifier.toUpperCase();
+          const cleanDigits = rawUpper.replace(/[^A-Z0-9]/g, '');
+          const withP = cleanDigits.startsWith('P') ? cleanDigits : 'P' + cleanDigits;
+          const withHyphen = cleanDigits.startsWith('P') ? 'P-' + cleanDigits.slice(1) : 'P-' + cleanDigits;
             
           const parent = await prisma.parent.findFirst({
             where: {
               OR: [
                 { parentCode: rawIdentifier },
-                { parentCode: rawIdentifier.toUpperCase() },
+                { parentCode: rawUpper },
                 { parentCode: rawIdentifier.toLowerCase() },
-                { parentCode: parentCodeVariation }
+                { parentCode: withP },
+                { parentCode: withHyphen }
               ]
             },
             include: { user: true }
@@ -91,7 +93,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             console.log('[AUTH] User found via Parent Code:', rawIdentifier)
           }
         }
-
         const identifier = rawIdentifier
 
         if (!user) {
