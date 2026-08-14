@@ -189,7 +189,7 @@ export default function ParentAdvisoryClient() {
   const studentCommitmentText = goalsData?.existingSheet?.studentCommitment || 
     profile?.learningCommitment?.studentCommitment || 
     allGoals.find((g: any) => g.studentCommitment)?.studentCommitment || 
-    "Chủ động và nghiêm túc thực hiện những mục tiêu đã đề ra, duy trì kỷ luật, thói quen tự học; duy trì các thói quen tốt và không ngừng rèn luyện, phát triển các kỹ năng và khắc phục những điểm còn hạn chế."
+    ""
 
   const signedByStudent = goalsData?.existingSheet?.signedByStudent ?? 
     profile?.learningCommitment?.signedByStudent ?? 
@@ -331,7 +331,7 @@ export default function ParentAdvisoryClient() {
                     <span>Các mục tiêu cụ thể của em:</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
-                    {hocTapGoal?.targetText || "Điểm TB môn Anh đạt 8.3 trở lên vào cuối HK1 và HK2. Đạt trình độ A2+ vào cuối năm. Được vào đội tuyển HSG Văn. Các môn học khác phải đạt trên 9.0 tất cả các kì (ít nhất 9.3) vào cuối năm."}
+                    {hocTapGoal?.targetText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung mục tiêu này</span>}
                   </div>
                 </div>
 
@@ -342,7 +342,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
-                    {hocTapGoal?.actions?.[0]?.actionText || hocTapGoal?.actionText || "Mỗi ngày ôn lại bài 15 phút, hoàn thành bài tập đầy đủ trong 30 phút, xem và soạn trước bài hôm sau trong 30 phút. Mỗi tuần luyện nói tiếng Anh ít nhất 2 tiếng. Hoàn thành 3-7 Unit( Writing). Học tiếng Trung ít nhất 1 tiếng."}
+                    {hocTapGoal?.actions?.[0]?.actionText || hocTapGoal?.actionText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung kế hoạch hành động</span>}
                   </div>
                 </div>
               </div>
@@ -355,7 +355,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
-                    {hocTapGoal?.teacherSupportRequest || "Em mong thầy cô giải đáp thắc mắc và những phần em chưa hiểu, góp ý và chỉnh sửa"}
+                    {hocTapGoal?.teacherSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
 
@@ -366,7 +366,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
-                    {hocTapGoal?.parentSupportRequest || "Em mong ba mẹ tạo điều kiện cho em học( học thêm,..) và có thời gian học tập ổn định"}
+                    {hocTapGoal?.parentSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
               </div>
@@ -398,7 +398,7 @@ export default function ParentAdvisoryClient() {
                     <span>Các mục tiêu cụ thể của em:</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
-                    {thoiQuenGoal?.targetText || "Hoàn thành nhiệm vụ và bài tập về nhà trước 8h tối. Ăn uống lành mạnh, sinh hoạt điều độ, không thức khuya (ngủ trước 10h45'. Không xao nhãng làm việc khác trong thời gian tự học, bắt buộc phải hoàn thành những mục tiêu hàng ngày, quan trọng."}
+                    {thoiQuenGoal?.targetText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung mục tiêu này</span>}
                   </div>
                 </div>
 
@@ -409,7 +409,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
-                    {thoiQuenGoal?.actions?.[0]?.actionText || thoiQuenGoal?.actionText || "Lập danh sách những việc cần làm mỗi ngày, kèm mức độ ưu tiên quan trọng). Ưu tiên làm bài tập, nhiệm vụ trước khi học hay làm gì đó( làm xong mới có thể giải lao). Không sử dụng điện thoại, thiết bị gây xao nhãng trong giờ tự học ( tắt hết chuông bỏ vào phòng khác). Trước khi ngủ viết lại những gì mình làm được ngày hôm nay."}
+                    {thoiQuenGoal?.actions?.[0]?.actionText || thoiQuenGoal?.actionText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung kế hoạch hành động</span>}
                   </div>
                 </div>
               </div>
@@ -422,7 +422,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
-                    {thoiQuenGoal?.teacherSupportRequest || "Nhắc nhở em khi em quên nhiệm vụ."}
+                    {thoiQuenGoal?.teacherSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
 
@@ -433,7 +433,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
-                    {thoiQuenGoal?.parentSupportRequest || "Giúp em duy trì việc học ổn định, nhắc nhở em khi cần thiết và góp ý nếu em chưa sắp"}
+                    {thoiQuenGoal?.parentSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
               </div>
@@ -465,7 +465,7 @@ export default function ParentAdvisoryClient() {
                     <span>Các mục tiêu cụ thể của em:</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
-                    {kyNangGoal?.targetText || "Giao tiếp mạch lạc, tự tin hơn, có thể thuyết trình một cách tự tin trước lớp ít nhất 2 lần mỗi học kì. Biết quản lý cảm xúc và không nóng vội, suy nghĩ thật kỹ trước khi làm một cái gì đó."}
+                    {kyNangGoal?.targetText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung mục tiêu này</span>}
                   </div>
                 </div>
 
@@ -476,7 +476,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
-                    {kyNangGoal?.actions?.[0]?.actionText || kyNangGoal?.actionText || "Luyện nói trước gương mỗi ngày. Đọc nhiều sách, học cách hít thở, ngồi thiền,...Chuẩn bị thật kỹ nội dung trước khi thuyết trình. Chủ động đưa ra ý kiến thay vì nghe."}
+                    {kyNangGoal?.actions?.[0]?.actionText || kyNangGoal?.actionText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung kế hoạch hành động</span>}
                   </div>
                 </div>
               </div>
@@ -489,7 +489,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
-                    {kyNangGoal?.teacherSupportRequest || "Chỉ ra những điểm em cần cải thiện"}
+                    {kyNangGoal?.teacherSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
 
@@ -500,7 +500,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
-                    {kyNangGoal?.parentSupportRequest || "Chỉ ra những điểm em cần cải thiện"}
+                    {kyNangGoal?.parentSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
               </div>
@@ -532,7 +532,7 @@ export default function ParentAdvisoryClient() {
                     <span>Các mục tiêu cụ thể của em:</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
-                    {dinhHuongGoal?.targetText || "Tìm hiểu và xác định được 2 - 3 nhóm ngành phù hợp với sở thích và năng lực của bản thân trước cuối năm học"}
+                    {dinhHuongGoal?.targetText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung mục tiêu này</span>}
                   </div>
                 </div>
 
@@ -543,7 +543,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
                   </label>
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
-                    {dinhHuongGoal?.actions?.[0]?.actionText || dinhHuongGoal?.actionText || "Tìm hiểu thông tin, khám phá các nhóm ngành. Thử sức với mọi thứ (tham gia nhiều). Viết ra điểm mạnh, yếu, sở thích để có thể tìm hiểu ngành nghề phù hợp. Ghi lại những môn học, ngành... mà mình có hứng thú"}
+                    {dinhHuongGoal?.actions?.[0]?.actionText || dinhHuongGoal?.actionText || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập nội dung kế hoạch hành động</span>}
                   </div>
                 </div>
               </div>
@@ -556,7 +556,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
-                    {dinhHuongGoal?.teacherSupportRequest || "Thầy cô giúp em dễ dàng định hướng"}
+                    {dinhHuongGoal?.teacherSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
 
@@ -567,7 +567,7 @@ export default function ParentAdvisoryClient() {
                     <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
                   </label>
                   <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
-                    {dinhHuongGoal?.parentSupportRequest || "Trao đổi với ba mẹ khi cần định hướng. Lắng nghe mong muốn và tôn trọng sở thích ci"}
+                    {dinhHuongGoal?.parentSupportRequest || <span className="text-slate-400 font-normal italic">Học sinh chưa nhập yêu cầu hỗ trợ</span>}
                   </div>
                 </div>
               </div>
