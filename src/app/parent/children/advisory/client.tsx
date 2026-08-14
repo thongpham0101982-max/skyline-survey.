@@ -90,9 +90,10 @@ export default function ParentAdvisoryClient() {
     async function loadData() {
       try {
         setLoading(true)
+        const stCode = selectedStudent?.studentCode || ""
         const [res360, resGoals] = await Promise.all([
-          fetch(`/api/advisory/profile-360?studentId=${selectedStudentId}&academicYearId=${academicYearId}`),
-          fetch(`/api/advisory/goals?studentId=${selectedStudentId}&academicYearId=${academicYearId}`).catch(() => null)
+          fetch(`/api/advisory/profile-360?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }),
+          fetch(`/api/advisory/goals?studentId=${selectedStudentId}&studentCode=${stCode}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null)
         ])
         
         let data360: any = null
@@ -162,10 +163,15 @@ export default function ParentAdvisoryClient() {
   const statusColor = profile?.currentStatusColor || "GREEN"
   const homeroomTeacherName = selectedStudent.homeroomTeacherName || student.homeroomTeacherName || (student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Chưa phân công")
   
-  // Merge goals array from DB
-  const allGoals: any[] = (profile?.goals && profile.goals.length > 0) 
-    ? profile.goals 
-    : (goalsData?.goals || [])
+  // Merge goals array from DB across all potential response payloads
+  const allGoals: any[] = 
+    (goalsData?.existingSheet?.goals && goalsData.existingSheet.goals.length > 0)
+      ? goalsData.existingSheet.goals
+      : (goalsData?.goals && goalsData.goals.length > 0)
+      ? goalsData.goals
+      : (profile?.goals && profile.goals.length > 0)
+      ? profile.goals
+      : []
 
   // Class & Grade info
   const classNameStr = student.class?.className || selectedStudent.class?.className || "8.3_CS1"
