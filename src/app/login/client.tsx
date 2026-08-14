@@ -192,17 +192,14 @@ export function LoginClient() {
             <SchoolLineArt className="w-full h-full object-contain" />
           </div>
 
-          {/* Top spacer */}
-          <div />
-
-          {/* Center Brand Title Section (Image 2 style) */}
-          <div className="relative z-10 flex flex-col items-start my-auto py-8">
+          {/* TOP LEFT BRAND TITLE SECTION (Image 2 style - Moved to very top left) */}
+          <div className="relative z-10 flex flex-col items-start pt-2 sm:pt-4">
             {/* White Brand Logo */}
-            <div className="mb-6 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-3">
               <img
                 src="/logo.png"
                 alt="Sky-Line Logo"
-                className="h-12 md:h-14 w-auto object-contain brightness-0 invert opacity-95 pointer-events-none drop-shadow-md"
+                className="h-10 sm:h-12 md:h-14 w-auto object-contain brightness-0 invert opacity-95 pointer-events-none drop-shadow-md"
               />
             </div>
 
@@ -222,13 +219,13 @@ export function LoginClient() {
             </div>
 
             {/* Feature Drawer for Mobile/Tablet inside Left Panel */}
-            <div className="w-full max-w-md hidden sm:block md:hidden">
+            <div className="w-full max-w-md hidden sm:block md:hidden mt-6">
               <FeatureDrawer />
             </div>
           </div>
 
-          {/* Bottom spacer */}
-          <div className="relative z-10 text-[10px] font-bold text-teal-100/40 uppercase tracking-widest">
+          {/* Bottom Footer Tagline */}
+          <div className="relative z-10 text-[10px] font-bold text-teal-100/40 uppercase tracking-widest mt-auto pt-8">
             Sky-Line Education System
           </div>
         </div>
