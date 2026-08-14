@@ -154,7 +154,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         </div>
 
         <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-          {role !== "TEACHER" && (
+          {role !== "TEACHER" && role !== "PARENT" && (
             <Link 
               href={role === "ADMIN" ? "/admin" : "/parent"}
               onClick={() => setIsOpen(false)}
@@ -757,7 +757,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
             </>
           )}
                     {role === "PARENT" && (
-            <div className="mt-4 pt-4 border-t border-white/10 space-y-1">
+            <div className="space-y-1">
               <Link 
                 href="/parent/surveys" 
                 onClick={() => setIsOpen(false)} 
@@ -766,7 +766,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 }`}
               >
                 <ClipboardList className="w-4 h-4 mr-2.5 text-amber-400 shrink-0" />
-                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Khảo sát</span>}
+                {!isCollapsed && <span className="whitespace-nowrap overflow-hidden text-ellipsis">Khảo sát định kỳ</span>}
               </Link>
               <Link 
                 href="/parent/children/profile" 

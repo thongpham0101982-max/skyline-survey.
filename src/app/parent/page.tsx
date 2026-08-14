@@ -87,8 +87,8 @@ export default async function ParentDashboard() {
             <Sparkles className="w-3.5 h-3.5 text-amber-300" />
             <span>CỔNG THÔNG TIN PHỤ HUYNH • SKYLINE ACADEMY</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-            Xin chào {parentFirstName}, 👋
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-snug">
+            Xin chào. Quý Phụ huynh {parent?.parentName || session?.user?.name || "học sinh"} đã đến với cổng thông tin dành cho PHHS Sky-Line.
           </h1>
           <p className="text-sm sm:text-base text-teal-100 font-medium leading-relaxed">
             Đồng hành cùng sự phát triển toàn diện của con em trong năm học <span className="font-bold text-white bg-white/20 px-2.5 py-0.5 rounded-full">{defaultYear?.name || 'Năm học hiện tại'}</span>.
