@@ -1,4 +1,3 @@
-import { UnreadBadgeProvider } from "@/context/UnreadBadgeContext"
 export const dynamic = "force-dynamic"
 import { ChatBotWidget } from "@/components/ChatBotWidget"
 import { MobileMenuTrigger } from "@/components/MobileMenuTrigger"
@@ -45,7 +44,6 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   }
 
   return (
-    <UnreadBadgeProvider>
     <div className="flex min-h-screen text-xs font-semibold">
       <Sidebar role="TEACHER" actualRole={roleCode} isGVCN={isGVCN} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
@@ -69,6 +67,5 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         <ChatBotWidget role="TEACHER" />
       </main>
     </div>
-     </UnreadBadgeProvider>
   )
 }
