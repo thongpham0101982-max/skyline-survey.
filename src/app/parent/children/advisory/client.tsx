@@ -134,12 +134,11 @@ export default function ParentAdvisoryClient() {
     if (!selectedStudentId) return
     try {
       setSaving(true)
-      const res = await fetch("/api/parent/commitment", {
-        method: "POST",
+      const res = await fetch("/api/advisory/goals", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           studentId: selectedStudentId,
-          academicYearId,
           parentMessage,
           signedByParent: true
         })
