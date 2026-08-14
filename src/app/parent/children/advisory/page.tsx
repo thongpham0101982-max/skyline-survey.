@@ -28,25 +28,19 @@ export default function ParentAdvisoryPortalPage() {
   const [saving, setSaving] = useState(false)
   const [toastMessage, setToastMessage] = useState("")
 
-  // 1. Fetch academic year and parent's linked children
+  // 1. Fetch academic year and parent's linked children for the selected academic year
   useEffect(() => {
+    let year = ""
     if (typeof window !== "undefined") {
-      const storedYear = localStorage.getItem("selectedAcademicYear") || ""
-      setAcademicYearId(storedYear)
+      year = localStorage.getItem("selectedAcademicYear") || ""
+      setAcademicYearId(year)
     }
 
-    const handleYearChange = () => {
-      if (typeof window !== "undefined") {
-        const storedYear = localStorage.getItem("selectedAcademicYear") || ""
-        setAcademicYearId(storedYear)
-      }
-    }
-    window.addEventListener("academicYearChanged", handleYearChange)
-
-    async function loadChildren() {
+    async function loadChildren(targetYearId: string) {
       try {
         setLoading(true)
-        const res = await fetch("/api/parent/children")
+        const url = targetYearId ? `/api/parent/children?academicYearId=${targetYearId}` : "/api/parent/children"
+        const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
@@ -69,7 +63,17 @@ export default function ParentAdvisoryPortalPage() {
         setLoading(false)
       }
     }
-    loadChildren()
+
+    loadChildren(year)
+
+    const handleYearChange = () => {
+      if (typeof window !== "undefined") {
+        const newYear = localStorage.getItem("selectedAcademicYear") || ""
+        setAcademicYearId(newYear)
+        loadChildren(newYear)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
 
     return () => {
       window.removeEventListener("academicYearChanged", handleYearChange)
@@ -142,6 +146,7 @@ export default function ParentAdvisoryPortalPage() {
   const selectedStudent = childrenList.find(c => c.id === selectedStudentId) || {}
   const student = profile?.student || selectedStudent
   const statusColor = profile?.currentStatusColor || "GREEN"
+  const homeroomTeacherName = selectedStudent.homeroomTeacherName || student.homeroomTeacherName || (student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Chưa phân công")
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 font-sans text-slate-800 pb-16">
@@ -165,11 +170,11 @@ export default function ParentAdvisoryPortalPage() {
       )}
 
       {/* Child Switcher Dropdown / Pills if multiple children */}
-      {childrenList.length > 1 && (
+      {childrenList.length > 0 && (
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between gap-4">
           <span className="text-xs font-black text-slate-600 flex items-center gap-2">
             <Users className="w-4 h-4 text-[#00A99D]" />
-            <span>Chọn con em theo dõi:</span>
+            <span>Chọn con em theo dõi (Năm học hiện tại):</span>
           </span>
           <div className="flex gap-2">
             {childrenList.map((c: any) => (
@@ -182,7 +187,7 @@ export default function ParentAdvisoryPortalPage() {
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 )}
               >
-                {c.studentName} ({c.class?.className || 'N/A'})
+                {c.studentName} ({c.class?.className || 'Chưa xếp lớp'})
               </button>
             ))}
           </div>
@@ -223,10 +228,10 @@ export default function ParentAdvisoryPortalPage() {
               </div>
             </div>
 
-            <div className="sm:text-right text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-0.5 min-w-[220px]">
+            <div className="sm:text-right text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-0.5 min-w-[240px]">
               <p className="font-extrabold text-[#003B3A]">Học sinh: {student.studentName || selectedStudent.studentName || "N/A"}</p>
               <p className="text-slate-500 font-semibold">Lớp: {student.class?.className || selectedStudent.class?.className || "N/A"} • Mã HS: {student.studentCode || selectedStudent.studentCode || "N/A"}</p>
-              <p className="text-slate-400 font-medium">GVCN: {student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Thầy/Cô Chủ Nhiệm"}</p>
+              <p className="text-teal-700 font-bold">GVCN: {homeroomTeacherName}</p>
             </div>
           </div>
 

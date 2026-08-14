@@ -27,23 +27,17 @@ export default function ParentStudentProfilePage() {
   const [activeTab, setActiveTab] = useState<"ACADEMIC" | "INPUT_ASSESSMENT" | "ACHIEVEMENTS">("ACADEMIC")
 
   useEffect(() => {
+    let year = ""
     if (typeof window !== "undefined") {
-      const storedYear = localStorage.getItem("selectedAcademicYear") || ""
-      setAcademicYearId(storedYear)
+      year = localStorage.getItem("selectedAcademicYear") || ""
+      setAcademicYearId(year)
     }
 
-    const handleYearChange = () => {
-      if (typeof window !== "undefined") {
-        const storedYear = localStorage.getItem("selectedAcademicYear") || ""
-        setAcademicYearId(storedYear)
-      }
-    }
-    window.addEventListener("academicYearChanged", handleYearChange)
-
-    async function loadChildren() {
+    async function loadChildren(targetYearId: string) {
       try {
         setLoading(true)
-        const res = await fetch("/api/parent/children")
+        const url = targetYearId ? `/api/parent/children?academicYearId=${targetYearId}` : "/api/parent/children"
+        const res = await fetch(url)
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
@@ -66,7 +60,17 @@ export default function ParentStudentProfilePage() {
         setLoading(false)
       }
     }
-    loadChildren()
+
+    loadChildren(year)
+
+    const handleYearChange = () => {
+      if (typeof window !== "undefined") {
+        const newYear = localStorage.getItem("selectedAcademicYear") || ""
+        setAcademicYearId(newYear)
+        loadChildren(newYear)
+      }
+    }
+    window.addEventListener("academicYearChanged", handleYearChange)
 
     return () => {
       window.removeEventListener("academicYearChanged", handleYearChange)
@@ -105,6 +109,7 @@ export default function ParentStudentProfilePage() {
 
   const hk1Summary = termSummaries.find((s: any) => s.semester === "HK1" || s.semester === 1)
   const hk2Summary = termSummaries.find((s: any) => s.semester === "HK2" || s.semester === 2)
+  const homeroomTeacherName = selectedStudent.homeroomTeacherName || student.homeroomTeacherName || (student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Chưa phân công")
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 font-sans text-slate-800 pb-16">
@@ -121,11 +126,11 @@ export default function ParentStudentProfilePage() {
       </div>
 
       {/* Child Switcher Dropdown / Pills */}
-      {childrenList.length > 1 && (
+      {childrenList.length > 0 && (
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between gap-4">
           <span className="text-xs font-black text-slate-600 flex items-center gap-2">
             <Users className="w-4 h-4 text-sky-600" />
-            <span>Chọn con em xem hồ sơ:</span>
+            <span>Chọn con em xem hồ sơ (Năm học hiện tại):</span>
           </span>
           <div className="flex gap-2">
             {childrenList.map((c: any) => (
@@ -138,7 +143,7 @@ export default function ParentStudentProfilePage() {
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 )}
               >
-                {c.studentName} ({c.class?.className || 'N/A'})
+                {c.studentName} ({c.class?.className || 'Chưa xếp lớp'})
               </button>
             ))}
           </div>
@@ -185,6 +190,10 @@ export default function ParentStudentProfilePage() {
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-teal-600" />
                       <span>{student.class?.campus?.campusName || selectedStudent.class?.campus?.campusName || "N/A"}</span>
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1 text-teal-700 font-bold">
+                      <span>GVCN: {homeroomTeacherName}</span>
                     </span>
                   </div>
                 </div>
