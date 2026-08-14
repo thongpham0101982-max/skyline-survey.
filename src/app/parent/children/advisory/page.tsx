@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { LinkStudentModal } from "@/components/LinkStudentModal"
 import { 
   Heart, 
   Save, 

@@ -30,7 +30,6 @@ import {
   Heart,
   HelpCircle
 } from "lucide-react"
-import { LinkStudentModal } from "@/components/LinkStudentModal"
 
 export default function ParentStudentProfilePage() {
   const [childrenList, setChildrenList] = useState<any[]>([])
