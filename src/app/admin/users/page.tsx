@@ -8,21 +8,23 @@ export const dynamic = "force-dynamic"
 export default async function UsersPage() {
   const session = await getAdminSession()
 
-  // Load staff/teacher/admin users only (exclude PARENT role and Parent records)
+  // Load all users (including PARENT accounts)
   const users = await prisma.user.findMany({
-    where: {
-      role: { not: "PARENT" },
-      parent: { is: null }
-    },
     orderBy: { createdAt: "desc" },
     include: {
       campusAssignments: true,
+      parent: {
+        include: {
+          students: {
+            include: { student: true }
+          }
+        }
+      },
       teacher: true
     }
   })
   
   const roles = await prisma.role.findMany({
-    where: { code: { not: "PARENT" } },
     orderBy: { name: "asc" }
   })
   
@@ -37,6 +39,13 @@ export default async function UsersPage() {
   const mappedUsers = users.map((u: any) => {
     const campusIds: string[] = u.campusAssignments.map((a: any) => a.campusId);
     if (u.teacher && u.teacher.campusId) campusIds.push(u.teacher.campusId);
+    if (u.parent) {
+      u.parent.students.forEach((link: any) => {
+        if (link.student?.campusId && !campusIds.includes(link.student.campusId)) {
+          campusIds.push(link.student.campusId);
+        }
+      })
+    }
     return {
       id: u.id,
       email: u.email,
