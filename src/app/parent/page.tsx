@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
@@ -31,51 +34,72 @@ export default async function ParentDashboard() {
     )
   }
 
-  // 1. Fetch Parent & Linked Children with full Advisory & Class details
-  const parent = await prisma.parent.findUnique({
-    where: { userId },
-    include: {
-      students: {
-        include: {
-          student: {
-            include: {
-              class: { 
-                include: { 
-                  campus: true 
-                } 
-              },
-              academicYear: true,
-              surveyForms: { select: { id: true, status: true, surveyPeriodId: true } },
-              advisoryStatuses: {
-                orderBy: { createdAt: 'desc' },
-                take: 1
-              },
-              goals: {
-                take: 3
+  let parent = null
+  let defaultYear = null
+  let surveys: any[] = []
+
+  try {
+    // 1. Fetch Parent & Linked Children with full Advisory & Class details
+    parent = await prisma.parent.findUnique({
+      where: { userId },
+      include: {
+        students: {
+          include: {
+            student: {
+              include: {
+                class: { 
+                  include: { 
+                    campus: true 
+                  } 
+                },
+                academicYear: true,
+                surveyForms: { select: { id: true, status: true, surveyPeriodId: true } },
+                advisoryStatuses: {
+                  orderBy: { createdAt: 'desc' },
+                  take: 1
+                },
+                goals: {
+                  take: 3
+                }
               }
             }
           }
         }
       }
-    }
-  })
+    })
+  } catch (e) {
+    console.error("Error fetching parent profile:", e)
+  }
 
-  // 2. Fetch active PHHS surveys for default academic year
-  const defaultYear = await getDefaultAcademicYear()
-  const surveys = await prisma.surveyPeriod.findMany({
-    where: {
-      status: "ACTIVE",
-      targetAudience: "PHHS",
-      ...(defaultYear ? { academicYearId: defaultYear.id } : {})
-    },
-    orderBy: { endDate: "asc" }
-  })
+  try {
+    defaultYear = await getDefaultAcademicYear(prisma)
+  } catch (e) {
+    console.error("Error fetching default academic year:", e)
+  }
 
-  const children = (parent?.students.map(s => s.student) || []).filter(child =>
+  try {
+    // 2. Fetch active PHHS surveys for default academic year
+    surveys = await prisma.surveyPeriod.findMany({
+      where: {
+        status: "ACTIVE",
+        targetAudience: "PHHS",
+        ...(defaultYear ? { academicYearId: defaultYear.id } : {})
+      },
+      orderBy: { endDate: "asc" }
+    })
+  } catch (e) {
+    console.error("Error fetching active surveys:", e)
+  }
+
+  const rawChildren = (parent?.students || [])
+    .map(s => s.student)
+    .filter((child): child is NonNullable<typeof child> => Boolean(child))
+
+  const children = rawChildren.filter(child =>
     !defaultYear || child.academicYearId === defaultYear.id || child.class?.academicYearId === defaultYear.id
   )
 
-  const parentFirstName = session?.user?.name?.split(' ').pop() || "Phụ huynh"
+  const parentDisplayName = parent?.parentName || session?.user?.name || "học sinh"
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-16 animate-in fade-in duration-500 font-sans">
@@ -88,7 +112,7 @@ export default async function ParentDashboard() {
             <span>CỔNG THÔNG TIN PHỤ HUYNH • SKYLINE ACADEMY</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-snug">
-            Xin chào. Quý Phụ huynh {parent?.parentName || session?.user?.name || "học sinh"} đã đến với cổng thông tin dành cho PHHS Sky-Line.
+            Xin chào. Quý Phụ huynh {parentDisplayName} đã đến với cổng thông tin dành cho PHHS Sky-Line.
           </h1>
           <p className="text-sm sm:text-base text-teal-100 font-medium leading-relaxed">
             Đồng hành cùng sự phát triển toàn diện của con em trong năm học <span className="font-bold text-white bg-white/20 px-2.5 py-0.5 rounded-full">{defaultYear?.name || 'Năm học hiện tại'}</span>.
@@ -119,7 +143,7 @@ export default async function ParentDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {children.map((child: any) => {
               const latestStatus = child.advisoryStatuses?.[0]?.statusColor || "GREEN"
-              const completedFormsCount = child.surveyForms?.filter((f: any) => f.status === 'COMPLETED').length || 0
+              const completedFormsCount = child.surveyForms?.filter((f: any) => f?.status === 'COMPLETED').length || 0
               const totalSurveys = surveys.length
               const isAllSurveysDone = totalSurveys > 0 && completedFormsCount >= totalSurveys
 
@@ -138,13 +162,13 @@ export default async function ParentDashboard() {
                       </div>
                       <div className="text-right">
                         <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Mã Học Sinh</span>
-                        <span className="text-xs font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded-lg">{child.studentCode}</span>
+                        <span className="text-xs font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded-lg">{child.studentCode || 'N/A'}</span>
                       </div>
                     </div>
 
                     {/* Tên & Lớp */}
                     <h3 className="text-xl font-black text-slate-900 mb-1 group-hover:text-[#00A99D] transition-colors">
-                      {child.studentName}
+                      {child.studentName || 'Học sinh'}
                     </h3>
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-6">
                       <span className="bg-teal-100/70 text-[#003B3A] px-2.5 py-0.5 rounded-md font-bold">
@@ -201,7 +225,7 @@ export default async function ParentDashboard() {
                     </Link>
                     <Link
                       href="/parent/children/profile"
-                      className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold text-center hover:bg-[#00A99D] hover:text-white transition-all flex items-center justify-center gap-1"
+                      className="px-3.5 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-bold text-center hover:bg-[#00A99D] hover:text-white transition-all flex items-center justify-center gap-1"
                     >
                       <GraduationCap className="w-3.5 h-3.5" />
                       <span>Hồ sơ 360°</span>

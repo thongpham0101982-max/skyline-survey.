@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 import { getDefaultAcademicYear } from "@/lib/academicYear"
 import { auth } from "@/lib/auth"
 import { prisma } from "@/lib/db"
@@ -5,42 +8,67 @@ import Link from "next/link"
 import { ClipboardList, CheckCircle2, Clock, Calendar, ArrowRight, Sparkles, UserCheck } from "lucide-react"
 
 async function getParentSurveys(userId: string) {
-  const parent = await prisma.parent.findUnique({
-    where: { userId },
-    include: {
-      students: {
-        include: {
-          student: {
-            include: {
-              class: true,
-              campus: true
+  if (!userId) return { parent: null, surveyTasks: [], defaultYear: null }
+
+  let parent = null
+  try {
+    parent = await prisma.parent.findUnique({
+      where: { userId },
+      include: {
+        students: {
+          include: {
+            student: {
+              include: {
+                class: true,
+                campus: true
+              }
             }
           }
         }
       }
-    }
-  })
+    })
+  } catch (e) {
+    console.error("Error loading parent surveys profile:", e)
+  }
 
-  if (!parent) return { parent: null, surveyTasks: [] }
+  if (!parent) return { parent: null, surveyTasks: [], defaultYear: null }
 
-  const defaultYear = await getDefaultAcademicYear()
-  const activePeriods = await prisma.surveyPeriod.findMany({
-    where: { 
-      status: "ACTIVE",
-      targetAudience: "PHHS",
-      ...(defaultYear ? { academicYearId: defaultYear.id } : {})
-    },
-    orderBy: { endDate: 'asc' }
-  })
+  let defaultYear = null
+  try {
+    defaultYear = await getDefaultAcademicYear(prisma)
+  } catch (e) {
+    console.error("Error loading default academic year:", e)
+  }
 
-  const existingForms = await prisma.surveyForm.findMany({
-    where: { parentId: parent.id }
-  })
+  let activePeriods: any[] = []
+  try {
+    activePeriods = await prisma.surveyPeriod.findMany({
+      where: { 
+        status: "ACTIVE",
+        targetAudience: "PHHS",
+        ...(defaultYear ? { academicYearId: defaultYear.id } : {})
+      },
+      orderBy: { endDate: 'asc' }
+    })
+  } catch (e) {
+    console.error("Error loading active survey periods:", e)
+  }
+
+  let existingForms: any[] = []
+  try {
+    existingForms = await prisma.surveyForm.findMany({
+      where: { parentId: parent.id }
+    })
+  } catch (e) {
+    console.error("Error loading existing survey forms:", e)
+  }
 
   const surveyTasks = []
   
-  for (const studentLink of parent.students) {
-    const student = studentLink.student
+  for (const studentLink of (parent.students || [])) {
+    const student = studentLink?.student
+    if (!student) continue
+
     if (defaultYear && student.academicYearId !== defaultYear.id && student.class?.academicYearId !== defaultYear.id) {
       continue
     }
@@ -166,11 +194,11 @@ export default async function ParentSurveysPage() {
                     <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 mb-4 space-y-1 text-xs">
                       <div className="flex justify-between text-slate-700 font-bold">
                         <span>Học sinh:</span>
-                        <span className="text-[#00A99D] font-extrabold">{task.student.studentName}</span>
+                        <span className="text-[#00A99D] font-extrabold">{task.student?.studentName || 'Học sinh'}</span>
                       </div>
                       <div className="flex justify-between text-slate-500 font-semibold">
                         <span>Lớp & Cơ sở:</span>
-                        <span>{task.student.class?.className || 'N/A'} • {task.student.class?.campus?.campusName || 'N/A'}</span>
+                        <span>{task.student?.class?.className || 'N/A'} • {task.student?.class?.campus?.campusName || 'N/A'}</span>
                       </div>
                     </div>
 
@@ -190,7 +218,7 @@ export default async function ParentSurveysPage() {
                       </span>
                     ) : (
                       <Link
-                        href={`/parent/surveys/${task.period.id}?studentId=${task.student.id}`}
+                        href={`/parent/surveys/${task.period.id}?studentId=${task.student?.id}`}
                         className="w-full py-3 rounded-2xl bg-amber-500 text-white text-xs font-extrabold flex items-center justify-center gap-2 hover:bg-amber-600 transition-all shadow-md shadow-amber-200"
                       >
                         <span>Thực hiện khảo sát ngay</span>
