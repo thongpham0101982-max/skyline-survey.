@@ -26,7 +26,9 @@ import {
   Heart,
   Target,
   HelpCircle,
-  MessageSquare
+  MessageSquare,
+  Layers,
+  FolderCheck
 } from "lucide-react"
 import { LinkStudentModal } from "@/components/LinkStudentModal"
 
@@ -36,7 +38,7 @@ export default function ParentStudentProfilePage() {
   const [academicYearId, setAcademicYearId] = useState("")
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<"cv" | "academic" | "entrance" | "achievements" | "orientation" | "comments" | "support">("cv")
+  const [activeTab, setActiveTab] = useState<"cv" | "academic" | "entrance" | "achievements" | "orientation" | "projects" | "comments" | "support">("cv")
 
   useEffect(() => {
     let year = ""
@@ -122,6 +124,7 @@ export default function ParentStudentProfilePage() {
   const careerOrientation = profile?.careerOrientation || null
   const learningCommitment = profile?.learningCommitment || null
   const highlightComments = profile?.highlightComments || []
+  const projectExperiences = profile?.projectExperiences || []
   const learningSupportTargets = profile?.learningSupportTargets || []
 
   const hk1Summary = termSummaries.find((s: any) => s.semester === "HK1" || s.semester === 1)
@@ -135,11 +138,11 @@ export default function ParentStudentProfilePage() {
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A99D] p-8 text-white shadow-xl space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/15 backdrop-blur-md uppercase tracking-wider text-teal-100 border border-white/20">
           <GraduationCap className="w-3.5 h-3.5" />
-          <span>DANH MỤC HỒ SƠ HỌC SINH 360° — CHUẨN ADMIN</span>
+          <span>DANH MỤC HỒ SƠ HỌC SINH 360° — ĐỒNG BỘ 100% TỪ ADMIN</span>
         </div>
         <h1 className="text-3xl font-black tracking-tight">Chi Tiết Hồ Sơ Học Sinh 360°</h1>
         <p className="text-xs sm:text-sm text-teal-100 font-medium max-w-3xl leading-relaxed">
-          Đồng bộ trực tiếp dữ liệu từ Hệ thống Quản lý Học sinh Admin: Lý lịch cá nhân, Kết quả học tập MOET, Khảo sát đầu vào, Thành tích, Định hướng & Kế hoạch hỗ trợ học tập.
+          Nội dung dữ liệu được đồng bộ trực tiếp thời gian thực khi Admin cập nhật bất kỳ thẻ hay thông tin nào: Lý lịch, Điểm số MOET, Khảo sát đầu vào, Thành tích, Dự án STEM & Kế hoạch hỗ trợ.
         </p>
       </div>
 
@@ -172,7 +175,7 @@ export default function ParentStudentProfilePage() {
       {loading ? (
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
           <GraduationCap className="w-8 h-8 mx-auto text-[#00A99D] animate-bounce" />
-          <p>Đang tải Hồ sơ Học sinh 360° chuẩn Admin...</p>
+          <p>Đang tải Hồ sơ Học sinh 360° đồng bộ Admin...</p>
         </div>
       ) : childrenList.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
@@ -239,7 +242,7 @@ export default function ParentStudentProfilePage() {
             </div>
           </div>
 
-          {/* 7 Tab Navigation matching Admin HSHS (client.tsx) */}
+          {/* 8 Tab Navigation matching Admin HSHS (client.tsx) */}
           <div className="flex border-b border-slate-200 gap-2 sm:gap-4 text-xs font-black overflow-x-auto custom-scrollbar">
             <button
               onClick={() => setActiveTab("cv")}
@@ -292,13 +295,23 @@ export default function ParentStudentProfilePage() {
             </button>
 
             <button
+              onClick={() => setActiveTab("projects")}
+              className={"pb-3 px-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition-all " + (
+                activeTab === "projects" ? "border-[#00A99D] text-[#003B3A]" : "border-transparent text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <FolderCheck className="w-4 h-4 text-teal-600" />
+              <span>6. Dự Án Trải Nghiệm & STEM</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab("comments")}
               className={"pb-3 px-3 flex items-center gap-2 border-b-2 whitespace-nowrap transition-all " + (
                 activeTab === "comments" ? "border-[#00A99D] text-[#003B3A]" : "border-transparent text-slate-400 hover:text-slate-600"
               )}
             >
               <MessageSquare className="w-4 h-4" />
-              <span>6. Nhận Xét Nổi Bật</span>
+              <span>7. Nhận Xét Nổi Bật</span>
             </button>
 
             <button
@@ -308,7 +321,7 @@ export default function ParentStudentProfilePage() {
               )}
             >
               <Target className="w-4 h-4" />
-              <span>7. Hỗ Trợ Học Tập</span>
+              <span>8. Hỗ Trợ Học Tập</span>
             </button>
           </div>
 
@@ -529,7 +542,36 @@ export default function ParentStudentProfilePage() {
             </div>
           )}
 
-          {/* TAB 6: Nhận xét nổi bật */}
+          {/* TAB 6: Dự án Trải nghiệm & STEM */}
+          {activeTab === "projects" && (
+            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
+              <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
+                <FolderCheck className="w-4 h-4 text-teal-600" />
+                <span>Dự Án Trải Nghiệm Thực Tế & Hoạt Động STEM</span>
+              </h3>
+
+              {projectExperiences.length === 0 ? (
+                <div className="py-10 text-center text-slate-400 text-xs font-medium space-y-2">
+                  <FolderCheck className="w-8 h-8 mx-auto text-slate-300" />
+                  <p>Chưa có dữ liệu hoạt động dự án trải nghiệm trong cơ sở dữ liệu cho học sinh này.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {projectExperiences.map((p: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-teal-50/30 border border-teal-100 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-black text-slate-900">{p.projectName || p.title}</span>
+                        <span className="text-[10px] font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded">Hoàn thành</span>
+                      </div>
+                      <p className="text-xs text-slate-600 font-semibold">{p.description || p.resultSummary}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 7: Nhận xét nổi bật */}
           {activeTab === "comments" && (
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
@@ -558,7 +600,7 @@ export default function ParentStudentProfilePage() {
             </div>
           )}
 
-          {/* TAB 7: Hỗ trợ học tập */}
+          {/* TAB 8: Hỗ trợ học tập */}
           {activeTab === "support" && (
             <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
               <h3 className="text-sm font-black text-[#003B3A] flex items-center gap-2">
