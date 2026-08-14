@@ -60,165 +60,182 @@ export async function createTask(data: any) {
     const adminId = (session.user as any).id
     const adminName = (session.user as any).fullName || (session.user as any).name || (session.user as any).email || "Ban Điều Hành"
 
-    const task = await prisma.workTask.create({
-      data: {
-        category: data.category,
-        title: data.title,
-        description: data.description || "",
-        assignedToRole: data.assignedToRole || "KT_DBCL",
-        assignedToUserId: data.assignedToUserId || null,
-        assignedById: adminId,
-        startDate: new Date(data.startDate),
-        endDate: new Date(data.endDate),
-        progress: "PENDING",
-        acceptanceStatus: "WAITING_CONFIRMATION",
-        month: data.month ? parseInt(data.month) : null,
-        academicYearId: data.academicYearId || null,
-        isImportant: data.isImportant || false
-      }
-    })
+    const collaboratorStr = data.collaborators ? (typeof data.collaborators === 'string' ? data.collaborators : JSON.stringify(data.collaborators)) : null
 
-    const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
-    const startDateFormatted = new Date(task.startDate).toLocaleDateString("vi-VN")
-    const endDateFormatted = new Date(task.endDate).toLocaleDateString("vi-VN")
-
-    // Fetch target users
-    let targets: any[] = []
-    if (data.assignedToUserId) {
-      const u = await prisma.user.findUnique({
-        where: { id: data.assignedToUserId },
-        select: { 
-          id: true, 
-          fullName: true, 
-          email: true,
-          teacher: { select: { email: true } }
-        }
-      })
-      if (u) targets = [u]
+    // Determine assignee IDs (support single or multiple assigned individuals)
+    let assignedUserIds: (string | null)[] = []
+    if (Array.isArray(data.assignedToUserIds) && data.assignedToUserIds.length > 0) {
+      assignedUserIds = data.assignedToUserIds
+    } else if (data.assignedToUserId) {
+      assignedUserIds = [data.assignedToUserId]
     } else {
-      const groupName = data.assignedToRole || "KT_DBCL"
-      targets = await prisma.user.findMany({
-        where: {
-          status: "ACTIVE",
-          OR: [
-            { role: groupName },
-            {
-              teacher: {
-                OR: [
-                  { departmentRel: { name: groupName } },
-                  { departmentRel: { code: groupName } },
-                  { mainSubjectRel: { subjectName: groupName } },
-                  { mainSubjectRel: { subjectCode: groupName } }
-                ]
-              }
-            }
-          ]
-        },
-        select: { 
-          id: true, 
-          fullName: true, 
-          email: true,
-          teacher: { select: { email: true } }
-        }
-      })
+      assignedUserIds = [null] // Assign to whole department
     }
 
-    let sentCount = 0
-    let emailSentCount = 0
-    for (const u of targets) {
-      await prisma.notification.create({
+    let primaryTask: any = null
+    let createdTasksCount = 0
+
+    for (const uid of assignedUserIds) {
+      const task = await prisma.workTask.create({
         data: {
-          userId: u.id,
-          title: (task.isImportant ? "[QUAN TRỌNG] " : "") + "[Yêu cầu xác nhận nhận việc] " + data.title,
-          message: adminName + " đã giao công việc mới cho bạn. Vui lòng kiểm tra và xác nhận nhận việc trước ngày " + endDateFormatted,
-          isRead: false,
-          link: "/admin/tasks?taskId=" + task.id + "&action=confirm"
+          category: data.category,
+          title: data.title,
+          description: data.description || "",
+          assignedToRole: data.assignedToRole || "KT_DBCL",
+          assignedToUserId: uid,
+          assignedById: adminId,
+          startDate: new Date(data.startDate),
+          endDate: new Date(data.endDate),
+          progress: "PENDING",
+          acceptanceStatus: "WAITING_CONFIRMATION",
+          month: data.month ? parseInt(data.month) : null,
+          academicYearId: data.academicYearId || null,
+          isImportant: data.isImportant || false,
+          collaborators: collaboratorStr
         }
       })
-      sentCount++
+      if (!primaryTask) primaryTask = task
+      createdTasksCount++
 
-      const resolvedEmail = resolveUserEmail(u)
-      if (resolvedEmail) {
-        try {
-          const emailHtml = `
-            <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; padding: 32px 16px; color: #1e293b;">
-              <div style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
-                
-                <div style="background: linear-gradient(135deg, ${task.isImportant ? '#dc2626' : '#00A99D'}, ${task.isImportant ? '#991b1b' : '#007A72'}); padding: 32px 28px; text-align: center; color: #ffffff;">
-                  <span style="background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;">
-                    ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : 'CÔNG VIỆC MỚI ĐƯỢC GIAO'}
-                  </span>
-                  <h1 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.3; color: #ffffff;">${task.title}</h1>
-                  <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
-                </div>
-                
-                <div style="padding: 32px 28px;">
-                  <p style="margin-top: 0; font-size: 15px; font-weight: 600; color: #334155;">Xin chào <strong>${u.fullName}</strong>,</p>
-                  <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-                    Bạn vừa nhận được một công việc mới được phân công từ <strong>${adminName}</strong>. 
-                    Vui lòng xem thông tin bên dưới và bấm nút <strong>Xác nhận nhận việc</strong> để tiếp nhận công việc.
-                  </p>
-                  
-                  <div style="background-color: #f8fafc; border-left: 4px solid ${task.isImportant ? '#dc2626' : '#00A99D'}; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #e2e8f0; border-left-width: 4px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                      <tr>
-                        <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; width: 120px; text-transform: uppercase;">Danh mục:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: ${task.isImportant ? '#dc2626' : '#00A99D'};">${task.category || "Công việc"}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Người giao:</td>
-                        <td style="padding: 6px 0; font-size: 14px; color: #1e293b; font-weight: 600;">${adminName}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Ngày bắt đầu:</td>
-                        <td style="padding: 6px 0; font-size: 14px; color: #334155;">${startDateFormatted}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Hạn chót:</td>
-                        <td style="padding: 6px 0; font-size: 14px; font-weight: 800; color: #dc2626;">${endDateFormatted}</td>
-                      </tr>
-                      ${task.description ? `
-                      <tr>
-                        <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; vertical-align: top;">Ghi chú:</td>
-                        <td style="padding: 6px 0; font-size: 14px; color: #334155;">${task.description}</td>
-                      </tr>
-                      ` : ''}
-                    </table>
-                  </div>
+      const appUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app"
+      const startDateFormatted = new Date(task.startDate).toLocaleDateString("vi-VN")
+      const endDateFormatted = new Date(task.endDate).toLocaleDateString("vi-VN")
 
-                  <div style="background-color: #fffbe6; border: 1px solid #ffe58f; padding: 14px 18px; border-radius: 10px; margin-bottom: 28px; font-size: 13px; color: #855900;">
-                    📌 <strong>Yêu cầu xác nhận:</strong> Sau khi nhận email này, vui lòng truy cập hệ thống để bấm <strong>"Xác nhận nhận việc"</strong> hoặc <strong>"Từ chối / Phản hồi"</strong> ý kiến.
+      // Fetch target main assignees
+      let targets: any[] = []
+      if (uid) {
+        const u = await prisma.user.findUnique({
+          where: { id: uid },
+          select: { id: true, fullName: true, email: true, teacher: { select: { email: true } } }
+        })
+        if (u) targets = [u]
+      } else {
+        const groupName = data.assignedToRole || "KT_DBCL"
+        targets = await prisma.user.findMany({
+          where: {
+            status: "ACTIVE",
+            OR: [
+              { role: groupName },
+              {
+                teacher: {
+                  OR: [
+                    { departmentRel: { name: groupName } },
+                    { departmentRel: { code: groupName } },
+                    { mainSubjectRel: { subjectName: groupName } },
+                    { mainSubjectRel: { subjectCode: groupName } }
+                  ]
+                }
+              }
+            ]
+          },
+          select: { id: true, fullName: true, email: true, teacher: { select: { email: true } } }
+        })
+      }
+
+      // Fetch collaborator users if provided
+      let collaboratorUsers: any[] = []
+      if (Array.isArray(data.collaboratorUserIds) && data.collaboratorUserIds.length > 0) {
+        collaboratorUsers = await prisma.user.findMany({
+          where: { id: { in: data.collaboratorUserIds } },
+          select: { id: true, fullName: true, email: true, teacher: { select: { email: true } } }
+        })
+      }
+
+      // Send to main assignees
+      for (const u of targets) {
+        await prisma.notification.create({
+          data: {
+            userId: u.id,
+            title: (task.isImportant ? "[QUAN TRỌNG] " : "") + "[Yêu cầu xác nhận nhận việc] " + data.title,
+            message: adminName + " đã giao công việc mới cho bạn. Vui lòng kiểm tra và xác nhận nhận việc trước ngày " + endDateFormatted,
+            isRead: false,
+            link: "/admin/tasks?taskId=" + task.id + "&action=confirm"
+          }
+        })
+
+        const resolvedEmail = resolveUserEmail(u)
+        if (resolvedEmail) {
+          try {
+            const emailHtml = `
+              <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; padding: 32px 16px; color: #1e293b;">
+                <div style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
+                  
+                  <div style="background: linear-gradient(135deg, ${task.isImportant ? '#dc2626' : '#00A99D'}, ${task.isImportant ? '#991b1b' : '#007A72'}); padding: 32px 28px; text-align: center; color: #ffffff;">
+                    <span style="background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;">
+                      ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : 'CÔNG VIỆC MỚI ĐƯỢC GIAO'}
+                    </span>
+                    <h1 style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.3; color: #ffffff;">${task.title}</h1>
+                    <p style="margin: 8px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
                   </div>
                   
-                  <div style="text-align: center; margin: 28px 0 12px 0;">
-                    <a href="${appUrl}/admin/tasks?taskId=${task.id}&action=confirm" 
-                       style="background-color: ${task.isImportant ? '#dc2626' : '#00A99D'}; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
-                       ✅ Xác Nhận Nhận Việc Ngay
-                    </a>
+                  <div style="padding: 32px 28px;">
+                    <p style="margin-top: 0; font-size: 15px; font-weight: 600; color: #334155;">Xin chào <strong>${u.fullName}</strong>,</p>
+                    <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+                      Bạn vừa nhận được một công việc mới được phân công từ <strong>${adminName}</strong>. 
+                      Vui lòng xem thông tin bên dưới và bấm nút <strong>Xác nhận nhận việc</strong> để tiếp nhận công việc.
+                    </p>
+                    
+                    <div style="background-color: #f8fafc; border-left: 4px solid ${task.isImportant ? '#dc2626' : '#00A99D'}; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #e2e8f0; border-left-width: 4px;">
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; width: 130px; text-transform: uppercase;">Danh mục:</td>
+                          <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: ${task.isImportant ? '#dc2626' : '#00A99D'};">${task.category || "Công việc"}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Người giao:</td>
+                          <td style="padding: 6px 0; font-size: 14px; color: #1e293b; font-weight: 600;">${adminName}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Thời gian:</td>
+                          <td style="padding: 6px 0; font-size: 14px; color: #334155;">${startDateFormatted} đến <strong style="color: #dc2626;">${endDateFormatted}</strong></td>
+                        </tr>
+                        ${task.description ? `
+                        <tr>
+                          <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; vertical-align: top;">Chi tiết công việc:</td>
+                          <td style="padding: 6px 0; font-size: 14px; color: #334155; white-space: pre-wrap;">${task.description}</td>
+                        </tr>
+                        ` : ''}
+                      </table>
+                    </div>
+
+                    <div style="text-align: center; margin: 28px 0 12px 0;">
+                      <a href="${appUrl}/admin/tasks?taskId=${task.id}&action=confirm" 
+                         style="background-color: ${task.isImportant ? '#dc2626' : '#00A99D'}; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
+                         ✅ Xác Nhận Nhận Việc Ngay
+                      </a>
+                    </div>
                   </div>
-                </div>
-                
-                <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px; text-align: center; font-size: 12px; color: #94a3b8;">
-                  <p style="margin: 0;">Email gửi tự động từ Hệ thống Khảo sát & Điều hành Giáo dục Skyline.</p>
-                  <p style="margin: 4px 0 0 0;">&copy; ${new Date().getFullYear()} Skyline Educational System. All rights reserved.</p>
                 </div>
               </div>
-            </div>
-          `;
-          await sendEmail({
-            to: resolvedEmail,
-            subject: `${task.isImportant ? '[QUAN TRỌNG] ' : ''}[Giao việc & Yêu cầu xác nhận] ${task.title}`,
-            html: emailHtml
-          });
-          emailSentCount++
-        } catch (emailErr) {
-          console.error(`Failed to send email to ${resolvedEmail}:`, emailErr);
+            `;
+            await sendEmail({
+              to: resolvedEmail,
+              subject: `${task.isImportant ? '[QUAN TRỌNG] ' : ''}[Giao việc & Yêu cầu xác nhận] ${task.title}`,
+              html: emailHtml
+            });
+          } catch (emailErr) {
+            console.error(`Failed to send email to ${resolvedEmail}:`, emailErr);
+          }
         }
+      }
+
+      // Send notifications to collaborators
+      for (const col of collaboratorUsers) {
+        if (targets.some(t => t.id === col.id)) continue;
+        await prisma.notification.create({
+          data: {
+            userId: col.id,
+            title: "[PHỐI HỢP THỰC HIỆN] " + data.title,
+            message: adminName + " đã thêm bạn là Người phối hợp công việc: '" + data.title + "'",
+            isRead: false,
+            link: "/admin/tasks?taskId=" + task.id
+          }
+        })
       }
     }
 
     revalidatePath("/admin/tasks")
-    return { success: true, sent: sentCount, emailSent: emailSentCount }
+    return { success: true, createdCount: createdTasksCount }
   } catch (e: any) {
     return { success: false, error: e.message }
   }
@@ -387,6 +404,8 @@ export async function rejectTaskAssignment(taskId: string, reason: string) {
 
 export async function updateTask(id: string, data: any) {
   try {
+    const collaboratorStr = data.collaborators ? (typeof data.collaborators === 'string' ? data.collaborators : JSON.stringify(data.collaborators)) : null
+
     await prisma.workTask.update({
       where: { id },
       data: {
@@ -399,7 +418,8 @@ export async function updateTask(id: string, data: any) {
         endDate: new Date(data.endDate),
         month: data.month ? parseInt(data.month) : null,
         academicYearId: data.academicYearId || null,
-        isImportant: data.isImportant || false
+        isImportant: data.isImportant || false,
+        collaborators: collaboratorStr
       }
     })
     revalidatePath("/admin/tasks")

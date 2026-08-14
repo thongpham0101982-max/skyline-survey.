@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import { X, Send, Paperclip, Download, Trash2, MessageSquare, File, Image, FileText, Clock, User, CheckCircle2, AlertTriangle, XCircle, ShieldCheck } from "lucide-react"
+import { X, Send, Paperclip, Download, Trash2, MessageSquare, File, Image, FileText, Clock, User, CheckCircle2, AlertTriangle, XCircle, ShieldCheck, Users } from "lucide-react"
 import { getTaskDetails, addTaskComment, deleteTaskComment, addTaskAttachment, deleteTaskAttachment } from "./collab_actions"
 import { confirmTaskAssignment, rejectTaskAssignment } from "./actions"
 
@@ -213,6 +213,27 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
             <span className="text-slate-400 text-[11px]">Xác nhận lúc: {new Date(task.acceptedAt).toLocaleString("vi-VN")}</span>
           )}
         </div>
+
+        {/* Chi tiết công việc */}
+        {task.description && (
+          <div className="mx-5 mt-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
+            <div className="font-bold text-slate-700 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-[#00A99D]" /> Chi tiết công việc:
+            </div>
+            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap pl-5 font-medium">{task.description}</p>
+          </div>
+        )}
+
+        {/* Người phối hợp */}
+        {task.collaborators && (
+          <div className="mx-5 mt-2.5 p-3 bg-teal-50/70 border border-teal-100 rounded-2xl text-xs flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#00A99D] flex-shrink-0" />
+            <div>
+              <span className="font-bold text-teal-900">Người phối hợp: </span>
+              <span className="text-teal-800 font-semibold">{task.collaborators}</span>
+            </div>
+          </div>
+        )}
 
         {/* Rejection Note Alert if any */}
         {task.rejectionReason && (

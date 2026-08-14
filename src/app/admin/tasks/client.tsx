@@ -48,6 +48,9 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
   const [category, setCategory] = useState("")
   const [assignedToRole, setAssignedToRole] = useState(roles?.[0]?.code || "")
   const [assignedToUserId, setAssignedToUserId] = useState("")
+  const [description, setDescription] = useState("")
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([])
+  const [collaboratorIds, setCollaboratorIds] = useState<string[]>([])
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10))
   const [endDate, setEndDate] = useState(new Date().toISOString().slice(0, 10))
   const [academicYearId, setAcademicYearId] = useState(() => getDefaultAcademicYearClient(years)?.id || "")
@@ -524,7 +527,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1">Danh mục công việc *</label>
               <select
@@ -541,11 +544,15 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
 
             <div>
               <label className="block text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-slate-400" /> Tổ / Bộ phận tiếp nhận
+                <Users className="w-3.5 h-3.5 text-slate-400" /> Tổ / Bộ phận tiếp nhận *
               </label>
               <select
                 value={assignedToRole}
-                onChange={e => setAssignedToRole(e.target.value)}
+                onChange={e => {
+                  setAssignedToRole(e.target.value)
+                  setSelectedUserIds([])
+                  setCollaboratorIds([])
+                }}
                 className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#00A99D] bg-white font-bold text-slate-700"
               >
                 {roles.map((r: any) => (
@@ -553,33 +560,106 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                 ))}
               </select>
             </div>
+          </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-600 mb-1 flex items-center gap-1">
-                <User className="w-3.5 h-3.5 text-indigo-500" /> Chọn cá nhân cụ thể (Tùy chọn)
+          {/* Individual Assignees Selection (Multi-select) */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-[#00A99D]" /> Chọn 1 hoặc nhiều cá nhân cụ thể thực hiện (Tùy chọn)
               </label>
-              <select
-                value={assignedToUserId}
-                onChange={e => setAssignedToUserId(e.target.value)}
-                disabled={loadingUsers}
-                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#00A99D] disabled:bg-slate-50 font-bold text-slate-700"
+              <span className="text-[11px] text-[#00A99D] font-bold">
+                {selectedUserIds.length === 0 ? `Đang chọn cả nhóm (${roleUsers.length} người)` : `Đã chọn ${selectedUserIds.length} người`}
+              </span>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
+              <button
+                type="button"
+                onClick={() => setSelectedUserIds([])}
+                className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
+                  selectedUserIds.length === 0 ? "bg-[#00A99D] text-white border-[#00A99D]" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                }`}
               >
-                <option value="">-- Giao cho cả nhóm ({roleUsers.length} người) --</option>
-                {roleUsers.map((u: any) => (
-                  <option key={u.id} value={u.id}>{u.fullName} ({u.email})</option>
-                ))}
-              </select>
+                Giao cho cả nhóm ({roleUsers.length})
+              </button>
+              {roleUsers.map((u: any) => {
+                const isChecked = selectedUserIds.includes(u.id)
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => {
+                      if (isChecked) setSelectedUserIds(selectedUserIds.filter(id => id !== u.id))
+                      else setSelectedUserIds([...selectedUserIds, u.id])
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1 ${
+                      isChecked ? "bg-indigo-600 text-white border-indigo-600 shadow-sm" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    <span>{isChecked ? '✓ ' : ''}{u.fullName}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
+          {/* Collaborators Selection (Người phối hợp) */}
+          <div className="bg-teal-50/50 border border-teal-200 rounded-2xl p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#00A99D]" /> Người phối hợp (Đồng thực hiện / Hỗ trợ):
+              </label>
+              <span className="text-[11px] text-teal-700 font-bold">
+                {collaboratorIds.length === 0 ? "Chưa chọn" : `${collaboratorIds.length} người phối hợp`}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-1">
+              {roleUsers.map((u: any) => {
+                const isChecked = collaboratorIds.includes(u.id)
+                const isAssignee = selectedUserIds.includes(u.id)
+                if (isAssignee) return null
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => {
+                      if (isChecked) setCollaboratorIds(collaboratorIds.filter(id => id !== u.id))
+                      else setCollaboratorIds([...collaboratorIds, u.id])
+                    }}
+                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1 ${
+                      isChecked ? "bg-[#00A99D] text-white border-[#00A99D] shadow-sm" : "bg-white text-teal-900 border-teal-200 hover:bg-teal-100"
+                    }`}
+                  >
+                    <span>{isChecked ? '🤝 ' : ''}{u.fullName}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Title */}
           <div>
-            <label className="block text-xs font-bold text-slate-600 mb-1">Nội dung công việc *</label>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Tên / Tiêu đề công việc *</label>
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="Nhập tên / tiêu đề công việc..."
-              className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D]"
+              className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#00A99D] bg-white"
+            />
+          </div>
+
+          {/* Chi tiết công việc (Detailed Description) */}
+          <div>
+            <label className="block text-xs font-bold text-slate-600 mb-1">Chi tiết công việc (Hướng dẫn, quy trình hoặc yêu cầu cụ thể)</label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              rows={3}
+              placeholder="Nhập mô tả chi tiết công việc, các bước thực hiện hoặc tài liệu hướng dẫn..."
+              className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#00A99D] resize-none leading-relaxed bg-white"
             />
             <div className="flex items-center gap-2 mt-2">
               <input
@@ -791,6 +871,16 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                         </div>
                         {t.assignedBy?.fullName && (
                           <div className="text-[11px] text-slate-400 mt-1">Bởi: {t.assignedBy.fullName}</div>
+                        )}
+                        {t.description && (
+                          <div className="text-xs text-slate-600 mt-1 line-clamp-2 italic font-normal bg-slate-50 p-1.5 rounded-lg border border-slate-100">
+                            💬 {t.description}
+                          </div>
+                        )}
+                        {t.collaborators && (
+                          <div className="text-[11px] text-teal-800 font-bold mt-1 flex items-center gap-1 bg-teal-50 px-2 py-0.5 rounded-md w-fit">
+                            <Users className="w-3 h-3 text-[#00A99D]" /> Phối hợp: {t.collaborators}
+                          </div>
                         )}
                         {t.staffNote && (
                           <div className="mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-700 break-words">

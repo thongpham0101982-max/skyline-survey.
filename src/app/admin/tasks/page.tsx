@@ -35,6 +35,7 @@ export default async function TasksPage() {
     whereClause = {
       OR: [
         { assignedToUserId: userId },
+        { collaborators: { contains: userId } },
         { assignedToRole: role, assignedToUserId: null },
         ...(deptName ? [{ assignedToRole: deptName, assignedToUserId: null }] : []),
         ...(deptCode ? [{ assignedToRole: deptCode, assignedToUserId: null }] : []),

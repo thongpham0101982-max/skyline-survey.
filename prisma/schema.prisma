@@ -537,6 +537,7 @@ model WorkTask {
   updatedAt        DateTime         @updatedAt
   staffNote        String?
   staffUpdatedAt   DateTime?
+  collaborators    String?
   attachments      TaskAttachment[]
   comments         TaskComment[]
   assignedToUser   User?            @relation("TaskAssignee", fields: [assignedToUserId], references: [id])
