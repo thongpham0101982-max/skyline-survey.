@@ -17,7 +17,12 @@ import {
   Clock,
   Sparkles,
   Award,
-  GraduationCap
+  GraduationCap,
+  Calendar,
+  MessageSquare,
+  Star,
+  CheckSquare,
+  AlertCircle
 } from "lucide-react"
 import Link from "next/link"
 
@@ -27,6 +32,14 @@ export default function ParentAdvisoryClient() {
   const [academicYearId, setAcademicYearId] = useState("")
   const [profile, setProfile] = useState<any>(null)
   const [goalsData, setGoalsData] = useState<any>(null)
+  const [trackingLogs, setTrackingLogs] = useState<any[]>([])
+  const [consultations, setConsultations] = useState<any[]>([])
+  const [termEvals, setTermEvals] = useState<any[]>([])
+  
+  const [activeTab, setActiveTab] = useState<"goals" | "tracking" | "evaluations">("goals")
+  const [selectedCheckPoint, setSelectedCheckPoint] = useState("DAU_NAM")
+  const [selectedTerm, setSelectedTerm] = useState("HK1")
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [parentMessage, setParentMessage] = useState("")
@@ -94,20 +107,22 @@ export default function ParentAdvisoryClient() {
         setLoading(true)
         const currentChild = childrenList.find(c => c.id === selectedStudentId)
         const stCode = currentChild?.studentCode || ""
-        const [res360, resGoals] = await Promise.all([
+        const [res360, resGoals, resTracking, resConsult, resEval] = await Promise.all([
           fetch(`/api/advisory/profile-360?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/advisory/goals?studentId=${selectedStudentId}&studentCode=${stCode}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null)
+          fetch(`/api/advisory/goals?studentId=${selectedStudentId}&studentCode=${stCode}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null),
+          fetch(`/api/advisory/tracking?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null),
+          fetch(`/api/advisory/consultations?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null),
+          fetch(`/api/advisory/term-evaluations?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null)
         ])
         
         let data360: any = null
         let dataGoals: any = null
 
-        if (res360 && res360.ok) {
-          data360 = await res360.json()
-        }
-        if (resGoals && resGoals.ok) {
-          dataGoals = await resGoals.json()
-        }
+        if (res360 && res360.ok) data360 = await res360.json()
+        if (resGoals && resGoals.ok) dataGoals = await resGoals.json()
+        if (resTracking && resTracking.ok) setTrackingLogs(await resTracking.json())
+        if (resConsult && resConsult.ok) setConsultations(await resConsult.json())
+        if (resEval && resEval.ok) setTermEvals(await resEval.json())
 
         if (data360) {
           setProfile(data360)
@@ -146,11 +161,12 @@ export default function ParentAdvisoryClient() {
           signedByParent: true
         })
       })
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) {
         setSigned(true)
-        alert("Đã lưu lời nhắn & ký cam kết đồng hành cùng con thành công!")
+        alert("✓ Đã lưu lời nhắn & ký cam kết đồng hành cùng con thành công!")
       } else {
-        alert("Có lỗi khi lưu cam kết. Vui lòng thử lại sau.")
+        alert(data.error || "Có lỗi khi lưu cam kết. Vui lòng thử lại sau.")
       }
     } catch (e) {
       console.error(e)
@@ -273,6 +289,9 @@ export default function ParentAdvisoryClient() {
     profile?.learningCommitment?.studentCommitment || 
     allGoals.find((g: any) => g.studentCommitment)?.studentCommitment || ""
 
+  // Active Term Eval
+  const activeTermEval = termEvals.find((e: any) => e.term === selectedTerm) || null
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 font-sans text-slate-800 pb-16">
       
@@ -286,18 +305,18 @@ export default function ParentAdvisoryClient() {
           Theo Dõi Cố Vấn & Mục Tiêu Đồng Hành
         </h1>
         <p className="text-xs sm:text-sm text-teal-100 font-medium max-w-3xl leading-relaxed">
-          Theo dõi sát sao Form Đăng Ký Mục Tiêu Năm Học do con em trực tiếp nhập theo biểu mẫu riêng của Khối {gradeNum}, gửi lời nhắn & ký cam kết đồng hành từ Gia đình.
+          Đồng bộ liên thông dữ liệu 3 chiều giữa Học Sinh ➔ Giáo Viên Cố Vấn ➔ Phụ Huynh. Theo dõi phiếu mục tiêu, bảng theo dõi tiến độ & nhật ký check-in từ Thầy Cô.
         </p>
       </div>
 
       {/* Child Switcher Selector */}
       {childrenList.length > 0 && (
-        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between gap-4">
+        <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <span className="text-xs font-black text-slate-600 flex items-center gap-2">
             <Users className="w-4 h-4 text-[#00A99D]" />
             <span>Chọn con em theo dõi (Năm học hiện tại):</span>
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {childrenList.map((c: any) => (
               <button
                 key={c.id}
@@ -318,7 +337,7 @@ export default function ParentAdvisoryClient() {
       {loading ? (
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
           <Compass className="w-8 h-8 mx-auto text-teal-500 animate-spin" />
-          <p>Đang nạp Phiếu Mục Tiêu Khối {gradeNum} Của Học Sinh...</p>
+          <p>Đang liên thông dữ liệu Cố vấn học tập Của Học Sinh...</p>
         </div>
       ) : childrenList.length === 0 ? (
         <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-3">
@@ -338,7 +357,7 @@ export default function ParentAdvisoryClient() {
       ) : (
         <div className="space-y-6">
           
-          {/* Card Trạng Thái Tín Hiệu Cố Vấn */}
+          {/* Card Trạng Thái Tín Hiệu Cố Vấn & Tóm Tắt Học Sinh */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
@@ -362,216 +381,516 @@ export default function ParentAdvisoryClient() {
             </div>
           </div>
 
-          {/* Form Banner Header matching Exact Student Grade Form */}
-          <div className="bg-teal-50/60 rounded-3xl p-5 border border-teal-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#00A99D] text-white flex items-center justify-center shrink-0 shadow-sm">
-                <FileText className="w-5 h-5" />
-              </div>
-              <div>
-                <h2 className="text-base font-black text-slate-900 uppercase">
-                  {formTitle}
-                </h2>
-                <p className="text-xs text-slate-500 font-medium">
-                  {formSub}
-                </p>
-              </div>
-            </div>
-            <div className="bg-[#003B3A] text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full shrink-0">
-              Mẫu biểu chuẩn Khối {gradeNum}
-            </div>
+          {/* 3-WAY SYNCHRONIZED TAB BAR NAVIGATION (PH ↔ TEACHER ↔ HS) */}
+          <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <button
+              onClick={() => setActiveTab("goals")}
+              className={"px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all " + (
+                activeTab === "goals"
+                  ? "bg-[#003B3A] text-white shadow-md"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+              )}
+            >
+              <FileText className="w-4 h-4 text-teal-400" />
+              <span>1. Phiếu Mục Tiêu Năm Học</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("tracking")}
+              className={"px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all " + (
+                activeTab === "tracking"
+                  ? "bg-[#003B3A] text-white shadow-md"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+              )}
+            >
+              <Target className="w-4 h-4 text-amber-400" />
+              <span>2. Tiến Độ & Nhật Ký Check-in GVCN ({trackingLogs.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("evaluations")}
+              className={"px-5 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all " + (
+                activeTab === "evaluations"
+                  ? "bg-[#003B3A] text-white shadow-md"
+                  : "bg-slate-50 text-slate-600 hover:bg-slate-100"
+              )}
+            >
+              <Award className="w-4 h-4 text-rose-400" />
+              <span>3. Đánh Giá Định Kỳ & Nhật Ký Tham Vấn ({consultations.length})</span>
+            </button>
           </div>
 
-          {/* RENDER THE EXACT CATEGORIES & ALL ENTERED GOALS FOR SPECIFIC GRADE (NO WARNING CARD) */}
-          <div className="space-y-6">
-            {currentCategories.map((catDef) => {
-              const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
-
-              return (
-                <div key={catDef.key} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-5">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                    <div>
-                      <h3 className="text-base font-black text-slate-900 uppercase">
-                        {catDef.title}
-                      </h3>
-                      <p className="text-xs text-slate-400 italic font-medium mt-0.5">
-                        {catDef.hint}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-3 py-1 rounded-md tracking-wider">
-                        NHÓM {catDef.number}
-                      </span>
-                    </div>
+          {/* TAB 1: PHIẾU MỤC TIÊU NĂM HỌC */}
+          {activeTab === "goals" && (
+            <div className="space-y-6">
+              {/* Form Banner Header matching Exact Student Grade Form */}
+              <div className="bg-teal-50/60 rounded-3xl p-5 border border-teal-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#00A99D] text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <FileText className="w-5 h-5" />
                   </div>
+                  <div>
+                    <h2 className="text-base font-black text-slate-900 uppercase">
+                      {formTitle}
+                    </h2>
+                    <p className="text-xs text-slate-500 font-medium">
+                      {formSub}
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-[#003B3A] text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full shrink-0">
+                  Mẫu biểu chuẩn Khối {gradeNum}
+                </div>
+              </div>
 
-                  {catGoalsList.length === 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-teal-500" />
-                          <span>Các mục tiêu cụ thể của em:</span>
-                        </label>
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
-                          (Học sinh chưa nhập nội dung mục tiêu này)
+              {/* RENDER THE EXACT CATEGORIES & ALL ENTERED GOALS FOR SPECIFIC GRADE */}
+              <div className="space-y-6">
+                {currentCategories.map((catDef) => {
+                  const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
+
+                  return (
+                    <div key={catDef.key} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-5">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <div>
+                          <h3 className="text-base font-black text-slate-900 uppercase">
+                            {catDef.title}
+                          </h3>
+                          <p className="text-xs text-slate-400 italic font-medium mt-0.5">
+                            {catDef.hint}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-3 py-1 rounded-md tracking-wider">
+                            NHÓM {catDef.number}
+                          </span>
                         </div>
                       </div>
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-full bg-amber-500" />
-                          <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
-                        </label>
-                        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
-                          (Học sinh chưa nhập nội dung kế hoạch hành động)
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      {catGoalsList.map((g: any, gIdx: number) => {
-                        const actionTextStr = g?.actions && g.actions.length > 0 
-                          ? g.actions.map((a: any) => a.actionText).join("; ")
-                          : g?.actionText || ""
 
-                        return (
-                          <div key={gIdx} className="space-y-4 pt-1 border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {/* Field 1: Target */}
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                  <span className="w-2 h-2 rounded-full bg-teal-500" />
-                                  <span>Các mục tiêu cụ thể của em:</span>
-                                </label>
-                                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
-                                  {g?.targetText ? (
-                                    <span>{g.targetText}</span>
-                                  ) : (
-                                    <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung mục tiêu này)</span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Field 2: Actions */}
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                                  <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
-                                </label>
-                                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
-                                  {actionTextStr ? (
-                                    <span>{actionTextStr}</span>
-                                  ) : (
-                                    <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung kế hoạch hành động)</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {/* Field 3: Teacher support */}
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-[#00A99D] flex items-center gap-1.5">
-                                  <Users className="w-3.5 h-3.5" />
-                                  <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
-                                </label>
-                                <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
-                                  {g?.teacherSupportRequest ? (
-                                    <span>{g.teacherSupportRequest}</span>
-                                  ) : (
-                                    <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Field 4: Parent support */}
-                              <div className="space-y-1.5">
-                                <label className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
-                                  <Heart className="w-3.5 h-3.5 fill-rose-100" />
-                                  <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
-                                </label>
-                                <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
-                                  {g?.parentSupportRequest ? (
-                                    <span>{g.parentSupportRequest}</span>
-                                  ) : (
-                                    <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
-                                  )}
-                                </div>
-                              </div>
+                      {catGoalsList.length === 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-teal-500" />
+                              <span>Các mục tiêu cụ thể của em:</span>
+                            </label>
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
+                              (Học sinh chưa nhập nội dung mục tiêu này)
                             </div>
                           </div>
-                        )
-                      })}
+                          <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-amber-500" />
+                              <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
+                            </label>
+                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
+                              (Học sinh chưa nhập nội dung kế hoạch hành động)
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          {catGoalsList.map((g: any, gIdx: number) => {
+                            const actionTextStr = g?.actions && g.actions.length > 0 
+                              ? g.actions.map((a: any) => a.actionText).join("; ")
+                              : g?.actionText || ""
+
+                            return (
+                              <div key={gIdx} className="space-y-4 pt-1 border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Field 1: Target */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-teal-500" />
+                                      <span>Các mục tiêu cụ thể của em:</span>
+                                    </label>
+                                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
+                                      {g?.targetText ? (
+                                        <span>{g.targetText}</span>
+                                      ) : (
+                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung mục tiêu này)</span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Field 2: Actions */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                      <span className="w-2 h-2 rounded-full bg-amber-500" />
+                                      <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
+                                    </label>
+                                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
+                                      {actionTextStr ? (
+                                        <span>{actionTextStr}</span>
+                                      ) : (
+                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung kế hoạch hành động)</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {/* Field 3: Teacher support */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-[#00A99D] flex items-center gap-1.5">
+                                      <Users className="w-3.5 h-3.5" />
+                                      <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
+                                    </label>
+                                    <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
+                                      {g?.teacherSupportRequest ? (
+                                        <span>{g.teacherSupportRequest}</span>
+                                      ) : (
+                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Field 4: Parent support */}
+                                  <div className="space-y-1.5">
+                                    <label className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
+                                      <Heart className="w-3.5 h-3.5 fill-rose-100" />
+                                      <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
+                                    </label>
+                                    <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
+                                      {g?.parentSupportRequest ? (
+                                        <span>{g.parentSupportRequest}</span>
+                                      ) : (
+                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
+                  )
+                })}
+
+                {/* LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️ */}
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-3">
+                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-[#00A99D]" />
+                    <span>LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️</span>
+                  </h3>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-teal-500" />
+                      <span>Em cam kết sẽ:</span>
+                    </label>
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed">
+                      {studentCommitmentText ? (
+                        <span>{studentCommitmentText}</span>
+                      ) : (
+                        <span className="text-slate-400 font-normal italic">(Chưa có lời cam kết từ học sinh)</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* LỜI NHẮN GỬI & KÝ CAM KẾT ĐỒNG HÀNH TỪ GIA ĐÌNH */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-teal-200 shadow-sm space-y-4 font-sans">
+                <div className="flex items-center justify-between border-b border-teal-100 pb-4">
+                  <h3 className="text-base font-black text-[#003B3A] flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-rose-500 fill-rose-100" />
+                    <span>Lời Nhắn Gửi & Ký Cam Kết Đồng Hành Từ Gia Đình</span>
+                  </h3>
+                  {signed && (
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Đã ký đồng hành</span>
+                    </span>
                   )}
                 </div>
-              )
-            })}
 
-            {/* LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️ */}
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-3">
-              <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-[#00A99D]" />
-                <span>LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️</span>
-              </h3>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-teal-500" />
-                  <span>Em cam kết sẽ:</span>
-                </label>
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed">
-                  {studentCommitmentText ? (
-                    <span>{studentCommitmentText}</span>
-                  ) : (
-                    <span className="text-slate-400 font-normal italic">(Chưa có lời cam kết từ học sinh)</span>
-                  )}
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                  Gửi gắm những tình cảm, niềm tin và sự ủng hộ của Phụ huynh đến con em. Lời nhắn sẽ được lưu trữ trực tiếp trong Hồ sơ học tập 360° của con.
+                </p>
+
+                <textarea
+                  rows={4}
+                  placeholder="Ví dụ: Ba mẹ tin tưởng con sẽ nỗ lực hoàn thành xuất sắc mục tiêu học tập năm nay. Hãy luôn tự tin và vui vẻ con nhé! 💖"
+                  value={parentMessage}
+                  onChange={(e) => setParentMessage(e.target.value)}
+                  className="w-full p-4 rounded-2xl border border-slate-200 focus:border-[#00A99D] focus:ring-2 focus:ring-teal-100 outline-none text-xs font-semibold text-slate-800 leading-relaxed transition-all"
+                />
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                  <div className="text-xs text-slate-500 font-medium">
+                    Xác nhận đồng hành: <strong className="text-slate-800">{signed ? "✓ Đã ký số xác nhận" : "Chưa xác nhận cam kết đồng hành"}</strong>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveCommitment}
+                    disabled={saving}
+                    className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md disabled:opacity-50 active:scale-95 transition-all"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{saving ? "Đang lưu..." : "Ký & Gửi Lời Nhắn Phụ Huynh"}</span>
+                  </button>
                 </div>
               </div>
             </div>
+          )}
 
-          </div>
+          {/* TAB 2: BẢNG THEO DÕI TIẾN ĐỘ & NHẬT KÝ CHECK-IN GVCN */}
+          {activeTab === "tracking" && (
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
+                    <Target className="w-5 h-5 text-[#00A99D]" />
+                    <span>Bảng Theo Dõi Tiến Độ Mục Tiêu & Nhật Ký Check-in GVCN</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Liên thông dữ liệu đánh giá tiến độ thực tế trực tiếp từ Thầy Cô GVCN trong từng đợt Check-in.
+                  </p>
+                </div>
 
-          {/* LỜI NHẮN GỬI & KÝ CAM KẾT ĐỒNG HÀNH TỪ GIA ĐÌNH */}
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-teal-200 shadow-sm space-y-4 font-sans">
-            <div className="flex items-center justify-between border-b border-teal-100 pb-4">
-              <h3 className="text-base font-black text-[#003B3A] flex items-center gap-2">
-                <Heart className="w-5 h-5 text-rose-500 fill-rose-100" />
-                <span>Lời Nhắn Gửi & Ký Cam Kết Đồng Hành Từ Gia Đình</span>
-              </h3>
-              {signed && (
-                <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Đã ký đồng hành</span>
-                </span>
+                {/* Filter CheckPoint */}
+                <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl shrink-0 text-xs font-bold">
+                  <span className="px-2 text-slate-500 text-[11px]">Đợt check-in:</span>
+                  {[
+                    { key: "DAU_NAM", label: "Đầu năm" },
+                    { key: "GIUA_HK1", label: "Giữa HK1" },
+                    { key: "CUOI_HK1", label: "Cuối HK1" },
+                    { key: "GIUA_HK2", label: "Giữa HK2" },
+                    { key: "CUOI_HK2", label: "Cuối HK2" }
+                  ].map(cp => (
+                    <button
+                      key={cp.key}
+                      onClick={() => setSelectedCheckPoint(cp.key)}
+                      className={"px-3 py-1.5 rounded-xl transition-all " + (
+                        selectedCheckPoint === cp.key
+                          ? "bg-white text-[#003B3A] shadow-xs font-black"
+                          : "text-slate-600 hover:text-slate-900"
+                      )}
+                    >
+                      {cp.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Table / Card List of Goal Check-in Logs */}
+              {trackingLogs.length === 0 ? (
+                <div className="p-12 rounded-3xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-2">
+                  <Clock className="w-8 h-8 text-slate-400 mx-auto" />
+                  <p className="text-xs font-bold text-slate-600">Chưa có nhật ký check-in tiến độ từ GVCN</p>
+                  <p className="text-[11px] text-slate-400">Thầy cô GVCN sẽ tiến hành check-in đánh giá mục tiêu định kỳ trong năm học.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {currentCategories.map(catDef => {
+                    const catLogs = trackingLogs.filter((t: any) => {
+                      const c = (t.category || "").toUpperCase()
+                      return c === catDef.key.toUpperCase() || catDef.altKeys.some(k => c.includes(k.toUpperCase()))
+                    })
+
+                    return (
+                      <div key={catDef.key} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center justify-between">
+                          <span>{catDef.title}</span>
+                          <span className="text-[10px] text-slate-500 font-bold bg-white px-2.5 py-0.5 rounded-full border border-slate-200">
+                            {catLogs.length} Đánh giá Check-in
+                          </span>
+                        </h4>
+
+                        {catLogs.length === 0 ? (
+                          <p className="text-xs text-slate-400 italic">GVCN chưa tạo bản ghi check-in cho nhóm này trong đợt chọn.</p>
+                        ) : (
+                          <div className="space-y-3">
+                            {catLogs.map((log: any, lIdx: number) => {
+                              const stPill = log.progressStatus === "DAT" 
+                                ? { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "🟢 ĐẠT MỤC TIÊU" }
+                                : log.progressStatus === "CAN_CO_GAN"
+                                ? { bg: "bg-rose-100 text-rose-800 border-rose-300", label: "🔴 CẦN CỐ GẮNG THÊM" }
+                                : { bg: "bg-amber-100 text-amber-800 border-amber-300", label: "🟡 ĐANG TIẾN TRIỂN TỐT" }
+
+                              return (
+                                <div key={lIdx} className="bg-white p-4 rounded-xl border border-slate-200 space-y-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="text-xs font-bold text-slate-900">{log.targetText || "Mục tiêu năm học"}</span>
+                                    <span className={"px-2.5 py-0.5 rounded-full text-[10px] font-black border " + stPill.bg}>
+                                      {stPill.label}
+                                    </span>
+                                  </div>
+                                  {log.teacherNotes ? (
+                                    <div className="p-3 rounded-lg bg-teal-50/50 border border-teal-100 text-xs font-medium text-slate-700 flex items-start gap-2">
+                                      <MessageSquare className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
+                                      <div>
+                                        <strong className="text-teal-900 block font-bold text-[11px]">Ghi chú Check-in của GVCN:</strong>
+                                        <span>{log.teacherNotes}</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-[11px] text-slate-400 italic">Chưa có ghi chú bổ sung từ GVCN.</p>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               )}
             </div>
+          )}
 
-            <p className="text-xs text-slate-500 font-medium leading-relaxed">
-              Gửi gắm những tình cảm, niềm tin và sự ủng hộ của Phụ huynh đến con em. Lời nhắn sẽ được lưu trữ trực tiếp trong Hồ sơ học tập 360° của con.
-            </p>
+          {/* TAB 3: ĐÁNH GIÁ ĐỊNH KỲ RUBRIC & NHẬT KÝ THAM VẤN CỐ VẤN */}
+          {activeTab === "evaluations" && (
+            <div className="space-y-6">
+              
+              {/* Card 1: Rubric Evaluation Stars */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
+                      <Award className="w-5 h-5 text-amber-500" />
+                      <span>Đánh Giá Kỳ Theo Rubric Của GVCN</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Đánh giá mức độ tự giác, hoàn thành mục tiêu & khuyến nghị từ Giáo Viên Chủ Nhiệm.
+                    </p>
+                  </div>
 
-            <textarea
-              rows={4}
-              placeholder="Ví dụ: Ba mẹ tin tưởng con sẽ nỗ lực hoàn thành xuất sắc mục tiêu học tập năm nay. Hãy luôn tự tin và vui vẻ con nhé! 💖"
-              value={parentMessage}
-              onChange={(e) => setParentMessage(e.target.value)}
-              className="w-full p-4 rounded-2xl border border-slate-200 focus:border-[#00A99D] focus:ring-2 focus:ring-teal-100 outline-none text-xs font-semibold text-slate-800 leading-relaxed transition-all"
-            />
+                  <div className="flex items-center gap-2">
+                    {["HK1", "HK2"].map(t => (
+                      <button
+                        key={t}
+                        onClick={() => setSelectedTerm(t)}
+                        className={"px-3.5 py-1.5 rounded-xl text-xs font-black transition-all " + (
+                          selectedTerm === t ? "bg-[#003B3A] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        )}
+                      >
+                        Học kỳ {t === "HK1" ? "I" : "II"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-              <div className="text-xs text-slate-500 font-medium">
-                Xác nhận đồng hành: <strong className="text-slate-800">{signed ? "✓ Đã ký số xác nhận" : "Chưa xác nhận cam kết đồng hành"}</strong>
+                {!activeTermEval ? (
+                  <div className="p-8 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-1 text-xs text-slate-400">
+                    <AlertCircle className="w-6 h-6 mx-auto text-slate-400" />
+                    <p className="font-bold">Chưa có bản đánh giá Rubric cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}</p>
+                    <p>GVCN sẽ cập nhật bảng tổng kết Rubric vào cuối mỗi học kỳ.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-1">
+                        <span className="text-[11px] font-bold text-amber-900 block">Mức độ hoàn thành mục tiêu</span>
+                        <div className="flex items-center gap-1 text-amber-500">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star key={star} className={"w-4 h-4 " + (star <= (activeTermEval.goalCompletionLevel || 4) ? "fill-amber-400 text-amber-400" : "text-slate-200")} />
+                          ))}
+                          <span className="text-xs font-black text-amber-900 ml-1">({activeTermEval.goalCompletionLevel || 4}/5)</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-teal-50/50 border border-teal-100 space-y-1">
+                        <span className="text-[11px] font-bold text-teal-900 block">Tính tự giác & chủ động</span>
+                        <div className="flex items-center gap-1 text-teal-500">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star key={star} className={"w-4 h-4 " + (star <= (activeTermEval.initiativeLevel || 4) ? "fill-teal-500 text-teal-500" : "text-slate-200")} />
+                          ))}
+                          <span className="text-xs font-black text-teal-900 ml-1">({activeTermEval.initiativeLevel || 4}/5)</span>
+                        </div>
+                      </div>
+
+                      <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 space-y-1">
+                        <span className="text-[11px] font-bold text-emerald-900 block">Thái độ tham gia hoạt động</span>
+                        <div className="flex items-center gap-1 text-emerald-500">
+                          {[1, 2, 3, 4, 5].map(star => (
+                            <Star key={star} className={"w-4 h-4 " + (star <= (activeTermEval.participationAttitude || 5) ? "fill-emerald-500 text-emerald-500" : "text-slate-200")} />
+                          ))}
+                          <span className="text-xs font-black text-emerald-900 ml-1">({activeTermEval.participationAttitude || 5}/5)</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {activeTermEval.recommendations && (
+                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                        <span className="text-xs font-extrabold text-[#003B3A] block">Khuyến nghị & Định hướng của GVCN:</span>
+                        <p className="text-xs font-medium text-slate-700 leading-relaxed">{activeTermEval.recommendations}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={handleSaveCommitment}
-                disabled={saving}
-                className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md disabled:opacity-50 active:scale-95 transition-all"
-              >
-                <Save className="w-4 h-4" />
-                <span>{saving ? "Đang lưu..." : "Ký & Gửi Lời Nhắn Phụ Huynh"}</span>
-              </button>
+
+              {/* Card 2: Academic Consultation Logs */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-teal-600" />
+                      <span>Nhật Ký Tham Vấn Cố Vấn (GVCN & Gia Đình)</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      Lịch sử các buổi tham vấn trực tiếp 1-1 giữa GVCN, Học sinh và Phụ huynh.
+                    </p>
+                  </div>
+                  <span className="bg-teal-100 text-teal-800 text-[10px] font-black uppercase px-3 py-1 rounded-full">
+                    {consultations.length} Buổi tham vấn
+                  </span>
+                </div>
+
+                {consultations.length === 0 ? (
+                  <div className="p-12 rounded-3xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-2">
+                    <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
+                    <p className="text-xs font-bold text-slate-600">Chưa có nhật ký tham vấn cá nhân</p>
+                    <p className="text-[11px] text-slate-400">Các buổi làm việc cố vấn trực tiếp với GVCN sẽ được lưu trữ tại đây.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {consultations.map((c: any, cIdx: number) => (
+                      <div key={cIdx} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-teal-600" />
+                            <span className="text-xs font-black text-slate-900">
+                              Ngày tham vấn: {c.meetingDate ? new Date(c.meetingDate).toLocaleDateString('vi-VN') : 'N/A'}
+                            </span>
+                          </div>
+                          <span className="text-[11px] font-bold text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-md">
+                            GVCN: {c.teacher?.teacherName || homeroomTeacherName}
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <strong className="text-slate-800 block">Nội dung trao đổi:</strong>
+                            <p className="text-slate-600 font-medium">{c.content}</p>
+                          </div>
+
+                          {c.difficulties && (
+                            <div>
+                              <strong className="text-rose-700 block">Khó khăn ghi nhận:</strong>
+                              <p className="text-slate-600 font-medium">{c.difficulties}</p>
+                            </div>
+                          )}
+
+                          {c.nextActions && (
+                            <div>
+                              <strong className="text-emerald-800 block">Lộ trình & giải pháp tiếp theo:</strong>
+                              <p className="text-slate-600 font-medium">{c.nextActions}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
-          </div>
+          )}
 
         </div>
       )}

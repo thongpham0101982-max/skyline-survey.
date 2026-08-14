@@ -320,7 +320,10 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const session = await auth()
-    if (!session) {
+    const parentSess = await getParentSession()
+    const studentSess = await getStudentSession()
+
+    if (!session && !parentSess && !studentSess) {
       return jsonResponse({ error: "Chưa đăng nhập" }, 401)
     }
 
@@ -347,15 +350,34 @@ export async function PATCH(req: Request) {
       }
     }
 
-    await prisma.studentGoal.updateMany({
-      where: {
-        studentId: { in: targetStudentIds }
-      },
-      data: {
-        parentMessage: parentMessage || "",
-        signedByParent: Boolean(signedByParent)
-      }
+    const count = await prisma.studentGoal.count({
+      where: { studentId: { in: targetStudentIds } }
     })
+
+    if (count === 0) {
+      await prisma.studentGoal.create({
+        data: {
+          studentId: studentId,
+          academicYearId: "",
+          gradeLevel: "K8",
+          semester: "HK1",
+          category: "HOC_TAP",
+          targetText: "",
+          parentMessage: parentMessage || "",
+          signedByParent: Boolean(signedByParent)
+        }
+      })
+    } else {
+      await prisma.studentGoal.updateMany({
+        where: {
+          studentId: { in: targetStudentIds }
+        },
+        data: {
+          parentMessage: parentMessage || "",
+          signedByParent: Boolean(signedByParent)
+        }
+      })
+    }
 
     return jsonResponse({ success: true, message: "Cập nhật lời dặn và ký cam kết đồng hành Phụ huynh thành công!" })
   } catch (error: any) {
