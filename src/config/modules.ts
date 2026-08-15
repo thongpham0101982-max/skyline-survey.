@@ -110,6 +110,16 @@ export const APP_CATEGORIES = [
     icon: GraduationCap,
     modules: [
       { code: "TEACHERS", name: "Quản lý Giáo viên", icon: GraduationCap, href: "/admin/teachers" },
+      {
+        code: "CO_VAN_HOC_TAP",
+        name: "QL Cố vấn học tập",
+        icon: Compass,
+        href: "/admin/co-van-hoc-tap",
+        subModules: [
+          { code: "CO_VAN_PRESETS", name: "QL Phiếu mẫu Mục tiêu", href: "/admin/co-van-hoc-tap?tab=presets" },
+          { code: "CO_VAN_DASHBOARD", name: "Dashboard Theo dõi", href: "/admin/co-van-hoc-tap?tab=dashboard" },
+        ]
+      },
       { code: "DEPARTMENTS", name: "Tổ chuyên môn", icon: Users2, href: "/admin/departments" },
       { code: "SUBJECTS", name: "Quản lý môn học", icon: BookOpen, href: "/admin/subjects" },
       { code: "ACADEMIC_YEARS", name: "Năm học & Học kỳ", icon: Calendar, href: "/admin/academic-years" },

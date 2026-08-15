@@ -190,17 +190,22 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" }
     }).catch(() => [])
 
-    let presets: any[] = []
+        let presets: any[] = []
     if (goals.length === 0) {
-      let gradeGroup = "K4_K8"
-      if (["K1", "K2", "K3"].includes(gradeLevel)) gradeGroup = "K1_K3"
+      let gradeGroup = "K6_K8"
+      if (gradeLevel === "K1") gradeGroup = "K1"
+      else if (gradeLevel === "K2") gradeGroup = "K2"
+      else if (gradeLevel === "K3") gradeGroup = "K3"
+      else if (["K4", "K5"].includes(gradeLevel)) gradeGroup = "K4_K5"
+      else if (["K6", "K7", "K8"].includes(gradeLevel)) gradeGroup = "K6_K8"
       else if (["K9", "K10", "K11", "K12"].includes(gradeLevel)) gradeGroup = "K9_K12"
       
       presets = await prisma.goalPreset.findMany({
         where: { 
-          OR: [{ gradeGroup }, { status: "ACTIVE" }]
+          gradeGroup,
+          status: "ACTIVE"
         },
-        orderBy: { sortOrder: "asc" }
+        orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }]
       }).catch(() => [])
     }
 
