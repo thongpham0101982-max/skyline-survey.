@@ -234,6 +234,35 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
     allGoals.find((g: any) => g.studentCommitment)?.studentCommitment ||
     "Chủ động và nghiêm túc thực hiện những mục tiêu đã đề ra, duy trì kỷ luật, thói quen, thói quen tự học; duy trì các thói quen tốt và không ngừng rèn luyện, phát triển các kỹ năng và khắc phục những điểm còn hạn chế."
 
+
+  // Rubric Level Text Definitions
+  const RUBRIC_TEXTS = {
+    goalCompletion: [
+      "",
+      "Level 1: Hầu như không đạt được mục tiêu nào đã đặt ra trong Kế hoạch cá nhân",
+      "Level 2: Đạt được một phần nhỏ; phần lớn mục tiêu chưa đạt",
+      "Level 3: Đạt được khoảng một nửa số mục tiêu đã đặt ra",
+      "Level 4: Đạt được phần lớn mục tiêu, còn một vài điểm chưa hoàn thành",
+      "Level 5: Đạt đầy đủ hoặc vượt các mục tiêu đã đặt ra"
+    ],
+    initiative: [
+      "",
+      "Level 1: Hoàn toàn thụ động, phải nhắc nhở liên tục mới thực hiện",
+      "Level 2: Ít chủ động, thường xuyên cần giáo viên nhắc nhở",
+      "Level 3: Chủ động ở mức trung bình, thỉnh thoảng cần nhắc",
+      "Level 4: Khá chủ động, tự thực hiện phần lớn công việc đã thống nhất",
+      "Level 5: Rất chủ động, tự giác thực hiện và chủ động đề xuất thêm"
+    ],
+    participation: [
+      "",
+      "Level 1: Không hợp tác; thường vắng mặt hoặc từ chối trao đổi",
+      "Level 2: Tham gia miễn cưỡng, ít chia sẻ trong buổi gặp",
+      "Level 3: Tham gia đầy đủ nhưng còn dè dặt, ít chủ động chia sẻ",
+      "Level 4: Tham gia tích cực, chia sẻ cởi mở với giáo viên",
+      "Level 5: Rất tích cực; chủ động chia sẻ và đóng góp cho buổi gặp"
+    ]
+  }
+
   // Active Term Eval
   const activeTermEval = termEvals.find((e: any) => e.term === selectedTerm) || null
 
@@ -717,16 +746,21 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
           {activeTab === "evaluations" && (
             <div className="space-y-6">
               
-              {/* RUBRIC EVALUATION SECTION */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-5">
+              {/* RUBRIC EVALUATION SECTION (READ-ONLY FOR PARENT) */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                   <div>
-                    <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
-                      <Award className="w-5 h-5 text-rose-500" />
-                      <span>Bảng Đánh Giá Định Kỳ Theo Rubric</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      Đánh giá mức độ hoàn thành mục tiêu, tính chủ động và thái độ của con em.
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
+                        <Award className="w-5 h-5 text-rose-500" />
+                        <span>Bảng Đánh Giá Định Kỳ Theo Rubric</span>
+                      </h3>
+                      <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-slate-200">
+                        🔒 Chế độ xem Phụ huynh
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      Đánh giá định kỳ 3 tiêu chí cốt lõi (1 - 5 Sao) do Thầy Cô Cố Vấn đánh giá cho {student.studentName || selectedStudent.studentName}.
                     </p>
                   </div>
 
@@ -748,47 +782,88 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                 </div>
 
                 {activeTermEval ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2 text-center">
-                      <span className="text-[10px] font-black text-amber-800 uppercase tracking-wider block">Mức độ hoàn thành mục tiêu</span>
-                      <div className="flex items-center justify-center gap-1 text-amber-500">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.goalCompletionLevel || 0) ? "fill-amber-400 text-amber-400" : "text-slate-300")} />
-                        ))}
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      
+                      {/* Criteria 1: Goal Completion */}
+                      <div className="p-5 rounded-3xl bg-amber-50/80 border-2 border-amber-200/90 space-y-3 font-sans flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">TIÊU CHÍ 01</span>
+                          <h4 className="text-xs font-black text-slate-900">Mức độ hoàn thành mục tiêu</h4>
+                          <div className="flex items-center gap-1 text-amber-500 py-1">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.goalCompletionLevel || 0) ? "fill-amber-400 text-amber-400" : "text-slate-300")} />
+                            ))}
+                          </div>
+                          <p className="text-[11px] font-semibold text-amber-950 leading-relaxed bg-white/70 p-3 rounded-2xl border border-amber-200/60">
+                            {RUBRIC_TEXTS.goalCompletion[activeTermEval.goalCompletionLevel || 0] || "Chưa có đánh giá"}
+                          </p>
+                        </div>
+                        <div className="pt-2 border-t border-amber-200/60 text-right">
+                          <span className="text-xs font-black text-amber-900 bg-amber-200/60 px-3 py-1 rounded-full inline-block">
+                            {activeTermEval.goalCompletionLevel || 0}/5 Điểm
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs font-black text-amber-950 block">{activeTermEval.goalCompletionLevel || 0}/5 Điểm</span>
-                    </div>
 
-                    <div className="p-5 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-2 text-center">
-                      <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider block">Mức độ chủ động & Tự học</span>
-                      <div className="flex items-center justify-center gap-1 text-teal-600">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.initiativeLevel || 0) ? "fill-teal-500 text-teal-500" : "text-slate-300")} />
-                        ))}
+                      {/* Criteria 2: Initiative */}
+                      <div className="p-5 rounded-3xl bg-teal-50/80 border-2 border-teal-200/90 space-y-3 font-sans flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-teal-900 uppercase tracking-wider block">TIÊU CHÍ 02</span>
+                          <h4 className="text-xs font-black text-slate-900">Mức độ chủ động & Tự học</h4>
+                          <div className="flex items-center gap-1 text-teal-600 py-1">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.initiativeLevel || 0) ? "fill-teal-500 text-teal-500" : "text-slate-300")} />
+                            ))}
+                          </div>
+                          <p className="text-[11px] font-semibold text-teal-950 leading-relaxed bg-white/70 p-3 rounded-2xl border border-teal-200/60">
+                            {RUBRIC_TEXTS.initiative[activeTermEval.initiativeLevel || 0] || "Chưa có đánh giá"}
+                          </p>
+                        </div>
+                        <div className="pt-2 border-t border-teal-200/60 text-right">
+                          <span className="text-xs font-black text-teal-900 bg-teal-200/60 px-3 py-1 rounded-full inline-block">
+                            {activeTermEval.initiativeLevel || 0}/5 Điểm
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs font-black text-teal-950 block">{activeTermEval.initiativeLevel || 0}/5 Điểm</span>
-                    </div>
 
-                    <div className="p-5 rounded-2xl bg-sky-50/70 border border-sky-200 space-y-2 text-center">
-                      <span className="text-[10px] font-black text-sky-800 uppercase tracking-wider block">Thái độ tham gia đồng hành</span>
-                      <div className="flex items-center justify-center gap-1 text-sky-600">
-                        {[1, 2, 3, 4, 5].map(s => (
-                          <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.participationAttitude || 0) ? "fill-sky-500 text-sky-500" : "text-slate-300")} />
-                        ))}
+                      {/* Criteria 3: Participation */}
+                      <div className="p-5 rounded-3xl bg-sky-50/80 border-2 border-sky-200/90 space-y-3 font-sans flex flex-col justify-between">
+                        <div className="space-y-2">
+                          <span className="text-[10px] font-black text-sky-900 uppercase tracking-wider block">TIÊU CHÍ 03</span>
+                          <h4 className="text-xs font-black text-slate-900">Thái độ tham gia đồng hành</h4>
+                          <div className="flex items-center gap-1 text-sky-600 py-1">
+                            {[1, 2, 3, 4, 5].map(s => (
+                              <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.participationAttitude || 0) ? "fill-sky-500 text-sky-500" : "text-slate-300")} />
+                            ))}
+                          </div>
+                          <p className="text-[11px] font-semibold text-sky-950 leading-relaxed bg-white/70 p-3 rounded-2xl border border-sky-200/60">
+                            {RUBRIC_TEXTS.participation[activeTermEval.participationAttitude || 0] || "Chưa có đánh giá"}
+                          </p>
+                        </div>
+                        <div className="pt-2 border-t border-sky-200/60 text-right">
+                          <span className="text-xs font-black text-sky-900 bg-sky-200/60 px-3 py-1 rounded-full inline-block">
+                            {activeTermEval.participationAttitude || 0}/5 Điểm
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-xs font-black text-sky-950 block">{activeTermEval.participationAttitude || 0}/5 Điểm</span>
+
                     </div>
 
                     {activeTermEval.recommendations && (
-                      <div className="md:col-span-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                        <span className="font-black text-slate-900 block">💡 Đề xuất khuyến nghị từ Thầy Cô:</span>
-                        <p className="text-slate-700 font-semibold leading-relaxed">{activeTermEval.recommendations}</p>
+                      <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-2">
+                        <span className="font-black text-xs text-slate-900 uppercase flex items-center gap-1.5">
+                          💡 Đề xuất khuyến nghị từ Thầy Cô Cố Vấn:
+                        </span>
+                        <p className="text-slate-800 font-semibold text-xs leading-relaxed pl-5 italic">
+                          "{activeTermEval.recommendations}"
+                        </p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="p-10 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    Chưa có đánh giá Rubric định kỳ cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}.
+                  <div className="p-12 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    Chưa có ghi nhận đánh giá Rubric định kỳ cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}.
                   </div>
                 )}
               </div>
