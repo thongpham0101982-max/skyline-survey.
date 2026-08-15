@@ -101,7 +101,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
     async function loadData() {
       try {
-        setLoading(true)
+        // Do NOT trigger full-screen unmount loading screen on background refreshes
         const currentChild = childrenList.find(c => c.id === selectedStudentId)
         const stCode = currentChild?.studentCode || ""
         const [res360, resGoals, resTracking, resConsult, resEval] = await Promise.all([
