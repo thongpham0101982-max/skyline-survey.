@@ -870,50 +870,112 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                   </div>
                 )}
 
-                {/* Detailed 4 Goal Categories Rubric Table matching Teacher View */}
+                {/* Detailed 4 Goal Categories Rubric Table matching Teacher View Exactly */}
                 <div className="pt-4 space-y-3">
-                  <h4 className="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
-                    <Table className="w-4 h-4 text-teal-600" />
-                    <span>Kết Quả Đánh Giá Chi Tiết Theo 4 Nhóm Mục Tiêu</span>
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+                      <Table className="w-4 h-4 text-teal-600" />
+                      <span>Bảng Đánh Giá Chi Tiết Theo 4 Nhóm Mục Tiêu (Kết quả từ GVCN)</span>
+                    </h4>
+                    <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                      Đồng bộ 100% với giao diện Giáo viên
+                    </span>
+                  </div>
 
-                  <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+                  <div className="bg-white rounded-3xl border border-slate-200 overflow-x-auto shadow-xs">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-200">
-                          <th className="p-3.5 border-r border-slate-200 min-w-[150px]">Nhóm mục tiêu</th>
-                          <th className="p-3.5 border-r border-slate-200 min-w-[220px]">Nội dung mục tiêu cá nhân</th>
-                          <th className="p-3.5 border-r border-slate-200 min-w-[140px]">Kết quả theo dõi</th>
-                          <th className="p-3.5 min-w-[200px]">Ghi chú / Khuyến nghị từ GVCN</th>
+                        <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
+                          <th className="p-3 border-r border-slate-200 min-w-[130px]">Học sinh</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[90px]">Kỳ đánh giá</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[220px]">Mục tiêu học tập</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[170px]">Mức hoàn thành mục tiêu (1-5)</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[170px]">Mức độ chủ động (1-5)</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[170px]">Thái độ tham gia (1-5)</th>
+                          <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 font-medium">
+                      <tbody className="divide-y divide-slate-200">
                         {currentCategories.map((catDef, catIdx) => {
                           const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
                           const firstGoal = catGoalsList[0] || {}
                           const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
-                          const progressStatus = matchedLog?.progressStatus || "TIEN_TRIEN"
-                          const teacherNotes = matchedLog?.teacherNotes || ""
+                          const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
+                          const goalLevel = matchedLog?.goalCompletionLevel || activeTermEval?.goalCompletionLevel || 4
+                          const initiativeLevel = matchedLog?.initiativeLevel || activeTermEval?.initiativeLevel || 4
+                          const attitudeLevel = matchedLog?.participationAttitude || activeTermEval?.participationAttitude || 5
+                          const teacherNotes = matchedLog?.teacherNotes || (catIdx === 0 ? activeTermEval?.recommendations : "") || ""
 
                           return (
-                            <tr key={catDef.key} className="hover:bg-slate-50/80 transition-colors">
-                              <td className="p-3.5 border-r border-slate-200 font-black text-slate-900 bg-slate-50/40">
-                                {catDef.label}
+                            <tr key={catDef.key} className="bg-white hover:bg-slate-50/70 transition-colors">
+                              {catIdx === 0 && (
+                                <td rowSpan={currentCategories.length} className="p-3 border-r border-slate-200 font-black text-slate-900 align-top bg-slate-50/50">
+                                  <div>{student.studentName || selectedStudent.studentName}</div>
+                                  {(student.studentCode || selectedStudent.studentCode) && (
+                                    <div className="text-[11px] font-medium text-slate-500 mt-0.5">
+                                      MS: {student.studentCode || selectedStudent.studentCode}
+                                    </div>
+                                  )}
+                                </td>
+                              )}
+
+                              {catIdx === 0 && (
+                                <td rowSpan={currentCategories.length} className="p-3 border-r border-slate-200 font-bold text-slate-700 align-top bg-slate-50/50">
+                                  {selectedTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
+                                </td>
+                              )}
+
+                              {/* Mục tiêu học tập */}
+                              <td className="p-3 border-r border-slate-200 align-top">
+                                <div className="space-y-1.5">
+                                  <span className="inline-block px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                                    {catDef.label}
+                                  </span>
+                                  <p className="text-xs font-bold text-slate-800 leading-snug">
+                                    {firstGoal.targetText || "Em chưa điền nội dung mục tiêu nhóm này"}
+                                  </p>
+                                </div>
                               </td>
-                              <td className="p-3.5 border-r border-slate-200 font-bold text-slate-800">
-                                {firstGoal.targetText || "Chưa nhập nội dung"}
-                              </td>
-                              <td className="p-3.5 border-r border-slate-200">
-                                <span className={"px-3 py-1 rounded-xl text-[11px] font-black border shadow-xs inline-flex items-center gap-1.5 " + (
+
+                              {/* Kết quả theo dõi */}
+                              <td className="p-3 border-r border-slate-200 align-top">
+                                <span className={"px-2.5 py-1 rounded-xl text-[11px] font-black border shadow-xs inline-flex items-center gap-1 " + (
                                   progressStatus === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
                                   progressStatus === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-300" :
-                                  "bg-amber-100 text-amber-900 border-amber-300"
+                                  progressStatus === "TIEN_TRIEN" ? "bg-amber-100 text-amber-900 border-amber-300" :
+                                  "bg-slate-100 text-slate-600 border-slate-300"
                                 )}>
-                                  {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa đạt" : "🟡 Đang tiến triển"}
+                                  {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa đạt" : progressStatus === "TIEN_TRIEN" ? "🟡 Đang tiến triển" : "🟣 Chưa đánh giá"}
                                 </span>
                               </td>
-                              <td className="p-3.5 text-slate-700 font-semibold italic">
-                                {teacherNotes ? "💬 " + teacherNotes : "Chưa có ghi chú"}
+
+                              {/* Mức hoàn thành mục tiêu (1-5) */}
+                              <td className="p-3 border-r border-slate-200 align-top">
+                                <div className="p-2 rounded-xl bg-amber-50 text-amber-950 border border-amber-200 font-bold text-xs">
+                                  Mức {goalLevel} - {RUBRIC_TEXTS.goalCompletion[goalLevel]?.slice(0, 32)}...
+                                </div>
+                              </td>
+
+                              {/* Mức độ chủ động (1-5) */}
+                              <td className="p-3 border-r border-slate-200 align-top">
+                                <div className="p-2 rounded-xl bg-blue-50 text-blue-950 border border-blue-200 font-bold text-xs">
+                                  Mức {initiativeLevel} - {RUBRIC_TEXTS.initiative[initiativeLevel]?.slice(0, 32)}...
+                                </div>
+                              </td>
+
+                              {/* Thái độ tham gia (1-5) */}
+                              <td className="p-3 border-r border-slate-200 align-top">
+                                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-950 border border-emerald-200 font-bold text-xs">
+                                  Mức {attitudeLevel} - {RUBRIC_TEXTS.participation[attitudeLevel]?.slice(0, 32)}...
+                                </div>
+                              </td>
+
+                              {/* Khuyến nghị cho phụ huynh / giáo viên bộ môn */}
+                              <td className="p-3 align-top">
+                                <p className="text-xs text-slate-700 font-semibold italic">
+                                  {teacherNotes ? "💬 " + teacherNotes : "Chưa có ghi chú"}
+                                </p>
                               </td>
                             </tr>
                           )
