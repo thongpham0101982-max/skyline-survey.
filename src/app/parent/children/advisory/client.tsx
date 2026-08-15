@@ -864,8 +864,9 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                     )}
                   </div>
                 ) : (
-                  <div className="p-10 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    Chưa có đánh giá Rubric định kỳ từ Giáo viên chủ nhiệm cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}.
+                  <div className="p-6 text-center text-slate-500 font-semibold text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200 space-y-2">
+                    <p className="font-bold text-slate-700">⏳ Chưa có kết quả tổng hợp Rubric 3 tiêu chí cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}</p>
+                    <p className="text-[11px] text-slate-400">Dữ liệu sẽ tự động xuất hiện khi Giáo viên chủ nhiệm thực hiện bấm nút [Lưu Đánh Giá Kỳ theo Rubric] ở trang quản lý Cố vấn.</p>
                   </div>
                 )}
 
