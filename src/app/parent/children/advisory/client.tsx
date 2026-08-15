@@ -2,48 +2,46 @@
 
 import { useState, useEffect } from "react"
 import { 
-  Heart, 
-  Save, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Compass, 
   FileText, 
+  Target, 
+  Award, 
+  ShieldCheck, 
+  Sparkles, 
+  Table, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle, 
+  Compass, 
   Users, 
-  Target,
-  BookOpen,
-  Activity,
-  Smile,
-  Zap,
-  Clock,
-  Sparkles,
-  Award,
-  GraduationCap,
-  Calendar,
-  MessageSquare,
+  Heart, 
+  MessageSquare, 
   Star,
-  CheckSquare,
-  AlertCircle
+  Layers,
+  TrendingUp,
+  Save,
+  Check
 } from "lucide-react"
-import Link from "next/link"
 
-export default function ParentAdvisoryClient() {
+export default function ParentAdvisoryClient({ initialProfile }: { initialProfile?: any }) {
+  const [academicYearId, setAcademicYearId] = useState("")
   const [childrenList, setChildrenList] = useState<any[]>([])
   const [selectedStudentId, setSelectedStudentId] = useState("")
-  const [academicYearId, setAcademicYearId] = useState("")
-  const [profile, setProfile] = useState<any>(null)
+  
+  const [profile, setProfile] = useState<any>(initialProfile || null)
   const [goalsData, setGoalsData] = useState<any>(null)
   const [trackingLogs, setTrackingLogs] = useState<any[]>([])
   const [consultations, setConsultations] = useState<any[]>([])
   const [termEvals, setTermEvals] = useState<any[]>([])
   
   const [activeTab, setActiveTab] = useState<"goals" | "tracking" | "evaluations">("goals")
-  const [selectedCheckPoint, setSelectedCheckPoint] = useState("DAU_NAM")
-  const [selectedTerm, setSelectedTerm] = useState("HK1")
+  const [selectedCheckPoint, setSelectedCheckPoint] = useState<"GIUA_KY_1" | "CUOI_KY_1" | "GIUA_KY_2" | "CUOI_KY_2">("GIUA_KY_1")
+  const [selectedTerm, setSelectedTerm] = useState<"HK1" | "HK2">("HK1")
+  const [viewMode, setViewMode] = useState<"card" | "table">("card")
 
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
   const [parentMessage, setParentMessage] = useState("")
   const [signed, setSigned] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let year = ""
@@ -52,11 +50,10 @@ export default function ParentAdvisoryClient() {
       setAcademicYearId(year)
     }
 
-    async function loadChildren(targetYearId: string) {
+    async function loadChildren(yId: string) {
       try {
         setLoading(true)
-        const url = targetYearId ? `/api/parent/children?academicYearId=${targetYearId}` : "/api/parent/children"
-        const res = await fetch(url)
+        const res = await fetch("/api/parent/children?academicYearId=" + yId + "&_t=" + Date.now(), { cache: "no-store" })
         if (res.ok) {
           const data = await res.json()
           if (Array.isArray(data) && data.length > 0) {
@@ -108,11 +105,11 @@ export default function ParentAdvisoryClient() {
         const currentChild = childrenList.find(c => c.id === selectedStudentId)
         const stCode = currentChild?.studentCode || ""
         const [res360, resGoals, resTracking, resConsult, resEval] = await Promise.all([
-          fetch(`/api/advisory/profile-360?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }),
-          fetch(`/api/advisory/goals?studentId=${selectedStudentId}&studentCode=${stCode}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null),
-          fetch(`/api/advisory/tracking?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null),
-          fetch(`/api/advisory/consultations?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null),
-          fetch(`/api/advisory/term-evaluations?studentId=${selectedStudentId}&academicYearId=${academicYearId}&_t=${Date.now()}`, { cache: "no-store" }).catch(() => null)
+          fetch("/api/advisory/profile-360?studentId=" + selectedStudentId + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" }),
+          fetch("/api/advisory/goals?studentId=" + selectedStudentId + "&studentCode=" + stCode + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" }).catch(() => null),
+          fetch("/api/advisory/tracking?studentId=" + selectedStudentId + "&academicYearId=" + academicYearId + "&checkPoint=" + selectedCheckPoint + "&_t=" + Date.now(), { cache: "no-store" }).catch(() => null),
+          fetch("/api/advisory/consultations?studentId=" + selectedStudentId + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" }).catch(() => null),
+          fetch("/api/advisory/term-evaluations?studentId=" + selectedStudentId + "&academicYearId=" + academicYearId + "&_t=" + Date.now(), { cache: "no-store" }).catch(() => null)
         ])
         
         let data360: any = null
@@ -146,7 +143,7 @@ export default function ParentAdvisoryClient() {
       }
     }
     loadData()
-  }, [selectedStudentId, academicYearId, childrenList])
+  }, [selectedStudentId, academicYearId, childrenList, selectedCheckPoint])
 
   async function handleSaveCommitment() {
     if (!selectedStudentId) return
@@ -194,89 +191,24 @@ export default function ParentAdvisoryClient() {
   // Class & Grade Parsing for 6 Separate Grade Form Types
   const classNameStr = student.class?.className || selectedStudent.class?.className || "8.3_CS1"
   let gradeNum = "8"
-  const matchNum = classNameStr.match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
+  const matchNum = classNameStr.match(/(?:KHỐI|LỚP|K)?s*(d{1,2})/)
   if (matchNum && matchNum[1]) gradeNum = matchNum[1]
 
-  const gVal = parseInt(gradeNum, 10) || 8
+  // Grade Form Title & Categories matching standard 4 categories
+  const formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI " + gradeNum
+  const formSub = "Hiển thị đầy đủ 4 nhóm mục tiêu cá nhân do học sinh " + (student.studentName || "con em") + " tự điền."
 
-  // Grade Form Configuration:
-  let formType = "6-8"
-  let formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI " + gradeNum
-  let formSub = "Bảng lập mục tiêu năm học gồm đúng 4 Nhóm mục tiêu chuẩn theo biểu mẫu của Hệ thống Trường Sky-Line."
-
-  if (gVal === 1) {
-    formType = "1"
-    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI 1"
-    formSub = "Bảng lập mục tiêu khởi đầu Tiểu học dành riêng cho học sinh Khối 1."
-  } else if (gVal === 2) {
-    formType = "2"
-    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI 2"
-    formSub = "Bảng lập mục tiêu rèn luyện tự giác dành riêng cho học sinh Khối 2."
-  } else if (gVal === 3) {
-    formType = "3"
-    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI 3"
-    formSub = "Bảng lập mục tiêu phát triển kỹ năng tự học dành riêng cho học sinh Khối 3."
-  } else if (gVal === 4 || gVal === 5) {
-    formType = "4-5"
-    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI " + gradeNum
-    formSub = "Bảng lập mục tiêu nâng cao năng lực & tự học dành riêng cho Khối 4 - 5."
-  } else if (gVal >= 9) {
-    formType = "9-12"
-    formTitle = "PHIẾU MỤC TIÊU NĂM HỌC (SMART) — KHỐI " + gradeNum
-    formSub = "Bảng lập mục tiêu định hướng tương lai SMART dành riêng cho Khối 9 - 12."
-  }
-
-  // 6 Separate Form Definitions
   const getCategoriesForForm = () => {
-    if (formType === "1") {
-      return [
-        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập 📚", hint: "Gợi ý: Học đọc, học viết, tính toán cơ bản, tập trung trên lớp...", altKeys: ["HOC_TAP", "ACADEMIC"] },
-        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen ⏰", hint: "Gợi ý: Ngủ đúng giờ, chuẩn bị đồ dùng học tập, tự cất gọn gàng...", altKeys: ["THOI_QUEN", "HEALTH"] },
-        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc 🎨", hint: "Gợi ý: Lễ phép chào hỏi, biết cảm ơn, xin lỗi, hòa đồng với bạn...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
-        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu ước mơ & sở thích 🌟", hint: "Gợi ý: Môn học yêu thích, ước mơ nhỏ của bé...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
-      ]
-    } else if (formType === "2") {
-      return [
-        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập 📚", hint: "Gợi ý: Rèn chữ đẹp, đọc hiểu tốt, làm bài tập đầy đủ...", altKeys: ["HOC_TAP", "ACADEMIC"] },
-        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen ⏰", hint: "Gợi ý: Tự giác học bài, tập thể dục, ăn uống khoa học...", altKeys: ["THOI_QUEN", "HEALTH"] },
-        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc 🎨", hint: "Gợi ý: Giao tiếp tự tin, biết lắng nghe, giúp đỡ bạn bè...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
-        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu ước mơ & năng khiếu 🚀", hint: "Gợi ý: Phát triển môn năng khiếu, hoạt động trải nghiệm yêu thích...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
-      ]
-    } else if (formType === "3") {
-      return [
-        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập 📚", hint: "Gợi ý: Nâng cao điểm số các môn, từ vựng Tiếng Anh, toán tư duy...", altKeys: ["HOC_TAP", "ACADEMIC"] },
-        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen ⏰", hint: "Gợi ý: Tự lập kế hoạch học tập, thói quen đọc sách mỗi ngày...", altKeys: ["THOI_QUEN", "HEALTH"] },
-        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc 🎨", hint: "Gợi ý: Thuyết trình ngắn, làm việc nhóm nhỏ, quản lý cảm xúc...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
-        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu khám phá & định hướng 🚀", hint: "Gợi ý: Khám phá các lĩnh vực mới, dự án cá nhân nhỏ...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
-      ]
-    } else if (formType === "4-5") {
-      return [
-        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập", hint: "Gợi ý: Môn học, phương pháp tự học, kết quả học tập kỳ vọng...", altKeys: ["HOC_TAP", "ACADEMIC"] },
-        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen & tự học", hint: "Gợi ý: Kỷ luật tự học, quản lý thời gian, sinh hoạt điều độ...", altKeys: ["THOI_QUEN", "HEALTH"] },
-        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng & cảm xúc", hint: "Gợi ý: Thuyết trình, làm việc nhóm, tư duy phản biện nhẹ...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
-        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu năng khiếu & trải nghiệm", hint: "Gợi ý: CLB ngoại khóa, năng khiếu, dự án học tập...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
-      ]
-    } else if (formType === "9-12") {
-      return [
-        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập & Thi cử (SMART)", hint: "Gợi ý: Điểm thi IELTS/SAT, thi Chuyên/Đại học target, điểm TB môn...", altKeys: ["HOC_TAP", "ACADEMIC"] },
-        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu rèn luyện & Thói quen SMART", hint: "Gợi ý: Quản lý thời gian, kỷ luật bản thân, thể chất & sức khỏe...", altKeys: ["THOI_QUEN", "HEALTH"] },
-        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng & Hồ sơ ngoại khóa", hint: "Gợi ý: Dự án cộng đồng, vai trò lãnh đạo, kỹ năng mềm...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
-        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu định hướng nghề nghiệp & Lộ trình", hint: "Gợi ý: Chọn ngành, chọn trường Đại học, kế hoạch săn học bổng...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
-      ]
-    } else {
-      // Khối 6 đến 8
-      return [
-        { key: "HOC_TAP", number: "1", title: "1. Mục tiêu học tập", hint: "Gợi ý: Môn học, phương pháp học, điểm số...", altKeys: ["HOC_TAP", "ACADEMIC"] },
-        { key: "THOI_QUEN", number: "2", title: "2. Mục tiêu thói quen", hint: "Gợi ý: Kỷ luật, tự học, hoàn thành nhiệm vụ đúng thời hạn, thói quen ăn uống, nghỉ ngơi...", altKeys: ["THOI_QUEN", "HEALTH"] },
-        { key: "KY_NANG_CAM_XUC", number: "3", title: "3. Mục tiêu kỹ năng, cảm xúc", hint: "Gợi ý: Giao tiếp, thuyết trình, làm việc nhóm, tư duy phản biện, quản lý cảm xúc...", altKeys: ["KY_NANG_CAM_XUC", "SKILLS"] },
-        { key: "DINH_HUONG", number: "4", title: "4. Mục tiêu định hướng", hint: "Gợi ý: Khám phá bản thân, ngành nghề, lộ trình tương lai...", altKeys: ["DINH_HUONG", "ORIENTATION"] }
-      ]
-    }
+    return [
+      { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚", number: "01", altKeys: ["HOC_TAP", "ACADEMIC"] },
+      { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰", number: "02", altKeys: ["THOI_QUEN", "HEALTH", "THOI_QUEN_SUC_KHOE"] },
+      { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨", number: "03", altKeys: ["KY_NANG_CAM_XUC", "SKILLS", "KY_NANG_SO_THICH"] },
+      { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀", number: "04", altKeys: ["DINH_HUONG", "ORIENTATION", "PHAM_CHAT"] }
+    ]
   }
 
   const currentCategories = getCategoriesForForm()
 
-  // Filter ALL goal items entered for category (supports multiple goals)
   const filterCategoryGoals = (catKey: string, altKeys: string[]) => {
     return allGoals.filter((g: any) => {
       const c = (g.category || "").toUpperCase()
@@ -287,7 +219,8 @@ export default function ParentAdvisoryClient() {
   // Student Commitment Text
   const studentCommitmentText = goalsData?.existingSheet?.studentCommitment || 
     profile?.learningCommitment?.studentCommitment || 
-    allGoals.find((g: any) => g.studentCommitment)?.studentCommitment || ""
+    allGoals.find((g: any) => g.studentCommitment)?.studentCommitment ||
+    "Chủ động và nghiêm túc thực hiện những mục tiêu đã đề ra, duy trì kỷ luật, thói quen, thói quen tự học; duy trì các thói quen tốt và không ngừng rèn luyện, phát triển các kỹ năng và khắc phục những điểm còn hạn chế."
 
   // Active Term Eval
   const activeTermEval = termEvals.find((e: any) => e.term === selectedTerm) || null
@@ -298,7 +231,7 @@ export default function ParentAdvisoryClient() {
       {/* Header Info Banner */}
       <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A99D] rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-2">
         <div className="flex items-center gap-2 text-xs font-bold text-teal-100 uppercase tracking-wider">
-          <Compass className="w-4 h-4 text-amber-300" />
+          <Compass className="w-4 h-4 text-[#00A99D]" />
           <span>PARENT PORTAL — SKYLINE ADVISORY</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">
@@ -348,35 +281,30 @@ export default function ParentAdvisoryClient() {
           <p className="text-xs text-slate-500 max-w-md mx-auto mb-4">
             Tài khoản chưa có thông tin học sinh liên kết. Quý Phụ huynh vui lòng chuyển sang trang Tổng quan để liên kết học sinh.
           </p>
-          <div className="pt-2 flex justify-center">
-            <Link href="/parent" className="px-5 py-2.5 rounded-2xl bg-[#003B3A] text-white text-xs font-bold hover:bg-[#004D4A] transition-all">
-              Chuyển sang trang Tổng quan
-            </Link>
-          </div>
         </div>
       ) : (
         <div className="space-y-6">
           
-          {/* Card Trạng Thái Tín Hiệu Cố Vấn & Tóm Tắt Học Sinh */}
-          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Executive Student Advisory Card */}
+          <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div className="space-y-1">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                TÍN HIỆU THEO DÕI TỰ HỌC & CỐ VẤN
-              </span>
-              <div className="flex items-center gap-3">
-                <span className={"px-3.5 py-1 rounded-full text-xs font-black uppercase border " + (
-                  statusColor === "RED" ? "bg-rose-100 text-rose-800 border-rose-300" :
-                  statusColor === "YELLOW" ? "bg-amber-100 text-amber-800 border-amber-300" :
-                  "bg-emerald-100 text-emerald-800 border-emerald-300"
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">TÍN HIỆU THEO DÕI TỰ HỌC & CỐ VẤN</span>
+              </div>
+              <div className="flex items-center gap-3 pt-1">
+                <span className={"px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wide border shadow-xs " + (
+                  statusColor === "RED" ? "bg-rose-100 text-rose-800 border-rose-200" :
+                  statusColor === "YELLOW" ? "bg-amber-100 text-amber-800 border-amber-200" :
+                  "bg-emerald-100 text-emerald-800 border-emerald-200"
                 )}>
-                  {statusColor === "RED" ? "🔴 Cần hỗ trợ đặc biệt" : statusColor === "YELLOW" ? "🟡 Cần theo dõi thêm" : "🟢 ỔN ĐỊNH & PHÁT TRIỂN TỐT"}
+                  {statusColor === "RED" ? "🔴 CẦN HỖ TRỢ ĐẶC BIỆT" : statusColor === "YELLOW" ? "🟡 CẦN THEO DÕI THÊM" : "🟢 ỔN ĐỊNH & PHÁT TRIỂN TỐT"}
                 </span>
               </div>
             </div>
 
-            <div className="sm:text-right text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-100 space-y-0.5 min-w-[240px]">
-              <p className="font-extrabold text-[#003B3A]">Học sinh: <strong className="text-slate-900">{student.studentName || selectedStudent.studentName || "N/A"}</strong></p>
-              <p className="text-slate-500 font-semibold">Lớp: {classNameStr} • Mã HS: {student.studentCode || selectedStudent.studentCode || "N/A"}</p>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-1 text-right sm:text-right w-full sm:w-auto">
+              <p className="font-extrabold text-slate-900">Học sinh: {student.studentName || selectedStudent.studentName}</p>
+              <p className="text-slate-500 font-semibold">Lớp: {student.class?.className || selectedStudent.class?.className || '8.3_CS1'} • Mã HS: {student.studentCode || selectedStudent.studentCode}</p>
               <p className="text-teal-700 font-bold">GVCN: {homeroomTeacherName}</p>
             </div>
           </div>
@@ -420,469 +348,490 @@ export default function ParentAdvisoryClient() {
             </button>
           </div>
 
-          {/* TAB 1: PHIẾU MỤC TIÊU NĂM HỌC */}
+          {/* ========================================================================= */}
+          {/* TAB 1: PHIẾU MỤC TIÊU NĂM HỌC — ĐỒNG NHẤT VỚI GIAO DIỆN THEO DÕI CỦA TEACHER */}
+          {/* ========================================================================= */}
           {activeTab === "goals" && (
             <div className="space-y-6">
-              {/* Form Banner Header matching Exact Student Grade Form */}
-              <div className="bg-teal-50/60 rounded-3xl p-5 border border-teal-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#00A99D] text-white flex items-center justify-center shrink-0 shadow-sm">
-                    <FileText className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-black text-slate-900 uppercase">
-                      {formTitle}
-                    </h2>
-                    <p className="text-xs text-slate-500 font-medium">
-                      {formSub}
-                    </p>
-                  </div>
+              
+              {/* Header Line matching Teacher Goal Tracking */}
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-5 rounded-3xl border border-slate-200 shadow-xs">
+                <div>
+                  <h3 className="text-base font-black text-[#003B3A] flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-teal-600" />
+                    <span>Bảng Theo Dõi Tiến Độ Mục Tiêu: {student.studentName || selectedStudent.studentName} ({student.studentCode || selectedStudent.studentCode})</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                    {formSub}
+                  </p>
                 </div>
-                <div className="bg-[#003B3A] text-white text-[11px] font-extrabold px-3.5 py-1.5 rounded-full shrink-0">
-                  Mẫu biểu chuẩn Khối {gradeNum}
+
+                {/* Checkpoint selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600">Mốc kiểm tra:</span>
+                  <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+                    {[
+                      { id: "GIUA_KY_1", label: "Giữa kỳ 1" },
+                      { id: "CUOI_KY_1", label: "Cuối kỳ 1" },
+                      { id: "GIUA_KY_2", label: "Giữa kỳ 2" },
+                      { id: "CUOI_KY_2", label: "Cuối kỳ 2" }
+                    ].map(cp => (
+                      <button
+                        key={cp.id}
+                        onClick={() => setSelectedCheckPoint(cp.id as any)}
+                        className={
+                          selectedCheckPoint === cp.id
+                            ? "px-3 py-1 rounded-lg text-xs font-black transition-all bg-[#003B3A] text-white shadow-xs"
+                            : "px-3 py-1 rounded-lg text-xs font-black transition-all text-slate-600 hover:text-slate-900"
+                        }
+                      >
+                        {cp.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* RENDER THE EXACT CATEGORIES & ALL ENTERED GOALS FOR SPECIFIC GRADE */}
-              <div className="space-y-6">
-                {currentCategories.map((catDef) => {
-                  const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
+              {/* Student Commitment Banner */}
+              <div className="p-4.5 bg-teal-50 border-2 border-teal-200 rounded-3xl text-teal-950 space-y-1.5 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-teal-700 shrink-0" />
+                  <span className="text-xs font-black uppercase tracking-wide text-teal-900">
+                    LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ({(student.studentName || selectedStudent.studentName || "HỌC SINH").toUpperCase()}):
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-teal-800 italic pl-7 leading-relaxed">
+                  "{studentCommitmentText}"
+                </p>
+              </div>
 
-                  return (
-                    <div key={catDef.key} className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-5">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                        <div>
-                          <h3 className="text-base font-black text-slate-900 uppercase">
-                            {catDef.title}
-                          </h3>
-                          <p className="text-xs text-slate-400 italic font-medium mt-0.5">
-                            {catDef.hint}
-                          </p>
+              {/* View Mode Switcher */}
+              <div className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                <span className="text-xs font-black text-slate-700 uppercase tracking-wider pl-2 flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-teal-600" />
+                  <span>CHẾ ĐỘ HIỂN THỊ:</span>
+                </span>
+
+                <div className="inline-flex rounded-xl bg-white p-1 border border-slate-200 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("card")}
+                    className={"px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 " + (
+                      viewMode === "card"
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Thẻ Dashboard Khoa Học</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("table")}
+                    className={"px-3.5 py-1.5 rounded-lg text-xs font-black transition-all flex items-center gap-1.5 " + (
+                      viewMode === "table"
+                        ? "bg-[#003B3A] text-white shadow-xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    <Table className="w-3.5 h-3.5" />
+                    <span>Bảng Tổng Quan Gọn</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* CARD DASHBOARD VIEW (ĐỒNG NHẤT HOÀN TOÀN VỚI TEACHER VIEW) */}
+              {viewMode === "card" ? (
+                <div className="grid grid-cols-1 gap-5">
+                  {currentCategories.map((catDef) => {
+                    const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
+                    const firstGoal = catGoalsList[0] || {}
+                    const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
+                    
+                    const progressStatus = matchedLog?.progressStatus || "TIEN_TRIEN"
+                    const teacherNotes = matchedLog?.teacherNotes || ""
+
+                    const actionTextStr = firstGoal?.actions && firstGoal.actions.length > 0 
+                      ? firstGoal.actions.map((a: any) => a.actionText).join("; ")
+                      : firstGoal?.actionText || ""
+
+                    return (
+                      <div key={catDef.key} className="bg-white rounded-3xl border-2 border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden font-sans">
+                        {/* Card Header (Category Title + Progress Status + Teacher Note) */}
+                        <div className="bg-slate-50 p-4 sm:p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-9 h-9 rounded-2xl bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                              {catDef.number}
+                            </span>
+                            <h4 className="font-black text-sm text-slate-900">
+                              {catDef.label}
+                            </h4>
+                          </div>
+
+                          {/* Status Pill & Teacher Note */}
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <span className="text-[11px] font-bold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
+                              Mốc: {selectedCheckPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : selectedCheckPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : selectedCheckPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
+                            </span>
+
+                            <span className={"px-3 py-1.5 rounded-xl font-black text-xs border shadow-xs flex items-center gap-1.5 " + (
+                              progressStatus === "DAT"
+                                ? "bg-emerald-500 text-white border-emerald-600"
+                                : progressStatus === "CHUA_DAT"
+                                ? "bg-rose-500 text-white border-rose-600"
+                                : "bg-amber-400 text-amber-950 border-amber-500"
+                            )}>
+                              {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : "🟡 Đang tiến triển"}
+                            </span>
+
+                            {teacherNotes && (
+                              <span className="text-xs font-semibold text-slate-700 bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-200 max-w-xs truncate" title={teacherNotes}>
+                                💬 GVCN: {teacherNotes}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="bg-slate-100 text-slate-600 text-[10px] font-black uppercase px-3 py-1 rounded-md tracking-wider">
-                            NHÓM {catDef.number}
-                          </span>
+
+                        {/* Card Body */}
+                        <div className="p-5 sm:p-6">
+                          {catGoalsList.length > 0 && (firstGoal.targetText || actionTextStr) ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                              
+                              {/* Left Box: Mục tiêu cụ thể & Kế hoạch */}
+                              <div className="space-y-4 bg-slate-50/90 p-5 rounded-2xl border border-slate-200/80">
+                                <div>
+                                  <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block" />
+                                    MỤC TIÊU CỤ THỂ:
+                                  </span>
+                                  <p className="font-bold text-slate-900 leading-relaxed text-xs">
+                                    {firstGoal.targetText || "Chưa điền mục tiêu"}
+                                  </p>
+                                </div>
+
+                                {actionTextStr && (
+                                  <div className="pt-3 border-t border-slate-200">
+                                    <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
+                                      EM SẼ LÀM GÌ ĐỂ ĐẠT MỤC TIÊU NÀY:
+                                    </span>
+                                    <p className="font-semibold text-slate-800 leading-relaxed text-xs">
+                                      {actionTextStr}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Right Box: Yêu cầu Hỗ trợ */}
+                              <div className="space-y-3">
+                                {firstGoal.teacherSupportRequest && (
+                                  <div className="p-4 rounded-2xl bg-sky-50/90 border border-sky-200/80 space-y-1">
+                                    <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
+                                      💬 Thầy/Cô & Bạn bè hỗ trợ:
+                                    </span>
+                                    <p className="font-medium text-slate-800 text-xs leading-relaxed">
+                                      {firstGoal.teacherSupportRequest}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {firstGoal.parentSupportRequest && (
+                                  <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200/80 space-y-1">
+                                    <span className="font-black text-rose-950 text-xs flex items-center gap-1.5">
+                                      🏫 Ba/Mẹ hỗ trợ:
+                                    </span>
+                                    <p className="font-medium text-slate-800 text-xs leading-relaxed">
+                                      {firstGoal.parentSupportRequest}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {!firstGoal.teacherSupportRequest && !firstGoal.parentSupportRequest && (
+                                  <div className="p-4 text-center text-slate-400 font-medium text-xs italic bg-slate-50 rounded-2xl border border-slate-200">
+                                    Không có yêu cầu hỗ trợ thêm cho nhóm này
+                                  </div>
+                                )}
+                              </div>
+
+                            </div>
+                          ) : (
+                            <div className="p-6 text-center text-slate-400 font-bold text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                              Học sinh chưa điền nội dung mục tiêu nhóm này
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      {catGoalsList.length === 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-teal-500" />
-                              <span>Các mục tiêu cụ thể của em:</span>
-                            </label>
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
-                              (Học sinh chưa nhập nội dung mục tiêu này)
-                            </div>
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                              <span className="w-2 h-2 rounded-full bg-amber-500" />
-                              <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
-                            </label>
-                            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-400 font-normal italic leading-relaxed min-h-[90px]">
-                              (Học sinh chưa nhập nội dung kế hoạch hành động)
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-6">
-                          {catGoalsList.map((g: any, gIdx: number) => {
-                            const actionTextStr = g?.actions && g.actions.length > 0 
-                              ? g.actions.map((a: any) => a.actionText).join("; ")
-                              : g?.actionText || ""
-
-                            return (
-                              <div key={gIdx} className="space-y-4 pt-1 border-b border-slate-100 pb-4 last:border-b-0 last:pb-0">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {/* Field 1: Target */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-teal-500" />
-                                      <span>Các mục tiêu cụ thể của em:</span>
-                                    </label>
-                                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed min-h-[90px]">
-                                      {g?.targetText ? (
-                                        <span>{g.targetText}</span>
-                                      ) : (
-                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung mục tiêu này)</span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Field 2: Actions */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full bg-amber-500" />
-                                      <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
-                                    </label>
-                                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-800 leading-relaxed min-h-[90px]">
-                                      {actionTextStr ? (
-                                        <span>{actionTextStr}</span>
-                                      ) : (
-                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập nội dung kế hoạch hành động)</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  {/* Field 3: Teacher support */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-[#00A99D] flex items-center gap-1.5">
-                                      <Users className="w-3.5 h-3.5" />
-                                      <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
-                                    </label>
-                                    <div className="p-3.5 rounded-2xl bg-teal-50/40 border border-teal-100 text-xs font-semibold text-slate-800">
-                                      {g?.teacherSupportRequest ? (
-                                        <span>{g.teacherSupportRequest}</span>
-                                      ) : (
-                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Field 4: Parent support */}
-                                  <div className="space-y-1.5">
-                                    <label className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
-                                      <Heart className="w-3.5 h-3.5 fill-rose-100" />
-                                      <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
-                                    </label>
-                                    <div className="p-3.5 rounded-2xl bg-rose-50/40 border border-rose-100 text-xs font-semibold text-slate-800">
-                                      {g?.parentSupportRequest ? (
-                                        <span>{g.parentSupportRequest}</span>
-                                      ) : (
-                                        <span className="text-slate-400 font-normal italic">(Học sinh chưa nhập yêu cầu hỗ trợ)</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
-
-                {/* LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️ */}
-                <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm space-y-3">
-                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                    <ShieldCheck className="w-5 h-5 text-[#00A99D]" />
-                    <span>LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️</span>
-                  </h3>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-teal-500" />
-                      <span>Em cam kết sẽ:</span>
-                    </label>
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-800 leading-relaxed">
-                      {studentCommitmentText ? (
-                        <span>{studentCommitmentText}</span>
-                      ) : (
-                        <span className="text-slate-400 font-normal italic">(Chưa có lời cam kết từ học sinh)</span>
-                      )}
-                    </div>
-                  </div>
+                    )
+                  })}
                 </div>
+              ) : (
+                /* TABLE VIEW SUMMARY */
+                <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700 font-black border-b border-slate-200">
+                        <th className="p-4">Nhóm Mục Tiêu</th>
+                        <th className="p-4">Mục Tiêu Cụ Thể</th>
+                        <th className="p-4">Kế Hoạch Thực Hiện</th>
+                        <th className="p-4">Tiến Độ Check-in</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {currentCategories.map(catDef => {
+                        const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
+                        const firstGoal = catGoalsList[0] || {}
+                        const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
+                        const progressStatus = matchedLog?.progressStatus || "TIEN_TRIEN"
 
-              </div>
+                        return (
+                          <tr key={catDef.key} className="hover:bg-slate-50/80 transition-colors">
+                            <td className="p-4 font-black text-slate-900">{catDef.label}</td>
+                            <td className="p-4 font-bold text-slate-800">{firstGoal.targetText || "Chưa nhập"}</td>
+                            <td className="p-4 text-slate-700">{firstGoal.actionText || "Chưa nhập"}</td>
+                            <td className="p-4">
+                              <span className={"px-2.5 py-1 rounded-lg text-[11px] font-black border " + (
+                                progressStatus === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+                                progressStatus === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-300" :
+                                "bg-amber-100 text-amber-900 border-amber-300"
+                              )}>
+                                {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : "🟡 Đang tiến triển"}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
-              {/* LỜI NHẮN GỬI & KÝ CAM KẾT ĐỒNG HÀNH TỪ GIA ĐÌNH */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-teal-200 shadow-sm space-y-4 font-sans">
-                <div className="flex items-center justify-between border-b border-teal-100 pb-4">
-                  <h3 className="text-base font-black text-[#003B3A] flex items-center gap-2">
-                    <Heart className="w-5 h-5 text-rose-500 fill-rose-100" />
-                    <span>Lời Nhắn Gửi & Ký Cam Kết Đồng Hành Từ Gia Đình</span>
-                  </h3>
+              {/* PARENT COMMITMENT & SIGNATURE BOX */}
+              <div className="bg-gradient-to-br from-amber-50/70 via-orange-50/50 to-amber-100/40 rounded-3xl p-6 sm:p-8 border-2 border-amber-200/90 shadow-md space-y-4">
+                <div className="flex items-center justify-between border-b border-amber-200/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Heart className="w-5 h-5 text-amber-600 fill-amber-500" />
+                    <h3 className="text-base font-black text-amber-950 uppercase tracking-tight">
+                      LỜI CAM KẾT & CHỮ KÝ ĐỒNG HÀNH CỦA PHỤ HUYNH
+                    </h3>
+                  </div>
                   {signed && (
-                    <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Đã ký đồng hành</span>
+                    <span className="bg-emerald-600 text-white text-[11px] font-black px-3.5 py-1 rounded-full shadow-xs flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Đã ký cam kết đồng hành</span>
                     </span>
                   )}
                 </div>
 
-                <p className="text-xs text-slate-500 font-medium leading-relaxed">
-                  Gửi gắm những tình cảm, niềm tin và sự ủng hộ của Phụ huynh đến con em. Lời nhắn sẽ được lưu trữ trực tiếp trong Hồ sơ học tập 360° của con.
+                <p className="text-xs text-amber-900 font-medium leading-relaxed">
+                  Quý Phụ huynh xem lại mục tiêu của con ở trên, nhập lời nhắn động viên và nhấn nút bên dưới để ký xác nhận đồng hành cùng con trong năm học này.
                 </p>
 
                 <textarea
-                  rows={4}
-                  placeholder="Ví dụ: Ba mẹ tin tưởng con sẽ nỗ lực hoàn thành xuất sắc mục tiêu học tập năm nay. Hãy luôn tự tin và vui vẻ con nhé! 💖"
                   value={parentMessage}
                   onChange={(e) => setParentMessage(e.target.value)}
-                  className="w-full p-4 rounded-2xl border border-slate-200 focus:border-[#00A99D] focus:ring-2 focus:ring-teal-100 outline-none text-xs font-semibold text-slate-800 leading-relaxed transition-all"
+                  placeholder="Nhập lời nhắn động viên, cam kết hỗ trợ tạo điều kiện cho con học tập tốt nhất..."
+                  rows={3}
+                  className="w-full p-4 rounded-2xl border border-amber-300/80 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-800 placeholder-amber-700/40 shadow-inner"
                 />
 
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                  <div className="text-xs text-slate-500 font-medium">
-                    Xác nhận đồng hành: <strong className="text-slate-800">{signed ? "✓ Đã ký số xác nhận" : "Chưa xác nhận cam kết đồng hành"}</strong>
-                  </div>
+                <div className="flex justify-end pt-1">
                   <button
-                    type="button"
                     onClick={handleSaveCommitment}
                     disabled={saving}
-                    className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md disabled:opacity-50 active:scale-95 transition-all"
+                    className="px-6 py-3 rounded-2xl bg-[#003B3A] hover:bg-[#004D4A] text-white text-xs font-black flex items-center gap-2 shadow-md active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                   >
-                    <Save className="w-4 h-4" />
-                    <span>{saving ? "Đang lưu..." : "Ký & Gửi Lời Nhắn Phụ Huynh"}</span>
+                    <Save className="w-4 h-4 text-amber-300" />
+                    <span>{saving ? "Đang lưu cam kết..." : "✓ Lưu & Xác Nhận Cam Kết Đồng Hành"}</span>
                   </button>
                 </div>
               </div>
+
             </div>
           )}
 
-          {/* TAB 2: BẢNG THEO DÕI TIẾN ĐỘ & NHẬT KÝ CHECK-IN GVCN */}
+          {/* ========================================================================= */}
+          {/* TAB 2: TIẾN ĐỘ & NHẬT KÝ CHECK-IN GVCN */}
+          {/* ========================================================================= */}
           {activeTab === "tracking" && (
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                 <div>
                   <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
-                    <Target className="w-5 h-5 text-[#00A99D]" />
-                    <span>Bảng Theo Dõi Tiến Độ Mục Tiêu & Nhật Ký Check-in GVCN</span>
+                    <Target className="w-5 h-5 text-amber-500" />
+                    <span>Nhật Ký Check-in Tiến Độ Từ Giáo Viên Chủ Nhiệm</span>
                   </h3>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Liên thông dữ liệu đánh giá tiến độ thực tế trực tiếp từ Thầy Cô GVCN trong từng đợt Check-in.
+                    Ghi nhận đánh giá tiến độ thực hiện mục tiêu của con qua 4 mốc kiểm tra trong năm học.
                   </p>
-                </div>
-
-                {/* Filter CheckPoint */}
-                <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl shrink-0 text-xs font-bold">
-                  <span className="px-2 text-slate-500 text-[11px]">Đợt check-in:</span>
-                  {[
-                    { key: "DAU_NAM", label: "Đầu năm" },
-                    { key: "GIUA_HK1", label: "Giữa HK1" },
-                    { key: "CUOI_HK1", label: "Cuối HK1" },
-                    { key: "GIUA_HK2", label: "Giữa HK2" },
-                    { key: "CUOI_HK2", label: "Cuối HK2" }
-                  ].map(cp => (
-                    <button
-                      key={cp.key}
-                      onClick={() => setSelectedCheckPoint(cp.key)}
-                      className={"px-3 py-1.5 rounded-xl transition-all " + (
-                        selectedCheckPoint === cp.key
-                          ? "bg-white text-[#003B3A] shadow-xs font-black"
-                          : "text-slate-600 hover:text-slate-900"
-                      )}
-                    >
-                      {cp.label}
-                    </button>
-                  ))}
                 </div>
               </div>
 
-              {/* Table / Card List of Goal Check-in Logs */}
               {trackingLogs.length === 0 ? (
-                <div className="p-12 rounded-3xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-2">
-                  <Clock className="w-8 h-8 text-slate-400 mx-auto" />
-                  <p className="text-xs font-bold text-slate-600">Chưa có nhật ký check-in tiến độ từ GVCN</p>
-                  <p className="text-[11px] text-slate-400">Thầy cô GVCN sẽ tiến hành check-in đánh giá mục tiêu định kỳ trong năm học.</p>
+                <div className="p-12 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                  Chưa có nhật ký Check-in tiến độ từ Giáo viên chủ nhiệm cho mốc kiểm tra này.
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {currentCategories.map(catDef => {
-                    const catLogs = trackingLogs.filter((t: any) => {
-                      const c = (t.category || "").toUpperCase()
-                      return c === catDef.key.toUpperCase() || catDef.altKeys.some(k => c.includes(k.toUpperCase()))
-                    })
-
-                    return (
-                      <div key={catDef.key} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center justify-between">
-                          <span>{catDef.title}</span>
-                          <span className="text-[10px] text-slate-500 font-bold bg-white px-2.5 py-0.5 rounded-full border border-slate-200">
-                            {catLogs.length} Đánh giá Check-in
-                          </span>
-                        </h4>
-
-                        {catLogs.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic">GVCN chưa tạo bản ghi check-in cho nhóm này trong đợt chọn.</p>
-                        ) : (
-                          <div className="space-y-3">
-                            {catLogs.map((log: any, lIdx: number) => {
-                              const stPill = log.progressStatus === "DAT" 
-                                ? { bg: "bg-emerald-100 text-emerald-800 border-emerald-300", label: "🟢 ĐẠT MỤC TIÊU" }
-                                : log.progressStatus === "CAN_CO_GAN"
-                                ? { bg: "bg-rose-100 text-rose-800 border-rose-300", label: "🔴 CẦN CỐ GẮNG THÊM" }
-                                : { bg: "bg-amber-100 text-amber-800 border-amber-300", label: "🟡 ĐANG TIẾN TRIỂN TỐT" }
-
-                              return (
-                                <div key={lIdx} className="bg-white p-4 rounded-xl border border-slate-200 space-y-2">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs font-bold text-slate-900">{log.targetText || "Mục tiêu năm học"}</span>
-                                    <span className={"px-2.5 py-0.5 rounded-full text-[10px] font-black border " + stPill.bg}>
-                                      {stPill.label}
-                                    </span>
-                                  </div>
-                                  {log.teacherNotes ? (
-                                    <div className="p-3 rounded-lg bg-teal-50/50 border border-teal-100 text-xs font-medium text-slate-700 flex items-start gap-2">
-                                      <MessageSquare className="w-4 h-4 text-teal-600 shrink-0 mt-0.5" />
-                                      <div>
-                                        <strong className="text-teal-900 block font-bold text-[11px]">Ghi chú Check-in của GVCN:</strong>
-                                        <span>{log.teacherNotes}</span>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <p className="text-[11px] text-slate-400 italic">Chưa có ghi chú bổ sung từ GVCN.</p>
-                                  )}
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {trackingLogs.map((log: any, idx: number) => (
+                    <div key={idx} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-2 font-sans">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-black text-slate-400 uppercase">MỐC: {log.checkPoint || 'GIỮA HK1'}</span>
+                        <span className={"px-2.5 py-0.5 rounded-full text-[10px] font-black border " + (
+                          log.progressStatus === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-200" :
+                          log.progressStatus === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-200" :
+                          "bg-amber-100 text-amber-800 border-amber-200"
+                        )}>
+                          {log.progressStatus === "DAT" ? "🟢 Đạt" : log.progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : "🟡 Đang tiến triển"}
+                        </span>
                       </div>
-                    )
-                  })}
+                      <h4 className="text-xs font-black text-slate-900">{log.category || 'Mục tiêu cá nhân'}</h4>
+                      <p className="text-xs text-slate-700 font-bold">{log.targetText}</p>
+                      {log.teacherNotes && (
+                        <div className="pt-2 border-t border-slate-200 text-xs text-teal-800 font-semibold italic">
+                          💬 Ghi chú nhận xét GVCN: "{log.teacherNotes}"
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           )}
 
-          {/* TAB 3: ĐÁNH GIÁ ĐỊNH KỲ RUBRIC & NHẬT KÝ THAM VẤN CỐ VẤN */}
+          {/* ========================================================================= */}
+          {/* TAB 3: ĐÁNH GIÁ ĐỊNH KỲ & NHẬT KÝ THAM VẤN */}
+          {/* ========================================================================= */}
           {activeTab === "evaluations" && (
             <div className="space-y-6">
               
-              {/* Card 1: Rubric Evaluation Stars */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              {/* RUBRIC EVALUATION SECTION */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                   <div>
                     <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
-                      <Award className="w-5 h-5 text-amber-500" />
-                      <span>Đánh Giá Kỳ Theo Rubric Của GVCN</span>
+                      <Award className="w-5 h-5 text-rose-500" />
+                      <span>Bảng Đánh Giá Định Kỳ Theo Rubric</span>
                     </h3>
                     <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      Đánh giá mức độ tự giác, hoàn thành mục tiêu & khuyến nghị từ Giáo Viên Chủ Nhiệm.
+                      Đánh giá mức độ hoàn thành mục tiêu, tính chủ động và thái độ của con em.
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {["HK1", "HK2"].map(t => (
+                  <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
+                    {["HK1", "HK2"].map((term) => (
                       <button
-                        key={t}
-                        onClick={() => setSelectedTerm(t)}
-                        className={"px-3.5 py-1.5 rounded-xl text-xs font-black transition-all " + (
-                          selectedTerm === t ? "bg-[#003B3A] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        key={term}
+                        onClick={() => setSelectedTerm(term as any)}
+                        className={"px-4 py-1.5 rounded-lg text-xs font-black transition-all " + (
+                          selectedTerm === term
+                            ? "bg-[#003B3A] text-white shadow-xs"
+                            : "text-slate-600 hover:text-slate-900"
                         )}
                       >
-                        Học kỳ {t === "HK1" ? "I" : "II"}
+                        Học kỳ {term === "HK1" ? "I" : "II"}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {!activeTermEval ? (
-                  <div className="p-8 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-1 text-xs text-slate-400">
-                    <AlertCircle className="w-6 h-6 mx-auto text-slate-400" />
-                    <p className="font-bold">Chưa có bản đánh giá Rubric cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}</p>
-                    <p>GVCN sẽ cập nhật bảng tổng kết Rubric vào cuối mỗi học kỳ.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-1">
-                        <span className="text-[11px] font-bold text-amber-900 block">Mức độ hoàn thành mục tiêu</span>
-                        <div className="flex items-center gap-1 text-amber-500">
-                          {[1, 2, 3, 4, 5].map(star => (
-                            <Star key={star} className={"w-4 h-4 " + (star <= (activeTermEval.goalCompletionLevel || 4) ? "fill-amber-400 text-amber-400" : "text-slate-200")} />
-                          ))}
-                          <span className="text-xs font-black text-amber-900 ml-1">({activeTermEval.goalCompletionLevel || 4}/5)</span>
-                        </div>
+                {activeTermEval ? (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2 text-center">
+                      <span className="text-[10px] font-black text-amber-800 uppercase tracking-wider block">Mức độ hoàn thành mục tiêu</span>
+                      <div className="flex items-center justify-center gap-1 text-amber-500">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.goalCompletionLevel || 0) ? "fill-amber-400 text-amber-400" : "text-slate-300")} />
+                        ))}
                       </div>
+                      <span className="text-xs font-black text-amber-950 block">{activeTermEval.goalCompletionLevel || 0}/5 Điểm</span>
+                    </div>
 
-                      <div className="p-4 rounded-2xl bg-teal-50/50 border border-teal-100 space-y-1">
-                        <span className="text-[11px] font-bold text-teal-900 block">Tính tự giác & chủ động</span>
-                        <div className="flex items-center gap-1 text-teal-500">
-                          {[1, 2, 3, 4, 5].map(star => (
-                            <Star key={star} className={"w-4 h-4 " + (star <= (activeTermEval.initiativeLevel || 4) ? "fill-teal-500 text-teal-500" : "text-slate-200")} />
-                          ))}
-                          <span className="text-xs font-black text-teal-900 ml-1">({activeTermEval.initiativeLevel || 4}/5)</span>
-                        </div>
+                    <div className="p-5 rounded-2xl bg-teal-50/70 border border-teal-200 space-y-2 text-center">
+                      <span className="text-[10px] font-black text-teal-800 uppercase tracking-wider block">Mức độ chủ động & Tự học</span>
+                      <div className="flex items-center justify-center gap-1 text-teal-600">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.initiativeLevel || 0) ? "fill-teal-500 text-teal-500" : "text-slate-300")} />
+                        ))}
                       </div>
+                      <span className="text-xs font-black text-teal-950 block">{activeTermEval.initiativeLevel || 0}/5 Điểm</span>
+                    </div>
 
-                      <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100 space-y-1">
-                        <span className="text-[11px] font-bold text-emerald-900 block">Thái độ tham gia hoạt động</span>
-                        <div className="flex items-center gap-1 text-emerald-500">
-                          {[1, 2, 3, 4, 5].map(star => (
-                            <Star key={star} className={"w-4 h-4 " + (star <= (activeTermEval.participationAttitude || 5) ? "fill-emerald-500 text-emerald-500" : "text-slate-200")} />
-                          ))}
-                          <span className="text-xs font-black text-emerald-900 ml-1">({activeTermEval.participationAttitude || 5}/5)</span>
-                        </div>
+                    <div className="p-5 rounded-2xl bg-sky-50/70 border border-sky-200 space-y-2 text-center">
+                      <span className="text-[10px] font-black text-sky-800 uppercase tracking-wider block">Thái độ tham gia đồng hành</span>
+                      <div className="flex items-center justify-center gap-1 text-sky-600">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval.participationAttitude || 0) ? "fill-sky-500 text-sky-500" : "text-slate-300")} />
+                        ))}
                       </div>
+                      <span className="text-xs font-black text-sky-950 block">{activeTermEval.participationAttitude || 0}/5 Điểm</span>
                     </div>
 
                     {activeTermEval.recommendations && (
-                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
-                        <span className="text-xs font-extrabold text-[#003B3A] block">Khuyến nghị & Định hướng của GVCN:</span>
-                        <p className="text-xs font-medium text-slate-700 leading-relaxed">{activeTermEval.recommendations}</p>
+                      <div className="md:col-span-3 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1">
+                        <span className="font-black text-slate-900 block">💡 Đề xuất khuyến nghị từ Thầy Cô:</span>
+                        <p className="text-slate-700 font-semibold leading-relaxed">{activeTermEval.recommendations}</p>
                       </div>
                     )}
+                  </div>
+                ) : (
+                  <div className="p-10 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    Chưa có đánh giá Rubric định kỳ cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}.
                   </div>
                 )}
               </div>
 
-              {/* Card 2: Academic Consultation Logs */}
-              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <div>
-                    <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-teal-600" />
-                      <span>Nhật Ký Tham Vấn Cố Vấn (GVCN & Gia Đình)</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">
-                      Lịch sử các buổi tham vấn trực tiếp 1-1 giữa GVCN, Học sinh và Phụ huynh.
-                    </p>
-                  </div>
-                  <span className="bg-teal-100 text-teal-800 text-[10px] font-black uppercase px-3 py-1 rounded-full">
-                    {consultations.length} Buổi tham vấn
-                  </span>
+              {/* CONSULTATION LOGS SECTION */}
+              <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs space-y-5">
+                <div className="border-b border-slate-100 pb-3">
+                  <h3 className="text-base font-black text-slate-900 uppercase flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-blue-500" />
+                    <span>Nhật Ký Lịch Sử Tham Vấn Cố Vấn 1-1 ({consultations.length})</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Nhật ký ghi nhận các buổi trao đổi, tham vấn 1-1 trực tiếp giữa Thầy Cô Cố Vấn và học sinh.
+                  </p>
                 </div>
 
                 {consultations.length === 0 ? (
-                  <div className="p-12 rounded-3xl bg-slate-50 border border-dashed border-slate-200 text-center space-y-2">
-                    <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
-                    <p className="text-xs font-bold text-slate-600">Chưa có nhật ký tham vấn cá nhân</p>
-                    <p className="text-[11px] text-slate-400">Các buổi làm việc cố vấn trực tiếp với GVCN sẽ được lưu trữ tại đây.</p>
+                  <div className="p-10 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    Chưa có ghi nhận nhật ký buổi tham vấn 1-1 nào.
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {consultations.map((c: any, cIdx: number) => (
-                      <div key={cIdx} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2.5">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-teal-600" />
-                            <span className="text-xs font-black text-slate-900">
-                              Ngày tham vấn: {c.meetingDate ? new Date(c.meetingDate).toLocaleDateString('vi-VN') : 'N/A'}
-                            </span>
-                          </div>
-                          <span className="text-[11px] font-bold text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-md">
-                            GVCN: {c.teacher?.teacherName || homeroomTeacherName}
+                    {consultations.map((c: any, idx: number) => (
+                      <div key={idx} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3 font-sans">
+                        <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
+                          <span className="text-xs font-black text-slate-900 flex items-center gap-2">
+                            <span>📅 Ngày trao đổi: {new Date(c.meetingDate).toLocaleDateString("vi-VN")}</span>
+                          </span>
+                          <span className="text-[10px] font-black bg-blue-100 text-blue-800 px-3 py-0.5 rounded-full">
+                            {c.evaluatorName || "GV Cố Vấn"}
                           </span>
                         </div>
 
-                        <div className="space-y-2 text-xs">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                           <div>
-                            <strong className="text-slate-800 block">Nội dung trao đổi:</strong>
-                            <p className="text-slate-600 font-medium">{c.content}</p>
+                            <span className="font-black text-slate-800 block mb-0.5">💬 Nội dung trao đổi:</span>
+                            <p className="text-slate-700 font-medium leading-relaxed">{c.content || 'N/A'}</p>
                           </div>
 
-                          {c.difficulties && (
-                            <div>
-                              <strong className="text-rose-700 block">Khó khăn ghi nhận:</strong>
-                              <p className="text-slate-600 font-medium">{c.difficulties}</p>
-                            </div>
-                          )}
-
-                          {c.nextActions && (
-                            <div>
-                              <strong className="text-emerald-800 block">Lộ trình & giải pháp tiếp theo:</strong>
-                              <p className="text-slate-600 font-medium">{c.nextActions}</p>
-                            </div>
-                          )}
+                          <div>
+                            <span className="font-black text-amber-800 block mb-0.5">⚠️ Khó khăn vướng mắc:</span>
+                            <p className="text-slate-700 font-medium leading-relaxed">{c.difficulties || 'Không có'}</p>
+                          </div>
                         </div>
+
+                        {(c.nextActions || c.deadline) && (
+                          <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <span className="font-bold text-teal-800">🎯 Giải pháp tiếp theo: {c.nextActions || 'N/A'}</span>
+                            {c.deadline && (
+                              <span className="font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded border border-rose-200">
+                                ⏰ Hạn hoàn thành: {new Date(c.deadline).toLocaleDateString("vi-VN")}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -894,6 +843,7 @@ export default function ParentAdvisoryClient() {
 
         </div>
       )}
+
     </div>
   )
 }
