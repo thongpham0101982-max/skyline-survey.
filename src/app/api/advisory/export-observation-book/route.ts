@@ -466,60 +466,7 @@ export async function GET(req: Request) {
     </div>
   </div>
 
-  <!-- ==================== TRANG 1: THÔNG TIN LỚP & GVCN ==================== -->
-  <div class="page">
-    <div class="sec-header">
-      <span class="sec-title">1. Thông Tin Lớp Học & Giáo Viên Cố Vấn (GVCN)</span>
-      <span class="sec-subtitle">Lớp ${className} - AY ${academicYearName}</span>
-    </div>
 
-    <div class="info-card-grid">
-      <div class="info-card">
-        <div class="info-card-title">📌 Thông Tin Tổng Quan Lớp</div>
-        <div class="info-card-row"><span>Tên Lớp:</span> <strong>${className}</strong></div>
-        <div class="info-card-row"><span>Khối lớp:</span> <strong>Khối ${targetClass.grade || ""}</strong></div>
-        <div class="info-card-row"><span>Tổng sĩ số:</span> <strong>${students.length} HS</strong></div>
-        <div class="info-card-row"><span>Cơ sở:</span> <strong>${campusName}</strong></div>
-        <div class="info-card-row"><span>Năm học:</span> <strong>${academicYearName}</strong></div>
-      </div>
-
-      <div class="info-card">
-        <div class="info-card-title">👨‍🏫 Thông Tin GVCN / Cố Vấn Học Tập</div>
-        <div class="info-card-row"><span>Họ và Tên:</span> <strong>${gvcnName}</strong></div>
-        <div class="info-card-row"><span>Email liên hệ:</span> <strong>${gvcnEmail}</strong></div>
-        <div class="info-card-row"><span>Số điện thoại:</span> <strong>${gvcnPhone}</strong></div>
-        <div class="info-card-row"><span>Chức vụ:</span> <strong>Giáo viên Chủ nhiệm (GVCN)</strong></div>
-      </div>
-    </div>
-
-    <div style="margin-top: 10px;">
-      <h4 style="color: #002060; font-size: 10pt; text-transform: uppercase; margin-bottom: 6px; font-weight: 800;">
-        👥 BAN CÁN SỰ LỚP & BAN ĐẠI DIỆN CHA MẸ HỌC SINH
-      </h4>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 25%;">Chức vụ</th>
-            <th style="width: 35%;">Họ và Tên</th>
-            <th style="width: 20%;">Số điện thoại</th>
-            <th>Ghi chú</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Lớp trưởng</td><td>........................................................</td><td>................................</td><td>................................</td></tr>
-          <tr><td>Lớp phó Học tập</td><td>........................................................</td><td>................................</td><td>................................</td></tr>
-          <tr><td>Lớp phó Kỷ luật / Đời sống</td><td>........................................................</td><td>................................</td><td>................................</td></tr>
-          <tr><td>Trưởng Ban ĐD CMHS Lớp</td><td>........................................................</td><td>................................</td><td>................................</td></tr>
-          <tr><td>Phó Ban ĐD CMHS Lớp</td><td>........................................................</td><td>................................</td><td>................................</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="print-footer">
-      <span>Sky-Line Education System • Sổ Quan Sát GVCN</span>
-      <span>Lớp ${className}</span>
-    </div>
-  </div>
 
   <!-- ==================== TRANG 2: DANH SÁCH HỌC SINH ==================== -->
   <div class="page">
