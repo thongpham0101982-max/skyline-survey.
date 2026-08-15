@@ -820,9 +820,15 @@ export function SupportClient({
       )
     }
     if (nameLower.includes("anh") || nameLower.includes("english")) {
+      let label = subName
+      if (nameLower.includes("viết") || nameLower.includes("written")) {
+        label = "Tiếng Anh (viết)"
+      } else if (nameLower.includes("vấn đáp") || nameLower.includes("oral") || nameLower.includes("nói")) {
+        label = "Tiếng Anh (vấn đáp)"
+      }
       return (
         <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 font-bold text-[11px] inline-block">
-          Tiếng Anh
+          {label}
         </span>
       )
     }

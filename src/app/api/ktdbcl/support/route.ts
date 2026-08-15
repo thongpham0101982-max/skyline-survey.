@@ -331,7 +331,15 @@ export async function GET(req: Request) {
         const subs: string[] = []
         if (/Toán|Math/i.test(text)) subs.push("Toán")
         if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
-        if (/Anh|English/i.test(text)) subs.push("Tiếng Anh")
+        if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
+          subs.push("Tiếng Anh (viết)")
+        }
+        if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
+          subs.push("Tiếng Anh (vấn đáp)")
+        }
+        if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+          subs.push("Tiếng Anh")
+        }
         if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
         return subs
       }
