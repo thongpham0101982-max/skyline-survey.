@@ -55,24 +55,27 @@ export async function GET(req: Request) {
 
     const studentIds = students.map(s => s.id)
 
-    // 2. Fetch Real Advisory Data
+    // 2. Fetch Real Advisory Data safely
     const [goals, trackingLogs, consultations, termEvals] = await Promise.all([
-      prisma.studentGoal.findMany({
+      ((prisma as any).studentGoal?.findMany ? (prisma as any).studentGoal.findMany({
         where: { studentId: { in: studentIds } },
         orderBy: { createdAt: "asc" }
-      }).catch(() => []),
-      prisma.studentGoalTrackingLog.findMany({
+      }) : Promise.resolve([])).catch(() => []),
+      ((prisma as any).studentGoalTrackingLog?.findMany ? (prisma as any).studentGoalTrackingLog.findMany({
         where: { studentId: { in: studentIds } },
         orderBy: { createdAt: "desc" }
-      }).catch(() => []),
-      prisma.studentConsultation.findMany({
+      }) : Promise.resolve([])).catch(() => []),
+      ((prisma as any).academicConsultationLog?.findMany ? (prisma as any).academicConsultationLog.findMany({
         where: { studentId: { in: studentIds } },
         orderBy: { meetingDate: "desc" }
-      }).catch(() => []),
-      prisma.studentTermEvaluation.findMany({
+      }) : (prisma as any).studentConsultation?.findMany ? (prisma as any).studentConsultation.findMany({
+        where: { studentId: { in: studentIds } },
+        orderBy: { meetingDate: "desc" }
+      }) : Promise.resolve([])).catch(() => []),
+      ((prisma as any).studentTermEvaluation?.findMany ? (prisma as any).studentTermEvaluation.findMany({
         where: { studentId: { in: studentIds } },
         orderBy: { createdAt: "desc" }
-      }).catch(() => [])
+      }) : Promise.resolve([])).catch(() => [])
     ])
 
     // Map student name lookup
