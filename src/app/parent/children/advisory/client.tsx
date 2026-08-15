@@ -93,6 +93,8 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
     }
   }, [])
 
+  const [lastSyncedTime, setLastSyncedTime] = useState<string>("")
+
   useEffect(() => {
     if (!selectedStudentId) {
       setLoading(false)
@@ -101,7 +103,6 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
     async function loadData() {
       try {
-        // Do NOT trigger full-screen unmount loading screen on background refreshes
         const currentChild = childrenList.find(c => c.id === selectedStudentId)
         const stCode = currentChild?.studentCode || ""
         const [res360, resGoals, resTracking, resConsult, resEval] = await Promise.all([
@@ -129,13 +130,32 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
         setParentMessage(commitmentMsg)
         setSigned(isSigned)
 
+        const now = new Date()
+        setLastSyncedTime(now.toLocaleTimeString("vi-VN"))
+
       } catch (e) {
         console.error("Error loading advisory data:", e)
       } finally {
         setLoading(false)
       }
     }
+
     loadData()
+
+    // Realtime Auto-Sync Polling every 4 seconds
+    const intervalId = setInterval(() => {
+      loadData()
+    }, 4000)
+
+    const handleFocus = () => loadData()
+    window.addEventListener("focus", handleFocus)
+    document.addEventListener("visibilitychange", handleFocus)
+
+    return () => {
+      clearInterval(intervalId)
+      window.removeEventListener("focus", handleFocus)
+      document.removeEventListener("visibilitychange", handleFocus)
+    }
   }, [selectedStudentId, academicYearId, childrenList, selectedCheckPoint])
 
   async function handleSaveCommitment() {
