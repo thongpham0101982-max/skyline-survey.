@@ -121,21 +121,14 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
         if (resConsult && resConsult.ok) setConsultations(await resConsult.json())
         if (resEval && resEval.ok) setTermEvals(await resEval.json())
 
-        if (data360) {
-          setProfile(data360)
-          setGoalsData(dataGoals)
+        if (data360) setProfile(data360)
+        if (dataGoals) setGoalsData(dataGoals)
 
-          if (data360.learningCommitment) {
-            setParentMessage(data360.learningCommitment.parentMessage || "")
-            setSigned(!!data360.learningCommitment.signedByParent)
-          } else if (dataGoals?.existingSheet) {
-            setParentMessage(dataGoals.existingSheet.parentMessage || "")
-            setSigned(!!dataGoals.existingSheet.signedByParent)
-          } else {
-            setParentMessage("")
-            setSigned(false)
-          }
-        }
+        const commitmentMsg = data360?.learningCommitment?.parentMessage || dataGoals?.existingSheet?.parentMessage || ""
+        const isSigned = Boolean(data360?.learningCommitment?.signedByParent || dataGoals?.existingSheet?.signedByParent)
+        setParentMessage(commitmentMsg)
+        setSigned(isSigned)
+
       } catch (e) {
         console.error("Error loading advisory data:", e)
       } finally {
@@ -179,7 +172,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
   const homeroomTeacherName = selectedStudent.homeroomTeacherName || student.homeroomTeacherName || (student.class?.homeroomTeacherId ? "Phụ trách chuyên môn" : "Chưa phân công")
   
   // Merge goals array from DB across all potential response payloads
-  const allGoals: any[] = 
+  const rawGoalsList: any[] = 
     (goalsData?.existingSheet?.goals && goalsData.existingSheet.goals.length > 0)
       ? goalsData.existingSheet.goals
       : (goalsData?.goals && goalsData.goals.length > 0)
@@ -187,6 +180,8 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
       : (profile?.goals && profile.goals.length > 0)
       ? profile.goals
       : []
+
+  const allGoals = rawGoalsList.filter((g: any) => Boolean(g && (g.targetText || g.category)))
 
   // Class & Grade Parsing for 6 Separate Grade Form Types
   const classNameStr = student.class?.className || selectedStudent.class?.className || "8.3_CS1"
@@ -196,24 +191,41 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
   // Grade Form Title & Categories matching standard 4 categories
   const formTitle = "PHIẾU MỤC TIÊU NĂM HỌC — KHỐI " + gradeNum
-  const formSub = "Hiển thị đầy đủ 4 nhóm mục tiêu cá nhân do học sinh " + (student.studentName || "con em") + " tự điền."
+  const formSub = "Hiển thị đầy đủ 4 nhóm mục tiêu cá nhân do học sinh " + (student.studentName || selectedStudent.studentName || "con em") + " tự điền."
 
   const getCategoriesForForm = () => {
     return [
-      { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚", number: "01", altKeys: ["HOC_TAP", "ACADEMIC"] },
-      { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰", number: "02", altKeys: ["THOI_QUEN", "HEALTH", "THOI_QUEN_SUC_KHOE"] },
-      { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨", number: "03", altKeys: ["KY_NANG_CAM_XUC", "SKILLS", "KY_NANG_SO_THICH"] },
-      { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀", number: "04", altKeys: ["DINH_HUONG", "ORIENTATION", "PHAM_CHAT"] }
+      { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚", number: "01", altKeys: ["HOC_TAP", "ACADEMIC", "HỌC TẬP", "NHÓM 1"] },
+      { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰", number: "02", altKeys: ["THOI_QUEN", "HEALTH", "THOI_QUEN_SUC_KHOE", "THÓI QUEN", "NHÓM 2"] },
+      { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨", number: "03", altKeys: ["KY_NANG_CAM_XUC", "SKILLS", "KY_NANG_SO_THICH", "KỸ NĂNG", "CẢM XÚC", "NHÓM 3"] },
+      { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀", number: "04", altKeys: ["DINH_HUONG", "ORIENTATION", "PHAM_CHAT", "ĐỊNH HƯỚNG", "PHẨM CHẤT", "NHÓM 4"] }
     ]
   }
 
   const currentCategories = getCategoriesForForm()
 
-  const filterCategoryGoals = (catKey: string, altKeys: string[]) => {
-    return allGoals.filter((g: any) => {
-      const c = (g.category || "").toUpperCase()
-      return c === catKey.toUpperCase() || altKeys.some(k => c.includes(k.toUpperCase()))
+  // Flexible Multi-Strategy Matching for Goal Categories
+  const filterCategoryGoals = (catIndex: number, catKey: string, altKeys: string[]) => {
+    // 1. Strict category string matching
+    const matched = allGoals.filter((g: any) => {
+      const c = (g.category || "").toUpperCase().trim()
+      if (c === catKey.toUpperCase()) return true
+      if (altKeys.some(k => c.includes(k.toUpperCase()))) return true
+      if (catIndex === 0 && (c.includes("HỌC TẬP") || c.includes("HOC TAP") || c.includes("NHÓM 1") || c.includes("1"))) return true
+      if (catIndex === 1 && (c.includes("THÓI QUEN") || c.includes("THOI QUEN") || c.includes("SUC KHOE") || c.includes("NHÓM 2") || c.includes("2"))) return true
+      if (catIndex === 2 && (c.includes("KỸ NĂNG") || c.includes("KY NANG") || c.includes("CẢM XÚC") || c.includes("CAM XUC") || c.includes("NHÓM 3") || c.includes("3"))) return true
+      if (catIndex === 3 && (c.includes("ĐỊNH HƯỚNG") || c.includes("DINH HUONG") || c.includes("PHẨM CHẤT") || c.includes("PHAM CHAT") || c.includes("NHÓM 4") || c.includes("4"))) return true
+      return false
     })
+
+    if (matched.length > 0) return matched
+
+    // 2. Index-based array fallback if 4 goals exist
+    if (allGoals[catIndex]) {
+      return [allGoals[catIndex]]
+    }
+
+    return []
   }
 
   // Student Commitment Text
@@ -231,7 +243,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
       {/* Header Info Banner */}
       <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A99D] rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-2">
         <div className="flex items-center gap-2 text-xs font-bold text-teal-100 uppercase tracking-wider">
-          <Compass className="w-4 h-4 text-[#00A99D]" />
+          <Compass className="w-4 h-4 text-amber-300" />
           <span>PARENT PORTAL — SKYLINE ADVISORY</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase">
@@ -444,8 +456,8 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
               {/* CARD DASHBOARD VIEW (ĐỒNG NHẤT HOÀN TOÀN VỚI TEACHER VIEW) */}
               {viewMode === "card" ? (
                 <div className="grid grid-cols-1 gap-5">
-                  {currentCategories.map((catDef) => {
-                    const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
+                  {currentCategories.map((catDef, catIdx) => {
+                    const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
                     const firstGoal = catGoalsList[0] || {}
                     const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
                     
@@ -495,7 +507,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
                         {/* Card Body */}
                         <div className="p-5 sm:p-6">
-                          {catGoalsList.length > 0 && (firstGoal.targetText || actionTextStr) ? (
+                          {firstGoal && (firstGoal.targetText || actionTextStr) ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                               
                               {/* Left Box: Mục tiêu cụ thể & Kế hoạch */}
@@ -578,8 +590,8 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
-                      {currentCategories.map(catDef => {
-                        const catGoalsList = filterCategoryGoals(catDef.key, catDef.altKeys)
+                      {currentCategories.map((catDef, catIdx) => {
+                        const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
                         const firstGoal = catGoalsList[0] || {}
                         const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
                         const progressStatus = matchedLog?.progressStatus || "TIEN_TRIEN"
