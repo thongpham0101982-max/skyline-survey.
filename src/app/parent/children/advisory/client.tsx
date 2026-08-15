@@ -802,7 +802,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                   </div>
                 </div>
 
-                {/* 3 Core Criteria Cards (Always visible with fallback values) */}
+                {/* 3 Core Criteria Cards */}
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     
@@ -813,16 +813,16 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                         <h4 className="text-xs font-black text-slate-900">Mức độ hoàn thành mục tiêu</h4>
                         <div className="flex items-center gap-1 text-amber-500 py-1">
                           {[1, 2, 3, 4, 5].map(s => (
-                            <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval?.goalCompletionLevel || 4) ? "fill-amber-400 text-amber-400" : "text-slate-300")} />
+                            <Star key={s} className={"w-5 h-5 " + (activeTermEval?.goalCompletionLevel && s <= activeTermEval.goalCompletionLevel ? "fill-amber-400 text-amber-400" : "text-slate-300")} />
                           ))}
                         </div>
                         <p className="text-[11px] font-semibold text-amber-950 leading-relaxed bg-white/70 p-3 rounded-2xl border border-amber-200/60">
-                          {activeTermEval ? (RUBRIC_TEXTS.goalCompletion[activeTermEval.goalCompletionLevel || 0] || "Đang tiến triển tốt") : "Mức 4 - Đạt được phần lớn mục tiêu (Chờ GVCN chốt điểm)"}
+                          {activeTermEval?.goalCompletionLevel ? (RUBRIC_TEXTS.goalCompletion[activeTermEval.goalCompletionLevel] || "Mức " + activeTermEval.goalCompletionLevel) : "- (Chưa đánh giá)"}
                         </p>
                       </div>
                       <div className="pt-2 border-t border-amber-200/60 text-right">
                         <span className="text-xs font-black text-amber-900 bg-amber-200/60 px-3 py-1 rounded-full inline-block">
-                          {activeTermEval?.goalCompletionLevel || 4}/5 Điểm
+                          {activeTermEval?.goalCompletionLevel ? activeTermEval.goalCompletionLevel + "/5 Điểm" : "Chưa đánh giá"}
                         </span>
                       </div>
                     </div>
@@ -834,16 +834,16 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                         <h4 className="text-xs font-black text-slate-900">Mức độ chủ động & Tự học</h4>
                         <div className="flex items-center gap-1 text-teal-600 py-1">
                           {[1, 2, 3, 4, 5].map(s => (
-                            <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval?.initiativeLevel || 4) ? "fill-teal-500 text-teal-500" : "text-slate-300")} />
+                            <Star key={s} className={"w-5 h-5 " + (activeTermEval?.initiativeLevel && s <= activeTermEval.initiativeLevel ? "fill-teal-500 text-teal-500" : "text-slate-300")} />
                           ))}
                         </div>
                         <p className="text-[11px] font-semibold text-teal-950 leading-relaxed bg-white/70 p-3 rounded-2xl border border-teal-200/60">
-                          {activeTermEval ? (RUBRIC_TEXTS.initiative[activeTermEval.initiativeLevel || 0] || "Đang tiến triển tốt") : "Mức 4 - Khá chủ động, tự thực hiện phần lớn công việc (Chờ GVCN chốt điểm)"}
+                          {activeTermEval?.initiativeLevel ? (RUBRIC_TEXTS.initiative[activeTermEval.initiativeLevel] || "Mức " + activeTermEval.initiativeLevel) : "- (Chưa đánh giá)"}
                         </p>
                       </div>
                       <div className="pt-2 border-t border-teal-200/60 text-right">
                         <span className="text-xs font-black text-teal-900 bg-teal-200/60 px-3 py-1 rounded-full inline-block">
-                          {activeTermEval?.initiativeLevel || 4}/5 Điểm
+                          {activeTermEval?.initiativeLevel ? activeTermEval.initiativeLevel + "/5 Điểm" : "Chưa đánh giá"}
                         </span>
                       </div>
                     </div>
@@ -855,16 +855,16 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                         <h4 className="text-xs font-black text-slate-900">Thái độ tham gia đồng hành</h4>
                         <div className="flex items-center gap-1 text-sky-600 py-1">
                           {[1, 2, 3, 4, 5].map(s => (
-                            <Star key={s} className={"w-5 h-5 " + (s <= (activeTermEval?.participationAttitude || 5) ? "fill-sky-500 text-sky-500" : "text-slate-300")} />
+                            <Star key={s} className={"w-5 h-5 " + (activeTermEval?.participationAttitude && s <= activeTermEval.participationAttitude ? "fill-sky-500 text-sky-500" : "text-slate-300")} />
                           ))}
                         </div>
                         <p className="text-[11px] font-semibold text-sky-950 leading-relaxed bg-white/70 p-3 rounded-2xl border border-sky-200/60">
-                          {activeTermEval ? (RUBRIC_TEXTS.participation[activeTermEval.participationAttitude || 0] || "Đang tiến triển tốt") : "Mức 5 - Rất tích cực; chủ động chia sẻ và đóng góp (Chờ GVCN chốt điểm)"}
+                          {activeTermEval?.participationAttitude ? (RUBRIC_TEXTS.participation[activeTermEval.participationAttitude] || "Mức " + activeTermEval.participationAttitude) : "- (Chưa đánh giá)"}
                         </p>
                       </div>
                       <div className="pt-2 border-t border-sky-200/60 text-right">
                         <span className="text-xs font-black text-sky-900 bg-sky-200/60 px-3 py-1 rounded-full inline-block">
-                          {activeTermEval?.participationAttitude || 5}/5 Điểm
+                          {activeTermEval?.participationAttitude ? activeTermEval.participationAttitude + "/5 Điểm" : "Chưa đánh giá"}
                         </span>
                       </div>
                     </div>
@@ -920,9 +920,9 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                           const firstGoal = catGoalsList[0] || {}
                           const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
                           const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
-                          const goalLevel = matchedLog?.goalCompletionLevel || activeTermEval?.goalCompletionLevel || 4
-                          const initiativeLevel = matchedLog?.initiativeLevel || activeTermEval?.initiativeLevel || 4
-                          const attitudeLevel = matchedLog?.participationAttitude || activeTermEval?.participationAttitude || 5
+                          const goalLevel = matchedLog?.goalCompletionLevel || activeTermEval?.goalCompletionLevel || null
+                          const initiativeLevel = matchedLog?.initiativeLevel || activeTermEval?.initiativeLevel || null
+                          const attitudeLevel = matchedLog?.participationAttitude || activeTermEval?.participationAttitude || null
                           const teacherNotes = matchedLog?.teacherNotes || (catIdx === 0 ? activeTermEval?.recommendations : "") || ""
 
                           return (
@@ -970,23 +970,41 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
                               {/* Mức hoàn thành mục tiêu (1-5) */}
                               <td className="p-3 border-r border-slate-200 align-top">
-                                <div className="p-2 rounded-xl bg-amber-50 text-amber-950 border border-amber-200 font-bold text-xs">
-                                  Mức {goalLevel} - {RUBRIC_TEXTS.goalCompletion[goalLevel]?.slice(0, 32)}...
-                                </div>
+                                {goalLevel ? (
+                                  <div className="p-2 rounded-xl bg-amber-50 text-amber-950 border border-amber-200 font-bold text-xs">
+                                    Mức {goalLevel} - {RUBRIC_TEXTS.goalCompletion[goalLevel]?.slice(0, 28)}...
+                                  </div>
+                                ) : (
+                                  <div className="p-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 font-medium text-xs">
+                                    - (Chưa đánh giá)
+                                  </div>
+                                )}
                               </td>
 
                               {/* Mức độ chủ động (1-5) */}
                               <td className="p-3 border-r border-slate-200 align-top">
-                                <div className="p-2 rounded-xl bg-blue-50 text-blue-950 border border-blue-200 font-bold text-xs">
-                                  Mức {initiativeLevel} - {RUBRIC_TEXTS.initiative[initiativeLevel]?.slice(0, 32)}...
-                                </div>
+                                {initiativeLevel ? (
+                                  <div className="p-2 rounded-xl bg-blue-50 text-blue-950 border border-blue-200 font-bold text-xs">
+                                    Mức {initiativeLevel} - {RUBRIC_TEXTS.initiative[initiativeLevel]?.slice(0, 28)}...
+                                  </div>
+                                ) : (
+                                  <div className="p-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 font-medium text-xs">
+                                    - (Chưa đánh giá)
+                                  </div>
+                                )}
                               </td>
 
                               {/* Thái độ tham gia (1-5) */}
                               <td className="p-3 border-r border-slate-200 align-top">
-                                <div className="p-2 rounded-xl bg-emerald-50 text-emerald-950 border border-emerald-200 font-bold text-xs">
-                                  Mức {attitudeLevel} - {RUBRIC_TEXTS.participation[attitudeLevel]?.slice(0, 32)}...
-                                </div>
+                                {attitudeLevel ? (
+                                  <div className="p-2 rounded-xl bg-emerald-50 text-emerald-950 border border-emerald-200 font-bold text-xs">
+                                    Mức {attitudeLevel} - {RUBRIC_TEXTS.participation[attitudeLevel]?.slice(0, 28)}...
+                                  </div>
+                                ) : (
+                                  <div className="p-2 rounded-xl bg-slate-50 text-slate-500 border border-slate-200 font-medium text-xs">
+                                    - (Chưa đánh giá)
+                                  </div>
+                                )}
                               </td>
 
                               {/* Khuyến nghị cho phụ huynh / giáo viên bộ môn */}
