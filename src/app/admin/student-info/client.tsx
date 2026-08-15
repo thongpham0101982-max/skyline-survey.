@@ -1603,6 +1603,7 @@ export function StudentInfoClient({
             "Ủy quyền xét duyệt": campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || ""
           }),
           "Kết quả duyệt": s.admissionResult || "Chưa duyệt",
+          "Lớp nhập học": s.enrollmentClass?.className || s.enrollmentClassId || "",
         };
       } else {
         return {
@@ -1616,6 +1617,7 @@ export function StudentInfoClient({
           "Nhóm tuổi": s.grade || "",
           "Cơ sở": s.admissionCampus || "",
           "Kết quả": s.admissionResult || "Chưa duyệt",
+          "Lớp nhập học": s.enrollmentClass?.className || s.enrollmentClassId || "",
         };
       }
     });
@@ -2319,7 +2321,10 @@ export function StudentInfoClient({
                     </>
                   )}
                   {subTab === "result" && (
-                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Kết quả duyệt</th>
+                    <>
+                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Kết quả duyệt</th>
+                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 text-center">Lớp nhập học</th>
+                    </>
                   )}
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
                 </tr>
@@ -2327,7 +2332,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-300 text-slate-700">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 19 : 14) : (subTab === "info" ? 17 : 12)} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
+                    <td colSpan={selectedPeriod?.toLowerCase().includes("open day") ? (subTab === "info" ? 19 : (subTab === "result" ? 15 : 13)) : (subTab === "info" ? 17 : (subTab === "result" ? 13 : 11))} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -2360,14 +2365,7 @@ export function StudentInfoClient({
                       <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{s.studentCode}</td>
                       <td className="px-5 py-4 border-b border-slate-100">
                         <div className="flex flex-col">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-800">{s.fullName}</span>
-                            {s.enrollmentStatus === "COMPLETED" && (
-                              <span className="text-[9px] font-semibold text-emerald-600">
-                                Lớp: {s.enrollmentClass?.className || s.enrollmentClassId || ""}
-                              </span>
-                            )}
-                          </div>
+                          <span className="text-xs font-bold text-slate-800">{s.fullName}</span>
                           <span className="text-[10px] font-medium text-slate-450 mt-0.5">{s.surveySystem || "Chưa xếp hệ"}</span>
                         </div>
                       </td>
@@ -2439,23 +2437,34 @@ export function StudentInfoClient({
                         </>
                       )}
                       {subTab === "result" && (
-                        <td className="px-5 py-4 border-b border-slate-100 text-center">
-                          <div className="flex flex-col items-center justify-center gap-0.5">
-                            <span className="text-xs font-semibold text-slate-700">
-                              {s.admissionResult || "Chưa duyệt"}
-                            </span>
-                            {s.enrollmentStatus === "ENROLLED" && (
-                              <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
-                                Đã nhập học
+                        <>
+                          <td className="px-5 py-4 border-b border-slate-100 text-center">
+                            <div className="flex flex-col items-center justify-center gap-0.5">
+                              <span className="text-xs font-semibold text-slate-700">
+                                {s.admissionResult || "Chưa duyệt"}
                               </span>
-                            )}
-                            {s.enrollmentStatus === "PENDING" && (
-                              <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
-                                Chờ nhập học
+                              {s.enrollmentStatus === "ENROLLED" && (
+                                <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${s.enrollmentClass?.className || s.enrollmentClassId || ""}`}>
+                                  Đã nhập học
+                                </span>
+                              )}
+                              {s.enrollmentStatus === "PENDING" && (
+                                <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
+                                  Chờ nhập học
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-700">
+                            {s.enrollmentClass?.className || s.enrollmentClassId ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                {s.enrollmentClass?.className || s.enrollmentClassId}
                               </span>
+                            ) : (
+                              <span className="text-slate-400 font-normal">-</span>
                             )}
-                          </div>
-                        </td>
+                          </td>
+                        </>
                       )}
                       <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-1.5">
@@ -2555,7 +2564,10 @@ export function StudentInfoClient({
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-16 text-center">Vắng</th>
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-24 text-center">Nhập học</th>
                   {subTab === "result" && (
-                    <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Kết quả</th>
+                    <>
+                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36">Kết quả</th>
+                      <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-36 text-center">Lớp nhập học</th>
+                    </>
                   )}
                   <th className="px-5 py-4 border-b border-slate-200/60 text-xs font-bold text-slate-600 w-32 text-center">Thao tác</th>
                 </tr>
@@ -2563,7 +2575,7 @@ export function StudentInfoClient({
               <tbody className="divide-y divide-slate-300">
                 {paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
+                    <td colSpan={subTab === "result" ? 13 : 11} className="px-4 py-6 text-center text-slate-400 font-medium border-b border-slate-100">
                       Không tìm thấy dữ liệu học sinh phù hợp.
                     </td>
                   </tr>
@@ -2596,14 +2608,7 @@ export function StudentInfoClient({
                       <td className="px-5 py-4 border-b border-slate-100 text-slate-400 text-xs">{(currentPage - 1) * pageSize + i + 1}</td>
                       <td className="px-5 py-4 border-b border-slate-100 font-mono text-xs text-slate-650">{child.studentCode}</td>
                       <td className="px-5 py-4 border-b border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-800 text-xs">{child.fullName}</span>
-                          {child.enrollmentStatus === "COMPLETED" && (
-                            <span className="text-[9px] font-semibold text-emerald-600">
-                              Lớp: {child.enrollmentClass?.className || child.enrollmentClassId || ""}
-                            </span>
-                          )}
-                        </div>
+                        <span className="font-bold text-slate-800 text-xs">{child.fullName}</span>
                       </td>
                       <td className="px-5 py-4 border-b border-slate-100 text-xs text-slate-500">
                         {formatDate(child.dateOfBirth)}
@@ -2638,23 +2643,34 @@ export function StudentInfoClient({
                         )}
                       </td>
                       {subTab === "result" && (
-                        <td className="px-5 py-4 border-b border-slate-100 text-center">
-                          <div className="flex flex-col items-center justify-center gap-0.5">
-                            <span className="text-xs font-semibold text-slate-700">
-                              {child.admissionResult || "Chưa duyệt"}
-                            </span>
-                            {child.enrollmentStatus === "ENROLLED" && (
-                              <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
-                                Đã nhập học
+                        <>
+                          <td className="px-5 py-4 border-b border-slate-100 text-center">
+                            <div className="flex flex-col items-center justify-center gap-0.5">
+                              <span className="text-xs font-semibold text-slate-700">
+                                {child.admissionResult || "Chưa duyệt"}
                               </span>
-                            )}
-                            {child.enrollmentStatus === "PENDING" && (
-                              <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
-                                Chờ nhập học
+                              {child.enrollmentStatus === "ENROLLED" && (
+                                <span className="text-[10px] font-bold text-emerald-600" title={`Nhập học vào ${child.enrollmentClass?.className || child.enrollmentClassId || ""}`}>
+                                  Đã nhập học
+                                </span>
+                              )}
+                              {child.enrollmentStatus === "PENDING" && (
+                                <span className="text-[10px] font-bold text-amber-600" title="Chờ xếp lớp">
+                                  Chờ nhập học
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 border-b border-slate-100 text-center text-xs font-semibold text-slate-700">
+                            {child.enrollmentClass?.className || child.enrollmentClassId ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                                {child.enrollmentClass?.className || child.enrollmentClassId}
                               </span>
+                            ) : (
+                              <span className="text-slate-400 font-normal">-</span>
                             )}
-                          </div>
-                        </td>
+                          </td>
+                        </>
                       )}
                       <td className="px-5 py-4 border-b border-slate-100 text-center" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center items-center gap-1.5">
