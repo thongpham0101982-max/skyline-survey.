@@ -511,7 +511,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                     const firstGoal = catGoalsList[0] || {}
                     const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
                     
-                    const progressStatus = matchedLog?.progressStatus || "TIEN_TRIEN"
+                    const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
                     const teacherNotes = matchedLog?.teacherNotes || ""
 
                     const actionTextStr = firstGoal?.actions && firstGoal.actions.length > 0 
@@ -538,13 +538,12 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                             </span>
 
                             <span className={"px-3 py-1.5 rounded-xl font-black text-xs border shadow-xs flex items-center gap-1.5 " + (
-                              progressStatus === "DAT"
-                                ? "bg-emerald-500 text-white border-emerald-600"
-                                : progressStatus === "CHUA_DAT"
-                                ? "bg-rose-500 text-white border-rose-600"
-                                : "bg-amber-400 text-amber-950 border-amber-500"
+                              progressStatus === "DAT" ? "bg-emerald-500 text-white border-emerald-600" :
+                              progressStatus === "CHUA_DAT" ? "bg-rose-500 text-white border-rose-600" :
+                              progressStatus === "TIEN_TRIEN" ? "bg-amber-400 text-amber-950 border-amber-500" :
+                              "bg-slate-100 text-slate-700 border-slate-300"
                             )}>
-                              {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : "🟡 Đang tiến triển"}
+                              {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : progressStatus === "TIEN_TRIEN" ? "🟡 Đang tiến triển" : "🟣 Chưa đánh giá"}
                             </span>
 
                             {teacherNotes && (
@@ -587,6 +586,16 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
                               {/* Right Box: Yêu cầu Hỗ trợ */}
                               <div className="space-y-3">
+                                {/* Dedicated GVCN Check-in Assessment Box */}
+                                <div className="p-4 rounded-2xl bg-teal-50/90 border-2 border-teal-200/90 space-y-1 shadow-2xs">
+                                  <span className="font-black text-teal-950 text-xs flex items-center gap-1.5 uppercase">
+                                    📝 Đánh Giá & Ghi Chú Tiến Độ Từ GVCN:
+                                  </span>
+                                  <p className="font-semibold text-teal-900 text-xs leading-relaxed italic">
+                                    {teacherNotes ? '"' + teacherNotes + '"' : "Chưa có ghi chú nhận xét từ GVCN cho mốc kiểm tra này."}
+                                  </p>
+                                </div>
+
                                 {firstGoal.teacherSupportRequest && (
                                   <div className="p-4 rounded-2xl bg-sky-50/90 border border-sky-200/80 space-y-1">
                                     <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
@@ -606,12 +615,6 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                                     <p className="font-medium text-slate-800 text-xs leading-relaxed">
                                       {firstGoal.parentSupportRequest}
                                     </p>
-                                  </div>
-                                )}
-
-                                {!firstGoal.teacherSupportRequest && !firstGoal.parentSupportRequest && (
-                                  <div className="p-4 text-center text-slate-400 font-medium text-xs italic bg-slate-50 rounded-2xl border border-slate-200">
-                                    Không có yêu cầu hỗ trợ thêm cho nhóm này
                                   </div>
                                 )}
                               </div>
@@ -644,7 +647,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                         const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
                         const firstGoal = catGoalsList[0] || {}
                         const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
-                        const progressStatus = matchedLog?.progressStatus || "TIEN_TRIEN"
+                        const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
 
                         return (
                           <tr key={catDef.key} className="hover:bg-slate-50/80 transition-colors">
