@@ -994,65 +994,193 @@ export default function TeacherAdvisoryPage() {
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 w-1/5">Học sinh</th>
-                    <th className="p-3 border-r border-slate-200 w-28">Kỳ đánh giá</th>
-                    <th className="p-3 border-r border-slate-200">Mức hoàn thành mục tiêu (1-5)</th>
-                    <th className="p-3 border-r border-slate-200">Mức độ chủ động (1-5)</th>
-                    <th className="p-3 border-r border-slate-200">Thái độ tham gia (1-5)</th>
-                    <th className="p-3">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[130px]">Học sinh</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[90px]">Kỳ đánh giá</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[220px]">Mục tiêu học tập</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[170px]">Kết quả theo dõi</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Mức hoàn thành mục tiêu (1-5)</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Mức độ chủ động (1-5)</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Thái độ tham gia (1-5)</th>
+                    <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
                   </tr>
                 </thead>
-                <tbody>
-                  <tr className="bg-white">
-                    <td className="p-3 border-r border-slate-200 font-black text-slate-900">
-                      {activeStudent?.studentName || "N/A"}
-                    </td>
-                    <td className="p-3 border-r border-slate-200 font-bold text-slate-700">
-                      {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
-                    </td>
-                    <td className="p-3 border-r border-slate-200">
-                      <select
-                        value={rubricForm.goalCompletionLevel}
-                        onChange={(e) => setRubricForm({ ...rubricForm, goalCompletionLevel: Number(e.target.value) })}
-                        className="w-full p-2 rounded-xl border border-slate-200 font-black text-xs bg-amber-50 text-amber-900"
-                      >
-                        {[1, 2, 3, 4, 5].map(v => (
-                          <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 30)}...</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="p-3 border-r border-slate-200">
-                      <select
-                        value={rubricForm.initiativeLevel}
-                        onChange={(e) => setRubricForm({ ...rubricForm, initiativeLevel: Number(e.target.value) })}
-                        className="w-full p-2 rounded-xl border border-slate-200 font-black text-xs bg-blue-50 text-blue-900"
-                      >
-                        {[1, 2, 3, 4, 5].map(v => (
-                          <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 30)}...</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="p-3 border-r border-slate-200">
-                      <select
-                        value={rubricForm.participationAttitude}
-                        onChange={(e) => setRubricForm({ ...rubricForm, participationAttitude: Number(e.target.value) })}
-                        className="w-full p-2 rounded-xl border border-slate-200 font-black text-xs bg-emerald-50 text-emerald-900"
-                      >
-                        {[1, 2, 3, 4, 5].map(v => (
-                          <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 30)}...</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="p-3">
-                      <textarea
-                        rows={3}
-                        value={rubricForm.recommendations}
-                        onChange={(e) => setRubricForm({ ...rubricForm, recommendations: e.target.value })}
-                        placeholder="Nhập khuyến nghị chi tiết cho Phụ huynh và GVBM..."
-                        className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold"
-                      />
-                    </td>
-                  </tr>
+                <tbody className="divide-y divide-slate-200">
+                  {singleStudentTrackingRows.length > 0 ? (
+                    singleStudentTrackingRows.map((item, idx) => (
+                      <tr key={idx} className="bg-white hover:bg-slate-50/50">
+                        {idx === 0 && (
+                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 font-black text-slate-900 align-top bg-slate-50/40">
+                            <div>{activeStudent?.studentName || "N/A"}</div>
+                            {activeStudent?.studentCode && (
+                              <div className="text-[11px] font-medium text-slate-500 mt-0.5">MS: {activeStudent.studentCode}</div>
+                            )}
+                          </td>
+                        )}
+
+                        {idx === 0 && (
+                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 font-bold text-slate-700 align-top bg-slate-50/40">
+                            {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
+                          </td>
+                        )}
+
+                        {/* Mục tiêu học tập (theo từng nhóm/mục tiêu) */}
+                        <td className="p-3 border-r border-slate-200 align-top">
+                          <div className="space-y-1">
+                            <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                              {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
+                            </span>
+                            {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
+                              <p className="font-bold text-slate-900 text-xs leading-relaxed">{item.targetText}</p>
+                            ) : (
+                              <p className="font-semibold text-slate-400 text-xs italic">Chưa ghi nhận mục tiêu cụ thể</p>
+                            )}
+                            {item.actionText && (
+                              <p className="text-[11px] font-semibold text-slate-600">👉 Action: {item.actionText}</p>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Kết quả theo dõi (từ thẻ 1) */}
+                        <td className="p-3 border-r border-slate-200 align-top">
+                          <div className="space-y-1.5">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border ${
+                              item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : item.progressStatus === "CHUA_DAT"
+                                ? "bg-rose-100 text-rose-800 border-rose-300"
+                                : item.progressStatus === "CAN_CO_GANG"
+                                ? "bg-amber-100 text-amber-900 border-amber-300"
+                                : "bg-sky-100 text-sky-800 border-sky-300"
+                            }`}>
+                              {item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
+                                ? "🟢 Đạt / Đã hoàn thành"
+                                : item.progressStatus === "CHUA_DAT"
+                                ? "🔴 Chưa đạt"
+                                : item.progressStatus === "CAN_CO_GANG"
+                                ? "🟠 Cần cố gắng"
+                                : "🟡 Đang tiến triển"}
+                            </span>
+                            {item.teacherNotes && (
+                              <p className="text-[11px] font-semibold text-slate-700 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                                💬 {item.teacherNotes}
+                              </p>
+                            )}
+                          </div>
+                        </td>
+
+                        {idx === 0 && (
+                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 align-top">
+                            <select
+                              value={rubricForm.goalCompletionLevel}
+                              onChange={(e) => setRubricForm({ ...rubricForm, goalCompletionLevel: Number(e.target.value) })}
+                              className="w-full p-2 rounded-xl border border-amber-300 font-black text-xs bg-amber-50 text-amber-950 shadow-xs focus:ring-2 focus:ring-amber-400"
+                            >
+                              {[1, 2, 3, 4, 5].map(v => (
+                                <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
+                              ))}
+                            </select>
+                          </td>
+                        )}
+
+                        {idx === 0 && (
+                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 align-top">
+                            <select
+                              value={rubricForm.initiativeLevel}
+                              onChange={(e) => setRubricForm({ ...rubricForm, initiativeLevel: Number(e.target.value) })}
+                              className="w-full p-2 rounded-xl border border-blue-300 font-black text-xs bg-blue-50 text-blue-950 shadow-xs focus:ring-2 focus:ring-blue-400"
+                            >
+                              {[1, 2, 3, 4, 5].map(v => (
+                                <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
+                              ))}
+                            </select>
+                          </td>
+                        )}
+
+                        {idx === 0 && (
+                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 align-top">
+                            <select
+                              value={rubricForm.participationAttitude}
+                              onChange={(e) => setRubricForm({ ...rubricForm, participationAttitude: Number(e.target.value) })}
+                              className="w-full p-2 rounded-xl border border-emerald-300 font-black text-xs bg-emerald-50 text-emerald-950 shadow-xs focus:ring-2 focus:ring-emerald-400"
+                            >
+                              {[1, 2, 3, 4, 5].map(v => (
+                                <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
+                              ))}
+                            </select>
+                          </td>
+                        )}
+
+                        {idx === 0 && (
+                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 align-top">
+                            <textarea
+                              rows={5}
+                              value={rubricForm.recommendations}
+                              onChange={(e) => setRubricForm({ ...rubricForm, recommendations: e.target.value })}
+                              placeholder="Nhập khuyến nghị chi tiết cho Phụ huynh và GVBM..."
+                              className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                            />
+                          </td>
+                        )}
+                      </tr>
+                    ))
+                  ) : (
+                    <tr className="bg-white">
+                      <td className="p-3 border-r border-slate-200 font-black text-slate-900">
+                        {activeStudent?.studentName || "N/A"}
+                      </td>
+                      <td className="p-3 border-r border-slate-200 font-bold text-slate-700">
+                        {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
+                      </td>
+                      <td className="p-3 border-r border-slate-200 font-semibold text-slate-400 italic">
+                        Chưa có dữ liệu mục tiêu
+                      </td>
+                      <td className="p-3 border-r border-slate-200 font-semibold text-slate-400 italic">
+                        -
+                      </td>
+                      <td className="p-3 border-r border-slate-200">
+                        <select
+                          value={rubricForm.goalCompletionLevel}
+                          onChange={(e) => setRubricForm({ ...rubricForm, goalCompletionLevel: Number(e.target.value) })}
+                          className="w-full p-2 rounded-xl border border-amber-300 font-black text-xs bg-amber-50 text-amber-950"
+                        >
+                          {[1, 2, 3, 4, 5].map(v => (
+                            <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="p-3 border-r border-slate-200">
+                        <select
+                          value={rubricForm.initiativeLevel}
+                          onChange={(e) => setRubricForm({ ...rubricForm, initiativeLevel: Number(e.target.value) })}
+                          className="w-full p-2 rounded-xl border border-blue-300 font-black text-xs bg-blue-50 text-blue-950"
+                        >
+                          {[1, 2, 3, 4, 5].map(v => (
+                            <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="p-3 border-r border-slate-200">
+                        <select
+                          value={rubricForm.participationAttitude}
+                          onChange={(e) => setRubricForm({ ...rubricForm, participationAttitude: Number(e.target.value) })}
+                          className="w-full p-2 rounded-xl border border-emerald-300 font-black text-xs bg-emerald-50 text-emerald-950"
+                        >
+                          {[1, 2, 3, 4, 5].map(v => (
+                            <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="p-3">
+                        <textarea
+                          rows={4}
+                          value={rubricForm.recommendations}
+                          onChange={(e) => setRubricForm({ ...rubricForm, recommendations: e.target.value })}
+                          placeholder="Nhập khuyến nghị chi tiết cho Phụ huynh và GVBM..."
+                          className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold"
+                        />
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
