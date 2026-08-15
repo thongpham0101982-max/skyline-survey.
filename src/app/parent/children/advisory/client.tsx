@@ -228,11 +228,12 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
     return []
   }
 
-  // Student Commitment Text
-  const studentCommitmentText = goalsData?.existingSheet?.studentCommitment || 
+  // Student Commitment Text - Strictly from Database
+  const dbCommitment = goalsData?.existingSheet?.studentCommitment || 
     profile?.learningCommitment?.studentCommitment || 
-    allGoals.find((g: any) => g.studentCommitment)?.studentCommitment ||
-    "Chủ động và nghiêm túc thực hiện những mục tiêu đã đề ra, duy trì kỷ luật, thói quen, thói quen tự học; duy trì các thói quen tốt và không ngừng rèn luyện, phát triển các kỹ năng và khắc phục những điểm còn hạn chế."
+    allGoals.find((g: any) => g.studentCommitment)?.studentCommitment || ""
+
+  const studentCommitmentText = dbCommitment ? dbCommitment : "Học sinh chưa cập nhật lời cam kết cá nhân trên hệ thống."
 
 
   // Rubric Level Text Definitions
