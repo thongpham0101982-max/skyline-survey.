@@ -46,7 +46,44 @@ export async function GET(req: Request) {
       return NextResponse.json([])
     }
 
-    const allStudents = parent.students.map(s => s.student)
+    let allStudents = parent.students.map(s => s.student).filter(Boolean)
+
+    // Auto-fallback: If ParentStudent table link is missing, match by parentCode (P0601020663 -> 0601020663)
+    if (allStudents.length === 0 && parent.parentCode) {
+      const cleanCode = parent.parentCode.replace(/^P/i, '').trim()
+      if (cleanCode) {
+        const autoMatchedStudents = await prisma.student.findMany({
+          where: { studentCode: cleanCode },
+          include: {
+            class: {
+              include: {
+                campus: true,
+                academicYear: true,
+                teachers: {
+                  include: {
+                    teacher: true
+                  }
+                }
+              }
+            },
+            academicYear: true
+          }
+        })
+
+        if (autoMatchedStudents.length > 0) {
+          allStudents = autoMatchedStudents
+          // Auto-link in ParentStudent for future fast queries
+          for (const st of autoMatchedStudents) {
+            await prisma.parentStudent.create({
+              data: {
+                parentId: parent.id,
+                studentId: st.id
+              }
+            }).catch(() => {})
+          }
+        }
+      }
+    }
 
     // Helper to get homeroom teacher name
     const formatStudentWithTeacher = async (s: any) => {
@@ -75,7 +112,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // Group by studentCode so each student appears ONLY ONCE for the current selected academic year
+    // Group by studentCode so each student appears ONLY ONCE
     const uniqueStudentsMap = new Map<string, any>()
 
     for (const st of allStudents) {
