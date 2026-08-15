@@ -266,8 +266,8 @@ export async function GET(req: Request) {
         where: {
           periodId: { in: periodIds },
           OR: [
-            { generalResult: { contains: "cam kết" } },
-            { generalResult: { contains: "Cam kết" } },
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
             { directorNote: { contains: "Môn cam kết" } },
             { directorNote: { contains: "Mon cam ket" } },
             { directorNote: { contains: "cam kết" } },
@@ -385,7 +385,7 @@ export async function GET(req: Request) {
             cleanString(ss.studentName) === cleanString(ps.fullName)
           )
           
-          const committedSubjects = parseCommittedSubjects(ps.directorNote, ps.generalResult)
+          const committedSubjects = parseCommittedSubjects(ps.directorNote, ps.admissionResult)
 
           const resolvedClassName = 
             matchingStudent?.class?.className ||
@@ -406,7 +406,7 @@ export async function GET(req: Request) {
             studentCode: ps.studentCode,
             fullName: ps.fullName,
             gender: ps.gender,
-            admissionResult: ps.generalResult,
+            admissionResult: ps.admissionResult,
             directorNote: ps.directorNote,
             systemStudentId: matchingStudent?.id || null,
             className: resolvedClassName,
