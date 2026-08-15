@@ -270,7 +270,7 @@ export default function TeacherAdvisoryPage() {
     }
   }
 
-  // Save Term Evaluation Rubric
+  // Save Term Evaluation Rubric & Goal Tracking Status
   async function handleSaveRubricEval() {
     if (!selectedStudentId) return
     try {
@@ -286,8 +286,19 @@ export default function TeacherAdvisoryPage() {
         })
       })
 
+      await fetch("/api/advisory/tracking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId: selectedStudentId,
+          academicYearId,
+          checkPoint,
+          items: singleStudentTrackingRows
+        })
+      }).catch(console.error)
+
       if (res.ok) {
-        setToastMessage("Đã lưu Đánh giá kỳ theo Rubric thành công!")
+        setToastMessage("Đã lưu Đánh giá kỳ theo Rubric & Tiến độ mục tiêu thành công!")
         setTimeout(() => setToastMessage(""), 4000)
       }
     } catch (e) {
@@ -980,7 +991,11 @@ export default function TeacherAdvisoryPage() {
                 <span className="text-xs font-bold text-slate-600">Kỳ đánh giá:</span>
                 <select
                   value={evalTerm}
-                  onChange={(e) => setEvalTerm(e.target.value as any)}
+                  onChange={(e) => {
+                    const newTerm = e.target.value as "HK1" | "HK2"
+                    setEvalTerm(newTerm)
+                    setCheckPoint(newTerm === "HK1" ? "CUOI_KY_1" : "CUOI_KY_2")
+                  }}
                   className="px-3 py-1.5 rounded-xl bg-teal-50 text-teal-900 font-black text-xs border border-teal-200"
                 >
                   <option value="HK1">Học kỳ I</option>
@@ -1023,10 +1038,10 @@ export default function TeacherAdvisoryPage() {
                           </td>
                         )}
 
-                        {/* Mục tiêu học tập (theo từng nhóm/mục tiêu) */}
+                        {/* Mục tiêu học tập (theo từng nhóm/mục tiêu, không lấy Action) */}
                         <td className="p-3 border-r border-slate-200 align-top">
-                          <div className="space-y-1">
-                            <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                          <div className="space-y-1.5">
+                            <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
                               {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
                             </span>
                             {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
@@ -1034,37 +1049,46 @@ export default function TeacherAdvisoryPage() {
                             ) : (
                               <p className="font-semibold text-slate-400 text-xs italic">Chưa ghi nhận mục tiêu cụ thể</p>
                             )}
-                            {item.actionText && (
-                              <p className="text-[11px] font-semibold text-slate-600">👉 Action: {item.actionText}</p>
-                            )}
                           </div>
                         </td>
 
-                        {/* Kết quả theo dõi (từ thẻ 1) */}
+                        {/* Kết quả theo dõi (cho từng mục tiêu, đồng bộ trực tiếp với Thẻ 1) */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <div className="space-y-1.5">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-black border ${
-                              item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
-                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                : item.progressStatus === "CHUA_DAT"
-                                ? "bg-rose-100 text-rose-800 border-rose-300"
-                                : item.progressStatus === "CAN_CO_GANG"
-                                ? "bg-amber-100 text-amber-900 border-amber-300"
-                                : "bg-sky-100 text-sky-800 border-sky-300"
-                            }`}>
-                              {item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
-                                ? "🟢 Đạt / Đã hoàn thành"
-                                : item.progressStatus === "CHUA_DAT"
-                                ? "🔴 Chưa đạt"
-                                : item.progressStatus === "CAN_CO_GANG"
-                                ? "🟠 Cần cố gắng"
-                                : "🟡 Đang tiến triển"}
-                            </span>
-                            {item.teacherNotes && (
-                              <p className="text-[11px] font-semibold text-slate-700 bg-slate-50 p-1.5 rounded-lg border border-slate-200">
-                                💬 {item.teacherNotes}
-                              </p>
-                            )}
+                            <select
+                              value={item.progressStatus}
+                              onChange={(e) => {
+                                const updated = [...singleStudentTrackingRows]
+                                updated[idx].progressStatus = e.target.value
+                                setSingleStudentTrackingRows(updated)
+                              }}
+                              className={`w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
+                                item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
+                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                  : item.progressStatus === "CHUA_DAT"
+                                  ? "bg-rose-100 text-rose-800 border-rose-300"
+                                  : item.progressStatus === "CAN_CO_GANG"
+                                  ? "bg-amber-100 text-amber-900 border-amber-300"
+                                  : "bg-amber-100 text-amber-950 border-amber-300"
+                              }`}
+                            >
+                              <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
+                              <option value="DAT">🟢 Đạt / Đã hoàn thành</option>
+                              <option value="CHUA_DAT">🔴 Chưa đạt</option>
+                              <option value="CAN_CO_GANG">🟠 Cần cố gắng</option>
+                            </select>
+
+                            <input
+                              type="text"
+                              value={item.teacherNotes || ""}
+                              onChange={(e) => {
+                                const updated = [...singleStudentTrackingRows]
+                                updated[idx].teacherNotes = e.target.value
+                                setSingleStudentTrackingRows(updated)
+                              }}
+                              placeholder="Ghi chú nhận xét..."
+                              className="w-full p-1.5 px-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-500"
+                            />
                           </div>
                         </td>
 
