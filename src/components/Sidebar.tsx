@@ -88,7 +88,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
     if (requiresAdmin && !isSuperAdmin) return false
-    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'TONG_HOP_DU_GIO' || module === 'TEACHER_DU_GIO') return true;
+    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'CO_VAN_HOC_TAP' || module === 'CO_VAN_PRESETS' || module === 'CO_VAN_DASHBOARD' || module === 'TONG_HOP_DU_GIO' || module === 'TEACHER_DU_GIO') return true;
     if (module === 'KTDBCL_HUONG_NGHIEP') return true;
       let hasParent = permissionModules?.includes(module) || false
       if (module === "KTDBCL_EXAMS") {
