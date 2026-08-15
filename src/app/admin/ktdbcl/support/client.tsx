@@ -1137,14 +1137,10 @@ export function SupportClient({
                               <span className="font-mono font-bold text-slate-600 text-[11px]">{row.studentCode}</span>
                             </td>
                             <td className="px-4 py-3.5">
-                              <span className="font-extrabold text-slate-700 text-[12px]">
-                                {row.className ? (row.className.includes("_") ? row.className.split("_")[0] : (row.className.includes("-") ? row.className.split("-")[0] : row.className)) : ""}
-                              </span>
+                              <span className="font-extrabold text-slate-700 text-[12px]">{row.className || "Chưa xếp lớp"}</span>
                             </td>
                             <td className="px-4 py-3.5">
-                              <span className="text-[11px] text-indigo-600 font-bold">
-                                {row.className && row.className.includes("CS") ? row.className.split("CS")[1].split(/[_-]/)[0] : "1"}
-                              </span>
+                              <span className="text-[11px] text-indigo-600 font-bold">{row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}</span>
                             </td>
                             <td className="px-4 py-3.5">
                               {row.committedSubjects && row.committedSubjects.length > 0 ? (

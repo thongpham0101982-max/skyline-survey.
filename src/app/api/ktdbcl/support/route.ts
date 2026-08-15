@@ -233,7 +233,7 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
-    // 4.5. Action: getCommitmentCandidates
+   // 4.5. Action: getCommitmentCandidates
     if (action === "getCommitmentCandidates") {
       const periods = await prisma.inputAssessmentPeriod.findMany({
         where: { academicYearId },
@@ -245,56 +245,181 @@ export async function GET(req: Request) {
         where: {
           periodId: { in: periodIds },
           OR: [
-            { admissionResult: "Đạt cam kết" },
-            { admissionResult: "Đạt - Cam kết" },
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
             { directorNote: { contains: "Môn cam kết" } },
-            { directorNote: { contains: "Mon cam ket" } }
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
+            { directorNote: { contains: "Cam kết" } }
           ]
+        },
+        include: {
+          enrollmentClass: {
+            include: {
+              campus: true
+            }
+          }
         }
       })
 
-      const studentCodes = inputStudents.map(s => s.studentCode)
+      const preschoolStudents = await prisma.preschoolInputAssessmentStudent.findMany({
+        where: {
+          periodId: { in: periodIds },
+          OR: [
+            { generalResult: { contains: "cam kết" } },
+            { generalResult: { contains: "Cam kết" } },
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
+            { directorNote: { contains: "Cam kết" } }
+          ]
+        },
+        include: {
+          enrollmentClass: {
+            include: {
+              campus: true
+            }
+          }
+        }
+      })
+
+      const allStudentCodes = [
+        ...inputStudents.map(s => s.studentCode),
+        ...preschoolStudents.map(s => s.studentCode)
+      ].filter(Boolean)
+
+      const allFullNames = [
+        ...inputStudents.map(s => s.fullName),
+        ...preschoolStudents.map(s => s.fullName)
+      ].filter(Boolean)
+
       const systemStudents = await prisma.student.findMany({
         where: {
-          studentCode: { in: studentCodes },
+          OR: [
+            { studentCode: { in: allStudentCodes } },
+            { studentName: { in: allFullNames } }
+          ],
           academicYearId
         },
         include: {
-          class: true
-        }
-      })
-
-      const result = inputStudents.map(is => {
-        const matchingStudent = systemStudents.find(ss => ss.studentCode === is.studentCode)
-        
-        const parseCommittedSubjects = (note: string) => {
-          if (!note) return []
-          const match = note.match(/(?:Môn cam kết|Mon cam ket):\s*\[([^\]]+)\]/i)
-          if (match && match[1]) {
-            return match[1].split(',').map((s) => s.trim())
+          class: {
+            include: {
+              campus: true
+            }
           }
-          return []
-        }
-        
-        const committedSubjects = parseCommittedSubjects(is.directorNote || "")
-
-        return {
-          id: is.id,
-          studentCode: is.studentCode,
-          fullName: is.fullName,
-          gender: is.gender,
-          admissionResult: is.admissionResult,
-          directorNote: is.directorNote,
-          systemStudentId: matchingStudent?.id || null,
-          className: matchingStudent?.class?.className || is.className || "Chưa xếp lớp",
-          committedSubjects,
-          mathScore: is.mathScore,
-          literatureScore: is.literatureScore,
-          writtenEnglishScore: is.writtenEnglishScore,
-          oralEnglishScore: is.oralEnglishScore,
-          psychologyScore: is.psychologyScore
         }
       })
+
+      const cleanString = (str: string | null | undefined) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
+      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
+        const text = `${note || ""} ${resultStr || ""}`
+        if (!text.trim()) return []
+        
+        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
+        if (match && match[1]) {
+          const splitSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
+          if (splitSubs.length > 0) return splitSubs
+        }
+
+        const subs: string[] = []
+        if (/Toán|Math/i.test(text)) subs.push("Toán")
+        if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
+        if (/Anh|English/i.test(text)) subs.push("Tiếng Anh")
+        if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
+        return subs
+      }
+
+      const result = [
+        ...inputStudents.map(is => {
+          const matchingStudent = systemStudents.find(ss => 
+            (ss.studentCode && is.studentCode && ss.studentCode.trim().toLowerCase() === is.studentCode.trim().toLowerCase()) ||
+            cleanString(ss.studentName) === cleanString(is.fullName)
+          )
+          
+          const committedSubjects = parseCommittedSubjects(is.directorNote, is.admissionResult)
+
+          const resolvedClassName = 
+            matchingStudent?.class?.className ||
+            matchingStudent?.class?.classCode ||
+            is.enrollmentClass?.className ||
+            is.enrollmentClass?.classCode ||
+            (is.enrollmentClassId && !is.enrollmentClassId.startsWith("c") ? is.enrollmentClassId : null) ||
+            (is.className && is.className !== "Chưa xếp lớp" ? is.className : null) ||
+            "Chưa xếp lớp"
+
+          const resolvedCampus = 
+            matchingStudent?.class?.campus?.campusName ||
+            is.enrollmentClass?.campus?.campusName ||
+            is.registeredCampus ||
+            is.admissionCampus ||
+            ""
+
+          return {
+            id: is.id,
+            studentCode: is.studentCode,
+            fullName: is.fullName,
+            gender: is.gender,
+            admissionResult: is.admissionResult,
+            directorNote: is.directorNote,
+            systemStudentId: matchingStudent?.id || null,
+            className: resolvedClassName,
+            campusName: resolvedCampus,
+            committedSubjects,
+            mathScore: is.mathScore,
+            literatureScore: is.literatureScore,
+            writtenEnglishScore: is.writtenEnglishScore,
+            oralEnglishScore: is.oralEnglishScore,
+            psychologyScore: is.psychologyScore
+          }
+        }),
+        ...preschoolStudents.map(ps => {
+          const matchingStudent = systemStudents.find(ss => 
+            (ss.studentCode && ps.studentCode && ss.studentCode.trim().toLowerCase() === ps.studentCode.trim().toLowerCase()) ||
+            cleanString(ss.studentName) === cleanString(ps.fullName)
+          )
+          
+          const committedSubjects = parseCommittedSubjects(ps.directorNote, ps.generalResult)
+
+          const resolvedClassName = 
+            matchingStudent?.class?.className ||
+            matchingStudent?.class?.classCode ||
+            ps.enrollmentClass?.className ||
+            ps.enrollmentClass?.classCode ||
+            (ps.enrollmentClassId && !ps.enrollmentClassId.startsWith("c") ? ps.enrollmentClassId : null) ||
+            "Chưa xếp lớp"
+
+          const resolvedCampus = 
+            matchingStudent?.class?.campus?.campusName ||
+            ps.enrollmentClass?.campus?.campusName ||
+            ps.admissionCampus ||
+            ""
+
+          return {
+            id: ps.id,
+            studentCode: ps.studentCode,
+            fullName: ps.fullName,
+            gender: ps.gender,
+            admissionResult: ps.generalResult,
+            directorNote: ps.directorNote,
+            systemStudentId: matchingStudent?.id || null,
+            className: resolvedClassName,
+            campusName: resolvedCampus,
+            committedSubjects,
+            mathScore: null,
+            literatureScore: null,
+            writtenEnglishScore: null,
+            oralEnglishScore: null,
+            psychologyScore: null
+          }
+        })
+      ]
 
       return NextResponse.json(result)
     }
