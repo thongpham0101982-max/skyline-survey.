@@ -1071,21 +1071,27 @@ export default function TeacherAdvisoryPage() {
                           </td>
                         )}
 
-                        {/* Mục tiêu học tập (không lấy Action) */}
+                        {/* Mục tiêu học tập (Nhập liệu chi tiết cho từng nhóm mục tiêu 1, 2, 3, 4) */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <div className="space-y-1.5">
                             <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
                               {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
                             </span>
-                            {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
-                              <p className="font-bold text-slate-900 text-xs leading-relaxed">{item.targetText}</p>
-                            ) : (
-                              <p className="font-semibold text-slate-400 text-xs italic">Chưa ghi nhận mục tiêu cụ thể</p>
-                            )}
+                            <textarea
+                              rows={3}
+                              value={item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : ""}
+                              onChange={(e) => {
+                                const updated = [...singleStudentTrackingRows]
+                                updated[idx].targetText = e.target.value
+                                setSingleStudentTrackingRows(updated)
+                              }}
+                              placeholder={"Bổ sung nội dung chi tiết cho " + (item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "Mục tiêu định hướng" : item.category) + "..."}
+                              className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
+                            />
                           </div>
                         </td>
 
-                        {/* Kết quả theo dõi (Chỉ lấy Dropdown, Không lấy nhận xét) */}
+                        {/* Kết quả theo dõi */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <select
                             value={item.progressStatus || "CHUA_DANH_GIA"}
@@ -1168,18 +1174,20 @@ export default function TeacherAdvisoryPage() {
                           </select>
                         </td>
 
-                        {/* Khuyến nghị cho phụ huynh / giáo viên bộ môn */}
-                        {idx === 0 && (
-                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 align-top">
-                            <textarea
-                              rows={8}
-                              value={rubricForm.recommendations}
-                              onChange={(e) => setRubricForm({ ...rubricForm, recommendations: e.target.value })}
-                              placeholder="Nhập khuyến nghị chi tiết cho Phụ huynh và GVBM..."
-                              className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:border-teal-500 focus:ring-2 focus:ring-teal-200 min-h-[160px]"
-                            />
-                          </td>
-                        )}
+                        {/* Khuyến nghị / Nhận xét chi tiết cho TỪNG nhóm mục tiêu */}
+                        <td className="p-3 align-top">
+                          <textarea
+                            rows={3}
+                            value={item.teacherNotes || ""}
+                            onChange={(e) => {
+                              const updated = [...singleStudentTrackingRows]
+                              updated[idx].teacherNotes = e.target.value
+                              setSingleStudentTrackingRows(updated)
+                            }}
+                            placeholder={"Nhập khuyến nghị / ghi chú chi tiết cho " + (item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "Mục tiêu định hướng" : item.category) + "..."}
+                            className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
+                          />
+                        </td>
                       </tr>
                     ))
                   ) : (
