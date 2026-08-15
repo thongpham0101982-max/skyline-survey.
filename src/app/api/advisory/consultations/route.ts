@@ -6,33 +6,75 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const studentId = searchParams.get("studentId")
+  const targetStudentId = searchParams.get("studentId")
+  const targetStudentCode = searchParams.get("studentCode")
   const classId = searchParams.get("classId")
   const academicYearId = searchParams.get("academicYearId")
 
   try {
-    const whereCondition: any = {}
-    if (academicYearId) whereCondition.academicYearId = academicYearId
-    if (studentId) whereCondition.studentId = studentId
+    let targetStudentIds: string[] = []
+    if (targetStudentId) targetStudentIds.push(targetStudentId)
 
-    if (classId && !studentId) {
+    let codeToLookup = targetStudentCode
+    if (!codeToLookup && targetStudentId) {
+      const stObj = await prisma.student.findUnique({
+        where: { id: targetStudentId },
+        select: { studentCode: true }
+      }).catch(() => null)
+      codeToLookup = stObj?.studentCode
+    }
+
+    if (codeToLookup) {
+      const sameCodeStudents = await prisma.student.findMany({
+        where: { studentCode: codeToLookup },
+        select: { id: true }
+      }).catch(() => [])
+      if (sameCodeStudents.length > 0) {
+        targetStudentIds = Array.from(new Set([...targetStudentIds, ...sameCodeStudents.map(s => s.id)]))
+      }
+    }
+
+    let whereCondition: any = {}
+    if (targetStudentIds.length > 0) {
+      whereCondition.studentId = { in: targetStudentIds }
+    } else if (classId) {
       const classStudents = await prisma.student.findMany({
         where: { classId },
         select: { id: true }
-      })
+      }).catch(() => [])
       whereCondition.studentId = { in: classStudents.map(s => s.id) }
     }
 
-    const logs = await prisma.academicConsultationLog.findMany({
-      where: whereCondition,
+    let logs = await prisma.academicConsultationLog.findMany({
+      where: {
+        ...whereCondition,
+        ...(academicYearId ? { academicYearId } : {})
+      },
       include: {
         student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } },
         teacher: { select: { id: true, teacherName: true } }
       },
       orderBy: { meetingDate: "desc" }
-    })
+    }).catch(() => [])
 
-    return NextResponse.json(logs)
+    // Fallback without academicYearId filter if empty
+    if (logs.length === 0 && targetStudentIds.length > 0) {
+      logs = await prisma.academicConsultationLog.findMany({
+        where: { studentId: { in: targetStudentIds } },
+        include: {
+          student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } },
+          teacher: { select: { id: true, teacherName: true } }
+        },
+        orderBy: { meetingDate: "desc" }
+      }).catch(() => [])
+    }
+
+    const formattedLogs = logs.map(l => ({
+      ...l,
+      evaluatorName: l.teacher?.teacherName || "Giáo Viên Cố Vấn"
+    }))
+
+    return NextResponse.json(formattedLogs)
   } catch (error: any) {
     console.error("GET /api/advisory/consultations error:", error)
     return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })
@@ -63,7 +105,7 @@ export async function POST(req: Request) {
 
     const teacher = await prisma.teacher.findUnique({
       where: { userId: session.user.id }
-    })
+    }).catch(() => null)
     const teacherId = teacher ? teacher.id : session.user.id
 
     let log
