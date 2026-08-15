@@ -11,7 +11,7 @@ import {
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation,
   requestObservationSlot, respondToObservationRequest,
-  deleteObservationSlot, getCreatedCountInMonth, getObservationSlots,
+  deleteObservationSlot, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
   approveRegistration, submitEvaluation, updateTeacherObservationTargets
 } from "./actions"
 
@@ -511,6 +511,23 @@ export function ObservationClient(props: ObservationClientProps) {
 
   useEffect(() => { setActiveTab(activeTabParam) }, [activeTabParam])
 
+  // Auto-open evaluation modal if evalSlotId query param exists
+  useEffect(() => {
+    const evalSlotIdParam = searchParams.get("evalSlotId");
+    if (evalSlotIdParam && slots.length > 0) {
+      const targetSlot = slots.find((s: any) => s.id === evalSlotIdParam);
+      if (targetSlot) {
+        const myReg = targetSlot.registrations?.find((r: any) => r.teacherId === currentTeacher?.id);
+        if (myReg) {
+          openEvalModal(myReg, targetSlot);
+        } else if (targetSlot.registrations && targetSlot.registrations.length > 0) {
+          openEvalModal(targetSlot.registrations[0], targetSlot);
+        }
+      }
+    }
+  }, [searchParams, slots, currentTeacher]);
+
+
   useEffect(() => {
     setSlots(initialSlots)
   }, [initialSlots])
@@ -774,6 +791,18 @@ export function ObservationClient(props: ObservationClientProps) {
       else showToast(res.error || "Không thể xóa!", "error")
     })
   }
+
+  
+  const handleSendTeamsReminder = async (slotId: string) => {
+    startTransition(async () => {
+      const res = await triggerSlotReminder(slotId);
+      if (res.success) {
+        showToast("Đã gửi tin nhắn nhắc nhở qua Teams đến Tổ chuyên môn!", "success");
+      } else {
+        showToast(res.error || "Không thể gửi tin nhắn nhắc nhở", "error");
+      }
+    });
+  };
 
   const handleApprove = async (registrationId: string) => {
     startTransition(async () => {

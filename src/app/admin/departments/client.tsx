@@ -11,7 +11,7 @@ export default function DepartmentsClient() {
   
   const [isOpen, setIsOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ code: "", name: "", description: "", blockCM: "" });
+  const [form, setForm] = useState({ code: "", name: "", description: "", blockCM: "", teamsWebhookUrl: "" });
 
   const fetchDepartments = async () => {
     setLoading(true);
@@ -39,7 +39,7 @@ export default function DepartmentsClient() {
 
   const handleEdit = (d: any) => {
     setEditingId(d.id);
-    setForm({ code: d.code, name: d.name, description: d.description || "", blockCM: d.blockCM || "" });
+    setForm({ code: d.code, name: d.name, description: d.description || "", blockCM: d.blockCM || "", teamsWebhookUrl: d.teamsWebhookUrl || "" });
     setIsOpen(true);
   };
 
@@ -77,7 +77,7 @@ export default function DepartmentsClient() {
           </h1>
           <p className="text-slate-500 mt-1 text-sm">Thêm, sửa, xóa danh sách Tổ chuyên môn / Phòng ban</p>
         </div>
-        <button onClick={() => { setEditingId(null); setForm({ code: "", name: "", description: "", blockCM: "" }); setIsOpen(true); }} className="px-4 py-2.5 bg-[#00A99D] text-white rounded-xl shadow-sm hover:bg-[#009085] font-semibold flex items-center gap-2"><Plus className="w-5 h-5"/>Thêm Tổ / Phòng</button>
+        <button onClick={() => { setEditingId(null); setForm({ code: "", name: "", description: "", blockCM: "", teamsWebhookUrl: "" }); setIsOpen(true); }} className="px-4 py-2.5 bg-[#00A99D] text-white rounded-xl shadow-sm hover:bg-[#009085] font-semibold flex items-center gap-2"><Plus className="w-5 h-5"/>Thêm Tổ / Phòng</button>
       </div>
 
       <div className="bg-white rounded-[1.5rem] shadow-sm border-2 border-violet-100/80 overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-hidden">
@@ -167,6 +167,11 @@ export default function DepartmentsClient() {
                   <option value="Điều hành">Điều hành</option>
                   <option value="Hỗ trợ người học">Hỗ trợ người học</option>
                 </select>
+              </div>
+                            <div>
+                <label className="block text-sm font-semibold mb-1.5 text-slate-700">Microsoft Teams Webhook URL (Kênh Tổ CM)</label>
+                <input value={form.teamsWebhookUrl} onChange={e=>setForm({...form, teamsWebhookUrl: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none text-xs font-mono" placeholder="https://outlook.office.com/webhook/..." />
+                <p className="text-[10px] text-slate-400 mt-1">Dùng để tự động phát thông báo khi có tiết dạy mở mới hoặc nhắc nhở dự giờ đến kênh Microsoft Teams của Tổ này.</p>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5 text-slate-700">Mô tả</label>

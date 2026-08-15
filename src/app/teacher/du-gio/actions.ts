@@ -1,4 +1,12 @@
 "use server"
+import {
+  sendTeamsNewSlotDepartmentNotif,
+  sendTeamsRequestApprovalNotif,
+  sendTeamsApprovalWithEvalFormNotif,
+  sendTeamsDeclineNotif,
+  sendTeamsLackingObserversReminder,
+  sendTeamsToAllDepartmentMembers
+} from "@/lib/teams";
 import { cookies } from "next/headers"
 
 import { prisma } from "@/lib/db"
@@ -459,6 +467,119 @@ export async function createObservationSlot(data: {
 
     revalidatePath("/teacher/du-gio")
     revalidatePath("/admin/du-gio")
+
+    // Notify ALL members in the Department via In-App, Email & Teams
+    try {
+      const targetDeptId = newSlot.targetDeptId || currentTeacher.departmentId;
+      if (targetDeptId) {
+                const deptMembers = await prisma.teacher.findMany({
+          where: {
+            OR: [
+              { departmentId: targetDeptId },
+              { departmentAssignments: { some: { departmentId: targetDeptId } } }
+            ],
+            status: "ACTIVE"
+          },
+          include: {
+            user: true,
+            departmentRel: true
+          }
+        });
+
+        // 1. Create In-App Notifications for all department members
+        const notifData = deptMembers
+          .filter(m => m.user?.id)
+          .map(m => ({
+            userId: m.user!.id,
+            title: "Tiết dạy dự giờ mới trong Tổ chuyên môn",
+            message: `Thầy/Cô ${currentTeacher.teacherName} vừa mở tiết dạy dự giờ mới (${newSlot.subjectName} - ${newSlot.topic}). Kính mời Thầy/Cô đăng ký tham dự.`,
+            link: "/teacher/du-gio?tab=dang-ky",
+            isRead: false
+          }));
+
+        if (notifData.length > 0) {
+          await prisma.notification.createMany({ data: notifData });
+        }
+
+        
+        // 2. Send Emails from system default account bankhaothi@skylineschool.edu.vn to ALL members in the Department
+        const memberEmails = deptMembers
+          .map(m => m.email || m.user?.email)
+          .filter(e => e && e.includes("@")) as string[];
+
+        if (memberEmails.length > 0) {
+          const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
+          const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + "/teacher/du-gio?tab=dang-ky";
+          
+          const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới trong Tổ chuyên môn: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
+          const emailHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+              <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <h2 style="color: #ffffff; margin: 0; font-size: 18px;">TIẾT DẠY DỰ GIỜ MỚI Trong TỔ CHUYÊN MÔN</h2>
+              </div>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô trong <strong>Tổ chuyên môn</strong>,</p>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa mở một tiết dạy dự giờ mới cho Tổ chuyên môn. Kính mời Thầy/Cô đăng ký tham dự.</p>
+              
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${newSlot.topic}</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.subjectName} (${newSlot.grade} - ${newSlot.className || "Lớp học"})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.campusName || "Trường"} - ${newSlot.room || "Phòng học"}</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
+                <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.startTime} - ${newSlot.endTime}</td></tr>
+              </table>
+
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Đăng Ký Dự Giờ Ngay Trực Tiếp Trên Skyline</a>
+              </div>
+              
+              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+              </div>
+            </div>
+          `;
+
+          for (const email of memberEmails) {
+            sendEmail({ to: email, subject: emailSubject, html: emailHtml }).catch(err => console.error("[Email Notification Error]:", err));
+          }
+        }
+
+        // 3. Dispatch Teams notifications to all department members
+        const deptRel = (currentTeacher as any).departmentRel;
+        // Teams webhook skipped: ONLY Email sending to department member emails active
+      }
+    } catch (deptNotifErr) {
+      console.error("Error sending department member notifications:", deptNotifErr);
+    }
+
+
+    // Send MS Teams Notification to Department Channel for new slot (Tag 1)
+    try {
+      const teacherWithDept = await prisma.teacher.findUnique({
+        where: { id: currentTeacher.id },
+        include: { departmentRel: true }
+      });
+      sendTeamsNewSlotDepartmentNotif({
+        id: newSlot.id,
+        topic: newSlot.topic,
+        subjectName: newSlot.subjectName,
+        level: newSlot.level,
+        grade: newSlot.grade,
+        className: newSlot.className,
+        date: newSlot.date,
+        startTime: newSlot.startTime,
+        endTime: newSlot.endTime,
+        campusName: newSlot.campusName,
+        room: newSlot.room,
+        teacherName: currentTeacher.teacherName,
+        teacherCode: currentTeacher.teacherCode,
+        maxSeats: newSlot.maxSeats || 4,
+        registeredCount: 0
+      }, teacherWithDept?.departmentRel as any).catch(err => console.error("MS Teams new slot error:", err));
+    } catch (teamsErr) {
+      console.error("Teams notification dispatch error:", teamsErr);
+    }
+
     
     // Notify host teacher about observation request from GVBM
     try {
@@ -502,11 +623,8 @@ export async function createObservationSlot(data: {
           `;
 
           try {
-            await sendEmail({
-              to: hostEmail,
-              subject: `[Skyline - Dự giờ] Thầy/Cô ${observerTeacher.teacherName} vừa đăng ký tiết dạy của bạn`,
-              html: emailHtml
-            });
+            // Email sending disabled per configuration
+// sendEmail call omitted
           } catch (mailErr) {
             console.error("Failed to send email for requestObservationSlot:", mailErr);
           }
@@ -618,11 +736,8 @@ export async function registerObservation(slotId: string) {
           `;
 
           try {
-            await sendEmail({
-              to: hostEmail,
-              subject: `[Skyline - Dự giờ] Thầy/Cô ${currentTeacher.teacherName} vừa đăng ký tiết dạy của bạn`,
-              html: emailHtml
-            });
+            // Email sending disabled per configuration
+// sendEmail call omitted
           } catch (mailErr) {
             console.error("Failed to send email to host teacher:", mailErr);
           }
@@ -782,6 +897,44 @@ export async function approveRegistration(registrationId: string) {
     }
 
     await prisma.observationRegistration.update({ where: { id: registrationId }, data: { isApproved: true, approvedAt: new Date() } })
+
+    // Send MS Teams confirmation with Evaluation Form link to Observer Teacher
+    try {
+      const regFull = await prisma.observationRegistration.findUnique({
+        where: { id: registrationId },
+        include: {
+          teacher: { include: { departmentRel: true } },
+          slot: { include: { teacher: true } }
+        }
+      });
+      if (regFull && regFull.teacher) {
+        sendTeamsApprovalWithEvalFormNotif(
+          {
+            id: regFull.slot.id,
+            topic: regFull.slot.topic,
+            subjectName: regFull.slot.subjectName,
+            level: regFull.slot.level,
+            grade: regFull.slot.grade,
+            className: regFull.slot.className,
+            date: regFull.slot.date,
+            startTime: regFull.slot.startTime,
+            endTime: regFull.slot.endTime,
+            campusName: regFull.slot.campusName,
+            room: regFull.slot.room
+          },
+          {
+            teacherName: regFull.teacher.teacherName,
+            teacherCode: regFull.teacher.teacherCode,
+            email: regFull.teacher.email,
+            teamsWebhookUrl: (regFull.teacher as any)?.departmentRel?.teamsWebhookUrl
+          },
+          currentTeacher.teacherName
+        ).catch(err => console.error("Teams approval error:", err));
+      }
+    } catch (apprTeamsErr) {
+      console.error("Teams approval dispatch error:", apprTeamsErr);
+    }
+
     revalidatePath("/teacher/du-gio")
     revalidatePath("/admin/du-gio")
     return { success: true }
@@ -1069,6 +1222,15 @@ export async function updateTeacherObservationTargets(
 
 async function ensureDbColumns() {
   try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Teacher" ADD COLUMN "teamsWebhookUrl" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "Department" ADD COLUMN "teamsWebhookUrl" TEXT;`);
+  } catch (e) {}
+  try {
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "lastRemindedAt" DATETIME;`);
+  } catch (e) {}
+  try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "requestOrigin" TEXT DEFAULT 'TEACHER_OPEN';`);
   } catch (e) {}
   try {
@@ -1257,11 +1419,8 @@ export async function requestObservationSlot(data: {
           `;
 
           try {
-            await sendEmail({
-              to: hostEmail,
-              subject: `[Skyline - Dự giờ] Thầy/Cô ${observerTeacher.teacherName} vừa đăng ký tiết dạy của bạn`,
-              html: emailHtml
-            });
+            // Email sending disabled per configuration
+// sendEmail call omitted
           } catch (mailErr) {
             console.error("Failed to send email for requestObservationSlot:", mailErr);
           }
@@ -1327,11 +1486,8 @@ export async function requestObservationSlot(data: {
             `;
 
             try {
-              await sendEmail({
-                to: teacherEmail,
-                subject: `[Skyline - Dự giờ] Thông báo tiết dạy mở mới thuộc Tổ Chuyên Môn - Thầy/Cô ${currentTeacher.teacherName}`,
-                html: emailHtml
-              });
+              // Email sending disabled per configuration
+// sendEmail call omitted
             } catch (mailErr) {
               console.error("Failed to send email to TCM teacher:", mailErr);
             }
@@ -1411,5 +1567,46 @@ export async function respondToObservationRequest(slotId: string, accept: boolea
     return { success: true }
   } catch (e: any) {
     return { success: false, error: e.message }
+  }
+}
+
+
+export async function triggerSlotReminder(slotId: string) {
+  try {
+    const session = await auth();
+    if (!session || !session.user) return { success: false, error: "Unauthorized" };
+
+    const slot = await prisma.observationSlot.findUnique({
+      where: { id: slotId },
+      include: {
+        teacher: { include: { departmentRel: true } },
+        registrations: true
+      }
+    });
+
+    if (!slot) return { success: false, error: "Không tìm thấy thông tin tiết dạy" };
+
+    const regCount = slot.registrations.length;
+    await sendTeamsLackingObserversReminder({
+      id: slot.id,
+      topic: slot.topic,
+      subjectName: slot.subjectName,
+      level: slot.level,
+      grade: slot.grade,
+      className: slot.className,
+      date: slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      campusName: slot.campusName,
+      room: slot.room,
+      teacherName: slot.teacher?.teacherName,
+      teacherCode: slot.teacher?.teacherCode,
+      maxSeats: slot.maxSeats || 4,
+      registeredCount: regCount
+    }, slot.teacher?.departmentRel as any);
+
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
   }
 }

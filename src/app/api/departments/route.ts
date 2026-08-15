@@ -18,12 +18,12 @@ export async function GET() {
 // POST - create new department
 export async function POST(req: NextRequest) {
   try {
-    const { code, name, description, blockCM } = await req.json();
+    const { code, name, description, blockCM, teamsWebhookUrl } = await req.json();
     if (!code || !name) {
       return NextResponse.json({ error: "Ma To va Ten To khong duoc de trong" }, { status: 400 });
     }
     const dept = await prisma.department.create({
-      data: { code: code.trim().toUpperCase(), name: name.trim(), description: description?.trim() || null, blockCM: blockCM?.trim() || null },
+      data: { code: code.trim().toUpperCase(), name: name.trim(), description: description?.trim() || null, blockCM: blockCM?.trim() || null, teamsWebhookUrl: teamsWebhookUrl?.trim() || null },
     });
     return NextResponse.json(dept, { status: 201 });
   } catch (e: any) {
@@ -38,13 +38,13 @@ export async function POST(req: NextRequest) {
 // PUT - update department
 export async function PUT(req: NextRequest) {
   try {
-    const { id, code, name, description, blockCM } = await req.json();
+    const { id, code, name, description, blockCM, teamsWebhookUrl } = await req.json();
     if (!id || !code || !name) {
       return NextResponse.json({ error: "Thieu thong tin cap nhat" }, { status: 400 });
     }
     const dept = await prisma.department.update({
       where: { id },
-      data: { code: code.trim().toUpperCase(), name: name.trim(), description: description?.trim() || null, blockCM: blockCM?.trim() || null },
+      data: { code: code.trim().toUpperCase(), name: name.trim(), description: description?.trim() || null, blockCM: blockCM?.trim() || null, teamsWebhookUrl: teamsWebhookUrl?.trim() || null },
     });
     return NextResponse.json(dept);
   } catch (e: any) {
