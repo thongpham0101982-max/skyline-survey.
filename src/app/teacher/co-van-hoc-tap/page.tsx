@@ -551,6 +551,14 @@ export default function TeacherAdvisoryPage() {
             {/* Executive Class Statistics Bar */}
             <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-2xl p-4 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
+              <a
+                href={`/api/advisory/export-observation-book?classId=${selectedClassId}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-extrabold text-xs shadow-sm transition-all"
+              >
+                <span>📖</span> Xuất Sổ Quan Sát GVCN (PDF)
+              </a>
                 <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-md flex items-center justify-center font-black text-lg text-teal-200 shrink-0">
                   📊
                 </div>
