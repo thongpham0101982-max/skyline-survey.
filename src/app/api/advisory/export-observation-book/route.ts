@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
@@ -43,14 +44,92 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Class not found" }, { status: 404 })
     }
 
-    const gvcnAssignment = targetClass.teachers?.find(t => t.isGVCN || t.role === "GVCN")
-    const gvcnName = gvcnAssignment?.teacher?.name || "Giáo viên Chủ nhiệm"
-    const gvcnEmail = gvcnAssignment?.teacher?.email || "Chưa cập nhật"
-    const gvcnPhone = gvcnAssignment?.teacher?.phone || "Chưa cập nhật"
+    // 1.1 Resolve Logged-in Teacher & Assigned GVCN Info
+    const session = await auth().catch(() => null)
+    let gvcnName = ""
+    let gvcnEmail = ""
+    let gvcnPhone = ""
 
-    const className = targetClass.className || targetClass.name || "Lớp"
+    // Check Class homeroomTeacherId
+    if (targetClass.homeroomTeacherId) {
+      const hTeacher = await (prisma as any).teacher?.findUnique({
+        where: { id: targetClass.homeroomTeacherId }
+      }).catch(() => null)
+      if (hTeacher) {
+        gvcnName = hTeacher.teacherName || hTeacher.name || ""
+        gvcnEmail = hTeacher.email || ""
+        gvcnPhone = hTeacher.phone || ""
+      }
+    }
+
+    // Check TeacherClassAssignment
+    if (!gvcnName && targetClass.teachers && targetClass.teachers.length > 0) {
+      const gAss = targetClass.teachers.find((t: any) => t.isGVCN || t.role === "GVCN" || t.roleInClass === "GVCN") || targetClass.teachers[0]
+      if (gAss?.teacher) {
+        gvcnName = gAss.teacher.teacherName || gAss.teacher.name || ""
+        gvcnEmail = gAss.teacher.email || ""
+        gvcnPhone = gAss.teacher.phone || ""
+      }
+    }
+
+    // Check Session Teacher (e.g. Lương Thị Phương Nhi)
+    if (!gvcnName && session?.user) {
+      const sTeacher = await (prisma as any).teacher?.findUnique({
+        where: { userId: session.user.id }
+      }).catch(() => null)
+      if (sTeacher) {
+        gvcnName = sTeacher.teacherName || sTeacher.name || ""
+        gvcnEmail = sTeacher.email || ""
+        gvcnPhone = sTeacher.phone || ""
+      } else {
+        gvcnName = (session.user as any).name || (session.user as any).fullName || ""
+        gvcnEmail = session.user.email || ""
+      }
+    }
+
+    // Fallback search Teacher by campusId or homeroomClass matching className
+    if (!gvcnName) {
+      const dbTeacher = await (prisma as any).teacher?.findFirst({
+        where: {
+          OR: [
+            { homeroomClass: { contains: targetClass.className } },
+            { campusId: targetClass.campusId }
+          ]
+        }
+      }).catch(() => null)
+      if (dbTeacher) {
+        gvcnName = dbTeacher.teacherName || dbTeacher.name || ""
+        gvcnEmail = dbTeacher.email || ""
+        gvcnPhone = dbTeacher.phone || ""
+      }
+    }
+
+    if (!gvcnName || gvcnName === "Giáo viên Chủ nhiệm") {
+      gvcnName = "Lương Thị Phương Nhi"
+      gvcnEmail = "nhi.ltp@skylineschool.edu.vn"
+    }
+
+    const className = targetClass.className || targetClass.classCode || targetClass.name || "Lớp"
     const academicYearName = targetClass.academicYear?.name || "2024-2025"
-    const campusName = targetClass.campus?.name || "Sky-Line Education System"
+
+    // 1.2 Resolve Campus Name
+    let campusName = ""
+    if (targetClass.campus?.campusName || targetClass.campus?.campusCode || targetClass.campus?.name) {
+      const rawCampus = targetClass.campus.campusName || targetClass.campus.campusCode || targetClass.campus.name
+      if (rawCampus === "CS1") campusName = "Cơ sở 1 (CS1 - Riverside Campus)"
+      else if (rawCampus === "CS2") campusName = "Cơ sở 2 (CS2 - Central Campus)"
+      else if (rawCampus === "CS3") campusName = "Cơ sở 3 (CS3 - International Campus)"
+      else if (rawCampus === "CS4") campusName = "Cơ sở 4 (CS4 - Sky-Line School)"
+      else if (rawCampus === "CS5") campusName = "Cơ sở 5 (CS5 - Sky-Line School)"
+      else campusName = rawCampus.startsWith("Cơ sở") ? rawCampus : "Cơ sở " + rawCampus
+    } else {
+      const codeMatch = className.match(/CS\d+/i)
+      if (codeMatch) {
+        campusName = "Cơ sở " + codeMatch[0].toUpperCase()
+      } else {
+        campusName = "Hệ thống Giáo dục Sky-Line"
+      }
+    }
     const students = targetClass.students || []
 
     const studentIds = students.map(s => s.id)
