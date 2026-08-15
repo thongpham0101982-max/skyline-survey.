@@ -757,11 +757,11 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                         <span>Bảng Đánh Giá Định Kỳ Theo Rubric</span>
                       </h3>
                       <span className="bg-slate-100 text-slate-600 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-slate-200">
-                        🔒 Chế độ xem Phụ huynh
+                        🔒 Chế độ xem Phụ huynh (Kết quả từ GVCN)
                       </span>
                     </div>
                     <p className="text-xs text-slate-500 font-medium mt-1">
-                      Đánh giá định kỳ 3 tiêu chí cốt lõi (1 - 5 Sao) do Thầy Cô Cố Vấn đánh giá cho {student.studentName || selectedStudent.studentName}.
+                      Đánh giá 3 tiêu chí cốt lõi (Thang điểm 1 - 5) & Tiến độ chi tiết do Giáo viên chủ nhiệm đánh giá cho {student.studentName || selectedStudent.studentName}.
                     </p>
                   </div>
 
@@ -782,6 +782,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                   </div>
                 </div>
 
+                {/* 3 Core Criteria Cards */}
                 {activeTermEval ? (
                   <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -852,21 +853,75 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                     </div>
 
                     {activeTermEval.recommendations && (
-                      <div className="p-5 rounded-3xl bg-slate-50 border border-slate-200 space-y-2">
-                        <span className="font-black text-xs text-slate-900 uppercase flex items-center gap-1.5">
+                      <div className="p-5 rounded-3xl bg-teal-50/80 border border-teal-200 space-y-2">
+                        <span className="font-black text-xs text-teal-950 uppercase flex items-center gap-1.5">
                           💡 Đề xuất khuyến nghị từ Thầy Cô Cố Vấn:
                         </span>
-                        <p className="text-slate-800 font-semibold text-xs leading-relaxed pl-5 italic">
+                        <p className="text-teal-900 font-semibold text-xs leading-relaxed pl-5 italic">
                           "{activeTermEval.recommendations}"
                         </p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="p-12 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                    Chưa có ghi nhận đánh giá Rubric định kỳ cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}.
+                  <div className="p-10 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                    Chưa có đánh giá Rubric định kỳ từ Giáo viên chủ nhiệm cho Học kỳ {selectedTerm === "HK1" ? "I" : "II"}.
                   </div>
                 )}
+
+                {/* Detailed 4 Goal Categories Rubric Table matching Teacher View */}
+                <div className="pt-4 space-y-3">
+                  <h4 className="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+                    <Table className="w-4 h-4 text-teal-600" />
+                    <span>Kết Quả Đánh Giá Chi Tiết Theo 4 Nhóm Mục Tiêu</span>
+                  </h4>
+
+                  <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-200">
+                          <th className="p-3.5 border-r border-slate-200 min-w-[150px]">Nhóm mục tiêu</th>
+                          <th className="p-3.5 border-r border-slate-200 min-w-[220px]">Nội dung mục tiêu cá nhân</th>
+                          <th className="p-3.5 border-r border-slate-200 min-w-[140px]">Kết quả theo dõi</th>
+                          <th className="p-3.5 min-w-[200px]">Ghi chú / Khuyến nghị từ GVCN</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {currentCategories.map((catDef, catIdx) => {
+                          const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
+                          const firstGoal = catGoalsList[0] || {}
+                          const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
+                          const progressStatus = matchedLog?.progressStatus || "TIEN_TRIEN"
+                          const teacherNotes = matchedLog?.teacherNotes || ""
+
+                          return (
+                            <tr key={catDef.key} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="p-3.5 border-r border-slate-200 font-black text-slate-900 bg-slate-50/40">
+                                {catDef.label}
+                              </td>
+                              <td className="p-3.5 border-r border-slate-200 font-bold text-slate-800">
+                                {firstGoal.targetText || "Chưa nhập nội dung"}
+                              </td>
+                              <td className="p-3.5 border-r border-slate-200">
+                                <span className={"px-3 py-1 rounded-xl text-[11px] font-black border shadow-xs inline-flex items-center gap-1.5 " + (
+                                  progressStatus === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+                                  progressStatus === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-300" :
+                                  "bg-amber-100 text-amber-900 border-amber-300"
+                                )}>
+                                  {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa đạt" : "🟡 Đang tiến triển"}
+                                </span>
+                              </td>
+                              <td className="p-3.5 text-slate-700 font-semibold italic">
+                                {teacherNotes ? "💬 " + teacherNotes : "Chưa có ghi chú"}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
               </div>
 
               {/* CONSULTATION LOGS SECTION */}
