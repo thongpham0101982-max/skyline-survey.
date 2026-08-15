@@ -197,7 +197,10 @@ export default function TeacherAdvisoryPage() {
               teacherSupportRequest: g.teacherSupportRequest || "",
               parentSupportRequest: g.parentSupportRequest || "",
               progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
-              teacherNotes: matchedLog?.teacherNotes || ""
+              teacherNotes: matchedLog?.teacherNotes || "",
+              goalCompletionLevel: matchedLog?.goalCompletionLevel || 4,
+              initiativeLevel: matchedLog?.initiativeLevel || 4,
+              participationAttitude: matchedLog?.participationAttitude || 5
             })
           })
         } else {
@@ -212,7 +215,10 @@ export default function TeacherAdvisoryPage() {
             teacherSupportRequest: "",
             parentSupportRequest: "",
             progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
-            teacherNotes: matchedLog?.teacherNotes || ""
+            teacherNotes: matchedLog?.teacherNotes || "",
+            goalCompletionLevel: matchedLog?.goalCompletionLevel || 4,
+            initiativeLevel: matchedLog?.initiativeLevel || 4,
+            participationAttitude: matchedLog?.participationAttitude || 5
           })
         }
       })
@@ -275,6 +281,19 @@ export default function TeacherAdvisoryPage() {
     if (!selectedStudentId) return
     try {
       setSaving(true)
+      
+      // Calculate overall student rubric scores from rows if present
+      const validRows = singleStudentTrackingRows.filter(r => r.goalCompletionLevel)
+      const avgGoalCompletion = validRows.length > 0
+        ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.goalCompletionLevel) || 4), 0) / validRows.length)
+        : rubricForm.goalCompletionLevel
+      const avgInitiative = validRows.length > 0
+        ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.initiativeLevel) || 4), 0) / validRows.length)
+        : rubricForm.initiativeLevel
+      const avgParticipation = validRows.length > 0
+        ? Math.round(validRows.reduce((acc, r) => acc + (Number(r.participationAttitude) || 5), 0) / validRows.length)
+        : rubricForm.participationAttitude
+
       const res = await fetch("/api/advisory/term-evaluations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -282,7 +301,10 @@ export default function TeacherAdvisoryPage() {
           studentId: selectedStudentId,
           academicYearId,
           term: evalTerm,
-          ...rubricForm
+          goalCompletionLevel: avgGoalCompletion,
+          initiativeLevel: avgInitiative,
+          participationAttitude: avgParticipation,
+          recommendations: rubricForm.recommendations
         })
       })
 
@@ -1038,7 +1060,7 @@ export default function TeacherAdvisoryPage() {
                           </td>
                         )}
 
-                        {/* Mục tiêu học tập (theo từng nhóm/mục tiêu, không lấy Action) */}
+                        {/* Mục tiêu học tập (không lấy Action) */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <div className="space-y-1.5">
                             <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
@@ -1052,96 +1074,95 @@ export default function TeacherAdvisoryPage() {
                           </div>
                         </td>
 
-                        {/* Kết quả theo dõi (cho từng mục tiêu, đồng bộ trực tiếp với Thẻ 1) */}
+                        {/* Kết quả theo dõi (Chỉ lấy Dropdown, Không lấy nhận xét) */}
                         <td className="p-3 border-r border-slate-200 align-top">
-                          <div className="space-y-1.5">
-                            <select
-                              value={item.progressStatus}
-                              onChange={(e) => {
-                                const updated = [...singleStudentTrackingRows]
-                                updated[idx].progressStatus = e.target.value
-                                setSingleStudentTrackingRows(updated)
-                              }}
-                              className={`w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
-                                item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
-                                  ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-                                  : item.progressStatus === "CHUA_DAT"
-                                  ? "bg-rose-100 text-rose-800 border-rose-300"
-                                  : item.progressStatus === "CAN_CO_GANG"
-                                  ? "bg-amber-100 text-amber-900 border-amber-300"
-                                  : "bg-amber-100 text-amber-950 border-amber-300"
-                              }`}
-                            >
-                              <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
-                              <option value="DAT">🟢 Đạt / Đã hoàn thành</option>
-                              <option value="CHUA_DAT">🔴 Chưa đạt</option>
-                              <option value="CAN_CO_GANG">🟠 Cần cố gắng</option>
-                            </select>
-
-                            <input
-                              type="text"
-                              value={item.teacherNotes || ""}
-                              onChange={(e) => {
-                                const updated = [...singleStudentTrackingRows]
-                                updated[idx].teacherNotes = e.target.value
-                                setSingleStudentTrackingRows(updated)
-                              }}
-                              placeholder="Ghi chú nhận xét..."
-                              className="w-full p-1.5 px-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-500"
-                            />
-                          </div>
+                          <select
+                            value={item.progressStatus}
+                            onChange={(e) => {
+                              const updated = [...singleStudentTrackingRows]
+                              updated[idx].progressStatus = e.target.value
+                              setSingleStudentTrackingRows(updated)
+                            }}
+                            className={`w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
+                              item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                                : item.progressStatus === "CHUA_DAT"
+                                ? "bg-rose-100 text-rose-800 border-rose-300"
+                                : item.progressStatus === "CAN_CO_GANG"
+                                ? "bg-amber-100 text-amber-900 border-amber-300"
+                                : "bg-amber-100 text-amber-950 border-amber-300"
+                            }`}
+                          >
+                            <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
+                            <option value="DAT">🟢 Đạt / Đã hoàn thành</option>
+                            <option value="CHUA_DAT">🔴 Chưa đạt</option>
+                            <option value="CAN_CO_GANG">🟠 Cần cố gắng</option>
+                          </select>
                         </td>
 
-                        {idx === 0 && (
-                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 align-top">
-                            <select
-                              value={rubricForm.goalCompletionLevel}
-                              onChange={(e) => setRubricForm({ ...rubricForm, goalCompletionLevel: Number(e.target.value) })}
-                              className="w-full p-2 rounded-xl border border-amber-300 font-black text-xs bg-amber-50 text-amber-950 shadow-xs focus:ring-2 focus:ring-amber-400"
-                            >
-                              {[1, 2, 3, 4, 5].map(v => (
-                                <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
-                              ))}
-                            </select>
-                          </td>
-                        )}
+                        {/* Mức hoàn thành mục tiêu (1-5) cho TỪNG mục tiêu */}
+                        <td className="p-3 border-r border-slate-200 align-top">
+                          <select
+                            value={item.goalCompletionLevel || rubricForm.goalCompletionLevel || 4}
+                            onChange={(e) => {
+                              const updated = [...singleStudentTrackingRows]
+                              updated[idx].goalCompletionLevel = Number(e.target.value)
+                              setSingleStudentTrackingRows(updated)
+                              if (idx === 0) setRubricForm(prev => ({ ...prev, goalCompletionLevel: Number(e.target.value) }))
+                            }}
+                            className="w-full p-2 rounded-xl border border-amber-300 font-black text-xs bg-amber-50 text-amber-950 shadow-xs focus:ring-2 focus:ring-amber-400"
+                          >
+                            {[1, 2, 3, 4, 5].map(v => (
+                              <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
+                            ))}
+                          </select>
+                        </td>
 
-                        {idx === 0 && (
-                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 align-top">
-                            <select
-                              value={rubricForm.initiativeLevel}
-                              onChange={(e) => setRubricForm({ ...rubricForm, initiativeLevel: Number(e.target.value) })}
-                              className="w-full p-2 rounded-xl border border-blue-300 font-black text-xs bg-blue-50 text-blue-950 shadow-xs focus:ring-2 focus:ring-blue-400"
-                            >
-                              {[1, 2, 3, 4, 5].map(v => (
-                                <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
-                              ))}
-                            </select>
-                          </td>
-                        )}
+                        {/* Mức độ chủ động (1-5) cho TỪNG mục tiêu */}
+                        <td className="p-3 border-r border-slate-200 align-top">
+                          <select
+                            value={item.initiativeLevel || rubricForm.initiativeLevel || 4}
+                            onChange={(e) => {
+                              const updated = [...singleStudentTrackingRows]
+                              updated[idx].initiativeLevel = Number(e.target.value)
+                              setSingleStudentTrackingRows(updated)
+                              if (idx === 0) setRubricForm(prev => ({ ...prev, initiativeLevel: Number(e.target.value) }))
+                            }}
+                            className="w-full p-2 rounded-xl border border-blue-300 font-black text-xs bg-blue-50 text-blue-950 shadow-xs focus:ring-2 focus:ring-blue-400"
+                          >
+                            {[1, 2, 3, 4, 5].map(v => (
+                              <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
+                            ))}
+                          </select>
+                        </td>
 
-                        {idx === 0 && (
-                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 align-top">
-                            <select
-                              value={rubricForm.participationAttitude}
-                              onChange={(e) => setRubricForm({ ...rubricForm, participationAttitude: Number(e.target.value) })}
-                              className="w-full p-2 rounded-xl border border-emerald-300 font-black text-xs bg-emerald-50 text-emerald-950 shadow-xs focus:ring-2 focus:ring-emerald-400"
-                            >
-                              {[1, 2, 3, 4, 5].map(v => (
-                                <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
-                              ))}
-                            </select>
-                          </td>
-                        )}
+                        {/* Thái độ tham gia (1-5) cho TỪNG mục tiêu */}
+                        <td className="p-3 border-r border-slate-200 align-top">
+                          <select
+                            value={item.participationAttitude || rubricForm.participationAttitude || 5}
+                            onChange={(e) => {
+                              const updated = [...singleStudentTrackingRows]
+                              updated[idx].participationAttitude = Number(e.target.value)
+                              setSingleStudentTrackingRows(updated)
+                              if (idx === 0) setRubricForm(prev => ({ ...prev, participationAttitude: Number(e.target.value) }))
+                            }}
+                            className="w-full p-2 rounded-xl border border-emerald-300 font-black text-xs bg-emerald-50 text-emerald-950 shadow-xs focus:ring-2 focus:ring-emerald-400"
+                          >
+                            {[1, 2, 3, 4, 5].map(v => (
+                              <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
+                            ))}
+                          </select>
+                        </td>
 
+                        {/* Khuyến nghị cho phụ huynh / giáo viên bộ môn */}
                         {idx === 0 && (
                           <td rowSpan={singleStudentTrackingRows.length} className="p-3 align-top">
                             <textarea
-                              rows={5}
+                              rows={8}
                               value={rubricForm.recommendations}
                               onChange={(e) => setRubricForm({ ...rubricForm, recommendations: e.target.value })}
                               placeholder="Nhập khuyến nghị chi tiết cho Phụ huynh và GVBM..."
-                              className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:border-teal-500 focus:ring-2 focus:ring-teal-200"
+                              className="w-full p-2.5 rounded-xl border border-slate-300 text-xs font-semibold focus:border-teal-500 focus:ring-2 focus:ring-teal-200 min-h-[160px]"
                             />
                           </td>
                         )}
