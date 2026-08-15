@@ -196,7 +196,7 @@ export default function TeacherAdvisoryPage() {
               actionText: g.actions?.[0]?.actionText || "",
               teacherSupportRequest: g.teacherSupportRequest || "",
               parentSupportRequest: g.parentSupportRequest || "",
-              progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
+              progressStatus: matchedLog?.progressStatus || "CHUA_DANH_GIA",
               teacherNotes: matchedLog?.teacherNotes || "",
               goalCompletionLevel: matchedLog?.goalCompletionLevel || 4,
               initiativeLevel: matchedLog?.initiativeLevel || 4,
@@ -214,7 +214,7 @@ export default function TeacherAdvisoryPage() {
             actionText: "",
             teacherSupportRequest: "",
             parentSupportRequest: "",
-            progressStatus: matchedLog?.progressStatus || "TIEN_TRIEN",
+            progressStatus: matchedLog?.progressStatus || "CHUA_DANH_GIA",
             teacherNotes: matchedLog?.teacherNotes || "",
             goalCompletionLevel: matchedLog?.goalCompletionLevel || 4,
             initiativeLevel: matchedLog?.initiativeLevel || 4,
@@ -788,13 +788,18 @@ export default function TeacherAdvisoryPage() {
                             setSingleStudentTrackingRows(updated)
                           }}
                           className={`px-3 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
-                            item.progressStatus === "DAT"
+                            item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
                               ? "bg-emerald-500 text-white border-emerald-600"
                               : item.progressStatus === "CHUA_DAT"
                               ? "bg-rose-500 text-white border-rose-600"
-                              : "bg-amber-400 text-amber-950 border-amber-500"
+                              : item.progressStatus === "CAN_CO_GANG"
+                              ? "bg-amber-500 text-white border-amber-600"
+                              : item.progressStatus === "TIEN_TRIEN"
+                              ? "bg-amber-400 text-amber-950 border-amber-500"
+                              : "bg-slate-200 text-slate-800 border-slate-300"
                           }`}
                         >
+                          <option value="CHUA_DANH_GIA" className="bg-white text-slate-900">⚪ Chưa đánh giá</option>
                           <option value="TIEN_TRIEN" className="bg-white text-slate-900">🟡 Đang tiến triển</option>
                           <option value="DAT" className="bg-white text-slate-900">🟢 Đạt</option>
                           <option value="CHUA_DAT" className="bg-white text-slate-900">🔴 Chưa Đạt</option>
@@ -921,23 +926,29 @@ export default function TeacherAdvisoryPage() {
                         </td>
                         <td className="p-3.5 border-r border-slate-200 align-top">
                           <select
-                            value={item.progressStatus}
+                            value={item.progressStatus || "CHUA_DANH_GIA"}
                             onChange={(e) => {
                               const updated = [...singleStudentTrackingRows]
                               updated[idx].progressStatus = e.target.value
                               setSingleStudentTrackingRows(updated)
                             }}
-                            className={
-                              item.progressStatus === "DAT"
-                                ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-emerald-100 text-emerald-800 border-emerald-300"
+                            className={`w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
+                              item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
+                                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
                                 : item.progressStatus === "CHUA_DAT"
-                                ? "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-rose-100 text-rose-800 border-rose-300"
-                                : "w-full px-2.5 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer bg-amber-100 text-amber-800 border-amber-300"
-                            }
+                                ? "bg-rose-100 text-rose-800 border-rose-300"
+                                : item.progressStatus === "CAN_CO_GANG"
+                                ? "bg-amber-100 text-amber-900 border-amber-300"
+                                : item.progressStatus === "TIEN_TRIEN"
+                                ? "bg-amber-100 text-amber-950 border-amber-300"
+                                : "bg-slate-100 text-slate-700 border-slate-300"
+                            }`}
                           >
+                            <option value="CHUA_DANH_GIA">⚪ Chưa đánh giá</option>
                             <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
-                            <option value="DAT">🟢 Đạt</option>
-                            <option value="CHUA_DAT">🔴 Chưa Đạt</option>
+                            <option value="DAT">🟢 Đạt / Đã hoàn thành</option>
+                            <option value="CHUA_DAT">🔴 Chưa đạt</option>
+                            <option value="CAN_CO_GANG">🟠 Cần cố gắng</option>
                           </select>
                         </td>
                         <td className="p-3.5 align-top">
@@ -1077,7 +1088,7 @@ export default function TeacherAdvisoryPage() {
                         {/* Kết quả theo dõi (Chỉ lấy Dropdown, Không lấy nhận xét) */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <select
-                            value={item.progressStatus}
+                            value={item.progressStatus || "CHUA_DANH_GIA"}
                             onChange={(e) => {
                               const updated = [...singleStudentTrackingRows]
                               updated[idx].progressStatus = e.target.value
@@ -1090,9 +1101,12 @@ export default function TeacherAdvisoryPage() {
                                 ? "bg-rose-100 text-rose-800 border-rose-300"
                                 : item.progressStatus === "CAN_CO_GANG"
                                 ? "bg-amber-100 text-amber-900 border-amber-300"
-                                : "bg-amber-100 text-amber-950 border-amber-300"
+                                : item.progressStatus === "TIEN_TRIEN"
+                                ? "bg-amber-100 text-amber-950 border-amber-300"
+                                : "bg-slate-100 text-slate-700 border-slate-300"
                             }`}
                           >
+                            <option value="CHUA_DANH_GIA">⚪ Chưa đánh giá</option>
                             <option value="TIEN_TRIEN">🟡 Đang tiến triển</option>
                             <option value="DAT">🟢 Đạt / Đã hoàn thành</option>
                             <option value="CHUA_DAT">🔴 Chưa đạt</option>
