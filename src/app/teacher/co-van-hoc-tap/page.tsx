@@ -32,9 +32,9 @@ export default function TeacherAdvisoryPage() {
   // 2. Term Evaluation Rubric States
   const [evalTerm, setEvalTerm] = useState<"HK1" | "HK2">("HK1")
   const [rubricForm, setRubricForm] = useState({
-    goalCompletionLevel: 4,
-    initiativeLevel: 4,
-    participationAttitude: 5,
+    goalCompletionLevel: 0,
+    initiativeLevel: 0,
+    participationAttitude: 0,
     recommendations: ""
   })
 
@@ -198,9 +198,9 @@ export default function TeacherAdvisoryPage() {
               parentSupportRequest: g.parentSupportRequest || "",
               progressStatus: matchedLog?.progressStatus || "CHUA_DANH_GIA",
               teacherNotes: matchedLog?.teacherNotes || "",
-              goalCompletionLevel: matchedLog?.goalCompletionLevel || 4,
-              initiativeLevel: matchedLog?.initiativeLevel || 4,
-              participationAttitude: matchedLog?.participationAttitude || 5
+              goalCompletionLevel: matchedLog?.goalCompletionLevel || 0,
+              initiativeLevel: matchedLog?.initiativeLevel || 0,
+              participationAttitude: matchedLog?.participationAttitude || 0
             })
           })
         } else {
@@ -216,9 +216,9 @@ export default function TeacherAdvisoryPage() {
             parentSupportRequest: "",
             progressStatus: matchedLog?.progressStatus || "CHUA_DANH_GIA",
             teacherNotes: matchedLog?.teacherNotes || "",
-            goalCompletionLevel: matchedLog?.goalCompletionLevel || 4,
-            initiativeLevel: matchedLog?.initiativeLevel || 4,
-            participationAttitude: matchedLog?.participationAttitude || 5
+            goalCompletionLevel: matchedLog?.goalCompletionLevel || 0,
+            initiativeLevel: matchedLog?.initiativeLevel || 0,
+            participationAttitude: matchedLog?.participationAttitude || 0
           })
         }
       })
@@ -237,9 +237,9 @@ export default function TeacherAdvisoryPage() {
         const matchedEval = evals.find((e: any) => e.term === evalTerm)
         if (matchedEval) {
           setRubricForm({
-            goalCompletionLevel: matchedEval.goalCompletionLevel || 4,
-            initiativeLevel: matchedEval.initiativeLevel || 4,
-            participationAttitude: matchedEval.participationAttitude || 5,
+            goalCompletionLevel: matchedEval.goalCompletionLevel || 0,
+            initiativeLevel: matchedEval.initiativeLevel || 0,
+            participationAttitude: matchedEval.participationAttitude || 0,
             recommendations: matchedEval.recommendations || ""
           })
         }
@@ -1123,15 +1123,20 @@ export default function TeacherAdvisoryPage() {
                         {/* Mức hoàn thành mục tiêu (1-5) cho TỪNG mục tiêu */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <select
-                            value={item.goalCompletionLevel || rubricForm.goalCompletionLevel || 4}
+                            value={item.goalCompletionLevel !== undefined ? item.goalCompletionLevel : (rubricForm.goalCompletionLevel || 0)}
                             onChange={(e) => {
                               const updated = [...singleStudentTrackingRows]
                               updated[idx].goalCompletionLevel = Number(e.target.value)
                               setSingleStudentTrackingRows(updated)
                               if (idx === 0) setRubricForm(prev => ({ ...prev, goalCompletionLevel: Number(e.target.value) }))
                             }}
-                            className="w-full p-2 rounded-xl border border-amber-300 font-black text-xs bg-amber-50 text-amber-950 shadow-xs focus:ring-2 focus:ring-amber-400"
+                            className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-amber-400 ${
+                              item.goalCompletionLevel
+                                ? "bg-amber-50 text-amber-950 border-amber-300"
+                                : "bg-slate-100 text-slate-700 border-slate-300"
+                            }`}
                           >
+                            <option value={0}>- (Chưa đánh giá)</option>
                             {[1, 2, 3, 4, 5].map(v => (
                               <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
                             ))}
@@ -1141,15 +1146,20 @@ export default function TeacherAdvisoryPage() {
                         {/* Mức độ chủ động (1-5) cho TỪNG mục tiêu */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <select
-                            value={item.initiativeLevel || rubricForm.initiativeLevel || 4}
+                            value={item.initiativeLevel !== undefined ? item.initiativeLevel : (rubricForm.initiativeLevel || 0)}
                             onChange={(e) => {
                               const updated = [...singleStudentTrackingRows]
                               updated[idx].initiativeLevel = Number(e.target.value)
                               setSingleStudentTrackingRows(updated)
                               if (idx === 0) setRubricForm(prev => ({ ...prev, initiativeLevel: Number(e.target.value) }))
                             }}
-                            className="w-full p-2 rounded-xl border border-blue-300 font-black text-xs bg-blue-50 text-blue-950 shadow-xs focus:ring-2 focus:ring-blue-400"
+                            className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-blue-400 ${
+                              item.initiativeLevel
+                                ? "bg-blue-50 text-blue-950 border-blue-300"
+                                : "bg-slate-100 text-slate-700 border-slate-300"
+                            }`}
                           >
+                            <option value={0}>- (Chưa đánh giá)</option>
                             {[1, 2, 3, 4, 5].map(v => (
                               <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
                             ))}
@@ -1159,15 +1169,20 @@ export default function TeacherAdvisoryPage() {
                         {/* Thái độ tham gia (1-5) cho TỪNG mục tiêu */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <select
-                            value={item.participationAttitude || rubricForm.participationAttitude || 5}
+                            value={item.participationAttitude !== undefined ? item.participationAttitude : (rubricForm.participationAttitude || 0)}
                             onChange={(e) => {
                               const updated = [...singleStudentTrackingRows]
                               updated[idx].participationAttitude = Number(e.target.value)
                               setSingleStudentTrackingRows(updated)
                               if (idx === 0) setRubricForm(prev => ({ ...prev, participationAttitude: Number(e.target.value) }))
                             }}
-                            className="w-full p-2 rounded-xl border border-emerald-300 font-black text-xs bg-emerald-50 text-emerald-950 shadow-xs focus:ring-2 focus:ring-emerald-400"
+                            className={`w-full p-2 rounded-xl border font-black text-xs shadow-xs focus:ring-2 focus:ring-emerald-400 ${
+                              item.participationAttitude
+                                ? "bg-emerald-50 text-emerald-950 border-emerald-300"
+                                : "bg-slate-100 text-slate-700 border-slate-300"
+                            }`}
                           >
+                            <option value={0}>- (Chưa đánh giá)</option>
                             {[1, 2, 3, 4, 5].map(v => (
                               <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
                             ))}
