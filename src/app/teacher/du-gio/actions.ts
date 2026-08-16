@@ -546,7 +546,32 @@ export async function createObservationSlot(data: {
 
         // 3. Dispatch Teams notifications to all department members
         const deptRel = (currentTeacher as any).departmentRel;
-        // Teams webhook skipped: ONLY Email sending to department member emails active
+        sendTeamsToAllDepartmentMembers(
+          {
+            id: newSlot.id,
+            topic: newSlot.topic,
+            subjectName: newSlot.subjectName,
+            level: newSlot.level,
+            grade: newSlot.grade,
+            className: newSlot.className,
+            date: newSlot.date,
+            startTime: newSlot.startTime,
+            endTime: newSlot.endTime,
+            campusName: newSlot.campusName,
+            room: newSlot.room,
+            teacherName: currentTeacher.teacherName,
+            teacherCode: currentTeacher.teacherCode,
+            maxSeats: newSlot.maxSeats || 4,
+            registeredCount: 0
+          },
+          deptMembers.map(m => ({
+            teacherName: m.teacherName,
+            teacherCode: m.teacherCode,
+            email: m.email || m.user?.email,
+            teamsWebhookUrl: (m as any).teamsWebhookUrl
+          })),
+          deptRel?.teamsWebhookUrl
+        ).catch(e => console.error("Teams broadcast error:", e));
       }
     } catch (deptNotifErr) {
       console.error("Error sending department member notifications:", deptNotifErr);
