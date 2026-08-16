@@ -532,7 +532,7 @@ export async function createObservationSlot(data: {
       const memberEmails = Array.from(emailsList).filter(e => typeof e === 'string' && e.includes("@")) as string[];
       console.log("[Skyline Email] Sending slot creation emails to:", memberEmails);
 
-      if (memberEmails.length > 0) {
+      if (data.sendEmailNotif !== false && memberEmails.length > 0) {
         const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
         const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + "/teacher/du-gio?tab=dang-ky";
         
@@ -650,7 +650,7 @@ export async function createObservationSlot(data: {
         });
 
         const hostEmail = hostTeacher.email || hostTeacher.user.email;
-        if (hostEmail && hostEmail.includes("@")) {
+        if (data.sendEmailNotif !== false && hostEmail && hostEmail.includes("@")) {
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
               <h2 style="color: #00A99D; margin-top: 0;">Thông Báo Đề Xuất Xin Dự Giờ</h2>

@@ -6,7 +6,7 @@ import {
   Calendar, Clock, MapPin, User, Users, BookOpen, Plus, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
-  Eye, TrendingUp, Sparkles, CheckSquare
+  Eye, TrendingUp, Sparkles, CheckSquare, Mail
 } from "lucide-react"
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
@@ -1054,6 +1054,7 @@ export function ObservationClient(props: ObservationClientProps) {
         subjectName: subName, level: isMN ? "Mầm non" : newLevel, grade: newGrade, topic: topicText, date: newDate,
         startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
         room: classNameStr, description: newDescription, visibilityType: newVisibility,
+        sendEmailNotif: sendEmailNotif,
         targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
         campusId: newCampusId, campusName: campusNameStr,
         classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
@@ -1892,6 +1893,33 @@ export function ObservationClient(props: ObservationClientProps) {
                   <option value="DEPARTMENT">Nội bộ Tổ chuyên môn</option>
                 </select>
               </div>
+            </div>
+
+            {/* Tùy chọn gửi email thông báo */}
+            <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 flex items-center justify-between gap-4 transition-all my-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white text-[#00A99D] flex items-center justify-center shrink-0 shadow-xs border border-teal-100">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-extrabold text-[#003B3A] flex items-center gap-1.5">
+                    Tùy chọn gửi Email thông báo tự động
+                    <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase font-black">Mặc định bật</span>
+                  </p>
+                  <p className="text-xs text-slate-600 font-medium mt-0.5">
+                    Gửi email tự động từ <span className="font-bold text-[#008b82]">bankhaothi@skylineschool.edu.vn</span> đến Giáo viên & Tổ chuyên môn.
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input 
+                  type="checkbox" 
+                  checked={sendEmailNotif} 
+                  onChange={e => setSendEmailNotif(e.target.checked)} 
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00A99D]"></div>
+              </label>
             </div>
 
             {/* Submit Button */}
