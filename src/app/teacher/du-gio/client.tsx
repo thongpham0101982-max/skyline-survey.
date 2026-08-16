@@ -1338,7 +1338,7 @@ export function ObservationClient(props: ObservationClientProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#002D2B] via-[#005E57] to-[#009085] p-6 md:p-8 rounded-[2rem] shadow-lg text-white">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
+            <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold font-black uppercase tracking-wider text-emerald-100 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> SKY-LINE SYSTEM | ĐÁNH GIÁ CHUYÊN MÔN
             </span>
           </div>
@@ -1355,9 +1355,9 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
           <div className="text-left space-y-0.5">
             <span className="block text-sm font-black tracking-wide">{currentTeacher?.teacherName}</span>
-            <span className="block text-[10px] text-emerald-100/90 font-bold">Mã số: {currentTeacher?.teacherCode}</span>
+            <span className="block text-xs font-bold text-emerald-100/90 font-bold">Mã số: {currentTeacher?.teacherCode}</span>
             {currentTeacher?.position && (
-              <span className="inline-block text-[9px] bg-emerald-500/30 text-emerald-100 px-2 py-0.2 rounded font-extrabold uppercase mt-1">
+              <span className="inline-block text-xs font-bold bg-emerald-500/30 text-emerald-100 px-2 py-0.2 rounded font-extrabold uppercase mt-1">
                 {currentTeacher?.position}
               </span>
             )}
@@ -1376,18 +1376,18 @@ export function ObservationClient(props: ObservationClientProps) {
                 <Eye className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu dự giờ</h4>
+                <h4 className="text-xs font-bold font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu dự giờ</h4>
                 <p className="text-xs font-bold text-slate-500 mt-0.5">Đơn vị: tiết / {selfObservedUnit}</p>
               </div>
             </div>
-            <span className="text-[10px] font-extrabold text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100">
+            <span className="text-xs font-bold font-extrabold text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100">
               {obsProgress}% Hoàn thành
             </span>
           </div>
 
           <div className="my-2">
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-black text-slate-800">{myObserved}</span>
+              <span className="text-4xl font-extrabold text-slate-900">{myObserved}</span>
               <span className="text-slate-400 font-bold text-sm">/ {obsTarget} tiết</span>
             </div>
           </div>
@@ -1400,7 +1400,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 style={{ width: `${obsProgress}%` }}
               />
             </div>
-            <p className="text-[10px] font-bold text-slate-400 text-right">
+            <p className="text-xs font-bold font-bold text-slate-400 text-right">
               {obsTarget - myObserved > 0 ? `Còn thiếu ${obsTarget - myObserved} tiết` : "Đã đạt mục tiêu!"}
             </p>
           </div>
@@ -1415,18 +1415,18 @@ export function ObservationClient(props: ObservationClientProps) {
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu tiết dạy</h4>
+                <h4 className="text-xs font-bold font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu tiết dạy</h4>
                 <p className="text-xs font-bold text-slate-500 mt-0.5">Đơn vị: tiết / {selfTaughtUnit}</p>
               </div>
             </div>
-            <span className="text-[10px] font-extrabold text-[#00A99D] bg-[#E6F7F6] px-2.5 py-0.5 rounded-full border border-[#00A99D]/15">
+            <span className="text-xs font-bold font-extrabold text-[#00A99D] bg-[#E6F7F6] px-2.5 py-0.5 rounded-full border border-[#00A99D]/15">
               {taughtProgress}% Hoàn thành
             </span>
           </div>
 
           <div className="my-2">
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-black text-slate-800">{myTaught}</span>
+              <span className="text-4xl font-extrabold text-slate-900">{myTaught}</span>
               <span className="text-slate-400 font-bold text-sm">/ {taughtTarget || 1} tiết</span>
             </div>
           </div>
@@ -1439,7 +1439,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 style={{ width: `${taughtProgress}%` }}
               />
             </div>
-            <p className="text-[10px] font-bold text-slate-400 text-right">
+            <p className="text-xs font-bold font-bold text-slate-400 text-right">
               {taughtTarget - myTaught > 0 ? `Còn thiếu ${taughtTarget - myTaught} tiết` : "Đã đạt mục tiêu!"}
             </p>
           </div>
@@ -1453,8 +1453,8 @@ export function ObservationClient(props: ObservationClientProps) {
               <TrendingUp className="w-4 h-4" />
             </div>
             <div>
-              <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Hiệu suất tháng gần nhất</h4>
-              <p className="text-[9px] font-extrabold text-slate-400">Thống kê số tiết dạy & dự</p>
+              <h4 className="text-xs font-bold font-black text-slate-400 uppercase tracking-wider">Hiệu suất tháng gần nhất</h4>
+              <p className="text-xs font-bold font-extrabold text-slate-400">Thống kê số tiết dạy & dự</p>
             </div>
           </div>
 
@@ -1466,10 +1466,10 @@ export function ObservationClient(props: ObservationClientProps) {
                 <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/70 border border-slate-100 transition-colors">
                   <span className="font-extrabold text-xs text-slate-700">{stat.monthStr}</span>
                   <div className="flex gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-extrabold text-[9px] border border-emerald-100/50">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-extrabold text-xs font-bold border border-emerald-100/50">
                       Dạy: {stat.taughtCount}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-violet-50 text-violet-700 font-extrabold text-[9px] border border-violet-100/50">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-violet-50 text-violet-700 font-extrabold text-xs font-bold border border-violet-100/50">
                       Dự: {stat.observedCount}
                     </span>
                   </div>
@@ -1512,7 +1512,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </button>
             </div>
             {creationMode === "TEACHER_OPEN" && (
-              <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-lg self-start sm:self-auto ${isMamNonTeacher ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-[#E6F7F6] text-[#00A99D]"}`}>
+              <span className={`text-xs font-bold font-extrabold px-2.5 py-1 rounded-lg self-start sm:self-auto ${isMamNonTeacher ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-[#E6F7F6] text-[#00A99D]"}`}>
                 Tháng {new Date().getMonth() + 1}: {monthlyLimitCount}/2
               </span>
             )}
@@ -1523,7 +1523,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100">
               <div className="bg-indigo-500/10 border border-indigo-200/60 rounded-xl p-3 flex items-start gap-2.5">
                 <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-indigo-900 leading-relaxed font-medium">
+                <p className="text-xs font-semibold text-indigo-900 leading-relaxed font-medium">
                   <span className="font-extrabold">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên bạn muốn dự, cùng Cơ sở, Cấp học, Khối lớp, Lớp học và Tiết học. Yêu cầu sẽ được gửi tới Giáo viên dạy để xác nhận & đồng ý.
                 </p>
               </div>
@@ -1531,11 +1531,11 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Tổ chuyên môn & Giáo viên dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
                   <select
                     value={reqDeptId}
                     onChange={e => { setReqDeptId(e.target.value); setReqTeacherId(""); }}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">Tất cả các Tổ chuyên môn</option>
                     {departments.map((d: any) => (
@@ -1545,12 +1545,12 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">2. Chọn Giáo viên dạy *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">2. Chọn Giáo viên dạy *</label>
                   <select
                     value={reqTeacherId}
                     onChange={e => setReqTeacherId(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn Giáo viên dạy --</option>
                     {filteredTeachersForRequest.map((t: any) => (
@@ -1565,12 +1565,12 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Môn học & Chủ đề/Tên bài dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">3. Chọn Môn học *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">3. Chọn Môn học *</label>
                   <select
                     value={reqSubjectId}
                     onChange={e => setReqSubjectId(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn môn học --</option>
                     {subjects.map((s: any) => (
@@ -1580,14 +1580,14 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
                   <input
                     type="text"
                     placeholder="Ví dụ: Cấp số cộng, Sự nảy mầm của hạt..."
                     value={reqTopic}
                     onChange={e => setReqTopic(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
                 </div>
               </div>
@@ -1595,12 +1595,12 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Cơ sở & Cấp học */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">5. Chọn Cơ sở *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">5. Chọn Cơ sở *</label>
                   <select
                     value={reqCampusId}
                     onChange={e => { setReqCampusId(e.target.value); setReqClassId(""); }}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cơ sở --</option>
                     {campuses.map((c: any) => (
@@ -1610,12 +1610,12 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">6. Chọn Cấp học *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">6. Chọn Cấp học *</label>
                   <select
                     value={reqLevel}
                     onChange={e => { setReqLevel(e.target.value); setReqGrade(""); setReqClassId(""); }}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cấp học --</option>
                     <option value="Mầm non">Mầm non</option>
@@ -1629,13 +1629,13 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Khối lớp & Lớp học */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">7. Chọn Khối lớp *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">7. Chọn Khối lớp *</label>
                   <select
                     value={reqGrade}
                     onChange={e => { setReqGrade(e.target.value); setReqClassId(""); }}
                     required
                     disabled={!reqLevel}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn khối học --</option>
                     {getGradesForLevel(reqLevel).map(g => (
@@ -1645,13 +1645,13 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">8. Chọn Lớp học *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">8. Chọn Lớp học *</label>
                   <select
                     value={reqClassId}
                     onChange={e => setReqClassId(e.target.value)}
                     required
                     disabled={!reqGrade}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn lớp học --</option>
                     {filteredReqClasses.map((c: any) => (
@@ -1666,12 +1666,12 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Tiết học & Ngày dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">9. Chọn Tiết học dự *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">9. Chọn Tiết học dự *</label>
                   <select
                     value={reqPeriod}
                     onChange={e => setReqPeriod(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 font-extrabold text-indigo-900"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 font-extrabold text-indigo-900"
                   >
                     <option value="Tiết 1">Tiết 1 (07:30 - 08:15)</option>
                     <option value="Tiết 2">Tiết 2 (08:25 - 09:10)</option>
@@ -1685,16 +1685,16 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">10. Chọn Ngày dạy / Thứ trong tuần *</label>
+                  <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">10. Chọn Ngày dạy / Thứ trong tuần *</label>
                   <input
                     type="date"
                     value={reqDate}
                     onChange={e => setReqDate(e.target.value)}
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
                   {reqDate && (
-                    <span className="text-[11px] font-extrabold text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-200 inline-block self-start mt-1">
+                    <span className="text-xs font-semibold font-extrabold text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-200 inline-block self-start mt-1">
                       🗓️ {formatDateWithDayOfWeek(reqDate)}
                     </span>
                   )}
@@ -1703,13 +1703,13 @@ export function ObservationClient(props: ObservationClientProps) {
 
               {/* Ghi chú */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-indigo-800 uppercase tracking-wide">11. Ghi chú gửi Giáo viên dạy</label>
+                <label className="text-xs font-bold font-black text-indigo-800 uppercase tracking-wide">11. Ghi chú gửi Giáo viên dạy</label>
                 <input
                   type="text"
                   placeholder="Ví dụ: Xin dự giờ học hỏi kinh nghiệm giảng dạy môn Toán..."
                   value={reqNotes}
                   onChange={e => setReqNotes(e.target.value)}
-                  className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                 />
               </div>
 
@@ -1729,37 +1729,37 @@ export function ObservationClient(props: ObservationClientProps) {
               <>
                 {/* Chu de */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-amber-700 uppercase tracking-wide">Chủ đề bài dạy *</label>
+                  <label className="text-xs font-bold font-black text-amber-700 uppercase tracking-wide">Chủ đề bài dạy *</label>
                   <input type="text" placeholder="Ví dụ: Thế giới động vật, Gia đình..." value={newChuDe} onChange={e => setNewChuDe(e.target.value)} required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
                 </div>
                 {/* Hoat dong & De tai */}
                 <div className="grid grid-cols-2 gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-amber-700 uppercase tracking-wide">Hoạt động *</label>
+                    <label className="text-xs font-bold font-black text-amber-700 uppercase tracking-wide">Hoạt động *</label>
                     <input type="text" placeholder="Ví dụ: Âm nhạc, Tạo hình, KPKH..." value={newHoatDong} onChange={e => setNewHoatDong(e.target.value)} required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-amber-700 uppercase tracking-wide">Đề tài *</label>
+                    <label className="text-xs font-bold font-black text-amber-700 uppercase tracking-wide">Đề tài *</label>
                     <input type="text" placeholder="Ví dụ: Bé yêu các con vật..." value={newDeTai} onChange={e => setNewDeTai(e.target.value)} required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
                   </div>
                 </div>
                 {/* Khối lớp & Lớp học */}
                 <div className="grid grid-cols-2 gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-amber-700 uppercase tracking-wide">Khối học *</label>
+                    <label className="text-xs font-bold font-black text-amber-700 uppercase tracking-wide">Khối học *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-white hover:bg-amber-50/10 transition-all text-slate-850">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-white hover:bg-amber-50/10 transition-all text-slate-850">
                       <option value="">Chọn khối học</option>
                        {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-amber-700 uppercase tracking-wide">Tên lớp *</label>
+                    <label className="text-xs font-bold font-black text-amber-700 uppercase tracking-wide">Tên lớp *</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-white hover:bg-amber-50/10 transition-all disabled:opacity-50 text-slate-850">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-white hover:bg-amber-50/10 transition-all disabled:opacity-50 text-slate-850">
                       <option value="">Chọn lớp</option>
                       {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                     </select>
@@ -1771,26 +1771,26 @@ export function ObservationClient(props: ObservationClientProps) {
               <>
                 {/* Topic Input */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Tên bài dạy / Chủ đề *</label>
+                  <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Tên bài dạy / Chủ đề *</label>
                   <input 
                     type="text" 
                     placeholder="Ví dụ: Đơn vị đo độ dài..." 
                     value={newTopic} 
                     onChange={e => setNewTopic(e.target.value)} 
                     required
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
                   />
                 </div>
 
                 {/* 1. Cơ sở & Môn học */}
                 <div className="grid grid-cols-2 gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Cơ sở *</label>
+                    <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Cơ sở *</label>
                     <select 
                       value={newCampusId || currentTeacher?.campusId || ""} 
                       onChange={e => { setNewCampusId(e.target.value); setNewClassId(""); }} 
                       required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850"
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850"
                     >
                       <option value="">Chọn cơ sở</option>
                       {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
@@ -1798,9 +1798,9 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Môn học *</label>
+                    <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Môn học *</label>
                     <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850">
                       <option value="">Chọn môn</option>
                       {subjects.map(s => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
                     </select>
@@ -1810,9 +1810,9 @@ export function ObservationClient(props: ObservationClientProps) {
                 {/* 2. Cấp học & Khối lớp */}
                 <div className="grid grid-cols-2 gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Cấp học *</label>
+                    <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Cấp học *</label>
                     <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId(""); }} required
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
                       <option value="">Chọn cấp</option>
                       <option value="Mầm non">Mầm non</option>
                       <option value="Tiểu học">Tiểu học</option>
@@ -1822,9 +1822,9 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Khối lớp *</label>
+                    <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Khối lớp *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required disabled={!newLevel}
-                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
                       <option value="">Chọn khối</option>
                       {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
@@ -1833,9 +1833,9 @@ export function ObservationClient(props: ObservationClientProps) {
 
                 {/* 3. Lớp học */}
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Lớp học *</label>
+                  <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Lớp học *</label>
                   <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
-                    className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
                     <option value="">Chọn lớp</option>
                     {filteredClassesForCreation.map(c => (
                       <option key={c.id} value={c.id}>{c.className}</option>
@@ -1847,20 +1847,20 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Date & Period */}
             <div className="grid grid-cols-2 gap-3.5">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Ngày dạy *</label>
+                <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Ngày dạy *</label>
                 <input 
                   type="date" 
                   value={newDate} 
                   onChange={e => setNewDate(e.target.value)} 
                   required
-                  className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Tiết dạy *</label>
+                <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Tiết dạy *</label>
                 <select value={newStartTime} onChange={e => { setNewStartTime(e.target.value); setNewEndTime(e.target.value); }} required
-                  className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
                   <option value="">Chọn tiết</option>
                   {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
                 </select>
@@ -1870,21 +1870,21 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Room & Visibility */}
             <div className="grid grid-cols-2 gap-3.5">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Phòng học *</label>
+                <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Phòng học *</label>
                 <input 
                   type="text" 
                   placeholder="Ví dụ: Phòng 302..." 
                   value={newClassNameText} 
                   onChange={e => setNewClassNameText(e.target.value)} 
                   required
-                  className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[10px] font-black text-slate-550 uppercase tracking-wide">Chế độ hiển thị</label>
+                <label className="text-xs font-bold font-black text-slate-550 uppercase tracking-wide">Chế độ hiển thị</label>
                 <select value={newVisibility} onChange={e => setNewVisibility(e.target.value)}
-                  className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
                   <option value="ALL">Công khai toàn trường</option>
                   <option value="DEPARTMENT">Nội bộ Tổ chuyên môn</option>
                 </select>
@@ -1911,12 +1911,12 @@ export function ObservationClient(props: ObservationClientProps) {
               <Award className="w-5 h-5 text-[#003B3A]" />
               <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">2. Đăng ký nhanh</span>
             </div>
-            <span className="text-[9px] font-bold bg-[#E6F7F6] text-[#00A99D] px-2.5 py-0.5 rounded-full border border-teal-100 animate-pulse">⚡ Gợi ý</span>
+            <span className="text-xs font-bold font-bold bg-[#E6F7F6] text-[#00A99D] px-2.5 py-0.5 rounded-full border border-teal-100 animate-pulse">⚡ Gợi ý</span>
           </div>
 
           {/* Quick Register Slots */}
           <div className="flex-1 flex flex-col gap-2.5">
-            <span className="text-[10px] font-black text-[#003B3A] uppercase tracking-wider">⚡ Tiết học gợi ý đăng ký nhanh</span>
+            <span className="text-xs font-bold font-black text-[#003B3A] uppercase tracking-wider">⚡ Tiết học gợi ý đăng ký nhanh</span>
             
             {(() => {
               const suggested = slots
@@ -1972,7 +1972,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 return (
                   <div className="flex flex-col items-center justify-center flex-1 py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                     <CheckCircle className="w-8 h-8 text-slate-350 mb-1 stroke-1" />
-                    <p className="text-[10px] font-bold text-center">Bạn đã đăng ký hết các tiết học khả dụng!</p>
+                    <p className="text-xs font-bold font-bold text-center">Bạn đã đăng ký hết các tiết học khả dụng!</p>
                   </div>
                 );
               }
@@ -1993,12 +1993,12 @@ export function ObservationClient(props: ObservationClientProps) {
                             return (
                               <div className="space-y-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-100 text-amber-800">Mầm non</span>
-                                  <span className="text-[10px] text-amber-900 font-extrabold truncate">Chủ đề: {chuDe}</span>
+                                  <span className="px-1.5 py-0.2 text-xs font-bold font-black uppercase rounded bg-amber-100 text-amber-800">Mầm non</span>
+                                  <span className="text-xs font-bold text-amber-900 font-extrabold truncate">Chủ đề: {chuDe}</span>
                                 </div>
                                 <p className="text-xs font-black text-amber-950 truncate leading-snug">Đề tài: {deTai}</p>
-                                <p className="text-[10px] text-slate-500 font-bold flex items-center gap-1">
-                                  <span className="bg-amber-100/50 text-amber-850 px-1.5 py-0.2 rounded font-black text-[9px]">{hoatDong}</span>
+                                <p className="text-xs font-bold text-slate-500 font-bold flex items-center gap-1">
+                                  <span className="bg-amber-100/50 text-amber-850 px-1.5 py-0.2 rounded font-black text-xs font-bold">{hoatDong}</span>
                                   <span>Lớp: {slot.className || "Lớp"}</span>
                                 </p>
                               </div>
@@ -2006,14 +2006,14 @@ export function ObservationClient(props: ObservationClientProps) {
                           })() : (
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-teal-50 text-[#00A99D] border border-teal-100">K-12</span>
-                                <span className="text-[10px] text-slate-500 font-bold truncate">{slot.subjectName}</span>
+                                <span className="px-1.5 py-0.2 text-xs font-bold font-black uppercase rounded bg-teal-50 text-[#00A99D] border border-teal-100">K-12</span>
+                                <span className="text-xs font-bold text-slate-500 font-bold truncate">{slot.subjectName}</span>
                               </div>
                               <p className="text-xs font-black text-slate-800 truncate leading-snug">{slot.topic}</p>
-                              <p className="text-[10px] text-slate-400 font-bold">Lớp: {slot.className || "Lớp"}</p>
+                              <p className="text-xs font-bold text-slate-400 font-bold">Lớp: {slot.className || "Lớp"}</p>
                             </div>
                           )}
-                          <div className="flex items-center gap-1.5 text-[9px] text-slate-450 font-bold pt-0.5 border-t border-slate-100/60">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-450 font-bold pt-0.5 border-t border-slate-100/60">
                             <span className="text-slate-600 font-extrabold">{slot.teacher.teacherName}</span>
                             <span>•</span>
                             <span>{new Date(slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</span>
@@ -2022,7 +2022,7 @@ export function ObservationClient(props: ObservationClientProps) {
                         <button 
                           disabled={isPastSlot}
                           onClick={() => setRegisterDetailSlot(slot)}
-                          className={`px-3 py-2 text-[10px] font-black uppercase rounded-xl transition-all shadow-sm flex-shrink-0 cursor-pointer hover:-translate-y-0.2 active:scale-98 ${
+                          className={`px-3 py-2 text-xs font-bold font-black uppercase rounded-xl transition-all shadow-sm flex-shrink-0 cursor-pointer hover:-translate-y-0.2 active:scale-98 ${
                             isPastSlot
                               ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
                               : "bg-[#00A99D] hover:bg-[#008b82] text-white"
@@ -2057,7 +2057,7 @@ export function ObservationClient(props: ObservationClientProps) {
               {isSearching && (
                 <div className="flex items-center gap-1.5 ml-2 animate-pulse text-xs font-semibold">
                   <div className="w-2 h-2 border border-sky-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-[10px] font-bold text-sky-600">Đang cập nhật...</span>
+                  <span className="text-xs font-bold font-bold text-sky-600">Đang cập nhật...</span>
                 </div>
               )}
             </div>
@@ -2075,21 +2075,21 @@ export function ObservationClient(props: ObservationClientProps) {
                     <button onClick={() => setActiveDeptTab("my-dept")}
                       className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                       <span>🏫 Tiết dạy thuộc TCM</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
+                      <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
                         {myDeptCount}
                       </span>
                     </button>
                     <button onClick={() => setActiveDeptTab("other-dept")}
                       className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                       <span>🌐 Tiết dạy TCM khác</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+                      <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
                         {otherDeptCount}
                       </span>
                     </button>
                     <button onClick={() => setActiveDeptTab("all")}
                       className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" ? "bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                       <span>⭐ Tất cả tiết dạy</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+                      <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
                         {allCount}
                       </span>
                     </button>
@@ -2103,7 +2103,7 @@ export function ObservationClient(props: ObservationClientProps) {
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-semibold">
             {/* Campus */}
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
+              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
               <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
                 <option value="all">Tất cả cơ sở</option>
@@ -2113,7 +2113,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
             {/* Level */}
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Bậc học</span>
+              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Bậc học</span>
               <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
                 <option value="all">Tất cả bậc</option>
@@ -2124,7 +2124,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
             {/* Grade */}
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Khối lớp</span>
+              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Khối lớp</span>
               <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-55">
                 <option value="all">Tất cả khối</option>
@@ -2134,14 +2134,14 @@ export function ObservationClient(props: ObservationClientProps) {
 
             {/* Date */}
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Ngày dạy</span>
+              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Ngày dạy</span>
               <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
             </div>
 
             {/* Period */}
             <div className="flex flex-col gap-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
+              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
               <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
                 <option value="all">Tất cả tiết</option>
@@ -2154,14 +2154,14 @@ export function ObservationClient(props: ObservationClientProps) {
           {activeFilterCount > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {activeFilterTags.map(tag => (
-                <span key={tag.key} className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-black rounded-lg bg-[#E6F7F6] text-[#00A99D] border border-[#00A99D]/10">
+                <span key={tag.key} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold font-black rounded-lg bg-[#E6F7F6] text-[#00A99D] border border-[#00A99D]/10">
                   <span>{tag.label}:</span> {tag.value}
                   <button onClick={tag.onRemove} className="ml-1 p-0.5 rounded-full hover:bg-[#00A99D]/20 transition-colors">
                     <X className="w-3 h-3" />
                   </button>
                 </span>
               ))}
-              <button onClick={clearAllFilters} className="text-[10px] font-black text-rose-500 hover:underline ml-1">Xóa tất cả bộ lọc</button>
+              <button onClick={clearAllFilters} className="text-xs font-bold font-black text-rose-500 hover:underline ml-1">Xóa tất cả bộ lọc</button>
             </div>
           )}
 
@@ -2174,8 +2174,8 @@ export function ObservationClient(props: ObservationClientProps) {
                 const otherCount = openSlots.filter(s => !checkIsMyDept(s)).length;
                 return (
                   <div className="text-center space-y-1.5">
-                    <p className="text-xs font-bold text-slate-700">Không tìm thấy tiết dạy dự giờ nào{activeDeptTab === "my-dept" ? " thuộc Tổ Chuyên Môn của bạn" : ""}!</p>
-                    <p className="text-[10px] text-slate-400">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-800">Không tìm thấy tiết dạy dự giờ nào{activeDeptTab === "my-dept" ? " thuộc Tổ Chuyên Môn của bạn" : ""}!</p>
+                    <p className="text-xs font-bold text-slate-400">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
                     {activeDeptTab === "my-dept" && otherCount > 0 && (
                       <button
                         type="button"
@@ -2193,7 +2193,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="overflow-x-auto rounded-2xl border border-slate-150">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-xs font-bold tracking-wider">
                     <th className="p-4">Giáo viên</th>
                     <th className="p-4">Môn học & Chủ đề</th>
                     <th className="p-4">Thời gian / Phòng</th>
@@ -2219,7 +2219,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-4 font-bold text-slate-800">
                           <p className="font-extrabold">{slot.teacher.teacherName}</p>
-                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
+                          <p className="text-xs font-bold text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
                         </td>
                         <td className="p-4">
                           {slot.level === "Mầm non" ? (() => {
@@ -2230,11 +2230,11 @@ export function ObservationClient(props: ObservationClientProps) {
                             return (
                               <div className="flex flex-col gap-1 text-xs">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.5 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-250">Mầm non</span>
-                                  <span className="text-[10px] font-bold text-amber-900 bg-amber-50/40 px-1.5 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
+                                  <span className="px-1.5 py-0.5 text-xs font-bold font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-250">Mầm non</span>
+                                  <span className="text-xs font-bold font-bold text-amber-900 bg-amber-50/40 px-1.5 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
                                 </div>
-                                <p className="font-black text-amber-950 text-[13px] leading-snug">Đề tài: {deTai}</p>
-                                <p className="text-[10px] text-slate-500 font-semibold">
+                                <p className="font-black text-amber-950 text-sm font-semibold leading-snug">Đề tài: {deTai}</p>
+                                <p className="text-xs font-bold text-slate-500 font-semibold">
                                   Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
                                 </p>
                               </div>
@@ -2242,7 +2242,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           })() : (
                             <>
                               <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5">
+                              <p className="text-xs font-bold text-slate-500 mt-0.5">
                                 {slot.subjectName} • {slot.className || "Lớp"} ({slot.campusName || "Cơ sở"})
                               </p>
                             </>
@@ -2250,7 +2250,7 @@ export function ObservationClient(props: ObservationClientProps) {
                         </td>
                         <td className="p-4">
                           <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                          <p className="text-[10px] text-[#00A99D] font-bold mt-0.5">
+                          <p className="text-xs font-bold text-[#00A99D] font-bold mt-0.5">
                             {slot.startTime} • Phòng: {slot.room || "X"}
                           </p>
                         </td>
@@ -2261,11 +2261,11 @@ export function ObservationClient(props: ObservationClientProps) {
                         </td>
                         <td className="p-4">
                           {isExpired ? (
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-rose-50 border border-rose-200 text-rose-600">
+                            <span className="px-2 py-0.5 text-xs font-bold font-black uppercase rounded bg-rose-50 border border-rose-200 text-rose-600">
                               Hết hạn
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded bg-emerald-50 border border-emerald-250 text-emerald-700">
+                            <span className="px-2 py-0.5 text-xs font-bold font-black uppercase rounded bg-emerald-50 border border-emerald-250 text-emerald-700">
                               Mở đăng ký
                             </span>
                           )}
@@ -2274,19 +2274,19 @@ export function ObservationClient(props: ObservationClientProps) {
                            {isExpired ? (
                              <button 
                                disabled
-                               className="px-3 py-1.5 text-[10px] font-black rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                               className="px-3 py-1.5 text-xs font-bold font-black rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
                              >
                                Hết hạn
                              </button>
                            ) : isRegistered ? (
                              <button onClick={() => handleCancelRegistration(myReg.id)}
-                               className="px-3 py-1.5 text-[10px] font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200">
+                               className="px-3 py-1.5 text-xs font-bold font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200">
                                Hủy dự
                              </button>
                            ) : (
                              <button 
                                onClick={() => setRegisterDetailSlot(slot)}
-                               className="px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
+                               className="px-3 py-1.5 text-xs font-bold font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
                              >
                                Đăng ký
                              </button>
@@ -2314,7 +2314,7 @@ export function ObservationClient(props: ObservationClientProps) {
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 border-l-4 border-l-amber-500 pl-3">
             <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết dạy của tôi</span>
-            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-amber-50 text-amber-700 rounded-md border border-amber-200">
+            <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-amber-50 text-amber-700 rounded-md border border-amber-200">
               {slots.filter(s => s.teacherId === currentTeacher?.id).length} tiết
             </span>
           </div>
@@ -2342,10 +2342,10 @@ export function ObservationClient(props: ObservationClientProps) {
                     return (
                       <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-amber-50/40 border-amber-200/80 border-l-4 border-l-amber-500">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-amber-100 text-amber-800">
+                          <span className="px-2 py-0.5 text-xs font-bold font-black uppercase rounded-md bg-amber-100 text-amber-800">
                             Tôi dạy
                           </span>
-                          <span className="text-[9px] font-extrabold text-slate-400">
+                          <span className="text-xs font-bold font-extrabold text-slate-400">
                             {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
                           </span>
                         </div>
@@ -2359,17 +2359,17 @@ export function ObservationClient(props: ObservationClientProps) {
                             return (
                               <div className="space-y-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
+                                  <span className="px-1.5 py-0.2 text-xs font-bold font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                  <span className="text-xs font-bold text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
                                 </div>
                                 <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
-                                <p className="text-[10px] font-bold text-slate-500 truncate">
+                                <p className="text-xs font-bold font-bold text-slate-500 truncate">
                                   Hoạt động: <span className="text-amber-800">{hoatDong}</span>
                                 </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate mt-0.5">
+                                <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
                                   Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
                                 </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate">
+                                <p className="text-xs font-bold font-semibold text-slate-400 truncate">
                                   Gv dạy: {slot.teacher.teacherName}
                                 </p>
                               </div>
@@ -2377,10 +2377,10 @@ export function ObservationClient(props: ObservationClientProps) {
                           })() : (
                             <>
                               <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                              <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
+                              <p className="text-xs font-bold font-semibold text-slate-500 truncate mt-1">
                                 Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
                               </p>
-                              <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                              <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
                                 Gv dạy: {slot.teacher.teacherName}
                               </p>
                             </>
@@ -2388,8 +2388,8 @@ export function ObservationClient(props: ObservationClientProps) {
                         </div>
 
                         {/* Host's Observers list block */}
-                        <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-[10px] font-semibold text-slate-500">
-                          <span className="font-black text-[#003B3A] uppercase tracking-wider text-[8px]">
+                        <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-xs font-bold font-semibold text-slate-500">
+                          <span className="font-black text-[#003B3A] uppercase tracking-wider text-xs font-bold">
                             GV đăng ký dự giờ ({slot.registrations.length}/4):
                           </span>
                           {slot.registrations.length === 0 ? (
@@ -2402,18 +2402,18 @@ export function ObservationClient(props: ObservationClientProps) {
                                   <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
                                     <div className="min-w-0 flex-1">
                                       <p className="font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
-                                      <p className="text-[8px] text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
+                                      <p className="text-xs font-bold text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
                                     </div>
                                     <div className="shrink-0">
                                       {reg.isApproved ? (
-                                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-[8px] uppercase">Đã duyệt</span>
+                                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-xs font-bold uppercase">Đã duyệt</span>
                                       ) : approvedCount >= 4 ? (
-                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-[8px] uppercase">Đầy (Tối đa 4)</span>
+                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-xs font-bold uppercase">Đầy (Tối đa 4)</span>
                                       ) : (
                                         <button 
                                           type="button"
                                           onClick={() => handleApprove(reg.id)}
-                                          className="px-2 py-0.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded font-black text-[8px] uppercase shadow-sm transition-all"
+                                          className="px-2 py-0.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded font-black text-xs font-bold uppercase shadow-sm transition-all"
                                         >
                                           Xác nhận
                                         </button>
@@ -2427,7 +2427,7 @@ export function ObservationClient(props: ObservationClientProps) {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
+                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-xs font-bold w-full">
                           <button type="button" onClick={() => openEditModal(slot)}
                             className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
                             Sửa
@@ -2455,7 +2455,7 @@ export function ObservationClient(props: ObservationClientProps) {
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 border-l-4 border-l-[#00A99D] pl-3">
             <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết đã đăng ký dự giờ</span>
-            <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[#E6F7F6] text-[#00A99D] rounded-md border border-teal-100">
+            <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-[#E6F7F6] text-[#00A99D] rounded-md border border-teal-100">
               {slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)).length} tiết
             </span>
           </div>
@@ -2484,10 +2484,10 @@ export function ObservationClient(props: ObservationClientProps) {
                     return (
                       <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#00A99D]">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-md bg-[#E6F7F6] text-[#00A99D]">
+                          <span className="px-2 py-0.5 text-xs font-bold font-black uppercase rounded-md bg-[#E6F7F6] text-[#00A99D]">
                             Tôi dự
                           </span>
-                          <span className="text-[9px] font-extrabold text-slate-400">
+                          <span className="text-xs font-bold font-extrabold text-slate-400">
                             {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
                           </span>
                         </div>
@@ -2501,17 +2501,17 @@ export function ObservationClient(props: ObservationClientProps) {
                             return (
                               <div className="space-y-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-[9px] text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
+                                  <span className="px-1.5 py-0.2 text-xs font-bold font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                  <span className="text-xs font-bold text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
                                 </div>
                                 <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
-                                <p className="text-[10px] font-bold text-slate-500 truncate">
+                                <p className="text-xs font-bold font-bold text-slate-500 truncate">
                                   Hoạt động: <span className="text-amber-800">{hoatDong}</span>
                                 </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate mt-0.5">
+                                <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
                                   Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
                                 </p>
-                                <p className="text-[9px] font-semibold text-slate-400 truncate">
+                                <p className="text-xs font-bold font-semibold text-slate-400 truncate">
                                   Gv dạy: {slot.teacher.teacherName}
                                 </p>
                               </div>
@@ -2519,10 +2519,10 @@ export function ObservationClient(props: ObservationClientProps) {
                           })() : (
                             <>
                               <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                              <p className="text-[10px] font-semibold text-slate-500 truncate mt-1">
+                              <p className="text-xs font-bold font-semibold text-slate-500 truncate mt-1">
                                 Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
                               </p>
-                              <p className="text-[10px] font-semibold text-slate-400 truncate mt-0.5">
+                              <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
                                 Gv dạy: {slot.teacher.teacherName}
                               </p>
                             </>
@@ -2530,10 +2530,10 @@ export function ObservationClient(props: ObservationClientProps) {
                         </div>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-[10px] w-full">
+                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-xs font-bold w-full">
                           {!myReg?.isApproved ? (
                             <div className="flex flex-col gap-1.5 w-full">
-                              <span className="px-2 py-1 text-[8px] font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
+                              <span className="px-2 py-1 text-xs font-bold font-black uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
                                 Chờ xác nhận GV tổ chức tiết dạy
                               </span>
                               <button type="button" onClick={() => handleCancelRegistration(myReg?.id)}
@@ -2543,7 +2543,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             </div>
                           ) : (
                             <div className="flex flex-col gap-1.5 w-full">
-                              <span className="px-2 py-1 text-[8px] font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
+                              <span className="px-2 py-1 text-xs font-bold font-black uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
                                 Đã xác nhận dự giờ
                               </span>
                               <button type="button" onClick={() => openEvalModal(myReg, slot)}
@@ -2582,7 +2582,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="overflow-x-auto rounded-2xl border border-slate-150">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-[10px] tracking-wider">
+                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-xs font-bold tracking-wider">
                     <th className="p-4">Giáo viên dạy</th>
                     <th className="p-4">Người đánh giá</th>
                     <th className="p-4">Môn học & Chủ đề</th>
@@ -2599,11 +2599,11 @@ export function ObservationClient(props: ObservationClientProps) {
                       <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
                         <td className="p-4 font-bold text-slate-800">
                           <p className="font-extrabold">{evalItem.slot.teacher?.teacherName || "Giáo viên"}</p>
-                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {evalItem.slot.teacher?.teacherCode || ""}</p>
+                          <p className="text-xs font-bold text-slate-400 font-bold mt-0.5">Mã: {evalItem.slot.teacher?.teacherCode || ""}</p>
                         </td>
                         <td className="p-4 font-bold text-slate-800">
                           <p className="font-extrabold">{evalItem.registration?.teacher?.teacherName || "Giáo viên"}</p>
-                          <p className="text-[10px] text-slate-400 font-bold mt-0.5">Mã: {evalItem.registration?.teacher?.teacherCode || ""}</p>
+                          <p className="text-xs font-bold text-slate-400 font-bold mt-0.5">Mã: {evalItem.registration?.teacher?.teacherCode || ""}</p>
                         </td>
                         <td className="p-4">
                           {evalItem.slot.level === "Mầm non" ? (() => {
@@ -2614,11 +2614,11 @@ export function ObservationClient(props: ObservationClientProps) {
                             return (
                               <div className="flex flex-col gap-0.5 text-xs">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-[8px] font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-[9px] font-bold text-amber-900 bg-amber-50/40 px-1 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
+                                  <span className="px-1.5 py-0.2 text-xs font-bold font-black uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
+                                  <span className="text-xs font-bold font-bold text-amber-900 bg-amber-50/40 px-1 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
                                 </div>
                                 <p className="font-bold text-[#003B3A] text-xs">Đề tài: {deTai}</p>
-                                <p className="text-[10px] text-slate-500 font-semibold">
+                                <p className="text-xs font-bold text-slate-500 font-semibold">
                                   Hoạt động: <span className="text-amber-800">{hoatDong}</span> • Lớp: {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
                                 </p>
                               </div>
@@ -2626,7 +2626,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           })() : (
                             <>
                               <p className="font-extrabold text-[#003B3A]">{evalItem.evaluation?.topic || evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
-                              <p className="text-[10px] text-slate-500 mt-0.5">
+                              <p className="text-xs font-bold text-slate-500 mt-0.5">
                                 {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
                               </p>
                             </>
@@ -2634,19 +2634,19 @@ export function ObservationClient(props: ObservationClientProps) {
                         </td>
                         <td className="p-4">
                           <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                          <p className="text-[10px] text-[#00A99D] font-bold mt-0.5">
+                          <p className="text-xs font-bold text-[#00A99D] font-bold mt-0.5">
                             {evalItem.slot.startTime} • Phòng: {evalItem.slot.room || "X"}
                           </p>
                         </td>
                         <td className="p-4 text-center">
-                          <span className={`px-2.5 py-0.5 text-[9px] font-black uppercase rounded-md border ${hasPassed ? "bg-emerald-50 text-emerald-700 border-emerald-250" : "bg-rose-50 text-rose-700 border-rose-200"}`}>
+                          <span className={`px-2.5 py-0.5 text-xs font-bold font-black uppercase rounded-md border ${hasPassed ? "bg-emerald-50 text-emerald-700 border-emerald-250" : "bg-rose-50 text-rose-700 border-rose-200"}`}>
                             {hasPassed ? "Đạt" : "Không đạt"}
                           </span>
                         </td>
                         <td className="p-4 text-right">
                           <button 
                             onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
-                            className="px-3 py-1.5 text-[10px] font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
+                            className="px-3 py-1.5 text-xs font-bold font-black rounded-xl transition-all shadow-sm bg-[#00A99D] hover:bg-[#008b82] text-white"
                           >
                             Xem chi tiết
                           </button>
@@ -2682,58 +2682,58 @@ export function ObservationClient(props: ObservationClientProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Chu de */}
                   <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-amber-700 uppercase tracking-wide">Chủ đề *</label>
+                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Chủ đề *</label>
                     <input type="text" placeholder="Ví dụ: Thế giới động vật, Gia đình..." value={newChuDe} onChange={e => setNewChuDe(e.target.value)} required
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
                   </div>
                   {/* Hoat dong */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-amber-700 uppercase tracking-wide">Hoạt động *</label>
+                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Hoạt động *</label>
                     <input type="text" placeholder="Ví dụ: Âm nhạc, Tạo hình, KPKH..." value={newHoatDong} onChange={e => setNewHoatDong(e.target.value)} required
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
                   </div>
                   {/* De tai */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-amber-700 uppercase tracking-wide">Đề tài *</label>
+                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Đề tài *</label>
                     <input type="text" placeholder="Ví dụ: Bé yêu các con vật..." value={newDeTai} onChange={e => setNewDeTai(e.target.value)} required
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
                   </div>
                   {/* Campus */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-amber-700 uppercase tracking-wide">Cơ sở *</label>
+                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Cơ sở *</label>
                     <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white hover:bg-amber-50/10 transition-all">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white hover:bg-amber-50/10 transition-all">
                       <option value="">Chọn cơ sở</option>
                       {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                     </select>
                   </div>
                   {/* Grade */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-amber-700 uppercase tracking-wide">Khối học *</label>
+                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Khối học *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white hover:bg-amber-50/10 transition-all">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white hover:bg-amber-50/10 transition-all">
                       <option value="">Chọn khối học</option>
                        {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
                   {/* Class */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-amber-700 uppercase tracking-wide">Tên lớp *</label>
+                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Tên lớp *</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newGrade}
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white disabled:opacity-50 hover:bg-amber-50/10 transition-all">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white disabled:opacity-50 hover:bg-amber-50/10 transition-all">
                       <option value="">Chọn tên lớp</option>
                       {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                     </select>
                   </div>
                   {/* Date */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Ngày dạy *</label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Ngày dạy *</label>
                     <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
                       className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-slate-200" />
                   </div>
                   {/* PDF Upload */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
                     <div className="flex items-center gap-2">
                       <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file-modal" />
                       <label htmlFor="pdf-upload-file-modal" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
@@ -2744,19 +2744,19 @@ export function ObservationClient(props: ObservationClientProps) {
                           className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
                       )}
                     </div>
-                    {newLessonPlanName && <span className="text-[10px] font-bold text-amber-600 mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
+                    {newLessonPlanName && <span className="text-xs font-bold font-bold text-amber-600 mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
                   </div>
                   {/* Period */}
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold bg-amber-50/20 border border-amber-100 rounded-2xl">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-extrabold text-slate-700">Tiết dạy: Từ *</label>
+                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tiết dạy: Từ *</label>
                       <select value={newStartTime} onChange={e => { setNewStartTime(e.target.value); setNewEndTime(e.target.value); }}
                         className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none">
                         {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-extrabold text-slate-700">Đến *</label>
+                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Đến *</label>
                       <select value={newEndTime} disabled={true}
                         className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-50">
                         {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
@@ -2774,9 +2774,9 @@ export function ObservationClient(props: ObservationClientProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Level */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-550 uppercase tracking-wide">Cấp học *</label>
+                    <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Cấp học *</label>
                     <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId("") }} required
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
                       <option value="">Chọn cấp học</option>
                       <option value="Mầm non">Mầm non</option>
                       <option value="Tiểu học">Tiểu học</option>
@@ -2786,18 +2786,18 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                   {/* Grade */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-550 uppercase tracking-wide">Khối lớp *</label>
+                    <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Khối lớp *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required disabled={!newLevel}
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all disabled:opacity-50">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all disabled:opacity-50">
                       <option value="">Chọn khối lớp</option>
                       {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
                   {/* Subject */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-black text-slate-550 uppercase tracking-wide">Môn học *</label>
+                    <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Môn học *</label>
                     <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
-                      className="w-full text-xs font-bold p-3 text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
                       <option value="">Chọn môn học</option>
                       {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
                       <option value="other">Môn học khác / Tổ nhóm chuyên đề</option>
@@ -2805,14 +2805,14 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                   {newSubjectId === "other" && (
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-extrabold text-slate-700">Tên môn học khác *</label>
+                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tên môn học khác *</label>
                       <input type="text" placeholder="Nhập tên môn học..." value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} required
                         className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
                     </div>
                   )}
                   {/* Campus */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Cơ sở *</label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Cơ sở *</label>
                     <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
                       className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold">
                       <option value="">Chọn cơ sở</option>
@@ -2821,7 +2821,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                   {/* Class */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Lớp học *</label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Lớp học *</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newLevel || !newGrade}
                       className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50 text-xs font-semibold">
                       <option value="">Chọn lớp học</option>
@@ -2831,26 +2831,26 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
                   {newClassId === "other" && (
                     <div className="flex flex-col gap-1.5 md:col-span-2">
-                      <label className="text-xs font-extrabold text-slate-700">Nhập tên lớp học khác *</label>
+                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Nhập tên lớp học khác *</label>
                       <input type="text" placeholder="Nhập tên lớp học (ví dụ: Lớp 2.1, Nhà trẻ A...)" value={newClassNameText} onChange={e => setNewClassNameText(e.target.value)} required
                         className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
                     </div>
                   )}
                   {/* Topic */}
                   <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Bài dạy / Chủ đề *</label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Bài dạy / Chủ đề *</label>
                     <input type="text" placeholder="Nhập tên bài dạy hoặc chủ đề sinh hoạt..." value={newTopic} onChange={e => setNewTopic(e.target.value)} required
                       className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
                   </div>
                   {/* Date */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Ngày dạy *</label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Ngày dạy *</label>
                     <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
                       className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none text-xs font-semibold" />
                   </div>
                   {/* PDF Upload */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-700">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
                     <div className="flex items-center gap-2">
                       <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file-modal-k12" />
                       <label htmlFor="pdf-upload-file-modal-k12" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
@@ -2861,19 +2861,19 @@ export function ObservationClient(props: ObservationClientProps) {
                           className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
                       )}
                     </div>
-                    {newLessonPlanName && <span className="text-[10px] font-bold text-[#00A99D] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
+                    {newLessonPlanName && <span className="text-xs font-bold font-bold text-[#00A99D] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
                   </div>
                   {/* Period */}
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-extrabold text-slate-700">Tiết dạy: Từ *</label>
+                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tiết dạy: Từ *</label>
                       <select value={newStartTime} onChange={e => handleStartTimeChange(e.target.value)}
                         className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none">
                         {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-extrabold text-slate-700">Đến *</label>
+                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Đến *</label>
                       <select value={newEndTime} disabled={newIsDoublePeriod} onChange={e => setNewEndTime(e.target.value)}
                         className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none disabled:opacity-50">
                         {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
@@ -2890,28 +2890,28 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Description */}
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-extrabold text-slate-700">Mô tả nội dung tiết dạy (không bắt buộc)</label>
-                  <span className="text-[10px] font-bold text-slate-400">{newDescription.length}/500</span>
+                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Mô tả nội dung tiết dạy (không bắt buộc)</label>
+                  <span className="text-xs font-bold font-bold text-slate-400">{newDescription.length}/500</span>
                 </div>
                 <textarea placeholder="Nhập mô tả ngắn về nội dung, mục tiêu, phương pháp dạy học..." maxLength={500} rows={3} value={newDescription} onChange={e => setNewDescription(e.target.value)}
                   className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none resize-none text-xs font-semibold" />
               </div>
               {/* Visibility */}
               <div className="flex flex-col gap-2.5 p-4 text-xs font-semibold">
-                <label className="text-xs font-extrabold text-slate-700">Hiển thị cho giáo viên</label>
+                <label className="text-xs sm:text-sm font-extrabold text-slate-800">Hiển thị cho giáo viên</label>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-600 select-none cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
                     <input type="radio" name="visibility" checked={newVisibility === "ALL"} onChange={() => setNewVisibility("ALL")} className="w-4 h-4 text-[#00A99D] focus:ring-[#00A99D]" />
                     Tất cả giáo viên trong trường
                   </label>
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-600 select-none cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
                     <input type="radio" name="visibility" checked={newVisibility === "DEPARTMENT"} onChange={() => setNewVisibility("DEPARTMENT")} className="w-4 h-4 text-[#00A99D] focus:ring-[#00A99D]" />
                     Chỉ các tổ nhóm chuyên môn
                   </label>
                 </div>
                 {newVisibility === "DEPARTMENT" && (
                   <div className="flex flex-col gap-1.5 mt-2 animate-in fade-in duration-200">
-                    <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Chọn tổ nhóm *</label>
+                    <label className="text-xs font-bold font-bold uppercase tracking-wider text-slate-400">Chọn tổ nhóm *</label>
                     <select value={newTargetDeptId} onChange={e => setNewTargetDeptId(e.target.value)} required
                       className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none">
                       <option value="">Chọn tổ nhóm chuyên môn</option>
@@ -2940,7 +2940,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="px-6 py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
               <div>
                 <h3 className="font-black text-base">Thông tin & Đăng ký Dự giờ</h3>
-                <p className="text-white/60 text-[10px] mt-0.5">Vui lòng kiểm tra kỹ thông tin tiết dạy trước khi đăng ký</p>
+                <p className="text-white/60 text-xs font-bold mt-0.5">Vui lòng kiểm tra kỹ thông tin tiết dạy trước khi đăng ký</p>
               </div>
               <button 
                 onClick={() => setRegisterDetailSlot(null)} 
@@ -2960,37 +2960,37 @@ export function ObservationClient(props: ObservationClientProps) {
                   <>
                     <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/50 space-y-1.5">
                       <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-[8px] font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-250">Mầm non</span>
-                        <span className="text-[9px] font-black text-amber-700 uppercase tracking-wider">Chủ đề: {chuDe}</span>
+                        <span className="px-2 py-0.5 text-xs font-bold font-black uppercase rounded bg-amber-100 text-amber-800 border border-amber-250">Mầm non</span>
+                        <span className="text-xs font-bold font-black text-amber-700 uppercase tracking-wider">Chủ đề: {chuDe}</span>
                       </div>
                       <h4 className="text-sm font-black text-[#78350F] leading-snug">Đề tài: {deTai}</h4>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-3.5">
                       <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
+                        <span className="text-xs font-bold font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
                         <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
-                        <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
+                        <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
                       </div>
                       
                       <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">Lớp học & Hoạt động</span>
+                        <span className="text-xs font-bold font-black text-slate-400 uppercase">Lớp học & Hoạt động</span>
                         <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
-                        <span className="text-[9px] text-amber-700 font-bold mt-0.5">Hoạt động: {hoatDong}</span>
+                        <span className="text-xs font-bold text-amber-700 font-bold mt-0.5">Hoạt động: {hoatDong}</span>
                       </div>
                       
                       <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">Thời gian</span>
+                        <span className="text-xs font-bold font-black text-slate-400 uppercase">Thời gian</span>
                         <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
-                        <span className="text-[9px] text-slate-400 mt-0.5">
+                        <span className="text-xs font-bold text-slate-400 mt-0.5">
                           {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                         </span>
                       </div>
                       
                       <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-[9px] font-black text-slate-400 uppercase">Địa điểm</span>
+                        <span className="text-xs font-bold font-black text-slate-400 uppercase">Địa điểm</span>
                         <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
-                        <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
+                        <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
                       </div>
                     </div>
                   </>
@@ -2998,43 +2998,43 @@ export function ObservationClient(props: ObservationClientProps) {
               })() : (
                 <>
                   <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
-                    <span className="text-[9px] font-black text-[#00A99D] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
+                    <span className="text-xs font-bold font-black text-[#00A99D] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
                     <h4 className="text-sm font-black text-[#003B3A] mt-1 leading-snug">{registerDetailSlot.topic}</h4>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-3.5">
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-[9px] font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
+                      <span className="text-xs font-bold font-black text-slate-400 uppercase">Giáo viên giảng dạy</span>
                       <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
-                      <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
+                      <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
                     </div>
                     
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-[9px] font-black text-slate-400 uppercase">Lớp học / Môn học</span>
+                      <span className="text-xs font-bold font-black text-slate-400 uppercase">Lớp học / Môn học</span>
                       <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
-                      <span className="text-[9px] text-[#00A99D] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
+                      <span className="text-xs font-bold text-[#00A99D] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
                     </div>
                     
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-[9px] font-black text-slate-400 uppercase">Thời gian</span>
+                      <span className="text-xs font-bold font-black text-slate-400 uppercase">Thời gian</span>
                       <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
-                      <span className="text-[9px] text-slate-400 mt-0.5">
+                      <span className="text-xs font-bold text-slate-400 mt-0.5">
                         {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
                       </span>
                     </div>
                     
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-[9px] font-black text-slate-400 uppercase">Địa điểm</span>
+                      <span className="text-xs font-bold font-black text-slate-400 uppercase">Địa điểm</span>
                       <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
-                      <span className="text-[9px] text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
+                      <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
                     </div>
                   </div>
                 </>
               )}
 
               <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-150">
-                <span className="text-[10px] font-black text-slate-400 uppercase">Hình thức đăng ký</span>
-                <span className={`px-2 py-0.5 text-[9px] font-black uppercase rounded ${
+                <span className="text-xs font-bold font-black text-slate-400 uppercase">Hình thức đăng ký</span>
+                <span className={`px-2 py-0.5 text-xs font-bold font-black uppercase rounded ${
                   new Date(registerDetailSlot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
                     ? "bg-amber-50 text-amber-700 border border-amber-200"
                     : "bg-emerald-50 text-emerald-700 border border-emerald-250"
@@ -3092,9 +3092,9 @@ export function ObservationClient(props: ObservationClientProps) {
                       ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
                       : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
                     return passed ? (
-                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
+                      <span className="text-white text-xs font-bold font-black uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
                     ) : (
-                      <span className="text-white text-[10px] font-black uppercase tracking-wider shadow-sm text-xs font-semibold">CHƯA ĐẠT</span>
+                      <span className="text-white text-xs font-bold font-black uppercase tracking-wider shadow-sm text-xs font-semibold">CHƯA ĐẠT</span>
                     );
                   })()}
                 </div>
@@ -3134,7 +3134,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     return (
                       <div key={sIdx} className="space-y-4">
                         <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                          <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">{sIdx + 1}</span>
+                          <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-xs font-bold font-black">{sIdx + 1}</span>
                           {sec.name}
                         </h4>
                         <div className="space-y-3">
@@ -3150,14 +3150,14 @@ export function ObservationClient(props: ObservationClientProps) {
                               <div key={req.id} className="p-4 bg-slate-50/60 hover:bg-slate-50 rounded-2xl border border-slate-100 transition-all duration-200 flex flex-col md:flex-row md:items-start justify-between gap-4 text-xs font-semibold">
                                 <div className="space-y-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
-                                    <span className="text-[10px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                    <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                    <span className="text-xs font-bold font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
                                   </div>
                                   <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
                                   
                                   {/* Warning message for core requirements (1, 3, 6, 7) */}
                                   {[1, 3, 6, 7].includes(req.id) && (
-                                    <div className={`mt-2 p-2 rounded-xl text-[10px] font-bold border transition-all ${
+                                    <div className={`mt-2 p-2 rounded-xl text-xs font-bold font-bold border transition-all ${
                                       (() => {
                                         const score = evalK12Scores[globalIdx] || 0;
                                         if (req.id === 1) {
@@ -3249,7 +3249,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     return (
                       <div key={sIdx} className="space-y-4">
                         <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                          <span className="w-5 h-5 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center text-[10px] font-black">{sIdx + 1}</span>
+                          <span className="w-5 h-5 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center text-xs font-bold font-black">{sIdx + 1}</span>
                           {sec.name}
                         </h4>
                         <div className="space-y-3">
@@ -3264,8 +3264,8 @@ export function ObservationClient(props: ObservationClientProps) {
                               <div key={req.id} className="p-4 flex flex-col md:flex-row md:items-start justify-between gap-4 text-xs font-semibold">
                                 <div className="space-y-1 min-w-0">
                                   <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 text-[9px] font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
-                                    <span className="text-[10px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                    <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                    <span className="text-xs font-bold font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
                                   </div>
                                   <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
                                 </div>
@@ -3298,23 +3298,23 @@ export function ObservationClient(props: ObservationClientProps) {
               {/* Text Fields */}
               <div className="space-y-4">
                 <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-[10px] font-black">
+                  <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-xs font-bold font-black">
                     {evalModal.slot.level !== "Mầm non" ? "5" : "2"}
                   </span>
                   Nhận xét chi tiết
                 </h4>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Ưu điểm nổi bật của tiết dạy</label>
+                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Ưu điểm nổi bật của tiết dạy</label>
                   <textarea placeholder="Những điểm mạnh, sáng tạo, hiệu quả của tiết dạy..." rows={3} value={evalStrengths} onChange={e => setEvalStrengths(e.target.value)}
                     disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Góp ý cải thiện / xây dựng</label>
+                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Góp ý cải thiện / xây dựng</label>
                   <textarea placeholder="Những điểm có thể cải thiện, gợi ý phương pháp thay thế..." rows={3} value={evalImprovements} onChange={e => setEvalImprovements(e.target.value)}
                     disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-700">Nhận xét chung</label>
+                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Nhận xét chung</label>
                   <textarea placeholder="Tổng thể nhận xét của bạn về tiết dự giờ..." rows={2} value={evalGeneral} onChange={e => setEvalGeneral(e.target.value)}
                     disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
                 </div>
@@ -3324,7 +3324,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <div className="flex flex-col gap-3 p-4 text-xs font-semibold">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <label className="text-xs font-extrabold text-slate-700 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
+                    <label className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
                     {evalModal.slot.level !== "Mầm non" && (
                       <span className="text-xs font-black text-violet-700 text-xs font-semibold">
                         Tổng điểm: {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)}/20đ
@@ -3337,18 +3337,18 @@ export function ObservationClient(props: ObservationClientProps) {
                         ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
                         : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
                       return passed ? (
-                        <span className="text-emerald-700 text-[10px] font-black uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
+                        <span className="text-emerald-700 text-xs font-bold font-black uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
                       ) : (
-                        <span className="text-rose-700 text-[10px] font-black uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
+                        <span className="text-rose-700 text-xs font-bold font-black uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
                       );
                     })()}
                   </div>
                   {evalModal.slot.level !== "Mầm non" ? (
-                    <span className="text-[10px] font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-bold font-black bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
                       Tự động gợi ý: {calculateK12Ranking(evalK12Scores)}
                     </span>
                   ) : (
-                    <span className="text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">
+                    <span className="text-xs font-bold font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">
                       Tự động gợi ý: {calculateMamNonRanking(evalCriteria)}
                     </span>
                   )}

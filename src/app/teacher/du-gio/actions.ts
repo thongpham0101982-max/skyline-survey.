@@ -473,7 +473,7 @@ export async function createObservationSlot(data: {
     try {
       const targetDeptId = newSlot.targetDeptId || currentTeacher.departmentId;
       
-      // Query department members or fallback to active teachers
+            // Query strictly department members belonging to targetDeptId
       let deptMembers = [];
       if (targetDeptId) {
         deptMembers = await prisma.teacher.findMany({
@@ -488,8 +488,8 @@ export async function createObservationSlot(data: {
         });
       }
 
-      // Fallback: If department query returns empty, fetch all active teachers with emails
-      if (deptMembers.length === 0) {
+      // Fallback only if no targetDeptId exists at all
+      if (!targetDeptId && deptMembers.length === 0) {
         deptMembers = await prisma.teacher.findMany({
           where: { status: "ACTIVE" },
           take: 50,
