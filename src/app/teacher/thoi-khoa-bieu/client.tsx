@@ -548,7 +548,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                             <td key={day.key} className="p-1.5 border-r border-slate-200 last:border-r-0 h-14 align-top">
                               {slot ? (
                                 <div 
-                                  className="h-full p-2 rounded-lg border flex flex-col justify-between shadow-2xs transition-all hover:scale-[1.02] hover:shadow-xs"
+                                  className="h-full p-2 rounded-lg border border-slate-300/80 flex flex-col justify-between shadow-xs transition-all hover:scale-[1.02] hover:shadow-md hover:border-teal-500/60"
                                   style={{
                                     backgroundColor: (slot.colorCode || "#00A99D") + "12",
                                     borderColor: slot.colorCode || "#00A99D"
@@ -577,9 +577,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   </div>
                                 </div>
                               ) : (
-                                <div className="h-full rounded-lg bg-slate-50/40 flex items-center justify-center text-slate-300 text-xs font-semibold">
-                                  -
-                                </div>
+                                <div className="h-full rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-center text-slate-300 text-xs font-semibold hover:border-slate-300 hover:bg-slate-100/50 transition-all">-</div>
                               )}
                             </td>
                           )
@@ -607,7 +605,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                             <td key={day.key} className="p-1.5 border-r border-slate-200 last:border-r-0 h-14 align-top">
                               {slot ? (
                                 <div 
-                                  className="h-full p-2 rounded-lg border flex flex-col justify-between shadow-2xs transition-all hover:scale-[1.02] hover:shadow-xs"
+                                  className="h-full p-2 rounded-lg border border-slate-300/80 flex flex-col justify-between shadow-xs transition-all hover:scale-[1.02] hover:shadow-md hover:border-teal-500/60"
                                   style={{
                                     backgroundColor: (slot.colorCode || "#00A99D") + "12",
                                     borderColor: slot.colorCode || "#00A99D"
@@ -636,9 +634,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   </div>
                                 </div>
                               ) : (
-                                <div className="h-full rounded-lg bg-slate-50/40 flex items-center justify-center text-slate-300 text-xs font-semibold">
-                                  -
-                                </div>
+                                <div className="h-full rounded-lg border border-slate-200/80 bg-slate-50/50 flex items-center justify-center text-slate-300 text-xs font-semibold hover:border-slate-300 hover:bg-slate-100/50 transition-all">-</div>
                               )}
                             </td>
                           )
@@ -852,7 +848,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-slate-300 text-xs">-</span>
+                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
                               )}
                             </td>
                           );
@@ -886,7 +882,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-slate-300 text-xs">-</span>
+                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
                               )}
                             </td>
                           );
@@ -1030,7 +1026,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-slate-300 text-xs">-</span>
+                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
                               )}
                             </td>
                           );
@@ -1064,7 +1060,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-slate-300 text-xs">-</span>
+                                <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
                               )}
                             </td>
                           );
@@ -1148,7 +1144,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                 <p className="text-[10px] text-slate-500 truncate">{slot.teacherName}</p>
                               </div>
                             ) : (
-                              <span className="text-slate-300 text-xs">-</span>
+                              <div className="py-1 px-2 rounded-md border border-slate-200/70 bg-slate-50/40 text-slate-300 text-xs font-medium inline-block">-</div>
                             )}
                           </td>
                         )
