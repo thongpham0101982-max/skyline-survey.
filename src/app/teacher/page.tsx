@@ -272,9 +272,7 @@ export default function TeacherDashboard() {
               <span>HỆ THỐNG QUẢN TRỊ CHẤT LƯỢNG GIÁO DỤC SKY-LINE (SQMS)</span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
-              Tổng Quan Công Việc & Chuẩn Hóa Đo Lường
-            </h1>
+            
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 shrink-0">
