@@ -471,33 +471,36 @@ export async function createObservationSlot(data: {
     
     // Guaranteed Email, Teams & In-App Notification Dispatch for Tag 1 (New Slot)
     try {
-      const targetDeptIds = Array.isArray(data.targetDeptIds) && data.targetDeptIds.length > 0
-        ? data.targetDeptIds
-        : (newSlot.targetDeptId || currentTeacher.departmentId ? [newSlot.targetDeptId || currentTeacher.departmentId] : []);
-
-      let deptMembers = [];
-      if (targetDeptIds.length > 0) {
+      let deptMembers: any[] = [];
+      if (data.notifMode === "SELECTED" && Array.isArray(data.selectedMemberIds) && data.selectedMemberIds.length > 0) {
+        // Query selected teachers directly by their teacher IDs
         deptMembers = await prisma.teacher.findMany({
           where: {
-            OR: [
-              { departmentId: { in: targetDeptIds } },
-              { departmentAssignments: { some: { departmentId: { in: targetDeptIds } } } }
-            ],
+            id: { in: data.selectedMemberIds },
             status: "ACTIVE"
           },
           include: { user: true, departmentRel: true }
         });
+      } else {
+        const targetDeptIds = Array.isArray(data.targetDeptIds) && data.targetDeptIds.length > 0
+          ? data.targetDeptIds
+          : (newSlot.targetDeptId || currentTeacher.departmentId ? [newSlot.targetDeptId || currentTeacher.departmentId] : []);
+
+        if (targetDeptIds.length > 0) {
+          deptMembers = await prisma.teacher.findMany({
+            where: {
+              OR: [
+                { departmentId: { in: targetDeptIds } },
+                { departmentAssignments: { some: { departmentId: { in: targetDeptIds } } } }
+              ],
+              status: "ACTIVE"
+            },
+            include: { user: true, departmentRel: true }
+          });
+        }
       }
 
-      // If custom member selection mode is active, filter only selected members
-      if (data.notifMode === "SELECTED" && Array.isArray(data.selectedMemberIds) && data.selectedMemberIds.length > 0) {
-        const selSet = new Set(data.selectedMemberIds);
-        // Keep current teacher as well so they receive confirmation
-        deptMembers = deptMembers.filter(m => selSet.has(m.id) || m.id === currentTeacher.id);
-      }
-
-      // Fallback only if no targetDeptId exists at all
-      if (!targetDeptId && deptMembers.length === 0) {
+      if (deptMembers.length === 0) {
         deptMembers = await prisma.teacher.findMany({
           where: { status: "ACTIVE" },
           take: 50,
