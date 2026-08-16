@@ -34,6 +34,7 @@ export interface DepartmentPayload {
 }
 
 const DEFAULT_TEAMS_WEBHOOK = process.env.MICROSOFT_TEAMS_WEBHOOK_URL || "";
+const SENDER_ACCOUNT_EMAIL = "bankhaothi@skylineschool.edu.vn";
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app";
 
 /**

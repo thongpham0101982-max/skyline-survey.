@@ -26,7 +26,7 @@ export async function sendEmail({ to, cc, bcc, subject, html, attachments, reply
   });
 
   const mailOptions = {
-    from: `"Cổng khảo sát Skyline" <${user}>`,
+    from: `"Ban Khảo thí & ĐBCL" <bankhaothi@skylineschool.edu.vn>`, replyTo: "bankhaothi@skylineschool.edu.vn",
     to,
     cc,
     bcc,
