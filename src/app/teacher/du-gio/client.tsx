@@ -249,7 +249,19 @@ export function ObservationClient(props: ObservationClientProps) {
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(true);
-  const [selectedEmailDeptIds, setSelectedEmailDeptIds] = useState<string[]>([]);
+  const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
+
+  // Filter teachers belonging ONLY to current logged-in teacher's department
+  const myDeptTeachers = useMemo(() => {
+    if (!currentTeacher?.departmentId) return teachers;
+    return teachers.filter((t: any) => t.departmentId === currentTeacher.departmentId);
+  }, [teachers, currentTeacher?.departmentId]);
+
+  useEffect(() => {
+    if (myDeptTeachers.length > 0 && selectedEmailTeacherIds.length === 0) {
+      setSelectedEmailTeacherIds(myDeptTeachers.map((t: any) => t.id));
+    }
+  }, [myDeptTeachers]);
 
   useEffect(() => {
     if (currentTeacher?.departmentId && selectedEmailDeptIds.length === 0) {
@@ -1063,7 +1075,8 @@ export function ObservationClient(props: ObservationClientProps) {
         startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
         room: classNameStr, description: newDescription, visibilityType: newVisibility,
         sendEmailNotif: sendEmailNotif,
-        targetDeptIds: selectedEmailDeptIds,
+        notifMode: "SELECTED",
+        selectedMemberIds: selectedEmailTeacherIds,
         targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
         campusId: newCampusId, campusName: campusNameStr,
         classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
@@ -1904,7 +1917,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
             </div>
 
-            {/* Tùy chọn gửi email thông báo tự động & Chọn Tổ chuyên môn nhận */}
+            {/* Tùy chọn gửi email thông báo tự động & Chọn Giáo viên trong Tổ chuyên môn */}
             <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 flex flex-col gap-3 transition-all my-2">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -1917,7 +1930,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase font-black">Mặc định bật</span>
                     </p>
                     <p className="text-xs text-slate-600 font-medium mt-0.5">
-                      Gửi email tự động từ <span className="font-bold text-[#008b82]">bankhaothi@skylineschool.edu.vn</span> tới Giáo viên các Tổ chuyên môn được chọn.
+                      Gửi email tự động từ <span className="font-bold text-[#008b82]">bankhaothi@skylineschool.edu.vn</span> đến Giáo viên được chọn trong Tổ chuyên môn.
                     </p>
                   </div>
                 </div>
@@ -1933,61 +1946,69 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
 
               {sendEmailNotif && (
-                <div className="pt-3 border-t border-teal-200/60 flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-extrabold text-[#003B3A] uppercase tracking-wide flex items-center gap-1">
-                      <span>📌 Chọn Tổ chuyên môn nhận Email:</span>
-                      <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md text-[11px] font-black">
-                        Đã chọn {selectedEmailDeptIds.length} tổ
+                <div className="pt-3 border-t border-teal-200/60 flex flex-col gap-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-extrabold text-[#003B3A] uppercase tracking-wide">
+                        🏫 {currentTeacher?.departmentRel?.name || "Tổ chuyên môn của tôi"}:
                       </span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (selectedEmailDeptIds.length === departments.length) {
-                          setSelectedEmailDeptIds(currentTeacher?.departmentId ? [currentTeacher.departmentId] : []);
-                        } else {
-                          setSelectedEmailDeptIds(departments.map((d: any) => d.id));
-                        }
-                      }}
-                      className="text-xs font-extrabold text-[#008b82] hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs"
-                    >
-                      {selectedEmailDeptIds.length === departments.length ? "Chỉ chọn Tổ của tôi" : "Chọn tất cả các Tổ CM"}
-                    </button>
+                      <span className="text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2 py-0.5 rounded-md text-xs font-black">
+                        Đã chọn {selectedEmailTeacherIds.length}/{myDeptTeachers.length} GV
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEmailTeacherIds(myDeptTeachers.map((t: any) => t.id))}
+                        className="text-xs font-extrabold text-[#008b82] hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs"
+                      >
+                        Chọn tất cả GV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEmailTeacherIds([])}
+                        className="text-xs font-bold text-slate-500 hover:text-slate-700 hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs"
+                      >
+                        Bỏ chọn
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto custom-scrollbar p-1">
-                    {departments.map((dept: any) => {
-                      const isSelected = selectedEmailDeptIds.includes(dept.id);
-                      const isMyDept = currentTeacher?.departmentId === dept.id;
-                      return (
-                        <button
-                          key={dept.id}
-                          type="button"
-                          onClick={() => {
-                            if (isSelected) {
-                              if (selectedEmailDeptIds.length > 1) {
-                                setSelectedEmailDeptIds(selectedEmailDeptIds.filter(id => id !== dept.id));
+                  <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto custom-scrollbar p-1">
+                    {myDeptTeachers.length === 0 ? (
+                      <span className="text-xs text-slate-400 italic">Không tìm thấy giáo viên nào trong Tổ chuyên môn này.</span>
+                    ) : (
+                      myDeptTeachers.map((t: any) => {
+                        const isSelected = selectedEmailTeacherIds.includes(t.id);
+                        const isMe = t.id === currentTeacher?.id;
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedEmailTeacherIds(selectedEmailTeacherIds.filter(id => id !== t.id));
+                              } else {
+                                setSelectedEmailTeacherIds([...selectedEmailTeacherIds, t.id]);
                               }
-                            } else {
-                              setSelectedEmailDeptIds([...selectedEmailDeptIds, dept.id]);
-                            }
-                          }}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 cursor-pointer ${
-                            isSelected
-                              ? "bg-[#00A99D] text-white border-[#00A99D] shadow-xs"
-                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                          }`}
-                        >
-                          <span>{dept.name}</span>
-                          {isMyDept && (
-                            <span className={`text-[10px] px-1.5 py-0.2 rounded font-black uppercase ${isSelected ? "bg-white/20 text-white" : "bg-teal-50 text-teal-800"}`}>
-                              Tổ của tôi
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                              isSelected
+                                ? "bg-[#00A99D] text-white border-[#00A99D] shadow-xs"
+                                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                            }`}
+                          >
+                            <span>{t.teacherName} ({t.teacherCode})</span>
+                            {isMe && (
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded font-black uppercase ${isSelected ? "bg-white/20 text-white" : "bg-teal-50 text-teal-800"}`}>
+                                Tôi
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
               )}
