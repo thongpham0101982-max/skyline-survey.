@@ -1475,38 +1475,71 @@ export async function requestObservationSlot(data: {
           }
         });
 
-        const hostEmail = hostTeacher.email || hostTeacher.user.email;
-        if (hostEmail && hostEmail.includes("@")) {
+        const hostEmail = getTeacherResolvedEmail(hostTeacher);
+        
+        let deptMembers: any[] = [];
+        const targetDeptId = data.targetDeptId || hostTeacher.departmentId;
+        if (targetDeptId) {
+          deptMembers = await prisma.teacher.findMany({
+            where: {
+              OR: [
+                { departmentId: targetDeptId },
+                { departmentAssignments: { some: { departmentId: targetDeptId } } }
+              ],
+              status: "ACTIVE"
+            },
+            include: { user: true, departmentRel: true }
+          });
+        }
+
+        const recipientsSet = new Set<string>();
+        if (hostEmail) recipientsSet.add(hostEmail);
+        for (const m of deptMembers) {
+          const email = getTeacherResolvedEmail(m);
+          if (email) recipientsSet.add(email);
+        }
+
+        const targetEmails = Array.from(recipientsSet).filter(e => typeof e === 'string' && e.includes("@"));
+
+        if (targetEmails.length > 0) {
           const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #00A99D; margin-top: 0;">Thông Báo Đề Xuất Xin Dự Giờ</h2>
-              <p>Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
-              <p>Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa gửi đề xuất xin dự giờ tiết dạy của bạn tại Tag 2 (GVBM xin dự giờ), vui lòng đăng nhập hệ thống và xác nhận.</p>
-              <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tên bài dạy / Chủ đề:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Môn học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.subjectName || "Môn học"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Cấp học:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.level || "N/A"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Khối lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.grade || "N/A"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Lớp:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.className || "N/A"}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Ngày dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${formattedDate}</td></tr>
-                <tr><td style="padding: 8px; border-bottom: 1px solid #f1f5f9; font-weight: bold;">Tiết dạy:</td><td style="padding: 8px; border-bottom: 1px solid #f1f5f9;">${data.period || "Tiết 1"}</td></tr>
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+              <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <h2 style="color: #ffffff; margin: 0; font-size: 18px;">ĐỀ XUẤT XIN DỰ GIỜ MỚI (TAG 2 - GVBM)</h2>
+              </div>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong> và Thầy/Cô trong Tổ chuyên môn,</p>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa gửi đề xuất xin dự giờ tiết dạy của Thầy/Cô <strong>${hostTeacher.teacherName}</strong>. Vui lòng đăng nhập hệ thống để xác nhận & phê duyệt.</p>
+              
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Giáo viên được chọn dạy:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #0f172a;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Khối lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${data.subjectName || "Môn học"} (${data.level || ""} ${data.grade || ""} - ${data.className || "Lớp"})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDate}</td></tr>
+                <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${data.period || "Tiết 1"}</td></tr>
               </table>
-              <p>Thầy/Cô vui lòng truy cập hệ thống Skyline để phê duyệt hoặc xem chi tiết yêu cầu.</p>
-              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">
-                Hệ thống Quản lý Dự giờ Skyline
+
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="https://skyline-survey.vercel.app/teacher/du-gio?tab=duoc-xin-du" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem & Phê Duyệt Ngay Trên Skyline</a>
+              </div>
+              
+              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
               </div>
             </div>
           `;
 
-          try {
-            if (hostEmail) {
-              await sendEmail({ to: hostEmail, subject: "[Skyline Dự Giờ] Đề xuất xin dự giờ mới từ " + observerTeacher.teacherName, html: emailHtml });
-              console.log("[Skyline Email] Sent request email to:", hostEmail);
-            }
-          } catch (mailErr) {
-            console.error("Failed to send email for requestObservationSlot:", mailErr);
-          }
+          const emailSubject = `[Skyline Dự Giờ] Đề xuất xin dự giờ từ ${observerTeacher.teacherName} -> ${hostTeacher.teacherName}`;
+          await Promise.all(
+            targetEmails.map(async (targetEmail) => {
+              try {
+                await sendEmail({ to: targetEmail, subject: emailSubject, html: emailHtml });
+                console.log("[Skyline Tag 2 Email] Sent request email to:", targetEmail);
+              } catch (mailErr) {
+                console.error("[Skyline Tag 2 Email Error] Failed sending to " + targetEmail + ":", mailErr);
+              }
+            })
+          );
         }
       }
     } catch (notifErr) {
