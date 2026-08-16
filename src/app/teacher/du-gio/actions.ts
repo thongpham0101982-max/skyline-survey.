@@ -789,7 +789,7 @@ export async function registerObservation(slotId: string) {
           }
         });
 
-        const hostEmail = slot.teacher.email || slot.teacher.user.email;
+        const hostEmail = getTeacherResolvedEmail(slot.teacher);
         if (hostEmail && hostEmail.includes("@")) {
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
@@ -814,7 +814,7 @@ export async function registerObservation(slotId: string) {
           `;
 
           try {
-            const hostEmail = slot.teacher?.email || (slot.teacher as any)?.user?.email;
+            const hostEmail = getTeacherResolvedEmail(slot.teacher);
             if (hostEmail) {
               await sendEmail({ to: hostEmail, subject: "[Skyline Dự Giờ] Thông báo có GV đăng ký dự giờ tiết dạy của bạn", html: emailHtml });
               console.log("[Skyline Email] Sent registration email to:", hostEmail);
