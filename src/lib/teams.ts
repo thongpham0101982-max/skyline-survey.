@@ -103,35 +103,24 @@ export async function sendTeamsNewSlotDepartmentNotif(
           "body": [
             {
               "type": "TextBlock",
-              "text": "📌 TIẾT DẠY DỰ GIỜ MỚI - TỔ CHUYÊN MÔN",
+              "text": `**${slot.subjectName || "Dự Giờ"} — ${slot.topic || "Tiết dạy đăng ký dự giờ"}**`,
               "weight": "Bolder",
               "size": "Medium",
-              "color": "Good"
+              "wrap": true
             },
             {
               "type": "TextBlock",
-              "text": `Thầy/Cô **${slot.teacherName || "Giáo viên"}** vừa mở tiết dạy dự giờ mới. Kính mời quý Thầy/Cô trong Tổ đăng ký tham dự.`,
-              "wrap": true,
-              "spacing": "Medium"
+              "text": `${slot.teacherName || "Giáo viên"} · ${slot.level || ""} (${slot.grade || ""} - ${slot.className || "Lớp học"}) · ${formatDateVi(slot.date)} (${slot.startTime || "Tiết 1"})`,
+              "size": "Small",
+              "color": "Dark",
+              "wrap": true
             },
             {
-              "type": "FactSet",
-              "facts": [
-                { "title": "📚 Bài dạy / Chủ đề:", "value": slot.topic || "Tiết dạy dự giờ" },
-                { "title": "📖 Môn học:", "value": slot.subjectName },
-                { "title": "🏫 Cấp & Khối lớp:", "value": `${slot.level} - ${slot.grade} (${slot.className || "Lớp học"})` },
-                { "title": "📍 Cơ sở & Phòng:", "value": `${slot.campusName || "Trường"} - ${slot.room || "Phòng học"}` },
-                { "title": "📅 Ngày dạy:", "value": formatDateVi(slot.date) },
-                { "title": "⏰ Tiết dạy:", "value": `${slot.startTime} - ${slot.endTime}` },
-                { "title": "👥 Số suất còn trống:", "value": `${4 - (slot.registeredCount || 0)} / 4 suất` }
-              ]
-            }
-          ],
-          "actions": [
-            {
-              "type": "Action.OpenUrl",
-              "title": "🔗 Đăng Ký Dự Giờ Ngay",
-              "url": linkUrl
+              "type": "TextBlock",
+              "text": `[Mở trong Hệ thống Dự giờ Skyline](${linkUrl})`,
+              "size": "Small",
+              "color": "Accent",
+              "wrap": true
             }
           ]
         }
