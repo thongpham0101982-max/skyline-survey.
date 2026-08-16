@@ -259,53 +259,6 @@ export default function TeacherDashboard() {
       {/* Welcome Greeting Alert Header */}
       <WelcomeAlert name={userName} />
 
-      {/* Modern Sky-Line SQMS Hero Banner */}
-      <div className="bg-gradient-to-br from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-3xl p-6 sm:p-8 text-white shadow-2xl relative overflow-hidden border border-teal-700/30">
-        {/* Glow Effects */}
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-96 h-96 bg-teal-400/25 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute left-1/3 bottom-0 translate-y-16 w-80 h-80 bg-emerald-400/20 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black bg-white/15 border border-white/25 text-teal-100 uppercase tracking-wider backdrop-blur-md shadow-sm">
-              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
-              <span>HỆ THỐNG QUẢN TRỊ CHẤT LƯỢNG GIÁO DỤC SKY-LINE (SQMS)</span>
-            </div>
-
-            
-          </div>
-
-          <div className="flex flex-col sm:flex-row lg:flex-col items-start sm:items-center lg:items-end gap-3 shrink-0">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <div className="flex items-center gap-2 bg-white/20 border border-white/30 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold text-white backdrop-blur-md shadow-sm">
-                <CalendarIcon className="w-4 h-4 text-amber-300" />
-                <span>Năm học: <strong className="text-amber-300 font-black">{activeAcademicYear}</strong></span>
-              </div>
-
-              <div className="flex items-center gap-2 bg-white/20 border border-white/30 px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold text-emerald-100 backdrop-blur-md shadow-sm">
-                <ShieldCheck className="w-4 h-4 text-emerald-300" />
-                <span>Chuẩn hóa dữ liệu</span>
-              </div>
-            </div>
-
-            {currentDateStr && (
-              <div className="flex items-center gap-2 bg-black/25 border border-white/20 px-4 py-2 rounded-2xl text-xs sm:text-sm font-semibold text-teal-100 backdrop-blur-md shadow-inner">
-                <Clock className="w-4 h-4 text-teal-300" />
-                <span>Hôm nay: <strong className="text-white font-bold">{currentDateStr}</strong></span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6 pt-4 border-t border-white/15 flex items-center justify-between text-xs text-teal-200/90 font-bold uppercase tracking-widest">
-          <span className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-emerald-300" />
-            Sky-Line International Education Standard
-          </span>
-          <span className="hidden sm:inline-block">SQMS Real-time Analytics</span>
-        </div>
-      </div>
-
       {/* 6 Real Metric KPI Cards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
