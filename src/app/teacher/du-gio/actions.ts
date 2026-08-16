@@ -675,8 +675,9 @@ export async function createObservationSlot(data: {
           `;
 
           try {
-            // Email sending disabled per configuration
-// sendEmail call omitted
+            const emailSubject = `[Skyline - Dự Giờ] Đề xuất xin dự giờ từ ${observerTeacher.teacherName}`;
+            await sendEmail({ to: hostEmail, subject: emailSubject, html: emailHtml });
+            console.log("[Skyline Email] Sent request email to host teacher:", hostEmail);
           } catch (mailErr) {
             console.error("Failed to send email for requestObservationSlot:", mailErr);
           }
