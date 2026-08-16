@@ -565,15 +565,22 @@ export async function createObservationSlot(data: {
           </div>
         `;
 
-        for (const targetEmail of memberEmails) {
-          sendEmail({ to: targetEmail, subject: emailSubject, html: emailHtml }).catch(err => console.error("[Email Notification Error]:", err));
-        }
+        await Promise.all(
+          memberEmails.map(async (targetEmail) => {
+            try {
+              await sendEmail({ to: targetEmail, subject: emailSubject, html: emailHtml });
+              console.log("[Skyline Email] Successfully sent slot creation email to:", targetEmail);
+            } catch (err) {
+              console.error("[Skyline Email Error] Failed sending to " + targetEmail + ":", err);
+            }
+          })
+        );
       }
 
       // 3. Teams Notification (strictly controlled by sendEmailNotif option)
       if (data.sendEmailNotif !== false) {
         const deptRel = (currentTeacher as any).departmentRel;
-        sendTeamsToAllDepartmentMembers(
+        await sendTeamsToAllDepartmentMembers(
           {
             id: newSlot.id,
             topic: newSlot.topic,
@@ -605,7 +612,7 @@ export async function createObservationSlot(data: {
             where: { id: currentTeacher.id },
             include: { departmentRel: true }
           });
-          sendTeamsNewSlotDepartmentNotif({
+          await sendTeamsNewSlotDepartmentNotif({
             id: newSlot.id,
             topic: newSlot.topic,
             subjectName: newSlot.subjectName,
