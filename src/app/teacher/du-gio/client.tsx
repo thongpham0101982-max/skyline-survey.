@@ -248,6 +248,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
+  const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(true);
   const [filterLevel, setFilterLevel] = useState(initialFilters.level)
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
   const [filterPeriod, setFilterPeriod] = useState("all")
