@@ -471,16 +471,17 @@ export async function createObservationSlot(data: {
     
     // Guaranteed Email, Teams & In-App Notification Dispatch for Tag 1 (New Slot)
     try {
-      const targetDeptId = newSlot.targetDeptId || currentTeacher.departmentId;
-      
-                  // Query strictly department members belonging to targetDeptId
+      const targetDeptIds = Array.isArray(data.targetDeptIds) && data.targetDeptIds.length > 0
+        ? data.targetDeptIds
+        : (newSlot.targetDeptId || currentTeacher.departmentId ? [newSlot.targetDeptId || currentTeacher.departmentId] : []);
+
       let deptMembers = [];
-      if (targetDeptId) {
+      if (targetDeptIds.length > 0) {
         deptMembers = await prisma.teacher.findMany({
           where: {
             OR: [
-              { departmentId: targetDeptId },
-              { departmentAssignments: { some: { departmentId: targetDeptId } } }
+              { departmentId: { in: targetDeptIds } },
+              { departmentAssignments: { some: { departmentId: { in: targetDeptIds } } } }
             ],
             status: "ACTIVE"
           },

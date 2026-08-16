@@ -249,6 +249,13 @@ export function ObservationClient(props: ObservationClientProps) {
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(true);
+  const [selectedEmailDeptIds, setSelectedEmailDeptIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (currentTeacher?.departmentId && selectedEmailDeptIds.length === 0) {
+      setSelectedEmailDeptIds([currentTeacher.departmentId]);
+    }
+  }, [currentTeacher?.departmentId]);
   const [filterLevel, setFilterLevel] = useState(initialFilters.level)
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
   const [filterPeriod, setFilterPeriod] = useState("all")
@@ -1056,6 +1063,7 @@ export function ObservationClient(props: ObservationClientProps) {
         startTime: newStartTime, endTime: newEndTime, isDoublePeriod: newIsDoublePeriod,
         room: classNameStr, description: newDescription, visibilityType: newVisibility,
         sendEmailNotif: sendEmailNotif,
+        targetDeptIds: selectedEmailDeptIds,
         targetDeptId: newVisibility === "DEPARTMENT" ? newTargetDeptId : undefined,
         campusId: newCampusId, campusName: campusNameStr,
         classId: (newClassId && newClassId !== "other") ? newClassId : undefined,
@@ -1896,31 +1904,93 @@ export function ObservationClient(props: ObservationClientProps) {
               </div>
             </div>
 
-            {/* Tùy chọn gửi email thông báo */}
-            <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 flex items-center justify-between gap-4 transition-all my-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white text-[#00A99D] flex items-center justify-center shrink-0 shadow-xs border border-teal-100">
-                  <Mail className="w-5 h-5" />
+            {/* Tùy chọn gửi email thông báo tự động & Chọn Tổ chuyên môn nhận */}
+            <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 flex flex-col gap-3 transition-all my-2">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white text-[#00A99D] flex items-center justify-center shrink-0 shadow-xs border border-teal-100">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-extrabold text-[#003B3A] flex items-center gap-1.5">
+                      Tùy chọn gửi Email thông báo tự động
+                      <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase font-black">Mặc định bật</span>
+                    </p>
+                    <p className="text-xs text-slate-600 font-medium mt-0.5">
+                      Gửi email tự động từ <span className="font-bold text-[#008b82]">bankhaothi@skylineschool.edu.vn</span> tới Giáo viên các Tổ chuyên môn được chọn.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs sm:text-sm font-extrabold text-[#003B3A] flex items-center gap-1.5">
-                    Tùy chọn gửi Email thông báo tự động
-                    <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase font-black">Mặc định bật</span>
-                  </p>
-                  <p className="text-xs text-slate-600 font-medium mt-0.5">
-                    Gửi email tự động từ <span className="font-bold text-[#008b82]">bankhaothi@skylineschool.edu.vn</span> đến Giáo viên & Tổ chuyên môn.
-                  </p>
-                </div>
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                  <input 
+                    type="checkbox" 
+                    checked={sendEmailNotif} 
+                    onChange={e => setSendEmailNotif(e.target.checked)} 
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00A99D]"></div>
+                </label>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                <input 
-                  type="checkbox" 
-                  checked={sendEmailNotif} 
-                  onChange={e => setSendEmailNotif(e.target.checked)} 
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#00A99D]"></div>
-              </label>
+
+              {sendEmailNotif && (
+                <div className="pt-3 border-t border-teal-200/60 flex flex-col gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-extrabold text-[#003B3A] uppercase tracking-wide flex items-center gap-1">
+                      <span>📌 Chọn Tổ chuyên môn nhận Email:</span>
+                      <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md text-[11px] font-black">
+                        Đã chọn {selectedEmailDeptIds.length} tổ
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedEmailDeptIds.length === departments.length) {
+                          setSelectedEmailDeptIds(currentTeacher?.departmentId ? [currentTeacher.departmentId] : []);
+                        } else {
+                          setSelectedEmailDeptIds(departments.map((d: any) => d.id));
+                        }
+                      }}
+                      className="text-xs font-extrabold text-[#008b82] hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs"
+                    >
+                      {selectedEmailDeptIds.length === departments.length ? "Chỉ chọn Tổ của tôi" : "Chọn tất cả các Tổ CM"}
+                    </button>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto custom-scrollbar p-1">
+                    {departments.map((dept: any) => {
+                      const isSelected = selectedEmailDeptIds.includes(dept.id);
+                      const isMyDept = currentTeacher?.departmentId === dept.id;
+                      return (
+                        <button
+                          key={dept.id}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              if (selectedEmailDeptIds.length > 1) {
+                                setSelectedEmailDeptIds(selectedEmailDeptIds.filter(id => id !== dept.id));
+                              }
+                            } else {
+                              setSelectedEmailDeptIds([...selectedEmailDeptIds, dept.id]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? "bg-[#00A99D] text-white border-[#00A99D] shadow-xs"
+                              : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                          }`}
+                        >
+                          <span>{dept.name}</span>
+                          {isMyDept && (
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded font-black uppercase ${isSelected ? "bg-white/20 text-white" : "bg-teal-50 text-teal-800"}`}>
+                              Tổ của tôi
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Submit Button */}
