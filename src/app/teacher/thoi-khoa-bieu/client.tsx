@@ -5,7 +5,7 @@ import Link from "next/link"
 import { 
   Calendar, Clock, BookOpen, Users, Building2, Filter, Sparkles, 
   CheckCircle, Search, Grid, List, RotateCcw, Sun, Moon,
-  ChevronRight, AlertCircle, ArrowRight, Shield
+  ChevronRight, AlertCircle, ArrowRight, Shield, Layers
 } from "lucide-react"
 
 interface TimetableSlotItem {
@@ -45,11 +45,11 @@ interface TeacherTimetableProps {
 }
 
 const DAYS_OF_WEEK = [
-  { key: "MONDAY", label: "Thứ 2" },
-  { key: "TUESDAY", label: "Thứ 3" },
-  { key: "WEDNESDAY", label: "Thứ 4" },
-  { key: "THURSDAY", label: "Thứ 5" },
-  { key: "FRIDAY", label: "Thứ 6" }
+  { key: "MONDAY", label: "Thứ 2", short: "T2" },
+  { key: "TUESDAY", label: "Thứ 3", short: "T3" },
+  { key: "WEDNESDAY", label: "Thứ 4", short: "T4" },
+  { key: "THURSDAY", label: "Thứ 5", short: "T5" },
+  { key: "FRIDAY", label: "Thứ 6", short: "T6" }
 ]
 
 const PERIODS = [1, 2, 3, 4]
@@ -134,8 +134,6 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
     return Array.from(new Set(allMySlots.map(s => s.className).filter(Boolean)))
   }, [allMySlots])
 
-  
-  
   // Filtered classes by Campus in Teacher page lookup
   const campusFilteredClasses = useMemo(() => {
     if (!Array.isArray(initialData.classes)) return []
@@ -189,7 +187,6 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
     }
   }, [selectedClassObj, initialData.timetableSlots])
 
-
   // Unique Departments for filter dropdown in Teacher page
   const uniqueDepartments = useMemo(() => {
     if (!Array.isArray(initialData.teachers)) return []
@@ -200,46 +197,54 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
         set.add(deptName.trim())
       }
     })
-    return Array.from(set).sort()
+    return Array.from(set)
   }, [initialData.teachers])
 
-  // Filtered teachers by Department & Search query in Teacher page
+  // Filtered teachers by department
   const deptFilteredTeachers = useMemo(() => {
     if (!Array.isArray(initialData.teachers)) return []
-    return initialData.teachers.filter((t: any) => {
-      const deptName = t.departmentRel?.name || t.departmentName || ""
-      const matchesDept = lookupDept === "ALL" || deptName.trim().toLowerCase() === lookupDept.trim().toLowerCase()
-      const matchesQuery = !lookupSearchQuery.trim() || 
-        (t.teacherName || "").toLowerCase().includes(lookupSearchQuery.toLowerCase()) ||
-        (t.teacherCode || "").toLowerCase().includes(lookupSearchQuery.toLowerCase())
-      return matchesDept && matchesQuery
-    })
+    let list = initialData.teachers
+    if (lookupDept !== "ALL") {
+      list = list.filter((t: any) => {
+        const dName = (t.departmentRel?.name || t.departmentName || "").trim()
+        return dName === lookupDept
+      })
+    }
+    if (lookupSearchQuery) {
+      const q = lookupSearchQuery.toLowerCase()
+      list = list.filter((t: any) => 
+        (t.teacherName || "").toLowerCase().includes(q) ||
+        (t.teacherCode || "").toLowerCase().includes(q)
+      )
+    }
+    return list
   }, [initialData.teachers, lookupDept, lookupSearchQuery])
 
-  // Active selected teacher object in Teacher page
+  // Active selected teacher object
   const selectedTeacherObj = useMemo(() => {
     if (lookupTeacherId) {
       return initialData.teachers.find((t: any) => t.id === lookupTeacherId) || null
     }
-    if (lookupSearchQuery.trim() && deptFilteredTeachers.length > 0) {
+    if (deptFilteredTeachers.length > 0) {
       return deptFilteredTeachers[0]
     }
     return null
-  }, [initialData.teachers, lookupTeacherId, lookupSearchQuery, deptFilteredTeachers])
+  }, [initialData.teachers, lookupTeacherId, deptFilteredTeachers])
 
-  // Teacher Weekly Schedule Matrix & Stats in Teacher page
+  // Teacher Weekly Schedule Matrix & Stats
   const { teacherWeeklyMatrix, teacherScheduleStats } = useMemo(() => {
     const matrix: Record<string, any> = {}
     const slotsList: any[] = []
     if (!selectedTeacherObj) return { teacherWeeklyMatrix: matrix, teacherScheduleStats: { totalPeriods: 0, slotsList } }
 
-    const targetName = (selectedTeacherObj.teacherName || "").trim().toLowerCase()
+    const tId = selectedTeacherObj.id
+    const tName = (selectedTeacherObj.teacherName || "").trim().toLowerCase()
 
     ;(initialData.timetableSlots || []).forEach((s: any) => {
-      const mainMatch = (s.teacherName || "").trim().toLowerCase() === targetName
-      const altMatch = (s.altTeacherName || "").trim().toLowerCase() === targetName
+      const idMatch = s.teacherId && s.teacherId === tId
+      const nameMatch = s.teacherName && s.teacherName.trim().toLowerCase() === tName
 
-      if (mainMatch || altMatch) {
+      if (idMatch || nameMatch) {
         const key = `${s.dayOfWeek}_${s.session}_${s.periodNumber}`
         matrix[key] = s
         
@@ -284,109 +289,121 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
   }, [initialData.classes, matrixCampusId, matrixLevel])
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-teal-900 to-[#00A99D] rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-6 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-teal-300 shrink-0 shadow-inner">
-              <Calendar className="w-6 h-6 animate-pulse" />
+    <div className="space-y-4 max-w-7xl mx-auto pb-10 font-sans text-slate-800">
+      {/* Compact Header Banner */}
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-2xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-teal-200 shrink-0 shadow-sm">
+              <Calendar className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl font-extrabold tracking-tight">Thời khóa biểu Giảng dạy</h1>
-                <span className="bg-emerald-400/20 text-emerald-300 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-400/30 uppercase tracking-wider">
-                  Trực quan & Chính xác
+                <h1 className="text-base sm:text-lg font-black tracking-tight text-white">Thời khóa biểu Giảng dạy</h1>
+                <span className="bg-emerald-400/25 text-emerald-200 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-300/30 uppercase tracking-wider">
+                  SQMS
                 </span>
               </div>
-              <p className="text-xs text-teal-100/80 font-medium mt-1">
-                Tra cứu phân công tiết dạy theo môn, tiết, lớp và thứ trong tuần từ Ma trận Thời khóa biểu chính thức
+              <p className="text-xs text-teal-100/90 font-medium">
+                Tra cứu phân công tiết dạy gọn gàng, khoa học & chuẩn xác
               </p>
             </div>
           </div>
 
-          {/* Tab Mode Switcher */}
-          <div className="flex items-center bg-black/20 p-1.5 rounded-2xl border border-white/10 shrink-0">
+          {/* Compact Tab Mode Switcher */}
+          <div className="flex flex-wrap items-center bg-black/25 p-1 rounded-xl border border-white/15 shrink-0 gap-1">
             <button
               onClick={() => setActiveTab("MY_SCHEDULE")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "MY_SCHEDULE"
-                  ? "bg-white text-[#003B3A] shadow-md scale-105"
+                  ? "bg-white text-[#003B3A] shadow-sm font-black"
                   : "text-teal-100 hover:text-white hover:bg-white/10"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Lịch dạy Cá nhân của Tôi ({allMySlots.length})
+              Lịch của tôi ({allMySlots.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("CLASS_LOOKUP")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "CLASS_LOOKUP"
+                  ? "bg-white text-[#003B3A] shadow-sm font-black"
+                  : "text-teal-100 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5" />
+              Theo Lớp
+            </button>
+            <button
+              onClick={() => setActiveTab("TEACHER_LOOKUP")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "TEACHER_LOOKUP"
+                  ? "bg-white text-[#003B3A] shadow-sm font-black"
+                  : "text-teal-100 hover:text-white hover:bg-white/10"
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              Theo GV
             </button>
             <button
               onClick={() => setActiveTab("SCHOOL_MATRIX")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                 activeTab === "SCHOOL_MATRIX"
-                  ? "bg-white text-[#003B3A] shadow-md scale-105"
+                  ? "bg-white text-[#003B3A] shadow-sm font-black"
                   : "text-teal-100 hover:text-white hover:bg-white/10"
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              TKB Toàn trường
+              Toàn trường
             </button>
           </div>
         </div>
 
-        {/* Quick KPI Stats Cards */}
+        {/* Inline Stats Badges Row */}
         {activeTab === "MY_SCHEDULE" && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-white/10">
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10">
-              <span className="text-[10px] font-bold text-teal-200 uppercase tracking-wider">Tổng tiết dạy</span>
-              <p className="text-lg sm:text-xl font-black text-white mt-0.5">{allMySlots.length} <span className="text-xs font-medium text-teal-200">tiết / tuần</span></p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10">
-              <span className="text-[10px] font-bold text-teal-200 uppercase tracking-wider">Môn giảng dạy</span>
-              <p className="text-lg sm:text-xl font-black text-white mt-0.5">{uniqueSubjects.length} <span className="text-xs font-medium text-teal-200">môn học</span></p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10">
-              <span className="text-[10px] font-bold text-teal-200 uppercase tracking-wider">Lớp phụ trách</span>
-              <p className="text-lg sm:text-xl font-black text-white mt-0.5">{uniqueClasses.length} <span className="text-xs font-medium text-teal-200">lớp học</span></p>
-            </div>
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/10">
-              <span className="text-[10px] font-bold text-teal-200 uppercase tracking-wider">Trạng thái TKB</span>
-              <p className="text-xs font-extrabold text-emerald-300 flex items-center gap-1.5 mt-2">
-                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                Đã chuẩn hóa
-              </p>
-            </div>
+          <div className="flex flex-wrap items-center gap-2 mt-3.5 pt-3 border-t border-white/15 text-xs font-bold">
+            <span className="bg-white/15 px-3 py-1 rounded-lg border border-white/20 text-white flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-amber-300" />
+              <span>Tổng: <strong className="text-amber-300 font-black">{allMySlots.length}</strong> tiết / tuần</span>
+            </span>
+            <span className="bg-white/15 px-3 py-1 rounded-lg border border-white/20 text-white flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5 text-teal-200" />
+              <span><strong className="text-teal-200 font-black">{uniqueSubjects.length}</strong> môn học</span>
+            </span>
+            <span className="bg-white/15 px-3 py-1 rounded-lg border border-white/20 text-white flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-emerald-300" />
+              <span><strong className="text-emerald-300 font-black">{uniqueClasses.length}</strong> lớp học</span>
+            </span>
           </div>
         )}
       </div>
 
       {/* ===== TAB 1: PERSONAL TEACHING SCHEDULE ===== */}
       {activeTab === "MY_SCHEDULE" && (
-        <div className="space-y-6">
-          {/* Multi-Dimensional Filter Controls Bar */}
-          <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200 space-y-4">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="space-y-4">
+          {/* Compact Filter Bar */}
+          <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4 text-[#00A99D]" />
-                <h3 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider">Bộ lọc Tra cứu Tiết dạy</h3>
+                <h3 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Bộ lọc Tra cứu Tiết dạy</h3>
               </div>
 
-              <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
-                {/* View Mode Switcher */}
-                <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center bg-slate-100 p-1 rounded-lg border border-slate-200">
                   <button
                     onClick={() => setViewMode("GRID")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      viewMode === "GRID" ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === "GRID" ? "bg-white text-[#00A99D] shadow-xs" : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
                     <Grid className="w-3.5 h-3.5" />
-                    Ma trận Tuần
+                    <span className="hidden sm:inline">Ma trận</span> Tuần
                   </button>
                   <button
                     onClick={() => setViewMode("LIST")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      viewMode === "LIST" ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                    className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      viewMode === "LIST" ? "bg-white text-[#00A99D] shadow-xs" : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
                     <List className="w-3.5 h-3.5" />
@@ -396,36 +413,34 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
                 <button
                   onClick={resetFilters}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition cursor-pointer"
+                  className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-lg transition cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  Đặt lại
+                  <span className="hidden sm:inline">Đặt lại</span>
                 </button>
               </div>
             </div>
 
-            {/* Filter Dropdowns Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              {/* Filter 1: Thứ */}
+            {/* Compact Filter Dropdowns Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc theo Thứ</label>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Thứ</label>
                 <select
                   value={filterDay}
                   onChange={e => setFilterDay(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả các thứ</option>
                   {DAYS_OF_WEEK.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
                 </select>
               </div>
 
-              {/* Filter 2: Buổi */}
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc theo Buổi</label>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Buổi</label>
                 <select
                   value={filterSession}
                   onChange={e => setFilterSession(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả các buổi</option>
                   <option value="MORNING">Buổi Sáng</option>
@@ -433,52 +448,48 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                 </select>
               </div>
 
-              {/* Filter 3: Tiết */}
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc theo Tiết</label>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Tiết</label>
                 <select
                   value={filterPeriod}
                   onChange={e => setFilterPeriod(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả tiết dạy</option>
                   {[1, 2, 3, 4].map(p => <option key={p} value={String(p)}>Tiết {p}</option>)}
                 </select>
               </div>
 
-              {/* Filter 4: Môn học */}
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc theo Môn</label>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Môn</label>
                 <select
                   value={filterSubject}
                   onChange={e => setFilterSubject(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả môn học</option>
                   {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
 
-              {/* Filter 5: Lớp học */}
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc theo Lớp</label>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Lọc theo Lớp</label>
                 <select
                   value={filterClass}
                   onChange={e => setFilterClass(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả lớp học</option>
                   {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
 
-              {/* Filter 6: Tuần */}
               <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Cấu hình Tuần</label>
+                <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Cấu hình Tuần</label>
                 <select
                   value={filterWeekType}
                   onChange={e => setFilterWeekType(e.target.value)}
-                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả các tuần</option>
                   <option value="EVEN">Tuần Chẵn</option>
@@ -488,82 +499,85 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
             </div>
           </div>
 
-          {/* VIEW 1: WEEKLY SCHEDULE MATRIX GRID */}
+          {/* VIEW 1: WEEKLY SCHEDULE MATRIX GRID (COMPACT SCIENTIFIC) */}
           {viewMode === "GRID" && (
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+              <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Grid className="w-4 h-4 text-[#00A99D]" />
-                  <span className="font-extrabold text-xs uppercase tracking-wider text-slate-700">
+                  <span className="font-black text-xs uppercase tracking-wider text-slate-800">
                     Ma trận Lịch dạy Tuần (Thứ 2 - Thứ 6)
                   </span>
                 </div>
-                <span className="text-[11px] font-bold text-slate-400">
-                  Hiển thị {filteredMySlots.length} / {allMySlots.length} tiết dạy
+                <span className="text-[11px] font-extrabold text-slate-500">
+                  Hiển thị <strong className="text-[#00A99D]">{filteredMySlots.length}</strong> / {allMySlots.length} tiết
                 </span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse min-w-[700px]">
+                <table className="w-full border-collapse min-w-[650px] text-xs">
                   <thead>
-                    <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 text-xs font-black uppercase">
-                      <th className="py-3 px-3 text-center border-r border-slate-200 w-20">Buổi</th>
-                      <th className="py-3 px-3 text-center border-r border-slate-200 w-16">Tiết</th>
+                    <tr className="bg-slate-100 border-b border-slate-200 text-slate-700 font-black uppercase text-[11px]">
+                      <th className="py-2 px-2 text-center border-r border-slate-200 w-16">Buổi</th>
+                      <th className="py-2 px-2 text-center border-r border-slate-200 w-14">Tiết</th>
                       {DAYS_OF_WEEK.map(day => (
-                        <th key={day.key} className="py-3 px-4 text-center border-r border-slate-200 last:border-r-0 font-black">
+                        <th key={day.key} className="py-2 px-3 text-center border-r border-slate-200 last:border-r-0 font-black">
                           {day.label}
                         </th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 text-xs">
+                  <tbody className="divide-y divide-slate-200">
                     {/* MORNING SESSION */}
                     {PERIODS.map((period, pIdx) => (
-                      <tr key={`morning-${period}`} className="hover:bg-slate-50/50">
+                      <tr key={`morning-${period}`} className="hover:bg-slate-50/60 transition-colors">
                         {pIdx === 0 && (
-                          <td rowSpan={4} className="py-4 px-3 text-center border-r border-slate-200 bg-amber-50/40 text-amber-800 font-extrabold text-xs">
-                            <div className="flex flex-col items-center gap-1">
-                              <Sun className="w-4 h-4 text-amber-500" />
+                          <td rowSpan={4} className="py-2 px-1 text-center border-r border-slate-200 bg-amber-50/50 text-amber-900 font-extrabold text-[11px]">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <Sun className="w-3.5 h-3.5 text-amber-500" />
                               <span>SÁNG</span>
                             </div>
                           </td>
                         )}
-                        <td className="py-3 px-2 text-center border-r border-slate-200 font-extrabold text-slate-600 bg-slate-50">
+                        <td className="py-2 px-1 text-center border-r border-slate-200 font-bold text-slate-600 bg-slate-50 text-xs">
                           Tiết {period}
                         </td>
                         {DAYS_OF_WEEK.map(day => {
                           const slot = filteredMySlots.find(s => s.dayOfWeek === day.key && s.session === "MORNING" && s.periodNumber === period)
                           return (
-                            <td key={day.key} className="p-2 border-r border-slate-200 last:border-r-0 h-20 align-top">
+                            <td key={day.key} className="p-1.5 border-r border-slate-200 last:border-r-0 h-14 align-top">
                               {slot ? (
                                 <div 
-                                  className="h-full p-2.5 rounded-xl border flex flex-col justify-between shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+                                  className="h-full p-2 rounded-lg border flex flex-col justify-between shadow-2xs transition-all hover:scale-[1.02] hover:shadow-xs"
                                   style={{
-                                    backgroundColor: (slot.colorCode || "#3B82F6") + "15",
-                                    borderColor: slot.colorCode || "#3B82F6"
+                                    backgroundColor: (slot.colorCode || "#00A99D") + "12",
+                                    borderColor: slot.colorCode || "#00A99D"
                                   }}
                                 >
                                   <div>
                                     <div className="flex items-center justify-between gap-1">
-                                      <span className="font-black text-xs text-slate-800 truncate">{slot.className}</span>
+                                      <span className="font-black text-xs text-slate-900 truncate">{slot.className}</span>
                                       {slot.weekType !== "ALL" && (
-                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-white/80 text-slate-700 border">
-                                          {slot.weekType === "EVEN" ? "Tuần Chẵn" : "Tuần Lẻ"}
+                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-white/90 text-slate-700 border border-slate-200">
+                                          {slot.weekType === "EVEN" ? "T.Chẵn" : "T.Lẻ"}
                                         </span>
                                       )}
                                     </div>
-                                    <p className="font-extrabold text-xs text-[#00A99D] mt-0.5 truncate">{slot.subjectName || "Chưa xếp môn"}</p>
+                                    <p className="font-bold text-xs text-[#003B3A] mt-0.5 truncate">{slot.subjectName || "Chưa môn"}</p>
                                   </div>
-                                  <Link
-                                    href="/teacher/du-gio"
-                                    className="text-[10px] font-bold text-slate-500 hover:text-[#00A99D] flex items-center justify-end gap-0.5 mt-1"
-                                  >
-                                    <span>Đăng ký dự giờ</span>
-                                    <ArrowRight className="w-3 h-3" />
-                                  </Link>
+                                  <div className="flex items-center justify-end pt-1">
+                                    <Link
+                                      href="/teacher/du-gio"
+                                      className="text-[10px] font-bold text-slate-500 hover:text-[#00A99D] flex items-center gap-0.5 transition-colors"
+                                      title="Đăng ký dự giờ tiết này"
+                                    >
+                                      <span>Dự giờ</span>
+                                      <ArrowRight className="w-3 h-3" />
+                                    </Link>
+                                  </div>
                                 </div>
                               ) : (
-                                <div className="h-full rounded-xl border border-dashed border-slate-200 bg-slate-50/30 flex items-center justify-center text-slate-300 text-[11px]">
+                                <div className="h-full rounded-lg bg-slate-50/40 flex items-center justify-center text-slate-300 text-xs font-semibold">
                                   -
                                 </div>
                               )}
@@ -575,51 +589,54 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
                     {/* AFTERNOON SESSION */}
                     {PERIODS.map((period, pIdx) => (
-                      <tr key={`afternoon-${period}`} className="hover:bg-slate-50/50">
+                      <tr key={`afternoon-${period}`} className="hover:bg-slate-50/60 transition-colors">
                         {pIdx === 0 && (
-                          <td rowSpan={4} className="py-4 px-3 text-center border-r border-slate-200 bg-sky-50/40 text-sky-800 font-extrabold text-xs">
-                            <div className="flex flex-col items-center gap-1">
-                              <Moon className="w-4 h-4 text-sky-500" />
+                          <td rowSpan={4} className="py-2 px-1 text-center border-r border-slate-200 bg-sky-50/50 text-sky-900 font-extrabold text-[11px]">
+                            <div className="flex flex-col items-center gap-0.5">
+                              <Moon className="w-3.5 h-3.5 text-sky-500" />
                               <span>CHIỀU</span>
                             </div>
                           </td>
                         )}
-                        <td className="py-3 px-2 text-center border-r border-slate-200 font-extrabold text-slate-600 bg-slate-50">
+                        <td className="py-2 px-1 text-center border-r border-slate-200 font-bold text-slate-600 bg-slate-50 text-xs">
                           Tiết {period}
                         </td>
                         {DAYS_OF_WEEK.map(day => {
                           const slot = filteredMySlots.find(s => s.dayOfWeek === day.key && s.session === "AFTERNOON" && s.periodNumber === period)
                           return (
-                            <td key={day.key} className="p-2 border-r border-slate-200 last:border-r-0 h-20 align-top">
+                            <td key={day.key} className="p-1.5 border-r border-slate-200 last:border-r-0 h-14 align-top">
                               {slot ? (
                                 <div 
-                                  className="h-full p-2.5 rounded-xl border flex flex-col justify-between shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+                                  className="h-full p-2 rounded-lg border flex flex-col justify-between shadow-2xs transition-all hover:scale-[1.02] hover:shadow-xs"
                                   style={{
-                                    backgroundColor: (slot.colorCode || "#3B82F6") + "15",
-                                    borderColor: slot.colorCode || "#3B82F6"
+                                    backgroundColor: (slot.colorCode || "#00A99D") + "12",
+                                    borderColor: slot.colorCode || "#00A99D"
                                   }}
                                 >
                                   <div>
                                     <div className="flex items-center justify-between gap-1">
-                                      <span className="font-black text-xs text-slate-800 truncate">{slot.className}</span>
+                                      <span className="font-black text-xs text-slate-900 truncate">{slot.className}</span>
                                       {slot.weekType !== "ALL" && (
-                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-white/80 text-slate-700 border">
-                                          {slot.weekType === "EVEN" ? "Tuần Chẵn" : "Tuần Lẻ"}
+                                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-white/90 text-slate-700 border border-slate-200">
+                                          {slot.weekType === "EVEN" ? "T.Chẵn" : "T.Lẻ"}
                                         </span>
                                       )}
                                     </div>
-                                    <p className="font-extrabold text-xs text-[#00A99D] mt-0.5 truncate">{slot.subjectName || "Chưa xếp môn"}</p>
+                                    <p className="font-bold text-xs text-[#003B3A] mt-0.5 truncate">{slot.subjectName || "Chưa môn"}</p>
                                   </div>
-                                  <Link
-                                    href="/teacher/du-gio"
-                                    className="text-[10px] font-bold text-slate-500 hover:text-[#00A99D] flex items-center justify-end gap-0.5 mt-1"
-                                  >
-                                    <span>Đăng ký dự giờ</span>
-                                    <ArrowRight className="w-3 h-3" />
-                                  </Link>
+                                  <div className="flex items-center justify-end pt-1">
+                                    <Link
+                                      href="/teacher/du-gio"
+                                      className="text-[10px] font-bold text-slate-500 hover:text-[#00A99D] flex items-center gap-0.5 transition-colors"
+                                      title="Đăng ký dự giờ tiết này"
+                                    >
+                                      <span>Dự giờ</span>
+                                      <ArrowRight className="w-3 h-3" />
+                                    </Link>
+                                  </div>
                                 </div>
                               ) : (
-                                <div className="h-full rounded-xl border border-dashed border-slate-200 bg-slate-50/30 flex items-center justify-center text-slate-300 text-[11px]">
+                                <div className="h-full rounded-lg bg-slate-50/40 flex items-center justify-center text-slate-300 text-xs font-semibold">
                                   -
                                 </div>
                               )}
@@ -636,32 +653,32 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
           {/* VIEW 2: SUBJECT QUOTA & DETAILED LIST VIEW */}
           {viewMode === "LIST" && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Summary Cards by Subject */}
-              <div className="lg:col-span-1 space-y-4">
-                <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <div className="lg:col-span-1 space-y-3">
+                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
                   <BookOpen className="w-4 h-4 text-[#00A99D]" />
                   <span>Thống kê theo Môn giảng dạy</span>
                 </h3>
 
                 {subjectSummary.map((sub, idx) => (
-                  <div key={idx} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+                  <div key={idx} className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-extrabold text-base text-slate-800">{sub.subjectName}</h4>
-                      <span className="bg-[#00A99D] text-white font-black text-xs px-3 py-1 rounded-full shadow-sm">
+                      <h4 className="font-black text-sm text-slate-900">{sub.subjectName}</h4>
+                      <span className="bg-[#00A99D] text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-2xs">
                         {sub.totalPeriods} tiết / tuần
                       </span>
                     </div>
 
-                    <div className="text-xs font-semibold text-slate-500 space-y-1">
-                      <p>Danh sách lớp phụ trách: <span className="font-bold text-slate-800">{Array.from(sub.classNames).join(", ") || "N/A"}</span></p>
+                    <div className="text-xs font-semibold text-slate-600 space-y-1">
+                      <p>Danh sách lớp phụ trách: <span className="font-bold text-slate-900">{Array.from(sub.classNames).join(", ") || "N/A"}</span></p>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1.5">
+                    <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1">
                       {sub.slots.map((s, sIdx) => {
-                        const dayText = DAYS_OF_WEEK.find(d => d.key === s.dayOfWeek)?.label || s.dayOfWeek
+                        const dayText = DAYS_OF_WEEK.find(d => d.key === s.dayOfWeek)?.short || s.dayOfWeek
                         return (
-                          <span key={sIdx} className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">
+                          <span key={sIdx} className="bg-slate-100 text-slate-800 text-[10px] font-bold px-2 py-0.5 rounded border border-slate-200">
                             {dayText} ({s.session === "MORNING" ? "Sáng" : "Chiều"} - T{s.periodNumber}): {s.className}
                           </span>
                         )
@@ -672,42 +689,42 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
               </div>
 
               {/* Detailed Slot Cards List */}
-              <div className="lg:col-span-2 space-y-4">
-                <h3 className="font-extrabold text-xs uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <div className="lg:col-span-2 space-y-3">
+                <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
                   <List className="w-4 h-4 text-[#00A99D]" />
                   <span>Danh sách Tiết dạy Chi tiết ({filteredMySlots.length})</span>
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {filteredMySlots.map((slot) => {
                     const dayText = DAYS_OF_WEEK.find(d => d.key === slot.dayOfWeek)?.label || slot.dayOfWeek
                     return (
-                      <div key={slot.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3 hover:shadow-md transition">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                          <span className="bg-emerald-50 text-[#00A99D] font-black text-xs px-2.5 py-0.5 rounded-full border border-emerald-100 uppercase">
-                            {dayText} - {slot.session === "MORNING" ? "Buổi Sáng" : "Buổi Chiều"}
+                      <div key={slot.id} className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-2.5 hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <span className="bg-emerald-50 text-[#003B3A] font-black text-xs px-2.5 py-0.5 rounded-md border border-emerald-200 uppercase">
+                            {dayText} - {slot.session === "MORNING" ? "Sáng" : "Chiều"}
                           </span>
-                          <span className="bg-amber-50 text-amber-700 font-black text-xs px-2.5 py-0.5 rounded-full border border-amber-100">
+                          <span className="bg-amber-100 text-amber-900 font-black text-xs px-2.5 py-0.5 rounded-md border border-amber-200">
                             Tiết {slot.periodNumber}
                           </span>
                         </div>
 
                         <div>
-                          <h4 className="font-extrabold text-base text-slate-800">{slot.subjectName || "Chưa xếp môn"}</h4>
-                          <p className="text-xs font-bold text-[#00A99D] mt-0.5">Lớp: {slot.className}</p>
+                          <h4 className="font-black text-sm text-slate-900">{slot.subjectName || "Chưa xếp môn"}</h4>
+                          <p className="text-xs font-extrabold text-[#00A99D] mt-0.5">Lớp: {slot.className}</p>
                         </div>
 
-                        <div className="text-xs font-semibold text-slate-500 space-y-1">
-                          <p>Cấp / Khối: <span className="font-bold text-slate-700">{slot.level === "TIEU_HOC" ? "Tiểu học" : "Trung học"} ({slot.grade})</span></p>
-                          <p>Tuần áp dụng: <span className="font-bold text-slate-700">{slot.weekType === "ALL" ? "Tất cả các tuần" : slot.weekType === "EVEN" ? "Tuần Chẵn" : "Tuần Lẻ"}</span></p>
+                        <div className="text-xs font-medium text-slate-600 space-y-0.5">
+                          <p>Cấp / Khối: <span className="font-bold text-slate-800">{slot.level === "TIEU_HOC" ? "Tiểu học" : "Trung học"} ({slot.grade})</span></p>
+                          <p>Tuần áp dụng: <span className="font-bold text-slate-800">{slot.weekType === "ALL" ? "Tất cả các tuần" : slot.weekType === "EVEN" ? "Tuần Chẵn" : "Tuần Lẻ"}</span></p>
                         </div>
 
                         <div className="pt-2 border-t border-slate-100 flex justify-end">
                           <Link
                             href="/teacher/du-gio"
-                            className="text-xs font-bold text-[#00A99D] hover:text-[#009085] flex items-center gap-1"
+                            className="text-xs font-bold text-[#00A99D] hover:text-[#003B3A] flex items-center gap-1"
                           >
-                            <span>Đăng ký dự giờ tiết này</span>
+                            <span>Đăng ký dự giờ</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </Link>
                         </div>
@@ -721,16 +738,15 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
         </div>
       )}
 
-      {/* ===== TAB: CLASS SCHEDULE LOOKUP ===== */}
+      {/* ===== TAB 2: CLASS SCHEDULE LOOKUP ===== */}
       {activeTab === "CLASS_LOOKUP" && (
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 space-y-5">
           {/* FILTER CONTROLS */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* 1. CHỌN CƠ SỞ */}
-            <div className="md:col-span-5 space-y-1.5">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            <div className="md:col-span-5 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
-                1. Chọn Cơ Sở Trực Thuộc
+                1. Chọn Cơ Sở
               </label>
               <select
                 value={lookupCampusId}
@@ -738,17 +754,16 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   setLookupCampusId(e.target.value);
                   setLookupClassId("");
                 }}
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
               >
-                <option value="">-- Tất cả các Cơ sở --</option>
+                <option value="">-- Tất cả Cơ sở --</option>
                 {initialData.campuses.map((c: any) => (
                   <option key={c.id} value={c.id}>{c.campusName}</option>
                 ))}
               </select>
             </div>
 
-            {/* 2. CHỌN LỚP HỌC */}
-            <div className="md:col-span-7 space-y-1.5">
+            <div className="md:col-span-7 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                 <Layers className="w-3.5 h-3.5 text-[#00A99D]" />
                 2. Chọn Lớp Học Cần Tra Cứu TKB
@@ -756,7 +771,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
               <select
                 value={lookupClassId}
                 onChange={e => setLookupClassId(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
               >
                 <option value="">-- Chọn Lớp học trong danh sách --</option>
                 {campusFilteredClasses.map((cls: any) => (
@@ -770,42 +785,40 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
           {/* CLASS INFO BADGE */}
           {selectedClassObj ? (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-xl text-white">
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black text-lg text-white">
                     {selectedClassObj.className?.charAt(0) || "L"}
                   </div>
                   <div>
-                    <h2 className="text-base font-black uppercase tracking-wide flex items-center gap-2">
+                    <h2 className="text-sm font-black uppercase tracking-wide flex items-center gap-2">
                       {selectedClassObj.className?.startsWith("Lớp") ? selectedClassObj.className : `Lớp ${selectedClassObj.className}`}
-                      <span className="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-mono normal-case">
+                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md normal-case">
                         {selectedClassObj.level || selectedClassObj.grade || "Cấp học"}
                       </span>
                     </h2>
-                    <p className="text-xs text-teal-100 font-semibold mt-0.5">
-                      Cơ sở: <span className="font-bold text-white">{initialData.campuses.find((c: any) => c.id === selectedClassObj.campusId)?.campusName || "Tất cả Cơ sở"}</span>
+                    <p className="text-xs text-teal-100 font-medium mt-0.5">
+                      Cơ sở: <strong className="text-white">{initialData.campuses.find((c: any) => c.id === selectedClassObj.campusId)?.campusName || "Tất cả Cơ sở"}</strong>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl text-right">
-                    <div className="text-[10px] text-teal-200 uppercase font-black">Tổng số tiết học trong tuần</div>
-                    <div className="text-lg font-black text-white">{classScheduleStats.totalPeriods} tiết / tuần</div>
-                  </div>
+                <div className="bg-white/15 px-3 py-1.5 rounded-lg text-right">
+                  <div className="text-[10px] text-teal-100 uppercase font-black">Tổng tiết học / tuần</div>
+                  <div className="text-sm font-black text-white">{classScheduleStats.totalPeriods} tiết</div>
                 </div>
               </div>
 
               {/* WEEKLY TIMETABLE TABLE MATRIX FOR CLASS */}
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-[#003B3A] text-white font-black uppercase text-[11px] tracking-wider">
-                      <th className="p-3 text-center w-24 border-r border-teal-800">Buổi</th>
-                      <th className="p-3 text-center w-20 border-r border-teal-800">Tiết</th>
+                      <th className="p-2 text-center w-20 border-r border-teal-800">Buổi</th>
+                      <th className="p-2 text-center w-16 border-r border-teal-800">Tiết</th>
                       {DAYS_OF_WEEK.map(d => (
-                        <th key={d.key} className="p-3 text-center border-r border-teal-800 min-w-[150px]">
+                        <th key={d.key} className="p-2 text-center border-r border-teal-800 min-w-[130px]">
                           {d.label}
                         </th>
                       ))}
@@ -815,36 +828,31 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                     {[1, 2, 3, 4].map((period, idx) => (
                       <tr key={`morning-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
                         {idx === 0 && (
-                          <td rowSpan={4} className="p-3 font-black text-center border-r border-slate-200 bg-amber-50/40 text-amber-800 uppercase tracking-wide">
-                            ☀️ SÁNG
+                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-amber-50/50 text-amber-900 uppercase tracking-wide text-xs">
+                            SÁNG
                           </td>
                         )}
-                        <td className="p-3 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
+                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
                           Tiết {period}
                         </td>
                         {DAYS_OF_WEEK.map(d => {
                           const assignedSlot = classWeeklyMatrix[`${d.key}_MORNING_${period}`];
                           return (
-                            <td key={d.key} className="p-2 border-r border-slate-200 text-center vertical-top">
+                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: assignedSlot.colorCode || "#FEF08A" }}
-                                  className="p-2.5 rounded-xl border border-slate-300 shadow-xs space-y-1 text-slate-900 font-bold"
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
                                     {assignedSlot.subjectName}
                                   </div>
-                                  <div className="text-[11px] text-slate-800 bg-white/70 px-2 py-0.5 rounded-md inline-block font-mono">
+                                  <div className="text-[11px] text-slate-700 font-medium">
                                     {assignedSlot.teacherName || "Chưa xếp GV"}
                                   </div>
-                                  {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
-                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                                      {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
-                                    </div>
-                                  )}
                                 </div>
                               ) : (
-                                <span className="text-slate-300 italic text-[11px]">Trống</span>
+                                <span className="text-slate-300 text-xs">-</span>
                               )}
                             </td>
                           );
@@ -854,36 +862,31 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                     {[1, 2, 3, 4].map((period, idx) => (
                       <tr key={`afternoon-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
                         {idx === 0 && (
-                          <td rowSpan={4} className="p-3 font-black text-center border-r border-slate-200 bg-sky-50/40 text-sky-800 uppercase tracking-wide">
-                            🌙 CHIỀU
+                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-sky-50/50 text-sky-900 uppercase tracking-wide text-xs">
+                            CHIỀU
                           </td>
                         )}
-                        <td className="p-3 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
+                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
                           Tiết {period}
                         </td>
                         {DAYS_OF_WEEK.map(d => {
                           const assignedSlot = classWeeklyMatrix[`${d.key}_AFTERNOON_${period}`];
                           return (
-                            <td key={d.key} className="p-2 border-r border-slate-200 text-center vertical-top">
+                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: assignedSlot.colorCode || "#FEF08A" }}
-                                  className="p-2.5 rounded-xl border border-slate-300 shadow-xs space-y-1 text-slate-900 font-bold"
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
                                     {assignedSlot.subjectName}
                                   </div>
-                                  <div className="text-[11px] text-slate-800 bg-white/70 px-2 py-0.5 rounded-md inline-block font-mono">
+                                  <div className="text-[11px] text-slate-700 font-medium">
                                     {assignedSlot.teacherName || "Chưa xếp GV"}
                                   </div>
-                                  {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
-                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                                      {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
-                                    </div>
-                                  )}
                                 </div>
                               ) : (
-                                <span className="text-slate-300 italic text-[11px]">Trống</span>
+                                <span className="text-slate-300 text-xs">-</span>
                               )}
                             </td>
                           );
@@ -893,40 +896,11 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   </tbody>
                 </table>
               </div>
-
-              {/* CHRONOLOGICAL LIST OF CLASS PERIODS */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
-                  Danh Sách Môn Học & GVGD Trong Tuần Của Lớp
-                </h3>
-                {classScheduleStats.slotsList.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {classScheduleStats.slotsList.map((item: any, i: number) => (
-                      <div key={i} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-                        <div>
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#00A99D] mr-2">
-                            {item.dayLabel} - {item.sessionLabel} Tiết {item.periodNumber}
-                          </span>
-                          <h4 className="text-xs font-black text-slate-800 mt-1">{item.subjectName}</h4>
-                          <p className="text-[11px] font-bold text-slate-500">GVGD: {item.teacherName || "Chưa chọn"}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] font-bold text-slate-400">Trạng thái</span>
-                          <div className="text-xs font-black text-emerald-600">Đã xếp lịch</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 italic p-3 text-center">Lớp học chưa có tiết học nào được xếp lịch trong thời khóa biểu hiện tại.</p>
-                )}
-              </div>
             </div>
           ) : (
-            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-400 font-semibold text-xs space-y-2">
-              <Building2 className="w-8 h-8 mx-auto text-slate-300" />
-              <p>Vui lòng chọn Cơ sở và Lớp học ở trên để tra cứu thời khóa biểu toàn bộ các tiết học trong tuần.</p>
+            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-8 text-center text-slate-400 font-semibold text-xs space-y-1">
+              <Building2 className="w-7 h-7 mx-auto text-slate-300" />
+              <p>Vui lòng chọn Cơ sở và Lớp học ở trên để tra cứu thời khóa biểu.</p>
             </div>
           )}
         </div>
@@ -934,14 +908,13 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
       {/* ===== TAB 3: TEACHER SCHEDULE LOOKUP ===== */}
       {activeTab === "TEACHER_LOOKUP" && (
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 space-y-5">
           {/* FILTER CONTROLS */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-            {/* 1. CHỌN TỔ CHUYÊN MÔN */}
-            <div className="md:col-span-5 space-y-1.5">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+            <div className="md:col-span-5 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                 <Filter className="w-3.5 h-3.5 text-[#00A99D]" />
-                1. Lọc Theo Tổ Chuyên Môn
+                1. Tổ Chuyên Môn
               </label>
               <select
                 value={lookupDept}
@@ -949,31 +922,30 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   setLookupDept(e.target.value);
                   setLookupTeacherId("");
                 }}
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
               >
-                <option value="ALL">-- Tất cả các Tổ chuyên môn --</option>
+                <option value="ALL">-- Tất cả Tổ chuyên môn --</option>
                 {uniqueDepartments.map(d => (
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
             </div>
 
-            {/* 2. CHỌN / TRA CỨU GIÁO VIÊN */}
-            <div className="md:col-span-7 space-y-1.5">
+            <div className="md:col-span-7 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                 <Search className="w-3.5 h-3.5 text-[#00A99D]" />
-                2. Chọn Giáo Viên Hoặc Nhập Tên Tra Cứu
+                2. Chọn / Tìm Giáo Viên
               </label>
               <div className="flex gap-2">
                 <select
                   value={lookupTeacherId}
                   onChange={e => setLookupTeacherId(e.target.value)}
-                  className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                  className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
                 >
                   <option value="">-- Chọn Giáo viên trong danh sách --</option>
                   {deptFilteredTeachers.map((t: any) => (
                     <option key={t.id} value={t.id}>
-                      {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ''} - {t.departmentRel?.name || t.departmentName || 'GV'}
+                      {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ''}
                     </option>
                   ))}
                 </select>
@@ -983,7 +955,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   placeholder="Hoặc gõ tên GV..."
                   value={lookupSearchQuery}
                   onChange={e => setLookupSearchQuery(e.target.value)}
-                  className="w-48 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                  className="w-40 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
                 />
               </div>
             </div>
@@ -991,42 +963,40 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
           {/* TEACHER INFO BADGE */}
           {selectedTeacherObj ? (
-            <div className="space-y-6">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-xl text-white">
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black text-lg text-white">
                     {selectedTeacherObj.teacherName?.charAt(0) || "GV"}
                   </div>
                   <div>
-                    <h2 className="text-base font-black uppercase tracking-wide flex items-center gap-2">
+                    <h2 className="text-sm font-black uppercase tracking-wide flex items-center gap-2">
                       {selectedTeacherObj.teacherName}
-                      <span className="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-mono normal-case">
+                      <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-md normal-case">
                         {selectedTeacherObj.teacherCode || "GV"}
                       </span>
                     </h2>
-                    <p className="text-xs text-teal-100 font-semibold mt-0.5">
-                      Tổ chuyên môn: <span className="font-bold text-white">{selectedTeacherObj.departmentRel?.name || selectedTeacherObj.departmentName || "Tổ chuyên môn"}</span>
+                    <p className="text-xs text-teal-100 font-medium mt-0.5">
+                      Tổ chuyên môn: <strong className="text-white">{selectedTeacherObj.departmentRel?.name || selectedTeacherObj.departmentName || "Tổ chuyên môn"}</strong>
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl text-right">
-                    <div className="text-[10px] text-teal-200 uppercase font-black">Tổng tiết dạy trong tuần</div>
-                    <div className="text-lg font-black text-white">{teacherScheduleStats.totalPeriods} tiết / tuần</div>
-                  </div>
+                <div className="bg-white/15 px-3 py-1.5 rounded-lg text-right">
+                  <div className="text-[10px] text-teal-100 uppercase font-black">Tổng tiết dạy / tuần</div>
+                  <div className="text-sm font-black text-white">{teacherScheduleStats.totalPeriods} tiết</div>
                 </div>
               </div>
 
               {/* WEEKLY TIMETABLE TABLE MATRIX FOR TEACHER */}
-              <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="bg-[#003B3A] text-white font-black uppercase text-[11px] tracking-wider">
-                      <th className="p-3 text-center w-24 border-r border-teal-800">Buổi</th>
-                      <th className="p-3 text-center w-20 border-r border-teal-800">Tiết</th>
+                      <th className="p-2 text-center w-20 border-r border-teal-800">Buổi</th>
+                      <th className="p-2 text-center w-16 border-r border-teal-800">Tiết</th>
                       {DAYS_OF_WEEK.map(d => (
-                        <th key={d.key} className="p-3 text-center border-r border-teal-800 min-w-[150px]">
+                        <th key={d.key} className="p-2 text-center border-r border-teal-800 min-w-[130px]">
                           {d.label}
                         </th>
                       ))}
@@ -1036,36 +1006,31 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                     {[1, 2, 3, 4].map((period, idx) => (
                       <tr key={`morning-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
                         {idx === 0 && (
-                          <td rowSpan={4} className="p-3 font-black text-center border-r border-slate-200 bg-amber-50/40 text-amber-800 uppercase tracking-wide">
-                            ☀️ SÁNG
+                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-amber-50/50 text-amber-900 uppercase tracking-wide text-xs">
+                            SÁNG
                           </td>
                         )}
-                        <td className="p-3 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
+                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
                           Tiết {period}
                         </td>
                         {DAYS_OF_WEEK.map(d => {
                           const assignedSlot = teacherWeeklyMatrix[`${d.key}_MORNING_${period}`];
                           return (
-                            <td key={d.key} className="p-2 border-r border-slate-200 text-center vertical-top">
+                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: assignedSlot.colorCode || "#FEF08A" }}
-                                  className="p-2.5 rounded-xl border border-slate-300 shadow-xs space-y-1 text-slate-900 font-bold"
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
                                     {assignedSlot.subjectName}
                                   </div>
-                                  <div className="text-[11px] text-slate-800 bg-white/70 px-2 py-0.5 rounded-md inline-block font-mono">
-                                    {assignedSlot.className}
+                                  <div className="text-[11px] text-slate-700 font-medium">
+                                    Lớp {assignedSlot.className}
                                   </div>
-                                  {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
-                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                                      {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
-                                    </div>
-                                  )}
                                 </div>
                               ) : (
-                                <span className="text-slate-300 italic text-[11px]">Trống</span>
+                                <span className="text-slate-300 text-xs">-</span>
                               )}
                             </td>
                           );
@@ -1075,36 +1040,31 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                     {[1, 2, 3, 4].map((period, idx) => (
                       <tr key={`afternoon-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
                         {idx === 0 && (
-                          <td rowSpan={4} className="p-3 font-black text-center border-r border-slate-200 bg-sky-50/40 text-sky-800 uppercase tracking-wide">
-                            🌙 CHIỀU
+                          <td rowSpan={4} className="p-2 font-black text-center border-r border-slate-200 bg-sky-50/50 text-sky-900 uppercase tracking-wide text-xs">
+                            CHIỀU
                           </td>
                         )}
-                        <td className="p-3 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
+                        <td className="p-2 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
                           Tiết {period}
                         </td>
                         {DAYS_OF_WEEK.map(d => {
                           const assignedSlot = teacherWeeklyMatrix[`${d.key}_AFTERNOON_${period}`];
                           return (
-                            <td key={d.key} className="p-2 border-r border-slate-200 text-center vertical-top">
+                            <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: assignedSlot.colorCode || "#FEF08A" }}
-                                  className="p-2.5 rounded-xl border border-slate-300 shadow-xs space-y-1 text-slate-900 font-bold"
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
                                     {assignedSlot.subjectName}
                                   </div>
-                                  <div className="text-[11px] text-slate-800 bg-white/70 px-2 py-0.5 rounded-md inline-block font-mono">
-                                    {assignedSlot.className}
+                                  <div className="text-[11px] text-slate-700 font-medium">
+                                    Lớp {assignedSlot.className}
                                   </div>
-                                  {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
-                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
-                                      {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
-                                    </div>
-                                  )}
                                 </div>
                               ) : (
-                                <span className="text-slate-300 italic text-[11px]">Trống</span>
+                                <span className="text-slate-300 text-xs">-</span>
                               )}
                             </td>
                           );
@@ -1114,60 +1074,30 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   </tbody>
                 </table>
               </div>
-
-              {/* CHRONOLOGICAL LIST OF TEACHING PERIODS */}
-              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
-                <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
-                  Danh Sách Tiết Dạy Trong Tuần (Chi Tiết)
-                </h3>
-                {teacherScheduleStats.slotsList.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {teacherScheduleStats.slotsList.map((item: any, i: number) => (
-                      <div key={i} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-                        <div>
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#00A99D] mr-2">
-                            {item.dayLabel} - {item.sessionLabel} Tiết {item.periodNumber}
-                          </span>
-                          <h4 className="text-xs font-black text-slate-800 mt-1">{item.subjectName}</h4>
-                          <p className="text-[11px] font-bold text-slate-500">Lớp: {item.className}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-[10px] font-bold text-slate-400">Trạng thái</span>
-                          <div className="text-xs font-black text-emerald-600">Đã xếp lịch</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-500 italic p-3 text-center">Giáo viên chưa có tiết dạy nào được xếp lịch trong thời khóa biểu hiện tại.</p>
-                )}
-              </div>
             </div>
           ) : (
-            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-400 font-semibold text-xs space-y-2">
-              <Search className="w-8 h-8 mx-auto text-slate-300" />
-              <p>Vui lòng chọn Tổ chuyên môn hoặc chọn/gõ tên Giáo viên ở trên để tra cứu toàn bộ lịch dạy trong tuần.</p>
+            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-8 text-center text-slate-400 font-semibold text-xs space-y-1">
+              <Search className="w-7 h-7 mx-auto text-slate-300" />
+              <p>Vui lòng chọn Tổ chuyên môn hoặc Giáo viên để tra cứu lịch dạy.</p>
             </div>
           )}
         </div>
       )}
 
-      {/* ===== TAB 2: FULL SCHOOL TIMETABLE MATRIX ===== */}
+      {/* ===== TAB 4: FULL SCHOOL TIMETABLE MATRIX ===== */}
       {activeTab === "SCHOOL_MATRIX" && (
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
             <div>
-              <h3 className="font-extrabold text-base text-slate-800">Ma trận Thời khóa biểu Toàn trường</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Tra cứu thời khóa biểu của các lớp học theo Cơ sở và Cấp học</p>
+              <h3 className="font-black text-sm text-slate-900">Ma trận Thời khóa biểu Toàn trường</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Tra cứu thời khóa biểu các lớp học theo Cơ sở & Cấp học</p>
             </div>
 
-            {/* Campus & Level Selector */}
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
               <select
                 value={matrixCampusId}
                 onChange={e => setMatrixCampusId(e.target.value)}
-                className="text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none text-slate-800"
+                className="text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white outline-none text-slate-800"
               >
                 {initialData.campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
               </select>
@@ -1175,7 +1105,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
               <select
                 value={matrixLevel}
                 onChange={e => setMatrixLevel(e.target.value)}
-                className="text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white outline-none text-slate-800"
+                className="text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white outline-none text-slate-800"
               >
                 <option value="TIEU_HOC">Tiểu học (Khối 1 - 5)</option>
                 <option value="TRUNG_HOC">Trung học (Khối 6 - 12)</option>
@@ -1183,15 +1113,14 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
             </div>
           </div>
 
-          {/* Classes Table */}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto border border-slate-200 rounded-xl shadow-2xs">
             <table className="w-full border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-100 text-slate-700 font-black uppercase border-b border-slate-200">
-                  <th className="py-3 px-3 border-r border-slate-200">Thứ</th>
-                  <th className="py-3 px-3 border-r border-slate-200">Tiết</th>
+                <tr className="bg-slate-100 text-slate-800 font-black uppercase border-b border-slate-200 text-[11px]">
+                  <th className="py-2 px-2 border-r border-slate-200 w-16">Thứ</th>
+                  <th className="py-2 px-2 border-r border-slate-200 w-12">Tiết</th>
                   {matrixClasses.map(c => (
-                    <th key={c.id} className="py-3 px-3 text-center border-r border-slate-200 last:border-r-0 font-black min-w-[120px]">
+                    <th key={c.id} className="py-2 px-2 text-center border-r border-slate-200 last:border-r-0 font-black min-w-[110px]">
                       {c.className}
                     </th>
                   ))}
@@ -1202,24 +1131,24 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   PERIODS.map((period, pIdx) => (
                     <tr key={`${day.key}-${period}`} className="hover:bg-slate-50">
                       {pIdx === 0 && (
-                        <td rowSpan={4} className="py-3 px-2 text-center font-extrabold bg-slate-50 border-r border-slate-200 text-slate-800">
-                          {day.label}
+                        <td rowSpan={4} className="py-2 px-1 text-center font-extrabold bg-slate-50 border-r border-slate-200 text-slate-800 text-xs">
+                          {day.short}
                         </td>
                       )}
-                      <td className="py-2 px-2 text-center font-bold bg-slate-50/50 border-r border-slate-200 text-slate-600">
+                      <td className="py-1.5 px-1 text-center font-bold bg-slate-50/50 border-r border-slate-200 text-slate-600">
                         T{period}
                       </td>
                       {matrixClasses.map(c => {
                         const slot = initialData.timetableSlots.find(s => s.classId === c.id && s.dayOfWeek === day.key && s.periodNumber === period && s.session === "MORNING")
                         return (
-                          <td key={c.id} className="p-2 border-r border-slate-200 last:border-r-0 text-center">
+                          <td key={c.id} className="p-1 border-r border-slate-200 last:border-r-0 text-center">
                             {slot ? (
-                              <div className="p-1.5 rounded-lg border text-[11px] font-semibold" style={{ backgroundColor: (slot.colorCode || "#3B82F6") + "15", borderColor: slot.colorCode || "#3B82F6" }}>
-                                <p className="font-extrabold text-slate-800 truncate">{slot.subjectName}</p>
+                              <div className="p-1 rounded border text-[11px] font-semibold" style={{ backgroundColor: (slot.colorCode || "#00A99D") + "15", borderColor: slot.colorCode || "#00A99D" }}>
+                                <p className="font-extrabold text-slate-900 truncate">{slot.subjectName}</p>
                                 <p className="text-[10px] text-slate-500 truncate">{slot.teacherName}</p>
                               </div>
                             ) : (
-                              <span className="text-slate-300">-</span>
+                              <span className="text-slate-300 text-xs">-</span>
                             )}
                           </td>
                         )
