@@ -1515,30 +1515,61 @@ export async function requestObservationSlot(data: {
           }
         }
 
-        // 2. MS Teams Notification sent ONLY to the Department Channel of the selected Department
+        // 2. MS Teams Notification sent directly to EACH individual teacher's Teams account
         try {
           const targetDeptId = data.targetDeptId || hostTeacher.departmentId;
-          let targetDept = null;
+          let deptMembers: any[] = [];
           if (targetDeptId) {
-            targetDept = await prisma.department.findUnique({ where: { id: targetDeptId } });
+            deptMembers = await prisma.teacher.findMany({
+              where: {
+                OR: [
+                  { departmentId: targetDeptId },
+                  { departmentAssignments: { some: { departmentId: targetDeptId } } }
+                ],
+                status: "ACTIVE"
+              },
+              include: { user: true, departmentRel: true }
+            });
           }
-          await sendTeamsNewSlotDepartmentNotif({
-            id: newSlot.id,
-            topic: data.topic || "Đề xuất xin dự giờ tiết học",
-            subjectName: data.subjectName || "Môn học",
-            level: data.level || "ALL",
-            grade: data.grade || "Khối",
-            className: data.className || "Lớp",
-            date: slotDate,
-            startTime: timeRange.start,
-            endTime: timeRange.end,
-            campusName: hostTeacher.campus?.campusName || null,
-            room: data.room || "Phòng học",
-            teacherName: hostTeacher.teacherName,
-            teacherCode: hostTeacher.teacherCode
-          }, targetDept as any).catch(err => console.error("MS Teams Tag 2 department channel error:", err));
+
+          const memberPayloads = deptMembers
+            .map(m => ({
+              teacherName: m.teacherName,
+              teacherCode: m.teacherCode,
+              email: getTeacherResolvedEmail(m)
+            }))
+            .filter(m => m.email && m.email.includes("@"));
+
+          if (hostEmail && !memberPayloads.some(m => m.email === hostEmail)) {
+            memberPayloads.push({
+              teacherName: hostTeacher.teacherName,
+              teacherCode: hostTeacher.teacherCode,
+              email: hostEmail
+            });
+          }
+
+          await sendTeamsToAllDepartmentMembers(
+            {
+              id: newSlot.id,
+              topic: data.topic || "Đề xuất xin dự giờ tiết học",
+              subjectName: data.subjectName || "Môn học",
+              level: data.level || "ALL",
+              grade: data.grade || "Khối",
+              className: data.className || "Lớp",
+              date: slotDate,
+              startTime: timeRange.start,
+              endTime: timeRange.end,
+              campusName: hostTeacher.campus?.campusName || null,
+              room: data.room || "Phòng học",
+              teacherName: observerTeacher.teacherName,
+              teacherCode: observerTeacher.teacherCode,
+              maxSeats: 4,
+              registeredCount: 0
+            },
+            memberPayloads
+          ).catch(err => console.error("MS Teams Tag 2 direct notification error:", err));
         } catch (teamsErr) {
-          console.error("Teams Tag 2 notification dispatch error:", teamsErr);
+          console.error("Teams Tag 2 direct notification dispatch error:", teamsErr);
         }
       }
     } catch (notifErr) {
