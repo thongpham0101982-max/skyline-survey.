@@ -280,24 +280,24 @@ export default function TeacherDashboard() {
                 {/* Top Colored Accent Bar */}
                 <div className={`h-1.5 w-full bg-gradient-to-r ${card.accentGradient}`} />
 
-                <div className="p-4 sm:p-5 space-y-3">
+                <div className="p-3.5 sm:p-4 space-y-2.5">
                   <div className="flex items-start justify-between gap-2">
-                    <span className={`px-2.5 py-1 rounded-xl text-xs font-black border ${card.badgeStyle}`}>
+                    <span className={`px-2 py-0.5 rounded-lg text-[10px] font-extrabold whitespace-nowrap border ${card.badgeStyle}`}>
                       {card.badge}
                     </span>
-                    <div className={`w-10 h-10 sm:w-11 sm:h-11 rounded-2xl ${card.iconBg} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${card.iconBg} flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-300`}>
                       <Icon className="w-5 h-5" />
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <p className="text-xs sm:text-sm font-extrabold text-slate-500 uppercase tracking-wider line-clamp-1">{card.label}</p>
-                    <p className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{card.value}</p>
+                    <p className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-tight line-clamp-1">{card.label}</p>
+                    <p className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">{card.value}</p>
                   </div>
                 </div>
 
-                <div className="px-4 sm:px-5 pb-4 pt-2.5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                  <p className="text-xs sm:text-sm font-semibold text-slate-600 line-clamp-1">{card.subtext}</p>
+                <div className="px-3.5 sm:px-4 pb-3 pt-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                  <p className="text-[11px] sm:text-xs font-medium text-slate-600 truncate">{card.subtext}</p>
                   {card.href && (
                     <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#00A99D] group-hover:translate-x-1 transition-all shrink-0 ml-1" />
                   )}
@@ -387,17 +387,17 @@ export default function TeacherDashboard() {
                     <Link
                       key={itemIdx}
                       href={item.href}
-                      className="group flex items-center justify-between p-4 sm:p-4.5 rounded-2xl bg-slate-50/80 hover:bg-gradient-to-r hover:from-teal-50/70 hover:to-emerald-50/40 border border-slate-200/80 hover:border-[#00A99D]/40 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                      className="group flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-gradient-to-r hover:from-teal-50/70 hover:to-emerald-50/40 border border-slate-200/80 hover:border-[#00A99D]/40 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
                         <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 border ${item.iconBg} group-hover:scale-105 transition-transform duration-200 shadow-xs`}>
                           <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
                         </div>
                         <div className="min-w-0 space-y-0.5">
-                          <h4 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-[#003B3A] transition-colors truncate">
+                          <h4 className="text-xs sm:text-sm font-extrabold text-slate-900 group-hover:text-[#003B3A] transition-colors">
                             {item.title}
                           </h4>
-                          <p className="text-xs sm:text-sm text-slate-600 font-medium line-clamp-1">
+                          <p className="text-xs text-slate-500 font-medium leading-snug line-clamp-2 mt-0.5">
                             {item.desc}
                           </p>
                         </div>
