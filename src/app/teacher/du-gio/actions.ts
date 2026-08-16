@@ -570,66 +570,64 @@ export async function createObservationSlot(data: {
         }
       }
 
-      // 3. Teams Notification
-      const deptRel = (currentTeacher as any).departmentRel;
-      sendTeamsToAllDepartmentMembers(
-        {
-          id: newSlot.id,
-          topic: newSlot.topic,
-          subjectName: newSlot.subjectName,
-          level: newSlot.level,
-          grade: newSlot.grade,
-          className: newSlot.className,
-          date: newSlot.date,
-          startTime: newSlot.startTime,
-          endTime: newSlot.endTime,
-          campusName: newSlot.campusName,
-          room: newSlot.room,
-          teacherName: currentTeacher.teacherName,
-          teacherCode: currentTeacher.teacherCode,
-          maxSeats: newSlot.maxSeats || 4,
-          registeredCount: 0
-        },
-        deptMembers.map(m => ({
-          teacherName: m.teacherName,
-          teacherCode: m.teacherCode,
-          email: m.email || m.user?.email,
-          teamsWebhookUrl: (m as any).teamsWebhookUrl
-        })),
-        deptRel?.teamsWebhookUrl
-      ).catch(e => console.error("Teams broadcast error:", e));
+      // 3. Teams Notification (strictly controlled by sendEmailNotif option)
+      if (data.sendEmailNotif !== false) {
+        const deptRel = (currentTeacher as any).departmentRel;
+        sendTeamsToAllDepartmentMembers(
+          {
+            id: newSlot.id,
+            topic: newSlot.topic,
+            subjectName: newSlot.subjectName,
+            level: newSlot.level,
+            grade: newSlot.grade,
+            className: newSlot.className,
+            date: newSlot.date,
+            startTime: newSlot.startTime,
+            endTime: newSlot.endTime,
+            campusName: newSlot.campusName,
+            room: newSlot.room,
+            teacherName: currentTeacher.teacherName,
+            teacherCode: currentTeacher.teacherCode,
+            maxSeats: newSlot.maxSeats || 4,
+            registeredCount: 0
+          },
+          deptMembers.map(m => ({
+            teacherName: m.teacherName,
+            teacherCode: m.teacherCode,
+            email: m.email || m.user?.email,
+            teamsWebhookUrl: (m as any).teamsWebhookUrl
+          })),
+          deptRel?.teamsWebhookUrl
+        ).catch(e => console.error("Teams broadcast error:", e));
 
+        try {
+          const teacherWithDept = await prisma.teacher.findUnique({
+            where: { id: currentTeacher.id },
+            include: { departmentRel: true }
+          });
+          sendTeamsNewSlotDepartmentNotif({
+            id: newSlot.id,
+            topic: newSlot.topic,
+            subjectName: newSlot.subjectName,
+            level: newSlot.level,
+            grade: newSlot.grade,
+            className: newSlot.className,
+            date: newSlot.date,
+            startTime: newSlot.startTime,
+            endTime: newSlot.endTime,
+            campusName: newSlot.campusName,
+            room: newSlot.room,
+            teacherName: currentTeacher.teacherName,
+            teacherCode: currentTeacher.teacherCode,
+            maxSeats: newSlot.maxSeats || 4,
+            registeredCount: 0
+          }, teacherWithDept?.departmentRel as any).catch(err => console.error("MS Teams new slot error:", err));
+        } catch (teamsErr) {
+          console.error("Teams notification dispatch error:", teamsErr);
+        }
+      }
     } catch (deptNotifErr) {
       console.error("Error sending department member notifications:", deptNotifErr);
-    }
-
-
-
-    // Send MS Teams Notification to Department Channel for new slot (Tag 1)
-    try {
-      const teacherWithDept = await prisma.teacher.findUnique({
-        where: { id: currentTeacher.id },
-        include: { departmentRel: true }
-      });
-      sendTeamsNewSlotDepartmentNotif({
-        id: newSlot.id,
-        topic: newSlot.topic,
-        subjectName: newSlot.subjectName,
-        level: newSlot.level,
-        grade: newSlot.grade,
-        className: newSlot.className,
-        date: newSlot.date,
-        startTime: newSlot.startTime,
-        endTime: newSlot.endTime,
-        campusName: newSlot.campusName,
-        room: newSlot.room,
-        teacherName: currentTeacher.teacherName,
-        teacherCode: currentTeacher.teacherCode,
-        maxSeats: newSlot.maxSeats || 4,
-        registeredCount: 0
-      }, teacherWithDept?.departmentRel as any).catch(err => console.error("MS Teams new slot error:", err));
-    } catch (teamsErr) {
-      console.error("Teams notification dispatch error:", teamsErr);
     }
 
     
