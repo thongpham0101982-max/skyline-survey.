@@ -4,8 +4,8 @@ export async function sendEmail({ to, cc, bcc, subject, html, attachments, reply
   const host = process.env.SMTP_HOST || "smtp.office365.com";
   const port = parseInt(process.env.SMTP_PORT || "587", 10);
   const secure = process.env.SMTP_SECURE === "true";
-  const user = process.env.SMTP_USER || "";
-  const pass = process.env.SMTP_PASS || "";
+  const user = process.env.SMTP_USER || "bankhaothi@skylineschool.edu.vn";
+  const pass = process.env.SMTP_PASS || "Khaothi@2024";
 
   if (!user || !pass) {
     throw new Error("Missing SMTP credentials in environmental variables");
