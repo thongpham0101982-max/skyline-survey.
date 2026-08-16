@@ -468,11 +468,15 @@ export async function createObservationSlot(data: {
     revalidatePath("/teacher/du-gio")
     revalidatePath("/admin/du-gio")
 
-    // Notify ALL members in the Department via In-App, Email & Teams
+    
+    // Guaranteed Email, Teams & In-App Notification Dispatch for Tag 1 (New Slot)
     try {
       const targetDeptId = newSlot.targetDeptId || currentTeacher.departmentId;
+      
+      // Query department members or fallback to active teachers
+      let deptMembers = [];
       if (targetDeptId) {
-                const deptMembers = await prisma.teacher.findMany({
+        deptMembers = await prisma.teacher.findMany({
           where: {
             OR: [
               { departmentId: targetDeptId },
@@ -480,102 +484,117 @@ export async function createObservationSlot(data: {
             ],
             status: "ACTIVE"
           },
-          include: {
-            user: true,
-            departmentRel: true
-          }
+          include: { user: true, departmentRel: true }
         });
-
-        // 1. Create In-App Notifications for all department members
-        const notifData = deptMembers
-          .filter(m => m.user?.id)
-          .map(m => ({
-            userId: m.user!.id,
-            title: "Tiết dạy dự giờ mới trong Tổ chuyên môn",
-            message: `Thầy/Cô ${currentTeacher.teacherName} vừa mở tiết dạy dự giờ mới (${newSlot.subjectName} - ${newSlot.topic}). Kính mời Thầy/Cô đăng ký tham dự.`,
-            link: "/teacher/du-gio?tab=dang-ky",
-            isRead: false
-          }));
-
-        if (notifData.length > 0) {
-          await prisma.notification.createMany({ data: notifData });
-        }
-
-        
-        // 2. Send Emails from system default account bankhaothi@skylineschool.edu.vn to ALL members in the Department
-        const memberEmails = deptMembers
-          .map(m => m.email || m.user?.email)
-          .filter(e => e && e.includes("@")) as string[];
-
-        if (memberEmails.length > 0) {
-          const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
-          const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + "/teacher/du-gio?tab=dang-ky";
-          
-          const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới trong Tổ chuyên môn: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
-          const emailHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-              <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-                <h2 style="color: #ffffff; margin: 0; font-size: 18px;">TIẾT DẠY DỰ GIỜ MỚI Trong TỔ CHUYÊN MÔN</h2>
-              </div>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô trong <strong>Tổ chuyên môn</strong>,</p>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa mở một tiết dạy dự giờ mới cho Tổ chuyên môn. Kính mời Thầy/Cô đăng ký tham dự.</p>
-              
-              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${newSlot.topic}</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.subjectName} (${newSlot.grade} - ${newSlot.className || "Lớp học"})</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.campusName || "Trường"} - ${newSlot.room || "Phòng học"}</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
-                <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.startTime} - ${newSlot.endTime}</td></tr>
-              </table>
-
-              <div style="text-align: center; margin: 25px 0;">
-                <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Đăng Ký Dự Giờ Ngay Trực Tiếp Trên Skyline</a>
-              </div>
-              
-              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
-                Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
-              </div>
-            </div>
-          `;
-
-          for (const email of memberEmails) {
-            sendEmail({ to: email, subject: emailSubject, html: emailHtml }).catch(err => console.error("[Email Notification Error]:", err));
-          }
-        }
-
-        // 3. Dispatch Teams notifications to all department members
-        const deptRel = (currentTeacher as any).departmentRel;
-        sendTeamsToAllDepartmentMembers(
-          {
-            id: newSlot.id,
-            topic: newSlot.topic,
-            subjectName: newSlot.subjectName,
-            level: newSlot.level,
-            grade: newSlot.grade,
-            className: newSlot.className,
-            date: newSlot.date,
-            startTime: newSlot.startTime,
-            endTime: newSlot.endTime,
-            campusName: newSlot.campusName,
-            room: newSlot.room,
-            teacherName: currentTeacher.teacherName,
-            teacherCode: currentTeacher.teacherCode,
-            maxSeats: newSlot.maxSeats || 4,
-            registeredCount: 0
-          },
-          deptMembers.map(m => ({
-            teacherName: m.teacherName,
-            teacherCode: m.teacherCode,
-            email: m.email || m.user?.email,
-            teamsWebhookUrl: (m as any).teamsWebhookUrl
-          })),
-          deptRel?.teamsWebhookUrl
-        ).catch(e => console.error("Teams broadcast error:", e));
       }
+
+      // Fallback: If department query returns empty, fetch all active teachers with emails
+      if (deptMembers.length === 0) {
+        deptMembers = await prisma.teacher.findMany({
+          where: { status: "ACTIVE" },
+          take: 50,
+          include: { user: true, departmentRel: true }
+        });
+      }
+
+      // 1. In-App Notifications
+      const notifData = deptMembers
+        .filter(m => m.user?.id)
+        .map(m => ({
+          userId: m.user!.id,
+          title: "Tiết dạy dự giờ mới trong Tổ chuyên môn",
+          message: `Thầy/Cô ${currentTeacher.teacherName} vừa mở tiết dạy dự giờ mới (${newSlot.subjectName} - ${newSlot.topic}). Kính mời Thầy/Cô đăng ký tham dự.`,
+          link: "/teacher/du-gio?tab=dang-ky",
+          isRead: false
+        }));
+
+      if (notifData.length > 0) {
+        await prisma.notification.createMany({ data: notifData }).catch(e => console.error("Notif error:", e));
+      }
+
+      // 2. Email Notification from bankhaothi@skylineschool.edu.vn
+      const emailsList = new Set();
+      if (currentTeacher.email) emailsList.add(currentTeacher.email);
+      if ((currentTeacher as any).user?.email) emailsList.add((currentTeacher as any).user.email);
+
+      for (const m of deptMembers) {
+        if (m.email) emailsList.add(m.email);
+        if (m.user?.email) emailsList.add(m.user.email);
+      }
+
+      const memberEmails = Array.from(emailsList).filter(e => typeof e === 'string' && e.includes("@")) as string[];
+      console.log("[Skyline Email] Sending slot creation emails to:", memberEmails);
+
+      if (memberEmails.length > 0) {
+        const formattedDateVi = new Date(newSlot.date).toLocaleDateString("vi-VN");
+        const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + "/teacher/du-gio?tab=dang-ky";
+        
+        const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+              <h2 style="color: #ffffff; margin: 0; font-size: 18px;">TIẾT DẠY DỰ GIỜ MỚI Trong TỔ CHUYÊN MÔN</h2>
+            </div>
+            <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô trong <strong>Tổ chuyên môn</strong>,</p>
+            <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa mở một tiết dạy dự giờ mới cho Tổ chuyên môn. Kính mời Thầy/Cô đăng ký tham dự.</p>
+            
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${newSlot.topic}</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.subjectName} (${newSlot.grade} - ${newSlot.className || "Lớp học"})</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.campusName || "Trường"} - ${newSlot.room || "Phòng học"}</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
+              <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.startTime} - ${newSlot.endTime}</td></tr>
+            </table>
+
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Đăng Ký Dự Giờ Ngay Trực Tiếp Trên Skyline</a>
+            </div>
+            
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+              Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+            </div>
+          </div>
+        `;
+
+        for (const targetEmail of memberEmails) {
+          sendEmail({ to: targetEmail, subject: emailSubject, html: emailHtml }).catch(err => console.error("[Email Notification Error]:", err));
+        }
+      }
+
+      // 3. Teams Notification
+      const deptRel = (currentTeacher as any).departmentRel;
+      sendTeamsToAllDepartmentMembers(
+        {
+          id: newSlot.id,
+          topic: newSlot.topic,
+          subjectName: newSlot.subjectName,
+          level: newSlot.level,
+          grade: newSlot.grade,
+          className: newSlot.className,
+          date: newSlot.date,
+          startTime: newSlot.startTime,
+          endTime: newSlot.endTime,
+          campusName: newSlot.campusName,
+          room: newSlot.room,
+          teacherName: currentTeacher.teacherName,
+          teacherCode: currentTeacher.teacherCode,
+          maxSeats: newSlot.maxSeats || 4,
+          registeredCount: 0
+        },
+        deptMembers.map(m => ({
+          teacherName: m.teacherName,
+          teacherCode: m.teacherCode,
+          email: m.email || m.user?.email,
+          teamsWebhookUrl: (m as any).teamsWebhookUrl
+        })),
+        deptRel?.teamsWebhookUrl
+      ).catch(e => console.error("Teams broadcast error:", e));
+
     } catch (deptNotifErr) {
       console.error("Error sending department member notifications:", deptNotifErr);
     }
+
 
 
     // Send MS Teams Notification to Department Channel for new slot (Tag 1)
