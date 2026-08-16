@@ -55,7 +55,10 @@ const DAYS_OF_WEEK = [
 const PERIODS = [1, 2, 3, 4]
 
 export default function TeacherTimetableLookupClient({ initialData, mySlots = [] }: TeacherTimetableProps) {
-  const [activeTab, setActiveTab] = useState<"MY_SCHEDULE" | "SCHOOL_MATRIX">("MY_SCHEDULE")
+  const [activeTab, setActiveTab] = useState<"MY_SCHEDULE" | "SCHOOL_MATRIX" | "TEACHER_LOOKUP">("MY_SCHEDULE")
+  const [lookupDept, setLookupDept] = useState<string>("ALL")
+  const [lookupTeacherId, setLookupTeacherId] = useState<string>("")
+  const [lookupSearchQuery, setLookupSearchQuery] = useState<string>("")
   const [viewMode, setViewMode] = useState<"GRID" | "LIST">("GRID")
   
   // Filter States for Personal Schedule
@@ -128,6 +131,78 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
   const uniqueClasses = useMemo(() => {
     return Array.from(new Set(allMySlots.map(s => s.className).filter(Boolean)))
   }, [allMySlots])
+
+  
+  // Unique Departments for filter dropdown in Teacher page
+  const uniqueDepartments = useMemo(() => {
+    if (!Array.isArray(initialData.teachers)) return []
+    const set = new Set<string>()
+    initialData.teachers.forEach((t: any) => {
+      const deptName = t.departmentRel?.name || t.departmentName
+      if (deptName && typeof deptName === 'string') {
+        set.add(deptName.trim())
+      }
+    })
+    return Array.from(set).sort()
+  }, [initialData.teachers])
+
+  // Filtered teachers by Department & Search query in Teacher page
+  const deptFilteredTeachers = useMemo(() => {
+    if (!Array.isArray(initialData.teachers)) return []
+    return initialData.teachers.filter((t: any) => {
+      const deptName = t.departmentRel?.name || t.departmentName || ""
+      const matchesDept = lookupDept === "ALL" || deptName.trim().toLowerCase() === lookupDept.trim().toLowerCase()
+      const matchesQuery = !lookupSearchQuery.trim() || 
+        (t.teacherName || "").toLowerCase().includes(lookupSearchQuery.toLowerCase()) ||
+        (t.teacherCode || "").toLowerCase().includes(lookupSearchQuery.toLowerCase())
+      return matchesDept && matchesQuery
+    })
+  }, [initialData.teachers, lookupDept, lookupSearchQuery])
+
+  // Active selected teacher object in Teacher page
+  const selectedTeacherObj = useMemo(() => {
+    if (lookupTeacherId) {
+      return initialData.teachers.find((t: any) => t.id === lookupTeacherId) || null
+    }
+    if (lookupSearchQuery.trim() && deptFilteredTeachers.length > 0) {
+      return deptFilteredTeachers[0]
+    }
+    return null
+  }, [initialData.teachers, lookupTeacherId, lookupSearchQuery, deptFilteredTeachers])
+
+  // Teacher Weekly Schedule Matrix & Stats in Teacher page
+  const { teacherWeeklyMatrix, teacherScheduleStats } = useMemo(() => {
+    const matrix: Record<string, any> = {}
+    const slotsList: any[] = []
+    if (!selectedTeacherObj) return { teacherWeeklyMatrix: matrix, teacherScheduleStats: { totalPeriods: 0, slotsList } }
+
+    const targetName = (selectedTeacherObj.teacherName || "").trim().toLowerCase()
+
+    ;(initialData.timetableSlots || []).forEach((s: any) => {
+      const mainMatch = (s.teacherName || "").trim().toLowerCase() === targetName
+      const altMatch = (s.altTeacherName || "").trim().toLowerCase() === targetName
+
+      if (mainMatch || altMatch) {
+        const key = `${s.dayOfWeek}_${s.session}_${s.periodNumber}`
+        matrix[key] = s
+        
+        const dayObj = DAYS_OF_WEEK.find(d => d.key === s.dayOfWeek)
+        slotsList.push({
+          ...s,
+          dayLabel: dayObj?.label || s.dayOfWeek,
+          sessionLabel: s.session === "MORNING" ? "Sáng" : "Chiều"
+        })
+      }
+    })
+
+    return {
+      teacherWeeklyMatrix: matrix,
+      teacherScheduleStats: {
+        totalPeriods: slotsList.length,
+        slotsList
+      }
+    }
+  }, [selectedTeacherObj, initialData.timetableSlots])
 
   const resetFilters = () => {
     setFilterDay("all")
@@ -584,6 +659,227 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   })}
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===== TAB 3: TEACHER SCHEDULE LOOKUP ===== */}
+      {activeTab === "TEACHER_LOOKUP" && (
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
+          {/* FILTER CONTROLS */}
+          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+            {/* 1. CHỌN TỔ CHUYÊN MÔN */}
+            <div className="md:col-span-5 space-y-1.5">
+              <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-[#00A99D]" />
+                1. Lọc Theo Tổ Chuyên Môn
+              </label>
+              <select
+                value={lookupDept}
+                onChange={e => {
+                  setLookupDept(e.target.value);
+                  setLookupTeacherId("");
+                }}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+              >
+                <option value="ALL">-- Tất cả các Tổ chuyên môn --</option>
+                {uniqueDepartments.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 2. CHỌN / TRA CỨU GIÁO VIÊN */}
+            <div className="md:col-span-7 space-y-1.5">
+              <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                <Search className="w-3.5 h-3.5 text-[#00A99D]" />
+                2. Chọn Giáo Viên Hoặc Nhập Tên Tra Cứu
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={lookupTeacherId}
+                  onChange={e => setLookupTeacherId(e.target.value)}
+                  className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                >
+                  <option value="">-- Chọn Giáo viên trong danh sách --</option>
+                  {deptFilteredTeachers.map((t: any) => (
+                    <option key={t.id} value={t.id}>
+                      {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ''} - {t.departmentRel?.name || t.departmentName || 'GV'}
+                    </option>
+                  ))}
+                </select>
+
+                <input
+                  type="text"
+                  placeholder="Hoặc gõ tên GV..."
+                  value={lookupSearchQuery}
+                  onChange={e => setLookupSearchQuery(e.target.value)}
+                  className="w-48 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* TEACHER INFO BADGE */}
+          {selectedTeacherObj ? (
+            <div className="space-y-6">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-xl text-white">
+                    {selectedTeacherObj.teacherName?.charAt(0) || "GV"}
+                  </div>
+                  <div>
+                    <h2 className="text-base font-black uppercase tracking-wide flex items-center gap-2">
+                      {selectedTeacherObj.teacherName}
+                      <span className="text-xs bg-white/20 px-2.5 py-0.5 rounded-full font-mono normal-case">
+                        {selectedTeacherObj.teacherCode || "GV"}
+                      </span>
+                    </h2>
+                    <p className="text-xs text-teal-100 font-semibold mt-0.5">
+                      Tổ chuyên môn: <span className="font-bold text-white">{selectedTeacherObj.departmentRel?.name || selectedTeacherObj.departmentName || "Tổ chuyên môn"}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-xl text-right">
+                    <div className="text-[10px] text-teal-200 uppercase font-black">Tổng tiết dạy trong tuần</div>
+                    <div className="text-lg font-black text-white">{teacherScheduleStats.totalPeriods} tiết / tuần</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* WEEKLY TIMETABLE TABLE MATRIX FOR TEACHER */}
+              <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#003B3A] text-white font-black uppercase text-[11px] tracking-wider">
+                      <th className="p-3 text-center w-24 border-r border-teal-800">Buổi</th>
+                      <th className="p-3 text-center w-20 border-r border-teal-800">Tiết</th>
+                      {DAYS_OF_WEEK.map(d => (
+                        <th key={d.key} className="p-3 text-center border-r border-teal-800 min-w-[150px]">
+                          {d.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[1, 2, 3, 4].map((period, idx) => (
+                      <tr key={`morning-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                        {idx === 0 && (
+                          <td rowSpan={4} className="p-3 font-black text-center border-r border-slate-200 bg-amber-50/40 text-amber-800 uppercase tracking-wide">
+                            ☀️ SÁNG
+                          </td>
+                        )}
+                        <td className="p-3 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
+                          Tiết {period}
+                        </td>
+                        {DAYS_OF_WEEK.map(d => {
+                          const assignedSlot = teacherWeeklyMatrix[`${d.key}_MORNING_${period}`];
+                          return (
+                            <td key={d.key} className="p-2 border-r border-slate-200 text-center vertical-top">
+                              {assignedSlot ? (
+                                <div
+                                  style={{ backgroundColor: assignedSlot.colorCode || "#FEF08A" }}
+                                  className="p-2.5 rounded-xl border border-slate-300 shadow-xs space-y-1 text-slate-900 font-bold"
+                                >
+                                  <div className="text-xs font-black uppercase text-[#003B3A]">
+                                    {assignedSlot.subjectName}
+                                  </div>
+                                  <div className="text-[11px] text-slate-800 bg-white/70 px-2 py-0.5 rounded-md inline-block font-mono">
+                                    {assignedSlot.className}
+                                  </div>
+                                  {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
+                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                      {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-slate-300 italic text-[11px]">Trống</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                    {[1, 2, 3, 4].map((period, idx) => (
+                      <tr key={`afternoon-${period}`} className={idx % 2 === 0 ? "bg-white" : "bg-slate-50/70"}>
+                        {idx === 0 && (
+                          <td rowSpan={4} className="p-3 font-black text-center border-r border-slate-200 bg-sky-50/40 text-sky-800 uppercase tracking-wide">
+                            🌙 CHIỀU
+                          </td>
+                        )}
+                        <td className="p-3 font-bold text-center border-r border-slate-200 text-slate-600 bg-slate-50">
+                          Tiết {period}
+                        </td>
+                        {DAYS_OF_WEEK.map(d => {
+                          const assignedSlot = teacherWeeklyMatrix[`${d.key}_AFTERNOON_${period}`];
+                          return (
+                            <td key={d.key} className="p-2 border-r border-slate-200 text-center vertical-top">
+                              {assignedSlot ? (
+                                <div
+                                  style={{ backgroundColor: assignedSlot.colorCode || "#FEF08A" }}
+                                  className="p-2.5 rounded-xl border border-slate-300 shadow-xs space-y-1 text-slate-900 font-bold"
+                                >
+                                  <div className="text-xs font-black uppercase text-[#003B3A]">
+                                    {assignedSlot.subjectName}
+                                  </div>
+                                  <div className="text-[11px] text-slate-800 bg-white/70 px-2 py-0.5 rounded-md inline-block font-mono">
+                                    {assignedSlot.className}
+                                  </div>
+                                  {assignedSlot.weekType && assignedSlot.weekType !== "ALL" && (
+                                    <div className="text-[10px] font-black text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                                      {assignedSlot.weekType === "EVEN" ? "Tuần Chẵn" : assignedSlot.weekType === "ODD" ? "Tuần Lẻ" : "Thay đổi"}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-slate-300 italic text-[11px]">Trống</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* CHRONOLOGICAL LIST OF TEACHING PERIODS */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
+                <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                  Danh Sách Tiết Dạy Trong Tuần (Chi Tiết)
+                </h3>
+                {teacherScheduleStats.slotsList.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {teacherScheduleStats.slotsList.map((item: any, i: number) => (
+                      <div key={i} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#00A99D] mr-2">
+                            {item.dayLabel} - {item.sessionLabel} Tiết {item.periodNumber}
+                          </span>
+                          <h4 className="text-xs font-black text-slate-800 mt-1">{item.subjectName}</h4>
+                          <p className="text-[11px] font-bold text-slate-500">Lớp: {item.className}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] font-bold text-slate-400">Trạng thái</span>
+                          <div className="text-xs font-black text-emerald-600">Đã xếp lịch</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic p-3 text-center">Giáo viên chưa có tiết dạy nào được xếp lịch trong thời khóa biểu hiện tại.</p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-12 text-center text-slate-400 font-semibold text-xs space-y-2">
+              <Search className="w-8 h-8 mx-auto text-slate-300" />
+              <p>Vui lòng chọn Tổ chuyên môn hoặc chọn/gõ tên Giáo viên ở trên để tra cứu toàn bộ lịch dạy trong tuần.</p>
             </div>
           )}
         </div>
