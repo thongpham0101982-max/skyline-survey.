@@ -1,4 +1,21 @@
 "use server"
+
+function getTeacherResolvedEmail(teacher: any): string | null {
+  if (!teacher) return null;
+  // Special lookup for teacher 020100094 / Phạm Nguyên Thông
+  if (teacher.teacherCode === "020100094" || teacher.teacherName?.includes("Phạm Nguyên Thông")) {
+    return "thongpn@skylineschool.edu.vn";
+  }
+  if (teacher.email && typeof teacher.email === "string" && teacher.email.includes("@") && teacher.email !== "bankhaothi@skylineschool.edu.vn") {
+    return teacher.email.trim();
+  }
+  if (teacher.user?.email && typeof teacher.user.email === "string" && teacher.user.email.includes("@") && teacher.user.email !== "bankhaothi@skylineschool.edu.vn") {
+    return teacher.user.email.trim();
+  }
+  return teacher.email || teacher.user?.email || null;
+}
+
+
 import {
   sendTeamsNewSlotDepartmentNotif,
   sendTeamsRequestApprovalNotif,
@@ -523,14 +540,14 @@ export async function createObservationSlot(data: {
         await prisma.notification.createMany({ data: notifData }).catch(e => console.error("Notif error:", e));
       }
 
-      // 2. Email Notification from bankhaothi@skylineschool.edu.vn
-      const emailsList = new Set();
-      if (currentTeacher.email) emailsList.add(currentTeacher.email);
-      if ((currentTeacher as any).user?.email) emailsList.add((currentTeacher as any).user.email);
+      // 2. Email Notification from bankhaothi@skylineschool.edu.vn to resolved teacher emails
+      const emailsList = new Set<string>();
+      const creatorEmail = getTeacherResolvedEmail(currentTeacher);
+      if (creatorEmail) emailsList.add(creatorEmail);
 
       for (const m of deptMembers) {
-        if (m.email) emailsList.add(m.email);
-        if (m.user?.email) emailsList.add(m.user.email);
+        const email = getTeacherResolvedEmail(m);
+        if (email) emailsList.add(email);
       }
 
       const memberEmails = Array.from(emailsList).filter(e => typeof e === 'string' && e.includes("@")) as string[];
@@ -604,7 +621,7 @@ export async function createObservationSlot(data: {
           deptMembers.map(m => ({
             teacherName: m.teacherName,
             teacherCode: m.teacherCode,
-            email: m.email || m.user?.email,
+            email: getTeacherResolvedEmail(m),
             teamsWebhookUrl: (m as any).teamsWebhookUrl
           })),
           deptRel?.teamsWebhookUrl
@@ -658,7 +675,7 @@ export async function createObservationSlot(data: {
           }
         });
 
-        const hostEmail = hostTeacher.email || hostTeacher.user.email;
+        const hostEmail = getTeacherResolvedEmail(hostTeacher);
         if (data.sendEmailNotif !== false && hostEmail && hostEmail.includes("@")) {
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
