@@ -263,11 +263,7 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [myDeptTeachers]);
 
-  useEffect(() => {
-    if (currentTeacher?.departmentId && selectedEmailDeptIds.length === 0) {
-      setSelectedEmailDeptIds([currentTeacher.departmentId]);
-    }
-  }, [currentTeacher?.departmentId]);
+
   const [filterLevel, setFilterLevel] = useState(initialFilters.level)
   const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
   const [filterPeriod, setFilterPeriod] = useState("all")
