@@ -789,8 +789,11 @@ export async function registerObservation(slotId: string) {
           `;
 
           try {
-            // Email sending disabled per configuration
-// sendEmail call omitted
+            const hostEmail = slot.teacher?.email || (slot.teacher as any)?.user?.email;
+            if (hostEmail) {
+              await sendEmail({ to: hostEmail, subject: "[Skyline Dự Giờ] Thông báo có GV đăng ký dự giờ tiết dạy của bạn", html: emailHtml });
+              console.log("[Skyline Email] Sent registration email to:", hostEmail);
+            }
           } catch (mailErr) {
             console.error("Failed to send email to host teacher:", mailErr);
           }
@@ -1472,8 +1475,10 @@ export async function requestObservationSlot(data: {
           `;
 
           try {
-            // Email sending disabled per configuration
-// sendEmail call omitted
+            if (hostEmail) {
+              await sendEmail({ to: hostEmail, subject: "[Skyline Dự Giờ] Đề xuất xin dự giờ mới từ " + observerTeacher.teacherName, html: emailHtml });
+              console.log("[Skyline Email] Sent request email to:", hostEmail);
+            }
           } catch (mailErr) {
             console.error("Failed to send email for requestObservationSlot:", mailErr);
           }
@@ -1539,8 +1544,8 @@ export async function requestObservationSlot(data: {
             `;
 
             try {
-              // Email sending disabled per configuration
-// sendEmail call omitted
+              await sendEmail({ to: teacherEmail, subject: "[Skyline Dự Giờ] Thông báo tiết dạy mới từ " + currentTeacher.teacherName, html: emailHtml });
+              console.log("[Skyline Email] Sent TCM slot email to:", teacherEmail);
             } catch (mailErr) {
               console.error("Failed to send email to TCM teacher:", mailErr);
             }
