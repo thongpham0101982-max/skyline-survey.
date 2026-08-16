@@ -473,7 +473,7 @@ export async function createObservationSlot(data: {
     try {
       const targetDeptId = newSlot.targetDeptId || currentTeacher.departmentId;
       
-            // Query strictly department members belonging to targetDeptId
+                  // Query strictly department members belonging to targetDeptId
       let deptMembers = [];
       if (targetDeptId) {
         deptMembers = await prisma.teacher.findMany({
@@ -486,6 +486,13 @@ export async function createObservationSlot(data: {
           },
           include: { user: true, departmentRel: true }
         });
+      }
+
+      // If custom member selection mode is active, filter only selected members
+      if (data.notifMode === "SELECTED" && Array.isArray(data.selectedMemberIds) && data.selectedMemberIds.length > 0) {
+        const selSet = new Set(data.selectedMemberIds);
+        // Keep current teacher as well so they receive confirmation
+        deptMembers = deptMembers.filter(m => selSet.has(m.id) || m.id === currentTeacher.id);
       }
 
       // Fallback only if no targetDeptId exists at all
@@ -1652,5 +1659,39 @@ export async function triggerSlotReminder(slotId: string) {
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
+  }
+}
+
+
+export async function getDepartmentTeachers(departmentId?: string) {
+  try {
+    const session = await auth();
+    if (!session?.user) return [];
+    
+    const userTeacher = await prisma.teacher.findUnique({
+      where: { userId: (session.user as any).id }
+    });
+    
+    const targetDeptId = departmentId || userTeacher?.departmentId;
+    if (!targetDeptId) {
+      return await prisma.teacher.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, teacherCode: true, teacherName: true, email: true }
+      });
+    }
+
+    return await prisma.teacher.findMany({
+      where: {
+        OR: [
+          { departmentId: targetDeptId },
+          { departmentAssignments: { some: { departmentId: targetDeptId } } }
+        ],
+        status: "ACTIVE"
+      },
+      select: { id: true, teacherCode: true, teacherName: true, email: true }
+    });
+  } catch (e) {
+    console.error(e);
+    return [];
   }
 }
