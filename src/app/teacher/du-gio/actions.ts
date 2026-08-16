@@ -1477,38 +1477,15 @@ export async function requestObservationSlot(data: {
 
         const hostEmail = getTeacherResolvedEmail(hostTeacher);
         
-        let deptMembers: any[] = [];
-        const targetDeptId = data.targetDeptId || hostTeacher.departmentId;
-        if (targetDeptId) {
-          deptMembers = await prisma.teacher.findMany({
-            where: {
-              OR: [
-                { departmentId: targetDeptId },
-                { departmentAssignments: { some: { departmentId: targetDeptId } } }
-              ],
-              status: "ACTIVE"
-            },
-            include: { user: true, departmentRel: true }
-          });
-        }
-
-        const recipientsSet = new Set<string>();
-        if (hostEmail) recipientsSet.add(hostEmail);
-        for (const m of deptMembers) {
-          const email = getTeacherResolvedEmail(m);
-          if (email) recipientsSet.add(email);
-        }
-
-        const targetEmails = Array.from(recipientsSet).filter(e => typeof e === 'string' && e.includes("@"));
-
-        if (targetEmails.length > 0) {
+        // 1. Email notification sent ONLY to CHỌN GIÁO VIÊN DẠY (host teacher)
+        if (hostEmail && hostEmail.includes("@")) {
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
               <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
                 <h2 style="color: #ffffff; margin: 0; font-size: 18px;">ĐỀ XUẤT XIN DỰ GIỜ MỚI (TAG 2 - GVBM)</h2>
               </div>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong> và Thầy/Cô trong Tổ chuyên môn,</p>
-              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa gửi đề xuất xin dự giờ tiết dạy của Thầy/Cô <strong>${hostTeacher.teacherName}</strong>. Vui lòng đăng nhập hệ thống để xác nhận & phê duyệt.</p>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa gửi đề xuất xin dự giờ tiết dạy của bạn. Vui lòng đăng nhập hệ thống để xác nhận & phê duyệt.</p>
               
               <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
                 <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td></tr>
@@ -1529,17 +1506,39 @@ export async function requestObservationSlot(data: {
             </div>
           `;
 
-          const emailSubject = `[Skyline Dự Giờ] Đề xuất xin dự giờ từ ${observerTeacher.teacherName} -> ${hostTeacher.teacherName}`;
-          await Promise.all(
-            targetEmails.map(async (targetEmail) => {
-              try {
-                await sendEmail({ to: targetEmail, subject: emailSubject, html: emailHtml });
-                console.log("[Skyline Tag 2 Email] Sent request email to:", targetEmail);
-              } catch (mailErr) {
-                console.error("[Skyline Tag 2 Email Error] Failed sending to " + targetEmail + ":", mailErr);
-              }
-            })
-          );
+          const emailSubject = `[Skyline Dự Giờ] Đề xuất xin dự giờ mới từ ${observerTeacher.teacherName}`;
+          try {
+            await sendEmail({ to: hostEmail, subject: emailSubject, html: emailHtml });
+            console.log("[Skyline Tag 2 Email] Sent request email ONLY to host teacher:", hostEmail);
+          } catch (mailErr) {
+            console.error("[Skyline Tag 2 Email Error] Failed sending to host teacher " + hostEmail + ":", mailErr);
+          }
+        }
+
+        // 2. MS Teams Notification sent ONLY to the Department Channel of the selected Department
+        try {
+          const targetDeptId = data.targetDeptId || hostTeacher.departmentId;
+          let targetDept = null;
+          if (targetDeptId) {
+            targetDept = await prisma.department.findUnique({ where: { id: targetDeptId } });
+          }
+          await sendTeamsNewSlotDepartmentNotif({
+            id: newSlot.id,
+            topic: data.topic || "Đề xuất xin dự giờ tiết học",
+            subjectName: data.subjectName || "Môn học",
+            level: data.level || "ALL",
+            grade: data.grade || "Khối",
+            className: data.className || "Lớp",
+            date: slotDate,
+            startTime: timeRange.start,
+            endTime: timeRange.end,
+            campusName: hostTeacher.campus?.campusName || null,
+            room: data.room || "Phòng học",
+            teacherName: hostTeacher.teacherName,
+            teacherCode: hostTeacher.teacherCode
+          }, targetDept as any).catch(err => console.error("MS Teams Tag 2 department channel error:", err));
+        } catch (teamsErr) {
+          console.error("Teams Tag 2 notification dispatch error:", teamsErr);
         }
       }
     } catch (notifErr) {
