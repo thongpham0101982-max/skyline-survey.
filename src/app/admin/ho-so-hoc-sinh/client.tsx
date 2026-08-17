@@ -33,21 +33,29 @@ const getCategoryLabel = (cat: string) => {
 const getLevelLabel = (lvl: string) => {
   if (!lvl) return "Cấp Trường";
   const str = String(lvl).toUpperCase();
+  if (str === "VANG" || str === "NHAT") return "Giải Vàng / Hạng Nhất";
+  if (str === "BAC" || str === "NHI") return "Giải Bạc / Hạng Nhì";
+  if (str === "DONG" || str === "BA") return "Giải Đồng / Hạng Ba";
+  if (str === "KHUYEN_KHICH") return "Giải Khuyến Khích";
   if (str === "CAP_QUOC_TE" || str === "5") return "Cấp Quốc tế";
   if (str === "CAP_QUOC_GIA" || str === "4") return "Cấp Quốc gia";
   if (str === "CAP_THANH_PHO" || str === "CAP_TINH" || str === "3") return "Cấp Thành phố / Tỉnh";
   if (str === "CAP_QUAN" || str === "CAP_HUYEN" || str === "2") return "Cấp Quận / Huyện";
   if (str === "CAP_TRUONG" || str === "1") return "Cấp Trường";
-  return lvl.startsWith("Cấp") ? lvl : `Cấp độ: ${lvl}`;
+  return lvl.startsWith("Cấp") || lvl.startsWith("Giải") ? lvl : `Giải/Cấp: ${lvl}`;
 };
 
 const getYearLabel = (ach: any) => {
   if (ach?.academicYear?.name) return ach.academicYear.name;
   if (ach?.yearName) return ach.yearName;
   if (ach?.academicYearId) {
+    if (ach.academicYearId === "AY-2026") return "Năm học 2025-2026";
     if (ach.academicYearId.startsWith("AY-")) {
-      const parts = ach.academicYearId.split("-");
-      if (parts[1]) return `Năm học 20${parts[1].slice(-2)}`;
+      const yearNum = ach.academicYearId.replace("AY-", "");
+      if (yearNum.length === 4) {
+        const startY = parseInt(yearNum) - 1;
+        return `Năm học ${startY}-${yearNum}`;
+      }
     }
     return ach.academicYearId;
   }
