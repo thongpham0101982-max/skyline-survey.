@@ -679,14 +679,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             
             
             {/* Premium Welcome Greeting Banner */}
-            <div className="relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#005650] to-[#00A99D] rounded-[2rem] p-6 text-white shadow-xl shadow-teal-950/10 animate-fade-in">
+            <div className="relative overflow-hidden bg-gradient-to-r from-[#003B3A] via-[#005650] to-[#36E08F] rounded-[2rem] p-6 text-white shadow-xl shadow-teal-950/10 animate-fade-in">
                 {/* Background ambient details */}
                 <div className="absolute right-0 top-0 w-80 h-80 bg-white/5 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-                <div className="absolute left-1/3 bottom-0 w-60 h-60 bg-[#00A99D]/20 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
+                <div className="absolute left-1/3 bottom-0 w-60 h-60 bg-[#36E08F]/20 rounded-full blur-3xl pointer-events-none -ml-20 -mb-20" />
                 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4.5">
-                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-[#00A99D] flex items-center justify-center shadow-inner">
+                        <div className="w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-[#36E08F] flex items-center justify-center shadow-inner">
                             <GraduationCap className="w-8 h-8 text-teal-100" />
                         </div>
                         <div>
@@ -723,8 +723,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 <div className="bg-white rounded-[2rem] border border-slate-200/80 p-6 shadow-sm flex flex-col gap-6 transition-all duration-300 hover:shadow-md animate-in fade-in">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center">
-                                <TrendingUp className="w-4 h-4 text-[#00A99D]" />
+                            <div className="w-8 h-8 rounded-lg bg-[#36E08F]/10 text-[#36E08F] flex items-center justify-center">
+                                <TrendingUp className="w-4 h-4 text-[#36E08F]" />
                             </div>
                             <div>
                                 <h3 className="text-sm font-bold text-slate-800">Biểu đồ Phân tích Khảo sát</h3>
@@ -736,13 +736,13 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div className="flex bg-slate-100/80 p-1.5 rounded-xl border border-slate-200/50 shadow-inner self-start">
                             <button
                                 onClick={() => setActiveChartTab("grade")}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${activeChartTab === "grade" ? "bg-white text-[#00A99D] shadow-xs border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-slate-700 cursor-pointer"}`}
+                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${activeChartTab === "grade" ? "bg-white text-[#36E08F] shadow-xs border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-slate-700 cursor-pointer"}`}
                             >
                                 Phân bổ theo Khối
                             </button>
                             <button
                                 onClick={() => setActiveChartTab("class")}
-                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${activeChartTab === "class" ? "bg-white text-[#00A99D] shadow-xs border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-slate-700 cursor-pointer"}`}
+                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${activeChartTab === "class" ? "bg-white text-[#36E08F] shadow-xs border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-slate-700 cursor-pointer"}`}
                             >
                                 So sánh giữa các Lớp
                             </button>
@@ -759,8 +759,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 <ComposedChart data={gradeChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                     <defs>
                                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#00A99D" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="#00A99D" stopOpacity={0.2}/>
+                                            <stop offset="5%" stopColor="#36E08F" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="#36E08F" stopOpacity={0.2}/>
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#f1f5f9" />
@@ -794,8 +794,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     <ComposedChart data={classChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#00A99D" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="#00A99D" stopOpacity={0.2}/>
+                                                <stop offset="5%" stopColor="#36E08F" stopOpacity={0.8}/>
+                                                <stop offset="95%" stopColor="#36E08F" stopOpacity={0.2}/>
                                             </linearGradient>
                                             <linearGradient id="colorEvaluated" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
@@ -872,7 +872,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
             {/* Unified Filter Card */}
             <div className="bg-white rounded-[2rem] border border-slate-200/80 shadow-sm overflow-hidden p-6 transition-all duration-300 hover:shadow-md animate-in fade-in">
                 <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-slate-100">
-                    <div className="w-8 h-8 rounded-lg bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-[#36E08F]/10 text-[#36E08F] flex items-center justify-center">
                         <SlidersHorizontal className="w-4 h-4" />
                     </div>
                     <div>
@@ -884,8 +884,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     {/* Kỳ Khảo sát */}
                     <div className="group">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#00A99D] transition-colors">
-                            <CalendarDays className="w-3.5 h-3.5 text-[#00A99D]"/> Kỳ Khảo sát
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#36E08F] transition-colors">
+                            <CalendarDays className="w-3.5 h-3.5 text-[#36E08F]"/> Kỳ Khảo sát
                         </label>
                         <div className="relative">
                             <select 
@@ -897,14 +897,14 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     setSelectedGrade("all");
                                     setSelectedSystemCode("all");
                                 }}
-                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all cursor-pointer"
+                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all cursor-pointer"
                             >
                                 <option value="">-- Chọn Kỳ khảo sát --</option>
                                 {periods.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#36E08F] transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
@@ -912,8 +912,8 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                     {/* Đợt khảo sát */}
                     <div className="group">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#00A99D] transition-colors">
-                            <Layers className="w-3.5 h-3.5 text-[#00A99D]"/> Đợt khảo sát
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#36E08F] transition-colors">
+                            <Layers className="w-3.5 h-3.5 text-[#36E08F]"/> Đợt khảo sát
                         </label>
                         <div className="relative">
                             <select 
@@ -923,7 +923,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     setSelectedBatchId(e.target.value);
                                     setSelectedAssignmentId("");
                                 }}
-                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <option value="">-- Chọn Đợt khảo sát --</option>
                                 {selectedPeriodId && <option value="all">Tất cả các đợt</option>}
@@ -931,7 +931,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#36E08F] transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
@@ -939,15 +939,15 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                     {/* Môn Khảo sát */}
                     <div className="group">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#00A99D] transition-colors">
-                            <BookOpen className="w-3.5 h-3.5 text-[#00A99D]"/> Môn Khảo sát
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#36E08F] transition-colors">
+                            <BookOpen className="w-3.5 h-3.5 text-[#36E08F]"/> Môn Khảo sát
                         </label>
                         <div className="relative">
                             <select 
                                 disabled={!selectedPeriodId}
                                 value={selectedAssignmentId} 
                                 onChange={e => setSelectedAssignmentId(e.target.value)}
-                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <option value="">-- Chọn Môn khảo sát --</option>
                                 {availableAssignments.map(a => (
@@ -956,7 +956,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     </option>
                                 ))}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#36E08F] transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
@@ -964,22 +964,22 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                     {/* Lọc theo Khối */}
                     <div className="group">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#00A99D] transition-colors">
-                            <GraduationCap className="w-3.5 h-3.5 text-[#00A99D]"/> Khối lớp
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#36E08F] transition-colors">
+                            <GraduationCap className="w-3.5 h-3.5 text-[#36E08F]"/> Khối lớp
                         </label>
                         <div className="relative">
                             <select
                                 disabled={availableGradeOptions.length === 0}
                                 value={selectedGrade}
                                 onChange={e => setSelectedGrade(e.target.value)}
-                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <option value="all">Tất cả các Khối</option>
                                 {uniqueGrades.map(g => (
                                     <option key={g} value={g}>Khối {g}</option>
                                 ))}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#36E08F] transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
@@ -987,22 +987,22 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
 
                     {/* Lọc theo Hệ đào tạo */}
                     <div className="group">
-                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#00A99D] transition-colors">
-                            <ShieldCheck className="w-3.5 h-3.5 text-[#00A99D]"/> Hệ đào tạo
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1 flex items-center gap-1.5 group-hover:text-[#36E08F] transition-colors">
+                            <ShieldCheck className="w-3.5 h-3.5 text-[#36E08F]"/> Hệ đào tạo
                         </label>
                         <div className="relative">
                             <select
                                 disabled={availableGradeOptions.length === 0}
                                 value={selectedSystemCode}
                                 onChange={e => setSelectedSystemCode(e.target.value)}
-                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="w-full bg-slate-50 hover:bg-slate-100/50 border border-slate-200 rounded-xl pl-4 pr-10 py-3 text-xs outline-none focus:bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 appearance-none font-bold text-slate-700 shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 <option value="all">Tất cả các Hệ</option>
                                 {uniqueSystems.map(sys => (
                                     <option key={sys} value={sys}>Hệ {sys}</option>
                                 ))}
                             </select>
-                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#00A99D] transition-colors">
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-[#36E08F] transition-colors">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
@@ -1032,12 +1032,12 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                     {/* Premium Form Header */}
                     <div className="px-6 py-5 bg-gradient-to-r from-teal-50/20 via-white to-slate-50/30 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#00A99D] flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#36E08F] flex items-center justify-center">
                                 <BookOpen className="w-5 h-5" />
                             </div>
                             <div>
                                 <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                    Danh sách Khảo sát: <span className="text-[#00A99D] font-extrabold">{currentAssignment?.subject?.name}</span>
+                                    Danh sách Khảo sát: <span className="text-[#36E08F] font-extrabold">{currentAssignment?.subject?.name}</span>
                                 </h3>
                                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                                     Hệ đào tạo: {currentAssignment?.educationSystem} | Khối: {selectedGrade !== "all" ? `Khối ${selectedGrade}` : availableGradeOptions.length === 1 ? `Khối ${availableGradeOptions[0]?.grade}` : (availableGradeOptions.length > 1 ? availableGradeOptions.map(o => `${o.grade}`).join(", ") : "Tất cả")}
@@ -1055,7 +1055,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     🔓 Đang mở nhập điểm
                                 </span>
                             )}
-                            <span className="text-[10px] font-black border px-3 py-1.5 rounded-xl shadow-xs bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/15">
+                            <span className="text-[10px] font-black border px-3 py-1.5 rounded-xl shadow-xs bg-[#36E08F]/5 text-[#36E08F] border-[#36E08F]/15">
                                 {isPsychSubject ? (gradeVal ? `Mẫu chuyên biệt Tâm lý Khối ${gradeVal}` : `Đánh giá Tâm lý`) : isChildDevSubject ? "Cấu hình: 1 cột điểm, 1 cột nhận xét" : `Cấu hình: ${currentAssignment?.subject?.scoreColumns ?? 1} cột điểm, ${currentAssignment?.subject?.commentColumns ?? 1} cột nhận xét`}
                             </span>
                         </div>
@@ -1066,11 +1066,11 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div className="flex bg-slate-100/80 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200/50 shadow-inner">
                             <button
                                 onClick={() => { setEvaluationTab("pending"); setCurrentPage(1); }}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 ${evaluationTab === "pending" ? "bg-white text-[#00A99D] shadow-md border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-slate-700 hover:bg-white/40"}`}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all duration-300 ${evaluationTab === "pending" ? "bg-white text-[#36E08F] shadow-md border border-slate-200/50 scale-[1.01]" : "text-slate-500 hover:text-slate-700 hover:bg-white/40"}`}
                             >
                                 <Clock className="w-4 h-4" />
                                 <span>Đang chờ đánh giá</span>
-                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${evaluationTab === "pending" ? "bg-[#00A99D] text-white" : "bg-slate-200 text-slate-600"}`}>
+                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full transition-colors ${evaluationTab === "pending" ? "bg-[#36E08F] text-white" : "bg-slate-200 text-slate-600"}`}>
                                     {pendingStudents.length}
                                 </span>
                             </button>
@@ -1125,33 +1125,33 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <table className="w-full text-xs text-left border-collapse min-w-max">
                             <thead className="text-xs font-semibold">
     <tr>
-        <th className="px-2 py-2 w-12 text-center font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
-        <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
-          <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
-          <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
-          <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
-          <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
-          <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
-        <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs text-center">
+        <th className="px-2 py-2 w-12 text-center font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs md:sticky md:left-0 z-20">STT</th>
+        <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Mã HS KS</th>
+          <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs whitespace-nowrap text-left">Họ và Tên</th>
+          <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Khối</th>
+          <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Giới tính</th>
+          <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Ngày sinh</th>
+          <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs whitespace-nowrap text-center">Hệ Khảo sát</th>
+        <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs text-center">
             {isPreschoolProbationSubject ? "Form ĐG Học thử" : (isPsychSubject || isChildDevSubject || isThinkingSkillsSubject || isPreschoolSubject ? "Form Khảo sát" : (hideComments ? "Chi tiết Điểm" : "Chi tiết Điểm & Nhận xét"))}
         </th>
         {(isChildDevSubject || isThinkingSkillsSubject) && (
-            <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
+            <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs text-left min-w-[250px]">Nhận xét chung</th>
         )}
         {isPsychSubject && (
             <>
-                <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
-                <th className="px-2 py-2 font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
+                <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs text-left min-w-[200px]">Kết luận sơ bộ</th>
+                <th className="px-2 py-2 font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs text-left min-w-[200px]">Khuyến nghị (Nếu có)</th>
             </>
         )}
-        <th className="px-2 py-2 md:px-4 md:py-4 text-center font-bold text-[#00A99D] bg-[#00A99D]/5 border-[#00A99D]/20 uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
+        <th className="px-2 py-2 md:px-4 md:py-4 text-center font-bold text-[#36E08F] bg-[#36E08F]/5 border-[#36E08F]/20 uppercase tracking-wider text-xs w-32 md:sticky md:right-0 z-20">Xác nhận</th>
     </tr>
 </thead>
                             <tbody className="divide-y divide-slate-100 border-b border-slate-100">
                                 {paginatedStudents.map((st, idx) => {
                                     const serialNumber = (safeCurrentPage - 1) * 10 + idx + 1;
                                     return (
-                                        <tr key={st.id} className="hover:bg-[#00A99D]/5 transition-colors border-b border-slate-100 last:border-none">
+                                        <tr key={st.id} className="hover:bg-[#36E08F]/5 transition-colors border-b border-slate-100 last:border-none">
                                             <td className="p-2 p-2 md:p-2 md:p-2 text-center text-slate-500 bg-transparent md:sticky md:left-0 z-10 font-medium text-xs border border-slate-200">{serialNumber}</td>
                                         <td className="p-2 p-2 bg-transparent text-center border border-slate-200">
                                               <span className="font-mono font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-full text-xs">{st.studentCode}</span>
@@ -1211,7 +1211,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                           <div className="text-[11px] text-slate-600 flex gap-1.5 flex-wrap justify-center mt-0.5">
                               <span className="font-semibold text-emerald-600">Logic: {st.scoreVals[0] || "-"}</span>
                               <span className="text-slate-300">|</span>
-                              <span className="font-semibold text-[#00A99D]">L.Tưởng: {st.scoreVals[1] || "-"}</span>
+                              <span className="font-semibold text-[#36E08F]">L.Tưởng: {st.scoreVals[1] || "-"}</span>
                               <span className="text-slate-300">|</span>
                               <span className="font-semibold text-rose-500">P.Biện: {st.scoreVals[2] || "-"}</span>
                               <span className="text-slate-300">|</span>
@@ -1311,7 +1311,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div key={"sc-input-"+colIdx} className="flex flex-col gap-1.5 w-24 flex-none">
                             <span className="text-[10px] uppercase font-bold text-slate-600 truncate border-b border-slate-200 pb-1" title={cName + maxScoreStr}>{cName}{maxScoreStr && <span className="text-red-500 font-black ml-0.5">{maxScoreStr}</span>}</span>
                             {isTotal ? (
-                                <div className="w-full bg-[#F0FDFA] border border-slate-300 rounded-lg py-1 text-center font-black text-[#00A99D] shadow-inner h-[30px] text-[12px] text-[13px] flex items-center justify-center">
+                                <div className="w-full bg-[#F0FDFA] border border-slate-300 rounded-lg py-1 text-center font-black text-[#36E08F] shadow-inner h-[30px] text-[12px] text-[13px] flex items-center justify-center">
                                     {(st.scoreVals || []).slice(0, colIdx).reduce((sum: number, val: any) => sum + (parseFloat(val) || 0), 0).toLocaleString("vi-VN", {maximumFractionDigits: 2})}
                                 </div>
                             ) : (
@@ -1320,7 +1320,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                     value={st.scoreVals?.[colIdx] || ""}
                                     onChange={e => handleScoreChange(st.id, colIdx, e.target.value)}
                                     disabled={isLocked}
-                                    className={`w-full border border-slate-300 rounded-lg py-1 text-center font-bold shadow-sm outline-none transition-all h-[30px] text-[12px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 placeholder-slate-300"}`}
+                                    className={`w-full border border-slate-300 rounded-lg py-1 text-center font-bold shadow-sm outline-none transition-all h-[30px] text-[12px] text-[13px] ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-800 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/20 placeholder-slate-300"}`}
                                     placeholder="-"
                                 />
                             )}
@@ -1339,7 +1339,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                 onChange={e => handleCommentChange(st.id, colIdx, e.target.value)}
                                 disabled={isLocked}
                                 rows={2}
-                                className={`w-full border border-slate-300 rounded-lg py-1.5 px-3 text-xs font-medium shadow-sm outline-none transition-all resize-y min-h-[50px] max-h-[120px] text-[12px] text-[13px] leading-relaxed custom-scrollbar ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 placeholder-slate-400"}`}
+                                className={`w-full border border-slate-300 rounded-lg py-1.5 px-3 text-xs font-medium shadow-sm outline-none transition-all resize-y min-h-[50px] max-h-[120px] text-[12px] text-[13px] leading-relaxed custom-scrollbar ${isLocked ? "bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200" : "bg-white text-slate-700 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/20 placeholder-slate-400"}`}
                                 placeholder="Nhập nhận xét..."
                             />
                         </div>
@@ -1482,7 +1482,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                                         <button
                                             key={p}
                                             onClick={() => setCurrentPage(p)}
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${p === safeCurrentPage ? "bg-[#00A99D] border-[#00A99D] text-white shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${p === safeCurrentPage ? "bg-[#36E08F] border-[#36E08F] text-white shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800"}`}
                                         >
                                             {p}
                                         </button>
@@ -1517,7 +1517,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
       {isUnlockRequestOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
           <div className="bg-white rounded-lg w-full max-w-lg shadow-xl overflow-hidden flex flex-col">
-            <div className="p-5 border-b flex justify-between items-center bg-[#00A99D]/5 border-[#00A99D]/20">
+            <div className="p-5 border-b flex justify-between items-center bg-[#36E08F]/5 border-[#36E08F]/20">
               <h3 className="font-bold text-lg text-slate-800">Yêu cầu Mở khóa Form</h3>
               <button onClick={() => setIsUnlockRequestOpen(false)} className="text-slate-400 hover:text-red-500"><X className="w-5 h-5" /></button>
             </div>
@@ -1527,7 +1527,7 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                 <textarea 
                     value={unlockReason} 
                     onChange={e => setUnlockReason(e.target.value)} 
-                    className="w-full border rounded-xl p-3 text-xs focus:border-[#00A99D] outline-none h-32 resize-none" 
+                    className="w-full border rounded-xl p-3 text-xs focus:border-[#36E08F] outline-none h-32 resize-none" 
                     placeholder="VD: Cần chỉnh sửa lại điểm cột Hành vi cho một số học sinh..."
                 />
               </div>

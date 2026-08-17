@@ -223,7 +223,7 @@ export default function AdminAdvisoryDashboard() {
     <div className="space-y-6 max-w-7xl mx-auto pb-16 font-sans text-slate-800">
       
       {/* Top Header Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#36E08F] rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/15 border border-white/20 text-teal-100 uppercase tracking-wider">
             <Compass className="w-4 h-4 text-teal-300 animate-spin-slow" />
@@ -304,7 +304,7 @@ export default function AdminAdvisoryDashboard() {
                     onClick={() => setSelectedGradeGroup(grp.key)}
                     className={`p-3 rounded-2xl text-left border transition-all flex flex-col justify-between ${
                       isSelected
-                        ? "bg-gradient-to-b from-[#003B3A] to-[#004D4A] text-white border-[#003B3A] shadow-md ring-2 ring-[#00A99D]"
+                        ? "bg-gradient-to-b from-[#003B3A] to-[#004D4A] text-white border-[#003B3A] shadow-md ring-2 ring-[#36E08F]"
                         : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                     }`}
                   >

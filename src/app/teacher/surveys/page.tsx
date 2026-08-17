@@ -79,7 +79,7 @@ export default async function TeacherSurveysPage() {
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       <div>
         <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Quản lý Khảo sát</h1>
-        <p className="text-slate-500 mt-1">Các đợt khảo sát thuộc năm học mặc định: <span className="font-bold text-[#00A99D]">{activeYear?.name || 'N/A'}</span></p>
+        <p className="text-slate-500 mt-1">Các đợt khảo sát thuộc năm học mặc định: <span className="font-bold text-[#36E08F]">{activeYear?.name || 'N/A'}</span></p>
       </div>
       
       <SurveyTabs activeTab="surveys" role="TEACHER" />
@@ -87,19 +87,19 @@ export default async function TeacherSurveysPage() {
       {/* Thống kê số học sinh khảo sát theo khối */}
       <div className="bg-white border-2 border-teal-100 rounded-2xl p-5 shadow-xs flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-teal-50 text-[#00A99D] flex items-center justify-center">
+          <div className="p-2 rounded-lg bg-teal-50 text-[#36E08F] flex items-center justify-center">
             <Users className="w-5 h-5" />
           </div>
           <div>
             <h3 className="font-bold text-slate-800 text-sm">Thống kê Học sinh Khảo sát trong năm</h3>
-            <p className="text-xs text-slate-500 mt-0.5">Tổng số học sinh được phân công khảo sát: <span className="font-black text-[#00A99D] text-sm">${totalStudents}</span> học sinh</p>
+            <p className="text-xs text-slate-500 mt-0.5">Tổng số học sinh được phân công khảo sát: <span className="font-black text-[#36E08F] text-sm">${totalStudents}</span> học sinh</p>
           </div>
         </div>
         
         {sortedGrades.length > 0 ? (
           <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
             {sortedGrades.map(([grade, count]) => (
-              <span key={grade} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-teal-50 text-[#00A99D] border border-teal-100 hover:bg-[#00A99D]/5 transition-colors">
+              <span key={grade} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-black bg-teal-50 text-[#36E08F] border border-teal-100 hover:bg-[#36E08F]/5 transition-colors">
                 ${grade}: <span className="text-slate-800 font-extrabold">${count} HS</span>
               </span>
             ))}
@@ -134,7 +134,7 @@ export default async function TeacherSurveysPage() {
                         <div className={`p-2 rounded-lg ${isActive ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                           <FileText className="w-5 h-5" />
                         </div>
-                        <h2 className="text-xl font-bold text-slate-900 group-hover:text-[#00A99D] transition-colors">
+                        <h2 className="text-xl font-bold text-slate-900 group-hover:text-[#36E08F] transition-colors">
                           {survey.name}
                         </h2>
                         {isActive ? (
@@ -163,14 +163,14 @@ export default async function TeacherSurveysPage() {
                       </div>
                       <div className="w-px h-12 bg-slate-200"></div>
                       <div className="text-center">
-                        <div className="text-2xl font-bold text-[#00A99D]">{completionRate}%</div>
+                        <div className="text-2xl font-bold text-[#36E08F]">{completionRate}%</div>
                         <div className="text-xs font-medium text-slate-500 uppercase tracking-wider mt-1">Tỷ lệ nộp</div>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div className="flex justify-end text-xs font-semibold">
-                  <Link href="/teacher/classes" className="text-sm font-bold text-[#00A99D] hover:text-[#009085] flex items-center gap-1">
+                  <Link href="/teacher/classes" className="text-sm font-bold text-[#36E08F] hover:text-[#009085] flex items-center gap-1">
                     Xem chi tiết tại danh sách lớp &rarr;
                   </Link>
                 </div>

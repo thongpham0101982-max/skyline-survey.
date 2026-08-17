@@ -40,7 +40,7 @@ export function ExamTabs({ activeTab }: ExamTabsProps) {
               href={tab.href}
               className={`flex items-center gap-2 px-6 py-3 border-b-2 font-black text-xs transition-all duration-200 uppercase tracking-wider ${
                 tab.isActive
-                  ? 'border-[#00A99D] text-[#00A99D]'
+                  ? 'border-[#36E08F] text-[#36E08F]'
                   : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
               }`}
             >
@@ -63,7 +63,7 @@ export function ExamTabs({ activeTab }: ExamTabsProps) {
                 href={tab.href}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-black transition-all duration-200 border ${
                   isActive
-                    ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-xs'
+                    ? 'bg-[#36E08F] text-white border-[#36E08F] shadow-xs'
                     : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-slate-800'
                 }`}
               >

@@ -60,7 +60,7 @@ export function PreschoolMoveToBatchModal({
         </div>
 
         <div className="p-6 space-y-5">
-          <div className="bg-[#00A99D]/10 text-[#00A99D] px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
+          <div className="bg-[#36E08F]/10 text-[#36E08F] px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2">
             Đang chọn {selectedIds.length} học sinh
           </div>
 
@@ -73,7 +73,7 @@ export function PreschoolMoveToBatchModal({
                   setSelectedPeriodId(e.target.value);
                   setSelectedBatchId("");
                 }}
-                className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] transition-all"
+                className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] transition-all"
               >
                 <option value="">-- Chọn kỳ khảo sát --</option>
                 {periods.map(p => (
@@ -88,7 +88,7 @@ export function PreschoolMoveToBatchModal({
                 <select
                   value={selectedBatchId}
                   onChange={(e) => setSelectedBatchId(e.target.value)}
-                  className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] transition-all"
+                  className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] transition-all"
                 >
                   <option value="">-- Gán vào đợt (Không bắt buộc) --</option>
                   {activeBatches.map((b: any) => (
@@ -110,7 +110,7 @@ export function PreschoolMoveToBatchModal({
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || !selectedPeriodId}
-            className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] disabled:opacity-50 text-white font-bold rounded-xl shadow-sm hover:shadow transition-all text-sm flex items-center gap-2"
+            className="px-6 py-2.5 bg-[#36E08F] hover:bg-[#009085] disabled:opacity-50 text-white font-bold rounded-xl shadow-sm hover:shadow transition-all text-sm flex items-center gap-2"
           >
             {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             Xác nhận

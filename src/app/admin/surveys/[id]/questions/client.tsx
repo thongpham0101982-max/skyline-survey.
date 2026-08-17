@@ -381,7 +381,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-slate-800 text-lg tracking-tight">Studio Tạo / Chỉnh Sửa Form</h1>
-              <span className="bg-[#00A99D]/10 text-[#00A99D] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              <span className="bg-[#36E08F]/10 text-[#36E08F] text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
                 Microsoft Forms
               </span>
             </div>
@@ -393,13 +393,13 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
         <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/60">
           <button
             onClick={() => setActiveTab("editor")}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === "editor" ? "bg-white text-[#00A99D] shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === "editor" ? "bg-white text-[#36E08F] shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
           >
             <Sparkles className="w-4 h-4" /> Chỉnh sửa Form
           </button>
           <button
             onClick={() => setActiveTab("preview")}
-            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === "preview" ? "bg-[#00A99D] text-white shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+            className={`flex items-center gap-2 px-5 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === "preview" ? "bg-[#36E08F] text-white shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
           >
             <Eye className="w-4 h-4" /> Xem trước Live
           </button>
@@ -425,9 +425,9 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
           ) : (
             <div className="flex items-center gap-2">
               <button onClick={downloadTemplate} className="inline-flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-all" title="Tải Mẫu File Excel">
-                <FileDown className="w-4 h-4 text-[#00A99D]" /> Mẫu Excel
+                <FileDown className="w-4 h-4 text-[#36E08F]" /> Mẫu Excel
               </button>
-              <label className="inline-flex items-center gap-1 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#00A99D] rounded-xl text-xs font-bold cursor-pointer transition-all">
+              <label className="inline-flex items-center gap-1 px-3 py-2 bg-teal-50 hover:bg-teal-100 text-[#36E08F] rounded-xl text-xs font-bold cursor-pointer transition-all">
                 <Upload className="w-4 h-4" /> Import Excel
                 <input type="file" onChange={handleImportExcel} accept=".xlsx,.xls" className="hidden" />
               </label>
@@ -445,7 +445,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
             </span>
             <button
               onClick={() => setActiveSectionFilter("ALL")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeSectionFilter === "ALL" ? "bg-[#00A99D] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeSectionFilter === "ALL" ? "bg-[#36E08F] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
             >
               Tất cả ({questions.length})
             </button>
@@ -455,7 +455,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                 <button
                   key={sec.id}
                   onClick={() => setActiveSectionFilter(sec.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeSectionFilter === sec.id ? "bg-[#00A99D] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeSectionFilter === sec.id ? "bg-[#36E08F] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
                 >
                   <span>{sec.name}</span>
                   <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${activeSectionFilter === sec.id ? "bg-white/20 text-white" : "bg-slate-200 text-slate-500"}`}>{count}</span>
@@ -466,7 +466,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
 
           <button
             onClick={() => setShowAddSectionModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#00A99D]/10 hover:bg-[#00A99D]/20 text-[#00A99D] rounded-xl text-xs font-extrabold transition-all"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#36E08F]/10 hover:bg-[#36E08F]/20 text-[#36E08F] rounded-xl text-xs font-extrabold transition-all"
           >
             <FolderPlus className="w-4 h-4" /> + Thêm Mục mới
           </button>
@@ -479,7 +479,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
           <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-[#00A99D]" /> Thêm Phân Mục Form mới
+                <FolderPlus className="w-5 h-5 text-[#36E08F]" /> Thêm Phân Mục Form mới
               </h3>
               <button onClick={() => setShowAddSectionModal(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5"/></button>
             </div>
@@ -489,12 +489,12 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
               value={newSectionName}
               onChange={(e) => setNewSectionName(e.target.value)}
               placeholder="VD: Mục 1: Thông tin cá nhân, Mục 2: Đánh giá giảng dạy..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 mb-6"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold outline-none focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/20 mb-6"
               autoFocus
             />
             <div className="flex justify-end gap-3">
               <button onClick={() => setShowAddSectionModal(false)} className="px-4 py-2 text-slate-500 font-bold text-xs hover:bg-slate-100 rounded-xl">Hủy</button>
-              <button onClick={handleCreateSection} className="px-5 py-2 bg-[#00A99D] text-white font-extrabold text-xs rounded-xl hover:bg-[#009085]">Tạo Mục</button>
+              <button onClick={handleCreateSection} className="px-5 py-2 bg-[#36E08F] text-white font-extrabold text-xs rounded-xl hover:bg-[#009085]">Tạo Mục</button>
             </div>
           </div>
         </div>
@@ -507,7 +507,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
           {/* MS FORMS FORM HEADER CARD */}
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden relative transition-all">
             {/* Signature Top Accent Banner */}
-            <div className="h-3 bg-[#00A99D] w-full" />
+            <div className="h-3 bg-[#36E08F] w-full" />
             <div className="p-6 md:p-8 space-y-4">
               <div>
                 <input
@@ -515,7 +515,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                   value={formTitle}
                   onChange={(e) => setFormTitle(e.target.value)}
                   placeholder="Tiêu đề Khảo sát..."
-                  className="w-full text-2xl md:text-3xl font-black text-slate-900 border-b-2 border-transparent hover:border-slate-200 focus:border-[#00A99D] outline-none pb-2 transition-all bg-transparent"
+                  className="w-full text-2xl md:text-3xl font-black text-slate-900 border-b-2 border-transparent hover:border-slate-200 focus:border-[#36E08F] outline-none pb-2 transition-all bg-transparent"
                 />
               </div>
               <div>
@@ -524,7 +524,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                   value={formDescription}
                   onChange={(e) => setFormDescription(e.target.value)}
                   placeholder="Thêm diễn giải / hướng dẫn làm khảo sát tại đây..."
-                  className="w-full text-sm font-medium text-slate-600 border-b border-transparent hover:border-slate-200 focus:border-[#00A99D] outline-none py-1 transition-all bg-transparent resize-none"
+                  className="w-full text-sm font-medium text-slate-600 border-b border-transparent hover:border-slate-200 focus:border-[#36E08F] outline-none py-1 transition-all bg-transparent resize-none"
                 />
               </div>
               <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-bold text-slate-400 border-t border-slate-100">
@@ -544,7 +544,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
               <HelpCircle className="w-12 h-12 mx-auto mb-3 text-slate-300" />
               <p className="font-extrabold text-base text-slate-700 mb-1">Chưa có câu hỏi nào trong mục này</p>
               <p className="text-xs text-slate-400 mb-6">Hãy bấm nút thêm loại câu hỏi dưới thanh công cụ để tạo câu hỏi đầu tiên</p>
-              <button onClick={() => addQuestion("SCALE_0_4")} className="px-6 py-2.5 bg-[#00A99D] text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-[#009085]">
+              <button onClick={() => addQuestion("SCALE_0_4")} className="px-6 py-2.5 bg-[#36E08F] text-white font-extrabold text-xs rounded-xl shadow-md hover:bg-[#009085]">
                 + Thêm Câu Hỏi Khảo Sát (0-4)
               </button>
             </div>
@@ -559,7 +559,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                 <div
                   key={q.id}
                   onClick={() => setActiveQIndex(realIndex)}
-                  className={`bg-white rounded-2xl border shadow-xs transition-all relative overflow-hidden group ${isSelected ? "border-l-4 border-l-[#00A99D] border-slate-300 shadow-md ring-2 ring-[#00A99D]/10" : "border-slate-200/80 hover:border-slate-300"}`}
+                  className={`bg-white rounded-2xl border shadow-xs transition-all relative overflow-hidden group ${isSelected ? "border-l-4 border-l-[#36E08F] border-slate-300 shadow-md ring-2 ring-[#36E08F]/10" : "border-slate-200/80 hover:border-slate-300"}`}
                 >
                   <div className="p-6 md:p-8">
                     
@@ -567,7 +567,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                     <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-6">
                       <div className="flex-1 w-full space-y-3">
                         <div className="flex items-center gap-3">
-                          <span className="w-8 h-8 rounded-xl bg-[#00A99D]/10 text-[#00A99D] text-xs font-black flex items-center justify-center">
+                          <span className="w-8 h-8 rounded-xl bg-[#36E08F]/10 text-[#36E08F] text-xs font-black flex items-center justify-center">
                             {(realIndex + 1).toString().padStart(2, '0')}
                           </span>
                           <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
@@ -576,7 +576,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
 
                           {/* Section Tag Badge */}
                           <div className="flex items-center gap-1 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-600">
-                            <Tag className="w-3 h-3 text-[#00A99D]" />
+                            <Tag className="w-3 h-3 text-[#36E08F]" />
                             <span>Mục:</span>
                             <select
                               value={q.sectionId || ""}
@@ -596,7 +596,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                           value={q.questionText}
                           onChange={(e) => updateQuestion(realIndex, "questionText", e.target.value)}
                           placeholder="Nhập nội dung câu hỏi..."
-                          className="w-full text-lg font-black text-slate-800 border-b-2 border-slate-100 hover:border-slate-300 focus:border-[#00A99D] outline-none pb-2 transition-all bg-transparent"
+                          className="w-full text-lg font-black text-slate-800 border-b-2 border-slate-100 hover:border-slate-300 focus:border-[#36E08F] outline-none pb-2 transition-all bg-transparent"
                         />
                       </div>
 
@@ -627,7 +627,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                         <div className="space-y-3 bg-slate-50/60 p-5 rounded-2xl border border-slate-100">
                           <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Danh sách tùy chọn trả lời</span>
-                            {q.questionType === "CHECKBOX" && <span className="text-[#00A99D] text-[11px] font-extrabold uppercase">Cho phép chọn nhiều</span>}
+                            {q.questionType === "CHECKBOX" && <span className="text-[#36E08F] text-[11px] font-extrabold uppercase">Cho phép chọn nhiều</span>}
                           </div>
                           {(q.options?.choices || []).map((opt: string, optIndex: number) => (
                             <div key={optIndex} className="flex items-center gap-3 group/opt">
@@ -636,7 +636,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                                 type="text"
                                 value={opt}
                                 onChange={(e) => updateOption(realIndex, optIndex, e.target.value)}
-                                className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold flex-1 outline-none focus:border-[#00A99D] transition-all shadow-2xs"
+                                className="bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold flex-1 outline-none focus:border-[#36E08F] transition-all shadow-2xs"
                                 placeholder={`Tùy chọn ${optIndex + 1}`}
                               />
                               <button onClick={() => removeOption(realIndex, optIndex)} className="text-slate-400 hover:text-red-500 p-2"><X className="w-4 h-4"/></button>
@@ -644,7 +644,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                           ))}
 
                           <div className="flex items-center gap-3 pt-3">
-                            <button onClick={() => addOption(realIndex)} className="text-xs font-extrabold text-[#00A99D] bg-white border border-teal-200 hover:bg-teal-50 px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all">
+                            <button onClick={() => addOption(realIndex)} className="text-xs font-extrabold text-[#36E08F] bg-white border border-teal-200 hover:bg-teal-50 px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all">
                               <Plus className="w-4 h-4" /> Thêm Tùy chọn
                             </button>
                             <button
@@ -662,18 +662,18 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50/60 p-5 rounded-2xl border border-slate-100">
                           <div>
                             <div className="flex items-center gap-2 mb-3">
-                              <ListPlus className="w-4 h-4 text-[#00A99D]" />
+                              <ListPlus className="w-4 h-4 text-[#36E08F]" />
                               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Hàng (Tiêu chí đánh giá)</span>
                             </div>
                             <div className="space-y-2">
                               {q.options?.rows?.map((row: string, rIndex: number) => (
                                 <div key={rIndex} className="flex items-center gap-2">
                                   <span className="text-xs font-bold text-slate-400 w-4">{rIndex + 1}.</span>
-                                  <input type="text" value={row} onChange={e => updateGridOption(realIndex, "rows", rIndex, e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#00A99D] outline-none" />
+                                  <input type="text" value={row} onChange={e => updateGridOption(realIndex, "rows", rIndex, e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold focus:border-[#36E08F] outline-none" />
                                   <button onClick={() => removeGridItem(realIndex, "rows", rIndex)} className="text-slate-400 hover:text-red-500 p-1"><X className="w-4 h-4"/></button>
                                 </div>
                               ))}
-                              <button onClick={() => addGridItem(realIndex, "rows")} className="w-full text-xs font-extrabold text-[#00A99D] bg-white border border-dashed border-teal-200 hover:bg-teal-50 py-2 rounded-xl mt-2 transition-all">+ Thêm Hàng</button>
+                              <button onClick={() => addGridItem(realIndex, "rows")} className="w-full text-xs font-extrabold text-[#36E08F] bg-white border border-dashed border-teal-200 hover:bg-teal-50 py-2 rounded-xl mt-2 transition-all">+ Thêm Hàng</button>
                             </div>
                           </div>
 
@@ -719,7 +719,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                             type="checkbox"
                             checked={q.isRequired}
                             onChange={(e) => updateQuestion(realIndex, "isRequired", e.target.checked)}
-                            className="w-4 h-4 rounded text-[#00A99D] focus:ring-0 cursor-pointer"
+                            className="w-4 h-4 rounded text-[#36E08F] focus:ring-0 cursor-pointer"
                           />
                           <span>Bắt buộc trả lời</span>
                         </label>
@@ -739,7 +739,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                       <div className="flex items-center gap-1">
                         <button onClick={() => moveQuestion(realIndex, -1)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Di chuyển lên"><ArrowUp className="w-4 h-4"/></button>
                         <button onClick={() => moveQuestion(realIndex, 1)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg" title="Di chuyển xuống"><ArrowDown className="w-4 h-4"/></button>
-                        <button onClick={() => duplicateQuestion(realIndex)} className="p-2 text-slate-400 hover:text-[#00A99D] hover:bg-teal-50 rounded-lg" title="Nhân bản câu hỏi"><Copy className="w-4 h-4"/></button>
+                        <button onClick={() => duplicateQuestion(realIndex)} className="p-2 text-slate-400 hover:text-[#36E08F] hover:bg-teal-50 rounded-lg" title="Nhân bản câu hỏi"><Copy className="w-4 h-4"/></button>
                         <div className="w-px h-5 bg-slate-200 mx-1" />
                         <button onClick={() => removeQuestion(realIndex)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Xóa câu hỏi"><Trash2 className="w-4 h-4"/></button>
                       </div>
@@ -755,8 +755,8 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
           <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-sm space-y-3">
             <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider block">Thêm câu hỏi mới nhanh</span>
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2">
-              <button onClick={() => addQuestion("SCALE_0_4")} className="p-2.5 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-xl text-xs font-bold text-slate-700 hover:text-[#00A99D] transition-all flex flex-col items-center gap-1">
-                <Plus className="w-4 h-4 text-[#00A99D]" />
+              <button onClick={() => addQuestion("SCALE_0_4")} className="p-2.5 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-300 rounded-xl text-xs font-bold text-slate-700 hover:text-[#36E08F] transition-all flex flex-col items-center gap-1">
+                <Plus className="w-4 h-4 text-[#36E08F]" />
                 <span>Khảo sát (0-4)</span>
               </button>
               <button onClick={() => addQuestion("NPS")} className="p-2.5 bg-slate-50 hover:bg-amber-50 border border-slate-200 hover:border-amber-300 rounded-xl text-xs font-bold text-slate-700 hover:text-amber-600 transition-all flex flex-col items-center gap-1">
@@ -800,7 +800,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
             {/* Rendered Live Form */}
             <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden space-y-6 pb-8">
               {/* Header Banner */}
-              <div className="h-3 bg-[#00A99D] w-full" />
+              <div className="h-3 bg-[#36E08F] w-full" />
               <div className="px-6 pt-2 pb-4 border-b border-slate-100">
                 <h2 className="text-2xl font-black text-slate-900 mb-2">{formTitle || "Phiếu Khảo Sát"}</h2>
                 <p className="text-xs font-medium text-slate-600 whitespace-pre-line">{formDescription}</p>
@@ -822,7 +822,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                       )}
                       
                       <div className="flex items-start gap-2">
-                        <span className="text-xs font-black text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded-lg">{idx + 1}.</span>
+                        <span className="text-xs font-black text-[#36E08F] bg-teal-50 px-2 py-0.5 rounded-lg">{idx + 1}.</span>
                         <h3 className="text-sm font-extrabold text-slate-800 flex-1 leading-snug">
                           {q.questionText || "Nội dung câu hỏi..."}
                           {q.isRequired && <span className="text-red-500 ml-1">*</span>}
@@ -834,7 +834,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                         <div className="space-y-2 pl-4">
                           {choices.map((c: string, ci: number) => (
                             <label key={ci} className="flex items-center gap-3 p-2 hover:bg-white rounded-xl cursor-pointer text-xs font-bold text-slate-700 border border-transparent hover:border-slate-200 transition-all">
-                              <input type={q.questionType === "CHECKBOX" ? "checkbox" : "radio"} name={`preview_${idx}`} className="w-4 h-4 text-[#00A99D]" />
+                              <input type={q.questionType === "CHECKBOX" ? "checkbox" : "radio"} name={`preview_${idx}`} className="w-4 h-4 text-[#36E08F]" />
                               <span>{c}</span>
                             </label>
                           ))}
@@ -867,7 +867,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                                   <td className="p-2 font-bold text-slate-700">{row}</td>
                                   {opts.columns?.map((_: any, ci: number) => (
                                     <td key={ci} className="p-2 text-center">
-                                      <input type={q.questionType === "CB_GRID" ? "checkbox" : "radio"} name={`grid_${idx}_${ri}`} className="w-4 h-4 text-[#00A99D]" />
+                                      <input type={q.questionType === "CB_GRID" ? "checkbox" : "radio"} name={`grid_${idx}_${ri}`} className="w-4 h-4 text-[#36E08F]" />
                                     </td>
                                   ))}
                                 </tr>
@@ -878,7 +878,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
                       )}
 
                       {q.questionType === "TEXT" && (
-                        <textarea rows={3} placeholder="Nhập câu trả lời tự luận..." className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-[#00A99D]" />
+                        <textarea rows={3} placeholder="Nhập câu trả lời tự luận..." className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-medium outline-none focus:border-[#36E08F]" />
                       )}
 
                       {q.questionType === "RATING" && (
@@ -887,13 +887,13 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
 
                       {q.questionType === "NPS" && (
                         <div className="flex gap-1 justify-between py-2">
-                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => <button key={n} className="flex-1 py-2 bg-white border border-slate-200 hover:border-[#00A99D] hover:text-[#00A99D] rounded-lg text-xs font-bold text-slate-600 transition-all">{n}</button>)}
+                          {[0,1,2,3,4,5,6,7,8,9,10].map(n => <button key={n} className="flex-1 py-2 bg-white border border-slate-200 hover:border-[#36E08F] hover:text-[#36E08F] rounded-lg text-xs font-bold text-slate-600 transition-all">{n}</button>)}
                         </div>
                       )}
 
                       {q.questionType === "SCALE_0_4" && (
                         <div className="flex gap-2 justify-center py-2">
-                          {[0,1,2,3,4].map(n => <button key={n} className="w-10 h-10 bg-white border border-slate-200 hover:border-[#00A99D] hover:bg-teal-50 rounded-xl text-xs font-extrabold text-slate-700 transition-all">{n}</button>)}
+                          {[0,1,2,3,4].map(n => <button key={n} className="w-10 h-10 bg-white border border-slate-200 hover:border-[#36E08F] hover:bg-teal-50 rounded-xl text-xs font-extrabold text-slate-700 transition-all">{n}</button>)}
                         </div>
                       )}
 
@@ -904,7 +904,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
 
               {/* Submit Preview Button */}
               <div className="px-6 pt-4">
-                <button disabled className="w-full py-3 bg-[#00A99D] text-white font-extrabold rounded-xl text-xs uppercase tracking-wider opacity-90 cursor-not-allowed">
+                <button disabled className="w-full py-3 bg-[#36E08F] text-white font-extrabold rounded-xl text-xs uppercase tracking-wider opacity-90 cursor-not-allowed">
                   Gửi Phản Hồi (Preview Mode)
                 </button>
               </div>
@@ -932,7 +932,7 @@ export function SurveyQuestionBuilderClient({ period, initialQuestions, categori
           <button
             onClick={() => handleSave(true)}
             disabled={saving}
-            className="px-8 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-teal-500/20 transition-all active:scale-95"
+            className="px-8 py-2.5 bg-[#36E08F] hover:bg-[#009085] text-white rounded-xl font-extrabold text-xs uppercase tracking-wider flex items-center gap-2 shadow-md shadow-teal-500/20 transition-all active:scale-95"
           >
             <CloudUpload className="w-4 h-4" /> Xuất Bản Form
           </button>

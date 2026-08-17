@@ -110,7 +110,7 @@ export function SurveyConfigClient({
               onClick={() => handleTabChange("k12")}
               className={`flex items-center justify-center gap-2.5 px-6 py-3 rounded-lg text-xs font-bold transition-all duration-300 ${
                 activeTab === "k12"
-                  ? "bg-[#00A99D] text-white shadow-md shadow-teal-500/10 scale-[1.02]"
+                  ? "bg-[#36E08F] text-white shadow-md shadow-teal-500/10 scale-[1.02]"
                   : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-800"
               }`}
             >
@@ -124,7 +124,7 @@ export function SurveyConfigClient({
               onClick={() => handleTabChange("preschool")}
               className={`flex items-center justify-center gap-2.5 px-6 py-3 rounded-lg text-xs font-bold transition-all duration-300 ${
                 activeTab === "preschool"
-                  ? "bg-[#00A99D] text-white shadow-md shadow-teal-500/10 scale-[1.02]"
+                  ? "bg-[#36E08F] text-white shadow-md shadow-teal-500/10 scale-[1.02]"
                   : "text-slate-600 hover:bg-slate-200/60 hover:text-slate-800"
               }`}
             >
@@ -134,9 +134,9 @@ export function SurveyConfigClient({
           )}
         </div>
 
-        <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-[#00A99D]/5 rounded-xl border border-[#00A99D]/10">
-          <span className="w-2 h-2 rounded-full bg-[#00A99D] animate-ping" />
-          <span className="text-[11px] font-bold text-[#00A99D] uppercase tracking-wider">
+        <div className="hidden lg:flex items-center gap-2 px-4 py-2 bg-[#36E08F]/5 rounded-xl border border-[#36E08F]/10">
+          <span className="w-2 h-2 rounded-full bg-[#36E08F] animate-ping" />
+          <span className="text-[11px] font-bold text-[#36E08F] uppercase tracking-wider">
             Trình quản lý Cấu hình Khảo sát
           </span>
         </div>

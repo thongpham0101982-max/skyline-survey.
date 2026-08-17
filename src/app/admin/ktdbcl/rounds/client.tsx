@@ -27,7 +27,7 @@ const getRoundIconAndColor = (code: string, name: string) => {
   if (cleanCode.includes("QUOC_TE") || cleanName.includes("quốc tế")) {
     return { Icon: Globe, bg: "bg-violet-50 text-violet-600 border-violet-100/50" }
   }
-  return { Icon: Flag, bg: "bg-teal-50 text-[#00A99D] border-teal-100/50" }
+  return { Icon: Flag, bg: "bg-teal-50 text-[#36E08F] border-teal-100/50" }
 }
 
 export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientProps) {
@@ -129,7 +129,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/60 shadow-2xs">
         <div className="space-y-1">
           <h3 className="font-black text-slate-800 text-sm flex items-center gap-2">
-            <Flag className="w-4 h-4 text-[#00A99D]" />
+            <Flag className="w-4 h-4 text-[#36E08F]" />
             Danh Sách Vòng Thi ({displayRounds.length})
           </h3>
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">
@@ -138,7 +138,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
         </div>
         <button
           onClick={openCreate}
-          className="flex items-center justify-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#00A99D]/15 transition-all text-xs cursor-pointer shrink-0"
+          className="flex items-center justify-center gap-2 bg-[#36E08F] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#36E08F]/15 transition-all text-xs cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           Tạo Vòng Thi Mới
@@ -148,7 +148,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
       {/* Table of Redesigned Round Rows */}
       {displayRounds.length === 0 ? (
         <div className="bg-white border border-slate-200/60 rounded-2xl flex flex-col items-center justify-center py-20 text-slate-400 shadow-2xs">
-          <Flag className="w-16 h-16 mb-4 opacity-20 text-[#00A99D]" />
+          <Flag className="w-16 h-16 mb-4 opacity-20 text-[#36E08F]" />
           <p className="font-bold text-slate-700 text-base mb-1">Chưa có vòng thi nào</p>
           <p className="text-xs text-slate-400 font-medium">Nhấn "Tạo Vòng Thi Mới" để bắt đầu thiết lập.</p>
         </div>
@@ -186,7 +186,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                         {round.description || <span className="text-slate-300 italic font-normal">Chưa có mô tả</span>}
                       </td>
                       <td className="py-4 px-4 text-center">
-                        <span className="bg-teal-50 text-[#00A99D] border border-teal-100/50 text-[10px] px-2.5 py-0.5 rounded-full font-black">
+                        <span className="bg-teal-50 text-[#36E08F] border border-teal-100/50 text-[10px] px-2.5 py-0.5 rounded-full font-black">
                           {examCount} kỳ thi
                         </span>
                       </td>
@@ -222,7 +222,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white px-6 py-4 flex items-center justify-between shrink-0">
+            <div className="bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white px-6 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Flag className="w-5 h-5 text-teal-300" />
                 <h3 className="font-black text-sm">Tạo Vòng Thi Mới</h3>
@@ -253,7 +253,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                   value={newForm.name}
                   onChange={e => setNewForm({ ...newForm, name: e.target.value })}
                   placeholder="Ví dụ: Vòng trường, Vòng Quận, Vòng Thành phố..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -266,7 +266,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                   value={newForm.code}
                   onChange={e => setNewForm({ ...newForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
                   placeholder="Ví dụ: VONG_CS_TRUONG"
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -276,7 +276,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                   value={newForm.description}
                   onChange={e => setNewForm({ ...newForm, description: e.target.value })}
                   placeholder="Nhập mô tả chi tiết..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                   rows={3}
                 />
               </div>
@@ -293,7 +293,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
               <button
                 onClick={handleCreate}
                 disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#00A99D] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#00A99D]/15 transition-all disabled:opacity-60 cursor-pointer"
+                className="px-6 py-2.5 bg-gradient-to-r from-[#36E08F] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#36E08F]/15 transition-all disabled:opacity-60 cursor-pointer"
               >
                 {saving ? "Đang lưu..." : "Lưu Vòng Thi"}
               </button>
@@ -307,7 +307,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white px-6 py-4 flex items-center justify-between shrink-0">
+            <div className="bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white px-6 py-4 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Flag className="w-5 h-5 text-teal-300" />
                 <h3 className="font-black text-sm">Chỉnh Sửa Vòng Thi</h3>
@@ -335,7 +335,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                   type="text"
                   value={editForm.name}
                   onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -345,7 +345,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                   type="text"
                   value={editForm.code}
                   onChange={e => setEditForm({ ...editForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -354,7 +354,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
                 <textarea
                   value={editForm.description}
                   onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                   rows={3}
                 />
               </div>
@@ -371,7 +371,7 @@ export function RoundsClient({ initialRounds, academicYears }: ExamRoundClientPr
               <button
                 onClick={() => handleSaveEdit(editingId)}
                 disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#00A99D] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#00A99D]/15 transition-all disabled:opacity-60 cursor-pointer"
+                className="px-6 py-2.5 bg-gradient-to-r from-[#36E08F] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#36E08F]/15 transition-all disabled:opacity-60 cursor-pointer"
               >
                 {saving ? "Đang lưu..." : "Lưu Thay Đổi"}
               </button>

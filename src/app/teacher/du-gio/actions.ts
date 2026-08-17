@@ -560,7 +560,7 @@ export async function createObservationSlot(data: {
         const emailSubject = `[Skyline - Dự Giờ] Tiết dạy mới: ${newSlot.subjectName} - ${currentTeacher.teacherName}`;
         const emailHtml = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-            <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+            <div style="background-color: #36E08F; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
               <h2 style="color: #ffffff; margin: 0; font-size: 18px;">TIẾT DẠY DỰ GIỜ MỚI Trong TỔ CHUYÊN MÔN</h2>
             </div>
             <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô trong <strong>Tổ chuyên môn</strong>,</p>
@@ -568,7 +568,7 @@ export async function createObservationSlot(data: {
             
             <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${currentTeacher.teacherName} (${currentTeacher.teacherCode})</td></tr>
-              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${newSlot.topic}</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #36E08F; font-weight: bold;">${newSlot.topic}</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.subjectName} (${newSlot.grade} - ${newSlot.className || "Lớp học"})</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${newSlot.campusName || "Trường"} - ${newSlot.room || "Phòng học"}</td></tr>
               <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
@@ -576,7 +576,7 @@ export async function createObservationSlot(data: {
             </table>
 
             <div style="text-align: center; margin: 25px 0;">
-              <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Đăng Ký Dự Giờ Ngay Trực Tiếp Trên Skyline</a>
+              <a href="${linkUrl}" style="background-color: #36E08F; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Đăng Ký Dự Giờ Ngay Trực Tiếp Trên Skyline</a>
             </div>
             
             <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
@@ -679,7 +679,7 @@ export async function createObservationSlot(data: {
         if (data.sendEmailNotif !== false && hostEmail && hostEmail.includes("@")) {
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #00A99D; margin-top: 0;">Thông Báo Đề Xuất Xin Dự Giờ</h2>
+              <h2 style="color: #36E08F; margin-top: 0;">Thông Báo Đề Xuất Xin Dự Giờ</h2>
               <p>Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
               <p>Thầy/Cô <strong>${observerTeacher.teacherName}</strong> vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.</p>
               <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
@@ -793,7 +793,7 @@ export async function registerObservation(slotId: string) {
         if (hostEmail && hostEmail.includes("@")) {
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-              <h2 style="color: #00A99D; margin-top: 0;">Thông Báo Đăng Ký Dự Giờ</h2>
+              <h2 style="color: #36E08F; margin-top: 0;">Thông Báo Đăng Ký Dự Giờ</h2>
               <p>Kính gửi Thầy/Cô <strong>${slot.teacher.teacherName}</strong>,</p>
               <p>Thầy/Cô <strong>${currentTeacher.teacherName}</strong> vừa đăng ký tiết dạy của bạn, vui lòng đăng nhập hệ thống và xác nhận.</p>
               <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
@@ -1481,7 +1481,7 @@ export async function requestObservationSlot(data: {
         if (hostEmail && hostEmail.includes("@")) {
           const emailHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-              <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+              <div style="background-color: #36E08F; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
                 <h2 style="color: #ffffff; margin: 0; font-size: 18px;">ĐỀ XUẤT XIN DỰ GIỜ MỚI (TAG 2 - GVBM)</h2>
               </div>
               <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
@@ -1489,7 +1489,7 @@ export async function requestObservationSlot(data: {
               
               <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
                 <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên xin dự giờ:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${observerTeacher.teacherName} (${observerTeacher.teacherCode})</td></tr>
-                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Giáo viên được chọn dạy:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Giáo viên được chọn dạy:</td><td style="padding: 10px 14px; color: #36E08F; font-weight: bold;">${hostTeacher.teacherName} (${hostTeacher.teacherCode})</td></tr>
                 <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #0f172a;">${data.topic || "Đề xuất xin dự giờ tiết học"}</td></tr>
                 <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Khối lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${data.subjectName || "Môn học"} (${data.level || ""} ${data.grade || ""} - ${data.className || "Lớp"})</td></tr>
                 <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDate}</td></tr>
@@ -1497,7 +1497,7 @@ export async function requestObservationSlot(data: {
               </table>
 
               <div style="text-align: center; margin: 25px 0;">
-                <a href="https://skyline-survey.vercel.app/teacher/du-gio?tab=duoc-xin-du" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem & Phê Duyệt Ngay Trên Skyline</a>
+                <a href="https://skyline-survey.vercel.app/teacher/du-gio?tab=duoc-xin-du" style="background-color: #36E08F; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem & Phê Duyệt Ngay Trên Skyline</a>
               </div>
               
               <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
@@ -1611,7 +1611,7 @@ export async function requestObservationSlot(data: {
           if (teacherEmail && teacherEmail.includes("@")) {
             const emailHtml = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
-                <h2 style="color: #00A99D; margin-top: 0;">Thông Báo Tiết Dạy Đăng Ký Dự Giờ Mới (Tổ Chuyên Môn)</h2>
+                <h2 style="color: #36E08F; margin-top: 0;">Thông Báo Tiết Dạy Đăng Ký Dự Giờ Mới (Tổ Chuyên Môn)</h2>
                 <p>Kính gửi Thầy/Cô <strong>${t.teacherName}</strong>,</p>
                 <p>Thầy/Cô <strong>${currentTeacher.teacherName}</strong> thuộc Tổ Chuyên Môn vừa khởi tạo tiết dạy đăng ký dự giờ. Kính mời Thầy/Cô đăng nhập hệ thống để đăng ký dự giờ.</p>
                 <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">

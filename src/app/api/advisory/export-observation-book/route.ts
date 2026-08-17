@@ -175,14 +175,14 @@ export async function GET(req: Request) {
       margin: 12mm 15mm 15mm 15mm;
       @bottom-right {
         content: "Trang " counter(page) " / " counter(pages);
-        font-family: 'Be Vietnam Pro', sans-serif;
+        font-family: 'Open Sans', sans-serif;
         font-size: 9pt;
         font-weight: 600;
         color: #64748B;
       }
       @bottom-left {
         content: "Sky-Line Education System • Sổ Quan Sát Cố Vấn Học Tập";
-        font-family: 'Be Vietnam Pro', sans-serif;
+        font-family: 'Open Sans', sans-serif;
         font-size: 9pt;
         font-weight: 600;
         color: #64748B;
@@ -191,7 +191,7 @@ export async function GET(req: Request) {
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       color: #0F172A;
       background: #FFFFFF;
       line-height: 1.45;

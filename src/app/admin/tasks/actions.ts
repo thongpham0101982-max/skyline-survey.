@@ -160,7 +160,7 @@ export async function createTask(data: any) {
               <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; padding: 32px 16px; color: #1e293b;">
                 <div style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;">
                   
-                  <div style="background: linear-gradient(135deg, ${task.isImportant ? '#dc2626' : '#00A99D'}, ${task.isImportant ? '#991b1b' : '#007A72'}); padding: 32px 28px; text-align: center; color: #ffffff;">
+                  <div style="background: linear-gradient(135deg, ${task.isImportant ? '#dc2626' : '#36E08F'}, ${task.isImportant ? '#991b1b' : '#007A72'}); padding: 32px 28px; text-align: center; color: #ffffff;">
                     <span style="background: rgba(255,255,255,0.2); padding: 4px 14px; border-radius: 99px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; display: inline-block; margin-bottom: 12px;">
                       ${task.isImportant ? '⚠️ QUAN TRỌNG / KHẨN CẤP' : 'CÔNG VIỆC MỚI ĐƯỢC GIAO'}
                     </span>
@@ -175,11 +175,11 @@ export async function createTask(data: any) {
                       Vui lòng xem thông tin bên dưới và bấm nút <strong>Xác nhận nhận việc</strong> để tiếp nhận công việc.
                     </p>
                     
-                    <div style="background-color: #f8fafc; border-left: 4px solid ${task.isImportant ? '#dc2626' : '#00A99D'}; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #e2e8f0; border-left-width: 4px;">
+                    <div style="background-color: #f8fafc; border-left: 4px solid ${task.isImportant ? '#dc2626' : '#36E08F'}; border-radius: 12px; padding: 20px; margin: 24px 0; border: 1px solid #e2e8f0; border-left-width: 4px;">
                       <table style="width: 100%; border-collapse: collapse;">
                         <tr>
                           <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; width: 130px; text-transform: uppercase;">Danh mục:</td>
-                          <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: ${task.isImportant ? '#dc2626' : '#00A99D'};">${task.category || "Công việc"}</td>
+                          <td style="padding: 6px 0; font-size: 14px; font-weight: 700; color: ${task.isImportant ? '#dc2626' : '#36E08F'};">${task.category || "Công việc"}</td>
                         </tr>
                         <tr>
                           <td style="padding: 6px 0; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase;">Người giao:</td>
@@ -200,7 +200,7 @@ export async function createTask(data: any) {
 
                     <div style="text-align: center; margin: 28px 0 12px 0;">
                       <a href="${appUrl}/admin/tasks?taskId=${task.id}&action=confirm" 
-                         style="background-color: ${task.isImportant ? '#dc2626' : '#00A99D'}; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
+                         style="background-color: ${task.isImportant ? '#dc2626' : '#36E08F'}; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
                          ✅ Xác Nhận Nhận Việc Ngay
                       </a>
                     </div>
@@ -548,7 +548,7 @@ export async function remindTask(id: string) {
           const emailHtml = `
             <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 40px 20px; color: #334155; line-height: 1.6;">
               <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
-                <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; padding: 28px; text-align: center;">
+                <div style="background-color: ${task.isImportant ? '#ef4444' : '#36E08F'}; padding: 28px; text-align: center;">
                   <h2 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 700;">NHẮC NHỞ CÔNG VIỆC</h2>
                   <p style="color: #ffffff; margin: 6px 0 0 0; font-size: 13px; opacity: 0.9;">Hệ thống Điều hành Công việc Skyline</p>
                 </div>
@@ -557,13 +557,13 @@ export async function remindTask(id: string) {
                   <p style="margin-top: 0; font-size: 15px;">Xin chào <strong>${u.fullName}</strong>,</p>
                   <p style="font-size: 14px; color: #475569;">Bạn nhận được nhắc nhở thực hiện công việc từ ban điều hành:</p>
                   
-                  <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#00A99D'}; border-radius: 8px; padding: 18px; margin: 20px 0;">
+                  <div style="background-color: #f1f5f9; border-left: 4px solid ${task.isImportant ? '#ef4444' : '#36E08F'}; border-radius: 8px; padding: 18px; margin: 20px 0;">
                     <p style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">${task.title}</p>
                     <p style="margin: 6px 0 0 0; font-size: 13px; color: #64748b;">Hạn chót: <strong style="color: #ef4444;">${formattedDate}</strong></p>
                   </div>
                   
                   <div style="text-align: center; margin: 28px 0 12px 0;">
-                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; display: inline-block;">Cập nhật tiến độ ngay</a>
+                    <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: ${task.isImportant ? '#ef4444' : '#36E08F'}; color: #ffffff; text-decoration: none; padding: 12px 32px; border-radius: 10px; font-size: 14px; font-weight: 700; display: inline-block;">Cập nhật tiến độ ngay</a>
                   </div>
                 </div>
               </div>
@@ -674,17 +674,17 @@ export async function checkAndNotifyUpcomingTasks() {
                 const emailHtml = `
                   <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 32px 16px; color: #334155;">
                     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
-                      <div style="background-color: ${task.isImportant ? '#ef4444' : '#00A99D'}; padding: 24px; text-align: center; color: #ffffff;">
+                      <div style="background-color: ${task.isImportant ? '#ef4444' : '#36E08F'}; padding: 24px; text-align: center; color: #ffffff;">
                         <h2 style="margin: 0; font-size: 20px; font-weight: 700;">THÔNG BÁO HẠN CHÓT ${reminderType}</h2>
                       </div>
                       <div style="padding: 24px;">
                         <p style="margin-top: 0;">Xin chào <strong>${u.fullName}</strong>,</p>
                         <p>Công việc được giao cho bạn sắp đến hạn chót vào ngày <strong>${formattedDate}</strong>:</p>
-                        <div style="background-color: #f1f5f9; border-left: 4px solid #00A99D; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                        <div style="background-color: #f1f5f9; border-left: 4px solid #36E08F; padding: 16px; border-radius: 8px; margin: 16px 0;">
                           <p style="margin: 0; font-weight: 700;">${task.title}</p>
                         </div>
                         <div style="text-align: center; margin-top: 24px;">
-                          <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: #00A99D; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; display: inline-block;">Xem công việc</a>
+                          <a href="${appUrl}/admin/tasks?taskId=${task.id}" style="background-color: #36E08F; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-weight: 700; display: inline-block;">Xem công việc</a>
                         </div>
                       </div>
                     </div>

@@ -327,7 +327,7 @@ export function ImportMappingClient({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
             <h3 className="text-sm font-bold text-slate-805 flex items-center gap-2">
-              <Settings className="w-4 h-4 text-[#00A99D]" />
+              <Settings className="w-4 h-4 text-[#36E08F]" />
               Thiết lập Cấu hình Ánh xạ
             </h3>
             <p className="text-slate-400 text-xs font-semibold">Chọn năm học và tải lên file Excel chứa danh sách ánh xạ mã.</p>
@@ -336,7 +336,7 @@ export function ImportMappingClient({
             <select 
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none focus:border-[#00A99D]"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-700 outline-none focus:border-[#36E08F]"
             >
               {academicYears.map((y: any) => (
                 <option key={y.id} value={y.id}>{y.name}</option>
@@ -346,7 +346,7 @@ export function ImportMappingClient({
         </div>
 
         {/* Upload Zone */}
-        <div className="mt-6 border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-[#00A99D]/60 transition-colors bg-slate-50/50">
+        <div className="mt-6 border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-[#36E08F]/60 transition-colors bg-slate-50/50">
           <Upload className="w-8 h-8 text-slate-300 mx-auto mb-3" />
           <p className="text-xs font-bold text-slate-700">Kéo thả hoặc Click chọn tệp Excel danh sách đối chiếu</p>
           <p className="text-[10px] text-slate-400 font-medium mt-1">Định dạng hỗ trợ: .xls, .xlsx, .csv</p>
@@ -359,7 +359,7 @@ export function ImportMappingClient({
           />
           <label 
             htmlFor="excel-mapping-upload"
-            className="mt-4 inline-flex bg-[#00A99D] hover:bg-[#008d83] text-white text-xs font-bold py-2 px-6 rounded-xl shadow-xs cursor-pointer"
+            className="mt-4 inline-flex bg-[#36E08F] hover:bg-[#008d83] text-white text-xs font-bold py-2 px-6 rounded-xl shadow-xs cursor-pointer"
           >
             Chọn File Excel
           </label>
@@ -408,7 +408,7 @@ export function ImportMappingClient({
               <select 
                 value={dbCodeCol}
                 onChange={(e) => setDbCodeCol(parseInt(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none border-[#00A99D]/40"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none border-[#36E08F]/40"
               >
                 <option value="-1">-- Chọn cột --</option>
                 {columns.map((c, i) => <option key={i} value={i}>{c}</option>)}
@@ -419,7 +419,7 @@ export function ImportMappingClient({
               <select 
                 value={markCodeCol}
                 onChange={(e) => setMarkCodeCol(parseInt(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none border-[#00A99D]/40"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none border-[#36E08F]/40"
               >
                 <option value="-1">-- Chọn cột --</option>
                 {columns.map((c, i) => <option key={i} value={i}>{c}</option>)}
@@ -431,7 +431,7 @@ export function ImportMappingClient({
           <div className="border border-slate-100 rounded-2xl overflow-hidden mt-6">
             <div className="bg-slate-50 px-4 py-3 border-b border-slate-100 flex justify-between items-center text-xs font-bold text-slate-700">
               <span>Xem trước dữ liệu ánh xạ ({parsedRows.length} hàng)</span>
-              <span className="text-[#00A99D]">Chỉ hàng Hợp lệ mới được lưu</span>
+              <span className="text-[#36E08F]">Chỉ hàng Hợp lệ mới được lưu</span>
             </div>
             <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
               <table className="w-full text-xs text-left border-collapse">
@@ -478,7 +478,7 @@ export function ImportMappingClient({
               type="button"
               onClick={runImport}
               disabled={importing}
-              className="bg-[#00A99D] hover:bg-[#008d83] text-white text-xs font-bold py-2.5 px-8 rounded-xl flex items-center justify-center gap-2 shadow-md disabled:bg-slate-300"
+              className="bg-[#36E08F] hover:bg-[#008d83] text-white text-xs font-bold py-2.5 px-8 rounded-xl flex items-center justify-center gap-2 shadow-md disabled:bg-slate-300"
             >
               <Play className="w-4 h-4" />
               Lưu Ánh xạ Mã Học sinh
@@ -524,14 +524,14 @@ export function ImportMappingClient({
               placeholder="Tìm kiếm Mã HS hoặc Mã vnEdu..."
               value={existingSearch}
               onChange={(e) => setExistingSearch(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-700 outline-none focus:border-[#00A99D]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-1.5 text-xs text-slate-700 outline-none focus:border-[#36E08F]"
             />
           </div>
         </div>
 
         {loadingExisting ? (
           <div className="text-center py-12">
-            <RefreshCw className="w-6 h-6 text-[#00A99D] animate-spin mx-auto mb-2" />
+            <RefreshCw className="w-6 h-6 text-[#36E08F] animate-spin mx-auto mb-2" />
             <span className="text-xs font-semibold text-slate-400">Đang tải danh sách ánh xạ...</span>
           </div>
         ) : filteredExisting.length === 0 ? (

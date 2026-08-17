@@ -151,20 +151,20 @@ export function LoginClient() {
             <div className="flex justify-center mb-6">
               <div className="relative w-16 h-16">
                 <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
-                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#00A99D] animate-spin" />
+                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#36E08F] animate-spin" />
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <GraduationCap className="w-7 h-7 text-[#00A99D]" />
+                  <GraduationCap className="w-7 h-7 text-[#36E08F]" />
                 </div>
               </div>
             </div>
             <h3 className="text-center text-lg font-extrabold text-[#003B3A] mb-0.5">Đang đăng nhập</h3>
-            <p className="text-center text-xs text-[#00A99D] font-black mb-6 uppercase tracking-wider">{roleLabel}</p>
+            <p className="text-center text-xs text-[#36E08F] font-black mb-6 uppercase tracking-wider">{roleLabel}</p>
             <div className="space-y-3">
               {(loadingSteps as any[]).map((step: any, i: number) => (
                 <div key={i} className="flex items-center gap-3 px-2">
                   {step.done
                     ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                    : <Loader2 className="w-5 h-5 text-[#00A99D] shrink-0 animate-spin" />}
+                    : <Loader2 className="w-5 h-5 text-[#36E08F] shrink-0 animate-spin" />}
                   <span className={`text-xs font-semibold ${step.done ? 'text-slate-400 line-through opacity-70' : 'text-[#003B3A]'}`}>
                     {step.text}
                   </span>
@@ -176,7 +176,7 @@ export function LoginClient() {
       )}
 
       {/* Main split-screen layout (Image 2 style) */}
-      <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F7FAFA] font-sans selection:bg-[#00A99D] selection:text-white relative overflow-hidden">
+      <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#F7FAFA] font-sans selection:bg-[#36E08F] selection:text-white relative overflow-hidden">
 
         {/* LEFT PANEL: Ultra-sleek Image 2 Brand Showcase */}
         <div className="w-full md:w-[48%] xl:w-[50%] flex flex-col justify-between p-8 sm:p-12 xl:p-16 bg-[#003B3A] relative select-none overflow-hidden min-h-[380px] md:min-h-screen">
@@ -188,7 +188,7 @@ export function LoginClient() {
           <SkyLineSwooshBg />
 
           {/* School Building & Sky-Line Checkmark Watermark (Bottom Right, Image 2 style) */}
-          <div className="absolute bottom-0 right-0 w-[90%] md:w-[85%] h-[60%] text-[#00A99D]/25 opacity-70 pointer-events-none flex items-end justify-end">
+          <div className="absolute bottom-0 right-0 w-[90%] md:w-[85%] h-[60%] text-[#36E08F]/25 opacity-70 pointer-events-none flex items-end justify-end">
             <SchoolLineArt className="w-full h-full object-contain" />
           </div>
 
@@ -214,7 +214,7 @@ export function LoginClient() {
             {/* 3 Glowing Status Dots (Image 2 style) */}
             <div className="flex items-center gap-2 mt-1">
               <span className="w-2.5 h-2.5 rounded-full bg-[#00D2C4] animate-pulse" />
-              <span className="w-2.5 h-2.5 rounded-full bg-[#00A99D]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#36E08F]" />
               <span className="w-2.5 h-2.5 rounded-full bg-[#007068]" />
             </div>
 
@@ -235,7 +235,7 @@ export function LoginClient() {
 
           {/* Soft background Swoosh vector lines */}
           <svg className="absolute inset-0 w-full h-full opacity-40 pointer-events-none" viewBox="0 0 1000 1000" fill="none">
-            <path d="M400 -100 C 700 200, 900 600, 1100 1100" stroke="#00A99D" strokeWidth="60" opacity="0.03" strokeLinecap="round" />
+            <path d="M400 -100 C 700 200, 900 600, 1100 1100" stroke="#36E08F" strokeWidth="60" opacity="0.03" strokeLinecap="round" />
             <path d="M600 -100 C 850 300, 950 700, 1150 1100" stroke="#00D2C4" strokeWidth="40" opacity="0.04" strokeLinecap="round" />
           </svg>
 

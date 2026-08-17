@@ -134,14 +134,14 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
             value={searchVal}
             onChange={e => setSearchVal(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleFilter()}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none text-sm font-semibold transition-all bg-white"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none text-sm font-semibold transition-all bg-white"
           />
         </div>
         <div className="w-full lg:w-48">
           <select 
             value={roleVal} 
             onChange={e => setRoleVal(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-bold cursor-pointer"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none bg-white transition-all font-bold cursor-pointer"
           >
             <option value="">-- Nhóm quyền --</option>
             {roles.map((r: any) => (
@@ -153,7 +153,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
           <select 
             value={actionVal} 
             onChange={e => setActionVal(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-bold cursor-pointer"
+            className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none bg-white transition-all font-bold cursor-pointer"
           >
             <option value="">-- Tất cả Hoạt động --</option>
             {actions.map((act: string) => (
@@ -164,7 +164,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
         <div className="flex gap-2 w-full lg:w-auto">
           <button 
             onClick={handleFilter}
-            className="px-5 py-2.5 bg-[#00A99D] hover:bg-[#009186] text-white font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer whitespace-nowrap"
+            className="px-5 py-2.5 bg-[#36E08F] hover:bg-[#009186] text-white font-bold rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer whitespace-nowrap"
           >
             <Filter className="w-4 h-4" /> Lọc
           </button>
@@ -260,7 +260,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                     {(log.oldValues || (log.newValues && (log.newValues.startsWith("{") || log.newValues.startsWith("[")))) ? (
                       <button 
                         onClick={() => setDetailsLog(log)}
-                        className="p-1 text-slate-400 hover:text-[#00A99D] hover:bg-slate-100 rounded transition-all cursor-pointer inline-flex items-center justify-center"
+                        className="p-1 text-slate-400 hover:text-[#36E08F] hover:bg-slate-100 rounded transition-all cursor-pointer inline-flex items-center justify-center"
                         title="Xem chi tiết thay đổi"
                       >
                         <Eye className="w-4 h-4" />
@@ -303,7 +303,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                   onClick={() => handlePageChange(pNum)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     page === pNum 
-                      ? "bg-[#00A99D] text-white" 
+                      ? "bg-[#36E08F] text-white" 
                       : "border border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
                   }`}
                 >
@@ -362,7 +362,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                     }}
                     className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                       cleanupMode === "before_days" && cleanupDays === 7
-                        ? "border-[#00A99D] bg-[#00A99D]/5 text-[#00A99D] font-bold"
+                        ? "border-[#36E08F] bg-[#36E08F]/5 text-[#36E08F] font-bold"
                         : "border-slate-200 text-slate-600 font-semibold hover:bg-slate-50"
                     }`}
                   >
@@ -376,7 +376,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                     }}
                     className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                       cleanupMode === "before_days" && cleanupDays === 30
-                        ? "border-[#00A99D] bg-[#00A99D]/5 text-[#00A99D] font-bold"
+                        ? "border-[#36E08F] bg-[#36E08F]/5 text-[#36E08F] font-bold"
                         : "border-slate-200 text-slate-600 font-semibold hover:bg-slate-50"
                     }`}
                   >
@@ -390,7 +390,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                     }}
                     className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
                       cleanupMode === "before_days" && cleanupDays === 90
-                        ? "border-[#00A99D] bg-[#00A99D]/5 text-[#00A99D] font-bold"
+                        ? "border-[#36E08F] bg-[#36E08F]/5 text-[#36E08F] font-bold"
                         : "border-slate-200 text-slate-600 font-semibold hover:bg-slate-50"
                     }`}
                   >
@@ -416,7 +416,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs font-semibold space-y-2 text-slate-700">
                 {isLoadingPreview ? (
                   <div className="flex items-center gap-2 justify-center py-2 text-slate-400">
-                    <Loader2 className="w-4 h-4 animate-spin text-[#00A99D]" />
+                    <Loader2 className="w-4 h-4 animate-spin text-[#36E08F]" />
                     <span>Đang tính toán số lượng bản ghi...</span>
                   </div>
                 ) : (
@@ -471,7 +471,7 @@ export function LogsClient({ initialLogs, total, page, limit, search, selectedAc
                 className={`px-5 py-2 font-bold rounded-xl transition-all cursor-pointer text-xs flex items-center gap-1.5 ${
                   cleanupMode === "all"
                     ? "bg-rose-600 hover:bg-rose-750 text-white disabled:opacity-40"
-                    : "bg-[#00A99D] hover:bg-[#009186] text-white disabled:opacity-40"
+                    : "bg-[#36E08F] hover:bg-[#009186] text-white disabled:opacity-40"
                 }`}
                 disabled={isDeleting || (cleanupMode === "all" && !confirmChecked) || (cleanupMode === "before_days" && previewBeforeCount === 0)}
               >

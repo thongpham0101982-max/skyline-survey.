@@ -194,7 +194,7 @@ export default async function ParentSurveysPage() {
                     <div className="p-3.5 rounded-2xl bg-white border border-slate-200/80 mb-4 space-y-1 text-xs">
                       <div className="flex justify-between text-slate-700 font-bold">
                         <span>Học sinh:</span>
-                        <span className="text-[#00A99D] font-extrabold">{task.student?.studentName || 'Học sinh'}</span>
+                        <span className="text-[#36E08F] font-extrabold">{task.student?.studentName || 'Học sinh'}</span>
                       </div>
                       <div className="flex justify-between text-slate-500 font-semibold">
                         <span>Lớp & Cơ sở:</span>

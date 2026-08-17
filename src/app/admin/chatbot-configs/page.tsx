@@ -10,7 +10,7 @@ export default async function ChatbotConfigsPage() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-[#00A99D] rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
+        <div className="w-12 h-12 bg-[#36E08F] rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
           <MessageSquareText className="w-6 h-6 text-white" />
         </div>
         <div>

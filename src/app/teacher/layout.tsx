@@ -51,7 +51,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
           <div className="flex items-center gap-4">
             <MobileMenuTrigger />
             <div className="hidden md:flex text-sm font-medium text-slate-500">
-              <span className="text-[#00A99D] font-bold">Giáo viên</span>
+              <span className="text-[#36E08F] font-bold">Giáo viên</span>
             </div>
           </div>
           <div className="flex items-center gap-4">

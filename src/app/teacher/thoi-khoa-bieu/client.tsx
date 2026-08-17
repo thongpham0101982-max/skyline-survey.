@@ -291,7 +291,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
   return (
     <div className="space-y-4 max-w-7xl mx-auto pb-10 font-sans text-slate-800">
       {/* Compact Header Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#00A99D] rounded-2xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#36E08F] rounded-2xl p-4 sm:p-5 text-white shadow-lg relative overflow-hidden">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-teal-200 shrink-0 shadow-sm">
@@ -385,7 +385,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
           <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-200 space-y-3">
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-[#00A99D]" />
+                <Filter className="w-4 h-4 text-[#36E08F]" />
                 <h3 className="font-extrabold text-xs text-slate-800 uppercase tracking-wider">Bộ lọc Tra cứu Tiết dạy</h3>
               </div>
 
@@ -394,7 +394,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   <button
                     onClick={() => setViewMode("GRID")}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      viewMode === "GRID" ? "bg-white text-[#00A99D] shadow-xs" : "text-slate-500 hover:text-slate-800"
+                      viewMode === "GRID" ? "bg-white text-[#36E08F] shadow-xs" : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
                     <Grid className="w-3.5 h-3.5" />
@@ -403,7 +403,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   <button
                     onClick={() => setViewMode("LIST")}
                     className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                      viewMode === "LIST" ? "bg-white text-[#00A99D] shadow-xs" : "text-slate-500 hover:text-slate-800"
+                      viewMode === "LIST" ? "bg-white text-[#36E08F] shadow-xs" : "text-slate-500 hover:text-slate-800"
                     }`}
                   >
                     <List className="w-3.5 h-3.5" />
@@ -428,7 +428,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                 <select
                   value={filterDay}
                   onChange={e => setFilterDay(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#36E08F] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả các thứ</option>
                   {DAYS_OF_WEEK.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
@@ -440,7 +440,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                 <select
                   value={filterSession}
                   onChange={e => setFilterSession(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#36E08F] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả các buổi</option>
                   <option value="MORNING">Buổi Sáng</option>
@@ -453,7 +453,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                 <select
                   value={filterPeriod}
                   onChange={e => setFilterPeriod(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#36E08F] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả tiết dạy</option>
                   {[1, 2, 3, 4].map(p => <option key={p} value={String(p)}>Tiết {p}</option>)}
@@ -465,7 +465,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                 <select
                   value={filterSubject}
                   onChange={e => setFilterSubject(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#36E08F] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả môn học</option>
                   {uniqueSubjects.map(s => <option key={s} value={s}>{s}</option>)}
@@ -477,7 +477,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                 <select
                   value={filterClass}
                   onChange={e => setFilterClass(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#36E08F] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả lớp học</option>
                   {uniqueClasses.map(c => <option key={c} value={c}>{c}</option>)}
@@ -489,7 +489,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                 <select
                   value={filterWeekType}
                   onChange={e => setFilterWeekType(e.target.value)}
-                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#00A99D] outline-none text-slate-800"
+                  className="w-full text-xs font-bold py-1.5 px-2.5 rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#36E08F] outline-none text-slate-800"
                 >
                   <option value="all">Tất cả các tuần</option>
                   <option value="EVEN">Tuần Chẵn</option>
@@ -504,13 +504,13 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
             <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
               <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Grid className="w-4 h-4 text-[#00A99D]" />
+                  <Grid className="w-4 h-4 text-[#36E08F]" />
                   <span className="font-black text-xs uppercase tracking-wider text-slate-800">
                     Ma trận Lịch dạy Tuần (Thứ 2 - Thứ 6)
                   </span>
                 </div>
                 <span className="text-[11px] font-extrabold text-slate-500">
-                  Hiển thị <strong className="text-[#00A99D]">{filteredMySlots.length}</strong> / {allMySlots.length} tiết
+                  Hiển thị <strong className="text-[#36E08F]">{filteredMySlots.length}</strong> / {allMySlots.length} tiết
                 </span>
               </div>
 
@@ -550,8 +550,8 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                 <div 
                                   className="h-full p-2 rounded-lg border border-slate-300/80 flex flex-col justify-between shadow-xs transition-all hover:scale-[1.02] hover:shadow-md hover:border-teal-500/60"
                                   style={{
-                                    backgroundColor: (slot.colorCode || "#00A99D") + "12",
-                                    borderColor: slot.colorCode || "#00A99D"
+                                    backgroundColor: (slot.colorCode || "#36E08F") + "12",
+                                    borderColor: slot.colorCode || "#36E08F"
                                   }}
                                 >
                                   <div>
@@ -568,7 +568,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   <div className="flex items-center justify-end pt-1">
                                     <Link
                                       href="/teacher/du-gio"
-                                      className="text-[10px] font-bold text-slate-500 hover:text-[#00A99D] flex items-center gap-0.5 transition-colors"
+                                      className="text-[10px] font-bold text-slate-500 hover:text-[#36E08F] flex items-center gap-0.5 transition-colors"
                                       title="Đăng ký dự giờ tiết này"
                                     >
                                       <span>Dự giờ</span>
@@ -607,8 +607,8 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                 <div 
                                   className="h-full p-2 rounded-lg border border-slate-300/80 flex flex-col justify-between shadow-xs transition-all hover:scale-[1.02] hover:shadow-md hover:border-teal-500/60"
                                   style={{
-                                    backgroundColor: (slot.colorCode || "#00A99D") + "12",
-                                    borderColor: slot.colorCode || "#00A99D"
+                                    backgroundColor: (slot.colorCode || "#36E08F") + "12",
+                                    borderColor: slot.colorCode || "#36E08F"
                                   }}
                                 >
                                   <div>
@@ -625,7 +625,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                                   <div className="flex items-center justify-end pt-1">
                                     <Link
                                       href="/teacher/du-gio"
-                                      className="text-[10px] font-bold text-slate-500 hover:text-[#00A99D] flex items-center gap-0.5 transition-colors"
+                                      className="text-[10px] font-bold text-slate-500 hover:text-[#36E08F] flex items-center gap-0.5 transition-colors"
                                       title="Đăng ký dự giờ tiết này"
                                     >
                                       <span>Dự giờ</span>
@@ -653,7 +653,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
               {/* Summary Cards by Subject */}
               <div className="lg:col-span-1 space-y-3">
                 <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                  <BookOpen className="w-4 h-4 text-[#36E08F]" />
                   <span>Thống kê theo Môn giảng dạy</span>
                 </h3>
 
@@ -661,7 +661,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   <div key={idx} className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs space-y-2">
                     <div className="flex items-center justify-between">
                       <h4 className="font-black text-sm text-slate-900">{sub.subjectName}</h4>
-                      <span className="bg-[#00A99D] text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-2xs">
+                      <span className="bg-[#36E08F] text-white font-black text-xs px-2.5 py-0.5 rounded-full shadow-2xs">
                         {sub.totalPeriods} tiết / tuần
                       </span>
                     </div>
@@ -687,7 +687,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
               {/* Detailed Slot Cards List */}
               <div className="lg:col-span-2 space-y-3">
                 <h3 className="font-black text-xs uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                  <List className="w-4 h-4 text-[#00A99D]" />
+                  <List className="w-4 h-4 text-[#36E08F]" />
                   <span>Danh sách Tiết dạy Chi tiết ({filteredMySlots.length})</span>
                 </h3>
 
@@ -707,7 +707,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
                         <div>
                           <h4 className="font-black text-sm text-slate-900">{slot.subjectName || "Chưa xếp môn"}</h4>
-                          <p className="text-xs font-extrabold text-[#00A99D] mt-0.5">Lớp: {slot.className}</p>
+                          <p className="text-xs font-extrabold text-[#36E08F] mt-0.5">Lớp: {slot.className}</p>
                         </div>
 
                         <div className="text-xs font-medium text-slate-600 space-y-0.5">
@@ -718,7 +718,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                         <div className="pt-2 border-t border-slate-100 flex justify-end">
                           <Link
                             href="/teacher/du-gio"
-                            className="text-xs font-bold text-[#00A99D] hover:text-[#003B3A] flex items-center gap-1"
+                            className="text-xs font-bold text-[#36E08F] hover:text-[#003B3A] flex items-center gap-1"
                           >
                             <span>Đăng ký dự giờ</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -741,7 +741,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             <div className="md:col-span-5 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Building2 className="w-3.5 h-3.5 text-[#36E08F]" />
                 1. Chọn Cơ Sở
               </label>
               <select
@@ -750,7 +750,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   setLookupCampusId(e.target.value);
                   setLookupClassId("");
                 }}
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] transition-all"
               >
                 <option value="">-- Tất cả Cơ sở --</option>
                 {initialData.campuses.map((c: any) => (
@@ -761,13 +761,13 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
             <div className="md:col-span-7 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Layers className="w-3.5 h-3.5 text-[#36E08F]" />
                 2. Chọn Lớp Học Cần Tra Cứu TKB
               </label>
               <select
                 value={lookupClassId}
                 onChange={e => setLookupClassId(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] transition-all"
               >
                 <option value="">-- Chọn Lớp học trong danh sách --</option>
                 {campusFilteredClasses.map((cls: any) => (
@@ -782,7 +782,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
           {/* CLASS INFO BADGE */}
           {selectedClassObj ? (
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black text-lg text-white">
                     {selectedClassObj.className?.charAt(0) || "L"}
@@ -837,7 +837,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                             <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#36E08F") + "15", borderColor: assignedSlot.colorCode || "#36E08F" }}
                                   className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
@@ -871,7 +871,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                             <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#36E08F") + "15", borderColor: assignedSlot.colorCode || "#36E08F" }}
                                   className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
@@ -909,7 +909,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
           <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             <div className="md:col-span-5 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Filter className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Filter className="w-3.5 h-3.5 text-[#36E08F]" />
                 1. Tổ Chuyên Môn
               </label>
               <select
@@ -918,7 +918,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   setLookupDept(e.target.value);
                   setLookupTeacherId("");
                 }}
-                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] transition-all"
               >
                 <option value="ALL">-- Tất cả Tổ chuyên môn --</option>
                 {uniqueDepartments.map(d => (
@@ -929,14 +929,14 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
 
             <div className="md:col-span-7 space-y-1">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Search className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Search className="w-3.5 h-3.5 text-[#36E08F]" />
                 2. Chọn / Tìm Giáo Viên
               </label>
               <div className="flex gap-2">
                 <select
                   value={lookupTeacherId}
                   onChange={e => setLookupTeacherId(e.target.value)}
-                  className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                  className="flex-1 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] transition-all"
                 >
                   <option value="">-- Chọn Giáo viên trong danh sách --</option>
                   {deptFilteredTeachers.map((t: any) => (
@@ -951,7 +951,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                   placeholder="Hoặc gõ tên GV..."
                   value={lookupSearchQuery}
                   onChange={e => setLookupSearchQuery(e.target.value)}
-                  className="w-40 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                  className="w-40 bg-white border border-slate-300 rounded-lg px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] transition-all"
                 />
               </div>
             </div>
@@ -960,7 +960,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
           {/* TEACHER INFO BADGE */}
           {selectedTeacherObj ? (
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white p-4 rounded-xl shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center font-black text-lg text-white">
                     {selectedTeacherObj.teacherName?.charAt(0) || "GV"}
@@ -1015,7 +1015,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                             <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#36E08F") + "15", borderColor: assignedSlot.colorCode || "#36E08F" }}
                                   className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
@@ -1049,7 +1049,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                             <td key={d.key} className="p-1.5 border-r border-slate-200 text-center vertical-top">
                               {assignedSlot ? (
                                 <div
-                                  style={{ backgroundColor: (assignedSlot.colorCode || "#00A99D") + "15", borderColor: assignedSlot.colorCode || "#00A99D" }}
+                                  style={{ backgroundColor: (assignedSlot.colorCode || "#36E08F") + "15", borderColor: assignedSlot.colorCode || "#36E08F" }}
                                   className="p-2 rounded-lg border shadow-2xs space-y-0.5 text-slate-900 font-bold"
                                 >
                                   <div className="text-xs font-black uppercase text-[#003B3A]">
@@ -1139,7 +1139,7 @@ export default function TeacherTimetableLookupClient({ initialData, mySlots = []
                         return (
                           <td key={c.id} className="p-1 border-r border-slate-200 last:border-r-0 text-center">
                             {slot ? (
-                              <div className="p-1 rounded border text-[11px] font-semibold" style={{ backgroundColor: (slot.colorCode || "#00A99D") + "15", borderColor: slot.colorCode || "#00A99D" }}>
+                              <div className="p-1 rounded border text-[11px] font-semibold" style={{ backgroundColor: (slot.colorCode || "#36E08F") + "15", borderColor: slot.colorCode || "#36E08F" }}>
                                 <p className="font-extrabold text-slate-900 truncate">{slot.subjectName}</p>
                                 <p className="text-[10px] text-slate-500 truncate">{slot.teacherName}</p>
                               </div>

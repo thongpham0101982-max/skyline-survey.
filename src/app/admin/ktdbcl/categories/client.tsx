@@ -24,7 +24,7 @@ const getCategoryIconAndColor = (code: string, name: string) => {
   if (cleanCode.includes("NT_TT") || cleanCode.includes("THE_THAO") || cleanName.includes("nghệ thuật") || cleanName.includes("thể thao") || cleanName.includes("âm nhạc") || cleanName.includes("mỹ thuật")) {
     return { Icon: Trophy, bg: "bg-gradient-to-br from-rose-500 to-pink-600 text-white shadow-md shadow-rose-500/20", badge: "bg-rose-50 text-rose-700 border-rose-200" }
   }
-  return { Icon: Tag, bg: "bg-gradient-to-br from-[#00A99D] to-[#008A81] text-white shadow-md shadow-teal-500/20", badge: "bg-teal-50 text-[#00A99D] border-teal-200" }
+  return { Icon: Tag, bg: "bg-gradient-to-br from-[#36E08F] to-[#008A81] text-white shadow-md shadow-teal-500/20", badge: "bg-teal-50 text-[#36E08F] border-teal-200" }
 }
 
 export function CategoriesClient({ initialCategories, academicYears }: ExamCategoryClientProps) {
@@ -149,7 +149,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
         {/* Card 2: Tổng số Kỳ thi */}
         <div className="bg-gradient-to-br from-teal-50/90 via-cyan-50/40 to-teal-100/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
           <div className="flex items-center justify-between mb-3">
-            <div className="p-3 bg-[#00A99D] text-white rounded-xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
+            <div className="p-3 bg-[#36E08F] text-white rounded-xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
               <Layers className="w-5 h-5" />
             </div>
           </div>
@@ -191,7 +191,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
         <div className="space-y-1">
           <h3 className="font-black text-slate-800 text-base flex items-center gap-2">
-            <Tag className="w-5 h-5 text-[#00A99D]" />
+            <Tag className="w-5 h-5 text-[#36E08F]" />
             Danh Sách Danh Mục Kỳ Thi ({displayCategories.length})
           </h3>
           <p className="text-slate-500 text-xs font-medium">
@@ -208,7 +208,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Tìm theo tên hoặc mã..."
-              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all text-slate-700"
+              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-slate-50/50 focus:bg-white focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none transition-all text-slate-700"
             />
             {searchQuery && (
               <button
@@ -222,7 +222,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
 
           <button
             onClick={openCreate}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#00A99D] to-[#009085] hover:opacity-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#00A99D]/20 transition-all text-xs cursor-pointer shrink-0"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#36E08F] to-[#009085] hover:opacity-95 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#36E08F]/20 transition-all text-xs cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             Tạo Danh Mục Mới
@@ -233,7 +233,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
       {/* Redesigned Table of Category Rows */}
       {displayCategories.length === 0 ? (
         <div className="bg-white border border-slate-200/80 rounded-2xl flex flex-col items-center justify-center py-20 text-slate-400 shadow-xs">
-          <Tag className="w-16 h-16 mb-4 opacity-20 text-[#00A99D]" />
+          <Tag className="w-16 h-16 mb-4 opacity-20 text-[#36E08F]" />
           <p className="font-bold text-slate-700 text-base mb-1">Không tìm thấy danh mục nào</p>
           <p className="text-xs text-slate-400 font-medium">Nhấn "Tạo Danh Mục Mới" để thêm danh mục mới vào hệ thống.</p>
         </div>
@@ -280,7 +280,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                         )}
                       </td>
                       <td className="py-4.5 px-5 text-center">
-                        <span className="bg-teal-50 text-[#00A99D] border border-teal-200/80 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs">
+                        <span className="bg-teal-50 text-[#36E08F] border border-teal-200/80 px-3 py-1 rounded-full text-xs font-extrabold shadow-2xs">
                           {examCount} kỳ thi
                         </span>
                       </td>
@@ -316,7 +316,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#00A99D] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
+            <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#36E08F] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <Tag className="w-5 h-5 text-teal-200" />
@@ -349,7 +349,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                   value={newForm.name}
                   onChange={e => setNewForm({ ...newForm, name: e.target.value })}
                   placeholder="Ví dụ: Công nghệ - Sáng tạo, Học thuật..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -362,7 +362,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                   value={newForm.code}
                   onChange={e => setNewForm({ ...newForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
                   placeholder="Ví dụ: CN_ST, HOC_THUAT..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -372,7 +372,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                   value={newForm.description}
                   onChange={e => setNewForm({ ...newForm, description: e.target.value })}
                   placeholder="Nhập mô tả chi tiết danh mục..."
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                   rows={3}
                 />
               </div>
@@ -389,7 +389,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
               <button
                 onClick={handleCreate}
                 disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#00A99D] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60 cursor-pointer"
+                className="px-6 py-2.5 bg-gradient-to-r from-[#36E08F] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#36E08F]/20 transition-all disabled:opacity-60 cursor-pointer"
               >
                 {saving ? "Đang lưu..." : "Lưu Danh Mục"}
               </button>
@@ -403,7 +403,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#00A99D] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
+            <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#36E08F] text-white px-6 py-4.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <Tag className="w-5 h-5 text-teal-200" />
@@ -433,7 +433,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                   type="text"
                   value={editForm.name}
                   onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -443,7 +443,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                   type="text"
                   value={editForm.code}
                   onChange={e => setEditForm({ ...editForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none font-mono transition-all font-semibold text-slate-700 bg-slate-50/50"
                 />
               </div>
 
@@ -452,7 +452,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
                 <textarea
                   value={editForm.description}
                   onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                   rows={3}
                 />
               </div>
@@ -469,7 +469,7 @@ export function CategoriesClient({ initialCategories, academicYears }: ExamCateg
               <button
                 onClick={() => handleSaveEdit(editingId)}
                 disabled={saving}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#00A99D] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60 cursor-pointer"
+                className="px-6 py-2.5 bg-gradient-to-r from-[#36E08F] to-[#009085] hover:opacity-95 text-white rounded-xl font-bold text-xs shadow-md shadow-[#36E08F]/20 transition-all disabled:opacity-60 cursor-pointer"
               >
                 {saving ? "Đang lưu..." : "Lưu Thay Đổi"}
               </button>

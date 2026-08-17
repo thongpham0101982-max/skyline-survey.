@@ -214,14 +214,14 @@ export default function ActivityResultInput() {
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-teal-50/30 flex justify-center items-center">
       <div className="text-center">
-        <Loader2 className="w-10 h-10 text-[#00A99D] animate-spin mx-auto mb-3" />
+        <Loader2 className="w-10 h-10 text-[#36E08F] animate-spin mx-auto mb-3" />
         <p className="text-slate-500 font-medium text-sm">Đang tải dữ liệu...</p>
       </div>
     </div>
   );
 
   const getSelectClass = (val: string) => {
-    const base = "w-full appearance-none text-xs font-bold rounded-xl focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] pl-3 pr-8 py-2.5 transition-all outline-none border ";
+    const base = "w-full appearance-none text-xs font-bold rounded-xl focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] pl-3 pr-8 py-2.5 transition-all outline-none border ";
     if (val) {
       return base + "bg-emerald-50/40 border-emerald-200/80 text-emerald-700";
     }
@@ -239,19 +239,19 @@ export default function ActivityResultInput() {
 
         {/* HEADER */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-          <div className="h-1 w-full bg-gradient-to-r from-[#00A99D] via-[#20C997] to-[#00BFB3]" />
+          <div className="h-1 w-full bg-gradient-to-r from-[#36E08F] via-[#20C997] to-[#00BFB3]" />
           <div className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <button
                 onClick={() => router.push('/teacher/experiential-activities')}
-                className="text-xs font-semibold text-slate-400 hover:text-[#00A99D] flex items-center gap-1 mb-2 transition-colors"
+                className="text-xs font-semibold text-slate-400 hover:text-[#36E08F] flex items-center gap-1 mb-2 transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" /> Trở lại danh sách
               </button>
 
               <div className="flex items-center gap-3 flex-wrap">
                 {activityCode && (
-                  <span className="text-xs font-black text-white bg-[#00A99D] px-2.5 py-1 rounded-lg tracking-wide">
+                  <span className="text-xs font-black text-white bg-[#36E08F] px-2.5 py-1 rounded-lg tracking-wide">
                     {activityCode}
                   </span>
                 )}
@@ -266,24 +266,24 @@ export default function ActivityResultInput() {
               <div className="flex items-center gap-4 mt-2 text-sm text-slate-500 font-medium flex-wrap">
                 {activity?.catalog?.name && activity.catalog.name !== activityName && (
                   <span className="flex items-center gap-1.5">
-                    <Tag className="w-3.5 h-3.5 text-[#00A99D]" />
+                    <Tag className="w-3.5 h-3.5 text-[#36E08F]" />
                     {activity.catalog.name}
                   </span>
                 )}
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-[#00A99D]" />
+                  <Calendar className="w-3.5 h-3.5 text-[#36E08F]" />
                   {activity?.date ? new Date(activity.date).toLocaleDateString('vi-VN') : '--'}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-[#00A99D]" />
+                  <Users className="w-3.5 h-3.5 text-[#36E08F]" />
                   {students.length} học sinh
                 </span>
-                <span className="flex items-center gap-1 bg-teal-50/80 text-[#00A99D] border border-teal-200/60 px-2 py-0.5 rounded-lg text-xs font-black">
+                <span className="flex items-center gap-1 bg-teal-50/80 text-[#36E08F] border border-teal-200/60 px-2 py-0.5 rounded-lg text-xs font-black">
                   Tiến độ: {gradedCount}/{students.length} học sinh đã nhập
                 </span>
                 {students.length > 0 && students[0].class && (
                   <span className="flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-[#00A99D]" />
+                    <BookOpen className="w-3.5 h-3.5 text-[#36E08F]" />
                     {students[0].class}
                   </span>
                 )}
@@ -306,7 +306,7 @@ export default function ActivityResultInput() {
               <button
                 onClick={handleSaveResults}
                 disabled={saving}
-                className="px-5 py-2 bg-gradient-to-r from-[#00A99D] to-[#20C997] hover:shadow-lg hover:shadow-[#00A99D]/25 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-70"
+                className="px-5 py-2 bg-gradient-to-r from-[#36E08F] to-[#20C997] hover:shadow-lg hover:shadow-[#36E08F]/25 text-white rounded-xl text-sm font-bold transition-all flex items-center gap-2 disabled:opacity-70"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Đang lưu...' : 'Lưu kết quả'}
@@ -323,18 +323,18 @@ export default function ActivityResultInput() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Tìm học sinh theo tên, mã số, lớp..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none transition-all shadow-sm"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none transition-all shadow-sm"
           />
         </div>
 
         {/* BULK TOOLBAR */}
         {selectedIds.size > 0 && (
-          <div className="bg-gradient-to-r from-[#00A99D]/10 to-teal-50 border border-[#00A99D]/25 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+          <div className="bg-gradient-to-r from-[#36E08F]/10 to-teal-50 border border-[#36E08F]/25 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#00A99D] rounded-lg flex items-center justify-center">
+              <div className="w-7 h-7 bg-[#36E08F] rounded-lg flex items-center justify-center">
                 <CheckCheck className="w-4 h-4 text-white" />
               </div>
-              <span className="font-bold text-[#00A99D] text-sm">Đã chọn <span className="text-base">{selectedIds.size}</span> học sinh</span>
+              <span className="font-bold text-[#36E08F] text-sm">Đã chọn <span className="text-base">{selectedIds.size}</span> học sinh</span>
               <button
                 onClick={() => setSelectedIds(new Set())}
                 className="text-xs text-slate-500 hover:text-red-500 ml-2 underline transition-colors"
@@ -364,7 +364,7 @@ export default function ActivityResultInput() {
                 </select>
                 <SelectArrow />
               </div>
-              <button onClick={handleApplyBulk} className="px-4 py-2 bg-[#00A99D] hover:bg-[#009085] text-white text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
+              <button onClick={handleApplyBulk} className="px-4 py-2 bg-[#36E08F] hover:bg-[#009085] text-white text-sm font-bold rounded-lg transition-all flex items-center gap-1.5 shadow-sm">
                 <CheckCheck className="w-4 h-4" /> Áp dụng
               </button>
             </div>
@@ -378,9 +378,9 @@ export default function ActivityResultInput() {
               <span className="font-bold">{filteredStudents.length}</span> học sinh
               {search && <span className="text-slate-400 ml-1">(lọc từ {students.length})</span>}
             </div>
-            <button onClick={toggleAll} className="text-xs font-semibold text-slate-500 hover:text-[#00A99D] flex items-center gap-1.5 transition-colors">
+            <button onClick={toggleAll} className="text-xs font-semibold text-slate-500 hover:text-[#36E08F] flex items-center gap-1.5 transition-colors">
               {allSelected
-                ? <><CheckSquare className="w-4 h-4 text-[#00A99D]" /> Bỏ chọn tất cả</>
+                ? <><CheckSquare className="w-4 h-4 text-[#36E08F]" /> Bỏ chọn tất cả</>
                 : <><Square className="w-4 h-4" /> Chọn tất cả {filteredStudents.length} HS</>
               }
             </button>
@@ -396,7 +396,7 @@ export default function ActivityResultInput() {
                       checked={allSelected}
                       ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
                       onChange={toggleAll}
-                      className="w-4 h-4 rounded border-slate-300 text-[#00A99D] cursor-pointer"
+                      className="w-4 h-4 rounded border-slate-300 text-[#36E08F] cursor-pointer"
                     />
                   </th>
                   <th className="px-3 py-3.5 w-10 text-slate-400">#</th>
@@ -407,7 +407,7 @@ export default function ActivityResultInput() {
                     </th>
                   ))}
                   {config.customColumns.map(col => (
-                    <th key={col.id} className="px-3 py-3.5 min-w-[140px] text-[#00A99D]">
+                    <th key={col.id} className="px-3 py-3.5 min-w-[140px] text-[#36E08F]">
                       <span className="flex items-center gap-1"><Hash className="w-3 h-3" />{col.name}</span>
                     </th>
                   ))}
@@ -419,12 +419,12 @@ export default function ActivityResultInput() {
                   return (
                     <tr key={student.id} className={`border-b border-slate-100 transition-colors ${isSelected ? 'bg-teal-50/60' : idx % 2 === 0 ? 'bg-white hover:bg-slate-50/70' : 'bg-slate-50/30 hover:bg-slate-50/70'}`}>
                       <td className="pl-5 pr-2 py-3">
-                        <input type="checkbox" checked={isSelected} onChange={() => toggleStudent(student.id)} className="w-4 h-4 rounded border-slate-300 text-[#00A99D] cursor-pointer" />
+                        <input type="checkbox" checked={isSelected} onChange={() => toggleStudent(student.id)} className="w-4 h-4 rounded border-slate-300 text-[#36E08F] cursor-pointer" />
                       </td>
                       <td className="px-3 py-3 text-sm font-bold text-slate-400">{idx + 1}</td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${isSelected ? 'bg-[#00A99D]' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0 ${isSelected ? 'bg-[#36E08F]' : 'bg-gradient-to-br from-slate-400 to-slate-500'}`}>
                             {(student.name || '?').charAt(0).toUpperCase()}
                           </div>
                           <div>
@@ -481,7 +481,7 @@ export default function ActivityResultInput() {
                       {config.visibleStandardColumns.includes('absenceReasonId') && (
                         <td className="px-3 py-3">
                           <input type="text" placeholder="Lý do..." value={student.absenceReasonId || ''} onChange={e => handleChange(student.id, 'absenceReasonId', e.target.value)}
-                            className="w-full bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] px-3 py-2 transition-all outline-none placeholder:text-slate-400" />
+                            className="w-full bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] px-3 py-2 transition-all outline-none placeholder:text-slate-400" />
                         </td>
                       )}
 
@@ -489,14 +489,14 @@ export default function ActivityResultInput() {
                         <td className="px-3 py-3">
                           <input type="text" placeholder="Ghi chú..." value={student.note && !student.note.startsWith('{') ? student.note : ''}
                             onChange={e => handleChange(student.id, 'note', e.target.value)}
-                            className="w-full bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] px-3 py-2 transition-all outline-none placeholder:text-slate-400" />
+                            className="w-full bg-white border border-slate-200 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] px-3 py-2 transition-all outline-none placeholder:text-slate-400" />
                         </td>
                       )}
 
                       {config.customColumns.map(col => (
                         <td key={col.id} className="px-3 py-3">
                           <input type={col.type === 'number' ? 'number' : 'text'} value={getCustomValue(student.note, col.id)} onChange={e => handleChange(student.id, col.id, e.target.value, true)}
-                            className="w-full bg-teal-50/50 border border-teal-100 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#00A99D]/30 focus:border-[#00A99D] px-3 py-2 transition-all outline-none" />
+                            className="w-full bg-teal-50/50 border border-teal-100 text-slate-700 text-sm rounded-lg focus:ring-2 focus:ring-[#36E08F]/30 focus:border-[#36E08F] px-3 py-2 transition-all outline-none" />
                         </td>
                       ))}
                     </tr>
@@ -517,7 +517,7 @@ export default function ActivityResultInput() {
           {students.length > 0 && (
             <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs text-slate-500 font-medium">
               <span>Tổng: <strong className="text-slate-700">{students.length}</strong> học sinh</span>
-              {selectedIds.size > 0 && <span className="text-[#00A99D] font-bold">Đang chọn: {selectedIds.size} học sinh</span>}
+              {selectedIds.size > 0 && <span className="text-[#36E08F] font-bold">Đang chọn: {selectedIds.size} học sinh</span>}
             </div>
           )}
         </div>
@@ -534,11 +534,11 @@ export default function ActivityResultInput() {
             </div>
             <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
               <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#00A99D]" /> Cột chuẩn</h3>
+                <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-[#36E08F]" /> Cột chuẩn</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {standardColumnsMeta.map(col => (
-                    <label key={col.id} className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 hover:border-[#00A99D]/40 cursor-pointer bg-white">
-                      <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-[#00A99D]"
+                    <label key={col.id} className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 hover:border-[#36E08F]/40 cursor-pointer bg-white">
+                      <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-[#36E08F]"
                         checked={editConfig.visibleStandardColumns.includes(col.id)}
                         onChange={e => setEditConfig({ ...editConfig, visibleStandardColumns: e.target.checked ? [...editConfig.visibleStandardColumns, col.id] : editConfig.visibleStandardColumns.filter(id => id !== col.id) })}
                       />
@@ -549,9 +549,9 @@ export default function ActivityResultInput() {
               </div>
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5"><Plus className="w-4 h-4 text-[#00A99D]" /> Cột tùy chỉnh</h3>
+                  <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5"><Plus className="w-4 h-4 text-[#36E08F]" /> Cột tùy chỉnh</h3>
                   <button onClick={() => setEditConfig({ ...editConfig, customColumns: [...editConfig.customColumns, { id: `col_${Date.now()}`, name: 'Cột mới', type: 'text' }] })}
-                    className="text-xs font-bold text-[#00A99D] bg-[#00A99D]/10 hover:bg-[#00A99D]/20 px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus className="w-3 h-3" /> Thêm cột</button>
+                    className="text-xs font-bold text-[#36E08F] bg-[#36E08F]/10 hover:bg-[#36E08F]/20 px-3 py-1.5 rounded-lg flex items-center gap-1"><Plus className="w-3 h-3" /> Thêm cột</button>
                 </div>
                 <div className="space-y-2">
                   {editConfig.customColumns.map(col => (
@@ -572,7 +572,7 @@ export default function ActivityResultInput() {
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
               <button onClick={() => setShowConfigModal(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl text-sm">Hủy</button>
-              <button onClick={() => { setConfig(editConfig); setShowConfigModal(false); }} className="px-5 py-2 bg-[#00A99D] text-white font-bold rounded-xl text-sm shadow-sm">Lưu cấu hình</button>
+              <button onClick={() => { setConfig(editConfig); setShowConfigModal(false); }} className="px-5 py-2 bg-[#36E08F] text-white font-bold rounded-xl text-sm shadow-sm">Lưu cấu hình</button>
             </div>
           </div>
         </div>
@@ -590,17 +590,17 @@ export default function ActivityResultInput() {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Tên hoạt động</label>
                 <input type="text" value={editData.name} onChange={e => setEditData({ ...editData, name: e.target.value })}
-                  className="w-full bg-slate-50 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] p-3.5 outline-none" placeholder="Tên hoạt động..." />
+                  className="w-full bg-slate-50 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] p-3.5 outline-none" placeholder="Tên hoạt động..." />
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1.5">Ngày tổ chức</label>
                 <input type="date" value={editData.date} onChange={e => setEditData({ ...editData, date: e.target.value })}
-                  className="w-full bg-slate-50 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#00A99D] p-3.5 outline-none" />
+                  className="w-full bg-slate-50 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] p-3.5 outline-none" />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
               <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl text-sm">Hủy</button>
-              <button onClick={handleUpdateActivity} disabled={saving} className="px-5 py-2 bg-[#00A99D] text-white font-bold rounded-xl text-sm shadow-sm flex items-center gap-2 disabled:opacity-70">
+              <button onClick={handleUpdateActivity} disabled={saving} className="px-5 py-2 bg-[#36E08F] text-white font-bold rounded-xl text-sm shadow-sm flex items-center gap-2 disabled:opacity-70">
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />} Cập nhật
               </button>
             </div>

@@ -58,12 +58,12 @@ export function SkyLineSwooshBg() {
       <div className="absolute top-[-20%] right-[-20%] w-[80%] h-[80%] rounded-full bg-radial from-[#00D2C4]/20 via-[#004F4D]/10 to-transparent blur-3xl pointer-events-none" />
 
       {/* Bottom fluid swoosh wave curve (Image 2 style) */}
-      <svg className="absolute -bottom-12 -left-12 w-[135%] h-[48%] text-[#00A99D]" viewBox="0 0 1000 350" fill="none">
+      <svg className="absolute -bottom-12 -left-12 w-[135%] h-[48%] text-[#36E08F]" viewBox="0 0 1000 350" fill="none">
         <path d="M-50 280 Q 220 80, 580 220 T 1150 160 L 1150 400 L -50 400 Z" fill="url(#image2-swoosh-grad)" />
         <defs>
           <linearGradient id="image2-swoosh-grad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#00E5D5" stopOpacity="0.45" />
-            <stop offset="40%" stopColor="#00A99D" stopOpacity="0.25" />
+            <stop offset="40%" stopColor="#36E08F" stopOpacity="0.25" />
             <stop offset="100%" stopColor="#003B3A" stopOpacity="0.05" />
           </linearGradient>
         </defs>
@@ -74,7 +74,7 @@ export function SkyLineSwooshBg() {
         <path d="M-50 290 Q 320 110, 680 240 T 1150 190 L 1150 350 L -50 350 Z" fill="url(#image2-swoosh-grad2)" />
         <defs>
           <linearGradient id="image2-swoosh-grad2" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#00A99D" stopOpacity="0.35" />
+            <stop offset="0%" stopColor="#36E08F" stopOpacity="0.35" />
             <stop offset="100%" stopColor="#10B981" stopOpacity="0.05" />
           </linearGradient>
         </defs>
@@ -108,9 +108,9 @@ export function RoleSelector({ role, setRole, setError }: RoleSelectorProps) {
               key={r.id}
               type="button"
               onClick={() => { setRole(r.id); setError('') }}
-              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00A99D]/40 ${
+              className={`flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#36E08F]/40 ${
                 isActive
-                  ? 'bg-[#00A99D] text-white shadow-md shadow-teal-600/30 scale-[1.02]'
+                  ? 'bg-[#36E08F] text-white shadow-md shadow-teal-600/30 scale-[1.02]'
                   : 'bg-transparent text-[#64748B] hover:text-[#003B3A] hover:bg-slate-200/50'
               }`}
             >
@@ -217,7 +217,7 @@ export function LoginForm({
 }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false)
 
-  const inputBase = "w-full h-[48px] rounded-2xl border bg-white text-sm font-semibold text-[#003B3A] placeholder-[#94A3B8] outline-none transition-all duration-200 hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:ring-4 focus:ring-[#00A99D]/15 shadow-sm"
+  const inputBase = "w-full h-[48px] rounded-2xl border bg-white text-sm font-semibold text-[#003B3A] placeholder-[#94A3B8] outline-none transition-all duration-200 hover:border-[#36E08F]/50 focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/15 shadow-sm"
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -264,14 +264,14 @@ export function LoginForm({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-4 z-10 flex items-center justify-center text-slate-400 hover:text-[#00A99D] transition-colors focus-visible:outline-none cursor-pointer"
+            className="absolute right-4 z-10 flex items-center justify-center text-slate-400 hover:text-[#36E08F] transition-colors focus-visible:outline-none cursor-pointer"
             aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
         {role === 'STUDENT' && (
-          <p className="text-[11px] text-[#00A99D] font-bold ml-1 italic mt-0.5">* Mật khẩu mặc định là mã học sinh</p>
+          <p className="text-[11px] text-[#36E08F] font-bold ml-1 italic mt-0.5">* Mật khẩu mặc định là mã học sinh</p>
         )}
       </div>
 
@@ -282,14 +282,14 @@ export function LoginForm({
             type="checkbox"
             checked={rememberMe}
             onChange={e => setRememberMe(e.target.checked)}
-            className="w-4 h-4 rounded border-slate-300 text-[#00A99D] focus:ring-[#00A99D]/20 cursor-pointer accent-[#00A99D]"
+            className="w-4 h-4 rounded border-slate-300 text-[#36E08F] focus:ring-[#36E08F]/20 cursor-pointer accent-[#36E08F]"
           />
           <span>Ghi nhớ</span>
         </label>
         <button
           type="button"
           onClick={onForgotPassword}
-          className="text-xs font-extrabold text-[#00A99D] hover:text-[#009085] hover:underline cursor-pointer transition-colors"
+          className="text-xs font-extrabold text-[#36E08F] hover:text-[#009085] hover:underline cursor-pointer transition-colors"
         >
           Quên mật khẩu?
         </button>
@@ -299,7 +299,7 @@ export function LoginForm({
       <button
         type="submit"
         disabled={loading}
-        className="w-full h-[50px] mt-1 bg-[#00A99D] hover:bg-[#009085] active:scale-[0.99] text-white rounded-2xl text-sm font-extrabold shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/35 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00A99D]/30 cursor-pointer"
+        className="w-full h-[50px] mt-1 bg-[#36E08F] hover:bg-[#009085] active:scale-[0.99] text-white rounded-2xl text-sm font-extrabold shadow-lg shadow-teal-600/25 hover:shadow-xl hover:shadow-teal-600/35 flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#36E08F]/30 cursor-pointer"
       >
         {loading ? (
           <>

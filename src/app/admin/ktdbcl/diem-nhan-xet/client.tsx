@@ -570,7 +570,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A99D] rounded-2xl p-6 text-white shadow-xl">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#36E08F] rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-teal-200 mb-2">
@@ -632,7 +632,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <Sliders className="w-5 h-5 text-[#00A99D]" />
+                <Sliders className="w-5 h-5 text-[#36E08F]" />
                 Thiết lập Định dạng File nhập điểm
               </h2>
               <span className="text-xs text-slate-400 font-normal">Tối đa khoảng 8 cột điểm thành phần</span>
@@ -644,7 +644,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={configGrade}
                   onChange={(e) => setConfigGrade(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#00A99D] outline-none"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#36E08F] outline-none"
                 >
                   <option value="ALL">-- Tất cả các Khối --</option>
                   {GRADES.map(g => (
@@ -658,7 +658,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={configSubjectId}
                   onChange={(e) => setConfigSubjectId(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#00A99D] outline-none"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#36E08F] outline-none"
                 >
                   <option value="ALL">-- Tất cả môn (Mẫu chung) --</option>
                   {subjects.map(s => (
@@ -672,7 +672,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={configPeriod}
                   onChange={(e) => setConfigPeriod(e.target.value)}
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#00A99D] outline-none"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs font-medium focus:ring-2 focus:ring-[#36E08F] outline-none"
                 >
                   <option value="ALL">-- Tất cả Kỳ đánh giá --</option>
                   {EVAL_PERIODS.map(p => (
@@ -697,7 +697,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                       onClick={() => setColumnCount(num)}
                       className={`w-8 h-8 rounded-lg text-xs font-extrabold transition-all ${
                         columnCount === num
-                          ? "bg-[#00A99D] text-white shadow-md shadow-teal-500/20 scale-110"
+                          ? "bg-[#36E08F] text-white shadow-md shadow-teal-500/20 scale-110"
                           : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
                       }`}
                     >
@@ -733,7 +733,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                   {columnNames.map((name, idx) => (
                     <div key={idx} className="flex flex-col sm:flex-row sm:items-center gap-2 p-2.5 bg-white border border-slate-200 rounded-xl">
                       <div className="flex items-center gap-2 shrink-0 sm:w-1/3">
-                        <span className="text-[11px] font-bold text-[#00A99D] w-12">Cột {idx + 1}:</span>
+                        <span className="text-[11px] font-bold text-[#36E08F] w-12">Cột {idx + 1}:</span>
                         <input
                           type="text"
                           value={name}
@@ -742,7 +742,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                             setColumnNames(prev => prev.map((n, i) => i === idx ? val : n))
                           }}
                           placeholder={`Tên cột ${idx + 1}`}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none"
                         />
                       </div>
                       <div className="flex-1">
@@ -756,7 +756,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                               return next
                             })
                           }}
-                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                          className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-50 focus:ring-2 focus:ring-[#36E08F] outline-none"
                         >
                           {COLUMN_TYPES.map(ct => (
                             <option key={ct.code} value={ct.code}>{ct.name}</option>
@@ -776,7 +776,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                   type="checkbox"
                   checked={hasComposite}
                   onChange={(e) => setHasComposite(e.target.checked)}
-                  className="w-4 h-4 text-[#00A99D] rounded border-slate-300 focus:ring-[#00A99D]"
+                  className="w-4 h-4 text-[#36E08F] rounded border-slate-300 focus:ring-[#36E08F]"
                 />
                 <div>
                   <div className="text-xs font-bold text-slate-800">Cột Điểm thành phần (Tổng hợp)</div>
@@ -789,7 +789,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                   type="checkbox"
                   checked={hasRemark}
                   onChange={(e) => setHasRemark(e.target.checked)}
-                  className="w-4 h-4 text-[#00A99D] rounded border-slate-300 focus:ring-[#00A99D]"
+                  className="w-4 h-4 text-[#36E08F] rounded border-slate-300 focus:ring-[#36E08F]"
                 />
                 <div>
                   <div className="text-xs font-bold text-slate-800">Cột Nhận xét của GVBM</div>
@@ -841,7 +841,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 type="button"
                 onClick={handleSaveConfig}
                 disabled={savingConfig}
-                className="flex items-center gap-2 px-6 py-2.5 bg-[#00A99D] hover:bg-[#008c82] text-white font-bold text-xs rounded-xl shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 bg-[#36E08F] hover:bg-[#008c82] text-white font-bold text-xs rounded-xl shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
               >
                 {savingConfig ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Lưu Cấu Hình Mẫu File
@@ -852,7 +852,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
           {/* Saved Configs List */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col">
             <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-[#00A99D]" />
+              <BookOpen className="w-4 h-4 text-[#36E08F]" />
               Danh sách Cấu hình Mẫu đã lưu ({savedConfigs.length})
             </h3>
 
@@ -935,7 +935,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                     setSelectedLevelFilter(e.target.value)
                     setSelectedGradeFilter("ALL")
                   }}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none bg-emerald-50/60 text-emerald-900 border-emerald-200"
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none bg-emerald-50/60 text-emerald-900 border-emerald-200"
                 >
                   <option value="ALL">-- Tất cả Bậc học --</option>
                   <option value="TieuHoc">Tiểu học (Lớp 1-5)</option>
@@ -950,7 +950,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={selectedGradeFilter}
                   onChange={(e) => setSelectedGradeFilter(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none bg-sky-50/60 text-sky-900 border-sky-200"
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none bg-sky-50/60 text-sky-900 border-sky-200"
                 >
                   <option value="ALL">-- Tất cả Khối --</option>
                   {selectedLevelFilter === "TieuHoc" && ["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"].map(g => (
@@ -973,7 +973,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={selectedSystemFilter}
                   onChange={(e) => setSelectedSystemFilter(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none bg-purple-50/60 text-purple-900 border-purple-200"
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none bg-purple-50/60 text-purple-900 border-purple-200"
                 >
                   <option value="ALL">-- Tất cả Hệ học --</option>
                   {educationSystemOptions.map(sys => (
@@ -987,7 +987,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={selectedClassId}
                   onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none"
                 >
                   {filteredClasses.map(c => (
                     <option key={c.id} value={c.id}>{c.className} ({c.grade || c.level})</option>
@@ -1000,7 +1000,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={selectedSubjectId}
                   onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none"
                 >
                   {subjects.map(s => (
                     <option key={s.id} value={s.id}>{s.subjectName} ({s.subjectCode})</option>
@@ -1013,7 +1013,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 <select
                   value={selectedPeriod}
                   onChange={(e) => setSelectedPeriod(e.target.value)}
-                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none bg-teal-50 text-teal-800 border-teal-200"
+                  className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none bg-teal-50 text-teal-800 border-teal-200"
                 >
                   {EVAL_PERIODS.map(p => (
                     <option key={p.code} value={p.code}>{p.name}</option>
@@ -1062,7 +1062,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                 type="button"
                 onClick={handleSaveGradeSheet}
                 disabled={savingEntries}
-                className="flex items-center gap-1.5 px-5 py-2 bg-[#00A99D] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-5 py-2 bg-[#36E08F] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
               >
                 {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Lưu Sổ Điểm
@@ -1173,7 +1173,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                                   type="text"
                                   value={val}
                                   onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                                  className="w-full border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                                  className="w-full border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none"
                                   placeholder="Nhập nhận xét..."
                                 />
                               </td>
@@ -1186,7 +1186,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                                 type="text"
                                 value={val}
                                 onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                                className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none"
+                                className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#36E08F] focus:border-[#36E08F] outline-none"
                                 placeholder={colType === "SCORE_1000" ? "0-1000" : "0-10"}
                               />
                             </td>
@@ -1196,7 +1196,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                         {/* Composite score input/display */}
                         {gradeSheetData.config?.hasCompositeColumn !== false && (
                           <td className="py-2 px-2 text-center border-r border-slate-200 bg-teal-50/50">
-                            <span className="font-black text-sm text-[#00A99D]">
+                            <span className="font-black text-sm text-[#36E08F]">
                               {entry.compositeScore || "-"}
                             </span>
                           </td>
@@ -1209,7 +1209,7 @@ export function DiemNhanXetAdminClient({ academicYears, activeYearId, classes, s
                               type="text"
                               value={entry.remark ?? ""}
                               onChange={(e) => handleRemarkChange(st.id, e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                              className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none"
                               placeholder="Nhập nhận xét..."
                             />
                           </td>

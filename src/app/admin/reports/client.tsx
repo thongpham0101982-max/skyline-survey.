@@ -115,7 +115,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
       <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200/80 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#00A99D]/10 text-[#00A99D] flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-[#36E08F]/10 text-[#36E08F] flex items-center justify-center">
               <LayoutDashboard className="w-6 h-6" />
             </div>
             <div>
@@ -127,7 +127,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
             <button
               onClick={handleExportExcel}
               disabled={exporting || !selectedPeriod}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#00A99D] hover:bg-[#009085] text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-[#00A99D]/10 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border-none"
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#36E08F] hover:bg-[#009085] text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-[#36E08F]/10 hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed border-none"
             >
               <Download className="w-4 h-4" />
               <span>{exporting ? "Đang xuất..." : "Xuất Excel Kết Quả"}</span>
@@ -141,7 +141,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
             <select 
               value={selectedPeriod} 
               onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="w-full p-4 border border-slate-200 focus:border-[#00A99D]/50 focus:ring-1 focus:ring-[#00A99D]/20 rounded-2xl font-bold text-slate-700 bg-slate-50/50 outline-none transition-all text-xs"
+              className="w-full p-4 border border-slate-200 focus:border-[#36E08F]/50 focus:ring-1 focus:ring-[#36E08F]/20 rounded-2xl font-bold text-slate-700 bg-slate-50/50 outline-none transition-all text-xs"
             >
               <option value="">-- Click để chọn Đợt Khảo Sát --</option>
               {periods.map((p: any) => (
@@ -158,7 +158,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
                 value={filterCampus}
                 onChange={(e) => setFilterCampus(e.target.value)}
                 disabled={isCampusLocked}
-                className={`w-full p-4 pl-12 border rounded-2xl font-bold text-slate-700 outline-none transition-all text-xs ${isCampusLocked ? "border-[#00A99D]/20 bg-[#00A99D]/5 text-[#00A99D] cursor-not-allowed" : "border-slate-200 bg-slate-50/50 focus:border-[#00A99D]/50 focus:ring-1 focus:ring-[#00A99D]/20"}`}
+                className={`w-full p-4 pl-12 border rounded-2xl font-bold text-slate-700 outline-none transition-all text-xs ${isCampusLocked ? "border-[#36E08F]/20 bg-[#36E08F]/5 text-[#36E08F] cursor-not-allowed" : "border-slate-200 bg-slate-50/50 focus:border-[#36E08F]/50 focus:ring-1 focus:ring-[#36E08F]/20"}`}
               >
                 {!isCampusLocked && <option value="ALL">Tất cả Cơ sở</option>}
                 {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
@@ -173,7 +173,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
               <select 
                 value={filterLevel}
                 onChange={(e) => setFilterLevel(e.target.value)}
-                className="w-full p-4 pl-12 border border-slate-200 focus:border-[#00A99D]/50 focus:ring-1 focus:ring-[#00A99D]/20 rounded-2xl font-bold text-slate-700 bg-slate-50/50 outline-none transition-all text-xs"
+                className="w-full p-4 pl-12 border border-slate-200 focus:border-[#36E08F]/50 focus:ring-1 focus:ring-[#36E08F]/20 rounded-2xl font-bold text-slate-700 bg-slate-50/50 outline-none transition-all text-xs"
               >
                 <option value="ALL">Tất cả Khối/Bậc học</option>
                 {levels.map(l => <option key={l} value={l}>{l}</option>)}
@@ -184,9 +184,9 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
       </div>
 
       {loading && (
-        <div className="bg-white p-20 text-center rounded-3xl border-2 border-dashed border-[#00A99D]/20 shadow-xs transition-all">
-           <div className="w-12 h-12 border-4 border-[#00A99D] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-           <p className="text-[#00A99D] font-black text-lg tracking-tight uppercase">Đang tải số liệu thống kê...</p>
+        <div className="bg-white p-20 text-center rounded-3xl border-2 border-dashed border-[#36E08F]/20 shadow-xs transition-all">
+           <div className="w-12 h-12 border-4 border-[#36E08F] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+           <p className="text-[#36E08F] font-black text-lg tracking-tight uppercase">Đang tải số liệu thống kê...</p>
            <p className="text-slate-400 text-sm mt-2 font-medium">Vui lòng chờ trong giây lát</p>
         </div>
       )}
@@ -230,12 +230,12 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
             <div className="bg-slate-900 p-6 rounded-2xl shadow-lg border border-slate-800 text-white flex items-center justify-between hover:shadow-xl transition-all">
                <div>
                  <p className="text-slate-400 text-[10px] font-black mb-1 uppercase tracking-widest">Khảo sát / Tổng HS năm học</p>
-                 <h3 className="text-3xl font-black text-[#00A99D] font-mono tracking-tighter">
+                 <h3 className="text-3xl font-black text-[#36E08F] font-mono tracking-tighter">
                    {globalCompleted} / {totalStudentsInYear}
                  </h3>
                  <p className="text-[10px] text-slate-400 font-bold mt-1">Đạt tỷ lệ: {overallAcademicYearRate}%</p>
                </div>
-               <div className="w-12 h-12 rounded-xl bg-slate-800 text-[#00A99D] flex items-center justify-center font-black text-xs font-mono">{overallAcademicYearRate}%</div>
+               <div className="w-12 h-12 rounded-xl bg-slate-800 text-[#36E08F] flex items-center justify-center font-black text-xs font-mono">{overallAcademicYearRate}%</div>
             </div>
           </div>
 
@@ -243,18 +243,18 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
           {filterCampus === "ALL" && campusStats.length > 0 && (
             <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
               <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#00A99D]" />
+                <Building2 className="w-5 h-5 text-[#36E08F]" />
                 Thống Kê Tiến Độ Theo Cơ Sở
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {campusStats.map(c => (
-                  <div key={c.id} className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5 space-y-3 hover:border-[#00A99D]/20 transition-all">
+                  <div key={c.id} className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5 space-y-3 hover:border-[#36E08F]/20 transition-all">
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-black text-slate-800">{c.campusName}</span>
-                      <span className="text-xs font-black text-[#00A99D] font-mono">{c.rate}%</span>
+                      <span className="text-xs font-black text-[#36E08F] font-mono">{c.rate}%</span>
                     </div>
                     <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#00A99D] rounded-full transition-all duration-500" style={{ width: `${c.rate}%` }}></div>
+                      <div className="h-full bg-[#36E08F] rounded-full transition-all duration-500" style={{ width: `${c.rate}%` }}></div>
                     </div>
                     <div className="flex justify-between text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       <span>Đã nộp: <strong className="text-slate-600 font-mono">{c.completed}</strong></span>
@@ -270,17 +270,17 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
           <div className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200/80 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <h3 className="font-black text-slate-800 text-lg flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-[#00A99D]" />
+                <BarChart3 className="w-5 h-5 text-[#36E08F]" />
                 Bảng Thống Kê Theo Lớp Học
               </h3>
               <div className="relative group max-w-xs w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#00A99D] transition-colors" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#36E08F] transition-colors" />
                 <input 
                   type="text" 
                   placeholder="Tìm kiếm lớp, GVCN..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-medium focus:ring-1 focus:ring-[#00A99D]/20 focus:border-[#00A99D]/50 transition-all outline-none"
+                  className="w-full bg-slate-50/50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs font-medium focus:ring-1 focus:ring-[#36E08F]/20 focus:border-[#36E08F]/50 transition-all outline-none"
                 />
               </div>
             </div>
@@ -318,7 +318,7 @@ export function TrackingClient({ periods, campuses: initialCampuses = [], defaul
                           <td className="p-4 border border-slate-100">
                             <div className="flex items-center gap-3">
                               <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-100/30">
-                                <div className={`h-full rounded-full transition-all duration-500 ${classRate === 100 ? 'bg-emerald-500' : 'bg-[#00A99D]'}`} style={{ width: `${classRate}%`}}></div>
+                                <div className={`h-full rounded-full transition-all duration-500 ${classRate === 100 ? 'bg-emerald-500' : 'bg-[#36E08F]'}`} style={{ width: `${classRate}%`}}></div>
                               </div>
                               <span className="text-xs font-black text-slate-800 font-mono w-8 text-right">${classRate}%</span>
                             </div>

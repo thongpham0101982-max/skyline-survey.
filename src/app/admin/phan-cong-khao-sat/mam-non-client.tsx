@@ -63,8 +63,8 @@ function Field({ label, required, children, tooltip }: { label: string; required
   )
 }
 
-const inp = "w-full bg-white border border-slate-200 rounded-xl pl-4 pr-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#00A99D] hover:border-slate-350 hover:shadow-xs transition-all placeholder:text-slate-400 shadow-sm"
-const TEAL = "#00A99D"
+const inp = "w-full bg-white border border-slate-200 rounded-xl pl-4 pr-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#36E08F] hover:border-slate-350 hover:shadow-xs transition-all placeholder:text-slate-400 shadow-sm"
+const TEAL = "#36E08F"
 
 interface ConfirmState { msg: string; fn: () => void }
 function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; onClose:()=>void; onConfirm:()=>void; message:string }) {
@@ -558,15 +558,15 @@ export function PhanCongMamNonClient({
       {confirm && <ConfirmDialog open={true} onClose={() => setConfirm(null)} onConfirm={confirm.fn} message={confirm.msg} />}
 
       {/* Header card with teal styled accents */}
-      <div className="bg-white border-t-4 border-[#00A99D] shadow-sm rounded-2xl px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white border-t-4 border-[#36E08F] shadow-sm rounded-2xl px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-[#00A99D] shadow-md shadow-teal-100">
+          <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 bg-[#36E08F] shadow-md shadow-teal-100">
             <Baby className="w-6 h-6 text-white" />
           </div>
           <div>
             <h1 className="text-lg font-black text-slate-800 tracking-tight flex items-center gap-2">
               Phân công Mầm non
-              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#00A99D] border border-teal-100/50">Preschool</span>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#36E08F] border border-teal-100/50">Preschool</span>
             </h1>
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Giao nhiệm vụ phụ trách khảo sát cho giáo viên mầm non</p>
           </div>
@@ -601,7 +601,7 @@ export function PhanCongMamNonClient({
             <li>Chọn <strong className="text-amber-950 font-black">Kỳ khảo sát</strong> và <strong className="text-amber-950 font-black">Đợt khảo sát</strong> ở mục Cấu hình phân công.</li>
             <li>Chọn nhanh <strong className="text-amber-950 font-black">Nhóm tuổi</strong> trong bảng Thống kê (Khối học và Phiếu khảo sát sẽ được tự động ánh xạ tương ứng).</li>
             <li>Tích chọn một hoặc nhiều <strong className="text-amber-950 font-black">Giáo viên</strong> ở danh sách bên phải.</li>
-            <li>Nhấn <strong className="text-[#00A99D] font-black">Lưu Phân công Giáo viên</strong> để hoàn thành.</li>
+            <li>Nhấn <strong className="text-[#36E08F] font-black">Lưu Phân công Giáo viên</strong> để hoàn thành.</li>
           </ol>
         </div>
       </div>
@@ -611,7 +611,7 @@ export function PhanCongMamNonClient({
         {/* Row 1: Cấu hình chung */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-5 transition-all">
           <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Settings className="w-4 h-4 text-[#00A99D]" /> Cấu hình Phân công
+            <Settings className="w-4 h-4 text-[#36E08F]" /> Cấu hình Phân công
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Field label="Kỳ Khảo sát" required>
@@ -668,9 +668,9 @@ export function PhanCongMamNonClient({
                     <div 
                       key={s.id} 
                       onClick={() => toggleStageSelection(s.id as any)}
-                      className={`flex items-center justify-center gap-2.5 px-3 py-3 rounded-xl border cursor-pointer transition-all duration-200 text-xs ${isSel ? "font-extrabold shadow-sm border-[#00A99D] bg-teal-50/30 text-[#00A99D]" : "bg-white border-slate-200 text-slate-655 hover:bg-slate-50"}`}>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSel ? "border-[#00A99D]" : "border-slate-300"}`}>
-                        {isSel && <div className="w-2.5 h-2.5 rounded-full bg-[#00A99D]" />}
+                      className={`flex items-center justify-center gap-2.5 px-3 py-3 rounded-xl border cursor-pointer transition-all duration-200 text-xs ${isSel ? "font-extrabold shadow-sm border-[#36E08F] bg-teal-50/30 text-[#36E08F]" : "bg-white border-slate-200 text-slate-655 hover:bg-slate-50"}`}>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${isSel ? "border-[#36E08F]" : "border-slate-300"}`}>
+                        {isSel && <div className="w-2.5 h-2.5 rounded-full bg-[#36E08F]" />}
                       </div>
                       <span className="truncate">{s.name}</span>
                     </div>
@@ -685,7 +685,7 @@ export function PhanCongMamNonClient({
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-6 transition-all">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#00A99D]" /> Thống kê Nhóm tuổi
+              <Users className="w-4 h-4 text-[#36E08F]" /> Thống kê Nhóm tuổi
             </h3>
             <span className="text-[10px] font-black text-teal-600 bg-teal-50 px-2.5 py-1 rounded-full uppercase tracking-wider border border-teal-100/50 shadow-sm shadow-teal-50">
               Tổng: {Object.values(studentStats).reduce((a, b) => a + b, 0)} trẻ
@@ -700,7 +700,7 @@ export function PhanCongMamNonClient({
           ) : (
             <div className="space-y-4 animate-in fade-in duration-300">
               {statsLoading ? (
-                <div className="flex items-center justify-center py-6 gap-2 text-xs font-bold text-[#00A99D]">
+                <div className="flex items-center justify-center py-6 gap-2 text-xs font-bold text-[#36E08F]">
                   <Loader2 className="w-4.5 h-4.5 animate-spin" /> Đang cập nhật dữ liệu trẻ...
                 </div>
               ) : Object.keys(studentStats).length === 0 ? (
@@ -734,7 +734,7 @@ export function PhanCongMamNonClient({
                               {grade}
                             </span>
                             {isActive && isStandard && (
-                              <div className="w-4 h-4 rounded-full bg-[#00A99D] flex items-center justify-center shrink-0">
+                              <div className="w-4 h-4 rounded-full bg-[#36E08F] flex items-center justify-center shrink-0">
                                 <Check className="w-2.5 h-2.5 text-white stroke-[3.5px]" />
                               </div>
                             )}
@@ -765,7 +765,7 @@ export function PhanCongMamNonClient({
                     <div className="mt-4 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/60 animate-in slide-in-from-top-2 duration-300">
                       <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                          <Users className="w-3.5 h-3.5 text-[#00A99D]" />
+                          <Users className="w-3.5 h-3.5 text-[#36E08F]" />
                           Danh sách trẻ nhóm {activeGroup} ({filteredGroupStudents.length})
                         </span>
                         <button 
@@ -799,7 +799,7 @@ export function PhanCongMamNonClient({
         {/* Row 3: Phạm vi & Ánh xạ khảo sát */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-5 transition-all">
           <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Layers className="w-4 h-4 text-[#00A99D]" /> Phạm vi & Ánh xạ khảo sát
+            <Layers className="w-4 h-4 text-[#36E08F]" /> Phạm vi & Ánh xạ khảo sát
           </h3>
 
           {!aPeriodId ? (
@@ -821,8 +821,8 @@ export function PhanCongMamNonClient({
                       <div 
                         key={g} 
                         onClick={() => toggleGradeSelection(g)}
-                        className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-md border-[#00A99D] bg-teal-50/30 text-[#00A99D] scale-[1.02]" : "bg-white border-slate-200 text-slate-655 hover:bg-slate-50 hover:border-slate-300"}`}>
-                        <div className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center shrink-0 ${isChecked ? "border-[#00A99D] bg-[#00A99D]" : "border-slate-300"}`}>
+                        className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border cursor-pointer transition-all text-xs ${isChecked ? "font-extrabold shadow-md border-[#36E08F] bg-teal-50/30 text-[#36E08F] scale-[1.02]" : "bg-white border-slate-200 text-slate-655 hover:bg-slate-50 hover:border-slate-300"}`}>
+                        <div className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center shrink-0 ${isChecked ? "border-[#36E08F] bg-[#36E08F]" : "border-slate-300"}`}>
                           {isChecked && <Check className="w-3 h-3 text-white stroke-[3px]" />}
                         </div>
                         <span>{g}</span>
@@ -845,7 +845,7 @@ export function PhanCongMamNonClient({
                     <select 
                       value={uiForm} 
                       disabled 
-                      className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed border-slate-200/80 font-bold text-[#00A99D]`}>
+                      className={`${inp} pl-10 opacity-80 bg-slate-50 cursor-not-allowed border-slate-200/80 font-bold text-[#36E08F]`}>
                       <option value="">Chờ lựa chọn cấu hình...</option>
                       {formOptions.map(f => (
                         <option key={f} value={f}>Mẫu: {f}</option>
@@ -886,10 +886,10 @@ export function PhanCongMamNonClient({
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-5 transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-3">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-[#00A99D]" /> Phân công Giáo viên
+              <UserCheck className="w-4 h-4 text-[#36E08F]" /> Phân công Giáo viên
             </h3>
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-[10px] px-3 py-1.5 rounded-full font-black bg-teal-50 text-[#00A99D] border border-teal-100/50">
+              <span className="text-[10px] px-3 py-1.5 rounded-full font-black bg-teal-50 text-[#36E08F] border border-teal-100/50">
                 Đã chọn {aSelectedTeachers.length} Giáo viên
               </span>
               <button 
@@ -925,7 +925,7 @@ export function PhanCongMamNonClient({
                   placeholder="Tìm tên hoặc mã giáo viên..."
                   value={aSearchTeacher} 
                   onChange={e => setASearchTeacher(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#00A99D] focus:ring-4 focus:ring-teal-50 transition-all shadow-xs" 
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400 focus:border-[#36E08F] focus:ring-4 focus:ring-teal-50 transition-all shadow-xs" 
                 />
                 {aSearchTeacher && (
                   <button onClick={() => setASearchTeacher("")} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-655">
@@ -969,11 +969,11 @@ export function PhanCongMamNonClient({
                     <div 
                       key={t.id} 
                       onClick={() => toggleTeacher(userId)}
-                      className={`flex flex-col p-4 rounded-xl cursor-pointer border transition-all duration-200 ${isChecked ? "border-[#00A99D] shadow-md bg-teal-50/20 scale-[1.02]" : "bg-white border-slate-200/80 hover:border-slate-350 hover:shadow-sm"}`}>
+                      className={`flex flex-col p-4 rounded-xl cursor-pointer border transition-all duration-200 ${isChecked ? "border-[#36E08F] shadow-md bg-teal-50/20 scale-[1.02]" : "bg-white border-slate-200/80 hover:border-slate-350 hover:shadow-sm"}`}>
                       
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-extrabold text-[12px] ${isChecked ? "bg-[#00A99D] text-white shadow-sm" : "bg-slate-100 text-slate-500"}`}>
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-extrabold text-[12px] ${isChecked ? "bg-[#36E08F] text-white shadow-sm" : "bg-slate-100 text-slate-500"}`}>
                             {initials}
                           </div>
                           <div className="min-w-0">
@@ -981,7 +981,7 @@ export function PhanCongMamNonClient({
                             <div className="text-[10px] text-slate-450 font-semibold uppercase mt-0.5 truncate">{t.teacherCode}</div>
                           </div>
                         </div>
-                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ml-2 ${isChecked ? "border-[#00A99D] bg-[#00A99D]" : "border-slate-300"}`}>
+                        <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ml-2 ${isChecked ? "border-[#36E08F] bg-[#36E08F]" : "border-slate-300"}`}>
                           {isChecked && <Check className="w-3.5 h-3.5 text-white stroke-[3px]" />}
                         </div>
                       </div>
@@ -994,7 +994,7 @@ export function PhanCongMamNonClient({
                         )}
                         
                         {teacherAssigns.length > 0 && (
-                          <span className="text-[9px] font-black uppercase text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100/50">
+                          <span className="text-[9px] font-black uppercase text-[#36E08F] bg-teal-50 px-2 py-0.5 rounded-md border border-teal-100/50">
                             {teacherAssigns.length} Phân công
                           </span>
                         )}
@@ -1012,7 +1012,7 @@ export function PhanCongMamNonClient({
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-            <UserCheck className="w-4 h-4 text-[#00A99D]" /> Danh sách Phân công hiện tại ({assignments.length})
+            <UserCheck className="w-4 h-4 text-[#36E08F]" /> Danh sách Phân công hiện tại ({assignments.length})
           </h3>
           {assignments.length > 0 && (
             <span className="text-[10px] font-extrabold text-slate-400 uppercase">Preschool Assignments</span>
@@ -1064,7 +1064,7 @@ export function PhanCongMamNonClient({
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-teal-50 text-[#00A99D] border border-teal-100/50">
+                        <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-teal-50 text-[#36E08F] border border-teal-100/50">
                           {assign.grade}
                         </span>
                       </td>
@@ -1082,7 +1082,7 @@ export function PhanCongMamNonClient({
                           value={assign.delegatedUserId || ""}
                           onChange={(e) => updateDelegation(assign.id, e.target.value)}
                           disabled={!canUpdate}
-                          className="block w-full min-w-[140px] rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 outline-none hover:border-[#00A99D]/50 focus:border-[#00A99D] focus:ring-1 focus:ring-teal-50 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
+                          className="block w-full min-w-[140px] rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 outline-none hover:border-[#36E08F]/50 focus:border-[#36E08F] focus:ring-1 focus:ring-teal-50 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed appearance-none"
                         >
                           <option value="">-- Chọn Giáo vụ CS --</option>
                           {giaoVuCSUsers.map((user) => (

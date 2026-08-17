@@ -70,7 +70,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
             <div className="hidden md:flex text-sm font-medium text-slate-500">
-              <span className="text-[#00A99D] font-bold">Admin</span>
+              <span className="text-[#36E08F] font-bold">Admin</span>
               <span className="mx-2">/</span>
               <span>Workspace</span>
             </div>

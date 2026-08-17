@@ -367,12 +367,12 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
       <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-4 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#00A99D]" />
+            <Layers className="w-4 h-4 text-[#36E08F]" />
             <h3 className="text-sm font-bold text-slate-800">Bộ Lọc Đăng Ký &amp; Theo Dõi</h3>
           </div>
           {activeExamObj && activeExamObj.grade && (
-            <span className="bg-[#E6F6F5] border border-[#00A99D]/15 rounded-lg px-2.5 py-1 text-[10px] text-[#009085] font-bold flex items-center gap-1.5 w-fit">
-              <Sparkles className="w-3.5 h-3.5 text-[#00A99D] flex-shrink-0" />
+            <span className="bg-[#E6F6F5] border border-[#36E08F]/15 rounded-lg px-2.5 py-1 text-[10px] text-[#009085] font-bold flex items-center gap-1.5 w-fit">
+              <Sparkles className="w-3.5 h-3.5 text-[#36E08F] flex-shrink-0" />
               Đối tượng mục tiêu: {getLevelLabel(activeExamObj.grade)}
             </span>
           )}
@@ -497,8 +497,8 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 </div>
               </div>
 
-              <div className="bg-[#E6F6F5]/50 border border-[#00A99D]/15 rounded-2xl p-4 shadow-xs flex items-center gap-3 animate-fade-in">
-                <div className="w-9 h-9 rounded-xl bg-white text-[#00A99D] flex items-center justify-center border border-[#00A99D]/20 shadow-xs">
+              <div className="bg-[#E6F6F5]/50 border border-[#36E08F]/15 rounded-2xl p-4 shadow-xs flex items-center gap-3 animate-fade-in">
+                <div className="w-9 h-9 rounded-xl bg-white text-[#36E08F] flex items-center justify-center border border-[#36E08F]/20 shadow-xs">
                   <Sparkles className="w-5 h-5" />
                 </div>
                 <div>
@@ -547,9 +547,9 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
 
       {/* Batch Action Alert Banner */}
       {selectedIds.length > 0 && (
-        <div className="bg-[#E6F6F5] border border-[#00A99D]/20 px-5 py-3 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in no-print shadow-xs">
+        <div className="bg-[#E6F6F5] border border-[#36E08F]/20 px-5 py-3 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in no-print shadow-xs">
           <div className="flex items-center gap-2 text-[#009085]">
-            <Check className="w-4.5 h-4.5 text-[#00A99D]" />
+            <Check className="w-4.5 h-4.5 text-[#36E08F]" />
             <span>Đã chọn <strong className="text-slate-800 text-sm font-black">{selectedIds.length}</strong> học sinh trong danh sách.</span>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
@@ -558,7 +558,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 type="button"
                 onClick={handleRegister}
                 disabled={updating}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2 rounded-xl font-bold transition-all shadow-sm shadow-[#00A99D]/15 disabled:opacity-50"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 bg-[#36E08F] hover:bg-[#009085] text-white px-5 py-2 rounded-xl font-bold transition-all shadow-sm shadow-[#36E08F]/15 disabled:opacity-50"
               >
                 {updating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                 Đăng ký Dự thi
@@ -582,7 +582,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
         {/* Header bar */}
         <div className="bg-slate-50/70 border-b border-slate-100 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <Users className="w-4.5 h-4.5 text-[#00A99D]" />
+            <Users className="w-4.5 h-4.5 text-[#36E08F]" />
             <span className="font-bold text-slate-800 text-sm">
               {showAllRegistered ? "Danh Sách Học Sinh Đã Đăng Ký" : "Danh Sách Học Sinh Lớp"}
             </span>
@@ -610,7 +610,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 placeholder="Tìm học sinh theo tên, mã..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-lg outline-none focus:border-[#00A99D] transition-all bg-white"
+                className="w-full pl-9 pr-4 py-1.5 text-[11px] font-semibold border border-slate-200 rounded-lg outline-none focus:border-[#36E08F] transition-all bg-white"
               />
               </div>
             </div>
@@ -626,7 +626,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
           </div>
         ) : loading ? (
           <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-            <Loader2 className="w-8 h-8 animate-spin text-[#00A99D] mb-3" />
+            <Loader2 className="w-8 h-8 animate-spin text-[#36E08F] mb-3" />
             <p className="font-bold text-sm">Đang tải danh sách học sinh...</p>
           </div>
         ) : filteredStudents.length === 0 ? (
@@ -652,7 +652,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                         filteredStudents.every((s) => selectedIds.includes(s.id))
                       }
                       onChange={handleToggleSelectAll}
-                      className="w-3.5 h-3.5 rounded text-[#00A99D] focus:ring-[#00A99D] cursor-pointer"
+                      className="w-3.5 h-3.5 rounded text-[#36E08F] focus:ring-[#36E08F] cursor-pointer"
                     />
                   </th>
                   <th className="px-6 py-3">Mã Học Sinh</th>
@@ -672,7 +672,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                       key={student.id}
                       onClick={() => handleToggleSelect(student.id)}
                       className={`hover:bg-slate-50/40 transition-colors cursor-pointer ${
-                        isChecked ? "bg-[#00A99D]/5 hover:bg-[#00A99D]/5" : ""
+                        isChecked ? "bg-[#36E08F]/5 hover:bg-[#36E08F]/5" : ""
                       }`}
                     >
                       <td className="px-6 py-3.5 text-center" onClick={(e) => e.stopPropagation()}>
@@ -680,14 +680,14 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleToggleSelect(student.id)}
-                          className="w-3.5 h-3.5 rounded text-[#00A99D] focus:ring-[#00A99D] cursor-pointer"
+                          className="w-3.5 h-3.5 rounded text-[#36E08F] focus:ring-[#36E08F] cursor-pointer"
                         />
                       </td>
                       <td className="px-6 py-3.5 font-mono text-slate-500 font-bold">{student.studentCode}</td>
                       <td className="px-6 py-3.5 font-bold text-slate-800 text-xs sm:text-sm">
                         <div className="flex items-center gap-2">
                           <div className={`w-6.5 h-6.5 rounded-lg flex items-center justify-center font-bold text-[9px] uppercase ${
-                            isChecked ? "bg-[#00A99D] text-white" : "bg-slate-100 text-slate-500"
+                            isChecked ? "bg-[#36E08F] text-white" : "bg-slate-100 text-slate-500"
                           }`}>
                             {student.studentName.split(" ").pop()?.charAt(0) || "HS"}
                           </div>

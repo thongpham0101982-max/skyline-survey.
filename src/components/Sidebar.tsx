@@ -175,11 +175,11 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               {/* Category Header */}
               <div className="px-3 py-2 select-none flex items-center justify-between text-white/60">
                 {!isCollapsed ? (
-                  <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.12em]">
+                  <span className="text-[10px] font-extrabold text-[#36E08F] uppercase tracking-[0.12em]">
                     QUẢN LÝ DỰ GIỜ
                   </span>
                 ) : (
-                  <span className="w-full text-center text-[#00A99D] block text-[10px] font-bold">D</span>
+                  <span className="w-full text-center text-[#36E08F] block text-[10px] font-bold">D</span>
                 )}
               </div>
 
@@ -289,19 +289,19 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 >
                   {!isCollapsed ? (
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.12em] group-hover:text-teal-400 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
+                      <span className="text-[10px] font-extrabold text-[#36E08F] uppercase tracking-[0.12em] group-hover:text-teal-400 transition-colors whitespace-nowrap overflow-hidden text-ellipsis">
                         {cat.name}
                       </span>
                     </div>
                   ) : (
                     <div className="w-full flex justify-center">
-                      <span className="w-full text-center text-[#00A99D] block text-[10px] font-bold">{cat.name.charAt(0)}</span>
+                      <span className="w-full text-center text-[#36E08F] block text-[10px] font-bold">{cat.name.charAt(0)}</span>
                     </div>
                   )}
                   {!isCollapsed && (
                     <ChevronDown 
-                      className={`w-3.5 h-3.5 text-[#00A99D]/50 group-hover:text-[#00A99D] transition-transform duration-300 ${
-                        hasActiveChild ? 'rotate-180 text-[#00A99D]' : ''
+                      className={`w-3.5 h-3.5 text-[#36E08F]/50 group-hover:text-[#36E08F] transition-transform duration-300 ${
+                        hasActiveChild ? 'rotate-180 text-[#36E08F]' : ''
                       }`} 
                     />
                   )}
@@ -394,11 +394,11 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
                 <div className="mb-4">
                   <div className="px-3 py-2">
                     {!isCollapsed ? (
-                      <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.12em]">
+                      <span className="text-[10px] font-extrabold text-[#36E08F] uppercase tracking-[0.12em]">
                         A. Công tác GVCN
                       </span>
                     ) : (
-                      <span className="w-full text-center text-[#00A99D] block text-[10px] font-bold">A</span>
+                      <span className="w-full text-center text-[#36E08F] block text-[10px] font-bold">A</span>
                     )}
                   </div>
                   
@@ -518,11 +518,11 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
               <div className="pt-4 border-t border-white/10 mt-2">
                 <div className="px-3 py-2">
                   {!isCollapsed ? (
-                    <span className="text-[10px] font-extrabold text-[#00A99D] uppercase tracking-[0.12em]">
+                    <span className="text-[10px] font-extrabold text-[#36E08F] uppercase tracking-[0.12em]">
                       B. Công tác GVBM
                     </span>
                   ) : (
-                    <span className="w-full text-center text-[#00A99D] block text-[10px] font-bold">B</span>
+                    <span className="w-full text-center text-[#36E08F] block text-[10px] font-bold">B</span>
                   )}
                 </div>
 

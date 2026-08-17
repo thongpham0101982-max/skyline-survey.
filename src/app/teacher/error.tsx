@@ -47,7 +47,7 @@ export default function TeacherPortalError({
           <button 
             type="button" 
             onClick={() => setShowDetails(!showDetails)}
-            className="text-[11px] font-bold text-[#00A99D] flex items-center gap-1 hover:underline cursor-pointer"
+            className="text-[11px] font-bold text-[#36E08F] flex items-center gap-1 hover:underline cursor-pointer"
           >
             <span>{showDetails ? "Ẩn chi tiết" : "Xem chi tiết"}</span>
             {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -63,7 +63,7 @@ export default function TeacherPortalError({
       <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
         <button
           onClick={() => reset()}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:shadow w-full sm:w-auto cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#36E08F] hover:bg-[#009085] text-white text-xs font-bold rounded-xl transition-all shadow-sm hover:shadow w-full sm:w-auto cursor-pointer"
         >
           <RefreshCcw className="w-4 h-4" />
           Thử tải lại

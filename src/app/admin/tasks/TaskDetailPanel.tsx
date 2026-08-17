@@ -168,7 +168,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-150" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100" onClick={e => e.stopPropagation()}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#00A99D] to-[#007A72] text-white p-5 flex items-start justify-between shadow-md">
+        <div className="bg-gradient-to-r from-[#36E08F] to-[#007A72] text-white p-5 flex items-start justify-between shadow-md">
           <div className="flex-1 min-w-0 mr-4 space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="bg-white/20 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
@@ -218,7 +218,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
         {task.description && (
           <div className="mx-5 mt-3 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1">
             <div className="font-bold text-slate-700 flex items-center gap-1.5">
-              <FileText className="w-4 h-4 text-[#00A99D]" /> Chi tiết công việc:
+              <FileText className="w-4 h-4 text-[#36E08F]" /> Chi tiết công việc:
             </div>
             <p className="text-slate-700 leading-relaxed whitespace-pre-wrap pl-5 font-medium">{task.description}</p>
           </div>
@@ -227,7 +227,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
         {/* Người phối hợp */}
         {task.collaborators && (
           <div className="mx-5 mt-2.5 p-3 bg-teal-50/70 border border-teal-100 rounded-2xl text-xs flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#00A99D] flex-shrink-0" />
+            <Users className="w-4 h-4 text-[#36E08F] flex-shrink-0" />
             <div>
               <span className="font-bold text-teal-900">Người phối hợp: </span>
               <span className="text-teal-800 font-semibold">{task.collaborators}</span>
@@ -295,11 +295,11 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
         {/* Tabs Header */}
         <div className="flex border-b border-slate-200 mt-2">
           <button onClick={() => setTab("comments")}
-            className={"flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold border-b-2 transition-colors " + (tab === "comments" ? "border-[#00A99D] text-[#00A99D] bg-teal-50/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
+            className={"flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold border-b-2 transition-colors " + (tab === "comments" ? "border-[#36E08F] text-[#36E08F] bg-teal-50/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
             <MessageSquare className="w-4 h-4" /> Trao đổi & Trao đổi ({comments.length})
           </button>
           <button onClick={() => setTab("attachments")}
-            className={"flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold border-b-2 transition-colors " + (tab === "attachments" ? "border-[#00A99D] text-[#00A99D] bg-teal-50/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
+            className={"flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold border-b-2 transition-colors " + (tab === "attachments" ? "border-[#36E08F] text-[#36E08F] bg-teal-50/50" : "border-transparent text-slate-500 hover:text-slate-700")}>
             <Paperclip className="w-4 h-4" /> File đính kèm ({attachments.length})
           </button>
         </div>
@@ -308,7 +308,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
         <div className="flex-1 overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center p-12">
-              <div className="w-8 h-8 border-3 border-teal-200 border-t-[#00A99D] rounded-full animate-spin"></div>
+              <div className="w-8 h-8 border-3 border-teal-200 border-t-[#36E08F] rounded-full animate-spin"></div>
             </div>
           ) : tab === "comments" ? (
             <div className="p-4 space-y-3">
@@ -324,8 +324,8 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
                 return (
                   <div key={c.id} className={"flex " + (isOwn ? "justify-end" : "justify-start")}>
                     <div className={"max-w-[85%] group " + (isOwn ? "order-2" : "")}>
-                      <div className={"rounded-2xl px-4 py-2.5 shadow-sm " + (isOwn ? "bg-[#00A99D] text-white rounded-br-md" : "bg-slate-100 text-slate-800 rounded-bl-md")}>
-                        {!isOwn && <div className={"text-[11px] font-bold mb-1 text-[#00A99D]"}>{c.user?.fullName}</div>}
+                      <div className={"rounded-2xl px-4 py-2.5 shadow-sm " + (isOwn ? "bg-[#36E08F] text-white rounded-br-md" : "bg-slate-100 text-slate-800 rounded-bl-md")}>
+                        {!isOwn && <div className={"text-[11px] font-bold mb-1 text-[#36E08F]"}>{c.user?.fullName}</div>}
                         <p className="text-xs whitespace-pre-wrap break-words leading-relaxed">{c.content}</p>
                       </div>
                       <div className={"flex items-center gap-2 mt-1 px-1 " + (isOwn ? "justify-end" : "")}>
@@ -356,14 +356,14 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
                 return (
                   <div key={a.id} className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl hover:border-teal-300 hover:shadow-sm transition-all group">
                     <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
-                      <IconComp className="w-5 h-5 text-[#00A99D]" />
+                      <IconComp className="w-5 h-5 text-[#36E08F]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-slate-800 truncate">{a.fileName}</p>
                       <p className="text-[11px] text-slate-400">{formatSize(a.fileSize)} • {a.user?.fullName} • {formatTime(a.createdAt)}</p>
                     </div>
                     <div className="flex items-center gap-1">
-                      <button onClick={() => handleDownload(a)} className="p-1.5 text-[#00A99D] hover:bg-teal-50 rounded-lg" title="Tải xuống">
+                      <button onClick={() => handleDownload(a)} className="p-1.5 text-[#36E08F] hover:bg-teal-50 rounded-lg" title="Tải xuống">
                         <Download className="w-4 h-4" />
                       </button>
                       {(a.userId === currentUserId || isAdmin) && (
@@ -389,12 +389,12 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
                 onKeyDown={handleKeyDown}
                 placeholder="Nhập nội dung trao đổi... (Enter để gửi)"
                 rows={1}
-                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-[#00A99D] bg-white"
+                className="flex-1 border border-slate-200 rounded-xl px-4 py-2.5 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-[#36E08F] bg-white"
               />
               <button
                 onClick={handleSendComment}
                 disabled={!newComment.trim() || sending}
-                className="bg-[#00A99D] text-white p-2.5 rounded-xl hover:bg-[#007A72] disabled:opacity-40 transition-colors shadow-sm"
+                className="bg-[#36E08F] text-white p-2.5 rounded-xl hover:bg-[#007A72] disabled:opacity-40 transition-colors shadow-sm"
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -405,7 +405,7 @@ export function TaskDetailPanel({ task, currentUserId, isAdmin, onClose, onTaskU
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="flex items-center gap-2 bg-[#00A99D] text-white px-5 py-2.5 rounded-xl hover:bg-[#007A72] disabled:opacity-50 font-bold text-xs transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-[#36E08F] text-white px-5 py-2.5 rounded-xl hover:bg-[#007A72] disabled:opacity-50 font-bold text-xs transition-colors shadow-sm"
               >
                 <Paperclip className="w-4 h-4" /> {uploading ? "Đang tải lên..." : "Tải file tài liệu lên"}
               </button>

@@ -147,7 +147,7 @@ export default function ParentStudentProfilePage() {
       {childrenList.length > 0 && (
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex items-center justify-between gap-4">
           <span className="text-xs font-black text-slate-600 flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#00A99D]" />
+            <Users className="w-4 h-4 text-[#36E08F]" />
             <span>Chọn học sinh xem Hồ sơ Năng lực:</span>
           </span>
           <div className="flex items-center gap-2">
@@ -170,7 +170,7 @@ export default function ParentStudentProfilePage() {
 
       {loading ? (
         <div className="py-20 text-center text-xs font-extrabold text-slate-400 animate-pulse space-y-2">
-          <GraduationCap className="w-8 h-8 mx-auto text-[#00A99D] animate-bounce" />
+          <GraduationCap className="w-8 h-8 mx-auto text-[#36E08F] animate-bounce" />
           <p>Đang tải Hồ sơ Năng lực Học sinh...</p>
         </div>
       ) : childrenList.length === 0 ? (
@@ -198,7 +198,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("advisory")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "advisory"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -210,11 +210,11 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("hshs_detail")}
                 className={"flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-extrabold transition-all " + (
                   activeTab === "hshs_detail"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-white shadow-xs"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-white shadow-xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
-                <User className="w-4 h-4 text-[#00A99D]" />
+                <User className="w-4 h-4 text-[#36E08F]" />
                 <span>Xem chi tiết HSHS</span>
               </button>
 
@@ -222,7 +222,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("moet")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "moet"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -234,7 +234,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("entrance")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "entrance"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -246,7 +246,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("achievements")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "achievements"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -261,7 +261,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("orientation")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "orientation"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -273,7 +273,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("experiences")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "experiences"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -285,7 +285,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("comments")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "comments"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -297,7 +297,7 @@ export default function ParentStudentProfilePage() {
                 onClick={() => setActiveTab("support")}
                 className={"flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold transition-all " + (
                   activeTab === "support"
-                    ? "border-2 border-[#00A99D] text-[#00A99D] bg-teal-50/40 shadow-2xs font-extrabold"
+                    ? "border-2 border-[#36E08F] text-[#36E08F] bg-teal-50/40 shadow-2xs font-extrabold"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                 )}
               >
@@ -309,12 +309,12 @@ export default function ParentStudentProfilePage() {
 
           {/* TAB 1: XEM CHI TIẾT HSHS (EXACT SCREENSHOT PORTFOLIO CARD) */}
           {activeTab === "hshs_detail" && (
-            <div className="bg-white border-t-4 border-[#00A99D] rounded-3xl border border-slate-200/90 shadow-md p-6 sm:p-10 space-y-8 relative overflow-hidden font-sans">
+            <div className="bg-white border-t-4 border-[#36E08F] rounded-3xl border border-slate-200/90 shadow-md p-6 sm:p-10 space-y-8 relative overflow-hidden font-sans">
               {/* Header Row */}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-6">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <GraduationCap className="w-5 h-5 text-[#00A99D]" />
+                    <GraduationCap className="w-5 h-5 text-[#36E08F]" />
                     <span className="font-extrabold text-xs tracking-wider text-slate-600 uppercase">SKY-LINE SYSTEM</span>
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight uppercase">
@@ -348,7 +348,7 @@ export default function ParentStudentProfilePage() {
                         {student.studentName || selectedStudent.studentName || "N/A"}
                       </h2>
                       <div>
-                        <span className="inline-block bg-teal-50 text-[#00A99D] font-extrabold text-xs px-3.5 py-1 rounded-full border border-teal-100 uppercase tracking-wider">
+                        <span className="inline-block bg-teal-50 text-[#36E08F] font-extrabold text-xs px-3.5 py-1 rounded-full border border-teal-100 uppercase tracking-wider">
                           LỚP: {classNameStr}
                         </span>
                       </div>
@@ -372,7 +372,7 @@ export default function ParentStudentProfilePage() {
 
                   <div className="space-y-2 pt-2">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <Ribbon className="w-4 h-4 text-[#00A99D]" />
+                      <Ribbon className="w-4 h-4 text-[#36E08F]" />
                       <span>THÀNH TÍCH NỔI BẬT</span>
                     </h3>
                     {achievements.length === 0 ? (
@@ -396,7 +396,7 @@ export default function ParentStudentProfilePage() {
 
                   <div className="space-y-2 pt-2">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <Compass className="w-4 h-4 text-[#00A99D]" />
+                      <Compass className="w-4 h-4 text-[#36E08F]" />
                       <span>ĐỊNH HƯỚNG NGÀNH NGHỀ</span>
                     </h3>
                     {careerOrientation?.description || careerOrientation?.targetField ? (
@@ -416,13 +416,13 @@ export default function ParentStudentProfilePage() {
                 <div className="md:col-span-2 space-y-6">
                   <div className="space-y-3">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                      <ClipboardCheck className="w-4 h-4 text-[#00A99D]" />
+                      <ClipboardCheck className="w-4 h-4 text-[#36E08F]" />
                       <span>HỒ SƠ HỌC THUẬT ĐẦU VÀO (INTAKE EVALUATION)</span>
                     </h3>
                     {inputAssessment ? (
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl text-center">
-                          <div className="text-[9px] text-[#00A99D] font-black uppercase tracking-wider">Toán học</div>
+                          <div className="text-[9px] text-[#36E08F] font-black uppercase tracking-wider">Toán học</div>
                           <div className="text-xl font-black text-slate-900 mt-1">{inputAssessment.mathScore ?? "—"}</div>
                         </div>
                         <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl text-center">
@@ -447,7 +447,7 @@ export default function ParentStudentProfilePage() {
 
                   <div className="space-y-3">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                      <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                      <BookOpen className="w-4 h-4 text-[#36E08F]" />
                       <span>HOẠT ĐỘNG TRẢI NGHIỆM</span>
                     </h3>
                     {projectExperiences.length === 0 ? (
@@ -471,7 +471,7 @@ export default function ParentStudentProfilePage() {
 
                   <div className="space-y-3">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                      <GraduationCap className="w-4 h-4 text-[#00A99D]" />
+                      <GraduationCap className="w-4 h-4 text-[#36E08F]" />
                       <span>KẾ HOẠCH HỖ TRỢ HỌC TẬP & PHÁT TRIỂN</span>
                     </h3>
                     {learningSupportTargets.length === 0 ? (
@@ -495,7 +495,7 @@ export default function ParentStudentProfilePage() {
 
                   <div className="space-y-3">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                      <MessageSquare className="w-4 h-4 text-[#00A99D]" />
+                      <MessageSquare className="w-4 h-4 text-[#36E08F]" />
                       <span>NHẬN XÉT ĐỊNH KỲ TỪ GIÁO VIÊN CHỦ NHIỆM</span>
                     </h3>
                     {highlightComments.length === 0 ? (
@@ -599,7 +599,7 @@ export default function ParentStudentProfilePage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl text-center">
-                    <div className="text-[9px] text-[#00A99D] font-black uppercase tracking-wider">Toán học</div>
+                    <div className="text-[9px] text-[#36E08F] font-black uppercase tracking-wider">Toán học</div>
                     <div className="text-xl font-black text-slate-900 mt-1">{inputAssessment.mathScore ?? "—"}</div>
                   </div>
                   <div className="bg-slate-50 border border-slate-100 p-3 rounded-2xl text-center">

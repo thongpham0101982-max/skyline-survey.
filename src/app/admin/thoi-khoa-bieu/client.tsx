@@ -542,7 +542,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
       {/* HEADER BAR */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#003B3A] to-[#00A99D] text-white flex items-center justify-center font-black shadow-md">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#003B3A] to-[#36E08F] text-white flex items-center justify-center font-black shadow-md">
             <Calendar className="w-6 h-6" />
           </div>
           <div>
@@ -560,7 +560,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           <button
             onClick={handleSaveAll}
             disabled={isSaving}
-            className="px-5 py-2.5 bg-[#00A99D] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-5 py-2.5 bg-[#36E08F] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
             {isSaving ? "Đang lưu toàn bộ..." : "LƯU THỜI KHÓA BIỂU"}
@@ -586,7 +586,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               : "text-slate-600 hover:bg-slate-100"
           }`}
         >
-          <Grid className="w-4 h-4 text-[#00A99D]" />
+          <Grid className="w-4 h-4 text-[#36E08F]" />
           1. MA TRẬN KÉO & THẢ LỚP HỌC
         </button>
 
@@ -594,7 +594,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           onClick={() => setMainViewMode("CLASS_LOOKUP")}
           className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
             mainViewMode === "CLASS_LOOKUP"
-              ? "bg-[#00A99D] text-white shadow-md"
+              ? "bg-[#36E08F] text-white shadow-md"
               : "text-slate-600 hover:bg-slate-100"
           }`}
         >
@@ -606,7 +606,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           onClick={() => setMainViewMode("TEACHER_LOOKUP")}
           className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
             mainViewMode === "TEACHER_LOOKUP"
-              ? "bg-[#00A99D] text-white shadow-md"
+              ? "bg-[#36E08F] text-white shadow-md"
               : "text-slate-600 hover:bg-slate-100"
           }`}
         >
@@ -674,7 +674,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
         <div className="lg:col-span-9 bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
           <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
             <span className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
-              <Grid className="w-4 h-4 text-[#00A99D]" />
+              <Grid className="w-4 h-4 text-[#36E08F]" />
               MA TRẬN THỜI KHÓA BIỂU LỚP HỌC (THỨ 2 - THỨ 6)
             </span>
             <span className="text-[11px] font-bold text-slate-500">
@@ -821,7 +821,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                 activeTab === "SUBJECTS" ? "bg-white text-[#003B3A] shadow-xs" : "text-slate-600"
               }`}
             >
-              <BookOpen className="w-4 h-4 text-[#00A99D]" />
+              <BookOpen className="w-4 h-4 text-[#36E08F]" />
               Môn học ({subjects.length})
             </button>
             <button
@@ -843,12 +843,12 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               placeholder={activeTab === "SUBJECTS" ? "Tìm môn học..." : "Tìm tên hoặc Mã GV..."}
               value={activeTab === "SUBJECTS" ? searchSubject : searchTeacher}
               onChange={e => activeTab === "SUBJECTS" ? setSearchSubject(e.target.value) : setSearchTeacher(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-xs font-bold rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#00A99D]"
+              className="w-full pl-9 pr-3 py-2 text-xs font-bold rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#36E08F]"
             />
           </div>
 
           <div className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
-            <Info className="w-3.5 h-3.5 shrink-0 text-[#00A99D]" />
+            <Info className="w-3.5 h-3.5 shrink-0 text-[#36E08F]" />
             <span>Kéo thẻ bên dưới và thả vào ô tiết học trong bảng</span>
           </div>
 
@@ -905,7 +905,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
             {/* 1. CHỌN CƠ SỞ */}
             <div className="md:col-span-5 space-y-1.5">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Building2 className="w-3.5 h-3.5 text-[#36E08F]" />
                 1. Chọn Cơ Sở Trực Thuộc
               </label>
               <select
@@ -914,7 +914,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   setLookupCampusId(e.target.value);
                   setLookupClassId("");
                 }}
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/20 transition-all"
               >
                 <option value="">-- Tất cả các Cơ sở --</option>
                 {campuses.map((c: any) => (
@@ -926,13 +926,13 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
             {/* 2. CHỌN LỚP HỌC */}
             <div className="md:col-span-7 space-y-1.5">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Layers className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Layers className="w-3.5 h-3.5 text-[#36E08F]" />
                 2. Chọn Lớp Học Cần Tra Cứu TKB
               </label>
               <select
                 value={lookupClassId}
                 onChange={e => setLookupClassId(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/20 transition-all"
               >
                 <option value="">-- Chọn Lớp học trong danh sách --</option>
                 {campusFilteredClasses.map((cls: any) => (
@@ -947,7 +947,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           {/* CLASS INFO BADGE */}
           {selectedClassObj ? (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-xl text-white">
                     {selectedClassObj.className?.charAt(0) || "L"}
@@ -1034,7 +1034,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               {/* CHRONOLOGICAL LIST OF CLASS PERIODS */}
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
                 <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                  <BookOpen className="w-4 h-4 text-[#36E08F]" />
                   Danh Sách Môn Học & GVGD Trong Tuần Của Lớp
                 </h3>
                 {classScheduleStats.slotsList.length > 0 ? (
@@ -1042,7 +1042,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                     {classScheduleStats.slotsList.map((item: any, i: number) => (
                       <div key={i} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#00A99D] mr-2">
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#36E08F] mr-2">
                             {item.dayLabel} - {item.sessionLabel} Tiết {item.periodNumber}
                           </span>
                           <h4 className="text-xs font-black text-slate-800 mt-1">{item.subjectName}</h4>
@@ -1077,7 +1077,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
             {/* 1. CHỌN TỔ CHUYÊN MÔN */}
             <div className="md:col-span-5 space-y-1.5">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Filter className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Filter className="w-3.5 h-3.5 text-[#36E08F]" />
                 1. Lọc Theo Tổ Chuyên Môn
               </label>
               <select
@@ -1086,7 +1086,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   setLookupDept(e.target.value);
                   setLookupTeacherId("");
                 }}
-                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                className="w-full bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/20 transition-all"
               >
                 <option value="ALL">-- Tất cả các Tổ chuyên môn --</option>
                 {uniqueDepartments.map(d => (
@@ -1098,14 +1098,14 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
             {/* 2. CHỌN / TRA CỨU GIÁO VIÊN */}
             <div className="md:col-span-7 space-y-1.5">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <Search className="w-3.5 h-3.5 text-[#00A99D]" />
+                <Search className="w-3.5 h-3.5 text-[#36E08F]" />
                 2. Chọn Giáo Viên Hoặc Nhập Tên Tra Cứu
               </label>
               <div className="flex gap-2">
                 <select
                   value={lookupTeacherId}
                   onChange={e => setLookupTeacherId(e.target.value)}
-                  className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/20 transition-all"
+                  className="flex-1 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/20 transition-all"
                 >
                   <option value="">-- Chọn Giáo viên trong danh sách --</option>
                   {deptFilteredTeachers.map((t: any) => (
@@ -1120,7 +1120,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   placeholder="Hoặc gõ tên GV..."
                   value={lookupSearchQuery}
                   onChange={e => setLookupSearchQuery(e.target.value)}
-                  className="w-48 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#00A99D] transition-all"
+                  className="w-48 bg-white border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] transition-all"
                 />
               </div>
             </div>
@@ -1129,7 +1129,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           {/* TEACHER INFO BADGE */}
           {selectedTeacherObj ? (
             <div className="space-y-6">
-              <div className="bg-gradient-to-r from-[#003B3A] to-[#00A99D] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-xl text-white">
                     {selectedTeacherObj.teacherName?.charAt(0) || "GV"}
@@ -1216,7 +1216,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               {/* CHRONOLOGICAL LIST OF TEACHING PERIODS */}
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-3">
                 <h3 className="text-xs font-black text-slate-700 uppercase tracking-wide flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                  <BookOpen className="w-4 h-4 text-[#36E08F]" />
                   Danh Sách Tiết Dạy Trong Tuần (Chi Tiết)
                 </h3>
                 {teacherScheduleStats.slotsList.length > 0 ? (
@@ -1224,7 +1224,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                     {teacherScheduleStats.slotsList.map((item: any, i: number) => (
                       <div key={i} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
                         <div>
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#00A99D] mr-2">
+                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-[#36E08F] mr-2">
                             {item.dayLabel} - {item.sessionLabel} Tiết {item.periodNumber}
                           </span>
                           <h4 className="text-xs font-black text-slate-800 mt-1">{item.subjectName}</h4>
@@ -1257,7 +1257,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 border border-slate-100 animate-in fade-in zoom-in duration-200">
             <div className="flex items-center justify-between border-b border-slate-150 pb-3">
               <div className="flex items-center gap-2">
-                <Edit3 className="w-5 h-5 text-[#00A99D]" />
+                <Edit3 className="w-5 h-5 text-[#36E08F]" />
                 <h3 className="font-black text-sm text-slate-850 uppercase tracking-wide">
                   CHỈNH SỬA TIẾT HỌC
                 </h3>
@@ -1268,7 +1268,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
             </div>
 
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-150 text-xs font-bold text-slate-700 flex flex-wrap gap-x-4 gap-y-1">
-              <span>Lớp: <span className="text-[#00A99D] font-black">{editingCell.className}</span></span>
+              <span>Lớp: <span className="text-[#36E08F] font-black">{editingCell.className}</span></span>
               <span>{DAYS.find(d => d.key === editingCell.dayOfWeek)?.label}</span>
               <span>{editingCell.session === "MORNING" ? "Sáng" : "Chiều"} - Tiết {editingCell.periodNumber}</span>
             </div>
@@ -1279,7 +1279,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               <select
                 value={editWeekType}
                 onChange={e => setEditWeekType(e.target.value)}
-                className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#00A99D]"
+                className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-[#36E08F]"
               >
                 <option value="ALL">Tất cả các tuần (Cố định)</option>
                 <option value="EVEN">Chỉ học Tuần chẵn</option>
@@ -1387,7 +1387,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                 <button
                   type="button"
                   onClick={handleSaveEditModal}
-                  className="px-5 py-2.5 bg-[#00A99D] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  className="px-5 py-2.5 bg-[#36E08F] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                 >
                   <Check className="w-4 h-4" />
                   Lưu thay đổi

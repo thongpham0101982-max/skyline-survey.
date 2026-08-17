@@ -189,7 +189,7 @@ export function AchievementsClient({
           onClick={() => { setActiveSubTab('categories'); setErrorMsg(""); setCreatingCat(false); setCreatingLvl(false); }}
           className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
             activeSubTab === 'categories' 
-              ? 'border-[#00A99D] text-[#00A99D]' 
+              ? 'border-[#36E08F] text-[#36E08F]' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -200,7 +200,7 @@ export function AchievementsClient({
           onClick={() => { setActiveSubTab('levels'); setErrorMsg(""); setCreatingCat(false); setCreatingLvl(false); }}
           className={`pb-3 text-xs font-black transition-all border-b-2 px-4 flex items-center gap-1.5 ${
             activeSubTab === 'levels' 
-              ? 'border-[#00A99D] text-[#00A99D]' 
+              ? 'border-[#36E08F] text-[#36E08F]' 
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
@@ -216,7 +216,7 @@ export function AchievementsClient({
             <p className="text-slate-500 text-sm font-medium">Tạo và quản lý các loại thành tích học sinh (ví dụ: Giải thưởng, Huy chương, Chứng nhận...).</p>
             <button
               onClick={() => { setCreatingCat(true); setErrorMsg("") }}
-              className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A99D]/20 transition-all text-xs"
+              className="flex items-center gap-2 bg-[#36E08F] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#36E08F]/20 transition-all text-xs"
             >
               <Plus className="w-4 h-4" />
               Thêm Loại Mới
@@ -226,7 +226,7 @@ export function AchievementsClient({
           {creatingCat && (
             <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
               <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-[#00A99D]" />
+                <Trophy className="w-5 h-5 text-[#36E08F]" />
                 Thêm Loại Thành Tích Mới
               </h3>
               {errorMsg && (
@@ -244,7 +244,7 @@ export function AchievementsClient({
                     value={newCatForm.name}
                     onChange={e => setNewCatForm({ ...newCatForm, name: e.target.value })}
                     placeholder="Ví dụ: Giải thưởng, Huy chương, Chứng nhận..."
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all font-semibold"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none transition-all font-semibold"
                   />
                 </div>
                 <div>
@@ -256,7 +256,7 @@ export function AchievementsClient({
                     value={newCatForm.code}
                     onChange={e => setNewCatForm({ ...newCatForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
                     placeholder="Ví dụ: GIAI_THUONG"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none font-mono transition-all font-semibold"
                   />
                 </div>
               </div>
@@ -266,7 +266,7 @@ export function AchievementsClient({
                   value={newCatForm.description}
                   onChange={e => setNewCatForm({ ...newCatForm, description: e.target.value })}
                   placeholder="Nhập mô tả chi tiết..."
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#00A99D] outline-none font-semibold"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#36E08F] outline-none font-semibold"
                   rows={3}
                 />
               </div>
@@ -274,7 +274,7 @@ export function AchievementsClient({
                 <button
                   onClick={handleCreateCategory}
                   disabled={saving}
-                  className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60"
+                  className="px-6 py-2.5 bg-[#36E08F] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#36E08F]/20 transition-all disabled:opacity-60"
                 >
                   {saving ? "Đang lưu..." : "Lưu Lại"}
                 </button>
@@ -305,7 +305,7 @@ export function AchievementsClient({
                   return (
                     <div key={cat.id} className="flex flex-col p-6 hover:bg-slate-50/50 transition-colors group">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-teal-50 text-[#00A99D] rounded-xl flex items-center justify-center flex-shrink-0">
+                        <div className="w-10 h-10 bg-teal-50 text-[#36E08F] rounded-xl flex items-center justify-center flex-shrink-0">
                           <Trophy className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -317,7 +317,7 @@ export function AchievementsClient({
                                   type="text"
                                   value={editCatForm.name}
                                   onChange={e => setEditCatForm({ ...editCatForm, name: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold"
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#36E08F] font-semibold"
                                 />
                               </div>
                               <div>
@@ -326,7 +326,7 @@ export function AchievementsClient({
                                   type="text"
                                   value={editCatForm.code}
                                   onChange={e => setEditCatForm({ ...editCatForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-mono font-semibold"
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#36E08F] font-mono font-semibold"
                                 />
                               </div>
                               <div className="md:col-span-2">
@@ -334,7 +334,7 @@ export function AchievementsClient({
                                 <textarea
                                   value={editCatForm.description}
                                   onChange={e => setEditCatForm({ ...editCatForm, description: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#00A99D] font-semibold"
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#36E08F] font-semibold"
                                   rows={2}
                                 />
                               </div>
@@ -380,7 +380,7 @@ export function AchievementsClient({
                             <>
                               <button
                                 onClick={() => handleEditCategory(cat)}
-                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
+                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-[#36E08F] hover:bg-[#36E08F]/5 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
@@ -410,7 +410,7 @@ export function AchievementsClient({
             <p className="text-slate-500 text-sm font-medium">Tạo và quản lý các mức giải thưởng (ví dụ: Giải Nhất, Giải Nhì, Huy chương Vàng, Huy chương Bạc...).</p>
             <button
               onClick={() => { setCreatingLvl(true); setErrorMsg("") }}
-              className="flex items-center gap-2 bg-[#00A99D] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#00A99D]/20 transition-all text-xs"
+              className="flex items-center gap-2 bg-[#36E08F] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-bold shadow-lg shadow-[#36E08F]/20 transition-all text-xs"
             >
               <Plus className="w-4 h-4" />
               Thêm Mức giải Mới
@@ -420,7 +420,7 @@ export function AchievementsClient({
           {creatingLvl && (
             <div className="bg-white border-2 border-indigo-200 rounded-2xl p-6 shadow-md shadow-indigo-50 animate-fade-in">
               <h3 className="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                <Medal className="w-5 h-5 text-[#00A99D]" />
+                <Medal className="w-5 h-5 text-[#36E08F]" />
                 Thêm Mức giải Mới
               </h3>
               {errorMsg && (
@@ -438,7 +438,7 @@ export function AchievementsClient({
                     value={newLvlForm.name}
                     onChange={e => setNewLvlForm({ ...newLvlForm, name: e.target.value })}
                     placeholder="Ví dụ: Giải Nhất, Huy chương Vàng..."
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none transition-all font-semibold"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none transition-all font-semibold"
                   />
                 </div>
                 <div>
@@ -450,7 +450,7 @@ export function AchievementsClient({
                     value={newLvlForm.code}
                     onChange={e => setNewLvlForm({ ...newLvlForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
                     placeholder="Ví dụ: NHAT, VANG"
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none font-mono transition-all font-semibold"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none font-mono transition-all font-semibold"
                   />
                 </div>
                 <div>
@@ -460,7 +460,7 @@ export function AchievementsClient({
                   <select
                     value={newLvlForm.categoryId}
                     onChange={e => setNewLvlForm({ ...newLvlForm, categoryId: e.target.value })}
-                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#00A99D] focus:ring-2 focus:ring-[#00A99D]/10 outline-none bg-white transition-all font-semibold"
+                    className="w-full border border-slate-200 rounded-lg px-4 py-2 text-xs focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none bg-white transition-all font-semibold"
                   >
                     <option value="">-- Chọn Loại thành tích --</option>
                     {categories.map(c => (
@@ -475,7 +475,7 @@ export function AchievementsClient({
                   value={newLvlForm.description}
                   onChange={e => setNewLvlForm({ ...newLvlForm, description: e.target.value })}
                   placeholder="Nhập mô tả chi tiết..."
-                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#00A99D] outline-none font-semibold"
+                  className="w-full border border-slate-200 rounded-lg px-4 py-2.5 text-xs focus:border-[#36E08F] outline-none font-semibold"
                   rows={3}
                 />
               </div>
@@ -483,7 +483,7 @@ export function AchievementsClient({
                 <button
                   onClick={handleCreateLevel}
                   disabled={saving}
-                  className="px-6 py-2.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#00A99D]/20 transition-all disabled:opacity-60"
+                  className="px-6 py-2.5 bg-[#36E08F] hover:bg-[#009085] text-white rounded-lg font-bold text-xs shadow-md shadow-[#36E08F]/20 transition-all disabled:opacity-60"
                 >
                   {saving ? "Đang lưu..." : "Lưu Lại"}
                 </button>
@@ -527,7 +527,7 @@ export function AchievementsClient({
                                   type="text"
                                   value={editLvlForm.name}
                                   onChange={e => setEditLvlForm({ ...editLvlForm, name: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold"
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#36E08F] font-semibold"
                                 />
                               </div>
                               <div>
@@ -536,7 +536,7 @@ export function AchievementsClient({
                                   type="text"
                                   value={editLvlForm.code}
                                   onChange={e => setEditLvlForm({ ...editLvlForm, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-mono font-semibold"
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#36E08F] font-mono font-semibold"
                                 />
                               </div>
                               <div>
@@ -544,7 +544,7 @@ export function AchievementsClient({
                                 <select
                                   value={editLvlForm.categoryId}
                                   onChange={e => setEditLvlForm({ ...editLvlForm, categoryId: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] bg-white font-semibold"
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1 text-xs outline-none focus:border-[#36E08F] bg-white font-semibold"
                                 >
                                   <option value="">-- Chọn Loại thành tích --</option>
                                   {categories.map(c => (
@@ -557,7 +557,7 @@ export function AchievementsClient({
                                 <textarea
                                   value={editLvlForm.description}
                                   onChange={e => setEditLvlForm({ ...editLvlForm, description: e.target.value })}
-                                  className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#00A99D] font-semibold"
+                                  className="w-full border border-slate-200 rounded px-2.5 py-1.5 text-xs outline-none focus:border-[#36E08F] font-semibold"
                                   rows={2}
                                 />
                               </div>
@@ -571,7 +571,7 @@ export function AchievementsClient({
                                   {lvl.code}
                                 </span>
                                 {associatedCategory ? (
-                                  <span className="flex items-center gap-1 text-[10px] bg-[#00A99D]/10 text-[#00A99D] font-black px-2 py-0.5 rounded-full border border-[#00A99D]/20">
+                                  <span className="flex items-center gap-1 text-[10px] bg-[#36E08F]/10 text-[#36E08F] font-black px-2 py-0.5 rounded-full border border-[#36E08F]/20">
                                     <Tag className="w-3 h-3" />
                                     {associatedCategory.name}
                                   </span>
@@ -614,7 +614,7 @@ export function AchievementsClient({
                             <>
                               <button
                                 onClick={() => handleEditLevel(lvl)}
-                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
+                                className="w-7 h-7 bg-slate-50 text-slate-400 hover:text-[#36E08F] hover:bg-[#36E08F]/5 rounded-lg flex items-center justify-center transition-all border border-slate-200/60"
                                 title="Chỉnh sửa"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />

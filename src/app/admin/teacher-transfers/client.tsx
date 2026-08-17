@@ -56,7 +56,7 @@ function YearSelector({ value, onChange, years, label }: {
         <select
           value={value}
           onChange={e => onChange(e.target.value)}
-          className="appearance-none w-full pl-3 pr-8 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-sm font-semibold text-slate-800 focus:border-[#00A99D] focus:outline-none transition-all"
+          className="appearance-none w-full pl-3 pr-8 py-2.5 rounded-xl border-2 border-slate-200 bg-white text-sm font-semibold text-slate-800 focus:border-[#36E08F] focus:outline-none transition-all"
         >
           <option value="">-- Chọn năm học --</option>
           {years.map(y => (
@@ -119,7 +119,7 @@ function TeacherListPanel({
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
           <input
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-[#00A99D] focus:outline-none bg-white"
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 focus:border-[#36E08F] focus:outline-none bg-white"
             placeholder="Tìm tên, mã GV..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -130,7 +130,7 @@ function TeacherListPanel({
             <select
               value={filterCampus}
               onChange={e => setFilterCampus(e.target.value)}
-              className="appearance-none pl-2 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:border-[#00A99D] focus:outline-none"
+              className="appearance-none pl-2 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:border-[#36E08F] focus:outline-none"
             >
               <option value="">Tất cả CS</option>
               {campuses.map(c => <option key={c} value={c}>{c}</option>)}
@@ -144,10 +144,10 @@ function TeacherListPanel({
       <div className="px-3 py-1.5 bg-white/40 border-b border-slate-100 flex items-center gap-2">
         <button
           onClick={allSelected ? onDeselectAll : onSelectAll}
-          className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 hover:text-[#00A99D] transition-colors"
+          className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 hover:text-[#36E08F] transition-colors"
         >
           {allSelected
-            ? <CheckSquare className="w-4 h-4 text-[#00A99D]" />
+            ? <CheckSquare className="w-4 h-4 text-[#36E08F]" />
             : someSelected
               ? <CheckSquare className="w-4 h-4 text-slate-400" />
               : <Square className="w-4 h-4" />
@@ -155,7 +155,7 @@ function TeacherListPanel({
           Chọn tất cả ({filtered.length})
         </button>
         {selectedIds.size > 0 && (
-          <span className="ml-auto text-[11px] font-bold text-[#00A99D]">
+          <span className="ml-auto text-[11px] font-bold text-[#36E08F]">
             Đã chọn: {[...selectedIds].filter(id => filtered.some(t => t.id === id)).length}
           </span>
         )}
@@ -165,7 +165,7 @@ function TeacherListPanel({
       <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar" style={{ maxHeight: 480 }}>
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-6 h-6 animate-spin text-[#00A99D]" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#36E08F]" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-slate-400 gap-2">
@@ -181,12 +181,12 @@ function TeacherListPanel({
                   key={t.id}
                   onClick={() => onToggle(t.id)}
                   className={`flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-colors select-none ${
-                    selected ? "bg-[#00A99D]/8 border-l-2 border-[#00A99D]" : "hover:bg-slate-50"
+                    selected ? "bg-[#36E08F]/8 border-l-2 border-[#36E08F]" : "hover:bg-slate-50"
                   }`}
                 >
                   <div className="shrink-0">
                     {selected
-                      ? <CheckSquare className="w-4 h-4 text-[#00A99D]" />
+                      ? <CheckSquare className="w-4 h-4 text-[#36E08F]" />
                       : <Square className="w-4 h-4 text-slate-300" />
                     }
                   </div>
@@ -366,13 +366,13 @@ export function TeacherTransfersClient({
           <div className="mt-5">
             <div className="flex items-center justify-between mb-2 text-xs font-semibold">
               <span className="text-slate-500">Tiến độ kết chuyển</span>
-              <span className="text-[#00A99D]">
+              <span className="text-[#36E08F]">
                 {transferredTeachers.length} / {totalTeachers} giáo viên đã kết chuyển
               </span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-[#00A99D] to-emerald-400 rounded-full transition-all duration-700"
+                className="h-full bg-gradient-to-r from-[#36E08F] to-emerald-400 rounded-full transition-all duration-700"
                 style={{ width: `${totalTeachers > 0 ? (transferredTeachers.length / totalTeachers) * 100 : 0}%` }}
               />
             </div>
@@ -407,7 +407,7 @@ export function TeacherTransfersClient({
             <button
               onClick={() => handleTransfer([...leftSelected])}
               disabled={leftSelected.size === 0 || transferring || !toYearId}
-              className="group flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl bg-[#00A99D] text-white font-bold text-xs shadow-lg hover:bg-[#009088] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="group flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl bg-[#36E08F] text-white font-bold text-xs shadow-lg hover:bg-[#009088] active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               title="Kết chuyển GV đã chọn sang năm học mới"
             >
               {transferring
@@ -470,7 +470,7 @@ export function TeacherTransfersClient({
           <TeacherListPanel
             title={`Năm học ${toYearName}`}
             subtitle={`Đã kết chuyển — ${transferredTeachers.length} GV`}
-            colorClass="border-[#00A99D]/30 bg-[#00A99D]/5 text-[#00A99D]"
+            colorClass="border-[#36E08F]/30 bg-[#36E08F]/5 text-[#36E08F]"
             icon={UserCheck}
             teachers={transferredTeachers}
             selectedIds={rightSelected}
@@ -480,7 +480,7 @@ export function TeacherTransfersClient({
             loading={loading}
             emptyMsg="Chưa có giáo viên nào được kết chuyển"
             badge={
-              <span className="text-2xl font-black text-[#00A99D]/40">{transferredTeachers.length}</span>
+              <span className="text-2xl font-black text-[#36E08F]/40">{transferredTeachers.length}</span>
             }
           />
         </div>

@@ -82,7 +82,7 @@ export default function TeacherStudentProfilesPrintPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen space-y-4 bg-white">
-        <Loader2 className="w-12 h-12 text-[#00A99D] animate-spin" />
+        <Loader2 className="w-12 h-12 text-[#36E08F] animate-spin" />
         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Đang khởi tạo bản in hồ sơ A4...</p>
       </div>
     )
@@ -146,12 +146,12 @@ export default function TeacherStudentProfilesPrintPage() {
       <div className="no-print-layout max-w-4xl mx-auto mb-4 bg-white border border-slate-200 p-4 rounded-2xl shadow-sm flex items-center justify-between text-xs font-bold text-slate-700">
         <div>
           <span>Bản in A4: </span>
-          <span className="text-[#00A99D] font-extrabold">{students.length} học sinh</span>
+          <span className="text-[#36E08F] font-extrabold">{students.length} học sinh</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => window.print()}
-            className="px-4 py-2 bg-[#00A99D] hover:bg-[#009085] text-white rounded-xl shadow-xs transition-all cursor-pointer"
+            className="px-4 py-2 bg-[#36E08F] hover:bg-[#009085] text-white rounded-xl shadow-xs transition-all cursor-pointer"
           >
             Mở hộp thoại In
           </button>
@@ -176,10 +176,10 @@ export default function TeacherStudentProfilesPrintPage() {
               className="print-cv-page bg-white border border-slate-200 shadow-md rounded-2xl p-10 font-sans relative overflow-hidden"
             >
               {/* CV Header */}
-              <div className="border-b-2 border-[#00A99D] pb-6 flex justify-between items-start gap-4">
+              <div className="border-b-2 border-[#36E08F] pb-6 flex justify-between items-start gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <GraduationCap className="w-6 h-6 text-[#00A99D]" />
+                    <GraduationCap className="w-6 h-6 text-[#36E08F]" />
                     <span className="font-extrabold text-sm tracking-wider text-slate-700 font-sans">SKY-LINE SYSTEM</span>
                   </div>
                   <h2 className="text-xl font-black text-slate-805 uppercase tracking-tight font-sans">Hồ sơ Năng lực Học sinh</h2>
@@ -196,12 +196,12 @@ export default function TeacherStudentProfilesPrintPage() {
                 {/* Left Column */}
                 <div className="col-span-1 border-r border-slate-100 pr-6 space-y-6">
                   <div className="text-center space-y-3">
-                    <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#00A99D]/20 shadow-inner flex items-center justify-center bg-slate-50 text-slate-355">
+                    <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#36E08F]/20 shadow-inner flex items-center justify-center bg-slate-50 text-slate-355">
                       <User className="w-16 h-16" />
                     </div>
                     <div>
                       <h3 className="font-black text-base text-slate-800">{student.studentName}</h3>
-                      <p className="text-[10px] text-[#00A99D] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {student.className || "N/A"}</p>
+                      <p className="text-[10px] text-[#36E08F] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {student.className || "N/A"}</p>
                     </div>
                   </div>
 
@@ -224,7 +224,7 @@ export default function TeacherStudentProfilesPrintPage() {
                   {/* Outstanding Achievements */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <Award className="w-4 h-4 text-[#00A99D]" />
+                      <Award className="w-4 h-4 text-[#36E08F]" />
                       Thành tích nổi bật
                     </h4>
                     {(!student.achievements || student.achievements.length === 0) ? (
@@ -247,7 +247,7 @@ export default function TeacherStudentProfilesPrintPage() {
                   {/* Learning Commitment / Results */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <FileText className="w-4 h-4 text-[#00A99D]" />
+                      <FileText className="w-4 h-4 text-[#36E08F]" />
                       {isHngOrSb
                         ? "Kết quả Học tập & Rèn luyện: Chương trình Bộ & Chương trình Học Song Ngữ"
                         : "Cam kết rèn luyện"}
@@ -274,7 +274,7 @@ export default function TeacherStudentProfilesPrintPage() {
                   {/* Career Orientation */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <Compass className="w-4 h-4 text-[#00A99D]" />
+                      <Compass className="w-4 h-4 text-[#36E08F]" />
                       Định hướng ngành nghề
                     </h4>
                     {student.orientation ? (
@@ -293,14 +293,14 @@ export default function TeacherStudentProfilesPrintPage() {
                   {/* Section: Academic Intake Profile */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <ClipboardCheck className="w-4 h-4 text-[#00A99D]" />
+                      <ClipboardCheck className="w-4 h-4 text-[#36E08F]" />
                       Hồ sơ học thuật đầu vào (Intake Evaluation)
                     </h4>
                     {student.admitted !== "Không" ? (
                       <div className="space-y-3">
                         {isPreschool ? (
                           <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
-                            <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#00A99D]">{student.devAssessment || "N/A"}</span></div>
+                            <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#36E08F]">{student.devAssessment || "N/A"}</span></div>
                             {student.probationaryComment && (
                               <div className="bg-white p-2.5 rounded border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
                                 "{student.probationaryComment}"
@@ -310,7 +310,7 @@ export default function TeacherStudentProfilesPrintPage() {
                         ) : (
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                              <div className="text-[9px] text-[#00A99D] font-bold uppercase tracking-wider">Toán học</div>
+                              <div className="text-[9px] text-[#36E08F] font-bold uppercase tracking-wider">Toán học</div>
                               <div className="text-lg font-black text-slate-805 mt-0.5">{student.mathScore || "—"}</div>
                             </div>
                             <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
@@ -336,7 +336,7 @@ export default function TeacherStudentProfilesPrintPage() {
                   {/* Section: Projects & Experiences */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <BookOpen className="w-4 h-4 text-[#00A99D]" />
+                      <BookOpen className="w-4 h-4 text-[#36E08F]" />
                       Hoạt động trải nghiệm
                     </h4>
                     {(!student.experientialActivities || student.experientialActivities.length === 0) && (!student.projectExperiences || student.projectExperiences.length === 0) ? (
@@ -351,7 +351,7 @@ export default function TeacherStudentProfilesPrintPage() {
                                 <div className="text-[9px] text-slate-400 mt-0.5">{act.groupName}</div>
                               </div>
                               <div className="flex gap-1.5 items-center">
-                                <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
+                                <span className="text-[8px] font-black uppercase bg-[#36E08F]/10 text-[#36E08F] px-2 py-0.5 rounded">
                                   {act.role}
                                 </span>
                                 <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -369,7 +369,7 @@ export default function TeacherStudentProfilesPrintPage() {
                                 <div className="text-[9px] text-slate-400 mt-0.5">Dự án học tập</div>
                               </div>
                               <div className="flex gap-1.5 items-center">
-                                <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
+                                <span className="text-[8px] font-black uppercase bg-[#36E08F]/10 text-[#36E08F] px-2 py-0.5 rounded">
                                   {p.role || "Thành viên"}
                                 </span>
                                 <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -387,7 +387,7 @@ export default function TeacherStudentProfilesPrintPage() {
                   {/* Section: Learning Support Progress */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <GraduationCap className="w-4 h-4 text-[#00A99D]" />
+                      <GraduationCap className="w-4 h-4 text-[#36E08F]" />
                       Kế hoạch hỗ trợ học tập & Phát triển
                     </h4>
                     {!student.supportReason ? (
@@ -403,11 +403,11 @@ export default function TeacherStudentProfilesPrintPage() {
                   {/* Section: GVCN Testimonial */}
                   <div className="space-y-3">
                     <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                      <MessageSquare className="w-4 h-4 text-[#00A99D]" />
+                      <MessageSquare className="w-4 h-4 text-[#36E08F]" />
                       Nhận xét định kỳ từ Giáo viên Chủ nhiệm
                     </h4>
                     {student.latestGvcnComment ? (
-                      <div className="bg-teal-50/10 border-l-4 border-[#00A99D] p-3 rounded-r-lg space-y-2">
+                      <div className="bg-teal-50/10 border-l-4 border-[#36E08F] p-3 rounded-r-lg space-y-2">
                         <p className="text-xs text-slate-755 font-semibold italic leading-relaxed whitespace-pre-wrap">
                           "{student.latestGvcnComment}"
                         </p>

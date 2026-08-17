@@ -68,10 +68,10 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
 
         {/* Header Block & Year Selector */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#00A99D]/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#36E08F]/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none"></div>
           <div className="relative z-10">
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-              <FileBarChart className="w-8 h-8 text-[#00A99D]" />
+              <FileBarChart className="w-8 h-8 text-[#36E08F]" />
               Báo cáo Thống kê Hoạt động Trải nghiệm
             </h1>
             <p className="text-slate-500 mt-2 text-sm font-medium">
@@ -81,13 +81,13 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
 
           <div className="flex flex-col space-y-1.5 z-10 w-full md:w-56">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-[#00A99D]" />
+              <Calendar className="w-3.5 h-3.5 text-[#36E08F]" />
               Niên khóa
             </label>
             <select
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36E08F]"
             >
               {academicYears.map(y => (
                 <option key={y.id} value={y.id}>{y.name}</option>
@@ -99,7 +99,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
         {/* Loading and Error States */}
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 text-slate-400 bg-white rounded-3xl border border-slate-200/60 shadow-sm">
-            <RefreshCw className="animate-spin h-10 w-10 text-[#00A99D] mb-4" />
+            <RefreshCw className="animate-spin h-10 w-10 text-[#36E08F] mb-4" />
             <p className="text-sm font-bold">Đang tổng hợp số liệu thống kê...</p>
           </div>
         )}
@@ -129,7 +129,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                     {stats.summary.totalActivities}
                   </span>
                 </div>
-                <div className="p-4 bg-[#00A99D] text-white rounded-2xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
+                <div className="p-4 bg-[#36E08F] text-white rounded-2xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
                   <Award className="w-6 h-6" />
                 </div>
               </div>
@@ -189,7 +189,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                       onClick={() => setActiveReportTab(tab.id)}
                       className={"flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer " + (
                         isActive 
-                          ? "bg-[#00A99D] text-white shadow-xs" 
+                          ? "bg-[#36E08F] text-white shadow-xs" 
                           : "text-slate-600 hover:bg-white hover:text-slate-800 border-transparent"
                       )}
                     >
@@ -232,7 +232,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                                 <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{g.gvcbCount}</td>
                                 <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{g.totalCount}</td>
                                 <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black">
+                                  <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-3 py-1 rounded-full text-[10px] font-black">
                                     {g.studentCount} học sinh
                                   </span>
                                 </td>
@@ -277,14 +277,14 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                               <tr key={c.id || idx} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
                                 <td className="py-3.5 px-4 font-black text-slate-800 text-sm flex items-center gap-2">
-                                  <Landmark className="w-4 h-4 text-[#00A99D]" />
+                                  <Landmark className="w-4 h-4 text-[#36E08F]" />
                                   {c.name}
                                 </td>
                                 <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{c.gvbmCount}</td>
                                 <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{c.gvcnCount}</td>
                                 <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{c.totalCount}</td>
                                 <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black">
+                                  <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-3 py-1 rounded-full text-[10px] font-black">
                                     {c.studentCount} học sinh
                                   </span>
                                 </td>
@@ -329,13 +329,13 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                             {stats.statsByGroup.map((g: any, idx: number) => (
                               <tr key={g.code || idx} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                <td className="py-3.5 px-4 font-mono font-bold text-[#00A99D]">{g.code}</td>
+                                <td className="py-3.5 px-4 font-mono font-bold text-[#36E08F]">{g.code}</td>
                                 <td className="py-3.5 px-4 font-black text-slate-800 text-sm">{g.name}</td>
                                 <td className="py-3.5 px-4 text-center text-sky-600 font-extrabold">{g.gvbmCount}</td>
                                 <td className="py-3.5 px-4 text-center text-pink-600 font-extrabold">{g.gvcnCount}</td>
                                 <td className="py-3.5 px-4 text-center font-black text-slate-800 text-sm">{g.totalCount}</td>
                                 <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black">
+                                  <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-3 py-1 rounded-full text-[10px] font-black">
                                     {g.studentCount} học sinh
                                   </span>
                                 </td>
@@ -377,7 +377,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                                 </td>
                                 <td className="py-3.5 px-4 text-center font-black text-slate-850 text-sm">{g.activityCount}</td>
                                 <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                                  <span className="bg-[#36E08F]/10 text-[#36E08F] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                                     {g.studentCount} học sinh
                                   </span>
                                 </td>
@@ -419,7 +419,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                                 </td>
                                 <td className="py-3.5 px-4 text-center font-black text-slate-850 text-sm">{g.projectCount}</td>
                                 <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                                  <span className="bg-[#36E08F]/10 text-[#36E08F] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                                     {g.studentCount} học sinh
                                   </span>
                                 </td>
@@ -465,7 +465,7 @@ export function ExperientialReportsClient({ academicYears, activeYearId }: Clien
                                   </span>
                                 </td>
                                 <td className="py-3.5 px-4 text-center">
-                                  <span className="bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                                  <span className="bg-[#36E08F]/10 text-[#36E08F] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                                     {act.participantCount} học sinh
                                   </span>
                                 </td>

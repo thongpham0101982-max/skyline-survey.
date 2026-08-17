@@ -379,7 +379,7 @@ export function OverviewDashboard({
         {/* Main Info */}
         <div className="space-y-1.5 z-10">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-[#00A99D] animate-pulse" />
+            <Sparkles className="h-5 w-5 text-[#36E08F] animate-pulse" />
             <h1 className="text-xl md:text-2xl font-extrabold tracking-tight">
               Báo cáo Tổng hợp Môn Hỗ trợ
             </h1>
@@ -412,7 +412,7 @@ export function OverviewDashboard({
         {/* Total students */}
         <div className="bg-white border border-slate-200/60 rounded-2xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.01)] hover:shadow-[0_10px_20px_rgba(0,0,0,0.03)] hover:-translate-y-0.5 transition-all duration-300 flex items-center gap-4 relative overflow-hidden group">
           <div className="absolute right-0 bottom-0 w-16 h-16 bg-[#E6F6F5]/40 rounded-tl-full opacity-60 group-hover:scale-110 transition-transform duration-300" />
-          <div className="p-3 bg-[#E6F6F5] text-[#00A99D] rounded-xl z-10">
+          <div className="p-3 bg-[#E6F6F5] text-[#36E08F] rounded-xl z-10">
             <Users className="h-5 w-5" />
           </div>
           <div className="z-10">
@@ -739,7 +739,7 @@ export function OverviewDashboard({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 pb-3 border-b border-slate-100">
           <div>
             <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-[#00A99D]" />
+              <Building2 className="h-5 w-5 text-[#36E08F]" />
               Thống kê theo Lớp tại Cơ sở
             </h2>
             <p className="text-[10px] text-slate-400 mt-0.5">Số lượng học sinh cần hỗ trợ và phân bổ chi tiết theo từng lớp học</p>
@@ -753,7 +753,7 @@ export function OverviewDashboard({
                 onClick={() => setSelectedCampusTabId(c.id)}
                 className={`py-1 px-3.5 text-[10px] font-bold rounded-lg transition-all whitespace-nowrap ${
                   selectedCampusTabId === c.id
-                    ? "bg-white text-[#00A99D] shadow-xs font-black"
+                    ? "bg-white text-[#36E08F] shadow-xs font-black"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
@@ -1153,7 +1153,7 @@ export function OverviewDashboard({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-sm font-black text-slate-800 flex items-center gap-2">
-              <Building2 className="h-4.5 w-4.5 text-[#00A99D]" />
+              <Building2 className="h-4.5 w-4.5 text-[#36E08F]" />
               Thống kê Chi tiết theo Cơ sở & Khối lớp
             </h2>
             <p className="text-[10px] text-slate-400 mt-0.5">Số liệu chi tiết phân bổ học sinh theo dõi bồi dưỡng và phân công giảng dạy</p>

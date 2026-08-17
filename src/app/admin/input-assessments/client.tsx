@@ -94,7 +94,7 @@ function Field({ label, required, children }: { label:string; required?:boolean;
     </div>
   )
 }
-const inp = "h-11 w-full pl-3.5 pr-3.5 bg-slate-50/50 border border-slate-200 text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#00A99D]/10 focus:border-[#00A99D] focus:bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed shadow-xs"
+const inp = "h-11 w-full pl-3.5 pr-3.5 bg-slate-50/50 border border-slate-200 text-[#1E293B] placeholder-[#94A3B8] text-sm font-semibold rounded-xl outline-none transition-all focus:ring-4 focus:ring-[#36E08F]/10 focus:border-[#36E08F] focus:bg-white disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed shadow-xs"
 
 function Modal({ open, onClose, title, size="md", children, footer }: {
   open:boolean; onClose:()=>void; title:string; size?:"sm"|"md"|"lg";
@@ -1626,36 +1626,36 @@ export function InputAssessmentsClient({
     const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-          '<span style="font-weight: bold; color: #00A99D; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+          '<span style="font-weight: bold; color: #36E08F; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
           '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-          '<span style="font-weight: 600; color: #00A99D; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
+          '<span style="font-weight: 600; color: #36E08F; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
         '</div>' +
         '<div style="display: flex; justify-content: space-between; font-size: 9px; position: relative; width: 100%;">' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
+              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
+              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
+              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
+              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
+              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #00A99D; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
+              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
@@ -1667,7 +1667,7 @@ export function InputAssessmentsClient({
               '<p style="margin: 0;">(+84.235) 375 1777</p>' +
             '</div>' +
           '</div>' +
-          '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #00A99D;">' +
+          '<div style="position: absolute; right: -5px; top: 2px; width: 64px; height: 48px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #36E08F;">' +
             '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
               '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
             '</svg>' +
@@ -4172,7 +4172,7 @@ return {
                 {!asFilterBatchId ? (
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <div className="w-16 h-16 flex items-center justify-center mb-4">
-                      <Filter className="w-8 h-8 text-[#00A99D]" />
+                      <Filter className="w-8 h-8 text-[#36E08F]" />
                     </div>
                     <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
                     <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
@@ -4560,7 +4560,7 @@ return {
             
             <div className="flex items-center gap-3">
               <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
-                Tổng cộng: <span className="text-[#00A99D] ml-1">{filtStu.length}</span> HS
+                Tổng cộng: <span className="text-[#36E08F] ml-1">{filtStu.length}</span> HS
               </span>
               
               <button
@@ -4593,7 +4593,7 @@ return {
               >
                 <Plus className="w-4 h-4 mr-2"/> Tạo đợt
               </button>
-<button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#00A99D] text-white text-sm font-bold rounded-xl hover:bg-[#009085] disabled:opacity-50 transition-all shadow-md shadow-[#00A99D]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
+<button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#36E08F] text-white text-sm font-bold rounded-xl hover:bg-[#009085] disabled:opacity-50 transition-all shadow-md shadow-[#36E08F]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                 <Plus className="w-4 h-4 mr-2"/> Thêm mới
               </button>
               <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
@@ -4672,12 +4672,12 @@ return {
                         {paginatedFiltStu.map((s, idx) => (
                           <tr key={s.id} className="border-b border-slate-100 hover:bg-indigo-50/30 transition-colors">
                             <td className="px-3 py-2 text-slate-400 font-bold">{(studentsCurrentPage - 1) * studentsPageSize + idx + 1}</td>
-                            <td className="px-3 py-2 font-mono text-[10px] font-black text-[#00A99D]">{s.studentCode}</td>
+                            <td className="px-3 py-2 font-mono text-[10px] font-black text-[#36E08F]">{s.studentCode}</td>
                             <td className="px-3 py-2 font-bold text-slate-700">{s.fullName}</td>
                             <td className="px-3 py-2 font-semibold text-slate-650">{s.grade}</td>
                             <td className="px-3 py-2 font-semibold text-slate-650">{s.gender || "-"}</td>
                             <td className="px-3 py-2 text-slate-500">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</td>
-                            <td className="px-3 py-2 font-semibold text-[#00A99D]">{s.surveyFormType || "-"}</td>
+                            <td className="px-3 py-2 font-semibold text-[#36E08F]">{s.surveyFormType || "-"}</td>
                             {selPeriod?.name?.toLowerCase().includes("open day") && (
                               <>
                                 <td className="px-3 py-2 font-semibold text-slate-700">
@@ -4690,7 +4690,7 @@ return {
                             )}
                             <td className="px-3 py-2">
                               <div className="flex items-center justify-end gap-1">
-                                <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#00A99D] hover:bg-slate-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                                <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#36E08F] hover:bg-slate-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
                                 <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                               </div>
                             </td>
@@ -4706,11 +4706,11 @@ return {
                     <div key={s.id} className="bg-white p-4 rounded-2xl border-2 border-blue-100 shadow-sm relative">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex flex-col">
-                          <span className="font-mono text-xs font-black text-[#00A99D] mb-1">{s.studentCode}</span>
+                          <span className="font-mono text-xs font-black text-[#36E08F] mb-1">{s.studentCode}</span>
                           <span className="text-sm font-bold text-slate-800">{s.fullName}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                           <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#00A99D] bg-slate-50 rounded-xl " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
+                           <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#36E08F] bg-slate-50 rounded-xl " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
                            <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                         </div>
                       </div>
@@ -4730,7 +4730,7 @@ return {
                         </div>
                         <div>
                            <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Hệ KS</span>
-                           <span className="font-semibold text-[#00A99D]">{s.surveyFormType || "-"}</span>
+                           <span className="font-semibold text-[#36E08F]">{s.surveyFormType || "-"}</span>
                          </div>
                          {selPeriod?.name?.toLowerCase().includes("open day") && (
                            <>
@@ -4858,7 +4858,7 @@ return {
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sách Môn Khảo sát</h2>
             <button
               onClick={() => { setEditingSubjectId(null); setSubjectForm({ code:"", name:"", subjectType:"", scoreColumns:1, commentColumns:1, status:"ACTIVE", exemptCriteria:[] as string[] }); setIsSubjectOpen(true) }}
-              className={"flex items-center gap-2 px-5 py-2.5 bg-[#00A99D] text-white text-[13px] font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md shadow-[#00A99D]/20 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
+              className={"flex items-center gap-2 px-5 py-2.5 bg-[#36E08F] text-white text-[13px] font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md shadow-[#36E08F]/20 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
             >
               <Plus className="w-4 h-4"/> Thêm Môn mới
             </button>
@@ -4926,7 +4926,7 @@ return {
           {!isReadOnly && (
             <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
             <div className="flex items-center gap-3 mb-5 border-b border-slate-200 pb-4">
-              <div className="bg-[#00A99D]/10 p-2 rounded-xl text-[#00A99D]"><Settings className="w-5 h-5"/></div>
+              <div className="bg-[#36E08F]/10 p-2 rounded-xl text-[#36E08F]"><Settings className="w-5 h-5"/></div>
               <div>
                 <h3 className="font-black text-slate-800 text-lg">{editingMappingSubjectId ? "Chỉnh sửa Cấu hình Môn" : "Gán Môn Khảo Sát"}</h3>
                 <p className="text-xs font-semibold text-slate-500 mt-0.5">{editingMappingSubjectId ? "Đang chỉnh sửa - thay đổi Khối/Hệ rồi bấm Cập Nhật" : "Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt"}</p>
@@ -4940,11 +4940,11 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Khối:</span>
-                    <button onClick={() => setSelGrades(selGrades.length === activeGrades.length ? [] : [...activeGrades])} className={"text-[10px] font-black uppercase tracking-wider text-[#00A99D] bg-[#00A99D]/10 hover:bg-[#00A99D]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A99D]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <button onClick={() => setSelGrades(selGrades.length === activeGrades.length ? [] : [...activeGrades])} className={"text-[10px] font-black uppercase tracking-wider text-[#36E08F] bg-[#36E08F]/10 hover:bg-[#36E08F]/20 px-2.5 py-1 rounded-md transition-colors border border-[#36E08F]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {activeGrades.map((g: string) => (
-                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A99D] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={g} onClick={() => toggleGrade(g)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selGrades.includes(g) ? 'bg-[#36E08F] text-white border-[#36E08F] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#36E08F] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selGrades.includes(g) && <Check className="w-3 h-3 inline mr-1"/>} {g}
                       </button>
                     ))}
@@ -4954,11 +4954,11 @@ return {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Hệ học:</span>
-                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A99D] bg-[#00A99D]/10 hover:bg-[#00A99D]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A99D]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-black uppercase tracking-wider text-[#36E08F] bg-[#36E08F]/10 hover:bg-[#36E08F]/20 px-2.5 py-1 rounded-md transition-colors border border-[#36E08F]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentEduSystems.map((es: any) => (
-                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selEdus.includes(es.code) ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A99D] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                      <button key={es.code} onClick={() => toggleEdu(es.code)} className={`text-xs px-3 py-1.5 rounded-xl font-bold transition-all border ${selEdus.includes(es.code) ? 'bg-[#36E08F] text-white border-[#36E08F] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#36E08F] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                         {selEdus.includes(es.code) && <Check className="w-3 h-3 inline mr-1"/>} {es.code}
                       </button>
                     ))}
@@ -4970,11 +4970,11 @@ return {
               <div className="lg:col-span-7 p-5 flex flex-col text-xs font-semibold">
                 <div className="flex items-center justify-between mb-3">
                   <span className="block font-black text-slate-855 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
-                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#00A99D] bg-[#00A99D]/10 hover:bg-[#00A99D]/20 px-2.5 py-1 rounded-md transition-colors border border-[#00A99D]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
+                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#36E08F] bg-[#36E08F]/10 hover:bg-[#36E08F]/20 px-2.5 py-1 rounded-md transition-colors border border-[#36E08F]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4 max-h-[150px] overflow-y-auto pr-1">
                   {subjectsList.map((s:any) => (
-                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-[#00A99D] text-white border-[#00A99D] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#00A99D] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
+                    <button key={s.id} onClick={() => setAssignSelSubjects(p => p.includes(s.id) ? p.filter(x => x !== s.id) : [...p, s.id])} className={`text-xs px-3 py-2 rounded-xl font-bold transition-all border ${assignSelSubjects.includes(s.id) ? 'bg-[#36E08F] text-white border-[#36E08F] shadow-sm' : 'bg-white text-slate-800 border-slate-300 hover:border-[#36E08F] hover:bg-slate-100/50'} ${isReadOnly ? "pointer-events-none opacity-40" : ""}`} disabled={isReadOnly}>
                       {s.name}
                     </button>
                   ))}
@@ -5010,7 +5010,7 @@ return {
                       notify(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
                     disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length) || cannotCreate || cannotUpdate}
-                    className={"w-full py-3.5 bg-[#00A99D] text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-[#1E8B87] transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
+                    className={"w-full py-3.5 bg-[#36E08F] text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-[#1E8B87] transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
                   >
                     {mappingLoading ? <FileSpreadsheet className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
                     {editingMappingSubjectId ? "Cập Nhật Cấu Hình" : "Lưu Cấu Hình"}
@@ -5024,8 +5024,8 @@ return {
           {/* BOTTOM PANEL: Table of existing configurations */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="flex justify-between items-center text-xs font-semibold">
-              <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#00A99D]"/> Danh sách Cấu hình đã lưu</h4>
-              <button onClick={fetchAllMappings} className="text-xs text-[#00A99D] hover:underline font-bold">Làm mới</button>
+              <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#36E08F]"/> Danh sách Cấu hình đã lưu</h4>
+              <button onClick={fetchAllMappings} className="text-xs text-[#36E08F] hover:underline font-bold">Làm mới</button>
             </div>
             
             {allMappingsLoading ? (
@@ -5071,7 +5071,7 @@ return {
                                 <span className="font-bold text-slate-800 text-base">{g.subject?.name}</span>
                                 {g.subject?.code && <span className="text-xs font-mono text-slate-400">{g.subject.code}</span>}
                                 {g.subject?.subjectType && g.subject.subjectType === "VIET_NAM" && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 font-bold uppercase">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 font-bold uppercase">
                                     GV VN
                                   </span>
                                 )}
@@ -5079,7 +5079,7 @@ return {
                             </td>
                             <td className="p-2 p-2 border border-slate-200">
                               {allGrades ? (
-                                <span className="font-bold text-[#00A99D] bg-[#00A99D]/5 border border-[#00A99D]/20 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
+                                <span className="font-bold text-[#36E08F] bg-[#36E08F]/5 border border-[#36E08F]/20 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Array.from(g.grades).sort((a:any, b:any) => parseInt(a) - parseInt(b)).map((grade:any) => (
@@ -5107,7 +5107,7 @@ return {
                                   setAssignSelSubjects([g.subject?.id]);
                                   setEditingMappingSubjectId(g.subject?.id);
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} className={"p-2 text-slate-400 hover:text-[#00A99D] hover:bg-[#00A99D]/5 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
+                                }} className={"p-2 text-slate-400 hover:text-[#36E08F] hover:bg-[#36E08F]/5 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
                                   <Pencil className="w-4 h-4"/>
                                 </button>
                                 <button onClick={async () => {
@@ -6558,20 +6558,20 @@ return {
                                   : (badgeStyle.replace("bg-indigo-50", "bg-violet-100/50").replace("text-indigo-700", "text-violet-700").replace("border-indigo-200", "border-violet-200"));
                               } else if (isToan || isTiengVietNguVan) {
                                 activeClasses = isActive 
-                                  ? "border-[#00A99D] bg-[#00A99D] text-white shadow-[0_4px_12px_rgba(0,161,154,0.2)] -translate-y-0.5" 
-                                  : "border-[#00A99D]/20 bg-[#00A99D]/5 text-[#009085] hover:bg-[#00A99D]/10 hover:border-[#00A99D]/40 hover:-translate-y-0.5";
-                                textLabelClass = isActive ? "text-teal-100" : "text-[#00A99D] font-bold";
+                                  ? "border-[#36E08F] bg-[#36E08F] text-white shadow-[0_4px_12px_rgba(0,161,154,0.2)] -translate-y-0.5" 
+                                  : "border-[#36E08F]/20 bg-[#36E08F]/5 text-[#009085] hover:bg-[#36E08F]/10 hover:border-[#36E08F]/40 hover:-translate-y-0.5";
+                                textLabelClass = isActive ? "text-teal-100" : "text-[#36E08F] font-bold";
                                 textValClass = isActive ? "text-white" : "text-[#009085]";
                                 badgeClass = isActive 
                                   ? "bg-white/20 text-white border-white/20" 
-                                  : "bg-[#00A99D]/10 text-[#009085] border-[#00A99D]/20";
+                                  : "bg-[#36E08F]/10 text-[#009085] border-[#36E08F]/20";
                               } else {
                                 activeClasses = isActive 
-                                  ? "border-[#00A99D] bg-[#00A99D]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
-                                  : "border-slate-200 bg-white hover:border-[#00A99D]/40 hover:-translate-y-0.5";
-                                textLabelClass = isActive ? "text-[#00A99D]" : "text-slate-400";
-                                textValClass = isActive ? "text-[#00A99D]" : "text-slate-800";
-                                badgeClass = isActive ? "bg-[#00A99D] text-white border-[#00A99D]" : badgeStyle;
+                                  ? "border-[#36E08F] bg-[#36E08F]/5 shadow-[0_2px_8px_rgba(0,161,154,0.08)] -translate-y-0.5" 
+                                  : "border-slate-200 bg-white hover:border-[#36E08F]/40 hover:-translate-y-0.5";
+                                textLabelClass = isActive ? "text-[#36E08F]" : "text-slate-400";
+                                textValClass = isActive ? "text-[#36E08F]" : "text-slate-800";
+                                badgeClass = isActive ? "bg-[#36E08F] text-white border-[#36E08F]" : badgeStyle;
                               }
 
                               return (
@@ -6587,7 +6587,7 @@ return {
                                       {sName}
                                     </span>
                                     {subject.subjectType === "VIET_NAM" && sc.id !== "tong_diem_tieng_anh" && (
-                                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${isActive ? "bg-white/20 text-white border-white/20" : "bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/20"}`}>
+                                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${isActive ? "bg-white/20 text-white border-white/20" : "bg-[#36E08F]/5 text-[#36E08F] border-[#36E08F]/20"}`}>
                                         GV Việt Nam
                                       </span>
                                     )}
@@ -6675,7 +6675,7 @@ return {
                                 const isTiengVietNguVan = subName.includes("tiếng việt") || subName.includes("ngữ văn") || subCode.includes("lit") || subCode.includes("vie") || subCode.includes("van");
 
                                 let detailCardClass = "bg-white border border-slate-200";
-                                let accentBarClass = "bg-[#00A99D]";
+                                let accentBarClass = "bg-[#36E08F]";
                                 let headerTextClass = "text-slate-800";
 
                                 if (isEnglish || isThinkingSkills) {
@@ -6683,8 +6683,8 @@ return {
                                   accentBarClass = "bg-violet-600";
                                   headerTextClass = "text-violet-900";
                                 } else if (isToan || isTiengVietNguVan) {
-                                  detailCardClass = "bg-[#00A99D]/5 border-[#00A99D]/20";
-                                  accentBarClass = "bg-[#00A99D]";
+                                  detailCardClass = "bg-[#36E08F]/5 border-[#36E08F]/20";
+                                  accentBarClass = "bg-[#36E08F]";
                                   headerTextClass = "text-[#009085]";
                                 }
 
@@ -6709,7 +6709,7 @@ return {
                                           <h4 className="font-black text-slate-800 text-lg leading-none">{subject.name}</h4>
                                           {subject.code && <span className="font-mono text-[10px] font-black text-slate-400 select-none text-xs font-semibold">{subject.code}</span>}
                                           {subject.subjectType === "VIET_NAM" && (
-                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#00A99D]/5 text-[#00A99D] border-[#00A99D]/20`}>
+                                            <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#36E08F]/5 text-[#36E08F] border-[#36E08F]/20`}>
                                               Giáo viên Việt Nam
                                             </span>
                                           )}
@@ -7137,7 +7137,7 @@ return {
          </div>
       </Modal>
 
-      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 px-6 py-3 bg-[#00A99D] hover:bg-[#0098C2] rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
+      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 px-6 py-3 bg-[#36E08F] hover:bg-[#0098C2] rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
         <div className="space-y-4">
            <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
                        <Field label="Tên Đợt KS" required>
@@ -8383,9 +8383,9 @@ return {
                   <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#00A99D] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#00A99D]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A99D] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                      <span className="font-bold text-[#36E08F] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#36E08F]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#36E08F] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
                     
                     {/* Information Grid */}
@@ -8393,15 +8393,15 @@ return {
                       {/* Left Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Central</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Global</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -8409,15 +8409,15 @@ return {
                       {/* Middle Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Beach</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Hill</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -8437,7 +8437,7 @@ return {
                     </div>
 
                     {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
-                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A99D]">
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#36E08F]">
                       <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
                         <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
                       </svg>
@@ -8519,9 +8519,9 @@ return {
                       <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#00A99D] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#00A99D]/70 h-0 mt-0.5"></div>
-                      <span className="font-semibold text-[#00A99D] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
+                      <span className="font-bold text-[#36E08F] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                      <div className="flex-grow border-t border-[#36E08F]/70 h-0 mt-0.5"></div>
+                      <span className="font-semibold text-[#36E08F] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
                     
                     {/* Information Grid */}
@@ -8529,15 +8529,15 @@ return {
                       {/* Left Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Central</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Central</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Global</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Global</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -8545,15 +8545,15 @@ return {
                       {/* Middle Column (3 branches) */}
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Beach</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Beach</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">SKY-LINE Hill</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">SKY-LINE Hill</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#00A99D] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="font-bold text-[#36E08F] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
                           <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
@@ -8573,7 +8573,7 @@ return {
                     </div>
 
                     {/* The Large Elegant Teal Checkmark Vector positioned absolute over the right corner */}
-                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#00A99D]">
+                    <div className="absolute right-[-5px] top-[2px] w-16 h-12 opacity-100 pointer-events-none flex items-center justify-center text-[#36E08F]">
                       <svg viewBox="0 0 120 60" className="w-full h-full fill-current" style={{ filter: "drop-shadow(0px 1px 1px rgba(0,166,169,0.1))" }}>
                         <path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />
                       </svg>
@@ -8703,8 +8703,8 @@ return {
                       ) : (
                         <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                           <div className="flex items-center gap-2 mb-2.5 w-full">
-                            <span className="font-bold text-[#00A99D] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                            <div className="flex-grow border-t border-[#00A99D]/70 h-0 mt-0.5"></div>
+                            <span className="font-bold text-[#36E08F] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
+                            <div className="flex-grow border-t border-[#36E08F]/70 h-0 mt-0.5"></div>
                           </div>
                           <div className="flex flex-row justify-between w-full relative text-[9px]">
                             <div className="w-full text-center">
@@ -9133,7 +9133,7 @@ return {
       {selectedIds && selectedIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-slate-900/95 backdrop-blur-md text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-6 border border-white/10 w-[90%] md:w-auto overflow-x-auto whitespace-nowrap">
           <div className="flex items-center gap-3 pr-6 border-r border-slate-700/50">
-            <div className="bg-[#00A99D]/20 text-[#00A99D] w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+            <div className="bg-[#36E08F]/20 text-[#36E08F] w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
               {selectedIds.length}
             </div>
             <span className="font-medium">học sinh đang chọn</span>

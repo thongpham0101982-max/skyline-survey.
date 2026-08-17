@@ -180,7 +180,7 @@ export default function TeacherAnnouncementsPage() {
   if (loadingStudents) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-12 h-12 text-[#00A99D] animate-spin opacity-60" />
+        <Loader2 className="w-12 h-12 text-[#36E08F] animate-spin opacity-60" />
         <p className="text-slate-400 font-bold tracking-wide uppercase text-xs">Đang tải danh sách học sinh...</p>
       </div>
     )
@@ -191,7 +191,7 @@ export default function TeacherAnnouncementsPage() {
       {/* Header Bar */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#00A99D] rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-[#36E08F] rounded-lg flex items-center justify-center flex-shrink-0">
             <Bell className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
@@ -218,7 +218,7 @@ export default function TeacherAnnouncementsPage() {
                     onClick={() => setSelectedStudentId(s.id)}
                     className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
                       selectedStudentId === s.id
-                        ? "bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/30"
+                        ? "bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/30"
                         : s.isEntranceAdmitted
                           ? "bg-sky-50 text-sky-700 border border-sky-100 hover:bg-sky-100/60"
                           : "text-slate-600 hover:bg-slate-50 border border-transparent"
@@ -242,7 +242,7 @@ export default function TeacherAnnouncementsPage() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
               {loadingProfile ? (
                 <div className="flex flex-col items-center justify-center py-24 space-y-4">
-                  <Loader2 className="w-10 h-10 text-[#00A99D] animate-spin opacity-50" />
+                  <Loader2 className="w-10 h-10 text-[#36E08F] animate-spin opacity-50" />
                   <p className="text-slate-400 text-xs font-bold">Đang tải bản tin...</p>
                 </div>
               ) : profileData ? (
@@ -252,7 +252,7 @@ export default function TeacherAnnouncementsPage() {
                       <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Bản tin & Thông báo Lớp học</h4>
                       <p className="text-[10px] text-slate-400 font-bold mt-0.5">Học sinh: {selectedStudent?.studentName} ({selectedStudent?.studentCode})</p>
                     </div>
-                    <span className="bg-[#E6F7F6] text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    <span className="bg-[#E6F7F6] text-[#36E08F] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                       Facebook Feed
                     </span>
                   </div>
@@ -268,13 +268,13 @@ export default function TeacherAnnouncementsPage() {
                           value={newPostText}
                           onChange={e => setNewPostText(e.target.value)}
                           placeholder={`Chia sẻ thông báo hoặc bản tin lớp học cho học sinh ${selectedStudent?.studentName}...`}
-                          className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#00A99D] outline-none min-h-[72px] resize-none bg-slate-50/50"
+                          className="w-full text-xs font-semibold p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-[#36E08F] outline-none min-h-[72px] resize-none bg-slate-50/50"
                         />
                         <div className="flex justify-end">
                           <button
                             type="submit"
                             disabled={postingAnnouncement || !newPostText.trim()}
-                            className="px-4 py-2 bg-[#00A99D] hover:bg-[#008b82] disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-sm text-xs flex items-center gap-1.5"
+                            className="px-4 py-2 bg-[#36E08F] hover:bg-[#008b82] disabled:bg-slate-100 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-sm text-xs flex items-center gap-1.5"
                           >
                             <Send className="w-3 h-3" />
                             {postingAnnouncement ? "Đang đăng..." : "Đăng tin"}
@@ -306,7 +306,7 @@ export default function TeacherAnnouncementsPage() {
                         id: `announcement-${c.id}`,
                         type: "TEACHER",
                         author: c.teacherName || "Giáo viên chủ nhiệm",
-                        avatarColor: "bg-teal-100 text-[#00A99D]",
+                        avatarColor: "bg-teal-100 text-[#36E08F]",
                         avatarIcon: User,
                         content: c.comment,
                         date: new Date(c.updatedAt)
@@ -354,8 +354,8 @@ export default function TeacherAnnouncementsPage() {
 
                               {/* Post Footer / Actions */}
                               <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[10px] font-black text-slate-500 select-none">
-                                <div className="flex items-center gap-1 text-[#00A99D]">
-                                  <ThumbsUp className="w-3.5 h-3.5 fill-[#00A99D]/20" />
+                                <div className="flex items-center gap-1 text-[#36E08F]">
+                                  <ThumbsUp className="w-3.5 h-3.5 fill-[#36E08F]/20" />
                                   <span>{likesInfo.count} lượt thích</span>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -366,7 +366,7 @@ export default function TeacherAnnouncementsPage() {
                               <div className="px-4 py-2.5 border-t border-slate-100 flex items-center justify-around gap-2 text-xs font-black text-slate-500 border-b">
                                 <button 
                                   onClick={() => toggleLike(post.id)}
-                                  className={`flex-1 py-1.5 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 transition-all ${likesInfo.liked ? "text-[#00A99D]" : ""}`}
+                                  className={`flex-1 py-1.5 rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 transition-all ${likesInfo.liked ? "text-[#36E08F]" : ""}`}
                                 >
                                   <ThumbsUp className={`w-4 h-4 ${likesInfo.liked ? "fill-current" : ""}`} />
                                   <span>Thích</span>
@@ -411,7 +411,7 @@ export default function TeacherAnnouncementsPage() {
                                       value={commentText}
                                       onChange={e => setNewCommentTexts(prev => ({ ...prev, [post.id]: e.target.value }))}
                                       placeholder="Viết bình luận..."
-                                      className="flex-1 text-[10px] font-semibold px-3 py-1.5 border border-slate-200 bg-white rounded-full focus:ring-1 focus:ring-[#00A99D] outline-none"
+                                      className="flex-1 text-[10px] font-semibold px-3 py-1.5 border border-slate-200 bg-white rounded-full focus:ring-1 focus:ring-[#36E08F] outline-none"
                                       onKeyDown={e => {
                                         if (e.key === "Enter") {
                                           handleAddComment(post.id, selectedStudent?.className ? `GVCN lớp ${selectedStudent.className}` : "Giáo viên chủ nhiệm");
@@ -420,7 +420,7 @@ export default function TeacherAnnouncementsPage() {
                                     />
                                     <button 
                                       onClick={() => handleAddComment(post.id, selectedStudent?.className ? `GVCN lớp ${selectedStudent.className}` : "Giáo viên chủ nhiệm")}
-                                      className="p-1.5 bg-[#00A99D] hover:bg-[#008b82] text-white rounded-full transition-colors flex items-center justify-center"
+                                      className="p-1.5 bg-[#36E08F] hover:bg-[#008b82] text-white rounded-full transition-colors flex items-center justify-center"
                                     >
                                       <Send className="w-3.5 h-3.5" />
                                     </button>

@@ -496,7 +496,7 @@ export function DiemNhanXetTeacherClient({
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#00A99D] rounded-2xl p-6 text-white shadow-xl">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#36E08F] rounded-2xl p-6 text-white shadow-xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-medium text-teal-200 mb-2">
@@ -636,7 +636,7 @@ export function DiemNhanXetTeacherClient({
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[#00A99D]">
+            <div className="p-2.5 rounded-xl bg-teal-50 border border-teal-200 text-[#36E08F]">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
@@ -684,7 +684,7 @@ export function DiemNhanXetTeacherClient({
                 type="button"
                 onClick={handleSaveGradeSheet}
                 disabled={savingEntries}
-                className="flex items-center gap-1.5 px-5 py-2 bg-[#00A99D] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
+                className="flex items-center gap-1.5 px-5 py-2 bg-[#36E08F] hover:bg-[#008c82] text-white rounded-xl text-xs font-bold shadow-lg shadow-teal-500/20 transition-all disabled:opacity-50"
               >
                 {savingEntries ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 Lưu Sổ Điểm
@@ -774,7 +774,7 @@ export function DiemNhanXetTeacherClient({
                               type="text"
                               value={entry.componentScores[`col${cIdx}`] ?? ""}
                               onChange={(e) => handleScoreChange(st.id, cIdx, e.target.value)}
-                              className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#00A99D] focus:border-[#00A99D] outline-none"
+                              className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-extrabold text-slate-800 focus:ring-2 focus:ring-[#36E08F] focus:border-[#36E08F] outline-none"
                               placeholder="0-10"
                             />
                           </td>
@@ -782,7 +782,7 @@ export function DiemNhanXetTeacherClient({
 
                         {gradeSheetData.config?.hasCompositeColumn !== false && (
                           <td className="py-2 px-2 text-center border-r border-slate-200 bg-teal-50/50">
-                            <span className="font-black text-sm text-[#00A99D]">
+                            <span className="font-black text-sm text-[#36E08F]">
                               {entry.compositeScore || "-"}
                             </span>
                           </td>
@@ -794,7 +794,7 @@ export function DiemNhanXetTeacherClient({
                               type="text"
                               value={entry.remark ?? ""}
                               onChange={(e) => handleRemarkChange(st.id, e.target.value)}
-                              className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#00A99D] outline-none"
+                              className="w-full border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none"
                               placeholder="Nhập nhận xét..."
                             />
                           </td>

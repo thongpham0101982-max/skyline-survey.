@@ -685,7 +685,7 @@ export function ResultsClient({
                         }
                         setSelectedExamId(e.target.value)
                       }}
-                      className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs focus:border-[#00A99D] outline-none font-black text-slate-700 bg-slate-50/50"
+                      className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-xs focus:border-[#36E08F] outline-none font-black text-slate-700 bg-slate-50/50"
                     >
                       {filteredExams.map(e => (
                         <option key={e.id} value={e.id}>
@@ -698,7 +698,7 @@ export function ResultsClient({
 
                 {selectedExamId && (
                   <div className="flex flex-wrap gap-2 items-center pt-2 sm:pt-4">
-                    <span className="text-[10px] font-bold bg-[#00A99D]/10 text-[#00A99D] px-2.5 py-1 rounded-md border border-[#00A99D]/20">
+                    <span className="text-[10px] font-bold bg-[#36E08F]/10 text-[#36E08F] px-2.5 py-1 rounded-md border border-[#36E08F]/20">
                       Cấp học: <strong className="font-extrabold">{currentExam?.grade || "Tất cả"}</strong>
                     </span>
                     <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md border border-indigo-100">
@@ -723,7 +723,7 @@ export function ResultsClient({
                 <button
                   onClick={handleSaveGrid}
                   disabled={savingGrid || gridRows.length === 0 || !hasChanges}
-                  className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#00A99D]/15 transition-all text-xs"
+                  className="flex items-center gap-1.5 bg-[#36E08F] hover:bg-[#009085] disabled:opacity-50 text-white px-5 py-2.5 rounded-xl font-bold shadow-md shadow-[#36E08F]/15 transition-all text-xs"
                 >
                   <Check className="w-4 h-4" />
                   {savingGrid ? "Đang lưu..." : "Lưu Thay Đổi"}
@@ -747,7 +747,7 @@ export function ResultsClient({
               <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-6 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-[#00A99D]" />
+                    <Sparkles className="w-5 h-5 text-[#36E08F]" />
                     Bảng Thành Tích Kỳ Thi: <span className="text-indigo-700">{currentExam?.name}</span>
                   </h3>
                                     <div className="flex items-center gap-4 mt-1">
@@ -757,7 +757,7 @@ export function ResultsClient({
                     <select 
                       value={gridClassFilter} 
                       onChange={e => { setGridClassFilter(e.target.value); setCurrentPage(1); }} 
-                      className="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700"
+                      className="border border-slate-200 rounded-lg px-2 py-1 text-xs focus:border-[#36E08F] outline-none font-semibold text-slate-700"
                     >
                       <option value="">-- Tất cả các lớp --</option>
                       {gridClasses.map(c => <option key={c} value={c}>{c}</option>)}
@@ -805,7 +805,7 @@ export function ResultsClient({
                   {checkedRowIds.size > 0 && (
                     <div className="bg-slate-900/95 text-white border border-slate-800 rounded-2xl shadow-xl px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 z-50 fixed bottom-6 left-1/2 -translate-x-1/2 max-w-4xl w-[90%] backdrop-blur-md transition-all duration-300 ease-out transform scale-100 animate-in fade-in slide-in-from-bottom-4">
                       <div className="flex items-center gap-3">
-                        <span className="bg-[#00A99D]/15 border border-[#00A99D]/20 text-[#00E5D5] px-3 py-1 rounded-lg text-xs font-black flex items-center gap-1.5">
+                        <span className="bg-[#36E08F]/15 border border-[#36E08F]/20 text-[#00E5D5] px-3 py-1 rounded-lg text-xs font-black flex items-center gap-1.5">
                           <Check className="w-4 h-4" /> Đã chọn {checkedRowIds.size} học sinh
                         </span>
                         <button
@@ -819,7 +819,7 @@ export function ResultsClient({
                         <select
                           value={bulkType}
                           onChange={e => setBulkType(e.target.value)}
-                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#00A99D] font-bold text-white transition-all cursor-pointer"
+                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#36E08F] font-bold text-white transition-all cursor-pointer"
                         >
                           <option value="CA_NHAN">Cá nhân</option>
                           <option value="DONG_DOI">Đồng đội</option>
@@ -830,7 +830,7 @@ export function ResultsClient({
                             setBulkCategory(e.target.value)
                             setBulkLevel("")
                           }}
-                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#00A99D] font-bold text-white transition-all cursor-pointer"
+                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#36E08F] font-bold text-white transition-all cursor-pointer"
                         >
                           <option value="">-- Loại giải --</option>
                           {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -841,7 +841,7 @@ export function ResultsClient({
                           value={bulkLevel}
                           onChange={e => setBulkLevel(e.target.value)}
                           disabled={bulkCategory === ""}
-                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#00A99D] font-bold text-white transition-all disabled:opacity-50 disabled:bg-slate-800/40 cursor-pointer"
+                          className="border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-slate-800 focus:border-[#36E08F] font-bold text-white transition-all disabled:opacity-50 disabled:bg-slate-800/40 cursor-pointer"
                         >
                           <option value="">-- Mức giải --</option>
                           {(() => {
@@ -854,7 +854,7 @@ export function ResultsClient({
                         </select>
                         <button 
                           onClick={handleBulkApply}
-                          className="px-5 py-1.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-lg text-xs font-black transition-all shadow-md shadow-[#00A99D]/20 cursor-pointer"
+                          className="px-5 py-1.5 bg-[#36E08F] hover:bg-[#009085] text-white rounded-lg text-xs font-black transition-all shadow-md shadow-[#36E08F]/20 cursor-pointer"
                         >
                           Áp dụng hàng loạt
                         </button>
@@ -1007,7 +1007,7 @@ export function ResultsClient({
                                 onChange={e => handleCellChange(row.gridRowId, "name", e.target.value)}
                                 disabled={row.category === "" || row.level === ""}
                                 placeholder="Tự sinh nếu để trống..."
-                                className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold text-slate-800 transition-all"
+                                className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#36E08F] font-semibold text-slate-800 transition-all"
                               />
                             </td>
                             
@@ -1023,7 +1023,7 @@ export function ResultsClient({
                                     }
                                   }}
                                   disabled={row.category === "" || row.level === ""}
-                                  className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#00A99D] transition-colors"
+                                  className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-1.5 py-1 text-xs outline-none bg-white focus:border-[#36E08F] transition-colors"
                                 >
                                   <option value="">-- Chọn GV hệ thống --</option>
                                   {teachers.map(t => (
@@ -1039,7 +1039,7 @@ export function ResultsClient({
                                     onChange={e => handleCellChange(row.gridRowId, "teacherName", e.target.value)}
                                     disabled={row.category === "" || row.level === ""}
                                     placeholder="Nhập tên GV..."
-                                    className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#00A99D] font-semibold text-slate-800 transition-all"
+                                    className="w-full border border-slate-200 disabled:bg-slate-50/50 rounded px-2.5 py-1 text-xs outline-none focus:border-[#36E08F] font-semibold text-slate-800 transition-all"
                                   />
                                 )}
                               </div>
@@ -1135,12 +1135,12 @@ export function ResultsClient({
           <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4 no-print animate-fade-in">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-slate-800 font-bold text-sm flex items-center gap-2">
-                <div className="w-7 h-7 bg-[#00A99D]/10 rounded-lg flex items-center justify-center">
-                  <Search className="w-4 h-4 text-[#00A99D]" />
+                <div className="w-7 h-7 bg-[#36E08F]/10 rounded-lg flex items-center justify-center">
+                  <Search className="w-4 h-4 text-[#36E08F]" />
                 </div>
                 Bộ lọc Báo cáo thành tích
               </h3>
-              <span className="text-[10px] font-black bg-[#00A99D]/10 text-[#00A99D] px-3 py-1.5 rounded-lg border border-[#00A99D]/20 flex items-center gap-1">
+              <span className="text-[10px] font-black bg-[#36E08F]/10 text-[#36E08F] px-3 py-1.5 rounded-lg border border-[#36E08F]/20 flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 Năm học: {academicYears.find(y => y.id === yearId)?.name || 'Tất cả'}
               </span>
@@ -1151,7 +1151,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.campusId}
                   onChange={e => setReportFilter({ ...reportFilter, campusId: e.target.value })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {campuses.map(c => (
@@ -1165,7 +1165,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.grade}
                   onChange={e => setReportFilter({ ...reportFilter, grade: e.target.value, classId: "" })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(g => (
@@ -1180,7 +1180,7 @@ export function ResultsClient({
                   value={reportFilter.classId}
                   onChange={e => setReportFilter({ ...reportFilter, classId: e.target.value })}
                   disabled={!reportFilter.grade || !reportFilter.campusId}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50"
                 >
                   <option value="">-- Tất cả --</option>
                   {classes
@@ -1196,7 +1196,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.category}
                   onChange={e => setReportFilter({ ...reportFilter, category: e.target.value })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {Object.entries(CATEGORY_LABELS).map(([k, v]) => (
@@ -1210,7 +1210,7 @@ export function ResultsClient({
                 <select
                   value={reportFilter.level}
                   onChange={e => setReportFilter({ ...reportFilter, level: e.target.value })}
-                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50"
+                  className="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="">-- Tất cả --</option>
                   {(() => {
@@ -1278,7 +1278,7 @@ export function ResultsClient({
             {/* Card 5: Khuyến khích */}
             <div className="bg-gradient-to-br from-teal-50/90 via-cyan-50/40 to-teal-100/60 p-5 rounded-2xl border border-teal-200/80 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-3 bg-[#00A99D] text-white rounded-xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
+                <div className="p-3 bg-[#36E08F] text-white rounded-xl shadow-md shadow-teal-500/20 group-hover:scale-110 transition-transform">
                   <Ribbon className="w-5 h-5" />
                 </div>
               </div>
@@ -1301,8 +1301,8 @@ export function ResultsClient({
 
             <div className="bg-gradient-to-r from-slate-50 to-white border-b border-slate-100 px-6 py-4 flex items-center justify-between no-print">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-[#00A99D]/10 rounded-xl flex items-center justify-center">
-                  <FileSpreadsheet className="w-4.5 h-4.5 text-[#00A99D]" />
+                <div className="w-9 h-9 bg-[#36E08F]/10 rounded-xl flex items-center justify-center">
+                  <FileSpreadsheet className="w-4.5 h-4.5 text-[#36E08F]" />
                 </div>
                 <div>
                   <div className="font-black text-slate-800 text-sm">Danh sách đạt giải</div>
@@ -1364,7 +1364,7 @@ export function ResultsClient({
                           <div className="text-[10px] text-slate-400 font-bold">{row.campusName}</div>
                         </td>
                         <td className="py-3 px-6 text-slate-600">{row.examName}</td>
-                        <td className="py-3 px-6 text-[#00A99D] font-bold">{row.achievementName}</td>
+                        <td className="py-3 px-6 text-[#36E08F] font-bold">{row.achievementName}</td>
                         <td className="py-3 px-6">
                           <div className="font-black text-amber-700">{LEVEL_LABELS[row.level] || row.level}</div>
                           <div className="text-[10px] text-slate-400 font-bold uppercase">{CATEGORY_LABELS[row.category] || row.category} ({row.type === "CA_NHAN" ? "Cá nhân" : "Đồng đội"})</div>
@@ -1420,7 +1420,7 @@ export function ResultsClient({
                   {/* Group Header */}
                   <div className="bg-gradient-to-r from-slate-50 via-teal-50/20 to-slate-50 border-b border-slate-200/80 px-5 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#00A99D]/10 text-[#00A99D] rounded-xl flex items-center justify-center border border-[#00A99D]/20 shadow-2xs">
+                      <div className="w-10 h-10 bg-[#36E08F]/10 text-[#36E08F] rounded-xl flex items-center justify-center border border-[#36E08F]/20 shadow-2xs">
                         {viewGroup === 'exam' ? (
                           <Sparkles className="w-5 h-5" />
                         ) : (
@@ -1434,7 +1434,7 @@ export function ResultsClient({
                         </p>
                       </div>
                     </div>
-                    <span className="text-[11px] font-black bg-[#00A99D]/10 text-[#00A99D] px-3 py-1 rounded-full border border-[#00A99D]/20 uppercase">
+                    <span className="text-[11px] font-black bg-[#36E08F]/10 text-[#36E08F] px-3 py-1 rounded-full border border-[#36E08F]/20 uppercase">
                       {achList.length} giải thưởng
                     </span>
                   </div>
@@ -1454,7 +1454,7 @@ export function ResultsClient({
             {/* Search Banner Container */}
             <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
               {/* Card Banner Header */}
-              <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#00A99D] text-white p-5 px-6 flex items-center justify-between">
+              <div className="bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#36E08F] text-white p-5 px-6 flex items-center justify-between">
                 <div className="flex items-center gap-3.5">
                   <div className="p-3 bg-white/10 rounded-xl backdrop-blur-xs shadow-inner">
                     <BookOpen className="w-6 h-6 text-teal-200" />
@@ -1483,7 +1483,7 @@ export function ResultsClient({
                 {/* Method 1: Quick Search */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs font-black text-slate-700 uppercase tracking-wider">
-                    <span className="w-5 h-5 rounded-full bg-teal-50 text-[#00A99D] border border-teal-200/80 flex items-center justify-center text-[10px] font-black">1</span>
+                    <span className="w-5 h-5 rounded-full bg-teal-50 text-[#36E08F] border border-teal-200/80 flex items-center justify-center text-[10px] font-black">1</span>
                     CÁCH 1: Tìm nhanh bằng Mã hoặc Tên học sinh
                   </div>
                   <div className="relative">
@@ -1499,7 +1499,7 @@ export function ResultsClient({
                         setClassStudents([]);
                       }}
                       placeholder="Nhập Mã học sinh hoặc Tên học sinh..."
-                      className="w-full border border-slate-200 rounded-xl pl-10 pr-9 py-3 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs transition-all"
+                      className="w-full border border-slate-200 rounded-xl pl-10 pr-9 py-3 text-xs focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs transition-all"
                     />
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     {searchQuery && (
@@ -1529,11 +1529,11 @@ export function ResultsClient({
                           className="w-full text-left px-4 py-3 hover:bg-teal-50/40 transition-all flex justify-between items-center text-xs font-semibold group cursor-pointer"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#00A99D] to-[#008A81] text-white flex items-center justify-center font-black text-xs uppercase shadow-2xs">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#36E08F] to-[#008A81] text-white flex items-center justify-center font-black text-xs uppercase shadow-2xs">
                               {student.studentName.split(" ").pop()?.charAt(0) || "H"}
                             </div>
                             <div>
-                              <div className="font-black text-slate-800 group-hover:text-[#00A99D] transition-colors">{student.studentName}</div>
+                              <div className="font-black text-slate-800 group-hover:text-[#36E08F] transition-colors">{student.studentName}</div>
                               <div className="text-[10px] text-slate-400 font-mono font-bold">Mã HS: {student.studentCode}</div>
                             </div>
                           </div>
@@ -1549,7 +1549,7 @@ export function ResultsClient({
                     <p className="text-xs text-rose-500 italic font-semibold">Không tìm thấy học sinh nào phù hợp.</p>
                   )}
                   {loadingSearch && (
-                    <p className="text-xs text-[#00A99D] animate-pulse font-bold">Đang tìm kiếm dữ liệu học sinh...</p>
+                    <p className="text-xs text-[#36E08F] animate-pulse font-bold">Đang tìm kiếm dữ liệu học sinh...</p>
                   )}
                 </div>
 
@@ -1569,7 +1569,7 @@ export function ResultsClient({
                           setProfileClassId("");
                           setClassStudents([]);
                         }}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs"
                       >
                         <option value="">-- Chọn Cơ sở --</option>
                         {campuses.map(c => (
@@ -1587,7 +1587,7 @@ export function ResultsClient({
                           setProfileClassId("");
                           setClassStudents([]);
                         }}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50 shadow-2xs"
                       >
                         <option value="">-- Chọn Khối --</option>
                         {Array.from({ length: 12 }, (_, i) => String(i + 1)).map(g => (
@@ -1602,7 +1602,7 @@ export function ResultsClient({
                         value={profileClassId}
                         onChange={e => setProfileClassId(e.target.value)}
                         disabled={!profileCampusId || !profileGrade}
-                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50 shadow-2xs"
+                        className="w-full border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none font-semibold text-slate-700 bg-slate-50/50 disabled:opacity-50 shadow-2xs"
                       >
                         <option value="">-- Chọn Lớp --</option>
                         {classes
@@ -1618,10 +1618,10 @@ export function ResultsClient({
                     <div className="pt-3 border-t border-slate-100 animate-fade-in space-y-2">
                       <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
                         <span>Danh sách Học sinh ({classStudents.length})</span>
-                        <span className="text-[#00A99D]">Nhấp chọn để tra cứu</span>
+                        <span className="text-[#36E08F]">Nhấp chọn để tra cứu</span>
                       </div>
                       {loadingClassStudents ? (
-                        <p className="text-xs text-[#00A99D] animate-pulse py-2 font-bold">Đang tải danh sách học sinh...</p>
+                        <p className="text-xs text-[#36E08F] animate-pulse py-2 font-bold">Đang tải danh sách học sinh...</p>
                       ) : classStudents.length === 0 ? (
                         <p className="text-xs text-slate-400 italic py-2">Không tìm thấy học sinh nào thuộc lớp này.</p>
                       ) : (
@@ -1633,13 +1633,13 @@ export function ResultsClient({
                               onClick={() => handleSelectStudentProfile(student.id)}
                               className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between text-xs cursor-pointer ${
                                 selectedStudentProfile?.id === student.id 
-                                  ? 'bg-teal-50/80 border-[#00A99D] text-[#00A99D] shadow-xs' 
+                                  ? 'bg-teal-50/80 border-[#36E08F] text-[#36E08F] shadow-xs' 
                                   : 'bg-slate-50/60 hover:bg-slate-100/60 border-slate-200/80 text-slate-700'
                               }`}
                             >
                               <div className="flex items-center gap-2.5 truncate">
                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-black text-[10px] uppercase flex-shrink-0 ${
-                                  selectedStudentProfile?.id === student.id ? 'bg-[#00A99D] text-white' : 'bg-slate-200 text-slate-700'
+                                  selectedStudentProfile?.id === student.id ? 'bg-[#36E08F] text-white' : 'bg-slate-200 text-slate-700'
                                 }`}>
                                   {student.studentName.split(" ").pop()?.charAt(0) || "H"}
                                 </div>
@@ -1661,7 +1661,7 @@ export function ResultsClient({
             {/* Profile Content Display */}
             {loadingProfile ? (
               <div className="py-20 text-center text-slate-400 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
-                <div className="animate-spin rounded-full h-9 w-9 border-3 border-[#00A99D] border-t-transparent mx-auto mb-3"></div>
+                <div className="animate-spin rounded-full h-9 w-9 border-3 border-[#36E08F] border-t-transparent mx-auto mb-3"></div>
                 <p className="text-xs font-black text-slate-600">Đang tải hồ sơ thành tích học sinh...</p>
               </div>
             ) : selectedStudentProfile ? (
@@ -1669,10 +1669,10 @@ export function ResultsClient({
                 {/* Candidate Bio Header Card */}
                 <div className="bg-gradient-to-br from-teal-50/80 via-white to-slate-50 border border-teal-200/80 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
                   {/* Background decoration */}
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#00A99D]/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-[#36E08F]/5 rounded-full blur-3xl pointer-events-none" />
                   
                   <div className="flex items-start gap-5 relative z-10">
-                    <div className="w-16 h-16 bg-gradient-to-br from-[#00A99D] to-[#007B73] rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-[#00A99D]/20 border border-white/20 font-black text-2xl uppercase">
+                    <div className="w-16 h-16 bg-gradient-to-br from-[#36E08F] to-[#007B73] rounded-2xl flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-[#36E08F]/20 border border-white/20 font-black text-2xl uppercase">
                       {selectedStudentProfile.studentName.split(" ").pop()?.charAt(0) || "H"}
                     </div>
                     <div className="space-y-2">
@@ -1695,7 +1695,7 @@ export function ResultsClient({
 
                   <div className="self-start md:self-center bg-white p-4 rounded-xl border border-slate-200/80 shadow-2xs text-right min-w-[180px] relative z-10">
                     <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Đơn vị & Lớp học</div>
-                    <div className="text-2xl font-black text-[#00A99D]">{selectedStudentProfile.className}</div>
+                    <div className="text-2xl font-black text-[#36E08F]">{selectedStudentProfile.className}</div>
                     <div className="text-xs text-slate-600 font-extrabold mt-0.5">{selectedStudentProfile.campusName}</div>
                     <div className="text-[10px] text-slate-500 font-mono mt-1.5 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200/60 inline-block font-bold">
                       Năm học: {selectedStudentProfile.academicYearName}
@@ -1714,7 +1714,7 @@ export function ResultsClient({
                         <h3 className="text-slate-800 font-black text-base">Lịch Sử Thành Tích &amp; Khen Thưởng</h3>
                         <p className="text-xs text-slate-400 font-medium">Toàn bộ giải thưởng đã đạt được trong quá trình học tập</p>
                       </div>
-                      <span className="text-xs font-black bg-[#00A99D] text-white px-3 py-1 rounded-full shadow-2xs ml-1">
+                      <span className="text-xs font-black bg-[#36E08F] text-white px-3 py-1 rounded-full shadow-2xs ml-1">
                         {selectedStudentProfile.achievements.length} giải
                       </span>
                     </div>
@@ -1725,7 +1725,7 @@ export function ResultsClient({
                         onClick={() => setViewGroup('exam')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           viewGroup === 'exam' 
-                            ? 'bg-white text-[#00A99D] shadow-xs' 
+                            ? 'bg-white text-[#36E08F] shadow-xs' 
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1736,7 +1736,7 @@ export function ResultsClient({
                         onClick={() => setViewGroup('category')}
                         className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           viewGroup === 'category' 
-                            ? 'bg-white text-[#00A99D] shadow-xs' 
+                            ? 'bg-white text-[#36E08F] shadow-xs' 
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
@@ -1750,8 +1750,8 @@ export function ResultsClient({
               </div>
             ) : (
               <div className="bg-gradient-to-br from-slate-50 via-teal-50/20 to-indigo-50/20 border border-slate-200/80 rounded-2xl p-16 text-center text-slate-400 shadow-xs animate-fade-in">
-                <div className="w-20 h-20 bg-[#00A99D]/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#00A99D]/20 shadow-2xs">
-                  <BookOpen className="w-10 h-10 text-[#00A99D]" />
+                <div className="w-20 h-20 bg-[#36E08F]/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#36E08F]/20 shadow-2xs">
+                  <BookOpen className="w-10 h-10 text-[#36E08F]" />
                 </div>
                 <h4 className="font-black text-slate-800 text-lg">Chưa Chọn Học Sinh Để Tra Cứu</h4>
                 <p className="text-xs mt-2 text-slate-500 max-w-md mx-auto leading-relaxed font-medium">
@@ -1759,7 +1759,7 @@ export function ResultsClient({
                 </p>
                 <div className="flex items-center justify-center gap-6 mt-6">
                   <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-2xs">
-                    <Search className="w-4 h-4 text-[#00A99D]" />
+                    <Search className="w-4 h-4 text-[#36E08F]" />
                     <span className="text-xs font-bold text-slate-700">Tìm nhanh mã/tên</span>
                   </div>
                   <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">hoặc</span>

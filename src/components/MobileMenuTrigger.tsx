@@ -12,7 +12,7 @@ export function MobileMenuTrigger() {
       className="md:hidden p-2 -ml-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all focus:outline-none"
       aria-label="Toggle Menu"
     >
-      <Menu className="w-6 h-6 text-[#00A99D]" />
+      <Menu className="w-6 h-6 text-[#36E08F]" />
     </button>
   )
 }

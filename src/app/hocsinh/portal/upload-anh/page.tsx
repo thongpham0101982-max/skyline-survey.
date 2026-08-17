@@ -155,7 +155,7 @@ export default function StudentPhotoPortalPage() {
   if (!portalStatus.checked) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50">
-        <Loader2 className="w-12 h-12 text-[#00A99D] animate-spin mb-4" />
+        <Loader2 className="w-12 h-12 text-[#36E08F] animate-spin mb-4" />
         <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Đang kiểm tra kết nối cổng...</p>
       </div>
     )
@@ -188,7 +188,7 @@ export default function StudentPhotoPortalPage() {
       <div className="relative z-10 w-full max-w-[500px] my-8">
         {/* Header Logo */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#00A99D] rounded-3xl mb-4 shadow-2xl relative animate-bounce-subtle">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#36E08F] rounded-3xl mb-4 shadow-2xl relative animate-bounce-subtle">
             <GraduationCap className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-black text-slate-800 tracking-tight uppercase">SKYLINE PORTAL</h1>
@@ -224,7 +224,7 @@ export default function StudentPhotoPortalPage() {
                       value={studentCode} 
                       onChange={e => setStudentCode(e.target.value)} 
                       placeholder="VD: HS000000"
-                      className="w-full rounded-2xl px-5 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-[#00A99D] text-base font-extrabold text-slate-800 outline-none transition-all placeholder:text-slate-300" 
+                      className="w-full rounded-2xl px-5 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-[#36E08F] text-base font-extrabold text-slate-800 outline-none transition-all placeholder:text-slate-300" 
                     />
                   </div>
                 </div>
@@ -239,7 +239,7 @@ export default function StudentPhotoPortalPage() {
                       type="date" 
                       value={dateOfBirth} 
                       onChange={e => setDateOfBirth(e.target.value)}
-                      className="w-full rounded-2xl pl-14 pr-5 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-[#00A99D] text-base font-extrabold text-slate-800 outline-none transition-all" 
+                      className="w-full rounded-2xl pl-14 pr-5 py-4 bg-slate-50 border-2 border-transparent focus:bg-white focus:border-[#36E08F] text-base font-extrabold text-slate-800 outline-none transition-all" 
                     />
                   </div>
                 </div>
@@ -247,7 +247,7 @@ export default function StudentPhotoPortalPage() {
                 <button 
                   type="submit" 
                   disabled={verifying}
-                  className="w-full py-4.5 bg-[#00A99D] hover:bg-[#009085] text-white rounded-2xl text-base font-black shadow-xl shadow-[#00A99D]/20 flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-50"
+                  className="w-full py-4.5 bg-[#36E08F] hover:bg-[#009085] text-white rounded-2xl text-base font-black shadow-xl shadow-[#36E08F]/20 flex items-center justify-center gap-2 transition-all active:scale-98 disabled:opacity-50"
                 >
                   {verifying ? (
                     <>
@@ -275,12 +275,12 @@ export default function StudentPhotoPortalPage() {
               </button>
 
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-2">
-                <span className="text-[9px] text-[#00A99D] font-black uppercase tracking-widest block">Thông tin học sinh</span>
+                <span className="text-[9px] text-[#36E08F] font-black uppercase tracking-widest block">Thông tin học sinh</span>
                 <h3 className="text-lg font-black text-slate-800 leading-tight">{studentInfo.studentName}</h3>
                 <div className="grid grid-cols-2 gap-2 text-xs font-bold text-slate-500 pt-1">
                   <div>Lớp: <span className="text-slate-800">{studentInfo.className}</span></div>
                   <div>Cơ sở: <span className="text-slate-800">{studentInfo.campusName}</span></div>
-                  <div className="col-span-2 mt-1">Mã số: <span className="text-[#00A99D] font-black">{studentInfo.studentCode}</span></div>
+                  <div className="col-span-2 mt-1">Mã số: <span className="text-[#36E08F] font-black">{studentInfo.studentCode}</span></div>
                 </div>
               </div>
 
@@ -304,7 +304,7 @@ export default function StudentPhotoPortalPage() {
               <div className="space-y-4">
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 hover:border-[#00A99D] bg-slate-50 rounded-3xl p-6 flex flex-col items-center justify-center min-h-[220px] cursor-pointer transition-all relative overflow-hidden group"
+                  className="border-2 border-dashed border-slate-200 hover:border-[#36E08F] bg-slate-50 rounded-3xl p-6 flex flex-col items-center justify-center min-h-[220px] cursor-pointer transition-all relative overflow-hidden group"
                 >
                   <input 
                     type="file" 
@@ -327,7 +327,7 @@ export default function StudentPhotoPortalPage() {
                     </div>
                   ) : (
                     <div className="text-center space-y-3">
-                      <div className="inline-flex items-center justify-center w-14 h-14 bg-white text-slate-400 group-hover:text-[#00A99D] rounded-2xl shadow transition-colors">
+                      <div className="inline-flex items-center justify-center w-14 h-14 bg-white text-slate-400 group-hover:text-[#36E08F] rounded-2xl shadow transition-colors">
                         <Upload className="w-6 h-6" />
                       </div>
                       <div>
@@ -359,7 +359,7 @@ export default function StudentPhotoPortalPage() {
                     disabled={!selectedFile || uploading}
                     className={`flex-1 py-4 text-white rounded-2xl text-sm font-black shadow-xl transition-all flex items-center justify-center gap-2 ${
                       selectedFile && !uploading 
-                        ? "bg-[#00A99D] hover:bg-[#009085] shadow-[#00A99D]/20 active:scale-98" 
+                        ? "bg-[#36E08F] hover:bg-[#009085] shadow-[#36E08F]/20 active:scale-98" 
                         : "bg-slate-300 shadow-none cursor-not-allowed"
                     }`}
                   >

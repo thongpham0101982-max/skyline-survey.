@@ -125,13 +125,13 @@ export function ClassDetailClient({
       {/* 1. Page Header and Glassmorphism Banner */}
       <div className="space-y-4">
         <div>
-          <Link href="/teacher/classes" className="inline-flex items-center text-xs font-bold text-[#00A99D] hover:text-[#008f85] transition-colors gap-1">
+          <Link href="/teacher/classes" className="inline-flex items-center text-xs font-bold text-[#36E08F] hover:text-[#008f85] transition-colors gap-1">
             &larr; Quay lại danh sách lớp học
           </Link>
         </div>
 
         {/* Premium Dashboard Header Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#00A99D] via-[#008b81] to-[#046e66] text-white p-6 sm:p-8 shadow-lg shadow-teal-900/10">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#36E08F] via-[#008b81] to-[#046e66] text-white p-6 sm:p-8 shadow-lg shadow-teal-900/10">
           {/* Decorative absolute glow or circles */}
           <div className="absolute right-0 top-0 -mt-12 -mr-12 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute left-1/3 bottom-0 -mb-16 w-48 h-48 bg-teal-400/10 rounded-full blur-xl pointer-events-none" />
@@ -231,7 +231,7 @@ export function ClassDetailClient({
                 placeholder="Tìm học sinh, mã số..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full text-xs font-semibold pl-10 pr-4 py-2 border border-slate-200 bg-white rounded-xl focus:ring-2 focus:ring-[#00A99D] outline-none"
+                className="w-full text-xs font-semibold pl-10 pr-4 py-2 border border-slate-200 bg-white rounded-xl focus:ring-2 focus:ring-[#36E08F] outline-none"
               />
             </div>
           </div>
@@ -267,7 +267,7 @@ export function ClassDetailClient({
                           {hasSubmitted ? (
                             <Link 
                               href={`/teacher/classes/${classId}/${studentForms.find(f => f.status === "SUBMITTED" || f.status === "ĐÃ HOÀN THÀNH")?.id}`} 
-                              className="inline-flex items-center gap-1 text-[#00A99D] hover:bg-teal-50 border border-teal-200/40 px-3 py-1.5 rounded-lg text-xs font-extrabold tracking-wide transition-all shadow-sm bg-teal-50/30"
+                              className="inline-flex items-center gap-1 text-[#36E08F] hover:bg-teal-50 border border-teal-200/40 px-3 py-1.5 rounded-lg text-xs font-extrabold tracking-wide transition-all shadow-sm bg-teal-50/30"
                             >
                               ĐÃ HOÀN THÀNH
                               <ChevronRight className="w-3.5 h-3.5" />
@@ -311,8 +311,8 @@ export function ClassDetailClient({
                     <LineChart data={monthlyHeadcount} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                       <defs>
                         <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#00A99D" stopOpacity={0.2}/>
-                          <stop offset="95%" stopColor="#00A99D" stopOpacity={0}/>
+                          <stop offset="5%" stopColor="#36E08F" stopOpacity={0.2}/>
+                          <stop offset="95%" stopColor="#36E08F" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -323,7 +323,7 @@ export function ClassDetailClient({
                         labelStyle={{ fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}
                       />
                       <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingBottom: '10px' }} />
-                      <Line type="monotone" dataKey="count" stroke="#00A99D" strokeWidth={3.5} activeDot={{ r: 6, strokeWidth: 0 }} name="Sỹ số học sinh" />
+                      <Line type="monotone" dataKey="count" stroke="#36E08F" strokeWidth={3.5} activeDot={{ r: 6, strokeWidth: 0 }} name="Sỹ số học sinh" />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -414,12 +414,12 @@ export function ClassDetailClient({
             <div className="p-6 border-b border-slate-100 bg-slate-50/40 space-y-4">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center text-[#00A99D]">
+                  <div className="w-8 h-8 bg-teal-50 rounded-lg flex items-center justify-center text-[#36E08F]">
                     <UserCheck className="w-4 h-4" />
                   </div>
                   <h3 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">Hồ sơ Học sinh Lớp chủ nhiệm</h3>
                 </div>
-                <span className="text-[9px] text-[#00A99D] font-extrabold uppercase tracking-widest bg-teal-50 border border-teal-100/60 px-3 py-1 rounded-full">
+                <span className="text-[9px] text-[#36E08F] font-extrabold uppercase tracking-widest bg-teal-50 border border-teal-100/60 px-3 py-1 rounded-full">
                   Sắp xếp Alpha Tiếng Việt
                 </span>
               </div>
@@ -434,7 +434,7 @@ export function ClassDetailClient({
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
                     placeholder="Tìm tên hoặc mã học sinh..."
-                    className="w-full text-xs font-semibold pl-9 pr-3 py-2 border border-slate-250 bg-white rounded-xl focus:ring-2 focus:ring-[#00A99D] outline-none"
+                    className="w-full text-xs font-semibold pl-9 pr-3 py-2 border border-slate-250 bg-white rounded-xl focus:ring-2 focus:ring-[#36E08F] outline-none"
                   />
                 </div>
 
@@ -444,7 +444,7 @@ export function ClassDetailClient({
                   <select
                     value={genderFilter}
                     onChange={e => setGenderFilter(e.target.value)}
-                    className="w-full text-xs font-semibold pl-9 pr-3 py-2 border border-slate-250 bg-white rounded-xl focus:ring-2 focus:ring-[#00A99D] outline-none cursor-pointer appearance-none"
+                    className="w-full text-xs font-semibold pl-9 pr-3 py-2 border border-slate-250 bg-white rounded-xl focus:ring-2 focus:ring-[#36E08F] outline-none cursor-pointer appearance-none"
                   >
                     <option value="all">Tất cả Giới tính</option>
                     <option value="male">Nam</option>
@@ -458,7 +458,7 @@ export function ClassDetailClient({
                   <select
                     value={statusFilter}
                     onChange={e => setStatusFilter(e.target.value)}
-                    className="w-full text-xs font-semibold pl-9 pr-3 py-2 border border-slate-250 bg-white rounded-xl focus:ring-2 focus:ring-[#00A99D] outline-none cursor-pointer appearance-none"
+                    className="w-full text-xs font-semibold pl-9 pr-3 py-2 border border-slate-250 bg-white rounded-xl focus:ring-2 focus:ring-[#36E08F] outline-none cursor-pointer appearance-none"
                   >
                     <option value="all">Tất cả Trạng thái</option>
                     <option value="active">Đang học</option>
