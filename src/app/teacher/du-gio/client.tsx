@@ -248,7 +248,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
-  const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(true);
+  const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
   const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
 
   // Filter teachers belonging ONLY to current logged-in teacher's department
@@ -567,7 +567,7 @@ export function ObservationClient(props: ObservationClientProps) {
     setEditSlotId(null);
     setNewSubjectId(""); setNewSubjectName(""); setNewLevel(isMamNonTeacher ? "Mầm non" : ""); setNewGrade(""); setNewClassId("");
     setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1");
-    setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId(""); setNewNotifMode("ALL"); setSelectedMemberIds([]);
+    setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId(""); setNewNotifMode("ALL"); setSelectedMemberIds([]); setSendEmailNotif(false);
     setNewLessonPlanName(""); setNewLessonPlanData("");
     setNewChuDe(""); setNewHoatDong(""); setNewDeTai("");
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -1926,7 +1926,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div>
                     <p className="text-xs sm:text-sm font-extrabold text-[#003B3A] flex items-center gap-1.5">
                       Tùy chọn gửi Email thông báo tự động
-                      <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase font-black">Mặc định bật</span>
+                      <span className="text-[10px] bg-slate-500 text-white px-2 py-0.5 rounded-full uppercase font-black">Mặc định tắt</span>
                     </p>
                     <p className="text-xs text-slate-600 font-medium mt-0.5">
                       Gửi email tự động từ <span className="font-bold text-[#008b82]">bankhaothi@skylineschool.edu.vn</span> đến Giáo viên được chọn trong Tổ chuyên môn.
