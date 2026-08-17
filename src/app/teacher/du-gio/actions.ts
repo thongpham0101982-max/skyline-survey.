@@ -1307,6 +1307,7 @@ async function ensureDbColumns() {
   } catch (e) {}
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "Department" ADD COLUMN "teamsWebhookUrl" TEXT;`);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "expiredNotifSentAt" DATETIME;`);
   } catch (e) {}
   try {
     await prisma.$executeRawUnsafe(`ALTER TABLE "ObservationSlot" ADD COLUMN "lastRemindedAt" DATETIME;`);
@@ -1788,5 +1789,154 @@ export async function getDepartmentTeachers(departmentId?: string) {
   } catch (e) {
     console.error(e);
     return [];
+  }
+}
+
+
+/**
+ * Process Expired Observation Slots:
+ * Sends automated Email, Teams & In-App notifications to BOTH the Host Teacher AND all Registered Observer Teachers.
+ */
+export async function processExpiredSlotsNotifications() {
+  await ensureDbColumns();
+  try {
+    const now = new Date();
+    // Fetch active slots whose date is today or past, and expiredNotifSentAt is null
+    const expiredSlots = await prisma.observationSlot.findMany({
+      where: {
+        status: "ACTIVE",
+        expiredNotifSentAt: null,
+        date: { lte: now }
+      },
+      include: {
+        teacher: { include: { user: true } },
+        registrations: {
+          include: {
+            teacher: { include: { user: true } }
+          }
+        }
+      }
+    });
+
+    console.log(`[Skyline Expired Check] Found ${expiredSlots.length} expired slots to notify.`);
+    let processedCount = 0;
+
+    for (const slot of expiredSlots) {
+      const hostTeacher = slot.teacher;
+      const approvedRegistrations = slot.registrations || [];
+      const observerTeachers = approvedRegistrations.map(r => r.teacher).filter(Boolean);
+      const registeredCount = observerTeachers.length;
+      const formattedDateVi = new Date(slot.date).toLocaleDateString("vi-VN");
+      const linkUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://skyline-survey.vercel.app") + "/teacher/du-gio";
+
+      // 1. Send Email to Host Teacher
+      if (hostTeacher) {
+        const hostEmail = hostTeacher.email || (hostTeacher as any).user?.email;
+        if (hostEmail && hostEmail.includes("@")) {
+          const observerNamesList = observerTeachers.length > 0 
+            ? observerTeachers.map(t => `• ${t.teacherName} (${t.teacherCode}) - ${t.email || ''}`).join("<br/>")
+            : "<em style='color: #94a3b8;'>Chưa có Giáo viên nào đăng ký dự giờ tiết này.</em>";
+
+          const hostSubject = `[Skyline - Dự Giờ] Hết hạn đăng ký: Tiết dạy "${slot.topic}" - Môn ${slot.subjectName}`;
+          const hostHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+              <div style="background-color: #e11d48; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <h2 style="color: #ffffff; margin: 0; font-size: 18px;">THÔNG BÁO HẾT HẠN ĐĂNG KÝ TIẾT DẠY</h2>
+              </div>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${hostTeacher.teacherName}</strong>,</p>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Tiết dạy dự giờ của Thầy/Cô đã <strong>HẾT HẠN ĐĂNG KÝ</strong>. Dưới đây là thông tin chi tiết số lượng đồng nghiệp tham dự:</p>
+
+              <div style="background-color: #f8fafc; padding: 16px; border-radius: 8px; margin: 15px 0; border: 1px solid #cbd5e1;">
+                <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: bold; color: #0f172a;">📊 Số lượng GV đã đăng ký: <span style="color: #00A99D; font-size: 16px;">${registeredCount} / 4 GV</span></p>
+                <div style="font-size: 13px; color: #334155; margin-top: 8px;">
+                  <strong>Danh sách Giáo viên dự giờ:</strong><br/>
+                  ${observerNamesList}
+                </div>
+              </div>
+
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #e11d48; font-weight: bold;">${slot.topic}</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Phòng:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Trường"} - ${slot.room || "Phòng học"}</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
+                <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.startTime} - ${slot.endTime}</td></tr>
+              </table>
+
+              <p style="color: #334155; font-size: 14px; line-height: 1.6; font-weight: bold; text-align: center;">Kính mời Thầy/Cô chuẩn bị và thực hiện tiết dạy theo đúng thời gian đã đăng ký.</p>
+
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem Chi Tiết Tiết Dạy Trên Skyline</a>
+              </div>
+
+              <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+                Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+              </div>
+            </div>
+          `;
+
+          sendEmail({ to: hostEmail, subject: hostSubject, html: hostHtml }).catch(e => console.error("Host expired email error:", e));
+        }
+      }
+
+      // 2. Send Emails to ALL Registered Observer Teachers
+      for (const observer of observerTeachers) {
+        const observerEmail = observer.email || (observer as any).user?.email;
+        if (observerEmail && observerEmail.includes("@")) {
+          const obsSubject = `[Skyline - Dự Giờ] Nhắc lịch dự giờ: "${slot.topic}" - GV ${hostTeacher?.teacherName || "Giáo viên"}`;
+          const obsHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+              <div style="background-color: #00A99D; padding: 16px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <h2 style="color: #ffffff; margin: 0; font-size: 18px;">NHẮC LỊCH DỰ GIỜ TIẾT HỌC</h2>
+              </div>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${observer.teacherName}</strong>,</p>
+              <p style="color: #334155; font-size: 14px; line-height: 1.6;">Tiết dạy dự giờ bạn đã đăng ký thuộc môn <strong>${slot.subjectName}</strong> của Thầy/Cô <strong>${hostTeacher?.teacherName}</strong> đã hết hạn đăng ký và sẽ diễn ra theo kế hoạch.</p>
+
+              <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 40%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #00A99D; font-weight: bold;">${slot.topic}</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn học & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Địa điểm:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Trường"} - ${slot.room || "Phòng học"}</td></tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Ngày dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${formattedDateVi}</td></tr>
+                <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Tiết dạy:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.startTime} - ${slot.endTime}</td></tr>
+              </table>
+
+              <p style="color: #334155; font-size: 14px; line-height: 1.6; font-weight: bold; text-align: center;">Kính mời Thầy/Cô sắp xếp thời gian tham dự đúng giờ.</p>
+
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${linkUrl}" style="background-color: #00A99D; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">🔗 Xem Chi Tiết Tiết Dạy Trên Skyline</a>
+              </div>
+            </div>
+          `;
+
+          sendEmail({ to: observerEmail, subject: obsSubject, html: obsHtml }).catch(e => console.error("Observer expired email error:", e));
+        }
+      }
+
+      // 3. Create In-App Notifications
+      const notifUsers = [hostTeacher?.user?.id, ...observerTeachers.map(o => o.user?.id)].filter(Boolean) as string[];
+      if (notifUsers.length > 0) {
+        const notifData = notifUsers.map(uId => ({
+          userId: uId,
+          title: "Hết hạn đăng ký dự giờ & Nhắc lịch dạy",
+          message: `Tiết dạy dự giờ (${slot.subjectName} - ${slot.topic}) đã hết hạn đăng ký (Có ${registeredCount}/4 GV tham dự). Vui lòng thực hiện tiết dạy theo đúng lịch.`,
+          link: "/teacher/du-gio",
+          isRead: false
+        }));
+        await prisma.notification.createMany({ data: notifData }).catch(e => console.error("Notif error:", e));
+      }
+
+      // Mark expiredNotifSentAt
+      await prisma.observationSlot.update({
+        where: { id: slot.id },
+        data: { expiredNotifSentAt: new Date() }
+      });
+
+      processedCount++;
+    }
+
+    return { success: true, processedCount };
+  } catch (e: any) {
+    console.error("processExpiredSlotsNotifications error:", e);
+    return { success: false, error: e?.message || "Lỗi xử lý tiết hết hạn" };
   }
 }
