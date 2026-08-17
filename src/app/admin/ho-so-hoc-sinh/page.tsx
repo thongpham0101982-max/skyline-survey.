@@ -6,6 +6,7 @@ import { StudentProfilesAdminClient } from "./client"
 
 export const metadata = { title: "Hồ sơ Học sinh | Admin Portal" }
 export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 export default async function AdminStudentProfilesPage() {
   let session: any = null
