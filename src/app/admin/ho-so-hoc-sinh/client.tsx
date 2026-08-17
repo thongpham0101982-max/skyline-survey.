@@ -6,7 +6,7 @@ import {
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
   Bell, Heart, MessageCircle, Send, Globe, Printer, Download,
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
-  Layers, School, Building2, RotateCcw, RefreshCw, Trash2
+  Layers, School, Building2, RotateCcw, RefreshCw, Trash2, X
 } from "lucide-react"
 
 interface StudentProfilesAdminClientProps {
