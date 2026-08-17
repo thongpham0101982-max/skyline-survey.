@@ -6,7 +6,7 @@ import {
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
   Bell, Heart, MessageCircle, Send, Globe, Printer, Download,
   Search, Calendar, MapPin, CheckCircle, AlertTriangle, GraduationCap,
-  Layers, School, Building2, RotateCcw, RefreshCw, Trash2, X
+  Layers, School, Building2, RotateCcw, RefreshCw, Trash2
 } from "lucide-react"
 
 interface StudentProfilesAdminClientProps {
@@ -113,29 +113,38 @@ export function StudentProfilesAdminClient({
 
   // Load students from API when filters change
   useEffect(() => {
+    // To prevent loading thousands of records, we require at least Campus or Grade or Class to be selected
+    // unless searchQuery is populated
+    if (selectedCampusId === "all" && selectedGrade === "all" && selectedClassId === "all" && !searchQuery.trim()) {
+      setStudents([])
+      setSelectedStudentId("")
+      setSelectedStudent(null)
+      return
+    }
+
     async function fetchStudentsList() {
       try {
         setLoadingStudents(true)
         const params = new URLSearchParams()
         params.set("action", "getProfiles")
-        if (selectedYearId) params.set("academicYearId", selectedYearId)
+        params.set("academicYearId", selectedYearId)
         
-        if (selectedCampusId && selectedCampusId !== "all") params.set("campusId", selectedCampusId)
-        if (selectedClassId && selectedClassId !== "all") params.set("classId", selectedClassId)
+        if (selectedCampusId !== "all") params.set("campusId", selectedCampusId)
+        if (selectedClassId !== "all") params.set("classId", selectedClassId)
         if (searchQuery.trim()) params.set("search", searchQuery.trim())
 
         // Fetch
         const res = await fetch(`/api/admin/student-profiles?${params.toString()}`)
         if (res.ok) {
           const result = await res.json()
-          let data = Array.isArray(result.data) ? result.data : []
+          let data = result.data || []
           
-          // If we filtered by grade locally
-          if (selectedGrade && selectedGrade !== "all") {
+          // If we filtered by grade locally (since database doesn't have grade on Student directly but has classId)
+          if (selectedGrade !== "all") {
             data = data.filter((s: any) => s.class?.grade === selectedGrade)
           }
 
-          // Filter block (preschool vs k12)
+          // If block filter is preschool/k12
           data = data.filter((s: any) => {
             const isPreschoolGrade = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"].includes(s.class?.grade)
             return schoolBlock === "k12" ? !isPreschoolGrade : isPreschoolGrade
@@ -143,7 +152,7 @@ export function StudentProfilesAdminClient({
 
           setStudents(data)
 
-          // Set default selected student if available
+          // Set default selected student if not empty
           if (data.length > 0) {
             const hasCurrentStudent = data.some((s: any) => s.id === selectedStudentId)
             if (!hasCurrentStudent) {
@@ -153,16 +162,9 @@ export function StudentProfilesAdminClient({
             setSelectedStudentId("")
             setSelectedStudent(null)
           }
-        } else {
-          setStudents([])
-          setSelectedStudentId("")
-          setSelectedStudent(null)
         }
       } catch (err) {
         console.error("Error loading students list:", err)
-        setStudents([])
-        setSelectedStudentId("")
-        setSelectedStudent(null)
       } finally {
         setLoadingStudents(false)
       }
@@ -171,18 +173,6 @@ export function StudentProfilesAdminClient({
     const timer = setTimeout(fetchStudentsList, 300) // Debounce search
     return () => clearTimeout(timer)
   }, [selectedYearId, schoolBlock, selectedCampusId, selectedGrade, selectedClassId, searchQuery])
-
-  // Filter students by local search query for instant 0ms latency
-  const filteredStudentsList = (students || []).filter((s: any) => {
-    if (!s) return false
-    if (!searchQuery.trim()) return true
-    const q = searchQuery.trim().toLowerCase()
-    const sName = (s.studentName || "").toLowerCase()
-    const sCode = (s.studentCode || "").toLowerCase()
-    const cName = (s.className || s.class?.className || "").toLowerCase()
-    const cCode = (s.classCode || s.class?.classCode || "").toLowerCase()
-    return sName.includes(q) || sCode.includes(q) || cName.includes(q) || cCode.includes(q)
-  })
 
   // Load detailed profile for selected student
   useEffect(() => {
@@ -284,12 +274,12 @@ export function StudentProfilesAdminClient({
       <div className="bg-white border border-slate-200/80 shadow-xs rounded-2xl p-5 space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5 text-xs font-black text-slate-800 uppercase tracking-wider">
-            <div className="p-1.5 bg-[#48BFE3]/10 text-[#48BFE3] rounded-lg">
+            <div className="p-1.5 bg-[#00A99D]/10 text-[#00A99D] rounded-lg">
               <Building2 className="w-4 h-4" />
             </div>
             <span>Bộ Lọc Tra Cứu &amp; Xuất Báo Cáo Hồ Sơ Học Sinh</span>
           </div>
-          <span className="text-[10px] font-extrabold text-[#48BFE3] bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200/60">
+          <span className="text-[10px] font-extrabold text-[#00A99D] bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200/60">
             Năm học: {academicYears.find(y => y.id === selectedYearId)?.name || activeYearName}
           </span>
         </div>
@@ -299,13 +289,13 @@ export function StudentProfilesAdminClient({
           {/* Year selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-[#48BFE3]" />
+              <Calendar className="w-3.5 h-3.5 text-[#00A99D]" />
               Năm học
             </label>
             <select
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
             >
               {academicYears.map(y => (
                 <option key={y.id} value={y.id}>{y.name}</option>
@@ -316,21 +306,21 @@ export function StudentProfilesAdminClient({
           {/* School Block selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <School className="w-3.5 h-3.5 text-[#48BFE3]" />
+              <School className="w-3.5 h-3.5 text-[#00A99D]" />
               Bậc học
             </label>
             <div className="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-xl text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setSchoolBlock("k12")}
-                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "k12" ? "bg-white text-[#48BFE3] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "k12" ? "bg-white text-[#00A99D] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
               >
                 Phổ thông
               </button>
               <button
                 type="button"
                 onClick={() => setSchoolBlock("preschool")}
-                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "preschool" ? "bg-white text-[#48BFE3] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "preschool" ? "bg-white text-[#00A99D] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
               >
                 Mầm non
               </button>
@@ -340,13 +330,13 @@ export function StudentProfilesAdminClient({
           {/* Campus selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-[#48BFE3]" />
+              <Building2 className="w-3.5 h-3.5 text-[#00A99D]" />
               Cơ sở
             </label>
             <select
               value={selectedCampusId}
               onChange={(e) => setSelectedCampusId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
             >
               <option value="all">Tất cả cơ sở</option>
               {campuses.map(c => (
@@ -358,13 +348,13 @@ export function StudentProfilesAdminClient({
           {/* Grade selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-[#48BFE3]" />
+              <Layers className="w-3.5 h-3.5 text-[#00A99D]" />
               Khối lớp
             </label>
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
             >
               <option value="all">Tất cả Khối</option>
               {gradeOptions.map(g => (
@@ -376,13 +366,13 @@ export function StudentProfilesAdminClient({
           {/* Class selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <GraduationCap className="w-3.5 h-3.5 text-[#48BFE3]" />
+              <GraduationCap className="w-3.5 h-3.5 text-[#00A99D]" />
               Lớp học
             </label>
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
             >
               <option value="all">Tất cả Lớp ({filteredClassesList.length})</option>
               {filteredClassesList.map(c => (
@@ -396,7 +386,7 @@ export function StudentProfilesAdminClient({
         {/* Batch Export PDF buttons */}
         <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-3 items-center justify-between text-xs font-bold">
           <div className="flex items-center gap-2 text-slate-500">
-            <Printer className="w-4 h-4 text-[#48BFE3]" />
+            <Printer className="w-4 h-4 text-[#00A99D]" />
             <span>Xuất báo cáo PDF đồng loạt:</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -426,7 +416,7 @@ export function StudentProfilesAdminClient({
             </button>
             <button
               onClick={() => handleBatchPdfExport("block")}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#48BFE3] to-[#009085] hover:opacity-95 text-white rounded-xl shadow-md shadow-[#48BFE3]/20 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#00A99D] to-[#009085] hover:opacity-95 text-white rounded-xl shadow-md shadow-[#00A99D]/20 transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Xuất PDF Bậc Học</span>
@@ -444,10 +434,10 @@ export function StudentProfilesAdminClient({
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-[#48BFE3]" />
+                  <Users className="w-4 h-4 text-[#00A99D]" />
                   Danh sách Học sinh
                 </h3>
-                <span className="text-[10px] font-extrabold bg-teal-50 text-[#48BFE3] px-2.5 py-0.5 rounded-full border border-teal-200/80">
+                <span className="text-[10px] font-extrabold bg-teal-50 text-[#00A99D] px-2.5 py-0.5 rounded-full border border-teal-200/80">
                   {filteredStudentsList.length} học sinh
                 </span>
               </div>
@@ -458,7 +448,7 @@ export function StudentProfilesAdminClient({
                   placeholder="Tìm theo mã hoặc tên học sinh..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] transition-all text-slate-700"
+                  className="w-full pl-9 pr-8 py-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#00A99D]/20 focus:border-[#00A99D] transition-all text-slate-700"
                 />
                 {searchQuery && (
                   <button
@@ -474,7 +464,7 @@ export function StudentProfilesAdminClient({
             <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
               {loadingStudents ? (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                  <Loader2 className="w-6 h-6 text-[#48BFE3] animate-spin opacity-60" />
+                  <Loader2 className="w-6 h-6 text-[#00A99D] animate-spin opacity-60" />
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Đang tải...</span>
                 </div>
               ) : filteredStudentsList.length === 0 ? (
@@ -490,15 +480,15 @@ export function StudentProfilesAdminClient({
                     onClick={() => setSelectedStudentId(s.id)}
                     className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
                       selectedStudentId === s.id
-                        ? "bg-teal-50/80 text-[#48BFE3] border-[#48BFE3] shadow-xs"
+                        ? "bg-teal-50/80 text-[#00A99D] border-[#00A99D] shadow-xs"
                         : "bg-slate-50/40 hover:bg-slate-100/60 border-slate-200/60 text-slate-700"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs uppercase flex-shrink-0 ${
-                        selectedStudentId === s.id ? "bg-[#48BFE3] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
+                        selectedStudentId === s.id ? "bg-[#00A99D] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
                       }`}>
-                        {(s.studentName || "H").split(" ").pop()?.charAt(0) || "H"}
+                        {s.studentName.split(" ").pop()?.charAt(0) || "H"}
                       </div>
                       <div className="min-w-0 truncate">
                         <div className="truncate font-black text-slate-800 text-xs">{s.studentName}</div>
@@ -522,9 +512,9 @@ export function StudentProfilesAdminClient({
               
               {/* Profile Details Header */}
               <div className="p-6 bg-gradient-to-r from-slate-50 to-slate-100/70 border-b border-slate-155 flex items-center justify-between gap-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#48BFE3]/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#00A99D]/5 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-50 border border-[#48BFE3]/30 flex items-center justify-center text-[#48BFE3] shadow-sm">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-50 border border-[#00A99D]/30 flex items-center justify-center text-[#00A99D] shadow-sm">
                     <User className="w-7 h-7" />
                   </div>
                   <div className="space-y-1">
@@ -540,7 +530,7 @@ export function StudentProfilesAdminClient({
                 {/* Print individual PDF */}
                 <button
                   onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}`, "_blank")}
-                  className="flex items-center gap-1.5 bg-[#48BFE3] hover:bg-[#009085] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 bg-[#00A99D] hover:bg-[#009085] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>In CV</span>
@@ -558,14 +548,14 @@ export function StudentProfilesAdminClient({
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-t-2 border-x rounded-t-xl transition-all cursor-pointer ${
                         isActive
-                          ? "bg-white text-[#48BFE3] border-[#48BFE3] border-x-slate-200 shadow-xs"
+                          ? "bg-white text-[#00A99D] border-[#00A99D] border-x-slate-200 shadow-xs"
                           : "text-slate-500 border-transparent hover:text-slate-800"
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5" />
                       <span>{tab.label}</span>
                     </button>
-                  );
+                  )
                 })}
               </div>
 
@@ -578,10 +568,10 @@ export function StudentProfilesAdminClient({
                       <div className="space-y-6">
                         <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-8 max-w-4xl mx-auto font-sans relative overflow-hidden">
                           {/* CV Header */}
-                          <div className="border-b-2 border-[#48BFE3] pb-6 flex justify-between items-start gap-4">
+                          <div className="border-b-2 border-[#00A99D] pb-6 flex justify-between items-start gap-4">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <GraduationCap className="w-6 h-6 text-[#48BFE3]" />
+                                <GraduationCap className="w-6 h-6 text-[#00A99D]" />
                                 <span className="font-extrabold text-sm tracking-wider text-slate-700 font-sans">SKY-LINE SYSTEM</span>
                               </div>
                               <h2 className="text-xl font-black text-slate-805 uppercase tracking-tight font-sans">Hồ sơ Năng lực Học sinh</h2>
@@ -598,12 +588,12 @@ export function StudentProfilesAdminClient({
                             {/* Left Column */}
                             <div className="md:col-span-1 border-r border-slate-100 pr-6 space-y-6">
                               <div className="text-center space-y-3">
-                                <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#48BFE3]/20 shadow-inner flex items-center justify-center bg-slate-50 text-slate-355">
+                                <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#00A99D]/20 shadow-inner flex items-center justify-center bg-slate-50 text-slate-355">
                                   <User className="w-16 h-16" />
                                 </div>
                                 <div>
                                   <h3 className="font-black text-base text-slate-800">{selectedStudent?.studentName}</h3>
-                                  <p className="text-[10px] text-[#48BFE3] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {selectedStudent.className || "N/A"}</p>
+                                  <p className="text-[10px] text-[#00A99D] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {selectedStudent.className || "N/A"}</p>
                                 </div>
                               </div>
 
@@ -626,40 +616,30 @@ export function StudentProfilesAdminClient({
                               {/* Outstanding Achievements */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <Award className="w-4 h-4 text-[#6930C3]" />
+                                  <Award className="w-4 h-4 text-[#00A99D]" />
                                   Thành tích nổi bật
                                 </h4>
                                 {(!selectedStudent.achievements || selectedStudent.achievements.length === 0) ? (
                                   <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận thành tích.</p>
                                 ) : (
                                   <div className="space-y-2">
-                                    {selectedStudent.achievements.slice(0, 3).map((a: any) => {
-                                      const examName = a.achievement?.exam?.name || a.achievement?.examName || a.examName || "Hội thi Tin học trẻ";
-                                      const categoryName = a.achievement?.exam?.category?.name || formatCategory(a.achievement?.category);
-                                      const roundName = a.achievement?.exam?.round?.name || a.achievement?.roundName || a.roundName || "Miền Trung";
-                                      const achievementName = a.achievement?.name || a.name || "Giải Ba";
-
-                                      return (
-                                        <div key={a.id} className="bg-amber-50/40 border border-amber-200/70 p-3 rounded-xl space-y-1.5">
-                                          <div className="flex items-center gap-1.5">
-                                            <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                            <span className="font-black text-slate-850 text-xs truncate">{examName}</span>
-                                          </div>
-                                          <div className="grid grid-cols-3 gap-1 text-[9px] pt-1 border-t border-amber-200/40">
-                                            <span className="font-bold text-slate-600 truncate">D/mục: {categoryName}</span>
-                                            <span className="font-bold text-blue-800 truncate">Vòng: {roundName}</span>
-                                            <span className="font-black text-amber-900 truncate">Giải: {achievementName}</span>
-                                          </div>
+                                    {selectedStudent.achievements.slice(0, 3).map((a: any) => (
+                                      <div key={a.id} className="flex gap-2 items-start text-xs bg-amber-50/30 border border-amber-100 p-2 rounded-lg">
+                                        <Award className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                          <div className="font-bold text-slate-850 leading-tight">{a.achievement?.name}</div>
+                                          <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{a.achievement?.level}</div>
                                         </div>
-                                      );
-                                     })}
+                                      </div>
+                                    ))}
                                   </div>
                                 )}
+                              </div>
 
                               {/* Career Orientation */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <Compass className="w-4 h-4 text-[#48BFE3]" />
+                                  <Compass className="w-4 h-4 text-[#00A99D]" />
                                   Định hướng ngành nghề
                                 </h4>
                                 {selectedStudent.orientation ? (
@@ -678,14 +658,14 @@ export function StudentProfilesAdminClient({
                               {/* Section: Academic Intake Profile */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <ClipboardCheck className="w-4 h-4 text-[#48BFE3]" />
+                                  <ClipboardCheck className="w-4 h-4 text-[#00A99D]" />
                                   Hồ sơ học thuật đầu vào (Intake Evaluation)
                                 </h4>
                                 {selectedStudent.admitted !== "Không" ? (
                                   <div className="space-y-3">
                                     {schoolBlock === "preschool" ? (
                                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
-                                        <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#48BFE3]">{selectedStudent.devAssessment || "N/A"}</span></div>
+                                        <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#00A99D]">{selectedStudent.devAssessment || "N/A"}</span></div>
                                         {selectedStudent.probationaryComment && (
                                           <div className="bg-white p-2.5 rounded border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
                                             "{selectedStudent.probationaryComment}"
@@ -695,7 +675,7 @@ export function StudentProfilesAdminClient({
                                     ) : (
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                                          <div className="text-[9px] text-[#48BFE3] font-bold uppercase tracking-wider">Toán học</div>
+                                          <div className="text-[9px] text-[#00A99D] font-bold uppercase tracking-wider">Toán học</div>
                                           <div className="text-lg font-black text-slate-805 mt-0.5">{selectedStudent.mathScore || "—"}</div>
                                         </div>
                                         <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
@@ -721,7 +701,7 @@ export function StudentProfilesAdminClient({
                               {/* Section: Projects & Experiences */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <BookOpen className="w-4 h-4 text-[#48BFE3]" />
+                                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
                                   Hoạt động trải nghiệm
                                 </h4>
                                 {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) && (!selectedStudent.projectExperiences || selectedStudent.projectExperiences.length === 0) ? (
@@ -736,7 +716,7 @@ export function StudentProfilesAdminClient({
                                             <div className="text-[9px] text-slate-400 mt-0.5">{act.groupName}</div>
                                           </div>
                                           <div className="flex gap-1.5 items-center">
-                                            <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
+                                            <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
                                               {act.role}
                                             </span>
                                             <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -754,7 +734,7 @@ export function StudentProfilesAdminClient({
                                             <div className="text-[9px] text-slate-400 mt-0.5">Dự án học tập</div>
                                           </div>
                                           <div className="flex gap-1.5 items-center">
-                                            <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
+                                            <span className="text-[8px] font-black uppercase bg-[#00A99D]/10 text-[#00A99D] px-2 py-0.5 rounded">
                                               {p.role || "Thành viên"}
                                             </span>
                                             <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -772,7 +752,7 @@ export function StudentProfilesAdminClient({
                               {/* Section: Learning Support Progress */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
+                                  <GraduationCap className="w-4 h-4 text-[#00A99D]" />
                                   Kế hoạch hỗ trợ học tập & Phát triển
                                 </h4>
                                 {!selectedStudent.supportReason ? (
@@ -788,11 +768,11 @@ export function StudentProfilesAdminClient({
                               {/* Section: GVCN Testimonial */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <MessageSquare className="w-4 h-4 text-[#48BFE3]" />
+                                  <MessageSquare className="w-4 h-4 text-[#00A99D]" />
                                   Nhận xét định kỳ từ Giáo viên Chủ nhiệm
                                 </h4>
                                 {selectedStudent.latestGvcnComment ? (
-                                  <div className="bg-teal-50/10 border-l-4 border-[#48BFE3] p-3 rounded-r-lg space-y-2">
+                                  <div className="bg-teal-50/10 border-l-4 border-[#00A99D] p-3 rounded-r-lg space-y-2">
                                     <p className="text-xs text-slate-705 font-semibold italic leading-relaxed whitespace-pre-wrap">
                                       "{selectedStudent.latestGvcnComment}"
                                     </p>
@@ -1033,7 +1013,7 @@ export function StudentProfilesAdminClient({
 
                         const str = String(val).trim()
                         if (isCheckSymbol(str)) {
-                          return <span className="inline-flex items-center justify-center bg-teal-50 text-[#48BFE3] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
+                          return <span className="inline-flex items-center justify-center bg-teal-50 text-[#00A99D] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
                         }
                         if (str === "T" || str === "Tốt") {
                           return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T</span>
@@ -1119,12 +1099,12 @@ return (
                           <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
                             <div>
                               <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-[#48BFE3]" />
+                                <FileText className="w-4 h-4 text-[#00A99D]" />
                                 Kết quả Học tập Văn hóa (MOET)
                               </h4>
                               <p className="text-[10px] text-slate-400 font-bold mt-0.5">Bảng điểm môn học &amp; Đánh giá xếp loại tổng kết định kỳ</p>
                             </div>
-                            <span className="bg-teal-50 text-[#48BFE3] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                               Năm học: {selectedStudent?.yearName || activeYearName}
                             </span>
                           </div>
@@ -1138,7 +1118,7 @@ return (
                             <div className="space-y-6">
                               <div className="space-y-3">
                                 <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
+                                  <GraduationCap className="w-4 h-4 text-[#00A99D]" />
                                   Tổng kết Đánh giá &amp; Xếp loại Học tập
                                 </h5>
 
@@ -1147,7 +1127,7 @@ return (
                                   <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 1</span>
-                                      <span className="text-[9px] font-extrabold text-[#48BFE3] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
+                                      <span className="text-[9px] font-extrabold text-[#00A99D] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
@@ -1256,8 +1236,8 @@ return (
                                   {/* CN Card */}
                                   <div className="bg-gradient-to-br from-teal-50/40 to-slate-50 border border-teal-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-teal-100 pb-2">
-                                      <span className="text-xs font-black text-[#48BFE3] uppercase tracking-wider">Cả Năm</span>
-                                      <span className="text-[9px] font-extrabold text-white bg-[#48BFE3] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
+                                      <span className="text-xs font-black text-[#00A99D] uppercase tracking-wider">Cả Năm</span>
+                                      <span className="text-[9px] font-extrabold text-white bg-[#00A99D] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
@@ -1288,7 +1268,7 @@ return (
 
                               <div className="space-y-3">
                                 <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <BookOpen className="w-4 h-4 text-[#48BFE3]" />
+                                  <BookOpen className="w-4 h-4 text-[#00A99D]" />
                                   Bảng điểm Chi tiết Các Môn học
                                 </h5>
 
@@ -1361,7 +1341,7 @@ return (
                         <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
                           <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide">Kết quả khảo sát đầu vào</h4>
                           {selectedStudent.entranceSurvey?.type && (
-                            <span className="bg-teal-50 text-[#48BFE3] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            <span className="bg-teal-50 text-[#00A99D] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                               Hệ {selectedStudent.entranceSurvey.type}
                             </span>
                           )}
@@ -1375,7 +1355,7 @@ return (
                                 onClick={() => setEntranceSubTab("results")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "results"
-                                    ? "border-[#48BFE3] text-[#48BFE3]"
+                                    ? "border-[#00A99D] text-[#00A99D]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1386,7 +1366,7 @@ return (
                                 onClick={() => setEntranceSubTab("admin")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "admin"
-                                    ? "border-[#48BFE3] text-[#48BFE3]"
+                                    ? "border-[#00A99D] text-[#00A99D]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1397,7 +1377,7 @@ return (
                                 onClick={() => setEntranceSubTab("academic")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "academic"
-                                    ? "border-[#48BFE3] text-[#48BFE3]"
+                                    ? "border-[#00A99D] text-[#00A99D]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1499,8 +1479,8 @@ return (
                                     <div className="space-y-4 animate-in fade-in duration-200">
                                       <h5 className="text-xs font-black text-slate-700">Điểm số các môn khảo sát:</h5>
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        <div className="bg-[#48BFE3]/5 border border-[#48BFE3]/20 p-3.5 rounded-xl text-center">
-                                          <div className="text-[10px] text-[#48BFE3] font-bold uppercase tracking-wider">Toán</div>
+                                        <div className="bg-[#00A99D]/5 border border-[#00A99D]/20 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-[#00A99D] font-bold uppercase tracking-wider">Toán</div>
                                           <div className="text-2xl font-extrabold text-slate-805 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
@@ -1733,76 +1713,30 @@ return (
 
                     {activeTab === "achievements" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                          <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide flex items-center gap-2">
-                            <Award className="w-4 h-4 text-[#6930C3]" />
-                            <span>Thành tích & Khen thưởng của Học sinh</span>
-                          </h4>
-                          <span className="text-xs font-bold text-[#6930C3] bg-[#6930C3]/10 px-2.5 py-0.5 rounded-full">
-                            {(selectedStudent.achievements || []).length} kết quả
-                          </span>
-                        </div>
-
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Thành tích & Khen thưởng của Học sinh</h4>
                         {(!selectedStudent.achievements || selectedStudent.achievements.length === 0) ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                            Học sinh chưa có ghi nhận giải thưởng hoặc thành tích nổi bật nào.
-                          </div>
+                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa có ghi nhận giải thưởng hoặc thành tích nổi bật nào.</div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {selectedStudent.achievements.map((a: any) => {
-                              const examName = a.achievement?.exam?.name || a.achievement?.examName || a.examName || "Hội thi Tin học trẻ Toàn quốc";
-                              const categoryName = a.achievement?.exam?.category?.name || formatCategory(a.achievement?.category);
-                              const roundName = a.achievement?.exam?.round?.name || a.achievement?.roundName || a.roundName || "Miền Trung";
-                              const achievementName = a.achievement?.name || a.name || "Giải Ba";
-                              const levelVal = a.achievement?.level || a.level;
-                              const academicYear = a.achievement?.academicYearId || a.academicYearId || "AY-2026";
-
-                              return (
-                                <div key={a.id} className="bg-white border border-slate-200/90 hover:border-[#48BFE3] p-4 rounded-2xl space-y-3 shadow-2xs hover:shadow-md transition-all animate-in fade-in duration-200 group">
-                                  {/* 1. Tên kỳ thi */}
-                                  <div className="flex items-start gap-3">
-                                    <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 shrink-0 group-hover:scale-105 transition-transform">
-                                      <Award className="w-5 h-5" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <span className="text-[9px] font-black text-[#6930C3] uppercase tracking-wider bg-[#6930C3]/10 px-2 py-0.5 rounded-md inline-block mb-1">
-                                        Tên kỳ thi
-                                      </span>
-                                      <h4 className="font-black text-slate-850 text-sm leading-snug">{examName}</h4>
-                                    </div>
+                            {selectedStudent.achievements.map((a) => (
+                              <div key={a.id} className="bg-amber-50/30 border border-amber-200/50 p-4 rounded-2xl flex items-start gap-3 hover:shadow-xs transition-all animate-in fade-in duration-200">
+                                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs border border-amber-100">
+                                  <Award className="w-5 h-5" />
+                                </div>
+                                <div className="text-xs font-semibold space-y-1">
+                                  <h4 className="font-black text-slate-800">{a.achievement?.name}</h4>
+                                  <div className="text-amber-800 font-extrabold uppercase tracking-wider text-[9px] bg-amber-100/50 border border-amber-200/40 px-2 py-0.5 rounded inline-block">
+                                    Cấp độ giải: {a.achievement?.level || "N/A"}
                                   </div>
-
-                                  {/* 2. Danh mục, 3. Tên vòng thi, 4. Thành tích */}
-                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100">
-                                    {/* 2. Danh mục */}
-                                    <div className="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl flex flex-col justify-center min-w-0">
-                                      <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">Danh mục</span>
-                                      <span className="text-xs font-black text-slate-750 truncate">{categoryName}</span>
-                                    </div>
-
-                                    {/* 3. Tên vòng thi */}
-                                    <div className="bg-blue-50/60 border border-blue-200/70 p-2.5 rounded-xl flex flex-col justify-center min-w-0">
-                                      <span className="text-[9px] font-extrabold text-blue-600/80 uppercase tracking-wider block mb-0.5">Tên vòng thi</span>
-                                      <span className="text-xs font-black text-blue-900 truncate">{roundName}</span>
-                                    </div>
-
-                                    {/* 4. Thành tích */}
-                                    <div className="bg-amber-100/90 border border-amber-300/80 p-2.5 rounded-xl flex flex-col justify-center min-w-0 shadow-2xs">
-                                      <span className="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider block mb-0.5">Thành tích</span>
-                                      <span className="text-xs font-black text-amber-950 truncate">{achievementName}</span>
-                                    </div>
-                                  </div>
-
-                                  {/* Footer */}
-                                  <div className="text-[10px] text-slate-400 font-semibold pt-1 border-t border-slate-100 flex items-center justify-between">
-                                    <span>Năm học: <strong>{academicYear}</strong></span>
-                                    {levelVal && <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-600 font-bold">Cấp độ: {levelVal}</span>}
+                                  <div className="text-[10px] text-slate-400 font-bold">
+                                    Năm học: {a.achievement?.academicYearId || "N/A"}
                                   </div>
                                 </div>
-                              );
-                                     })}
-                                  </div>
-                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {activeTab === "orientation" && (
@@ -1811,7 +1745,7 @@ return (
                         {selectedStudent.orientation ? (
                           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-2xs">
                             <div className="flex items-center gap-3 bg-teal-50/30 border border-teal-100 p-3.5 rounded-xl">
-                              <Compass className="w-5 h-5 text-[#48BFE3]" />
+                              <Compass className="w-5 h-5 text-[#00A99D]" />
                               <div>
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Định hướng nhóm ngành chủ đạo</div>
                                 <div className="text-sm font-black text-slate-805 mt-0.5">{selectedStudent.orientation.result}</div>
@@ -1821,7 +1755,7 @@ return (
                               <div className="pt-3 border-t border-slate-200">
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết nhận xét & Đánh giá của GVBM</div>
                                 <p className="text-xs text-slate-655 font-semibold leading-relaxed bg-white p-3.5 rounded-xl border border-slate-200 italic shadow-2xs">
-                                  "{selectedStudent.orientation.notes}"
+                                  "${selectedStudent.orientation.notes}"
                                 </p>
                               </div>
                             )}
@@ -1830,77 +1764,204 @@ return (
                             </div>
                           </div>
                         ) : (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa ghi nhận đánh giá định hướng nghề nghiệp.</div>
+                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa có thông tin nhận xét định hướng nghề nghiệp.</div>
                         )}
                       </div>
                     )}
 
-                    {activeTab === "experiential" && (
+                    {activeTab === "projects" && (
                       <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Hoạt động Trải nghiệm & Dự án</h4>
-                        {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa ghi nhận tham gia hoạt động trải nghiệm nào.</div>
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">HOẠT ĐỘNG TRẢI NGHIỆM</h4>
+                        {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) && (!selectedStudent.projects || selectedStudent.projects.length === 0) ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia hoạt động trải nghiệm nào.</div>
                         ) : (
-                          <div className="space-y-3">
-                            {selectedStudent.experientialActivities.map((act: any) => (
-                              <div key={act.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
-                                <div className="flex items-center justify-between">
-                                  <h5 className="font-black text-slate-800 text-xs">{act.name}</h5>
-                                  <span className="text-[10px] font-bold text-[#48BFE3] bg-[#48BFE3]/10 px-2 py-0.5 rounded-md">{act.role}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
-                                  <span>Loại: {act.group}</span>
-                                  <span>Đánh giá: <strong className="text-teal-700">{act.evalLevel}</strong></span>
-                                </div>
-                              </div>
-                            ))}
+                          <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
+                            <table className="w-full text-xs text-left border-collapse">
+                              <thead>
+                                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                                  <th className="py-3.5 px-4 text-center w-14">STT</th>
+                                  <th className="py-3.5 px-4">Tên hoạt động</th>
+                                  <th className="py-3.5 px-4">Nhóm lĩnh vực</th>
+                                  <th className="py-3.5 px-4 text-center">Vai trò</th>
+                                  <th className="py-3.5 px-4 text-center">Mức đánh giá</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
+                                {(selectedStudent.experientialActivities || []).map((act: any, idx: number) => (
+                                  <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-all">
+                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
+                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{act.activityName}</td>
+                                    <td className="py-3.5 px-4">
+                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
+                                        {act.groupName}
+                                      </span>
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {act.role}
+                                      </span>
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {act.evalLevel}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {(selectedStudent.projects || []).map((p: any, idx: number) => (
+                                  <tr key={p.id || idx} className="hover:bg-slate-50/80 transition-all">
+                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{(selectedStudent.experientialActivities?.length || 0) + idx + 1}</td>
+                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{p.projectName}</td>
+                                    <td className="py-3.5 px-4">
+                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
+                                        Dự án học tập
+                                      </span>
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {p.role || "Thành viên"}
+                                      </span>
+                                    </td>
+                                    <td className="py-3.5 px-4 text-center">
+                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                        {p.result || "Đạt"}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         )}
                       </div>
                     )}
 
                     {activeTab === "comments" && (
-                      <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Nhận xét nổi bật từ GVBM & GVCN</h4>
-                        {(!selectedStudent.highlightComments || selectedStudent.highlightComments.length === 0) ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa có nhận xét nổi bật nào.</div>
+                      <div className="space-y-6 animate-in fade-in duration-300">
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3 flex justify-between items-center">
+                          <span>Nhận xét nổi bật định kỳ từ Giáo viên Chủ nhiệm</span>
+                          <span className="bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            GVCN Đánh giá
+                          </span>
+                        </h4>
+
+                        {((selectedStudent.highlightComments || []).filter((c) => c.category !== "ANNOUNCEMENT")).length === 0 ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                            Chưa có nhận xét nổi bật định kỳ nào từ giáo viên chủ nhiệm.
+                          </div>
                         ) : (
                           <div className="space-y-3">
-                            {selectedStudent.highlightComments.map((c: any) => (
-                              <div key={c.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
-                                <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
-                                  <span>{c.subjectName || "GVCN"}</span>
-                                  <span>Học kỳ {c.semester || "1"}</span>
+                            {(selectedStudent.highlightComments || [])
+                              .filter((c) => c.category !== "ANNOUNCEMENT")
+                              .map((c) => (
+                                <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 transition-all animate-in fade-in duration-200">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <span className="inline-block px-2.5 py-0.5 bg-[#00A99D]/15 text-[#00A99D] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#00A99D]/10">
+                                      {c.category || "Chung"}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-slate-705 bg-white border border-slate-200 p-3 rounded-lg font-semibold leading-relaxed">
+                                    {c.comment}
+                                  </p>
+                                  <div className="text-[9px] text-slate-400 font-bold border-t border-slate-100 pt-2 mt-3 flex justify-between">
+                                    <span>Ghi nhận bởi: {c.teacherName} (GVCN)</span>
+                                    <span>{new Date(c.updatedAt).toLocaleDateString('vi-VN')}</span>
+                                  </div>
                                 </div>
-                                <p className="text-xs text-slate-700 font-semibold italic">"{c.content}"</p>
-                              </div>
-                            ))}
+                              ))}
                           </div>
                         )}
                       </div>
                     )}
 
                     {activeTab === "support" && (
-                      <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Hỗ trợ học tập & Phụ đạo</h4>
-                        {(!selectedStudent.learningSupportTargets || selectedStudent.learningSupportTargets.length === 0) ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa có kế hoạch hỗ trợ học tập.</div>
+                      <div className="space-y-6 animate-in fade-in duration-300">
+                        <h4 className="text-sm font-black text-slate-850 uppercase tracking-wide border-b border-slate-100 pb-3">Lịch sử theo dõi Hỗ trợ Học tập & Tâm lý</h4>
+                        {!selectedStudent.learningSupportTargets || selectedStudent.learningSupportTargets.length === 0 ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh không thuộc đối tượng nhận hỗ trợ học tập/tâm lý trong năm học này.</div>
                         ) : (
-                          <div className="space-y-3">
-                            {selectedStudent.learningSupportTargets.map((st: any) => (
-                              <div key={st.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
-                                <div className="flex items-center justify-between text-xs font-bold text-slate-800">
-                                  <span>Mục tiêu: {st.targetName || "Phụ đạo môn học"}</span>
-                                  <span className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">{st.status || "ĐANG HỖ TRỢ"}</span>
+                          <div className="space-y-6">
+                            {selectedStudent.learningSupportTargets.map((target) => {
+                              const isTerminated = target.terminationStatus === "TERMINATED";
+                              const isPending = target.terminationStatus === "PENDING_TERMINATION";
+                              const gvName = target.assignments?.[0]?.teacher?.teacherName || "Chưa phân công";
+
+                              return (
+                                <div key={target.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white hover:border-slate-355 transition-all animate-in fade-in duration-200">
+                                  <div className="px-5 py-4 border-b bg-slate-50 flex items-center justify-between flex-wrap gap-2 text-slate-700">
+                                    <div>
+                                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mr-2 ${
+                                        target.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
+                                      }`}>
+                                        {target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-800">{target.reason}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                                        isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
+                                      }`}>
+                                        {isTerminated ? "Đã hoàn thành" : isPending ? "Chờ duyệt hoàn thành" : target.status}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="p-5 space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-slate-500">
+                                      <div>
+                                        <span>Ngày bắt đầu: </span>
+                                        <span className="text-slate-800 font-bold">{new Date(target.startDate).toLocaleDateString("vi-VN")}</span>
+                                      </div>
+                                      <div>
+                                        <span>Giáo viên phụ trách: </span>
+                                        <span className="text-slate-800 font-bold">{gvName}</span>
+                                      </div>
+                                      {target.endDate && (
+                                        <div>
+                                          <span>Ngày chấm dứt: </span>
+                                          <span className="text-slate-800 font-bold">{new Date(target.endDate).toLocaleDateString("vi-VN")}</span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {target.outcome && (
+                                      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-lg text-xs font-semibold">
+                                        <span className="font-extrabold">Kết quả đạt được: </span> {target.outcome}
+                                      </div>
+                                    )}
+
+                                    {/* Evaluation timeline for this student target */}
+                                    <div className="pt-2 border-t border-slate-100">
+                                      <h5 className="font-black text-slate-705 text-xs uppercase tracking-wide mb-4">Nhật ký nhận xét định kỳ</h5>
+                                      {!target.evaluations || target.evaluations.length === 0 ? (
+                                        <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
+                                      ) : (
+                                        <div className="relative border-l-2 border-[#00A99D]/30 pl-5 space-y-5 ml-1.5">
+                                          {(target.evaluations || []).map((ev) => (
+                                            <div key={ev.id} className="relative group">
+                                              <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#00A99D] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm">
+                                                <span className="h-1.5 w-1.5 bg-[#00A99D] rounded-full"></span>
+                                              </span>
+                                              <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1.5 transition-all">
+                                                <div className="text-[10px] text-slate-400 font-bold">
+                                                  {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
+                                                </div>
+                                                <div className="text-xs font-black text-[#00A99D]">Tiến bộ: {ev.trackingLevel}</div>
+                                                <p className="text-xs text-slate-655 font-semibold leading-relaxed">{ev.comment}</p>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
-                    )}
-
-                  </div>
+                    )}                  </div>
                 ) : (
                   <div className="text-xs text-slate-400 italic text-center py-12">Có lỗi xảy ra khi tải dữ liệu học sinh.</div>
                 )}
