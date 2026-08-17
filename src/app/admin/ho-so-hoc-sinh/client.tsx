@@ -1747,13 +1747,11 @@ return (
                                     <Award className="w-6 h-6 text-amber-600" />
                                   </div>
                                   <div className="text-xs space-y-2 flex-1 min-w-0">
-                                    {/* 1. Tên kỳ thi */}
                                     <div>
                                       <span className="text-[10px] font-extrabold text-amber-800/70 uppercase tracking-wider block mb-0.5">Tên kỳ thi</span>
                                       <h4 className="font-black text-slate-800 text-sm leading-snug">{displayExam}</h4>
                                     </div>
                                     
-                                    {/* 2. Tên vòng thi & 3. Giải */}
                                     <div className="space-y-1 pt-1 border-t border-amber-200/50">
                                       <div className="flex items-center gap-1.5 text-slate-700">
                                         <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider min-w-[70px]">Vòng thi:</span>
@@ -1789,28 +1787,104 @@ return (
                           </div>
                         )}
                       </div>
-                    )}}
+                    )}
+
+                    {activeTab === "orientation" && (
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Định hướng Nghề nghiệp & Hướng nghiệp</h4>
+                        {selectedStudent.orientation ? (
+                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-2xs">
+                            <div className="flex items-center gap-3 bg-teal-50/30 border border-teal-100 p-3.5 rounded-xl">
+                              <Compass className="w-5 h-5 text-[#48BFE3]" />
+                              <div>
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Định hướng nhóm ngành chủ đạo</div>
+                                <div className="text-sm font-black text-slate-805 mt-0.5">{selectedStudent.orientation.result}</div>
+                              </div>
+                            </div>
+                            {selectedStudent.orientation.notes && (
+                              <div className="pt-3 border-t border-slate-200">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết nhận xét & Đánh giá của GVBM</div>
+                                <p className="text-xs text-slate-655 font-semibold leading-relaxed bg-white p-3.5 rounded-xl border border-slate-200 italic shadow-2xs">
+                                  "{selectedStudent.orientation.notes}"
+                                </p>
+                              </div>
+                            )}
+                            <div className="text-[9px] text-slate-400 font-bold pt-1 text-right">
+                              Đánh giá bởi: {selectedStudent.orientation.teacherName} (GVBM)
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa ghi nhận đánh giá định hướng nghề nghiệp.</div>
+                        )}
+                      </div>
+                    )}
+
+                    {activeTab === "experiential" && (
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Hoạt động Trải nghiệm & Dự án</h4>
+                        {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa ghi nhận tham gia hoạt động trải nghiệm nào.</div>
+                        ) : (
+                          <div className="space-y-3">
+                            {selectedStudent.experientialActivities.map((act: any) => (
+                              <div key={act.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <h5 className="font-black text-slate-800 text-xs">{act.name}</h5>
+                                  <span className="text-[10px] font-bold text-[#48BFE3] bg-[#48BFE3]/10 px-2 py-0.5 rounded-md">{act.role}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
+                                  <span>Loại: {act.group}</span>
+                                  <span>Đánh giá: <strong className="text-teal-700">{act.evalLevel}</strong></span>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
                     )}
-                                                </div>
-                                                <div className="text-xs font-black text-[#48BFE3]">Tiến bộ: {ev.trackingLevel}</div>
-                                                <p className="text-xs text-slate-655 font-semibold leading-relaxed">{ev.comment}</p>
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
+
+                    {activeTab === "comments" && (
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Nhận xét nổi bật từ GVBM & GVCN</h4>
+                        {(!selectedStudent.highlightComments || selectedStudent.highlightComments.length === 0) ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa có nhận xét nổi bật nào.</div>
+                        ) : (
+                          <div className="space-y-3">
+                            {selectedStudent.highlightComments.map((c: any) => (
+                              <div key={c.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
+                                <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+                                  <span>{c.subjectName || "GVCN"}</span>
+                                  <span>Học kỳ {c.semester || "1"}</span>
                                 </div>
-                              );
-                            })}
+                                <p className="text-xs text-slate-700 font-semibold italic">"{c.content}"</p>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
-                    )}                  </div>
+                    )}
+
+                    {activeTab === "support" && (
+                      <div className="space-y-4 animate-in fade-in duration-300">
+                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Hỗ trợ học tập & Phụ đạo</h4>
+                        {(!selectedStudent.learningSupportTargets || selectedStudent.learningSupportTargets.length === 0) ? (
+                          <div className="text-xs text-slate-400 italic text-center py-12">Chưa có kế hoạch hỗ trợ học tập.</div>
+                        ) : (
+                          <div className="space-y-3">
+                            {selectedStudent.learningSupportTargets.map((st: any) => (
+                              <div key={st.id} className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2">
+                                <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                                  <span>Mục tiêu: {st.targetName || "Phụ đạo môn học"}</span>
+                                  <span className="text-[10px] text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md">{st.status || "ĐANG HỖ TRỢ"}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  </div>
                 ) : (
                   <div className="text-xs text-slate-400 italic text-center py-12">Có lỗi xảy ra khi tải dữ liệu học sinh.</div>
                 )}
