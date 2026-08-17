@@ -65,7 +65,7 @@ export default function Error({
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
           <button
-            onClick={() => reset()}
+            onClick={() => { try { reset(); } catch(e){} window.location.reload(); }}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition shadow-md hover:shadow-lg w-full sm:w-auto"
           >
             <RefreshCcw className="w-4 h-4" />
