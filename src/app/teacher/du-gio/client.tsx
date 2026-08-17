@@ -566,6 +566,75 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [isMamNonTeacher])
 
+  
+  const openHistoryModal = (slot: any) => {
+    setHistorySlot(slot);
+    setShowHistoryModal(true);
+  };
+
+  const getSlotHistoryLogs = (slot: any) => {
+    const logs: Array<{ title: string; time: string; icon: string; detail: string; color: string }> = [];
+    
+    // 1. Creation event
+    logs.push({
+      title: "Khởi tạo tiết dạy dự giờ",
+      time: slot.createdAt ? new Date(slot.createdAt).toLocaleString("vi-VN") : "Ban đầu",
+      icon: "PlusCircle",
+      color: "teal",
+      detail: `Thầy/Cô ${slot.teacher?.teacherName || slot.teacherName || "Giáo viên"} đã mở tiết dạy (${slot.subjectName} - ${slot.topic}).`
+    });
+
+    // 2. Email / Teams Dispatch Event
+    if (slot.sendEmailNotif !== false) {
+      logs.push({
+        title: "Phát thông báo Email & Teams",
+        time: slot.createdAt ? new Date(slot.createdAt).toLocaleString("vi-VN") : "Ban đầu",
+        icon: "Mail",
+        color: "blue",
+        detail: `Hệ thống đã phát Email từ bankhaothi@skylineschool.edu.vn & tin nhắn Teams tới các GV thuộc Tổ chuyên môn.`
+      });
+    }
+
+    // 3. Registrations & Approvals
+    if (slot.registrations && slot.registrations.length > 0) {
+      slot.registrations.forEach((reg: any) => {
+        const regTime = reg.createdAt ? new Date(reg.createdAt).toLocaleString("vi-VN") : "N/A";
+        logs.push({
+          title: `Đăng ký dự giờ từ ${reg.teacher?.teacherName || reg.teacherName || "GV"}`,
+          time: regTime,
+          icon: "UserCheck",
+          color: reg.isApproved ? "emerald" : "amber",
+          detail: `Giáo viên ${reg.teacher?.teacherName || reg.teacherName} (${reg.teacher?.teacherCode || ""}) đã đăng ký tham dự. Trạng thái: ${reg.isApproved ? "Đã phê duyệt" : "Chờ xác nhận"}.`
+        });
+
+        if (reg.evaluation) {
+          const evalTime = reg.evaluation.submittedAt ? new Date(reg.evaluation.submittedAt).toLocaleString("vi-VN") : regTime;
+          logs.push({
+            title: `Đã nộp phiếu đánh giá kết quả tiết dạy`,
+            time: evalTime,
+            icon: "FileCheck",
+            color: "purple",
+            detail: `Thầy/Cô ${reg.teacher?.teacherName || ""} đã hoàn tất phiếu đánh giá kết quả tiết dạy. Xếp loại: ${reg.evaluation.overallRating || "Đạt"}.`
+          });
+        }
+      });
+    }
+
+    // 4. Expired Event
+    const isPast = new Date(slot.date) < new Date();
+    if (isPast || slot.expiredNotifSentAt) {
+      logs.push({
+        title: "Hết hạn đăng ký dự giờ & Tổng kết",
+        time: slot.expiredNotifSentAt ? new Date(slot.expiredNotifSentAt).toLocaleString("vi-VN") : "Đã đến hạn",
+        icon: "Clock",
+        color: "rose",
+        detail: `Tiết dạy đã hết hạn đăng ký (Tổng cộng ${slot.registrations?.length || 0}/4 GV đăng ký). Đã phát Email tổng kết nhắc lịch tới GV dạy & GV dự giờ.`
+      });
+    }
+
+    return logs;
+  };
+
   const resetCreateForm = () => {
     setEditSlotId(null);
     setNewSubjectId(""); setNewSubjectName(""); setNewLevel(isMamNonTeacher ? "Mầm non" : ""); setNewGrade(""); setNewClassId("");
