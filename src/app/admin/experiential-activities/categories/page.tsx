@@ -124,10 +124,10 @@ export default function CategoriesPage() {
         
         {/* HEADER */}
         <div className="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#36E08F]/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none"></div>
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#48BFE3]/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl pointer-events-none"></div>
           <div className="relative z-10">
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-              <FolderTree className="w-8 h-8 text-[#36E08F]" />
+              <FolderTree className="w-8 h-8 text-[#48BFE3]" />
               Cấu hình Danh mục
             </h1>
             <p className="text-slate-500 mt-2 text-sm font-medium">Quản lý các loại danh mục cho Hoạt động trải nghiệm</p>
@@ -155,7 +155,7 @@ export default function CategoriesPage() {
                       onClick={() => { setActiveType(type.value); resetForm(); }}
                       className={"w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-bold transition-all duration-200 group " + (
                         isActive 
-                          ? 'bg-[#36E08F]/10 text-[#36E08F] shadow-sm' 
+                          ? 'bg-[#48BFE3]/10 text-[#48BFE3] shadow-sm' 
                           : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                       )}
                     >
@@ -203,7 +203,7 @@ export default function CategoriesPage() {
               {!showForm && (
                 <button 
                   onClick={() => setShowForm(true)}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-[#36E08F] hover:bg-[#009085] text-white text-sm font-bold rounded-xl shadow-sm shadow-[#36E08F]/20 transition-all hover:scale-105 active:scale-95"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white text-sm font-bold rounded-xl shadow-sm shadow-[#48BFE3]/20 transition-all hover:scale-105 active:scale-95"
                 >
                   <Plus className="w-4 h-4" /> Thêm mới
                 </button>
@@ -215,7 +215,7 @@ export default function CategoriesPage() {
               <div className="bg-white p-6 md:p-8 shadow-lg shadow-slate-200/40 rounded-3xl border border-slate-200/60 animate-in fade-in slide-in-from-top-4 duration-300">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                    <Edit2 className="w-5 h-5 text-[#36E08F]" />
+                    <Edit2 className="w-5 h-5 text-[#48BFE3]" />
                     {editingId ? 'Cập nhật mục' : 'Thêm mục mới'}
                   </h3>
                   <button onClick={resetForm} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
@@ -231,7 +231,7 @@ export default function CategoriesPage() {
                         required
                         disabled={!!editingId}
                         placeholder="VD: TYPE_1"
-                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all disabled:opacity-50"
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all disabled:opacity-50"
                         value={formData.code}
                         onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
                       />
@@ -242,7 +242,7 @@ export default function CategoriesPage() {
                       <input 
                         required
                         placeholder="Nhập tên hiển thị..."
-                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                         value={formData.name}
                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                       />
@@ -253,7 +253,7 @@ export default function CategoriesPage() {
                       <input 
                         type="number"
                         min="0"
-                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                        className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                         value={formData.sortOrder}
                         onChange={(e) => setFormData({...formData, sortOrder: parseInt(e.target.value) || 0})}
                       />
@@ -263,7 +263,7 @@ export default function CategoriesPage() {
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Trạng thái</label>
                         <select 
-                          className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                          className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                           value={formData.status}
                           onChange={(e) => setFormData({...formData, status: e.target.value})}
                         >
@@ -285,7 +285,7 @@ export default function CategoriesPage() {
                     <button 
                       type="submit" 
                       className={"flex items-center gap-2 px-8 py-2.5 text-sm font-bold text-white rounded-xl shadow-sm transition-all hover:scale-105 active:scale-95 " + (
-                        editingId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20' : 'bg-[#36E08F] hover:bg-[#009085] shadow-[#36E08F]/20'
+                        editingId ? 'bg-amber-500 hover:bg-amber-600 shadow-amber-500/20' : 'bg-[#48BFE3] hover:bg-[#009085] shadow-[#48BFE3]/20'
                       )}
                     >
                       <Save className="w-4 h-4" /> {editingId ? 'Lưu thay đổi' : 'Tạo mới'}
@@ -304,7 +304,7 @@ export default function CategoriesPage() {
                   <input 
                     type="text" 
                     placeholder="Tìm kiếm nhanh..." 
-                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border-0 ring-1 ring-slate-200 rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#36E08F] transition-all"
+                    className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border-0 ring-1 ring-slate-200 rounded-full text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[#48BFE3] transition-all"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -313,7 +313,7 @@ export default function CategoriesPage() {
 
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-16 text-slate-400">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#36E08F] mb-4"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#48BFE3] mb-4"></div>
                   <p className="text-sm font-bold">Đang tải dữ liệu...</p>
                 </div>
               ) : filteredCategories.length === 0 ? (

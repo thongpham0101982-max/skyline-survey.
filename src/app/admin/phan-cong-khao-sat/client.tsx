@@ -80,7 +80,7 @@ export function PhanCongKhaoSatClient({
             onClick={() => setActiveTab("preschool")}
             className={`flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-black transition-all duration-300 ${
               activeTab === "preschool"
-                ? "bg-[#36E08F] text-white shadow-lg shadow-teal-100/30 scale-[1.02]"
+                ? "bg-[#48BFE3] text-white shadow-lg shadow-teal-100/30 scale-[1.02]"
                 : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
             }`}
           >

@@ -53,7 +53,7 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#36E08F] font-black text-[10px] uppercase tracking-[0.2em]">
+          <div className="flex items-center gap-2 text-[#48BFE3] font-black text-[10px] uppercase tracking-[0.2em]">
             <Target className="w-3 h-3 animate-pulse" /> Skyline Analytics Hub
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Kết quả Khảo sát</h1>
@@ -62,7 +62,7 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
 
         {activeYearName && (
           <div className="bg-white px-4 py-2.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-            <Calendar className="w-5 h-5 text-[#36E08F]" />
+            <Calendar className="w-5 h-5 text-[#48BFE3]" />
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Năm học</p>
               <p className="text-sm font-black text-slate-800">{activeYearName}</p>
@@ -75,15 +75,15 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
       <SurveyTabs activeTab="results" />
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-2xl border border-[#36E08F]/20 shadow-xs flex flex-col md:flex-row gap-4 items-center justify-between">
+      <div className="bg-white p-4 rounded-2xl border border-[#48BFE3]/20 shadow-xs flex flex-col md:flex-row gap-4 items-center justify-between">
         <div className="relative w-full md:w-80 group">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#36E08F] transition-colors" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#48BFE3] transition-colors" />
           <input 
             type="text" 
             placeholder="Tìm kiếm theo tên hoặc mã đợt..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full hover:bg-slate-100/50 pl-10 pr-4 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#36E08F]/10 focus:border-[#36E08F] transition-all outline-none text-xs font-semibold"
+            className="w-full hover:bg-slate-100/50 pl-10 pr-4 text-xs font-semibold text-slate-800 focus:bg-white focus:ring-2 focus:ring-[#48BFE3]/10 focus:border-[#48BFE3] transition-all outline-none text-xs font-semibold"
           />
         </div>
 
@@ -92,7 +92,7 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
           <select 
             value={selectedYear} 
             onChange={(e) => setSelectedYear(e.target.value)}
-            className="w-full md:w-48 hover:bg-slate-100/50 text-xs font-black text-slate-700 outline-none hover:border-[#36E08F] focus:border-[#36E08F] transition-all cursor-pointer text-xs font-semibold"
+            className="w-full md:w-48 hover:bg-slate-100/50 text-xs font-black text-slate-700 outline-none hover:border-[#48BFE3] focus:border-[#48BFE3] transition-all cursor-pointer text-xs font-semibold"
           >
             <option value="ALL">Tất cả năm học</option>
             {years.map(y => <option key={y.id} value={y.name}>{y.name}</option>)}
@@ -124,10 +124,10 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
           return (
             <div 
               key={s.id} 
-              className="bg-white rounded-[2rem] border-2 border-[#36E08F]/20 hover:border-[#36E08F]/40 hover:shadow-xl transition-all duration-300 p-6 group relative overflow-hidden"
+              className="bg-white rounded-[2rem] border-2 border-[#48BFE3]/20 hover:border-[#48BFE3]/40 hover:shadow-xl transition-all duration-300 p-6 group relative overflow-hidden"
             >
               {/* Subtle top decoration */}
-              <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#36E08F]/10 group-hover:bg-[#36E08F]/30 transition-colors" />
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#48BFE3]/10 group-hover:bg-[#48BFE3]/30 transition-colors" />
 
               <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                 {/* Left side: basic details */}
@@ -141,10 +141,10 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
                       {s.status === "ACTIVE" ? "Đang tiến hành" : s.status}
                     </span>
                     <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-slate-100 text-slate-500 border border-slate-200">{s.code}</span>
-                    <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20">{s.academicYear?.name}</span>
+                    <span className="px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20">{s.academicYear?.name}</span>
                   </div>
 
-                  <h3 className="text-xl font-black text-slate-800 leading-snug group-hover:text-[#36E08F] transition-colors">{s.name}</h3>
+                  <h3 className="text-xl font-black text-slate-800 leading-snug group-hover:text-[#48BFE3] transition-colors">{s.name}</h3>
 
                   <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
                     <Calendar className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ export function ResultsPageClient({ surveyStats, years }: Props) {
                 <div className="shrink-0 flex items-center">
                   <Link
                     href={`/admin/surveys/${s.id}/results`}
-                    className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs font-black text-white shadow-xs transition-all hover:scale-105 active:scale-95 whitespace-nowrap bg-[#36E08F] hover:bg-[#008f89] border border-[#36E08F] shadow-[#36E08F]/20"
+                    className="w-full lg:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-xs font-black text-white shadow-xs transition-all hover:scale-105 active:scale-95 whitespace-nowrap bg-[#48BFE3] hover:bg-[#008f89] border border-[#48BFE3] shadow-[#48BFE3]/20"
                   >
                     <BarChart3 className="w-4 h-4" /> Báo cáo chi tiết <ArrowUpRight className="w-4 h-4" />
                   </Link>

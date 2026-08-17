@@ -352,7 +352,7 @@ export default function TeacherStudentProfilePage() {
   if (loadingStudents) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-12 h-12 text-[#36E08F] animate-spin opacity-60" />
+        <Loader2 className="w-12 h-12 text-[#48BFE3] animate-spin opacity-60" />
         <p className="text-slate-400 font-bold tracking-wide uppercase text-xs">Đang tải danh sách học sinh lớp chủ nhiệm...</p>
       </div>
     )
@@ -488,7 +488,7 @@ export default function TeacherStudentProfilePage() {
       {/* Header Bar */}
       <div className="header-bar bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px] no-print">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#36E08F] rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-[#48BFE3] rounded-lg flex items-center justify-center flex-shrink-0">
             <Users className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
@@ -511,13 +511,13 @@ export default function TeacherStudentProfilePage() {
                   placeholder="Tìm kiếm học sinh..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36E08F] focus:border-[#36E08F] transition-all"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3] focus:border-[#48BFE3] transition-all"
                 />
               </div>
               {students.length > 0 && (
                 <button
                   onClick={() => window.open(`/teacher/ho-so-hoc-sinh/print?type=class&classId=${students[0]?.classId || selectedStudent?.classId}&academicYearId=${yearId}`, "_blank")}
-                  className="w-full mt-2 flex items-center justify-center gap-2 bg-[#36E08F] hover:bg-[#009085] text-white py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer border border-[#36E08F]/20"
+                  className="w-full mt-2 flex items-center justify-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer border border-[#48BFE3]/20"
                 >
                   <Printer className="w-4 h-4" />
                   <span>In HSHS Cả lớp</span>
@@ -539,17 +539,17 @@ export default function TeacherStudentProfilePage() {
                       onClick={() => setSelectedStudentId(s.id)}
                       className={`group relative w-full text-left p-3 rounded-2xl text-xs font-bold transition-all flex items-center gap-3 cursor-pointer border ${
                         isSelected
-                          ? "bg-gradient-to-r from-[#36E08F]/12 to-[#36E08F]/4 text-[#36E08F] border-[#36E08F]/20 shadow-xs translate-x-1"
+                          ? "bg-gradient-to-r from-[#48BFE3]/12 to-[#48BFE3]/4 text-[#48BFE3] border-[#48BFE3]/20 shadow-xs translate-x-1"
                           : "bg-white hover:bg-slate-50/80 border-slate-100 text-slate-655"
                       }`}
                     >
                       {isSelected && (
-                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-[#36E08F] rounded-r-md" />
+                        <div className="absolute left-0 top-3 bottom-3 w-1 bg-[#48BFE3] rounded-r-md" />
                       )}
                       
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0 transition-colors ${
                         isSelected
-                          ? "bg-[#36E08F] text-white"
+                          ? "bg-[#48BFE3] text-white"
                           : s.isEntranceAdmitted
                             ? "bg-sky-100 text-sky-700 border border-sky-200"
                             : "bg-slate-100 text-slate-500"
@@ -587,8 +587,8 @@ export default function TeacherStudentProfilePage() {
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
               {/* Profile header */}
               <div className="p-6 bg-gradient-to-r from-slate-50 to-slate-100/70 border-b border-slate-155 flex items-center gap-5 no-print relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#36E08F]/5 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none"></div>
-                <div className="relative group w-16 h-16 rounded-full overflow-hidden bg-teal-50 border-2 border-[#36E08F]/40 flex items-center justify-center text-[#36E08F] cursor-pointer shadow-md transition-all hover:scale-105">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#48BFE3]/5 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none"></div>
+                <div className="relative group w-16 h-16 rounded-full overflow-hidden bg-teal-50 border-2 border-[#48BFE3]/40 flex items-center justify-center text-[#48BFE3] cursor-pointer shadow-md transition-all hover:scale-105">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover animate-in fade-in duration-300" onError={() => setAvatarUrl("")} />
                   ) : (
@@ -626,7 +626,7 @@ export default function TeacherStudentProfilePage() {
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-t-2 border-x rounded-t-xl transition-all cursor-pointer ${
                         isActive
-                          ? "bg-white text-[#36E08F] border-[#36E08F] border-x-slate-200 shadow-xs"
+                          ? "bg-white text-[#48BFE3] border-[#48BFE3] border-x-slate-200 shadow-xs"
                           : "text-slate-500 border-transparent hover:text-slate-800"
                       }`}
                     >
@@ -641,7 +641,7 @@ export default function TeacherStudentProfilePage() {
               <div className="p-6 flex-grow">
                 {loadingProfile ? (
                   <div className="flex flex-col items-center justify-center py-24 space-y-4">
-                    <Loader2 className="w-10 h-10 text-[#36E08F] animate-spin opacity-50" />
+                    <Loader2 className="w-10 h-10 text-[#48BFE3] animate-spin opacity-50" />
                     <p className="text-slate-400 text-xs font-bold">Đang tải chi tiết hồ sơ...</p>
                   </div>
                 ) : profileData ? (
@@ -657,7 +657,7 @@ export default function TeacherStudentProfilePage() {
                           </div>
                           <button
                             onClick={() => window.open(`/teacher/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${yearId}`, "_blank")}
-                            className="flex items-center gap-2 bg-[#36E08F] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+                            className="flex items-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
                           >
                             <Printer className="w-4 h-4" />
                             <span>In hồ sơ / Lưu PDF</span>
@@ -667,18 +667,18 @@ export default function TeacherStudentProfilePage() {
                         {/* CV Document Container */}
                         <div className="print-container bg-white border border-slate-200 shadow-xl rounded-3xl p-8 max-w-4xl mx-auto font-sans relative overflow-hidden">
                           {/* Decorative Top Accent Stripe */}
-                          <div className="absolute top-0 left-0 right-0 h-2 bg-[#36E08F]" />
+                          <div className="absolute top-0 left-0 right-0 h-2 bg-[#48BFE3]" />
                           
                           {/* Background decoration elements */}
-                          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#36E08F]/8 to-transparent rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none no-print"></div>
+                          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#48BFE3]/8 to-transparent rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none no-print"></div>
                           <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-indigo-500/5 to-transparent rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none no-print"></div>
                           
                           {/* CV Header */}
                           <div className="border-b border-slate-200 pb-6 flex justify-between items-start gap-4">
                             <div className="space-y-1.5">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-[#36E08F]/10 flex items-center justify-center border border-[#36E08F]/20">
-                                  <GraduationCap className="w-5 h-5 text-[#36E08F]" />
+                                <div className="w-8 h-8 rounded-lg bg-[#48BFE3]/10 flex items-center justify-center border border-[#48BFE3]/20">
+                                  <GraduationCap className="w-5 h-5 text-[#48BFE3]" />
                                 </div>
                                 <span className="font-black text-xs tracking-wider text-slate-500 font-sans uppercase">SKY-LINE SYSTEM</span>
                               </div>
@@ -712,7 +712,7 @@ export default function TeacherStudentProfilePage() {
                                 </div>
                                 <div>
                                   <h3 className="font-black text-base text-slate-900 leading-tight">{selectedStudent?.studentName}</h3>
-                                  <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#36E08F]/10 text-[#36E08F] text-[10px] font-black uppercase mt-1">
+                                  <div className="inline-block px-2.5 py-0.5 rounded-full bg-[#48BFE3]/10 text-[#48BFE3] text-[10px] font-black uppercase mt-1">
                                     Lớp: {selectedStudent?.className}
                                   </div>
                                 </div>
@@ -737,7 +737,7 @@ export default function TeacherStudentProfilePage() {
                               {/* Outstanding Achievements */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                  <Award className="w-4 h-4 text-[#36E08F]" />
+                                  <Award className="w-4 h-4 text-[#48BFE3]" />
                                   Thành tích nổi bật
                                 </h4>
                                 {!profileData?.achievements || profileData.achievements.length === 0 ? (
@@ -762,14 +762,14 @@ export default function TeacherStudentProfilePage() {
                               {/* Career Orientation */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                  <Compass className="w-4 h-4 text-[#36E08F]" />
+                                  <Compass className="w-4 h-4 text-[#48BFE3]" />
                                   Định hướng ngành nghề
                                 </h4>
                                 {profileData?.orientation ? (
-                                  <div className="bg-[#36E08F]/[0.03] border border-[#36E08F]/10 p-3.5 rounded-xl space-y-1.5">
+                                  <div className="bg-[#48BFE3]/[0.03] border border-[#48BFE3]/10 p-3.5 rounded-xl space-y-1.5">
                                     <div className="text-[9px] text-slate-400 font-black uppercase tracking-wider">Nhóm ngành quan tâm</div>
                                     <div className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                                      <Compass className="w-3.5 h-3.5 text-[#36E08F]" />
+                                      <Compass className="w-3.5 h-3.5 text-[#48BFE3]" />
                                       {profileData.orientation.result}
                                     </div>
                                   </div>
@@ -784,7 +784,7 @@ export default function TeacherStudentProfilePage() {
                               {/* Section: Academic Intake Profile */}
                               <div className="space-y-4">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                  <ClipboardCheck className="w-4 h-4 text-[#36E08F]" />
+                                  <ClipboardCheck className="w-4 h-4 text-[#48BFE3]" />
                                   Hồ sơ học thuật đầu vào (Intake Evaluation)
                                 </h4>
                                 {profileData?.entranceSurvey ? (
@@ -793,7 +793,7 @@ export default function TeacherStudentProfilePage() {
                                       <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100 space-y-2.5">
                                         <div className="text-xs font-bold text-slate-700 flex justify-between items-center">
                                           <span>Đánh giá phát triển mầm non:</span>
-                                          <span className="font-black text-[#36E08F] uppercase tracking-wider bg-[#36E08F]/10 px-2 py-0.5 rounded">{profileData.entranceSurvey.devAssessmentResult || "N/A"}</span>
+                                          <span className="font-black text-[#48BFE3] uppercase tracking-wider bg-[#48BFE3]/10 px-2 py-0.5 rounded">{profileData.entranceSurvey.devAssessmentResult || "N/A"}</span>
                                         </div>
                                         {profileData.entranceSurvey.probationaryComment && (
                                           <div className="bg-white p-3 rounded-xl border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
@@ -832,7 +832,7 @@ export default function TeacherStudentProfilePage() {
                                       return (
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                           <div className="bg-slate-50/50 border border-slate-100 p-3 rounded-2xl text-center transition-all hover:bg-slate-50">
-                                            <div className="text-[9px] text-[#36E08F] font-black uppercase tracking-wider">Toán học</div>
+                                            <div className="text-[9px] text-[#48BFE3] font-black uppercase tracking-wider">Toán học</div>
                                             <div className="text-xl font-black text-slate-800 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
                                             <div className="text-[8px] text-slate-400 font-bold mt-0.5">Thang 10</div>
                                           </div>
@@ -863,7 +863,7 @@ export default function TeacherStudentProfilePage() {
                               {/* Section: Projects & Experiences */}
                               <div className="space-y-4">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                  <BookOpen className="w-4 h-4 text-[#36E08F]" />
+                                  <BookOpen className="w-4 h-4 text-[#48BFE3]" />
                                   Hoạt động trải nghiệm
                                 </h4>
                                 {(!profileData?.experientialActivities || profileData.experientialActivities.length === 0) && (!profileData?.projects || profileData.projects.length === 0) ? (
@@ -878,7 +878,7 @@ export default function TeacherStudentProfilePage() {
                                             <div className="text-[9px] text-slate-400 mt-0.5">{act.groupName}</div>
                                           </div>
                                           <div className="flex gap-1.5 items-center">
-                                            <span className="text-[8px] font-black uppercase bg-[#36E08F]/10 text-[#36E08F] px-2 py-0.5 rounded">
+                                            <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
                                               {act.role}
                                             </span>
                                             <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -896,7 +896,7 @@ export default function TeacherStudentProfilePage() {
                                             <div className="text-[9px] text-slate-400 mt-0.5">Dự án học tập</div>
                                           </div>
                                           <div className="flex gap-1.5 items-center">
-                                            <span className="text-[8px] font-black uppercase bg-[#36E08F]/10 text-[#36E08F] px-2 py-0.5 rounded">
+                                            <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
                                               {p.role || "Thành viên"}
                                             </span>
                                             <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -914,7 +914,7 @@ export default function TeacherStudentProfilePage() {
                               {/* Section: Learning Support Progress */}
                               <div className="space-y-4">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                  <GraduationCap className="w-4 h-4 text-[#36E08F]" />
+                                  <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
                                   Kế hoạch hỗ trợ học tập & Phát triển
                                 </h4>
                                 {!(profileData as any)?.learningSupportTargets || (profileData as any).learningSupportTargets.length === 0 ? (
@@ -937,7 +937,7 @@ export default function TeacherStudentProfilePage() {
                                           {target.evaluations?.length > 0 && (
                                             <div className="border-t border-slate-200/50 pt-2 space-y-1.5">
                                               <div className="text-[8px] text-slate-400 font-black uppercase tracking-wider">Tiến độ cập nhật gần nhất:</div>
-                                              <p className="text-[10px] text-slate-600 italic">"{target.evaluations[0].comment}" - <span className="font-black text-[#36E08F]">{target.evaluations[0].trackingLevel}</span></p>
+                                              <p className="text-[10px] text-slate-600 italic">"{target.evaluations[0].comment}" - <span className="font-black text-[#48BFE3]">{target.evaluations[0].trackingLevel}</span></p>
                                             </div>
                                           )}
                                         </div>
@@ -950,18 +950,18 @@ export default function TeacherStudentProfilePage() {
                               {/* Section: GVCN Testimonial */}
                               <div className="space-y-4">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-2">
-                                  <MessageSquare className="w-4 h-4 text-[#36E08F]" />
+                                  <MessageSquare className="w-4 h-4 text-[#48BFE3]" />
                                   Nhận xét định kỳ từ Giáo viên Chủ nhiệm
                                 </h4>
                                 {(() => {
                                   const primaryComment = profileData?.highlightComments?.filter((c: any) => c.category !== "ANNOUNCEMENT")?.[0]
                                   if (primaryComment) {
                                     return (
-                                      <div className="bg-[#36E08F]/[0.03] border-l-4 border-[#36E08F] p-4 rounded-r-2xl space-y-3 relative overflow-hidden">
+                                      <div className="bg-[#48BFE3]/[0.03] border-l-4 border-[#48BFE3] p-4 rounded-r-2xl space-y-3 relative overflow-hidden">
                                         <p className="text-xs text-slate-700 font-semibold italic leading-relaxed whitespace-pre-wrap relative z-10">
                                           "{primaryComment.comment}"
                                         </p>
-                                        <div className="text-right text-[9px] text-[#36E08F] font-black uppercase tracking-wider">
+                                        <div className="text-right text-[9px] text-[#48BFE3] font-black uppercase tracking-wider">
                                           — {primaryComment.teacherName} (GVCN) • {safeFormatDate(primaryComment.updatedAt)}
                                         </div>
                                       </div>
@@ -1077,7 +1077,7 @@ export default function TeacherStudentProfilePage() {
                         if (val === null || val === undefined || val === "—") return <span className="text-slate-400 font-normal">—</span>
                         const str = String(val).trim()
                         if (isCheckSymbol(str)) {
-                          return <span className="inline-flex items-center justify-center bg-teal-50 text-[#36E08F] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
+                          return <span className="inline-flex items-center justify-center bg-teal-50 text-[#48BFE3] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
                         }
                         if (str === "T" || str === "Tốt") {
                           return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T (Tốt)</span>
@@ -1105,12 +1105,12 @@ export default function TeacherStudentProfilePage() {
                           <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
                             <div>
                               <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-[#36E08F]" />
+                                <FileText className="w-4 h-4 text-[#48BFE3]" />
                                 Kết quả Học tập Văn hóa (MOET)
                               </h4>
                               <p className="text-[10px] text-slate-400 font-bold mt-0.5">Bảng điểm môn học &amp; Đánh giá xếp loại tổng kết định kỳ</p>
                             </div>
-                            <span className="bg-teal-50 text-[#36E08F] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            <span className="bg-teal-50 text-[#48BFE3] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                               Năm học: {selectedStudent?.yearName || "2025-2026"}
                             </span>
                           </div>
@@ -1124,7 +1124,7 @@ export default function TeacherStudentProfilePage() {
                             <div className="space-y-6">
                               <div className="space-y-3">
                                 <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <GraduationCap className="w-4 h-4 text-[#36E08F]" />
+                                  <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
                                   Tổng kết Đánh giá &amp; Xếp loại Học tập
                                 </h5>
 
@@ -1133,13 +1133,13 @@ export default function TeacherStudentProfilePage() {
                                   <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 1</span>
-                                      <span className="text-[9px] font-extrabold text-[#36E08F] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
+                                      <span className="text-[9px] font-extrabold text-[#48BFE3] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
                                         <div className="flex justify-between items-center">
                                           <span>Đánh giá KQGD:</span>
-                                          <span className="font-extrabold text-[#36E08F] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{finalKqgdHK1 || "—"}</span>
+                                          <span className="font-extrabold text-[#48BFE3] bg-teal-50 px-2 py-0.5 rounded border border-teal-200">{finalKqgdHK1 || "—"}</span>
                                         </div>
                                       ) : (
                                         <>
@@ -1214,8 +1214,8 @@ export default function TeacherStudentProfilePage() {
                                   {/* CN Card */}
                                   <div className="bg-gradient-to-br from-teal-50/40 to-slate-50 border border-teal-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-teal-100 pb-2">
-                                      <span className="text-xs font-black text-[#36E08F] uppercase tracking-wider">Cả Năm</span>
-                                      <span className="text-[9px] font-extrabold text-white bg-[#36E08F] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
+                                      <span className="text-xs font-black text-[#48BFE3] uppercase tracking-wider">Cả Năm</span>
+                                      <span className="text-[9px] font-extrabold text-white bg-[#48BFE3] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
@@ -1248,7 +1248,7 @@ export default function TeacherStudentProfilePage() {
 
                               <div className="space-y-3">
                                 <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <BookOpen className="w-4 h-4 text-[#36E08F]" />
+                                  <BookOpen className="w-4 h-4 text-[#48BFE3]" />
                                   Bảng điểm Chi tiết Các Môn học
                                 </h5>
 
@@ -1288,7 +1288,7 @@ export default function TeacherStudentProfilePage() {
                         <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
                           <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Kết quả khảo sát đầu vào</h4>
                           {profileData?.entranceSurvey?.type && (
-                            <span className="bg-teal-50 text-[#36E08F] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            <span className="bg-teal-50 text-[#48BFE3] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                               Hệ {profileData.entranceSurvey.type}
                             </span>
                           )}
@@ -1302,7 +1302,7 @@ export default function TeacherStudentProfilePage() {
                                 onClick={() => setEntranceSubTab("results")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "results"
-                                    ? "border-[#36E08F] text-[#36E08F]"
+                                    ? "border-[#48BFE3] text-[#48BFE3]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1313,7 +1313,7 @@ export default function TeacherStudentProfilePage() {
                                 onClick={() => setEntranceSubTab("admin")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "admin"
-                                    ? "border-[#36E08F] text-[#36E08F]"
+                                    ? "border-[#48BFE3] text-[#48BFE3]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1324,7 +1324,7 @@ export default function TeacherStudentProfilePage() {
                                 onClick={() => setEntranceSubTab("academic")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "academic"
-                                    ? "border-[#36E08F] text-[#36E08F]"
+                                    ? "border-[#48BFE3] text-[#48BFE3]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1426,8 +1426,8 @@ export default function TeacherStudentProfilePage() {
                                     <div className="space-y-4">
                                       <h5 className="text-xs font-black text-slate-700">Điểm số các môn khảo sát:</h5>
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        <div className="bg-[#36E08F]/5 border border-[#36E08F]/20 p-3.5 rounded-xl text-center">
-                                          <div className="text-[10px] text-[#36E08F] font-bold uppercase tracking-wider">Toán</div>
+                                        <div className="bg-[#48BFE3]/5 border border-[#48BFE3]/20 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-[#48BFE3] font-bold uppercase tracking-wider">Toán</div>
                                           <div className="text-2xl font-extrabold text-slate-805 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
@@ -1694,7 +1694,7 @@ export default function TeacherStudentProfilePage() {
                         {profileData?.orientation ? (
                           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-2xs">
                             <div className="flex items-center gap-3 bg-teal-50/30 border border-teal-100 p-3.5 rounded-xl">
-                              <Compass className="w-5 h-5 text-[#36E08F]" />
+                              <Compass className="w-5 h-5 text-[#48BFE3]" />
                               <div>
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Định hướng nhóm ngành chủ đạo</div>
                                 <div className="text-sm font-black text-slate-805 mt-0.5">{profileData.orientation.result}</div>
@@ -1747,7 +1747,7 @@ export default function TeacherStudentProfilePage() {
                                       </span>
                                     </td>
                                     <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                      <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
                                         {act.role}
                                       </span>
                                     </td>
@@ -1768,7 +1768,7 @@ export default function TeacherStudentProfilePage() {
                                       </span>
                                     </td>
                                     <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                      <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
                                         {p.role || "Thành viên"}
                                       </span>
                                     </td>
@@ -1791,7 +1791,7 @@ export default function TeacherStudentProfilePage() {
                       <div className="space-y-6">
                         <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3 flex justify-between items-center">
                           <span>Nhận xét nổi bật định kỳ từ Giáo viên Chủ nhiệm</span>
-                          <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                          <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                             GVCN Đánh giá
                           </span>
                         </h4>
@@ -1803,7 +1803,7 @@ export default function TeacherStudentProfilePage() {
                             <select
                               value={commentCategory}
                               onChange={(e) => setCommentCategory(e.target.value)}
-                              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36E08F]"
+                              className="bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
                             >
                               <option value="CHUNG">Chung</option>
                               <option value="HỌC TẬP">Học tập</option>
@@ -1816,13 +1816,13 @@ export default function TeacherStudentProfilePage() {
                             onChange={(e) => setNewCommentText(e.target.value)}
                             placeholder={`Thêm nhận xét nổi bật mới về kết quả học tập/rèn luyện của học sinh ${selectedStudent?.studentName}...`}
                             rows={3}
-                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#36E08F] focus:border-[#36E08F] resize-none"
+                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs font-semibold placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#48BFE3] focus:border-[#48BFE3] resize-none"
                           />
                           <div className="flex justify-end">
                             <button
                               type="submit"
                               disabled={postingComment || !newCommentText.trim()}
-                              className="flex items-center gap-1.5 bg-[#36E08F] hover:bg-[#009085] disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
+                              className="flex items-center gap-1.5 bg-[#48BFE3] hover:bg-[#009085] disabled:opacity-50 text-white px-4 py-2 rounded-xl text-xs font-black shadow-sm transition-all cursor-pointer"
                             >
                               {postingComment ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1846,7 +1846,7 @@ export default function TeacherStudentProfilePage() {
                               .map((c: any) => (
                                 <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 transition-all">
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="inline-block px-2.5 py-0.5 bg-[#36E08F]/15 text-[#36E08F] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#36E08F]/10">
+                                    <span className="inline-block px-2.5 py-0.5 bg-[#48BFE3]/15 text-[#48BFE3] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#48BFE3]/10">
                                       {c.category || "Chung"}
                                     </span>
                                     <button
@@ -1952,17 +1952,17 @@ export default function TeacherStudentProfilePage() {
                                       {!target.evaluations || target.evaluations.length === 0 ? (
                                         <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
                                       ) : (
-                                        <div className="relative border-l-2 border-[#36E08F]/30 pl-5 space-y-5 ml-1.5">
+                                        <div className="relative border-l-2 border-[#48BFE3]/30 pl-5 space-y-5 ml-1.5">
                                           {target.evaluations.map((ev: any) => (
                                             <div key={ev.id} className="relative group">
-                                              <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#36E08F] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                                                <span className="h-1.5 w-1.5 bg-[#36E08F] rounded-full"></span>
+                                              <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#48BFE3] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                                                <span className="h-1.5 w-1.5 bg-[#48BFE3] rounded-full"></span>
                                               </span>
                                               <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1.5 transition-all">
                                                 <div className="text-[10px] text-slate-400 font-bold">
                                                   {safeFormatDate(ev.createdAt)} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
                                                 </div>
-                                                <div className="text-xs font-black text-[#36E08F]">Tiến bộ: {ev.trackingLevel}</div>
+                                                <div className="text-xs font-black text-[#48BFE3]">Tiến bộ: {ev.trackingLevel}</div>
                                                 <p className="text-xs text-slate-655 font-semibold leading-relaxed">{ev.comment}</p>
                                               </div>
                                             </div>

@@ -64,7 +64,7 @@ export default function StudentPortalHomePage() {
     <div className="max-w-6xl mx-auto p-4 sm:p-6 md:p-8 space-y-8 font-sans text-slate-800 pb-20">
       
       {/* Header Banner - Dynamic for currently logged in student */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#36E08F] p-6 sm:p-8 text-white shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] p-6 sm:p-8 text-white shadow-2xl">
         <div className="absolute -right-10 -top-10 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute right-20 -bottom-10 w-60 h-60 bg-teal-400/20 rounded-full blur-2xl pointer-events-none" />
 

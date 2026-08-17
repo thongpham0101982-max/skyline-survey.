@@ -235,7 +235,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                 onClick={() => setLevelFilter("PHO_THONG")}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   levelFilter === "PHO_THONG" 
-                    ? "bg-[#36E08F]/10 text-[#36E08F]" 
+                    ? "bg-[#48BFE3]/10 text-[#48BFE3]" 
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
@@ -299,7 +299,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                 placeholder="Tìm tên hoặc mã trường..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 rounded-2xl font-medium outline-none transition-all text-xs text-slate-800" 
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl font-medium outline-none transition-all text-xs text-slate-800" 
               />
             </div>
 
@@ -329,7 +329,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
 
               <button 
                 onClick={handleOpenAdd}
-                className="px-4 py-2.5 bg-[#36E08F] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
+                className="px-4 py-2.5 bg-[#48BFE3] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center gap-1.5 shadow-sm text-xs cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Thêm trường mới
@@ -430,7 +430,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
             {/* Header */}
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-base font-extrabold text-slate-850 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#36E08F]" />
+                <Building2 className="w-5 h-5 text-[#48BFE3]" />
                 {editingSchool ? "Chỉnh sửa trường liên kết" : "Thêm trường liên kết mới"}
               </h2>
               <button 
@@ -451,7 +451,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                   placeholder="Ví dụ: THPT Quang Trung"
                   value={form.name}
                   onChange={e => setForm({...form, name: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl font-medium outline-none transition-all text-xs text-slate-855 font-semibold"
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl font-medium outline-none transition-all text-xs text-slate-855 font-semibold"
                 />
               </div>
 
@@ -463,7 +463,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                   placeholder="Ví dụ: QTR"
                   value={form.code}
                   onChange={e => setForm({...form, code: e.target.value})}
-                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl font-medium outline-none transition-all text-xs text-slate-855 font-mono font-bold uppercase"
+                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl font-medium outline-none transition-all text-xs text-slate-855 font-mono font-bold uppercase"
                 />
               </div>
 
@@ -473,7 +473,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                   <label 
                     className={`flex items-center justify-center gap-2 border p-3.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
                       form.level === "PHO_THONG"
-                        ? "border-[#36E08F] bg-[#36E08F]/5 text-[#36E08F] shadow-xs"
+                        ? "border-[#48BFE3] bg-[#48BFE3]/5 text-[#48BFE3] shadow-xs"
                         : "border-slate-250 hover:bg-slate-50 text-slate-600"
                     }`}
                   >
@@ -532,7 +532,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                   <label 
                     className={`flex items-center justify-center gap-2 border p-3.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
                       form.schoolType === "PRIVATE"
-                        ? "border-[#36E08F] bg-[#36E08F]/5 text-[#36E08F] shadow-xs"
+                        ? "border-[#48BFE3] bg-[#48BFE3]/5 text-[#48BFE3] shadow-xs"
                         : "border-slate-250 hover:bg-slate-50 text-slate-600"
                     }`}
                   >
@@ -561,7 +561,7 @@ export function DestinationSchoolsClient({ initialSchools }: { initialSchools: a
                 <button 
                   type="submit"
                   disabled={saving}
-                  className="px-5 py-2.5 bg-[#36E08F] text-white font-bold rounded-xl hover:bg-[#009085] transition-all flex items-center gap-1.5 text-xs cursor-pointer shadow-xs disabled:opacity-55"
+                  className="px-5 py-2.5 bg-[#48BFE3] text-white font-bold rounded-xl hover:bg-[#009085] transition-all flex items-center gap-1.5 text-xs cursor-pointer shadow-xs disabled:opacity-55"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   Lưu thay đổi

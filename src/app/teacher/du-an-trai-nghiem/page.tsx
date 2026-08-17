@@ -223,7 +223,7 @@ export default function TeacherProjectsPage() {
   if (loadingClasses) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-12 h-12 text-[#36E08F] animate-spin opacity-60" />
+        <Loader2 className="w-12 h-12 text-[#48BFE3] animate-spin opacity-60" />
         <p className="text-slate-400 font-bold tracking-wide uppercase text-xs">Đang tải danh sách lớp...</p>
       </div>
     )
@@ -234,7 +234,7 @@ export default function TeacherProjectsPage() {
       {/* Header Bar */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#36E08F] rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-[#48BFE3] rounded-lg flex items-center justify-center flex-shrink-0">
             <BookOpen className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
@@ -253,7 +253,7 @@ export default function TeacherProjectsPage() {
               <select
                 value={selectedClassId}
                 onChange={e => setSelectedClassId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#36E08F] transition-colors cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#48BFE3] transition-colors cursor-pointer"
               >
                 {classes.length === 0 ? (
                   <option value="">Không có lớp học nào</option>
@@ -269,7 +269,7 @@ export default function TeacherProjectsPage() {
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">2. Danh sách học sinh</label>
               {loadingStudents ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-5 h-5 text-[#36E08F] animate-spin" />
+                  <Loader2 className="w-5 h-5 text-[#48BFE3] animate-spin" />
                 </div>
               ) : students.length === 0 ? (
                 <p className="text-xs text-slate-400 italic">Không có học sinh nào</p>
@@ -281,7 +281,7 @@ export default function TeacherProjectsPage() {
                       onClick={() => setSelectedStudentId(s.id)}
                       className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
                         selectedStudentId === s.id
-                          ? "bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/30"
+                          ? "bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/30"
                           : "text-slate-600 hover:bg-slate-50 border border-transparent"
                       }`}
                     >
@@ -314,7 +314,7 @@ export default function TeacherProjectsPage() {
                 {!showForm && (
                   <button
                     onClick={startCreate}
-                    className="flex items-center gap-1 bg-[#36E08F] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                    className="flex items-center gap-1 bg-[#48BFE3] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Thêm dự án
@@ -347,7 +347,7 @@ export default function TeacherProjectsPage() {
                         onChange={e => setProjectName(e.target.value)}
                         required
                         placeholder="Ví dụ: Robot dọn rác mini, STEM..."
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] transition-all"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] transition-all"
                       />
                     </div>
                     <div>
@@ -357,7 +357,7 @@ export default function TeacherProjectsPage() {
                         value={role}
                         onChange={e => setRole(e.target.value)}
                         placeholder="Ví dụ: Trưởng nhóm, Thành viên..."
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] transition-all"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] transition-all"
                       />
                     </div>
                   </div>
@@ -370,7 +370,7 @@ export default function TeacherProjectsPage() {
                       onChange={e => setResult(e.target.value)}
                       required
                       placeholder="Ví dụ: Xuất sắc, Hoàn thành tốt..."
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] transition-all"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] transition-all"
                     />
                   </div>
 
@@ -381,7 +381,7 @@ export default function TeacherProjectsPage() {
                       value={notes}
                       onChange={e => setNotes(e.target.value)}
                       placeholder="Nhận xét tinh thần làm việc nhóm, kỹ năng thuyết trình, kết quả cụ thể..."
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] transition-all resize-none"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] transition-all resize-none"
                     />
                   </div>
 
@@ -396,7 +396,7 @@ export default function TeacherProjectsPage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex items-center gap-1.5 bg-[#36E08F] hover:bg-[#009085] text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                      className="flex items-center gap-1.5 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
                     >
                       {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       Lưu lại
@@ -408,7 +408,7 @@ export default function TeacherProjectsPage() {
               {/* Projects List */}
               {loadingProjects ? (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 text-[#36E08F] animate-spin opacity-50" />
+                  <Loader2 className="w-8 h-8 text-[#48BFE3] animate-spin opacity-50" />
                 </div>
               ) : projects.length === 0 ? (
                 <p className="text-xs text-slate-400 font-medium italic text-center py-8">Chưa có dự án nào được ghi nhận cho học sinh này.</p>
@@ -420,7 +420,7 @@ export default function TeacherProjectsPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <h4 className="font-extrabold text-sm text-slate-800">{p.projectName}</h4>
-                            <p className="text-[10px] text-[#36E08F] font-bold mt-0.5">Vai trò: {p.role || "N/A"} • Kết quả: {p.result}</p>
+                            <p className="text-[10px] text-[#48BFE3] font-bold mt-0.5">Vai trò: {p.role || "N/A"} • Kết quả: {p.result}</p>
                           </div>
                           <div className="flex items-center gap-1">
                             <button

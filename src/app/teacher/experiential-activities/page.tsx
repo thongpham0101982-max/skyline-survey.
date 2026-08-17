@@ -86,11 +86,11 @@ export default function ExperientialActivitiesList() {
 
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-          <div className="h-1 w-full bg-gradient-to-r from-[#36E08F] via-[#20C997] to-[#00BFB3]" />
+          <div className="h-1 w-full bg-gradient-to-r from-[#48BFE3] via-[#20C997] to-[#00BFB3]" />
           <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#36E08F]/20 to-teal-100 rounded-2xl flex items-center justify-center">
-                <Activity className="w-6 h-6 text-[#36E08F]" />
+              <div className="w-12 h-12 bg-gradient-to-br from-[#48BFE3]/20 to-teal-100 rounded-2xl flex items-center justify-center">
+                <Activity className="w-6 h-6 text-[#48BFE3]" />
               </div>
               <div>
                 <h1 className="text-2xl font-black text-slate-800">Hoạt động trải nghiệm</h1>
@@ -99,7 +99,7 @@ export default function ExperientialActivitiesList() {
             </div>
             <button
               onClick={() => router.push('/teacher/experiential-activities/create')}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#36E08F] to-[#20C997] hover:shadow-lg hover:shadow-[#36E08F]/25 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2 w-fit"
+              className="px-5 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#20C997] hover:shadow-lg hover:shadow-[#48BFE3]/25 text-white text-sm font-bold rounded-xl transition-all flex items-center gap-2 w-fit"
             >
               <Plus className="w-4 h-4" /> Tạo hoạt động mới
             </button>
@@ -113,7 +113,7 @@ export default function ExperientialActivitiesList() {
             <input
               type="text"
               placeholder="Tìm theo tên, mã hoạt động..."
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#36E08F]/30 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none transition-all shadow-sm"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#48BFE3]/30 rounded-xl text-sm font-medium focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none transition-all shadow-sm"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -123,7 +123,7 @@ export default function ExperientialActivitiesList() {
             <button
               onClick={() => setShowAllYears(!showAllYears)}
               className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border shadow-sm flex items-center justify-center gap-2 " + 
-                (showAllYears ? "bg-[#36E08F] text-white border-[#36E08F]" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")}
+                (showAllYears ? "bg-[#48BFE3] text-white border-[#48BFE3]" : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50")}
             >
               <Calendar className="w-4 h-4" />
               <span>{showAllYears ? 'Đang hiện tất cả năm học' : 'Lọc theo năm học chọn'}</span>
@@ -132,14 +132,14 @@ export default function ExperientialActivitiesList() {
             <div className="flex bg-slate-100 p-1 rounded-xl items-center border border-slate-200">
               <button 
                 onClick={() => handleSetViewMode('list')} 
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-[#36E08F] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-[#48BFE3] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 title="Dạng danh sách hàng"
               >
                 <List className="w-4 h-4" />
               </button>
               <button 
                 onClick={() => handleSetViewMode('grid')} 
-                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-[#36E08F] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                className={`p-1.5 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-[#48BFE3] shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                 title="Dạng lưới thẻ"
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -151,7 +151,7 @@ export default function ExperientialActivitiesList() {
         {/* List */}
         {loading ? (
           <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-4 border-[#36E08F] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-4 border-[#48BFE3] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl py-16 text-center border border-slate-200/60 shadow-sm space-y-4">
@@ -167,7 +167,7 @@ export default function ExperientialActivitiesList() {
             {activities.length > 0 && !showAllYears && (
               <button 
                 onClick={() => setShowAllYears(true)}
-                className="px-4 py-2 bg-[#36E08F]/10 text-[#36E08F] font-bold text-xs rounded-xl hover:bg-[#36E08F]/20 transition-all inline-flex items-center gap-1.5"
+                className="px-4 py-2 bg-[#48BFE3]/10 text-[#48BFE3] font-bold text-xs rounded-xl hover:bg-[#48BFE3]/20 transition-all inline-flex items-center gap-1.5"
               >
                 <Calendar className="w-4 h-4" />
                 <span>Xem tất cả năm học ({activities.length} hoạt động)</span>
@@ -197,11 +197,11 @@ export default function ExperientialActivitiesList() {
                         <tr
                           key={act.id}
                           onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
-                          className="group hover:bg-[#36E08F]/5 cursor-pointer transition-colors"
+                          className="group hover:bg-[#48BFE3]/5 cursor-pointer transition-colors"
                         >
                           <td className="py-4 px-6 whitespace-nowrap">
                             {act.code ? (
-                              <span className="inline-block text-xs font-black text-[#36E08F] bg-[#36E08F]/10 px-2.5 py-1 rounded-lg tracking-wide">
+                              <span className="inline-block text-xs font-black text-[#48BFE3] bg-[#48BFE3]/10 px-2.5 py-1 rounded-lg tracking-wide">
                                 {act.code}
                               </span>
                             ) : (
@@ -210,7 +210,7 @@ export default function ExperientialActivitiesList() {
                           </td>
                           <td className="py-4 px-6">
                             <div className="max-w-[320px] lg:max-w-[450px]">
-                              <h4 className="text-sm font-bold text-slate-800 group-hover:text-[#36E08F] transition-colors line-clamp-1">
+                              <h4 className="text-sm font-bold text-slate-800 group-hover:text-[#48BFE3] transition-colors line-clamp-1">
                                 {act.name}
                               </h4>
                               {act.catalogName && act.catalogName !== act.name && (
@@ -223,13 +223,13 @@ export default function ExperientialActivitiesList() {
                           </td>
                           <td className="py-4 px-6 whitespace-nowrap">
                             <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
-                              <Calendar className="w-4 h-4 text-[#36E08F]/70 flex-shrink-0" />
+                              <Calendar className="w-4 h-4 text-[#48BFE3]/70 flex-shrink-0" />
                               <span>{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : '-'}</span>
                             </div>
                           </td>
                           <td className="py-4 px-6 whitespace-nowrap text-center">
                             <div className="inline-flex items-center gap-1.5 text-sm text-slate-700 font-semibold bg-slate-50 px-2.5 py-1 rounded-lg">
-                              <Users className="w-3.5 h-3.5 text-[#36E08F]/70" />
+                              <Users className="w-3.5 h-3.5 text-[#48BFE3]/70" />
                               <span>{act.participants || 0}</span>
                             </div>
                           </td>
@@ -247,7 +247,7 @@ export default function ExperientialActivitiesList() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
-                                className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-[#36E08F]/10 text-slate-500 hover:text-[#36E08F] transition-colors"
+                                className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-[#48BFE3]/10 text-slate-500 hover:text-[#48BFE3] transition-colors"
                                 title="Mở chi tiết"
                               >
                                 <Edit3 className="w-4 h-4" />
@@ -259,7 +259,7 @@ export default function ExperientialActivitiesList() {
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
-                              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#36E08F] transition-colors ml-1" />
+                              <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#48BFE3] transition-colors ml-1" />
                             </div>
                           </td>
                         </tr>
@@ -276,15 +276,15 @@ export default function ExperientialActivitiesList() {
                   return (
                     <div
                       key={act.id}
-                      className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-[#36E08F]/30 transition-all cursor-pointer group flex flex-col overflow-hidden"
+                      className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-[#48BFE3]/30 transition-all cursor-pointer group flex flex-col overflow-hidden"
                       onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
                     >
-                      <div className="h-1 w-full bg-gradient-to-r from-[#36E08F]/60 to-teal-300/60 group-hover:from-[#36E08F] group-hover:to-[#20C997] transition-all" />
+                      <div className="h-1 w-full bg-gradient-to-r from-[#48BFE3]/60 to-teal-300/60 group-hover:from-[#48BFE3] group-hover:to-[#20C997] transition-all" />
                       <div className="p-5 flex flex-col flex-1">
                         <div className="flex items-start justify-between gap-2 mb-3">
                           <div className="flex-1 min-w-0">
                             {act.code && (
-                              <span className="inline-block text-xs font-black text-[#36E08F] bg-[#36E08F]/10 px-2 py-0.5 rounded-md mb-1.5 tracking-wide">
+                              <span className="inline-block text-xs font-black text-[#48BFE3] bg-[#48BFE3]/10 px-2 py-0.5 rounded-md mb-1.5 tracking-wide">
                                 {act.code}
                               </span>
                             )}
@@ -299,7 +299,7 @@ export default function ExperientialActivitiesList() {
                           <div className="flex items-center gap-1 flex-shrink-0">
                             <button
                               onClick={(e) => { e.stopPropagation(); router.push(`/teacher/experiential-activities/${act.id}`); }}
-                              className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-[#36E08F]/10 text-slate-400 hover:text-[#36E08F] transition-colors"
+                              className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-[#48BFE3]/10 text-slate-400 hover:text-[#48BFE3] transition-colors"
                               title="Mở chi tiết"
                             >
                               <Edit3 className="w-3.5 h-3.5" />
@@ -311,17 +311,17 @@ export default function ExperientialActivitiesList() {
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
-                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#36E08F] transition-colors ml-1" />
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#48BFE3] transition-colors ml-1" />
                           </div>
                         </div>
                         <div className="mt-auto pt-3 border-t border-slate-100 space-y-2">
                           <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <Calendar className="w-3.5 h-3.5 text-[#36E08F]/70 flex-shrink-0" />
+                            <Calendar className="w-3.5 h-3.5 text-[#48BFE3]/70 flex-shrink-0" />
                             <span>{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : act.date}</span>
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                              <Users className="w-3.5 h-3.5 text-[#36E08F]/70 flex-shrink-0" />
+                              <Users className="w-3.5 h-3.5 text-[#48BFE3]/70 flex-shrink-0" />
                               <span><strong className="text-slate-700">{act.participants || 0}</strong> học sinh tham gia</span>
                             </div>
                             <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badge.cls}`}>
@@ -346,15 +346,15 @@ export default function ExperientialActivitiesList() {
                 return (
                   <div
                     key={act.id}
-                    className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-[#36E08F]/30 transition-all cursor-pointer group flex flex-col overflow-hidden"
+                    className="bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md hover:border-[#48BFE3]/30 transition-all cursor-pointer group flex flex-col overflow-hidden"
                     onClick={() => router.push(`/teacher/experiential-activities/${act.id}`)}
                   >
-                    <div className="h-1 w-full bg-gradient-to-r from-[#36E08F]/60 to-teal-300/60 group-hover:from-[#36E08F] group-hover:to-[#20C997] transition-all" />
+                    <div className="h-1 w-full bg-gradient-to-r from-[#48BFE3]/60 to-teal-300/60 group-hover:from-[#48BFE3] group-hover:to-[#20C997] transition-all" />
                     <div className="p-5 flex flex-col flex-1">
                       <div className="flex items-start justify-between gap-2 mb-3">
                         <div className="flex-1 min-w-0">
                           {act.code && (
-                            <span className="inline-block text-xs font-black text-[#36E08F] bg-[#36E08F]/10 px-2 py-0.5 rounded-md mb-1.5 tracking-wide">
+                            <span className="inline-block text-xs font-black text-[#48BFE3] bg-[#48BFE3]/10 px-2 py-0.5 rounded-md mb-1.5 tracking-wide">
                               {act.code}
                             </span>
                           )}
@@ -369,7 +369,7 @@ export default function ExperientialActivitiesList() {
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <button
                             onClick={(e) => { e.stopPropagation(); router.push(`/teacher/experiential-activities/${act.id}`); }}
-                            className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-[#36E08F]/10 text-slate-400 hover:text-[#36E08F] transition-colors"
+                            className="w-7 h-7 rounded-lg bg-slate-50 flex items-center justify-center hover:bg-[#48BFE3]/10 text-slate-400 hover:text-[#48BFE3] transition-colors"
                             title="Mở chi tiết"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -381,17 +381,17 @@ export default function ExperientialActivitiesList() {
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
-                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#36E08F] transition-colors ml-1" />
+                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-[#48BFE3] transition-colors ml-1" />
                         </div>
                       </div>
                       <div className="mt-auto pt-3 border-t border-slate-100 space-y-2">
                         <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-[#36E08F]/70 flex-shrink-0" />
+                          <Calendar className="w-3.5 h-3.5 text-[#48BFE3]/70 flex-shrink-0" />
                           <span>{act.date ? new Date(act.date).toLocaleDateString('vi-VN') : act.date}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            <Users className="w-3.5 h-3.5 text-[#36E08F]/70 flex-shrink-0" />
+                            <Users className="w-3.5 h-3.5 text-[#48BFE3]/70 flex-shrink-0" />
                             <span><strong className="text-slate-700">{act.participants || 0}</strong> học sinh tham gia</span>
                           </div>
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${badge.cls}`}>

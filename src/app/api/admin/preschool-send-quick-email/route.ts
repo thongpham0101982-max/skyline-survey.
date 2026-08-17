@@ -30,8 +30,8 @@ export async function POST(req: Request) {
       else if (r.includes("Khong dat") || r.includes("KHONG DAT")) { resText = "KHONG DAT"; resColor = "#b91c1c"; resBg = "#fef2f2"; resBorder = "#fecaca"; }
       else if (r.includes("Hoc thu")) { resText = "HOC THU"; resColor = "#4338ca"; resBg = "#e0e7ff"; resBorder = "#c7d2fe"; }
       const isPassed = r.includes("Dat") || r.includes("DAT") || r.includes("MIEN");
-      const attachTd = showAttachments ? `<td style="padding:12px 10px;text-align:center;" className="p-2 border border-slate-200">${isPassed ? `<a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=chuc_mung" style="display:inline-block;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:bold;color:#fff;background:#36E08F;text-decoration:none;">Tai file</a>` : "—"}</td>` : "";
-      return `<tr style="border-bottom:1px solid #f1f5f9;background:${idx % 2 === 0 ? "#fff" : "#f8fafc"};"><td style="padding:12px 10px;text-align:center;font-size:13px;font-weight:600;color:#64748b;" className="p-2 border border-slate-200">${idx + 1}</td><td style="padding:12px 10px;font-size:13px;font-weight:700;color:#1E1B4B;" className="p-2 border border-slate-200">${s.fullName || "—"}</td><td style="padding:12px 10px;text-align:center;font-size:13px;color:#334155;" className="p-2 border border-slate-200">K${s.grade || "—"}</td><td style="padding:12px 10px;text-align:center;font-size:13px;color:#334155;" className="p-2 border border-slate-200">${dob}</td><td style="padding:12px 10px;text-align:center;" className="p-2 border border-slate-200"><span style="display:inline-block;padding:4px 10px;border-radius:50px;font-size:10px;font-weight:700;color:${resColor};background:${resBg};border:1px solid ${resBorder};text-transform:uppercase;">${resText}</span></td><td style="padding:12px 10px;font-size:13px;font-weight:600;color:#36E08F;" className="p-2 border border-slate-200">${s.admissionCampus || "—"}</td>${attachTd}</tr>`;
+      const attachTd = showAttachments ? `<td style="padding:12px 10px;text-align:center;" className="p-2 border border-slate-200">${isPassed ? `<a href="${baseUrl}/admin/input-assessments?studentId=${s.id}&print=chuc_mung" style="display:inline-block;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:bold;color:#fff;background:#48BFE3;text-decoration:none;">Tai file</a>` : "—"}</td>` : "";
+      return `<tr style="border-bottom:1px solid #f1f5f9;background:${idx % 2 === 0 ? "#fff" : "#f8fafc"};"><td style="padding:12px 10px;text-align:center;font-size:13px;font-weight:600;color:#64748b;" className="p-2 border border-slate-200">${idx + 1}</td><td style="padding:12px 10px;font-size:13px;font-weight:700;color:#1E1B4B;" className="p-2 border border-slate-200">${s.fullName || "—"}</td><td style="padding:12px 10px;text-align:center;font-size:13px;color:#334155;" className="p-2 border border-slate-200">K${s.grade || "—"}</td><td style="padding:12px 10px;text-align:center;font-size:13px;color:#334155;" className="p-2 border border-slate-200">${dob}</td><td style="padding:12px 10px;text-align:center;" className="p-2 border border-slate-200"><span style="display:inline-block;padding:4px 10px;border-radius:50px;font-size:10px;font-weight:700;color:${resColor};background:${resBg};border:1px solid ${resBorder};text-transform:uppercase;">${resText}</span></td><td style="padding:12px 10px;font-size:13px;font-weight:600;color:#48BFE3;" className="p-2 border border-slate-200">${s.admissionCampus || "—"}</td>${attachTd}</tr>`;
     }).join("");
 
     const attachHeader = showAttachments ? `<th style="padding:13px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;" className="p-2 border border-slate-200">File tai</th>` : "";
@@ -75,12 +75,12 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Outfit','Inter',Arial,sa
   <div style="max-width:860px;margin:0 auto;background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 10px 30px rgba(0,122,135,.1);border:1px solid #e2e8f0;">
 
     <!-- HEADER -->
-    <div style="background:#ffffff;padding:36px 32px;text-align:center;border-bottom:3px solid #36E08F;">
+    <div style="background:#ffffff;padding:36px 32px;text-align:center;border-bottom:3px solid #48BFE3;">
       <div style="display:inline-block;background:rgba(0,166,169,0.1);padding:5px 16px;border-radius:50px;margin-bottom:14px;border:1px solid rgba(0,166,169,0.2);">
-        <span style="color:#36E08F;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">Sky-Line Education System</span>
+        <span style="color:#48BFE3;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;">Sky-Line Education System</span>
       </div>
       <h1 style="margin:0;color:#1E1B4B;font-size:24px;font-weight:800;text-transform:uppercase;">Bao cao Ket qua Khao sat Dau vao KSNL</h1>
-      <p style="margin:8px 0 0;color:#36E08F;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">HỆ THỐNG KHẢO SÁT NĂNG LỰC ĐẦU VÀO SKY-LINE</p>
+      <p style="margin:8px 0 0;color:#48BFE3;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">HỆ THỐNG KHẢO SÁT NĂNG LỰC ĐẦU VÀO SKY-LINE</p>
     </div>
 
     <!-- KY & DOT -->
@@ -126,7 +126,7 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Outfit','Inter',Arial,sa
           <td width="33%" style="padding-right:10px;" className="p-2 border border-slate-200">
             <div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:14px;padding:18px;text-align:center;">
               <div style="font-size:10px;font-weight:700;color:#0f766e;text-transform:uppercase;">Dat / Trung tuyen</div>
-              <div style="font-size:28px;font-weight:800;color:#36E08F;margin-top:6px;">${totalPassed}</div>
+              <div style="font-size:28px;font-weight:800;color:#48BFE3;margin-top:6px;">${totalPassed}</div>
             </div>
           </td>
           <td width="33%" className="p-2 border border-slate-200">
@@ -141,11 +141,11 @@ body{margin:0;padding:0;background:#f1f5f9;font-family:'Outfit','Inter',Arial,sa
 
     <!-- BANG CHI TIET -->
     <div style="padding:16px 32px 36px;">
-      <h2 style="font-size:16px;font-weight:800;color:#1E1B4B;border-left:4px solid #36E08F;padding-left:12px;margin:0 0 16px;">Danh sach ket qua chi tiet</h2>
+      <h2 style="font-size:16px;font-weight:800;color:#1E1B4B;border-left:4px solid #48BFE3;padding-left:12px;margin:0 0 16px;">Danh sach ket qua chi tiet</h2>
       <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;" className="border border-slate-200 border-collapse">
           <thead>
-            <tr style="background:#36E08F;">
+            <tr style="background:#48BFE3;">
               <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;" className="p-2 border border-slate-200">STT</th>
               <th style="padding:12px 10px;text-align:left;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;" className="p-2 border border-slate-200">Ho va Ten</th>
               <th style="padding:12px 10px;text-align:center;font-size:11px;font-weight:800;color:#fff;text-transform:uppercase;" className="p-2 border border-slate-200">Khoi</th>

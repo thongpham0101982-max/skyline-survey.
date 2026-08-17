@@ -1433,10 +1433,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
         {/* Card 2: Taught target */}
         <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col justify-between gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-b from-[#36E08F]/5 to-transparent rounded-full -mr-6 -mt-6" />
+          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-b from-[#48BFE3]/5 to-transparent rounded-full -mr-6 -mt-6" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] flex items-center justify-center text-[#36E08F]">
+              <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] flex items-center justify-center text-[#48BFE3]">
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
@@ -1444,7 +1444,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 <p className="text-xs font-bold text-slate-500 mt-0.5">Đơn vị: tiết / {selfTaughtUnit}</p>
               </div>
             </div>
-            <span className="text-xs font-bold font-extrabold text-[#36E08F] bg-[#E6F7F6] px-2.5 py-0.5 rounded-full border border-[#36E08F]/15">
+            <span className="text-xs font-bold font-extrabold text-[#48BFE3] bg-[#E6F7F6] px-2.5 py-0.5 rounded-full border border-[#48BFE3]/15">
               {taughtProgress}% Hoàn thành
             </span>
           </div>
@@ -1460,7 +1460,7 @@ export function ObservationClient(props: ObservationClientProps) {
           <div className="space-y-1">
             <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-[#36E08F] to-[#007068] rounded-full transition-all duration-500" 
+                className="h-full bg-gradient-to-r from-[#48BFE3] to-[#007068] rounded-full transition-all duration-500" 
                 style={{ width: `${taughtProgress}%` }}
               />
             </div>
@@ -1508,7 +1508,7 @@ export function ObservationClient(props: ObservationClientProps) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Panel 1: Khởi tạo tiết dạy của tôi */}
-        <div className={`lg:col-span-7 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#36E08F]"}`}>
+        <div className={`lg:col-span-7 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#48BFE3]"}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-3">
             <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200 shadow-inner-2xs w-full sm:w-auto">
               <button
@@ -1537,7 +1537,7 @@ export function ObservationClient(props: ObservationClientProps) {
               </button>
             </div>
             {creationMode === "TEACHER_OPEN" && (
-              <span className={`text-xs font-bold font-extrabold px-2.5 py-1 rounded-lg self-start sm:self-auto ${isMamNonTeacher ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-[#E6F7F6] text-[#36E08F]"}`}>
+              <span className={`text-xs font-bold font-extrabold px-2.5 py-1 rounded-lg self-start sm:self-auto ${isMamNonTeacher ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-[#E6F7F6] text-[#48BFE3]"}`}>
                 Tháng {new Date().getMonth() + 1}: {monthlyLimitCount}/2
               </span>
             )}
@@ -1803,7 +1803,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     value={newTopic} 
                     onChange={e => setNewTopic(e.target.value)} 
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
                   />
                 </div>
 
@@ -1815,7 +1815,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       value={newCampusId || currentTeacher?.campusId || ""} 
                       onChange={e => { setNewCampusId(e.target.value); setNewClassId(""); }} 
                       required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850"
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850"
                     >
                       <option value="">Chọn cơ sở</option>
                       {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
@@ -1825,7 +1825,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Môn học *</label>
                     <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850">
                       <option value="">Chọn môn</option>
                       {subjects.map(s => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
                     </select>
@@ -1837,7 +1837,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Cấp học *</label>
                     <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId(""); }} required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
                       <option value="">Chọn cấp</option>
                       <option value="Mầm non">Mầm non</option>
                       <option value="Tiểu học">Tiểu học</option>
@@ -1849,7 +1849,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Khối lớp *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required disabled={!newLevel}
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
+                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
                       <option value="">Chọn khối</option>
                       {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
@@ -1860,7 +1860,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Lớp học *</label>
                   <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
+                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
                     <option value="">Chọn lớp</option>
                     {filteredClassesForCreation.map(c => (
                       <option key={c.id} value={c.id}>{c.className}</option>
@@ -1878,14 +1878,14 @@ export function ObservationClient(props: ObservationClientProps) {
                   value={newDate} 
                   onChange={e => setNewDate(e.target.value)} 
                   required
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Tiết dạy *</label>
                 <select value={newStartTime} onChange={e => { setNewStartTime(e.target.value); setNewEndTime(e.target.value); }} required
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
                   <option value="">Chọn tiết</option>
                   {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
                 </select>
@@ -1902,14 +1902,14 @@ export function ObservationClient(props: ObservationClientProps) {
                   value={newClassNameText} 
                   onChange={e => setNewClassNameText(e.target.value)} 
                   required
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
                 />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Chế độ hiển thị</label>
                 <select value={newVisibility} onChange={e => setNewVisibility(e.target.value)}
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
+                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
                   <option value="ALL">Công khai toàn trường</option>
                   <option value="DEPARTMENT">Nội bộ Tổ chuyên môn</option>
                 </select>
@@ -1920,7 +1920,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 flex flex-col gap-3 transition-all my-2">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white text-[#36E08F] flex items-center justify-center shrink-0 shadow-xs border border-teal-100">
+                  <div className="w-10 h-10 rounded-xl bg-white text-[#48BFE3] flex items-center justify-center shrink-0 shadow-xs border border-teal-100">
                     <Mail className="w-5 h-5" />
                   </div>
                   <div>
@@ -1940,7 +1940,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     onChange={e => setSendEmailNotif(e.target.checked)} 
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#36E08F]"></div>
+                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#48BFE3]"></div>
                 </label>
               </div>
 
@@ -1994,7 +1994,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             }}
                             className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 cursor-pointer ${
                               isSelected
-                                ? "bg-[#36E08F] text-white border-[#36E08F] shadow-xs"
+                                ? "bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs"
                                 : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
                             }`}
                           >
@@ -2017,7 +2017,7 @@ export function ObservationClient(props: ObservationClientProps) {
             <button 
               type="submit" 
               disabled={submitting}
-              className={`w-full mt-3 text-white font-black py-3.5 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] text-xs uppercase tracking-wider shrink-0 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 cursor-pointer ${isMamNonTeacher ? "bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-800 hover:to-amber-600 shadow-amber-100/50" : "bg-gradient-to-r from-[#003B3A] to-[#36E08F] hover:from-[#002b2a] hover:to-[#008b82] shadow-[#003B3A]/10"}`}
+              className={`w-full mt-3 text-white font-black py-3.5 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] text-xs uppercase tracking-wider shrink-0 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 cursor-pointer ${isMamNonTeacher ? "bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-800 hover:to-amber-600 shadow-amber-100/50" : "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] hover:from-[#002b2a] hover:to-[#008b82] shadow-[#003B3A]/10"}`}
             >
               <Plus className="w-4 h-4" />
               {submitting ? "Đang xử lý..." : "Khởi tạo lịch dạy"}
@@ -2033,7 +2033,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <Award className="w-5 h-5 text-[#003B3A]" />
               <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">2. Đăng ký nhanh</span>
             </div>
-            <span className="text-xs font-bold font-bold bg-[#E6F7F6] text-[#36E08F] px-2.5 py-0.5 rounded-full border border-teal-100 animate-pulse">⚡ Gợi ý</span>
+            <span className="text-xs font-bold font-bold bg-[#E6F7F6] text-[#48BFE3] px-2.5 py-0.5 rounded-full border border-teal-100 animate-pulse">⚡ Gợi ý</span>
           </div>
 
           {/* Quick Register Slots */}
@@ -2128,7 +2128,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           })() : (
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-1.5 py-0.2 text-xs font-extrabold uppercase rounded bg-teal-50 text-[#36E08F] border border-teal-100">K-12</span>
+                                <span className="px-1.5 py-0.2 text-xs font-extrabold uppercase rounded bg-teal-50 text-[#48BFE3] border border-teal-100">K-12</span>
                                 <span className="text-xs font-bold text-slate-500 font-bold truncate">{slot.subjectName}</span>
                               </div>
                               <p className="text-xs font-black text-slate-800 truncate leading-snug">{slot.topic}</p>
@@ -2147,7 +2147,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           className={`px-3 py-2 text-xs font-extrabold uppercase rounded-xl transition-all shadow-sm flex-shrink-0 cursor-pointer hover:-translate-y-0.2 active:scale-98 ${
                             isPastSlot
                               ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
-                              : "bg-[#36E08F] hover:bg-[#008b82] text-white"
+                              : "bg-[#48BFE3] hover:bg-[#008b82] text-white"
                           }`}
                         >
                           {isPastSlot ? "Hết hạn" : "Đăng ký"}
@@ -2174,7 +2174,7 @@ export function ObservationClient(props: ObservationClientProps) {
         <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
             <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-5 h-5 text-[#36E08F]" />
+              <SlidersHorizontal className="w-5 h-5 text-[#48BFE3]" />
               <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">3. Danh sách tiết dạy đăng ký dự giờ</span>
               {isSearching && (
                 <div className="flex items-center gap-1.5 ml-2 animate-pulse text-xs font-semibold">
@@ -2195,21 +2195,21 @@ export function ObservationClient(props: ObservationClientProps) {
                 return (
                   <>
                     <button onClick={() => setActiveDeptTab("my-dept")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                       <span>🏫 Tiết dạy thuộc TCM</span>
                       <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
                         {myDeptCount}
                       </span>
                     </button>
                     <button onClick={() => setActiveDeptTab("other-dept")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                       <span>🌐 Tiết dạy TCM khác</span>
                       <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
                         {otherDeptCount}
                       </span>
                     </button>
                     <button onClick={() => setActiveDeptTab("all")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" ? "bg-gradient-to-r from-[#003B3A] to-[#36E08F] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
                       <span>⭐ Tất cả tiết dạy</span>
                       <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
                         {allCount}
@@ -2276,9 +2276,9 @@ export function ObservationClient(props: ObservationClientProps) {
           {activeFilterCount > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {activeFilterTags.map(tag => (
-                <span key={tag.key} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-extrabold rounded-lg bg-[#E6F7F6] text-[#36E08F] border border-[#36E08F]/10">
+                <span key={tag.key} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-extrabold rounded-lg bg-[#E6F7F6] text-[#48BFE3] border border-[#48BFE3]/10">
                   <span>{tag.label}:</span> {tag.value}
-                  <button onClick={tag.onRemove} className="ml-1 p-0.5 rounded-full hover:bg-[#36E08F]/20 transition-colors">
+                  <button onClick={tag.onRemove} className="ml-1 p-0.5 rounded-full hover:bg-[#48BFE3]/20 transition-colors">
                     <X className="w-3 h-3" />
                   </button>
                 </span>
@@ -2302,7 +2302,7 @@ export function ObservationClient(props: ObservationClientProps) {
                       <button
                         type="button"
                         onClick={() => setActiveDeptTab("other-dept")}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-[#36E08F] bg-teal-50 hover:bg-[#36E08F] hover:text-white rounded-xl border border-teal-200 transition-all cursor-pointer shadow-xs"
+                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-[#48BFE3] bg-teal-50 hover:bg-[#48BFE3] hover:text-white rounded-xl border border-teal-200 transition-all cursor-pointer shadow-xs"
                       >
                         ⚡ Xem ngay {otherCount} tiết dạy mở tại các Tổ Chuyên Môn khác
                       </button>
@@ -2372,7 +2372,7 @@ export function ObservationClient(props: ObservationClientProps) {
                         </td>
                         <td className="p-4">
                           <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                          <p className="text-xs font-bold text-[#36E08F] font-bold mt-0.5">
+                          <p className="text-xs font-bold text-[#48BFE3] font-bold mt-0.5">
                             {slot.startTime} • Phòng: {slot.room || "X"}
                           </p>
                         </td>
@@ -2408,7 +2408,7 @@ export function ObservationClient(props: ObservationClientProps) {
                            ) : (
                              <button 
                                onClick={() => setRegisterDetailSlot(slot)}
-                               className="px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all shadow-sm bg-[#36E08F] hover:bg-[#008b82] text-white"
+                               className="px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all shadow-sm bg-[#48BFE3] hover:bg-[#008b82] text-white"
                              >
                                Đăng ký
                              </button>
@@ -2426,9 +2426,9 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
             {/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-6 border-t-4 border-t-[#36E08F] mt-6">
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-6 border-t-4 border-t-[#48BFE3] mt-6">
         <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
-          <Calendar className="w-5 h-5 text-[#36E08F]" />
+          <Calendar className="w-5 h-5 text-[#48BFE3]" />
           <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">4. Lịch dạy & dự giờ của tôi</span>
         </div>
 
@@ -2535,7 +2535,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                         <button 
                                           type="button"
                                           onClick={() => handleApprove(reg.id)}
-                                          className="px-2 py-0.5 bg-[#36E08F] hover:bg-[#008b82] text-white rounded font-black text-xs font-bold uppercase shadow-sm transition-all"
+                                          className="px-2 py-0.5 bg-[#48BFE3] hover:bg-[#008b82] text-white rounded font-black text-xs font-bold uppercase shadow-sm transition-all"
                                         >
                                           Xác nhận
                                         </button>
@@ -2575,9 +2575,9 @@ export function ObservationClient(props: ObservationClientProps) {
 
         {/* 4.2 TIẾT ĐÃ ĐĂNG KÝ DỰ GIỜ */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 border-l-4 border-l-[#36E08F] pl-3">
+          <div className="flex items-center gap-2 border-l-4 border-l-[#48BFE3] pl-3">
             <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết đã đăng ký dự giờ</span>
-            <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-[#E6F7F6] text-[#36E08F] rounded-md border border-teal-100">
+            <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-[#E6F7F6] text-[#48BFE3] rounded-md border border-teal-100">
               {slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)).length} tiết
             </span>
           </div>
@@ -2604,9 +2604,9 @@ export function ObservationClient(props: ObservationClientProps) {
                     const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                     
                     return (
-                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#36E08F]">
+                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#48BFE3]">
                         <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 text-xs font-extrabold uppercase rounded-md bg-[#E6F7F6] text-[#36E08F]">
+                          <span className="px-2 py-0.5 text-xs font-extrabold uppercase rounded-md bg-[#E6F7F6] text-[#48BFE3]">
                             Tôi dự
                           </span>
                           <span className="text-xs font-bold font-extrabold text-slate-400">
@@ -2669,7 +2669,7 @@ export function ObservationClient(props: ObservationClientProps) {
                                 Đã xác nhận dự giờ
                               </span>
                               <button type="button" onClick={() => openEvalModal(myReg, slot)}
-                                className="px-2.5 py-1 bg-[#36E08F] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
+                                className="px-2.5 py-1 bg-[#48BFE3] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
                                 {myReg?.evaluation ? "Xem đánh giá" : "Nhập đánh giá"}
                               </button>
                             </div>
@@ -2689,9 +2689,9 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* ROW 4: Full Width Layout for Panel 6 */}
       <div className="w-full mt-6">
         {/* Panel 6: Kết quả đánh giá gần đây */}
-        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#36E08F]">
+        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#48BFE3]">
           <div className="flex items-center gap-2 border-b border-slate-150 pb-4">
-            <ClipboardList className="w-5 h-5 text-[#36E08F]" />
+            <ClipboardList className="w-5 h-5 text-[#48BFE3]" />
             <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">6. Kết quả đánh giá gần đây</span>
           </div>
 
@@ -2756,7 +2756,7 @@ export function ObservationClient(props: ObservationClientProps) {
                         </td>
                         <td className="p-4">
                           <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                          <p className="text-xs font-bold text-[#36E08F] font-bold mt-0.5">
+                          <p className="text-xs font-bold text-[#48BFE3] font-bold mt-0.5">
                             {evalItem.slot.startTime} • Phòng: {evalItem.slot.room || "X"}
                           </p>
                         </td>
@@ -2768,7 +2768,7 @@ export function ObservationClient(props: ObservationClientProps) {
                         <td className="p-4 text-right">
                           <button 
                             onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
-                            className="px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all shadow-sm bg-[#36E08F] hover:bg-[#008b82] text-white"
+                            className="px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all shadow-sm bg-[#48BFE3] hover:bg-[#008b82] text-white"
                           >
                             Xem chi tiết
                           </button>
@@ -2898,7 +2898,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Cấp học *</label>
                     <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId("") }} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
                       <option value="">Chọn cấp học</option>
                       <option value="Mầm non">Mầm non</option>
                       <option value="Tiểu học">Tiểu học</option>
@@ -2910,7 +2910,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Khối lớp *</label>
                     <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required disabled={!newLevel}
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all disabled:opacity-50">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all disabled:opacity-50">
                       <option value="">Chọn khối lớp</option>
                       {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
@@ -2919,7 +2919,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Môn học *</label>
                     <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
+                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
                       <option value="">Chọn môn học</option>
                       {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
                       <option value="other">Môn học khác / Tổ nhóm chuyên đề</option>
@@ -2929,14 +2929,14 @@ export function ObservationClient(props: ObservationClientProps) {
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tên môn học khác *</label>
                       <input type="text" placeholder="Nhập tên môn học..." value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} required
-                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none text-xs font-semibold" />
+                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
                     </div>
                   )}
                   {/* Campus */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs sm:text-sm font-extrabold text-slate-800">Cơ sở *</label>
                     <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none text-xs font-semibold">
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold">
                       <option value="">Chọn cơ sở</option>
                       {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
                     </select>
@@ -2945,7 +2945,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs sm:text-sm font-extrabold text-slate-800">Lớp học *</label>
                     <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newLevel || !newGrade}
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none disabled:opacity-50 text-xs font-semibold">
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none disabled:opacity-50 text-xs font-semibold">
                       <option value="">Chọn lớp học</option>
                       {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
                       <option value="other">Lớp học khác (Nhập tay...)</option>
@@ -2955,20 +2955,20 @@ export function ObservationClient(props: ObservationClientProps) {
                     <div className="flex flex-col gap-1.5 md:col-span-2">
                       <label className="text-xs sm:text-sm font-extrabold text-slate-800">Nhập tên lớp học khác *</label>
                       <input type="text" placeholder="Nhập tên lớp học (ví dụ: Lớp 2.1, Nhà trẻ A...)" value={newClassNameText} onChange={e => setNewClassNameText(e.target.value)} required
-                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none text-xs font-semibold" />
+                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
                     </div>
                   )}
                   {/* Topic */}
                   <div className="md:col-span-2 flex flex-col gap-1.5">
                     <label className="text-xs sm:text-sm font-extrabold text-slate-800">Bài dạy / Chủ đề *</label>
                     <input type="text" placeholder="Nhập tên bài dạy hoặc chủ đề sinh hoạt..." value={newTopic} onChange={e => setNewTopic(e.target.value)} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none text-xs font-semibold" />
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
                   </div>
                   {/* Date */}
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs sm:text-sm font-extrabold text-slate-800">Ngày dạy *</label>
                     <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none text-xs font-semibold" />
+                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
                   </div>
                   {/* PDF Upload */}
                   <div className="flex flex-col gap-1.5">
@@ -2983,27 +2983,27 @@ export function ObservationClient(props: ObservationClientProps) {
                           className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
                       )}
                     </div>
-                    {newLessonPlanName && <span className="text-xs font-bold font-bold text-[#36E08F] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
+                    {newLessonPlanName && <span className="text-xs font-bold font-bold text-[#48BFE3] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
                   </div>
                   {/* Period */}
                   <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold">
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tiết dạy: Từ *</label>
                       <select value={newStartTime} onChange={e => handleStartTimeChange(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none">
+                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none">
                         {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
                     <div className="flex flex-col gap-1.5">
                       <label className="text-xs sm:text-sm font-extrabold text-slate-800">Đến *</label>
                       <select value={newEndTime} disabled={newIsDoublePeriod} onChange={e => setNewEndTime(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none disabled:opacity-50">
+                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none disabled:opacity-50">
                         {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </div>
                     <div className="flex items-center gap-2 pb-2 h-[42px] pl-2">
                       <input type="checkbox" id="isDoublePeriod" checked={newIsDoublePeriod} disabled={newStartTime === "Tiết 8"} onChange={e => handleDoublePeriodChange(e.target.checked)}
-                        className="w-4 h-4 rounded text-[#36E08F] focus:ring-[#36E08F]" />
+                        className="w-4 h-4 rounded text-[#48BFE3] focus:ring-[#48BFE3]" />
                       <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-600 select-none cursor-pointer">Dạy 2 tiết liên tiếp</label>
                     </div>
                   </div>
@@ -3016,18 +3016,18 @@ export function ObservationClient(props: ObservationClientProps) {
                   <span className="text-xs font-bold font-bold text-slate-400">{newDescription.length}/500</span>
                 </div>
                 <textarea placeholder="Nhập mô tả ngắn về nội dung, mục tiêu, phương pháp dạy học..." maxLength={500} rows={3} value={newDescription} onChange={e => setNewDescription(e.target.value)}
-                  className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none resize-none text-xs font-semibold" />
+                  className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none resize-none text-xs font-semibold" />
               </div>
               {/* Visibility */}
               <div className="flex flex-col gap-2.5 p-4 text-xs font-semibold">
                 <label className="text-xs sm:text-sm font-extrabold text-slate-800">Hiển thị cho giáo viên</label>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="visibility" checked={newVisibility === "ALL"} onChange={() => setNewVisibility("ALL")} className="w-4 h-4 text-[#36E08F] focus:ring-[#36E08F]" />
+                    <input type="radio" name="visibility" checked={newVisibility === "ALL"} onChange={() => setNewVisibility("ALL")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
                     Tất cả giáo viên trong trường
                   </label>
                   <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="visibility" checked={newVisibility === "DEPARTMENT"} onChange={() => setNewVisibility("DEPARTMENT")} className="w-4 h-4 text-[#36E08F] focus:ring-[#36E08F]" />
+                    <input type="radio" name="visibility" checked={newVisibility === "DEPARTMENT"} onChange={() => setNewVisibility("DEPARTMENT")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
                     Chỉ các tổ nhóm chuyên môn
                   </label>
                 </div>
@@ -3035,7 +3035,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <div className="flex flex-col gap-1.5 mt-2 animate-in fade-in duration-200">
                     <label className="text-xs font-bold font-bold uppercase tracking-wider text-slate-400">Chọn tổ nhóm *</label>
                     <select value={newTargetDeptId} onChange={e => setNewTargetDeptId(e.target.value)} required
-                      className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-[#36E08F] outline-none">
+                      className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none">
                       <option value="">Chọn tổ nhóm chuyên môn</option>
                       {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>)}
                     </select>
@@ -3050,11 +3050,11 @@ export function ObservationClient(props: ObservationClientProps) {
                 </label>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="notifMode" checked={newNotifMode === "ALL"} onChange={() => setNewNotifMode("ALL")} className="w-4 h-4 text-[#36E08F] focus:ring-[#36E08F]" />
+                    <input type="radio" name="notifMode" checked={newNotifMode === "ALL"} onChange={() => setNewNotifMode("ALL")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
                     Gửi tự động cho tất cả thành viên trong Tổ CM
                   </label>
                   <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="notifMode" checked={newNotifMode === "SELECTED"} onChange={() => setNewNotifMode("SELECTED")} className="w-4 h-4 text-[#36E08F] focus:ring-[#36E08F]" />
+                    <input type="radio" name="notifMode" checked={newNotifMode === "SELECTED"} onChange={() => setNewNotifMode("SELECTED")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
                     Chỉ gửi cho các thành viên được chọn
                   </label>
                 </div>
@@ -3069,7 +3069,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           <input type="checkbox" checked={selectedMemberIds.includes(t.id)} onChange={e => {
                             if (e.target.checked) setSelectedMemberIds([...selectedMemberIds, t.id]);
                             else setSelectedMemberIds(selectedMemberIds.filter(id => id !== t.id));
-                          }} className="w-4 h-4 text-[#36E08F] rounded border-slate-300" />
+                          }} className="w-4 h-4 text-[#48BFE3] rounded border-slate-300" />
                           <span>{t.teacherName} ({t.teacherCode}) {t.email ? `- ${t.email}` : ""}</span>
                         </label>
                       ))
@@ -3082,7 +3082,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button type="button" onClick={() => { setShowCreateModal(false); resetCreateForm(); }} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Hủy</button>
                 <button type="submit" disabled={submitting || monthlyLimitCount >= 2}
-                  className={`px-6 py-2.5 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0 ${isMamNonTeacher ? "bg-amber-600 hover:bg-amber-700" : "bg-[#36E08F] hover:bg-[#008B85]"}`}>
+                  className={`px-6 py-2.5 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0 ${isMamNonTeacher ? "bg-amber-600 hover:bg-amber-700" : "bg-[#48BFE3] hover:bg-[#008B85]"}`}>
                   {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật" : "Lưu tiết dạy")}
                 </button>
               </div>
@@ -3156,7 +3156,7 @@ export function ObservationClient(props: ObservationClientProps) {
               })() : (
                 <>
                   <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
-                    <span className="text-xs font-extrabold text-[#36E08F] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
+                    <span className="text-xs font-extrabold text-[#48BFE3] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
                     <h4 className="text-sm font-black text-[#003B3A] mt-1 leading-snug">{registerDetailSlot.topic}</h4>
                   </div>
                   
@@ -3170,7 +3170,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
                       <span className="text-xs font-extrabold text-slate-400 uppercase">Lớp học / Môn học</span>
                       <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
-                      <span className="text-xs font-bold text-[#36E08F] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
+                      <span className="text-xs font-bold text-[#48BFE3] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
                     </div>
                     
                     <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
@@ -3222,7 +3222,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     type="button" 
                     disabled={isExpired}
                     onClick={() => handleRegister(registerDetailSlot.id)} 
-                    className="px-5 py-2 bg-[#36E08F] hover:bg-[#008b82] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-xs shadow-md"
+                    className="px-5 py-2 bg-[#48BFE3] hover:bg-[#008b82] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-xs shadow-md"
                   >
                     {isExpired ? "Đã hết hạn" : "Xác nhận Đăng ký"}
                   </button>

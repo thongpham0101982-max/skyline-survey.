@@ -138,7 +138,7 @@ export function UserMenu({ session }: UserMenuProps) {
                       setIsOpen(false);
                       setIsModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:text-[#36E08F] hover:bg-[#36E08F]/5 transition-all text-left"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-slate-600 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 transition-all text-left"
                   >
                     <KeyRound className="w-4 h-4 text-slate-400 shrink-0" />
                     <span>Đổi mật khẩu</span>

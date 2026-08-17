@@ -225,11 +225,11 @@ export function RolesClient({ initialRoles }: any) {
       <div className="lg:col-span-1 bg-white rounded-3xl shadow-lg border border-slate-100/90 overflow-hidden flex flex-col h-fit backdrop-blur-md">
         <div className="p-5 flex justify-between items-center border-b border-slate-50">
           <h3 className="font-extrabold text-slate-800 text-sm tracking-wider flex items-center gap-2">
-            <Shield className="w-5 h-5 text-[#36E08F]"/> NHÓM QUYỀN
+            <Shield className="w-5 h-5 text-[#48BFE3]"/> NHÓM QUYỀN
           </h3>
           <button 
              onClick={() => { setModalMode('ADD'); setFormData({ code: '', name: '', description: '' }); setModalOpen(true); }}
-             className="text-white bg-[#36E08F] hover:bg-[#009085] p-2 rounded-xl transition-all shadow-md shadow-teal-100 active:scale-95">
+             className="text-white bg-[#48BFE3] hover:bg-[#009085] p-2 rounded-xl transition-all shadow-md shadow-teal-100 active:scale-95">
             <Plus className="w-4 h-4"/>
           </button>
         </div>
@@ -250,14 +250,14 @@ export function RolesClient({ initialRoles }: any) {
                 <div className="flex items-center justify-between mt-1 gap-2">
                   <div className="text-[11px] text-slate-400 font-medium line-clamp-1 leading-snug">{r.description || r.code}</div>
                   {r.isSystem && (
-                    <span className="text-[8px] font-black tracking-widest text-[#36E08F] uppercase shrink-0">Hệ thống</span>
+                    <span className="text-[8px] font-black tracking-widest text-[#48BFE3] uppercase shrink-0">Hệ thống</span>
                   )}
                 </div>
               </button>
               
               {!r.isSystem && (
                 <div className="opacity-0 group-hover:opacity-100 flex flex-col justify-center gap-1 px-2.5 border-l border-slate-100 transition-all duration-200">
-                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#36E08F] hover:bg-slate-100 rounded-lg transition-all"><Edit className="w-3.5 h-3.5" /></button>
+                  <button onClick={() => { setModalMode('EDIT'); setFormData({ code: r.code, name: r.name, description: r.description || '' }); setModalOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#48BFE3] hover:bg-slate-100 rounded-lg transition-all"><Edit className="w-3.5 h-3.5" /></button>
                   <button onClick={async () => { 
                       if(confirm('Bạn có chắc muốn xóa nhóm quyền này?')) {
                          const res = await deleteRole(r.code);
@@ -280,11 +280,11 @@ export function RolesClient({ initialRoles }: any) {
             <div>
               <h3 className="font-extrabold text-slate-800 text-lg tracking-tight">Ma Trận Phân Quyền</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Phân quyền chi tiết cho nhóm: <span className="font-bold text-[#36E08F]">{roles.find((r: any) => r.code === activeRole)?.name}</span>
+                Phân quyền chi tiết cho nhóm: <span className="font-bold text-[#48BFE3]">{roles.find((r: any) => r.code === activeRole)?.name}</span>
               </p>
             </div>
             <button onClick={handleSavePerms} disabled={savingMatrix}
-              className="px-5 py-2.5 bg-[#36E08F] text-white rounded-xl text-xs font-bold flex items-center hover:bg-[#009085] active:scale-95 shadow-md shadow-teal-50 transition-all disabled:opacity-60 self-start sm:self-auto">
+              className="px-5 py-2.5 bg-[#48BFE3] text-white rounded-xl text-xs font-bold flex items-center hover:bg-[#009085] active:scale-95 shadow-md shadow-teal-50 transition-all disabled:opacity-60 self-start sm:self-auto">
               <Save className="w-4 h-4 mr-2"/> Lưu Cấu Hình
             </button>
           </div>
@@ -292,14 +292,14 @@ export function RolesClient({ initialRoles }: any) {
           {/* Preset Buttons Panel */}
           <div className="bg-white p-3 rounded-2xl border border-slate-100 space-y-2">
             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#36E08F]" /> MẪU PHÂN QUYỀN NHANH (PRESETS)
+              <Sparkles className="w-3.5 h-3.5 text-[#48BFE3]" /> MẪU PHÂN QUYỀN NHANH (PRESETS)
             </div>
             <div className="flex flex-wrap gap-1.5">
-              <button onClick={() => applyPreset('ALL_FULL')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-[#36E08F] hover:text-white rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors">Toàn quyền</button>
+              <button onClick={() => applyPreset('ALL_FULL')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-[#48BFE3] hover:text-white rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors">Toàn quyền</button>
               <button onClick={() => applyPreset('ALL_READ')} className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-[10.5px] font-bold text-slate-700 transition-colors">Chỉ Xem</button>
               <button onClick={() => applyPreset('ALL_CLEAR')} className="px-2.5 py-1.5 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-lg text-[10.5px] font-bold transition-colors">Dọn dẹp</button>
               <span className="w-px bg-slate-200 my-1 mx-1"></span>
-              <button onClick={() => applyPreset('GDCS')} className="px-2.5 py-1.5 border border-teal-100 text-[#36E08F] hover:bg-teal-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GĐCS</button>
+              <button onClick={() => applyPreset('GDCS')} className="px-2.5 py-1.5 border border-teal-100 text-[#48BFE3] hover:bg-teal-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset GĐCS</button>
               <button onClick={() => applyPreset('GIAO_VU')} className="px-2.5 py-1.5 border border-blue-100 text-blue-600 hover:bg-blue-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Giáo vụ</button>
               <button onClick={() => applyPreset('TVAN')} className="px-2.5 py-1.5 border border-amber-100 text-amber-600 hover:bg-amber-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset Tư vấn</button>
               <button onClick={() => applyPreset('BGH_MN')} className="px-2.5 py-1.5 border border-purple-100 text-purple-600 hover:bg-purple-50 rounded-lg text-[10.5px] font-bold transition-colors">Preset BGH Mầm non</button>
@@ -348,16 +348,16 @@ export function RolesClient({ initialRoles }: any) {
                               <div className="flex items-center gap-2">
                                  {hasSub ? (
                                    <button onClick={() => toggleExpand(m.code)} className="p-1 hover:bg-slate-100 rounded-md transition-all text-slate-400 hover:text-slate-800">
-                                     {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[#36E08F]" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                                     {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-[#48BFE3]" /> : <ChevronRight className="w-3.5 h-3.5" />}
                                    </button>
                                  ) : (
                                    <div className="w-5 h-5" />
                                  )}
                                  <div className="p-1.5 rounded-lg bg-slate-50 group-hover:bg-white transition-all border border-slate-100 group-hover:border-slate-200">
-                                   <m.icon className="w-4 h-4 text-slate-400 group-hover:text-[#36E08F] transition-colors" />
+                                   <m.icon className="w-4 h-4 text-slate-400 group-hover:text-[#48BFE3] transition-colors" />
                                   </div>
                                   <div>
-                                    <div className={`font-semibold text-slate-700 text-sm ${hasSub ? "cursor-pointer select-none hover:text-[#36E08F]" : ""}`} onClick={hasSub ? () => toggleExpand(m.code) : undefined}>
+                                    <div className={`font-semibold text-slate-700 text-sm ${hasSub ? "cursor-pointer select-none hover:text-[#48BFE3]" : ""}`} onClick={hasSub ? () => toggleExpand(m.code) : undefined}>
                                       {m.name}
                                     </div>
                                     <div className="text-[9px] text-slate-400 font-mono mt-0.5 opacity-60">{m.code}</div>
@@ -375,7 +375,7 @@ export function RolesClient({ initialRoles }: any) {
                                     p[field] 
                                       ? field === "canDelete" 
                                         ? "bg-rose-500 border-rose-500 text-white"
-                                        : "bg-[#36E08F] border-[#36E08F] text-white" 
+                                        : "bg-[#48BFE3] border-[#48BFE3] text-white" 
                                       : "bg-white border-slate-200 hover:border-slate-300"
                                   }`}>
                                     {p[field] && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -416,7 +416,7 @@ export function RolesClient({ initialRoles }: any) {
                                         subP[field] 
                                           ? field === "canDelete" 
                                             ? "bg-rose-500 border-rose-500 text-white"
-                                            : "bg-[#36E08F] border-[#36E08F] text-white" 
+                                            : "bg-[#48BFE3] border-[#48BFE3] text-white" 
                                           : "bg-white border-slate-200 hover:border-slate-350"
                                       }`}>
                                         {subP[field] && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -456,15 +456,15 @@ export function RolesClient({ initialRoles }: any) {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mã nhóm (Code) *</label>
-                <input type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})} disabled={modalMode === 'EDIT'} placeholder="VD: NHAN_SU" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none disabled:bg-slate-50 disabled:text-slate-500" />
+                <input type="text" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value.toUpperCase()})} disabled={modalMode === 'EDIT'} placeholder="VD: NHAN_SU" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none disabled:bg-slate-50 disabled:text-slate-500" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Tên hiển thị *</label>
-                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="VD: Quản lý Nhân sự" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none" />
+                <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="VD: Quản lý Nhân sự" className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Mô tả</label>
-                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} placeholder="Mô tả chức năng của nhóm quyền này..." className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none resize-none" />
+                <textarea value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} rows={3} placeholder="Mô tả chức năng của nhóm quyền này..." className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none resize-none" />
               </div>
             </div>
             <div className="p-5 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
@@ -475,7 +475,7 @@ export function RolesClient({ initialRoles }: any) {
                  if (res.success) { setModalOpen(false); window.location.reload(); }
                  else { alert("Lỗi: " + res.error); }
                  setLoading(false);
-              }} className="px-4 py-2 text-xs font-bold text-white bg-[#36E08F] hover:bg-[#009085] disabled:opacity-50 rounded-xl transition-colors flex items-center shadow-md shadow-teal-100">
+              }} className="px-4 py-2 text-xs font-bold text-white bg-[#48BFE3] hover:bg-[#009085] disabled:opacity-50 rounded-xl transition-colors flex items-center shadow-md shadow-teal-100">
                 {loading ? 'Đang xử lý...' : 'Xác nhận'}
               </button>
             </div>

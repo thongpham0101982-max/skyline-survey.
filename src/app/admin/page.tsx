@@ -43,13 +43,13 @@ import {
 } from "recharts"
 
 // CHUẨN MÀU CƠ SỞ THEO YÊU CẦU:
-// CS1: Xanh Sky-Line (#36E08F)
+// CS1: Xanh Sky-Line (#48BFE3)
 // CS2: Xanh Sky-Line pha màu tím (#6C5CE7)
 // CS3: Màu tím than đậm (#2E1065)
 // CS4: Màu vàng đất (#D97706)
 // CS5: Màu xám xanh (#475569)
 const CAMPUS_COLOR_MAP: Record<string, { name: string; color: string; bg: string; border: string; text: string }> = {
-  "CS1": { name: "Cơ sở 1 (Sky-Line Central)", color: "#36E08F", bg: "bg-teal-50", border: "border-teal-200", text: "text-[#36E08F]" },
+  "CS1": { name: "Cơ sở 1 (Sky-Line Central)", color: "#48BFE3", bg: "bg-teal-50", border: "border-teal-200", text: "text-[#48BFE3]" },
   "CS2": { name: "Cơ sở 2 (Sky-Line Riverside)", color: "#6C5CE7", bg: "bg-indigo-50", border: "border-indigo-200", text: "text-[#6C5CE7]" },
   "CS3": { name: "Cơ sở 3 (Sky-Line Hill)", color: "#2E1065", bg: "bg-purple-950/10", border: "border-purple-900/30", text: "text-[#2E1065]" },
   "CS4": { name: "Cơ sở 4 (Sky-Line International)", color: "#D97706", bg: "bg-amber-50", border: "border-amber-200", text: "text-[#D97706]" },
@@ -63,7 +63,7 @@ const getCampusInfo = (nameOrCode: string) => {
   if (str.includes("CS3") || str.includes("CƠ SỞ 3") || str.includes("HILL") || str === "3") return CAMPUS_COLOR_MAP["CS3"]
   if (str.includes("CS4") || str.includes("CƠ SỞ 4") || str.includes("BEACH") || str.includes("INTERNATIONAL") || str === "4") return CAMPUS_COLOR_MAP["CS4"]
   if (str.includes("CS5") || str.includes("CƠ SỞ 5") || str.includes("GLOBAL") || str === "5") return CAMPUS_COLOR_MAP["CS5"]
-  return { name: nameOrCode || "Khác", color: "#36E08F", bg: "bg-teal-50", border: "border-teal-200", text: "text-[#36E08F]" }
+  return { name: nameOrCode || "Khác", color: "#48BFE3", bg: "bg-teal-50", border: "border-teal-200", text: "text-[#48BFE3]" }
 }
 
 export default function AdminDashboard() {
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
   if (status === "loading" || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-12 h-12 text-[#36E08F] animate-spin opacity-80" />
+        <Loader2 className="w-12 h-12 text-[#48BFE3] animate-spin opacity-80" />
         <p className="text-slate-500 font-bold tracking-wider uppercase text-xs">Đang tải dữ liệu Realtime...</p>
       </div>
     )
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
   // Level Colors
   const LEVEL_COLORS: Record<string, string> = {
     "Mầm non": "#f43f5e",
-    "Tiểu học": "#36E08F",
+    "Tiểu học": "#48BFE3",
     "THCS": "#6C5CE7",
     "THPT": "#2E1065",
     "Khác": "#94a3b8"
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
             </span>
           </div>
           <p className="text-slate-500 text-sm font-medium mt-0.5">
-            Năm học: <span className="font-bold text-[#36E08F]">{finalMetrics.academicYearName || "---"}</span> | Cập nhật gần nhất: <span className="font-bold text-slate-700">{lastUpdated || "Ngay bây giờ"}</span>
+            Năm học: <span className="font-bold text-[#48BFE3]">{finalMetrics.academicYearName || "---"}</span> | Cập nhật gần nhất: <span className="font-bold text-slate-700">{lastUpdated || "Ngay bây giờ"}</span>
           </p>
         </div>
 
@@ -202,11 +202,11 @@ export default function AdminDashboard() {
             onClick={() => setIsAutoRefresh(!isAutoRefresh)}
             className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all flex items-center gap-2 ${
               isAutoRefresh 
-                ? "bg-teal-50 text-[#36E08F] border-teal-200 shadow-2xs" 
+                ? "bg-teal-50 text-[#48BFE3] border-teal-200 shadow-2xs" 
                 : "bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100"
             }`}
           >
-            <Radio className={`w-3.5 h-3.5 ${isAutoRefresh ? 'animate-pulse text-[#36E08F]' : ''}`} />
+            <Radio className={`w-3.5 h-3.5 ${isAutoRefresh ? 'animate-pulse text-[#48BFE3]' : ''}`} />
             Auto-refresh (30s): <strong>{isAutoRefresh ? "BẬT" : "TẮT"}</strong>
           </button>
 
@@ -234,7 +234,7 @@ export default function AdminDashboard() {
         {/* CARD 1: TỔNG HỌC SINH */}
         <div className="relative bg-white rounded-2xl border-2 border-teal-100 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center text-[#36E08F] bg-teal-50 rounded-xl shadow-2xs">
+            <div className="w-12 h-12 flex items-center justify-center text-[#48BFE3] bg-teal-50 rounded-xl shadow-2xs">
               <Users className="w-6 h-6" />
             </div>
             <div>
@@ -278,7 +278,7 @@ export default function AdminDashboard() {
                 <span>•</span>
                 <span>Đi: <strong className="text-rose-500">{finalMetrics.transferCount || 0}</strong></span>
                 <span>•</span>
-                <span>Lớp: <strong className="text-[#36E08F]">{finalMetrics.changeClassCount || 0}</strong></span>
+                <span>Lớp: <strong className="text-[#48BFE3]">{finalMetrics.changeClassCount || 0}</strong></span>
               </div>
             </div>
           </div>
@@ -304,7 +304,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl border-2 border-slate-100 p-6 shadow-xs space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 text-[#36E08F] flex items-center justify-center bg-teal-50 rounded-xl font-bold">
+              <div className="w-10 h-10 text-[#48BFE3] flex items-center justify-center bg-teal-50 rounded-xl font-bold">
                 <TrendingUp className="w-5 h-5" />
               </div>
               <div>
@@ -326,7 +326,7 @@ export default function AdminDashboard() {
                   labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
                 />
                 <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
-                <Line type="monotone" dataKey="generalCount" stroke="#36E08F" strokeWidth={3} activeDot={{ r: 6 }} name="Sỹ số Phổ thông" />
+                <Line type="monotone" dataKey="generalCount" stroke="#48BFE3" strokeWidth={3} activeDot={{ r: 6 }} name="Sỹ số Phổ thông" />
                 <Line type="monotone" dataKey="preschoolCount" stroke="#f43f5e" strokeWidth={3} activeDot={{ r: 6 }} name="Sỹ số Mầm non" />
                 <Line type="monotone" dataKey="count" stroke="#6C5CE7" strokeWidth={2} strokeDasharray="5 5" activeDot={{ r: 4 }} name="Tổng sỹ số" />
               </LineChart>
@@ -343,7 +343,7 @@ export default function AdminDashboard() {
       <div className="bg-white rounded-2xl border-2 border-teal-100 p-6 shadow-xs space-y-6">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 text-[#36E08F] bg-teal-50 rounded-xl flex items-center justify-center font-bold">
+            <div className="w-10 h-10 text-[#48BFE3] bg-teal-50 rounded-xl flex items-center justify-center font-bold">
               <GraduationCap className="w-5 h-5" />
             </div>
             <div>
@@ -378,7 +378,7 @@ export default function AdminDashboard() {
               />
               <Bar dataKey="count" name="Sỹ số" radius={[8, 8, 0, 0]}>
                 {finalMetrics.gradeDistribution?.map((entry: any, index: number) => {
-                  const color = entry.level === "Mầm non" ? "#f43f5e" : entry.level === "Tiểu học" ? "#36E08F" : entry.level === "THCS" ? "#6C5CE7" : "#2E1065";
+                  const color = entry.level === "Mầm non" ? "#f43f5e" : entry.level === "Tiểu học" ? "#48BFE3" : entry.level === "THCS" ? "#6C5CE7" : "#2E1065";
                   return <Cell key={`cell-${index}`} fill={color} />
                 })}
               </Bar>
@@ -389,7 +389,7 @@ export default function AdminDashboard() {
         {/* Chú giải phân loại theo bậc học */}
         <div className="flex flex-wrap items-center justify-center gap-6 pt-2 border-t border-slate-50 text-xs font-bold text-slate-600">
           <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-[#36E08F] inline-block"></span>
+            <span className="w-3 h-3 rounded-full bg-[#48BFE3] inline-block"></span>
             <span>Tiểu học (Khối 1 - 5)</span>
           </div>
           <div className="flex items-center gap-2">
@@ -490,8 +490,8 @@ export default function AdminDashboard() {
           {/* LEGEND CHÚ GIẢI MÀU CƠ SỞ CHUẨN */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-3 border-t border-slate-100 text-[11px] font-bold">
             <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded-md inline-block bg-[#36E08F]"></span>
-              <span className="text-[#36E08F]">CS1: Xanh Sky-Line</span>
+              <span className="w-3 h-3 rounded-md inline-block bg-[#48BFE3]"></span>
+              <span className="text-[#48BFE3]">CS1: Xanh Sky-Line</span>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-3 h-3 rounded-md inline-block bg-[#6C5CE7]"></span>
@@ -522,20 +522,20 @@ export default function AdminDashboard() {
         {/* HEADER SECTION */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 text-[#36E08F] bg-teal-50 rounded-xl flex items-center justify-center font-black shadow-2xs">
+            <div className="w-11 h-11 text-[#48BFE3] bg-teal-50 rounded-xl flex items-center justify-center font-black shadow-2xs">
               <Sparkles className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-lg font-black text-slate-800 tracking-tight">Quản lý & Phân tích Học sinh Đầu cấp</h2>
               <p className="text-xs text-slate-500 font-semibold mt-0.5 uppercase tracking-wider">
-                Thống kê học sinh các khối đầu cấp: <strong className="text-[#36E08F]">Khối 1</strong>, <strong className="text-[#6C5CE7]">Khối 6</strong>, <strong className="text-[#2E1065]">Khối 10</strong> phân loại theo nguồn nhập học
+                Thống kê học sinh các khối đầu cấp: <strong className="text-[#48BFE3]">Khối 1</strong>, <strong className="text-[#6C5CE7]">Khối 6</strong>, <strong className="text-[#2E1065]">Khối 10</strong> phân loại theo nguồn nhập học
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="px-3.5 py-1.5 bg-teal-50 text-[#36E08F] rounded-xl border border-teal-200 text-xs font-extrabold flex items-center gap-1.5 shadow-2xs">
-              <UserCheck className="w-4 h-4 text-[#36E08F]" />
+            <span className="px-3.5 py-1.5 bg-teal-50 text-[#48BFE3] rounded-xl border border-teal-200 text-xs font-extrabold flex items-center gap-1.5 shadow-2xs">
+              <UserCheck className="w-4 h-4 text-[#48BFE3]" />
               Tổng HS Đầu cấp: {finalMetrics.entryLevelStats?.total || 0} HS
             </span>
           </div>
@@ -547,15 +547,15 @@ export default function AdminDashboard() {
           {/* KHỐI 1 CARD */}
           <div className="bg-gradient-to-br from-teal-50/60 to-emerald-50/40 rounded-2xl border-2 border-teal-100 p-5 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
-              <span className="px-2.5 py-1 bg-[#36E08F] text-white rounded-lg text-xs font-black uppercase tracking-wider">Khối 1</span>
-              <span className="text-xs font-bold text-slate-500">Tổng: <strong className="text-[#36E08F] text-base font-black">{finalMetrics.entryLevelStats?.grade1?.total || 0}</strong> HS</span>
+              <span className="px-2.5 py-1 bg-[#48BFE3] text-white rounded-lg text-xs font-black uppercase tracking-wider">Khối 1</span>
+              <span className="text-xs font-bold text-slate-500">Tổng: <strong className="text-[#48BFE3] text-base font-black">{finalMetrics.entryLevelStats?.grade1?.total || 0}</strong> HS</span>
             </div>
             <div className="space-y-2 pt-1 border-t border-teal-100/80">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-600 font-semibold flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-[#36E08F]"></span> Nhập học qua Khảo sát:
+                  <span className="w-2 h-2 rounded-full bg-[#48BFE3]"></span> Nhập học qua Khảo sát:
                 </span>
-                <strong className="text-[#36E08F] font-black">{finalMetrics.entryLevelStats?.grade1?.surveyCount || 0} HS</strong>
+                <strong className="text-[#48BFE3] font-black">{finalMetrics.entryLevelStats?.grade1?.surveyCount || 0} HS</strong>
               </div>
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-600 font-semibold flex items-center gap-1">
@@ -629,7 +629,7 @@ export default function AdminDashboard() {
               placeholder="Tìm theo tên, mã HS, lớp..."
               value={entrySearchQuery}
               onChange={(e) => setEntrySearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#36E08F] transition-all"
+              className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3] transition-all"
             />
           </div>
 
@@ -640,13 +640,13 @@ export default function AdminDashboard() {
             <div className="flex items-center bg-slate-100 p-1 rounded-xl gap-1 text-xs font-bold">
               <button
                 onClick={() => setEntryGradeFilter("ALL")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "ALL" ? "bg-white text-[#36E08F] shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "ALL" ? "bg-white text-[#48BFE3] shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
               >
                 Tất cả khối
               </button>
               <button
                 onClick={() => setEntryGradeFilter("1")}
-                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "1" ? "bg-[#36E08F] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
+                className={`px-3 py-1.5 rounded-lg transition-all ${entryGradeFilter === "1" ? "bg-[#48BFE3] text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"}`}
               >
                 Khối 1
               </button>
@@ -668,7 +668,7 @@ export default function AdminDashboard() {
             <select
               value={entryCampusFilter}
               onChange={(e) => setEntryCampusFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#36E08F]"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
             >
               <option value="ALL">-- Tất cả cơ sở --</option>
               <option value="CS1">CS1 (Sky-Line Central - Xanh Sky-Line)</option>
@@ -682,7 +682,7 @@ export default function AdminDashboard() {
             <select
               value={entrySourceFilter}
               onChange={(e) => setEntrySourceFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#36E08F]"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
             >
               <option value="ALL">-- Tất cả nguồn nhập học --</option>
               <option value="KHAO_SAT">Nhập học qua Khảo sát</option>
@@ -725,7 +725,7 @@ export default function AdminDashboard() {
                       <td className="py-3 px-4 font-bold text-slate-900">{st.studentName}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
-                          st.rawGrade === '1' ? 'bg-teal-100 text-[#36E08F]' :
+                          st.rawGrade === '1' ? 'bg-teal-100 text-[#48BFE3]' :
                           st.rawGrade === '6' ? 'bg-indigo-100 text-[#6C5CE7]' :
                           'bg-purple-100 text-[#2E1065]'
                         }`}>
@@ -741,8 +741,8 @@ export default function AdminDashboard() {
                       </td>
                       <td className="py-3 px-4">
                         {st.source === "KHAO_SAT" && (
-                          <span className="px-2.5 py-1 bg-teal-50 text-[#36E08F] border border-teal-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-[#36E08F]" />
+                          <span className="px-2.5 py-1 bg-teal-50 text-[#48BFE3] border border-teal-200 rounded-lg text-[11px] font-bold inline-flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-[#48BFE3]" />
                             Qua Khảo sát
                           </span>
                         )}
@@ -784,7 +784,7 @@ export default function AdminDashboard() {
         {/* COLUMN LEFT: NHẬP HỌC MỚI */}
         <div className="bg-white rounded-2xl border-2 border-teal-100 p-6 shadow-xs space-y-6">
           <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div className="w-10 h-10 text-[#36E08F] bg-teal-50 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 text-[#48BFE3] bg-teal-50 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
@@ -796,11 +796,11 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tổng sỹ số nhập mới</span>
-              <span className="text-2xl font-black text-[#36E08F] block mt-1">{(finalMetrics.newEnrollmentStats?.total || 0).toLocaleString()}</span>
+              <span className="text-2xl font-black text-[#48BFE3] block mt-1">{(finalMetrics.newEnrollmentStats?.total || 0).toLocaleString()}</span>
             </div>
             <div className="p-4 rounded-xl bg-teal-50/40 border border-teal-100/60 text-center">
-              <span className="text-[10px] font-bold text-[#36E08F] uppercase tracking-wider block">Nội tỉnh (Tư thục)</span>
-              <span className="text-2xl font-black text-[#36E08F] block mt-1">{(finalMetrics.newEnrollmentStats?.inProvincePrivate || 0).toLocaleString()}</span>
+              <span className="text-[10px] font-bold text-[#48BFE3] uppercase tracking-wider block">Nội tỉnh (Tư thục)</span>
+              <span className="text-2xl font-black text-[#48BFE3] block mt-1">{(finalMetrics.newEnrollmentStats?.inProvincePrivate || 0).toLocaleString()}</span>
             </div>
           </div>
 

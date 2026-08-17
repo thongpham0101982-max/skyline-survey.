@@ -114,7 +114,7 @@ export default async function ParentDashboard() {
     <div className="max-w-7xl mx-auto space-y-8 font-sans text-slate-800 pb-16 pt-2">
       
       {/* 1. Header Banner Chào Mừng Đẳng Cấp & Chuẩn Bố Cục */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#36E08F] p-6 sm:p-8 lg:p-10 text-white shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#48BFE3] p-6 sm:p-8 lg:p-10 text-white shadow-xl">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 w-80 h-80 rounded-full bg-white/10 blur-3xl pointer-events-none" />
         <div className="absolute left-1/3 bottom-0 -mb-16 w-60 h-60 rounded-full bg-teal-400/10 blur-2xl pointer-events-none" />
 
@@ -156,7 +156,7 @@ export default async function ParentDashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
           <div>
             <h2 className="text-lg font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#36E08F]" />
+              <Users className="w-5 h-5 text-[#48BFE3]" />
               <span>Danh Sách Con Em Đồng Hành ({children.length})</span>
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
@@ -171,13 +171,13 @@ export default async function ParentDashboard() {
 
         {children.length === 0 ? (
           <div className="bg-white rounded-3xl p-10 sm:p-14 text-center border border-slate-200 shadow-sm space-y-4 max-w-xl mx-auto">
-            <div className="w-16 h-16 bg-teal-50 text-[#36E08F] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+            <div className="w-16 h-16 bg-teal-50 text-[#48BFE3] rounded-2xl flex items-center justify-center mx-auto shadow-inner">
               <Users className="w-8 h-8" />
             </div>
             <div className="space-y-1.5">
               <h3 className="text-lg font-black text-slate-900">Tài khoản chưa có thông tin Học sinh liên kết</h3>
               <p className="text-xs text-slate-500 font-medium max-w-md mx-auto leading-relaxed">
-                Quý Phụ huynh vui lòng nhấn nút <strong className="text-[#36E08F]">+ Bổ sung mã Học sinh</strong> ở trên để liên kết mã con em. Hệ thống sẽ tự động cập nhật thông tin ngay khi xác nhận.
+                Quý Phụ huynh vui lòng nhấn nút <strong className="text-[#48BFE3]">+ Bổ sung mã Học sinh</strong> ở trên để liên kết mã con em. Hệ thống sẽ tự động cập nhật thông tin ngay khi xác nhận.
               </p>
             </div>
           </div>
@@ -193,12 +193,12 @@ export default async function ParentDashboard() {
                   key={child.id} 
                   className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-sm hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden group font-sans"
                 >
-                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#36E08F]" />
+                  <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#48BFE3]" />
 
                   <div className="space-y-4">
                     {/* Header Thẻ Con */}
                     <div className="flex justify-between items-start pt-1">
-                      <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#36E08F] flex items-center justify-center font-bold text-xl shadow-inner border border-teal-100 shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#48BFE3] flex items-center justify-center font-bold text-xl shadow-inner border border-teal-100 shrink-0">
                         <GraduationCap className="w-6 h-6 text-[#003B3A]" />
                       </div>
                       <div className="text-right space-y-0.5">
@@ -314,12 +314,12 @@ export default async function ParentDashboard() {
           {/* Card 2: Cố Vấn & Mục Tiêu Đồng Hành */}
           <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col justify-between space-y-4 relative overflow-hidden group">
             <div className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#36E08F] flex items-center justify-center font-bold shadow-inner border border-teal-100">
+              <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#48BFE3] flex items-center justify-center font-bold shadow-inner border border-teal-100">
                 <Compass className="w-6 h-6 text-[#003B3A]" />
               </div>
               <div>
                 <span className="text-[10px] font-black text-teal-700 uppercase tracking-widest block">TÍNH NĂNG 02</span>
-                <h3 className="text-base font-black text-slate-900 group-hover:text-[#36E08F] transition-colors">
+                <h3 className="text-base font-black text-slate-900 group-hover:text-[#48BFE3] transition-colors">
                   Cố Vấn & Mục Tiêu Đồng Hành
                 </h3>
               </div>

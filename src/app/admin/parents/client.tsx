@@ -279,14 +279,14 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
             ? "bg-[#003B3A] text-white border-emerald-500/30" 
             : "bg-rose-900 text-white border-rose-500/30"
         }`}>
-          <Sparkles className="w-5 h-5 text-[#36E08F]" />
+          <Sparkles className="w-5 h-5 text-[#48BFE3]" />
           <span>{toastMessage.text}</span>
         </div>
       )}
 
       {/* TOP FILTER & CONTROLS PANEL */}
       <div className="relative rounded-[2rem] bg-white border border-slate-100 shadow-[0_20px_50px_rgba(0,59,58,0.05)] overflow-hidden">
-        <div className="bg-gradient-to-r from-[#003B3A] via-[#005A5B] to-[#36E08F] p-6 sm:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-[#003B3A] via-[#005A5B] to-[#48BFE3] p-6 sm:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full bg-white/15 text-emerald-300 text-[10px] font-black uppercase tracking-widest backdrop-blur-md">Sky-Line Identity</span>
@@ -309,7 +309,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
             <button
               onClick={handleGenerate}
               disabled={!selectedClassId || generating || loading}
-              className="px-6 py-3 rounded-2xl bg-[#36E08F] hover:bg-[#009688] text-white font-black text-xs uppercase tracking-wider flex items-center gap-2.5 shadow-lg shadow-[#36E08F]/30 transition-all active:scale-95 disabled:opacity-40"
+              className="px-6 py-3 rounded-2xl bg-[#48BFE3] hover:bg-[#009688] text-white font-black text-xs uppercase tracking-wider flex items-center gap-2.5 shadow-lg shadow-[#48BFE3]/30 transition-all active:scale-95 disabled:opacity-40"
             >
               {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
               <span>Khởi tạo tài khoản</span>
@@ -326,7 +326,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
             {/* Year Selector */}
             <div className="space-y-3">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <CalendarDays className="w-3.5 h-3.5 text-[#36E08F]" />
+                <CalendarDays className="w-3.5 h-3.5 text-[#48BFE3]" />
                 1. Chọn Niên Khoá
               </label>
               <div className="flex flex-wrap gap-2">
@@ -335,7 +335,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                     filterYearId === "ALL" 
                       ? "bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/20" 
-                      : "bg-white text-slate-600 border border-slate-200 hover:border-[#36E08F] hover:text-[#36E08F]"
+                      : "bg-white text-slate-600 border border-slate-200 hover:border-[#48BFE3] hover:text-[#48BFE3]"
                   }`}
                 >Tất cả niên khoá</button>
                 {years.filter((y: any) => !y.isOff).map((y: any) => (
@@ -344,8 +344,8 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                     onClick={() => setFilterYearId(y.id)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                       filterYearId === y.id 
-                        ? "bg-[#36E08F] text-white shadow-md shadow-[#36E08F]/20 scale-105" 
-                        : "bg-white text-slate-600 border border-slate-200 hover:border-[#36E08F] hover:text-[#36E08F]"
+                        ? "bg-[#48BFE3] text-white shadow-md shadow-[#48BFE3]/20 scale-105" 
+                        : "bg-white text-slate-600 border border-slate-200 hover:border-[#48BFE3] hover:text-[#48BFE3]"
                     }`}
                   >
                     {y.name}
@@ -357,7 +357,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
             {/* Campus Selector */}
             <div className="space-y-3">
               <label className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                <School className="w-3.5 h-3.5 text-[#36E08F]" />
+                <School className="w-3.5 h-3.5 text-[#48BFE3]" />
                 2. Chọn Cơ Sở Đào Tạo
               </label>
               <div className="flex flex-wrap gap-2">
@@ -366,7 +366,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                     selectedCampusId === "ALL" 
                       ? "bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/20" 
-                      : "bg-white text-slate-600 border border-slate-200 hover:border-[#36E08F] hover:text-[#36E08F]"
+                      : "bg-white text-slate-600 border border-slate-200 hover:border-[#48BFE3] hover:text-[#48BFE3]"
                   }`}
                 >Toàn hệ thống</button>
                 {campuses.map((c: any) => (
@@ -375,8 +375,8 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                     onClick={() => setSelectedCampusId(c.id)}
                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                       selectedCampusId === c.id 
-                        ? "bg-[#36E08F] text-white shadow-md shadow-[#36E08F]/20 scale-105" 
-                        : "bg-white text-slate-600 border border-slate-200 hover:border-[#36E08F] hover:text-[#36E08F]"
+                        ? "bg-[#48BFE3] text-white shadow-md shadow-[#48BFE3]/20 scale-105" 
+                        : "bg-white text-slate-600 border border-slate-200 hover:border-[#48BFE3] hover:text-[#48BFE3]"
                     }`}
                   >
                     {c.campusName}
@@ -391,14 +391,14 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
           <div className="pt-4 border-t border-slate-200/60 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
             <div className="flex-1 max-w-xl space-y-2">
               <label className="text-[11px] font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2">
-                <Users className="w-3.5 h-3.5 text-[#36E08F]" />
+                <Users className="w-3.5 h-3.5 text-[#48BFE3]" />
                 3. Chọn Lớp Học ({filteredClasses.length} lớp khả dụng)
               </label>
               <div className="relative">
                 <select
                   value={selectedClassId}
                   onChange={(e) => setSelectedClassId(e.target.value)}
-                  className="w-full h-12 pl-4 pr-10 bg-white border-2 border-slate-200 focus:border-[#36E08F] rounded-2xl font-bold text-slate-800 text-sm outline-none transition-all cursor-pointer shadow-sm"
+                  className="w-full h-12 pl-4 pr-10 bg-white border-2 border-slate-200 focus:border-[#48BFE3] rounded-2xl font-bold text-slate-800 text-sm outline-none transition-all cursor-pointer shadow-sm"
                 >
                   <option value="">-- Vui lòng chọn lớp học để xem danh sách --</option>
                   {filteredClasses.map((c: any) => (
@@ -425,7 +425,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
       {/* KPI METRIC CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#36E08F] flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 text-[#48BFE3] flex items-center justify-center shrink-0">
             <Users className="w-6 h-6" />
           </div>
           <div>
@@ -479,7 +479,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
               placeholder="Tìm theo tên HS, mã HS, tài khoản PHHS..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-200 focus:border-[#36E08F] rounded-xl text-xs font-semibold text-slate-800 outline-none transition-all"
+              className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-200 focus:border-[#48BFE3] rounded-xl text-xs font-semibold text-slate-800 outline-none transition-all"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -539,7 +539,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                       if (selectedStudentIds.length === processedStudents.length) setSelectedStudentIds([])
                       else setSelectedStudentIds(processedStudents.map(s => s.id))
                     }}
-                    className="w-4 h-4 rounded border-slate-300 text-[#36E08F] focus:ring-[#36E08F] cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 text-[#48BFE3] focus:ring-[#48BFE3] cursor-pointer"
                   />
                 </th>
                 <th className="py-4 px-4">STT / Thông tin học sinh</th>
@@ -557,7 +557,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                 <tr>
                   <td colSpan={8} className="py-16 text-center">
                     <div className="max-w-xs mx-auto flex flex-col items-center space-y-4 opacity-50">
-                      {loading ? <RefreshCw className="w-10 h-10 animate-spin text-[#36E08F]" /> : <Search className="w-10 h-10 text-slate-400" />}
+                      {loading ? <RefreshCw className="w-10 h-10 animate-spin text-[#48BFE3]" /> : <Search className="w-10 h-10 text-slate-400" />}
                       <p className="font-bold text-slate-600">
                         {loading ? "Đang tải dữ liệu học sinh & tài khoản Phụ huynh..." : "Vui lòng chọn Lớp học phía trên để hiển thị danh sách tài khoản"}
                       </p>
@@ -600,7 +600,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                             isSelected ? prev.filter(id => id !== s.id) : [...prev, s.id]
                           )
                         }}
-                        className="w-4 h-4 rounded border-slate-300 text-[#36E08F] focus:ring-[#36E08F] cursor-pointer"
+                        className="w-4 h-4 rounded border-slate-300 text-[#48BFE3] focus:ring-[#48BFE3] cursor-pointer"
                       />
                     </td>
 
@@ -710,7 +710,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
         {/* FOOTER CREDENTIAL REMINDER */}
         <div className="p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-[#36E08F]/10 text-[#36E08F] flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-[#48BFE3]/10 text-[#48BFE3] flex items-center justify-center shrink-0">
               <ShieldCheck className="w-4 h-4" />
             </div>
             <p>
@@ -785,7 +785,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
           <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-6 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#36E08F] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#48BFE3] flex items-center justify-center">
                   <UserPlus className="w-5 h-5" />
                 </div>
                 <div>
@@ -808,9 +808,9 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                   placeholder="Nhập tên học sinh hoặc Mã HS..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 focus:border-[#36E08F] rounded-xl text-xs font-semibold outline-none"
+                  className="w-full h-11 pl-10 pr-4 bg-slate-50 border border-slate-200 focus:border-[#48BFE3] rounded-xl text-xs font-semibold outline-none"
                 />
-                {searching && <RefreshCw className="w-4 h-4 animate-spin text-[#36E08F] absolute right-3 top-1/2 -translate-y-1/2" />}
+                {searching && <RefreshCw className="w-4 h-4 animate-spin text-[#48BFE3] absolute right-3 top-1/2 -translate-y-1/2" />}
               </div>
             </div>
 
@@ -831,7 +831,7 @@ export function ParentAccountsClient({ classes, years, campuses, defaultYearId }
                     <button
                       onClick={() => handleLinkStudent(resSt.id)}
                       disabled={linking}
-                      className="px-3 py-1.5 rounded-lg bg-[#36E08F] hover:bg-[#009688] text-white font-bold text-[11px] transition-all disabled:opacity-50"
+                      className="px-3 py-1.5 rounded-lg bg-[#48BFE3] hover:bg-[#009688] text-white font-bold text-[11px] transition-all disabled:opacity-50"
                     >
                       {linking ? "Đang lưu..." : "Liên kết"}
                     </button>

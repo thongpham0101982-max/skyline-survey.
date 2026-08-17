@@ -41,7 +41,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
   )
 }
 
-const inp = "w-full bg-white border border-slate-200 rounded-xl pl-4 pr-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#36E08F] hover:border-slate-300 transition-all placeholder:text-slate-400 shadow-sm"
+const inp = "w-full bg-white border border-slate-200 rounded-xl pl-4 pr-4 py-3 text-sm font-semibold text-slate-700 outline-none appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20fill%3D%27none%27%20viewBox%3D%270%200%2020%2020%27%3E%3Cpath%20stroke%3D%27%2394a3b8%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%20stroke-width%3D%271.5%27%20d%3D%27m6%208%204%204%204-4%27%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_14px_center] bg-[length:18px_18px] pr-10 focus:ring-4 focus:ring-teal-50 focus:border-[#48BFE3] hover:border-slate-300 transition-all placeholder:text-slate-400 shadow-sm"
 
 interface ConfirmState { msg: string; fn: () => void }
 function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; onClose:()=>void; onConfirm:()=>void; message:string }) {
@@ -415,7 +415,7 @@ export function PhanCongK12Client({
                     <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100/70 space-y-3 animate-in fade-in duration-350">
                       <div className="flex items-center justify-between border-b border-slate-200/40 pb-2">
                         <div className="flex items-center gap-2">
-                          <Users className="w-4 h-4 text-[#36E08F]" />
+                          <Users className="w-4 h-4 text-[#48BFE3]" />
                           <span className="text-xs font-bold text-slate-800">Thống kê theo Khối</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -440,7 +440,7 @@ export function PhanCongK12Client({
                                   className="flex items-center justify-between px-3.5 py-2.5 cursor-pointer hover:bg-slate-50 transition-colors text-xs"
                                 >
                                   <span className="font-bold text-slate-700">Khối {grade}</span>
-                                  <div className="flex items-center gap-1.5 font-extrabold text-[#36E08F]">
+                                  <div className="flex items-center gap-1.5 font-extrabold text-[#48BFE3]">
                                     <span>{studentsList.length} HS</span>
                                     <span className="text-slate-400 font-bold text-[10px]">{isExpanded ? "▲" : "▼"}</span>
                                   </div>
@@ -491,7 +491,7 @@ export function PhanCongK12Client({
                     return (
                       <div className="p-4 bg-teal-50/30 border border-teal-100/50 rounded-2xl space-y-2.5 animate-in fade-in duration-300">
                         <div className="text-[11px] font-bold text-teal-700 uppercase tracking-wider flex items-center gap-1.5">
-                          <BookOpen className="w-4 h-4 text-[#36E08F]" /> 
+                          <BookOpen className="w-4 h-4 text-[#48BFE3]" /> 
                           <span>Phân công hiện tại của GV</span>
                         </div>
                         {currentTeacherAssigns.length === 0 ? (
@@ -500,7 +500,7 @@ export function PhanCongK12Client({
                           <div className="flex flex-wrap gap-2 pl-5">
                             {currentTeacherAssigns.map((a) => (
                               <span key={a.id} className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-teal-100/80 rounded-xl text-xs font-semibold text-slate-700 shadow-sm">
-                                <span className="font-bold text-[#36E08F]">{a.subject?.name}</span>
+                                <span className="font-bold text-[#48BFE3]">{a.subject?.name}</span>
                                 <span className="text-slate-300">•</span>
                                 <span>Khối {a.grade}</span>
                                 <span className="text-slate-300">•</span>
@@ -537,7 +537,7 @@ export function PhanCongK12Client({
                     <div className="flex flex-wrap gap-2">
                       {initialSubjects.map(sub => (
                         <button key={sub.id} onClick={() => setAsSelSubjects(p => p.includes(sub.id) ? p.filter(x => x !== sub.id) : [...p, sub.id])}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${asSelSubjects.includes(sub.id) ? "bg-[#36E08F] border-[#36E08F] text-white shadow-md shadow-teal-100/40" : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800"}`}>
+                          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${asSelSubjects.includes(sub.id) ? "bg-[#48BFE3] border-[#48BFE3] text-white shadow-md shadow-teal-100/40" : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800"}`}>
                           {sub.name}
                         </button>
                       ))}
@@ -554,7 +554,7 @@ export function PhanCongK12Client({
                       <div className="grid grid-cols-4 gap-2">
                         {activeGrades.map(g => (
                           <button key={g} onClick={() => setAsSelGrades(p => p.includes(g) ? p.filter(x => x !== g) : [...p, g])}
-                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${asSelGrades.includes(g) ? "bg-[#36E08F] border-[#36E08F] text-white shadow-md shadow-teal-100/40" : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800"}`}>
+                            className={`py-2 rounded-xl text-xs font-bold border transition-all ${asSelGrades.includes(g) ? "bg-[#48BFE3] border-[#48BFE3] text-white shadow-md shadow-teal-100/40" : "bg-slate-50 border-slate-200/60 text-slate-600 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-800"}`}>
                             {g}
                           </button>
                         ))}
@@ -586,7 +586,7 @@ export function PhanCongK12Client({
         {/* Submit Button */}
         <div className="flex justify-center -mt-3">
           <button onClick={submitAssignment} disabled={asSubmitting || !canCreate}
-            className="group flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-[#36E08F] to-[#009085] text-white rounded-[2rem] font-black text-base hover:from-[#009085] hover:to-[#007068] hover:scale-105 transition-all shadow-2xl shadow-teal-100 disabled:opacity-50 cursor-pointer">
+            className="group flex items-center gap-3 px-12 py-5 bg-gradient-to-r from-[#48BFE3] to-[#009085] text-white rounded-[2rem] font-black text-base hover:from-[#009085] hover:to-[#007068] hover:scale-105 transition-all shadow-2xl shadow-teal-100 disabled:opacity-50 cursor-pointer">
             {asSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <UserPlus className="w-6 h-6 group-hover:rotate-12 transition-all" />}
             Xác nhận Phân công cho Giáo viên
           </button>
@@ -625,7 +625,7 @@ export function PhanCongK12Client({
           <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
             {!asFilterBatchId ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold"><Filter className="w-8 h-8 text-[#36E08F]" /></div>
+                <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold"><Filter className="w-8 h-8 text-[#48BFE3]" /></div>
                 <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
                 <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
               </div>

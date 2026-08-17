@@ -440,7 +440,7 @@ export default function TeacherAdvisoryPage() {
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
       
       {/* Top Banner Header */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#36E08F] rounded-3xl p-6 text-white shadow-xl space-y-3">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-3xl p-6 text-white shadow-xl space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-black bg-white/15 uppercase tracking-wider text-teal-200">
             <Compass className="w-4 h-4 text-teal-300" />
@@ -549,7 +549,7 @@ export default function TeacherAdvisoryPage() {
           <div className="bg-white rounded-3xl p-5 border-2 border-slate-200 shadow-sm space-y-4">
             
             {/* Executive Class Statistics Bar */}
-            <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#36E08F] rounded-2xl p-4 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="bg-gradient-to-r from-[#003B3A] via-[#004D4A] to-[#48BFE3] rounded-2xl p-4 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
               <a
                 href={`/api/advisory/export-observation-book?classId=${selectedClassId}`}

@@ -238,7 +238,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
               onClick={() => setActiveTab("config")}
               className={`px-6 py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
                 activeTab === "config" 
-                  ? "border-[#36E08F] text-[#36E08F]" 
+                  ? "border-[#48BFE3] text-[#48BFE3]" 
                   : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
             >
@@ -248,7 +248,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
               onClick={() => setActiveTab("bulk")}
               className={`px-6 py-3.5 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
                 activeTab === "bulk" 
-                  ? "border-[#36E08F] text-[#36E08F]" 
+                  ? "border-[#48BFE3] text-[#48BFE3]" 
                   : "border-transparent text-slate-400 hover:text-slate-600"
               }`}
             >
@@ -280,7 +280,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                   <select 
                     value={config.academicYearId}
                     onChange={e => setConfig({ ...config, academicYearId: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-teal-50 outline-none transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-bold bg-white focus:border-[#48BFE3] focus:ring-4 focus:ring-teal-50 outline-none transition-all"
                   >
                     <option value="">-- Chọn năm học --</option>
                     {academicYears.map((year: any) => (
@@ -297,13 +297,13 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                     onClick={() => setConfig({ ...config, isOpen: !config.isOpen })}
                     className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between h-36 ${
                       config.isOpen 
-                        ? "border-[#36E08F]/30 bg-[#36E08F]/5" 
+                        ? "border-[#48BFE3]/30 bg-[#48BFE3]/5" 
                         : "border-slate-200 hover:border-slate-300"
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <span className="text-xs font-black uppercase tracking-wider text-slate-400">Trạng thái Cổng</span>
-                      <div className={`w-12 h-6 rounded-full p-0.5 transition-colors ${config.isOpen ? "bg-[#36E08F]" : "bg-slate-200"}`}>
+                      <div className={`w-12 h-6 rounded-full p-0.5 transition-colors ${config.isOpen ? "bg-[#48BFE3]" : "bg-slate-200"}`}>
                         <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${config.isOpen ? "translate-x-6" : "translate-x-0"}`} />
                       </div>
                     </div>
@@ -318,13 +318,13 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                     onClick={() => setConfig({ ...config, allowUpload: !config.allowUpload })}
                     className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between h-36 ${
                       config.allowUpload 
-                        ? "border-[#36E08F]/30 bg-[#36E08F]/5" 
+                        ? "border-[#48BFE3]/30 bg-[#48BFE3]/5" 
                         : "border-slate-200 hover:border-slate-300"
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <span className="text-xs font-black uppercase tracking-wider text-slate-400">Tải ảnh lên</span>
-                      <div className={`w-12 h-6 rounded-full p-0.5 transition-colors ${config.allowUpload ? "bg-[#36E08F]" : "bg-slate-200"}`}>
+                      <div className={`w-12 h-6 rounded-full p-0.5 transition-colors ${config.allowUpload ? "bg-[#48BFE3]" : "bg-slate-200"}`}>
                         <div className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${config.allowUpload ? "translate-x-6" : "translate-x-0"}`} />
                       </div>
                     </div>
@@ -343,7 +343,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                     onChange={e => setConfig({ ...config, notes: e.target.value })}
                     rows={6}
                     placeholder="Ví dụ: Phụ huynh vui lòng tải ảnh chân dung học sinh chuẩn định dạng thẻ, phông nền trắng hoặc xanh dương, mặt nhìn thẳng không đeo kính..."
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-teal-50 outline-none transition-all"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-teal-50 outline-none transition-all"
                   />
                   <p className="text-[10px] text-slate-400 font-semibold italic ml-1">Văn bản này sẽ được hiển thị ngay bên dưới khung tải ảnh tại trang công cộng.</p>
                 </div>
@@ -353,7 +353,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                   <button 
                     onClick={handleSave}
                     disabled={saving}
-                    className="flex items-center gap-2 bg-[#36E08F] text-white px-8 py-3.5 rounded-2xl hover:bg-[#009085] font-black shadow-lg shadow-teal-100 transition-all active:scale-95 disabled:opacity-50"
+                    className="flex items-center gap-2 bg-[#48BFE3] text-white px-8 py-3.5 rounded-2xl hover:bg-[#009085] font-black shadow-lg shadow-teal-100 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {saving ? (
                       <>
@@ -374,7 +374,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
           {activeTab === "bulk" && (
             <div className="space-y-6 animate-in fade-in">
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 flex gap-4 text-xs font-medium text-slate-600">
-                <Info className="w-5 h-5 text-[#36E08F] shrink-0 mt-0.5" />
+                <Info className="w-5 h-5 text-[#48BFE3] shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <p className="font-extrabold text-slate-800">Hướng dẫn sử dụng Tool Upload Hàng loạt:</p>
                   <ol className="list-decimal pl-4 space-y-1">
@@ -387,7 +387,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
               </div>
 
               {/* Upload Dropzone */}
-              <div className="border-2 border-dashed border-slate-200 hover:border-[#36E08F] bg-slate-50/60 rounded-3xl p-8 flex flex-col items-center justify-center min-h-[180px] transition-all relative overflow-hidden group">
+              <div className="border-2 border-dashed border-slate-200 hover:border-[#48BFE3] bg-slate-50/60 rounded-3xl p-8 flex flex-col items-center justify-center min-h-[180px] transition-all relative overflow-hidden group">
                 <input 
                   type="file" 
                   ref={folderInputRef}
@@ -409,7 +409,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                 />
 
                 <div className="text-center space-y-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-white text-slate-400 group-hover:text-[#36E08F] rounded-2xl shadow transition-colors">
+                  <div className="inline-flex items-center justify-center w-12 h-12 bg-white text-slate-400 group-hover:text-[#48BFE3] rounded-2xl shadow transition-colors">
                     <UploadCloud className="w-5 h-5" />
                   </div>
                   <div>
@@ -420,7 +420,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                     <button 
                       onClick={() => folderInputRef.current?.click()}
                       disabled={uploadingAll || validating}
-                      className="flex items-center gap-1.5 px-4 py-2.5 bg-[#36E08F]/10 hover:bg-[#36E08F]/20 text-[#36E08F] rounded-xl text-xs font-black transition-all disabled:opacity-50 pointer-events-auto"
+                      className="flex items-center gap-1.5 px-4 py-2.5 bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 text-[#48BFE3] rounded-xl text-xs font-black transition-all disabled:opacity-50 pointer-events-auto"
                     >
                       <FolderOpen className="w-4 h-4" /> Chọn Thư mục
                     </button>
@@ -459,7 +459,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                         <button 
                           onClick={handleValidateList}
                           disabled={validating || uploadingAll}
-                          className="px-3.5 py-1.5 bg-[#36E08F] hover:bg-[#009085] text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                          className="px-3.5 py-1.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
                         >
                           Xác thực mã HS
                         </button>
@@ -616,7 +616,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                   href={getPortalUrl()}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#36E08F]/10 hover:bg-[#36E08F]/20 text-[#36E08F] rounded-xl text-xs font-bold transition-all"
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 text-[#48BFE3] rounded-xl text-xs font-bold transition-all"
                 >
                   <Eye className="w-4 h-4" /> Xem thử <ExternalLink className="w-3.5 h-3.5" />
                 </a>
@@ -664,7 +664,7 @@ export function StudentPortalClient({ initialConfig, academicYears, stats }: any
                     cx="64" 
                     cy="64" 
                     r="54" 
-                    className="stroke-[#36E08F] fill-none transition-all duration-500" 
+                    className="stroke-[#48BFE3] fill-none transition-all duration-500" 
                     strokeWidth="8" 
                     strokeDasharray={2 * Math.PI * 54} 
                     strokeDashoffset={2 * Math.PI * 54 * (1 - completionRate / 100)} 

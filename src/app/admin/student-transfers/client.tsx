@@ -48,7 +48,7 @@ const checkIsPreschoolStudent = (student: any) => {
 
 
 // --- REALTIME VISUAL DASHBOARD COMPONENT ---
-const PIE_COLORS = ["#36E08F", "#10B981", "#F59E0B", "#6366F1", "#0284C7", "#EC4899", "#8B5CF6", "#F43F5E"];
+const PIE_COLORS = ["#48BFE3", "#10B981", "#F59E0B", "#6366F1", "#0284C7", "#EC4899", "#8B5CF6", "#F43F5E"];
 
 function RealtimeTransferDashboard({
   transfers,
@@ -262,7 +262,7 @@ function RealtimeTransferDashboard({
       return (
         <div className="bg-slate-900/90 text-white p-3.5 rounded-2xl shadow-xl border border-slate-700 backdrop-blur-md text-xs font-semibold space-y-1.5 animate-in fade-in duration-150">
           <p className="font-extrabold text-slate-200 border-b border-slate-700/80 pb-1 flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-[#36E08F]" /> {label}
+            <Building2 className="w-3.5 h-3.5 text-[#48BFE3]" /> {label}
           </p>
           {payload.map((entry: any, index: number) => (
             <div key={`item-${index}`} className="flex justify-between items-center gap-4">
@@ -283,10 +283,10 @@ function RealtimeTransferDashboard({
     <div className="bg-white rounded-3xl shadow-sm border border-slate-200/80 overflow-hidden transition-all animate-in fade-in duration-300">
       {/* REALTIME HEADER */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-5 md:p-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#36E08F]/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -top-12 -right-12 w-48 h-48 bg-[#48BFE3]/20 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="flex items-center gap-3.5 z-10">
-          <div className="p-3 bg-gradient-to-br from-[#36E08F] to-emerald-600 rounded-2xl shadow-lg text-white">
+          <div className="p-3 bg-gradient-to-br from-[#48BFE3] to-emerald-600 rounded-2xl shadow-lg text-white">
             <BarChart3 className="w-6 h-6" />
           </div>
           <div>
@@ -310,7 +310,7 @@ function RealtimeTransferDashboard({
         <div className="flex items-center gap-3 z-10 self-end md:self-center">
           {/* Academic Year Filter Selector */}
           <div className="flex items-center gap-2 bg-slate-800/90 hover:bg-slate-700/90 text-white px-3.5 py-2 rounded-xl border border-slate-700/90 shadow-sm transition-all">
-            <GraduationCap className="w-4 h-4 text-[#36E08F]" />
+            <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
             <select
               value={selectedYearFilter}
               onChange={(e) => setSelectedYearFilter(e.target.value)}
@@ -330,13 +330,13 @@ function RealtimeTransferDashboard({
             disabled={loading || isRefreshing}
             className="flex items-center gap-2 px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 rounded-xl text-xs font-extrabold transition-all active:scale-95 disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#36E08F]" : ""}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#48BFE3]" : ""}`} />
             Làm mới Realtime
           </button>
           
           <button
             onClick={() => setShowStats(!showStats)}
-            className="flex items-center gap-2 px-4 py-2 bg-[#36E08F] hover:bg-[#009187] text-white rounded-xl text-xs font-extrabold shadow-md transition-all active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 bg-[#48BFE3] hover:bg-[#009187] text-white rounded-xl text-xs font-extrabold shadow-md transition-all active:scale-95"
           >
             {showStats ? (
               <>
@@ -366,7 +366,7 @@ function RealtimeTransferDashboard({
                 <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">
                   {activeTab === "IN" ? "Tổng yêu cầu chuyển đến" : activeTab === "OUT" ? "Tổng học sinh chuyển đi" : "Tổng phiếu chuyển lớp"}
                 </span>
-                <div className="p-2 bg-teal-50 text-[#36E08F] rounded-xl group-hover:scale-110 transition-transform">
+                <div className="p-2 bg-teal-50 text-[#48BFE3] rounded-xl group-hover:scale-110 transition-transform">
                   <Activity className="w-4 h-4" />
                 </div>
               </div>
@@ -377,7 +377,7 @@ function RealtimeTransferDashboard({
                 </div>
                 <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
                   <span className="text-slate-500 font-medium">Toàn hệ thống:</span>
-                  <span className="font-extrabold text-[#36E08F]">{totalTransfersOverall} lượt</span>
+                  <span className="font-extrabold text-[#48BFE3]">{totalTransfersOverall} lượt</span>
                 </div>
               </div>
             </div>
@@ -442,7 +442,7 @@ function RealtimeTransferDashboard({
                   <span className="text-3xl font-black text-sky-600 tracking-tight">{currentTabCompletionRate}%</span>
                   <div className="flex-1 bg-sky-100 h-2.5 rounded-full overflow-hidden p-0.5">
                     <div 
-                      className="bg-gradient-to-r from-sky-500 to-[#36E08F] h-full rounded-full transition-all duration-500" 
+                      className="bg-gradient-to-r from-sky-500 to-[#48BFE3] h-full rounded-full transition-all duration-500" 
                       style={{ width: currentTabCompletionRate + "%" }}
                     ></div>
                   </div>
@@ -462,7 +462,7 @@ function RealtimeTransferDashboard({
             {/* Level / Category Filter Nodes */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-1.5 mr-1">
-                <div className="p-1.5 bg-teal-50 text-[#36E08F] rounded-lg">
+                <div className="p-1.5 bg-teal-50 text-[#48BFE3] rounded-lg">
                   <Filter className="w-4 h-4" />
                 </div>
                 <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Đối tượng / Cấp học:</span>
@@ -483,7 +483,7 @@ function RealtimeTransferDashboard({
                 onClick={() => setSelectedLevelFilter("K12")}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 ${
                   selectedLevelFilter === "K12"
-                    ? "bg-[#36E08F] text-white border-[#36E08F] shadow-sm"
+                    ? "bg-[#48BFE3] text-white border-[#48BFE3] shadow-sm"
                     : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                 }`}
               >
@@ -524,7 +524,7 @@ function RealtimeTransferDashboard({
                   onClick={() => setSelectedCampusFilter(campus)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1 ${
                     selectedCampusFilter === campus
-                      ? "bg-[#36E08F] text-white border-[#36E08F] shadow-sm"
+                      ? "bg-[#48BFE3] text-white border-[#48BFE3] shadow-sm"
                       : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
@@ -543,7 +543,7 @@ function RealtimeTransferDashboard({
             <div className="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-teal-50 text-[#36E08F] rounded-xl">
+                  <div className="p-2 bg-teal-50 text-[#48BFE3] rounded-xl">
                     <Building2 className="w-4 h-4" />
                   </div>
                   <div>
@@ -554,7 +554,7 @@ function RealtimeTransferDashboard({
                   </div>
                 </div>
                 {selectedCampusFilter !== "ALL" && (
-                  <span className="text-[11px] font-extrabold text-[#36E08F] bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                  <span className="text-[11px] font-extrabold text-[#48BFE3] bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
                     Đang lọc: {selectedCampusFilter}
                   </span>
                 )}
@@ -572,7 +572,7 @@ function RealtimeTransferDashboard({
                         wrapperStyle={{ fontSize: 11, fontWeight: 700, paddingTop: 10 }} 
                         iconType="circle"
                       />
-                      <Bar dataKey="enrolled" name="Đã nhập học" fill="#36E08F" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                      <Bar dataKey="enrolled" name="Đã nhập học" fill="#48BFE3" radius={[6, 6, 0, 0]} maxBarSize={40} />
                       <Bar dataKey="pending" name="Chờ xếp lớp" fill="#F59E0B" radius={[6, 6, 0, 0]} maxBarSize={40} />
                       <Bar dataKey="transferOut" name="Chuyển đi" fill="#F43F5E" radius={[6, 6, 0, 0]} maxBarSize={40} />
                     </BarChart>
@@ -686,12 +686,12 @@ function RealtimeTransferDashboard({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black text-slate-800">{cl.name}</span>
-                        <span className="text-[10px] font-bold text-[#36E08F] bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">
+                        <span className="text-[10px] font-bold text-[#48BFE3] bg-teal-50 px-1.5 py-0.5 rounded border border-teal-100">
                           {cl.campusName}
                         </span>
                       </div>
                       <div className="w-32 bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-                        <div className="bg-[#36E08F] h-full rounded-full" style={{ width: Math.min(100, (cl.count * 15)) + "%" }}></div>
+                        <div className="bg-[#48BFE3] h-full rounded-full" style={{ width: Math.min(100, (cl.count * 15)) + "%" }}></div>
                       </div>
                     </div>
                     
@@ -1318,11 +1318,11 @@ export function StudentTransfersClient() {
           onClick={() => setActiveSubTab("dashboard")}
           className={`flex items-center gap-2.5 px-6 py-3.5 font-extrabold text-sm transition-all border-b-2 -mb-px rounded-t-2xl ${
             activeSubTab === "dashboard"
-              ? "border-[#36E08F] text-[#36E08F] bg-teal-50/60 shadow-xs"
+              ? "border-[#48BFE3] text-[#48BFE3] bg-teal-50/60 shadow-xs"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
           }`}
         >
-          <BarChart3 className="w-5 h-5 text-[#36E08F]" />
+          <BarChart3 className="w-5 h-5 text-[#48BFE3]" />
           Dashboard Thống Kê &amp; Phân Tích
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping ml-0.5"></span>
         </button>
@@ -1331,7 +1331,7 @@ export function StudentTransfersClient() {
           onClick={() => setActiveSubTab("general")}
           className={`flex items-center gap-2.5 px-6 py-3.5 font-extrabold text-sm transition-all border-b-2 -mb-px rounded-t-2xl ${
             activeSubTab === "general"
-              ? "border-[#36E08F] text-[#36E08F] bg-slate-50/50"
+              ? "border-[#48BFE3] text-[#48BFE3] bg-slate-50/50"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
           }`}
         >
@@ -1343,7 +1343,7 @@ export function StudentTransfersClient() {
           onClick={() => setActiveSubTab("preschool")}
           className={`flex items-center gap-2.5 px-6 py-3.5 font-extrabold text-sm transition-all border-b-2 -mb-px rounded-t-2xl ${
             activeSubTab === "preschool"
-              ? "border-[#36E08F] text-[#36E08F] bg-slate-50/50"
+              ? "border-[#48BFE3] text-[#48BFE3] bg-slate-50/50"
               : "border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50/20"
           }`}
         >
@@ -1430,7 +1430,7 @@ export function StudentTransfersClient() {
                 {/* Campus breakdown */}
                 <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-[#36E08F]" /> Thống kê theo Cơ sở
+                    <Building2 className="w-4 h-4 text-[#48BFE3]" /> Thống kê theo Cơ sở
                   </h4>
                   <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
                     {stats.campusStats.length > 0 ? stats.campusStats.map(c => (
@@ -1457,7 +1457,7 @@ export function StudentTransfersClient() {
                 {/* Grade breakdown */}
                 <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-[#36E08F]" /> Thống kê theo Khối
+                    <Layers className="w-4 h-4 text-[#48BFE3]" /> Thống kê theo Khối
                   </h4>
                   <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
                     {stats.gradeStats.length > 0 ? stats.gradeStats.map(g => (
@@ -1484,7 +1484,7 @@ export function StudentTransfersClient() {
                 {/* Class breakdown */}
                 <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <BookOpen className="w-4 h-4 text-[#36E08F]" /> Thống kê theo Lớp (Đã xếp)
+                    <BookOpen className="w-4 h-4 text-[#48BFE3]" /> Thống kê theo Lớp (Đã xếp)
                   </h4>
                   <div className="space-y-3.5 max-h-[250px] overflow-y-auto pr-1 custom-scrollbar">
                     {stats.classStats.length > 0 ? stats.classStats.map(cl => (
@@ -1598,7 +1598,7 @@ export function StudentTransfersClient() {
                 <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-5">
                   <div className="space-y-4">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                      <Building2 className="w-4 h-4 text-[#36E08F]" /> Theo Cơ sở cũ
+                      <Building2 className="w-4 h-4 text-[#48BFE3]" /> Theo Cơ sở cũ
                     </h4>
                     <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                       {outStats.campusStats.length > 0 ? outStats.campusStats.map(c => (
@@ -1623,7 +1623,7 @@ export function StudentTransfersClient() {
 
                   <div className="space-y-4 pt-4 border-t border-slate-100">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-[#36E08F]" /> Theo Lớp cũ
+                      <BookOpen className="w-4 h-4 text-[#48BFE3]" /> Theo Lớp cũ
                     </h4>
                     <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                       {outStats.classStats.length > 0 ? outStats.classStats.map(cl => (
@@ -1650,7 +1650,7 @@ export function StudentTransfersClient() {
                 <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-5">
                   <div className="space-y-4">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-[#36E08F]" /> Theo Diện chuyển
+                      <Activity className="w-4 h-4 text-[#48BFE3]" /> Theo Diện chuyển
                     </h4>
                     <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                       {outStats.categoryStats.length > 0 ? outStats.categoryStats.map(cat => (
@@ -1675,7 +1675,7 @@ export function StudentTransfersClient() {
 
                   <div className="space-y-4 pt-4 border-t border-slate-100">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                      <School className="w-4 h-4 text-[#36E08F]" /> Theo Loại hình trường đến
+                      <School className="w-4 h-4 text-[#48BFE3]" /> Theo Loại hình trường đến
                     </h4>
                     <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                       {outStats.typeStats.length > 0 ? outStats.typeStats.map(t => (
@@ -1703,7 +1703,7 @@ export function StudentTransfersClient() {
                 <div className="space-y-6">
                   <div className="bg-white border border-slate-100 p-5 rounded-2xl space-y-4">
                     <h4 className="text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-[#36E08F]" /> Theo Tỉnh/Thành phố đến
+                      <MapPin className="w-4 h-4 text-[#48BFE3]" /> Theo Tỉnh/Thành phố đến
                     </h4>
                     <div className="space-y-3.5 max-h-[160px] overflow-y-auto pr-1 custom-scrollbar">
                       {outStats.provinceStats.length > 0 ? outStats.provinceStats.map(p => (
@@ -1745,11 +1745,11 @@ export function StudentTransfersClient() {
                         <div className="flex justify-between items-center text-xs font-semibold text-slate-700">
                           <span>Tư thục</span>
                           <span>
-                            <span className="font-extrabold text-[#36E08F]">{outStats.privateDaNang}</span> HS ({outStats.pctPrivateDaNang}%)
+                            <span className="font-extrabold text-[#48BFE3]">{outStats.privateDaNang}</span> HS ({outStats.pctPrivateDaNang}%)
                           </span>
                         </div>
                         <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                          <div className="bg-[#36E08F] h-full" style={{ width: outStats.pctPrivateDaNang + "%" }}></div>
+                          <div className="bg-[#48BFE3] h-full" style={{ width: outStats.pctPrivateDaNang + "%" }}></div>
                         </div>
                       </div>
 
@@ -1844,7 +1844,7 @@ export function StudentTransfersClient() {
             onClick={() => setActiveTab("CHANGE_CLASS")}
             className={`flex items-center px-6 py-4 text-sm font-bold rounded-2xl transition-all whitespace-nowrap ${
               activeTab === "CHANGE_CLASS"
-                ? "bg-[#36E08F]/10 text-[#36E08F] border-b-4 border-indigo-500 shadow-sm"
+                ? "bg-[#48BFE3]/10 text-[#48BFE3] border-b-4 border-indigo-500 shadow-sm"
                 : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
             }`}
           >
@@ -1863,7 +1863,7 @@ export function StudentTransfersClient() {
                placeholder="Tìm kiếm học sinh..." 
                value={globalSearch}
                onChange={(e) => setGlobalSearch(e.target.value)}
-               className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#36E08F] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
+               className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#48BFE3] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
              />
            </div>
            
@@ -1905,7 +1905,7 @@ export function StudentTransfersClient() {
                   accept=".xlsx, .xls" 
                   className="hidden" 
                 />
-                <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#36E08F] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#36E08F]/20 text-xs">
+                <button onClick={() => setShowOutModal(true)} className="px-6 py-3 bg-[#48BFE3] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#48BFE3]/20 text-xs">
                   <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển đi
                 </button>
               </div>
@@ -1931,7 +1931,7 @@ export function StudentTransfersClient() {
                     }
                   }
                 }}
-                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
               >
                 <option value="">Tất cả Cơ sở ({uniqueCampuses.length})</option>
                 {uniqueCampuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1941,7 +1941,7 @@ export function StudentTransfersClient() {
               <select 
                 value={filterOutClass} 
                 onChange={e => setFilterOutClass(e.target.value)}
-                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+                className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
               >
                 <option value="">Tất cả Lớp ({uniqueClasses.length})</option>
                 {uniqueClasses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -1951,7 +1951,7 @@ export function StudentTransfersClient() {
              <select 
                value={filterOutCategory} 
                onChange={e => setFilterOutCategory(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
              >
                <option value="">Tất cả Diện chuyển</option>
                <option value="DOMESTIC">Chuyển trường VN</option>
@@ -1964,7 +1964,7 @@ export function StudentTransfersClient() {
              <select 
                value={filterOutType} 
                onChange={e => setFilterOutType(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
              >
                <option value="">Tất cả Loại hình</option>
                <option value="PRIVATE">Tư thục</option>
@@ -1976,7 +1976,7 @@ export function StudentTransfersClient() {
              <select 
                value={filterOutProvince} 
                onChange={e => setFilterOutProvince(e.target.value)}
-               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+               className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
              >
                <option value="">Tất cả Tỉnh/TP ({uniqueProvinces.length})</option>
                {uniqueProvinces.map(p => <option key={p} value={p}>{p}</option>)}
@@ -2001,7 +2001,7 @@ export function StudentTransfersClient() {
          )}
 
            {activeTab === "CHANGE_CLASS" && (
-             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#36E08F] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#36E08F]/20">
+             <button onClick={() => setShowChangeModal(true)} className="px-6 py-3 bg-[#48BFE3] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all flex items-center shadow-lg shadow-[#48BFE3]/20">
                <Plus className="w-5 h-5 mr-2" /> Tạo phiếu Chuyển lớp
              </button>
            )}
@@ -2024,7 +2024,7 @@ export function StudentTransfersClient() {
                     <th className="px-4 py-3 text-center w-10">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 text-[#36E08F] border-slate-355 rounded focus:ring-[#36E08F] cursor-pointer"
+                        className="w-4 h-4 text-[#48BFE3] border-slate-355 rounded focus:ring-[#48BFE3] cursor-pointer"
                         checked={outTransfers.length > 0 && outTransfers.every(t => selectedOutTransferIds.includes(t.id))}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -2045,11 +2045,11 @@ export function StudentTransfersClient() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {outTransfers.map(t => (
-                    <tr key={t.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedOutTransferIds.includes(t.id) ? 'bg-[#36E08F]/5 hover:bg-[#36E08F]/10' : ''}`}>
+                    <tr key={t.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedOutTransferIds.includes(t.id) ? 'bg-[#48BFE3]/5 hover:bg-[#48BFE3]/10' : ''}`}>
                       <td className="px-4 py-3.5 text-center">
                         <input 
                           type="checkbox" 
-                          className="w-4 h-4 text-[#36E08F] border-slate-355 rounded focus:ring-[#36E08F] cursor-pointer"
+                          className="w-4 h-4 text-[#48BFE3] border-slate-355 rounded focus:ring-[#48BFE3] cursor-pointer"
                           checked={selectedOutTransferIds.includes(t.id)}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -2161,7 +2161,7 @@ export function StudentTransfersClient() {
                           {t.student?.studentCode}
                         </span>
                       </td>
-                      <td className="px-4 py-3.5 font-semibold text-[#36E08F]">{t.destinationSchool}</td>
+                      <td className="px-4 py-3.5 font-semibold text-[#48BFE3]">{t.destinationSchool}</td>
                       <td className="px-4 py-3.5 text-slate-650 font-medium">{t.reason}</td>
                     </tr>
                   ))}
@@ -2209,13 +2209,13 @@ export function StudentTransfersClient() {
                           placeholder="Tìm tên hoặc mã khảo sát..." 
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
-                          className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#36E08F] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
+                          className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 focus:border-[#48BFE3] rounded-xl font-medium outline-none transition-all text-xs font-semibold text-slate-800" 
                         />
                       </div>
                       <select 
                         value={filterCampus}
                         onChange={(e) => setFilterCampus(e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-[#36E08F] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
+                        className="bg-white border border-slate-200 focus:border-[#48BFE3] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
                       >
                         <option value="">Tất cả Cơ sở dự tuyển</option>
                         {availableCampuses.map(c => <option key={c} value={c}>{c}</option>)}
@@ -2223,7 +2223,7 @@ export function StudentTransfersClient() {
                       <select 
                         value={filterGrade}
                         onChange={(e) => setFilterGrade(e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-[#36E08F] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
+                        className="bg-white border border-slate-200 focus:border-[#48BFE3] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer"
                       >
                         <option value="">Tất cả Phân hệ / Khối</option>
                         {availableGrades.map(g => <option key={g} value={g}>{g}</option>)}
@@ -2245,7 +2245,7 @@ export function StudentTransfersClient() {
                           setSelectedRequests(selected);
                           setShowInModal(true);
                         }}
-                        className="px-4 py-2.5 bg-[#36E08F] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-md shadow-[#36E08F]/20 transition-all flex items-center gap-1.5 cursor-pointer animate-in fade-in slide-in-from-right-3 duration-200"
+                        className="px-4 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-xl text-xs font-bold shadow-md shadow-[#48BFE3]/20 transition-all flex items-center gap-1.5 cursor-pointer animate-in fade-in slide-in-from-right-3 duration-200"
                       >
                         <UserCheck className="w-4 h-4" />
                         Xếp lớp hàng loạt ({selectedRequestIds.length})
@@ -2276,7 +2276,7 @@ export function StudentTransfersClient() {
                                       setSelectedRequestIds(prev => prev.filter(id => !paginatedPendingRequests.some(r => r.id === id)));
                                     }
                                   }}
-                                  className="rounded border-slate-350 text-[#36E08F] focus:ring-[#36E08F] h-4 w-4 cursor-pointer"
+                                  className="rounded border-slate-350 text-[#48BFE3] focus:ring-[#48BFE3] h-4 w-4 cursor-pointer"
                                 />
                               </th>
                             <th className="px-4 py-3 font-extrabold">Ngày yêu cầu</th>
@@ -2289,7 +2289,7 @@ export function StudentTransfersClient() {
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                           {paginatedPendingRequests.map(req => (
-                            <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedRequestIds.includes(req.id) ? 'bg-[#36E08F]/5 hover:bg-[#36E08F]/10' : ''}`}>
+                            <tr key={req.id} className={`hover:bg-slate-50/50 text-xs font-semibold transition-colors ${selectedRequestIds.includes(req.id) ? 'bg-[#48BFE3]/5 hover:bg-[#48BFE3]/10' : ''}`}>
                               <td className="px-4 py-3.5 text-center">
                                 <input 
                                   type="checkbox" 
@@ -2301,7 +2301,7 @@ export function StudentTransfersClient() {
                                       setSelectedRequestIds(prev => prev.filter(id => id !== req.id));
                                     }
                                   }}
-                                  className="rounded border-slate-350 text-[#36E08F] focus:ring-[#36E08F] h-4 w-4 cursor-pointer"
+                                  className="rounded border-slate-350 text-[#48BFE3] focus:ring-[#48BFE3] h-4 w-4 cursor-pointer"
                                 />
                               </td>
                               <td className="px-4 py-3.5 font-medium text-slate-700">
@@ -2389,7 +2389,7 @@ export function StudentTransfersClient() {
                       <select
                         value={historyFilterClass}
                         onChange={(e) => setHistoryFilterClass(e.target.value)}
-                        className="bg-white border border-slate-200 focus:border-[#36E08F] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer shadow-sm"
+                        className="bg-white border border-slate-200 focus:border-[#48BFE3] rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 outline-none transition-all cursor-pointer shadow-sm"
                       >
                         <option value="">Tất cả Lớp chuyển đến</option>
                         {historyClasses.map(c => <option key={c} value={c}>{c}</option>)}
@@ -2445,7 +2445,7 @@ export function StudentTransfersClient() {
                                     setEditingTransfer(t);
                                     setShowInModal(true);
                                   }}
-                                  className="px-3 py-1.5 border border-[#36E08F] hover:bg-[#36E08F]/5 text-[#36E08F] font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                                  className="px-3 py-1.5 border border-[#48BFE3] hover:bg-[#48BFE3]/5 text-[#48BFE3] font-bold rounded-xl text-xs transition-colors cursor-pointer"
                                 >
                                   Sửa
                                 </button>
@@ -2693,7 +2693,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Học sinh chuyển đi</div>
-                  <div className="text-base font-extrabold text-[#36E08F] mt-1 flex items-center gap-2">
+                  <div className="text-base font-extrabold text-[#48BFE3] mt-1 flex items-center gap-2">
                     {initialData.student?.studentName}
                     <span className="text-[10px] font-semibold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded">
                       {initialData.student?.studentCode}
@@ -2735,7 +2735,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                     </select>
                     {form.classId && (
                       <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
-                        <UserCheck className="w-3.5 h-3.5 text-[#36E08F]" />
+                        <UserCheck className="w-3.5 h-3.5 text-[#48BFE3]" />
                         <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
                       </div>
                     )}
@@ -2751,7 +2751,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                           <input
                             type="checkbox"
                             id="select-all-students"
-                            className="w-4 h-4 text-[#36E08F] border-slate-300 rounded focus:ring-[#36E08F] cursor-pointer"
+                            className="w-4 h-4 text-[#48BFE3] border-slate-300 rounded focus:ring-[#48BFE3] cursor-pointer"
                             checked={students.length > 0 && students.every(s => selectedStudentIds.includes(s.id))}
                             onChange={(e) => {
                               if (e.target.checked) {
@@ -2769,7 +2769,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
                               <input
                                 type="checkbox"
                                 id={`student-check-${s.id}`}
-                                className="w-4 h-4 text-[#36E08F] border-slate-300 rounded focus:ring-[#36E08F] cursor-pointer"
+                                className="w-4 h-4 text-[#48BFE3] border-slate-300 rounded focus:ring-[#48BFE3] cursor-pointer"
                                 checked={selectedStudentIds.includes(s.id)}
                                 onChange={(e) => {
                                   if (e.target.checked) {
@@ -2911,7 +2911,7 @@ function TransferOutModal({ activeSubTab, initialData, onClose, onSaved }: { act
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#36E08F] text-white font-bold rounded-xl hover:bg-[#009085] transition-colors shadow-lg shadow-[#36E08F]/20 flex items-center">
+              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#48BFE3] text-white font-bold rounded-xl hover:bg-[#009085] transition-colors shadow-lg shadow-[#48BFE3]/20 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Xác nhận chuyển
               </button>
@@ -3060,7 +3060,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
                 </select>
                 {form.classId && (
                   <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
-                    <UserCheck className="w-3.5 h-3.5 text-[#36E08F]" />
+                    <UserCheck className="w-3.5 h-3.5 text-[#48BFE3]" />
                     <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
                   </div>
                 )}
@@ -3078,7 +3078,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
 
             <div className="bg-slate-50/55 p-5 rounded-2xl border border-slate-200 space-y-4">
               <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                <ArrowRightLeft className="w-4 h-4 text-[#36E08F]" /> Thông tin chuyển lớp
+                <ArrowRightLeft className="w-4 h-4 text-[#48BFE3]" /> Thông tin chuyển lớp
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -3096,7 +3096,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
                   </select>
                   {form.destClassId && (
                     <div className="mt-2 text-[10px] font-bold text-slate-500 bg-white p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
-                      <UserCheck className="w-3.5 h-3.5 text-[#36E08F]" />
+                      <UserCheck className="w-3.5 h-3.5 text-[#48BFE3]" />
                       <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredDestClasses.find(c => c.id === form.destClassId)?.homeroomTeacher || "Chưa phân công"}</span></span>
                     </div>
                   )}
@@ -3117,7 +3117,7 @@ function ChangeClassModal({ activeSubTab, onClose, onSaved }: { activeSubTab: "g
               <button type="button" onClick={onClose} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-colors">
                 Hủy
               </button>
-              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#36E08F] text-white font-bold rounded-xl hover:bg-[#009085] transition-colors shadow-lg shadow-[#36E08F]/20 flex items-center">
+              <button disabled={saving} type="submit" className="px-6 py-3 bg-[#48BFE3] text-white font-bold rounded-xl hover:bg-[#009085] transition-colors shadow-lg shadow-[#48BFE3]/20 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Xác nhận chuyển lớp
               </button>
@@ -3483,7 +3483,7 @@ function TransferInModal({
                   </select>
                   {form.classId && (
                     <div className="mt-2 text-[10px] font-bold text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-100 flex items-center gap-1.5 animate-in fade-in duration-200">
-                      <UserCheck className="w-3.5 h-3.5 text-[#36E08F]" />
+                      <UserCheck className="w-3.5 h-3.5 text-[#48BFE3]" />
                       <span>GVCN: <span className="text-slate-800 font-extrabold">{filteredClasses.find(c => c.id === form.classId)?.homeroomTeacher || "Chưa phân công"}</span></span>
                     </div>
                   )}
@@ -3511,7 +3511,7 @@ function TransferInModal({
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Lưu phiếu
               </button>
-              <button disabled={saving} type="button" onClick={() => handleSubmit(null, true)} className="px-6 py-3 bg-[#36E08F] hover:bg-[#009085] text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-100 flex items-center">
+              <button disabled={saving} type="button" onClick={() => handleSubmit(null, true)} className="px-6 py-3 bg-[#48BFE3] hover:bg-[#009085] text-white font-bold rounded-xl transition-colors shadow-lg shadow-indigo-100 flex items-center">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Thông báo đến GVCN
               </button>
@@ -3850,7 +3850,7 @@ export function BatchEditOutModal({ ids, transfers, onClose, onSaved }: { ids: s
             <button 
               type="submit"
               disabled={saving}
-              className="px-5 py-2.5 bg-[#36E08F] hover:bg-[#009085] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer disabled:opacity-55"
+              className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#009085] text-white font-bold rounded-xl transition-all flex items-center gap-1.5 text-xs shadow-sm cursor-pointer disabled:opacity-55"
             >
               {saving && <Loader2 className="w-4 h-4 animate-spin" />}
               Lưu thay đổi hàng loạt

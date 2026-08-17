@@ -65,7 +65,7 @@ export default async function StudentPortalPage() {
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-[#36E08F] rounded-2xl flex items-center justify-center shadow-lg shadow-teal-100">
+        <div className="w-12 h-12 bg-[#48BFE3] rounded-2xl flex items-center justify-center shadow-lg shadow-teal-100">
           <Globe className="w-6 h-6 text-white" />
         </div>
         <div>

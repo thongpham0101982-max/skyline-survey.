@@ -1247,7 +1247,7 @@ export function TeacherSupportClient({
                         {s.studentCode}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <button onClick={() => handleOpenProfile(s.id)} className="font-bold text-[#36E08F] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">{s.studentName}</button>
+                        <button onClick={() => handleOpenProfile(s.id)} className="font-bold text-[#48BFE3] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">{s.studentName}</button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-bold text-xs">
                         {s.className}
@@ -1417,7 +1417,7 @@ export function TeacherSupportClient({
                               setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào. Điểm khảo sát: ${scoreDetails}`)
                               fetchClassStudents(s.classId)
                             }}
-                            className="bg-[#36E08F] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
+                            className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
                           >
                             Thêm vào Form
                           </button>

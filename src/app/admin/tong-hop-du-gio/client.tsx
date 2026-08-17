@@ -597,14 +597,14 @@ export function AdminTongHopClient({
     }
     return {
       color: "teal",
-      hex: "#36E08F",
-      border: "border-[#36E08F]",
+      hex: "#48BFE3",
+      border: "border-[#48BFE3]",
       borderT: "border-t-[#003B3A]",
-      text: "text-[#36E08F]",
+      text: "text-[#48BFE3]",
       textD: "text-[#003B3A]",
       bg: "bg-teal-50/50",
       fill: "rgba(0, 161, 154, 0.12)",
-      btn: "border-[#36E08F] text-[#36E08F]"
+      btn: "border-[#48BFE3] text-[#48BFE3]"
     };
   }, [activeDetailTab, isPreschoolTeacher]);
 
@@ -618,7 +618,7 @@ export function AdminTongHopClient({
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <div className="p-2 text-[#36E08F] text-xs font-semibold">
+              <div className="p-2 text-[#48BFE3] text-xs font-semibold">
                 <PieChart className="w-5 h-5" />
               </div>
               <h1 className="text-2xl font-black text-[#003B3A] tracking-tight">Tổng hợp kết quả dự giờ</h1>
@@ -627,7 +627,7 @@ export function AdminTongHopClient({
               <select
                 value={filterAcademicYearId}
                 onChange={(e) => handleAcademicYearChange(e.target.value)}
-                className="text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-700 shadow-sm focus:ring-2 focus:ring-[#36E08F] outline-none ml-2"
+                className="text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-700 shadow-sm focus:ring-2 focus:ring-[#48BFE3] outline-none ml-2"
               >
                 {academicYears.map((yr: any) => (
                   <option key={yr.id} value={yr.id}>
@@ -739,7 +739,7 @@ export function AdminTongHopClient({
           </div>
 
           {/* Department Selector & Teacher Search Card */}
-          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 space-y-4 relative overflow-hidden border-t-4 border-t-[#36E08F]">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-md shadow-slate-100/30 space-y-4 relative overflow-hidden border-t-4 border-t-[#48BFE3]">
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tổ chuyên môn</label>
               {isTTCM ? (
@@ -751,7 +751,7 @@ export function AdminTongHopClient({
                 <select 
                   value={selectedDeptId} 
                   onChange={e => { setSelectedDeptId(e.target.value); setSelectedTeacherId(null); setSearchTeacherQuery(""); setActiveDetailTab("to-cm"); }}
-                  className="w-full text-sm font-semibold p-3 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 transition-all outline-none appearance-none pr-8 text-xs font-semibold"
+                  className="w-full text-sm font-semibold p-3 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all outline-none appearance-none pr-8 text-xs font-semibold"
                 >
                   {activeDepartments.map(dept => (
                     <option key={dept.id} value={dept.id}>{dept.name}</option>
@@ -766,7 +766,7 @@ export function AdminTongHopClient({
               <select 
                 value={selectedMonth} 
                 onChange={e => { setSelectedMonth(e.target.value); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }}
-                className="w-full text-sm font-semibold p-3 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 transition-all outline-none appearance-none pr-8 text-xs font-semibold"
+                className="w-full text-sm font-semibold p-3 hover:bg-slate-50 text-slate-800 focus:bg-white focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all outline-none appearance-none pr-8 text-xs font-semibold"
               >
                 <option value="all">Tất cả các tháng</option>
                 {availableMonths.map(m => {
@@ -780,13 +780,13 @@ export function AdminTongHopClient({
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Tìm kiếm giáo viên</label>
               <div className="relative group/search">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within/search:text-[#36E08F] transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within/search:text-[#48BFE3] transition-colors" />
                 <input 
                   type="text" 
                   placeholder="Tìm tên hoặc mã giáo viên..."
                   value={searchTeacherQuery}
                   onChange={e => { setSearchTeacherQuery(e.target.value); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }}
-                  className="w-full text-xs font-semibold pl-9 pr-8 text-slate-850 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-[#36E08F]/10 focus:border-[#36E08F] transition-all outline-none text-xs font-semibold"
+                  className="w-full text-xs font-semibold pl-9 pr-8 text-slate-850 placeholder-slate-400 focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10 focus:border-[#48BFE3] transition-all outline-none text-xs font-semibold"
                 />
                 {searchTeacherQuery && (
                   <button onClick={() => { setSearchTeacherQuery(""); setSelectedTeacherId(null); setActiveDetailTab("to-cm"); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-450 hover:text-slate-700">
@@ -827,18 +827,18 @@ export function AdminTongHopClient({
                       onClick={() => { setSelectedTeacherId(teacher.id); setSearchSlotQuery(""); setFilterLevel("all"); setFilterGrade("all"); setActiveDetailTab("lich-su"); }}
                       className={"w-full text-left p-3.5 rounded-2xl border transition-all duration-305 flex items-center justify-between gap-3 " + (
                         isSelected
-                          ? "bg-gradient-to-r from-teal-50/70 to-emerald-50/20 border-[#36E08F] shadow-xs shadow-teal-50 scale-[1.01]"
+                          ? "bg-gradient-to-r from-teal-50/70 to-emerald-50/20 border-[#48BFE3] shadow-xs shadow-teal-50 scale-[1.01]"
                           : "bg-slate-50/30 border-slate-150 hover:bg-slate-50/80 hover:border-slate-300 hover:scale-[1.005]"
                       )}
                     >
                       <div className="min-w-0 flex items-center gap-3">
                         <div className={"w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 " + (
-                          isSelected ? "bg-[#36E08F] text-white" : "bg-slate-150 text-slate-650"
+                          isSelected ? "bg-[#48BFE3] text-white" : "bg-slate-150 text-slate-650"
                         )}>
                           {teacher.teacherName.charAt(0)}
                         </div>
                         <div className="min-w-0">
-                          <p className={"text-xs font-extrabold truncate " + (isSelected ? "text-[#36E08F]" : "text-slate-800")}>
+                          <p className={"text-xs font-extrabold truncate " + (isSelected ? "text-[#48BFE3]" : "text-slate-800")}>
                             {teacher.teacherName}
                           </p>
                           <p className="text-[10px] font-bold text-slate-400 mt-0.5">
@@ -1099,7 +1099,7 @@ export function AdminTongHopClient({
                     <div className={"w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm shadow-2xs border " + (
                       isPreschoolTeacher 
                         ? "bg-amber-50 text-amber-600 border-amber-100" 
-                        : "bg-teal-50 text-[#36E08F] border-teal-100"
+                        : "bg-teal-50 text-[#48BFE3] border-teal-100"
                     )}>
                       {selTeacher ? selTeacher.teacherName.charAt(0) : "G"}
                     </div>
@@ -1128,7 +1128,7 @@ export function AdminTongHopClient({
                   <span className={"px-3.5 py-1.5 border rounded-2xl text-[10px] font-black uppercase tracking-wider shadow-2xs " + (
                     isPreschoolTeacher
                       ? "bg-amber-50/60 text-amber-700 border-amber-200"
-                      : "bg-[#36E08F]/10 text-[#36E08F] border-[#36E08F]/20"
+                      : "bg-[#48BFE3]/10 text-[#48BFE3] border-[#48BFE3]/20"
                   )}>
                     {filteredSlots.length} / {selTeacherSlots.length} tiết dạy
                   </span>
@@ -1145,14 +1145,14 @@ export function AdminTongHopClient({
                           placeholder="Tìm kiếm chủ đề, lớp học..."
                           value={searchSlotQuery}
                           onChange={e => setSearchSlotQuery(e.target.value)}
-                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 bg-white text-slate-800 focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 outline-none transition-all"
+                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 pl-9 pr-3 py-2.5 bg-white text-slate-800 focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 outline-none transition-all"
                         />
                       </div>
                       <div className="md:col-span-3">
                         <select 
                           value={filterLevel} 
                           onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
+                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
                         >
                           <option value="all">Mọi cấp học</option>
                           <option value="Tiểu học">Tiểu học</option>
@@ -1165,7 +1165,7 @@ export function AdminTongHopClient({
                         <select 
                           value={filterGrade} 
                           onChange={e => setFilterGrade(e.target.value)}
-                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
+                          className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 outline-none transition-all appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2523475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-6"
                         >
                           <option value="all">Mọi khối</option>
                           {Array.from(new Set(selTeacherSlots.map(s => s.grade))).sort().map(g => (
@@ -1471,7 +1471,7 @@ export function AdminTongHopClient({
 
                         {sortedWeaknesses[0] && sortedWeaknesses[0].lowPct > 0 && (
                           <div className="bg-gradient-to-r from-teal-50/40 to-emerald-50/20 border border-teal-200 rounded-2xl p-4 flex gap-3.5 items-start mt-3">
-                            <div className="p-2 bg-white text-[#36E08F] rounded-xl border border-teal-250 shrink-0 shadow-2xs">
+                            <div className="p-2 bg-white text-[#48BFE3] rounded-xl border border-teal-250 shrink-0 shadow-2xs">
                               <MessageSquare className="w-5 h-5" />
                             </div>
                             <div className="space-y-1 min-w-0">

@@ -291,7 +291,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
     <div className="max-w-6xl mx-auto space-y-6 font-sans text-slate-800 pb-16">
       
       {/* Header Info Banner */}
-      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#36E08F] rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-2">
+      <div className="bg-gradient-to-r from-[#003B3A] via-[#005B58] to-[#48BFE3] rounded-3xl p-6 sm:p-8 text-white shadow-lg space-y-2">
         <div className="flex items-center gap-2 text-xs font-bold text-teal-100 uppercase tracking-wider">
           <Compass className="w-4 h-4 text-amber-300" />
           <span>PARENT PORTAL — SKYLINE ADVISORY</span>
@@ -308,7 +308,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
       {childrenList.length > 0 && (
         <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <span className="text-xs font-black text-slate-600 flex items-center gap-2">
-            <Users className="w-4 h-4 text-[#36E08F]" />
+            <Users className="w-4 h-4 text-[#48BFE3]" />
             <span>Chọn con em theo dõi (Năm học hiện tại):</span>
           </span>
           <div className="flex flex-wrap items-center gap-2">

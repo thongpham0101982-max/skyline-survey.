@@ -86,13 +86,13 @@ function Spin() {
 }
 
 function Empty({ text, sub }: { text: string; sub?: string }) {
-  return <div className="flex flex-col items-center justify-center py-16 text-center"><div className="w-20 h-20 bg-[#36E08F]/5 rounded-full flex items-center justify-center mb-4"><Baby className="w-10 h-10 text-teal-400" /></div><p className="font-black text-slate-500 text-sm">{text}</p>{sub && <p className="text-xs text-slate-400 mt-1 font-medium">{sub}</p>}</div>;
+  return <div className="flex flex-col items-center justify-center py-16 text-center"><div className="w-20 h-20 bg-[#48BFE3]/5 rounded-full flex items-center justify-center mb-4"><Baby className="w-10 h-10 text-teal-400" /></div><p className="font-black text-slate-500 text-sm">{text}</p>{sub && <p className="text-xs text-slate-400 mt-1 font-medium">{sub}</p>}</div>;
 }
 
 function TypeBadge({ t }: { t: string }) {
   const map: Record<string, string> = {
     KHAO_SAT_LE: "bg-blue-50 text-blue-700 border border-blue-200",
-    OPEN_DAY: "bg-[#36E08F]/5 text-purple-700 border border-purple-200"
+    OPEN_DAY: "bg-[#48BFE3]/5 text-purple-700 border border-purple-200"
   };
   const label: Record<string, string> = {
     KHAO_SAT_LE: "Khảo sát lẻ cơ sở",
@@ -362,7 +362,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       return (
         <div 
           onClick={onOpen} 
-          className="cursor-pointer hover:bg-slate-50/80 p-2 rounded-xl border border-slate-200 hover:border-[#36E08F]/40 transition-all w-full flex flex-col gap-1.5 bg-white shadow-2xs"
+          className="cursor-pointer hover:bg-slate-50/80 p-2 rounded-xl border border-slate-200 hover:border-[#48BFE3]/40 transition-all w-full flex flex-col gap-1.5 bg-white shadow-2xs"
         >
           <div className="flex items-center justify-between gap-1">
             <span className="text-[9px] font-black text-slate-400 tracking-wide uppercase">{label}</span>
@@ -374,7 +374,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
             </div>
           )}
           <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-            <div className="w-5 h-5 rounded-full bg-[#36E08F]/10  flex items-center justify-center text-[8px] font-black text-slate-800 shrink-0">
+            <div className="w-5 h-5 rounded-full bg-[#48BFE3]/10  flex items-center justify-center text-[8px] font-black text-slate-800 shrink-0">
               {initials}
             </div>
             <span className="text-[9px] text-slate-500 font-bold truncate max-w-[100px]" title={user || ""}>{user || "—"}</span>
@@ -387,7 +387,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
       <div className="flex items-center gap-2 w-full justify-between">
         <button 
           onClick={onOpen} 
-          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[10px] font-bold text-white bg-[#36E08F] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-xs border border-[#009085]/10 cursor-pointer"
+          className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[10px] font-bold text-white bg-[#48BFE3] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-xs border border-[#009085]/10 cursor-pointer"
         >
           Xét duyệt
         </button>
@@ -845,7 +845,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
     const logoHtml = config.logo 
       ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") 
-      : '<svg class="logo-svg" style="height: 48px; fill: #36E08F;" viewBox="0 0 260 50"><text x="0" y="38" font-family="Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>';
+      : '<svg class="logo-svg" style="height: 48px; fill: #48BFE3;" viewBox="0 0 260 50"><text x="0" y="38" font-family="Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>';
 
     const signatureHtml = config.signature 
       ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") 
@@ -875,34 +875,34 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
     const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-          '<span style="font-weight: bold; color: #36E08F; white-space: nowrap; text-transform: uppercase; font-size: 9.5pt; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+          '<span style="font-weight: bold; color: #48BFE3; white-space: nowrap; text-transform: uppercase; font-size: 9.5pt; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
           '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-          '<span style="font-weight: 600; color: #36E08F; white-space: nowrap; text-transform: lowercase; font-size: 9pt;">www.skylineschool.edu.vn</span>' +
+          '<span style="font-weight: 600; color: #48BFE3; white-space: nowrap; text-transform: lowercase; font-size: 9pt;">www.skylineschool.edu.vn</span>' +
         '</div>' +
         '<div style="display: flex; justify-content: space-between; font-size: 7.5pt; color: #555555; position: relative; width: 100%;">' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Riverside</p>' +
+              '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Riverside</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2.4 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Central</p>' +
+              '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Central</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 48 Nguyễn Du, Q. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Global</p>' +
+              '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Global</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Beach</p>' +
+              '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Beach</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 199 Trần Anh Tông, Q. Thanh Khê, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
-              '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Hill</p>' +
+              '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Hill</p>' +
               '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Khối Hà My Đông A, Điện Bàn, Quảng Nam</p>' +
             '</div>' +
             '<div style="display: flex; flex-direction: column; line-height: 1.35; font-weight: 600; color: #1e293b;">' +
@@ -910,7 +910,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
               '<p style="margin: 0;">(+84.236) 356 8777</p>' +
             '</div>' +
           '</div>' +
-          '<div style="position: absolute; right: -4px; top: -4px; width: 50px; height: 38px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #36E08F;">' +
+          '<div style="position: absolute; right: -4px; top: -4px; width: 50px; height: 38px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #48BFE3;">' +
             '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
               '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
             '</svg>' +
@@ -920,7 +920,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
 
     const bgHtml = config.background 
       ? getImgTag(config.background, "print-watermark", "", "Watermark") 
-      : '<svg class="print-watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110mm; height: auto; opacity: 0.04; z-index: 1; pointer-events: none;" viewBox="0 0 100 100"><path fill="#36E08F" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" /><path fill="#36E08F" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" /></svg>';
+      : '<svg class="print-watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110mm; height: auto; opacity: 0.04; z-index: 1; pointer-events: none;" viewBox="0 0 100 100"><path fill="#48BFE3" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" /><path fill="#48BFE3" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" /></svg>';
 
     return '<!DOCTYPE html>' +
       '<html>' +
@@ -995,7 +995,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
         '<div class="a4-page">' +
           bgHtml +
           '<div style="position: relative; z-index: 10; display: flex; flex-direction: column; flex-grow: 1;">' +
-            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #36E08F; padding-bottom: 8px; margin-bottom: 24px;">' +
+            '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #48BFE3; padding-bottom: 8px; margin-bottom: 24px;">' +
               '<div style="display: flex; align-items: center; justify-content: space-between;">' +
                 logoHtml +
               '</div>' +
@@ -1347,7 +1347,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
           <button
             disabled={currentPage === 1}
             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-[#36E08F] hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-[#48BFE3] hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
           >
             Trước
           </button>
@@ -1366,7 +1366,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
                   onClick={() => setCurrentPage(pageNum)}
                   className={"h-8 w-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border-none font-black " + (
                     currentPage === pageNum
-                      ? "bg-[#36E08F] text-white shadow-sm shadow-[#36E08F]/20"
+                      ? "bg-[#48BFE3] text-white shadow-sm shadow-[#48BFE3]/20"
                       : "text-slate-655 hover:bg-slate-100"
                   )}
                 >
@@ -1378,7 +1378,7 @@ export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, g
           <button
             disabled={currentPage === totalPages || totalPages === 0}
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-[#36E08F] hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
+            className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-[#48BFE3] hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
           >
             Sau
           </button>
@@ -3701,8 +3701,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4 text-teal-400" /> Kỳ &amp; Đợt Khảo sát Mầm non</h2>
             <div className="flex gap-2">
-              <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-none transition-all"><RefreshCw className="w-4 h-4" /></button>
-              <button onClick={openAddPeriod} className="flex items-center gap-2 px-5 py-2.5 bg-[#36E08F] text-white text-[13px] font-black rounded-none hover:bg-[#36E08F]-700 transition-all shadow-none shadow-teal-100"><Plus className="w-4 h-4" /> Tạo Kỳ mới</button>
+              <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none transition-all"><RefreshCw className="w-4 h-4" /></button>
+              <button onClick={openAddPeriod} className="flex items-center gap-2 px-5 py-2.5 bg-[#48BFE3] text-white text-[13px] font-black rounded-none hover:bg-[#48BFE3]-700 transition-all shadow-none shadow-teal-100"><Plus className="w-4 h-4" /> Tạo Kỳ mới</button>
             </div>
           </div>
           {pLoading ? <Spin /> : periods.length === 0 ? <Empty text="Chưa có Kỳ khảo sát nào" sub="Bấm Tạo Kỳ mới để bắt đầu" /> : (
@@ -3711,7 +3711,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div key={p.id} className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden hover:border-slate-300 transition-all">
                   <div className="px-4 py-3.5 flex flex-wrap items-center justify-between gap-3 cursor-pointer" onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-none bg-[#36E08F]/5 flex items-center justify-center flex-shrink-0"><Baby className="w-6 h-6 text-teal-400" /></div>
+                      <div className="w-12 h-12 rounded-none bg-[#48BFE3]/5 flex items-center justify-center flex-shrink-0"><Baby className="w-6 h-6 text-teal-400" /></div>
                       <div>
                         <div className="flex items-center gap-2"><span className="font-black text-slate-800 text-lg">{p.name}</span><Badge s={p.status} /><TypeBadge t={p.surveyType || "KHAO_SAT_LE"} /></div>
                         <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-400 font-bold">
@@ -3722,19 +3722,19 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button onClick={e => { e.stopPropagation(); openAddBatch(p.id); }} className="flex items-center gap-1.5 text-[11px] font-black text-slate-800 hover:bg-emerald-500 hover:text-white transition-all text-xs font-semibold"><Plus className="w-3.5 h-3.5" /> Thêm Đợt</button>
-                      <button onClick={e => { e.stopPropagation(); openEditPeriod(p); }} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={e => { e.stopPropagation(); openEditPeriod(p); }} className="p-2 text-slate-400 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button>
                       <button onClick={e => { e.stopPropagation(); setConfirm({ msg: `Xóa kỳ "${p.name}"?`, fn: () => doDeletePeriod(p.id) }); }} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button>
                       <span className="text-slate-300 ml-2">{expandedId === p.id ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}</span>
                     </div>
                   </div>
                   {expandedId === p.id && (
-                    <div className="border-t border-slate-300 p-5 bg-[#36E08F]/5/30">
+                    <div className="border-t border-slate-300 p-5 bg-[#48BFE3]/5/30">
                       {!p.batches || p.batches.length === 0 ? (
                         <div className="text-center py-8 text-slate-400 font-bold text-xs uppercase tracking-wider bg-white rounded-none border-2 border-dashed border-slate-300">Chưa có Đợt nào</div>
                       ) : (
                         <div className="overflow-x-auto bg-white border border-slate-300 rounded-none shadow-none">
                           <table className="w-full text-left border-collapse">
-                            <thead className="bg-[#36E08F]/5/70 border-b border-slate-300">
+                            <thead className="bg-[#48BFE3]/5/70 border-b border-slate-300">
                               <tr>
                                 {["Mã Đợt", "Nội dung", "Cơ sở", "Thời gian", "Trạng thái", "Người phụ trách", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>)}
                               </tr>
@@ -3745,8 +3745,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 let baseName = b.name;
                                 const m = b.name.match(/Đợt \d+ - (.*?) \|/); if (m) baseName = m[1]; else { const m2 = b.name.match(/Đợt \d+ - (.*)/); if (m2) baseName = m2[1]; }
                                 return (
-                                  <tr key={b.id} className="hover:bg-[#36E08F]/5/30 transition-colors">
-                                    <td className="p-2 border border-slate-200"><span className="inline-flex items-center justify-center w-8 h-8 rounded-none bg-[#36E08F]/5 font-black text-slate-800 text-xs">#{b.batchNumber}</span></td>
+                                  <tr key={b.id} className="hover:bg-[#48BFE3]/5/30 transition-colors">
+                                    <td className="p-2 border border-slate-200"><span className="inline-flex items-center justify-center w-8 h-8 rounded-none bg-[#48BFE3]/5 font-black text-slate-800 text-xs">#{b.batchNumber}</span></td>
                                     <td className="p-2 border border-slate-200"><span className="text-sm font-semibold text-slate-700">{baseName}</span></td>
                                     <td className="p-2 border border-slate-200"><span className="text-xs text-slate-500">{campus?.campusName || "Tất cả"}</span></td>
                                     <td className="p-2 border border-slate-200"><span className="text-xs text-slate-500">{b.startDate?.slice(0,10)} → {b.endDate?.slice(0,10)}</span></td>
@@ -3764,7 +3764,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                              else { const d = await res.json(); alert(d.error || "Lỗi cập nhật"); }
                                            } catch(e) { alert("Lỗi mạng"); }
                                          }}
-                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#36E08F] focus:ring-offset-2 ${
+                                         className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#48BFE3] focus:ring-offset-2 ${
                                            b.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"
                                          }`}
                                          title={b.status === "ACTIVE" ? "Đang mở (Click để Khóa)" : "Đã khóa (Click để Mở)"}
@@ -3817,7 +3817,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                                 setSendingEmailBatchId(null);
                                               }
                                             }}
-                                            className="p-1 text-slate-400 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-md transition-all ml-2"
+                                            className="p-1 text-slate-400 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-md transition-all ml-2"
                                             disabled={sendingEmailBatchId === b.id}
                                             title="Gửi email thông báo cho người phụ trách"
                                           >
@@ -3830,7 +3830,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                         )}
                                       </div>
                                     </td>
-                                    <td className="p-2 text-right border border-slate-200"><div className="flex justify-end gap-1"><button onClick={() => openEditBatch(b)} className="p-2 text-slate-300 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa đợt #${b.batchNumber}?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
+                                    <td className="p-2 text-right border border-slate-200"><div className="flex justify-end gap-1"><button onClick={() => openEditBatch(b)} className="p-2 text-slate-300 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa đợt #${b.batchNumber}?`, fn: () => doDeleteBatch(b.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
                                   </tr>
                                 );
                               })}
@@ -3857,7 +3857,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="flex gap-2">
               <button 
                 onClick={fetchAssignments} 
-                className="p-2 text-slate-400 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-none transition-all"
+                className="p-2 text-slate-400 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none transition-all"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
@@ -3938,8 +3938,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     ];
 
                     return (
-                      <div className="bg-gradient-to-br from-[#36E08F]/5 via-white to-teal-50/10 border-l-4 border-l-[#36E08F] border-y border-r border-slate-300 rounded-none p-4 space-y-3.5 shadow-none animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center gap-2 border-b border-[#36E08F]/10 pb-2">
+                      <div className="bg-gradient-to-br from-[#48BFE3]/5 via-white to-teal-50/10 border-l-4 border-l-[#48BFE3] border-y border-r border-slate-300 rounded-none p-4 space-y-3.5 shadow-none animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-2 border-b border-[#48BFE3]/10 pb-2">
                           <Calendar className="w-4 h-4 text-slate-800" />
                           <span className="text-[11px] font-black text-slate-800 uppercase tracking-widest">
                             Quy tắc Ánh xạ Nhóm tuổi ({stageTitle})
@@ -3952,7 +3952,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             <span className="col-span-6">Khối Áp dụng</span>
                           </div>
                           {mappings.map((m, idx) => (
-                            <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white border border-teal-50 px-3 py-2.5 rounded-none shadow-2xs hover:border-[#36E08F]/30 hover:shadow-xs transition-all duration-200">
+                            <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white border border-teal-50 px-3 py-2.5 rounded-none shadow-2xs hover:border-[#48BFE3]/30 hover:shadow-xs transition-all duration-200">
                               <span className="col-span-5 font-black text-slate-700 text-[11px]">{m.form}</span>
                               <span className="col-span-1 text-slate-300 text-center font-bold">→</span>
                               <span className="col-span-6 font-extrabold text-slate-800 text-[11px]">{m.actual}</span>
@@ -3979,7 +3979,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                             key={g} 
                             className={`flex items-center gap-2.5 p-3 rounded-none border cursor-pointer transition-all ${
                               isChecked 
-                                ? "bg-[#36E08F]/5 border-[#36E08F] text-slate-800 font-extrabold shadow-xs" 
+                                ? "bg-[#48BFE3]/5 border-[#48BFE3] text-slate-800 font-extrabold shadow-xs" 
                                 : "bg-white border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-300"
                             }`}
                           >
@@ -4010,7 +4010,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <h3 className="text-[12px] font-black text-slate-800 uppercase tracking-widest flex items-center gap-1.5">
                     <Users className="w-4 h-4 text-teal-400" /> Danh sách Giáo viên
                   </h3>
-                  <span className="text-[10px] bg-[#36E08F]/5 text-slate-800 px-2 py-0.5 rounded-none font-black">
+                  <span className="text-[10px] bg-[#48BFE3]/5 text-slate-800 px-2 py-0.5 rounded-none font-black">
                     Đã chọn {aSelectedTeachers.length}
                   </span>
                 </div>
@@ -4069,7 +4069,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       return (
                         <label 
                           key={t.id} 
-                          className={`flex items-center justify-between p-3 rounded-none cursor-pointer border transition-all ${isChecked ? "bg-[#36E08F]/5/50 border-slate-300" : "bg-white border-slate-300 hover:border-slate-300 hover:bg-slate-50/30"}`}
+                          className={`flex items-center justify-between p-3 rounded-none cursor-pointer border transition-all ${isChecked ? "bg-[#48BFE3]/5/50 border-slate-300" : "bg-white border-slate-300 hover:border-slate-300 hover:bg-slate-50/30"}`}
                         >
                           <div className="flex items-center gap-3">
                             <input 
@@ -4086,7 +4086,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               <div className="text-sm font-bold text-slate-800 flex items-center gap-2">
                                 <span>{t.teacherName}</span>
                                 {t.departmentRel?.name && (
-                                  <span className="text-[9px] font-black uppercase bg-[#36E08F]/5 text-slate-800 border border-slate-300 px-1.5 py-0.5 rounded-none tracking-wider">
+                                  <span className="text-[9px] font-black uppercase bg-[#48BFE3]/5 text-slate-800 border border-slate-300 px-1.5 py-0.5 rounded-none tracking-wider">
                                     {t.departmentRel.name}
                                   </span>
                                 )}
@@ -4103,7 +4103,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <button 
                   onClick={saveAssignments} 
                   disabled={aSaving || !aPeriodId}
-                  className="w-full py-3.5 bg-[#36E08F] text-white font-black rounded-none hover:bg-[#36E08F]-700 disabled:opacity-50 transition-all shadow-none shadow-teal-100/50 flex items-center justify-center gap-2 mt-4 hover:scale-[1.01] active:scale-[0.99] duration-150"
+                  className="w-full py-3.5 bg-[#48BFE3] text-white font-black rounded-none hover:bg-[#48BFE3]-700 disabled:opacity-50 transition-all shadow-none shadow-teal-100/50 flex items-center justify-center gap-2 mt-4 hover:scale-[1.01] active:scale-[0.99] duration-150"
                 >
                   {aSaving ? (
                     <div className="w-5 h-5 border-3 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -4156,7 +4156,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               </div>
                               <div className="text-[11px] text-slate-400 font-semibold">{tCode} • {tEmail}</div>
                               <div className="flex gap-1.5 mt-1 items-center">
-                                <span className="text-[9px] font-black uppercase bg-[#36E08F]/5 text-slate-800 border border-slate-300 px-2 py-0.5 rounded-none tracking-wider">
+                                <span className="text-[9px] font-black uppercase bg-[#48BFE3]/5 text-slate-800 border border-slate-300 px-2 py-0.5 rounded-none tracking-wider">
                                   {assign.grade}
                                 </span>
                                 {assign.batch && (
@@ -4217,7 +4217,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {cfgSelected.length > 0 && (
                 <button onClick={() => setConfirm({ msg: `Xóa ${cfgSelected.length} mục đã chọn?`, fn: doBulkDeleteCfg })} className="flex items-center gap-2 text-white text-[13px] font-black hover:bg-rose-700 transition-all shadow-none shadow-rose-100 animate-in fade-in duration-200 text-xs font-semibold"><Trash2 className="w-4 h-4" /> Xóa mục đã chọn (${cfgSelected.length})</button>
               )}
-              <button onClick={() => openAddCfg("criteria")} className="flex items-center gap-2 px-5 py-2.5 bg-[#36E08F] text-white text-[13px] font-black rounded-none hover:bg-[#36E08F]-700 transition-all shadow-none shadow-teal-100"><Plus className="w-4 h-4" /> Thêm mục</button>
+              <button onClick={() => openAddCfg("criteria")} className="flex items-center gap-2 px-5 py-2.5 bg-[#48BFE3] text-white text-[13px] font-black rounded-none hover:bg-[#48BFE3]-700 transition-all shadow-none shadow-teal-100"><Plus className="w-4 h-4" /> Thêm mục</button>
             </div>
           </div>
           {cfgLoading ? <Spin /> : (
@@ -4225,25 +4225,25 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {configs.length === 0 ? <Empty text="Chưa có danh mục nào" /> : (
                 <div className="overflow-x-auto custom-scrollbar flex-1">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-[#36E08F]/5 border-b border-slate-300">
+                    <thead className="bg-[#48BFE3]/5 border-b border-slate-300">
                       <tr>
                         <th className="p-2 w-12 border border-slate-200">
-                          <input type="checkbox" className="w-4 h-4 rounded accent-[#36E08F]" checked={configs.length > 0 && cfgSelected.length === configs.length} onChange={e => setCfgSelected(e.target.checked ? configs.map(c => c.id) : [])} />
+                          <input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={configs.length > 0 && cfgSelected.length === configs.length} onChange={e => setCfgSelected(e.target.checked ? configs.map(c => c.id) : [])} />
                         </th>
                         {["STT", "Loại", "Mã", "Tên", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>)}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-teal-50">
                       {configs.map((c, i) => (
-                        <tr key={c.id} className="hover:bg-[#36E08F]/5/30 transition-colors">
+                        <tr key={c.id} className="hover:bg-[#48BFE3]/5/30 transition-colors">
                           <td className="p-2 w-12 border border-slate-200">
-                            <input type="checkbox" className="w-4 h-4 rounded accent-[#36E08F]" checked={cfgSelected.includes(c.id)} onChange={e => setCfgSelected(e.target.checked ? [...cfgSelected, c.id] : cfgSelected.filter(id => id !== c.id))} />
+                            <input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={cfgSelected.includes(c.id)} onChange={e => setCfgSelected(e.target.checked ? [...cfgSelected, c.id] : cfgSelected.filter(id => id !== c.id))} />
                           </td>
                           <td className="p-2 text-slate-400 text-sm border border-slate-200">{i+1}</td>
-                          <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-slate-800 bg-[#36E08F]/5 px-2 py-0.5 rounded-none  uppercase">{c.categoryType}</span></td>
+                          <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-slate-800 bg-[#48BFE3]/5 px-2 py-0.5 rounded-none  uppercase">{c.categoryType}</span></td>
                           <td className="p-2 font-mono text-xs font-bold text-slate-800 border border-slate-200">{c.code}</td>
                           <td className="p-2 font-semibold text-slate-700 text-sm border border-slate-200">{c.name}</td>
-                          <td className="p-2 text-right border border-slate-200"><div className="flex justify-end gap-1"><button onClick={() => openEditCfg(c)} className="p-2 text-slate-300 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa "${c.name}"?`, fn: () => doDeleteCfg(c.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
+                          <td className="p-2 text-right border border-slate-200"><div className="flex justify-end gap-1"><button onClick={() => openEditCfg(c)} className="p-2 text-slate-300 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa "${c.name}"?`, fn: () => doDeleteCfg(c.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
                         </tr>
                       ))}
                     </tbody>
@@ -4297,7 +4297,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               >
                 <Plus className="w-4 h-4" /> Tạo đợt
               </button>
-<button onClick={openAddChild} disabled={!cPeriodId} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#36E08F] hover:bg-[#36E08F]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
+<button onClick={openAddChild} disabled={!cPeriodId} className="flex items-center gap-1.5 px-4 py-2 text-xs font-black text-white bg-[#48BFE3] hover:bg-[#48BFE3]-700 rounded-none shadow-none shadow-teal-100 transition-all disabled:opacity-50"><Plus className="w-4 h-4" /> Thêm bé</button>
             </div>
           </div>
 
@@ -4307,16 +4307,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             ) : (
               <div className="overflow-x-auto custom-scrollbar flex-1">
                 <table className="w-full text-left text-sm whitespace-nowrap border-collapse">
-                  <thead className="bg-[#36E08F]/5 border-b border-slate-300">
+                  <thead className="bg-[#48BFE3]/5 border-b border-slate-300">
                     <tr>
-                      <th className="p-2 w-12 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#36E08F]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
+                      <th className="p-2 w-12 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={filtChildren.length > 0 && cSelected.length === filtChildren.length} onChange={e => setCSelected(e.target.checked ? filtChildren.map(c => c.id) : [])} /></th>
                       {["STT", "Mã bé", "Họ và tên", "Ngày sinh", "Giới tính", "Nhóm tuổi", "Cơ sở", "Kết quả", "Thao tác"].map(h => <th key={h} className="p-2 text-[10px] font-black text-slate-500 uppercase tracking-widest border border-slate-300">{h}</th>)}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {filtChildren.map((child, i) => (
-                      <tr key={child.id} className={`hover:bg-[#36E08F]/5/30 transition-colors ${cSelected.includes(child.id) ? "bg-[#36E08F]/5/50" : ""}`}>
-                        <td className="p-2 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#36E08F]" checked={cSelected.includes(child.id)} onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))} /></td>
+                      <tr key={child.id} className={`hover:bg-[#48BFE3]/5/30 transition-colors ${cSelected.includes(child.id) ? "bg-[#48BFE3]/5/50" : ""}`}>
+                        <td className="p-2 border border-slate-300"><input type="checkbox" className="w-4 h-4 rounded accent-[#48BFE3]" checked={cSelected.includes(child.id)} onChange={e => setCSelected(e.target.checked ? [...cSelected, child.id] : cSelected.filter(id => id !== child.id))} /></td>
                         <td className="p-2 text-slate-500 text-sm border border-slate-300">{i+1}</td>
                         <td className="p-2 border border-slate-300 font-mono text-xs text-slate-700">{child.studentCode}</td>
                         <td className="p-2 border border-slate-300 text-sm font-bold text-slate-800">{child.fullName}</td>
@@ -4325,7 +4325,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <td className="p-2 border border-slate-300 text-sm text-slate-700">{child.grade || "—"}</td>
                         <td className="p-2 text-xs font-semibold text-slate-600 border border-slate-300">{child.admissionCampus || "—"}</td>
                         <td className="p-2 border border-slate-300 text-xs font-black">{child.admissionResult ? <span className={child.admissionResult === "Học thử" ? "text-slate-800" : child.admissionResult.toUpperCase().includes("ĐẠT") && !child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-slate-800" : child.admissionResult.toUpperCase().includes("KHÔNG") ? "text-slate-800" : "text-slate-800"}>{child.admissionResult}</span> : <span className="text-slate-300">Chưa</span>}</td>
-                        <td className="p-2 text-right border border-slate-300"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
+                        <td className="p-2 text-right border border-slate-300"><div className="flex justify-end gap-1"><button onClick={() => openEditChild(child)} className="p-2 text-slate-300 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none transition-all"><Edit2 className="w-4 h-4" /></button><button onClick={() => setConfirm({ msg: `Xóa bé "${child.fullName}"?`, fn: () => doDeleteChild(child.id) })} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all text-xs font-semibold"><Trash2 className="w-4 h-4" /></button></div></td>
                       </tr>
                     ))}
                   </tbody>
@@ -4370,13 +4370,13 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
             </div>
           )}
-          <div className="bg-[#EBF5F4]/60 backdrop-blur-md p-1.5 rounded-3xl flex flex-wrap gap-2 w-fit border border-[#36E08F]/15 shadow-sm no-print mb-6">
+          <div className="bg-[#EBF5F4]/60 backdrop-blur-md p-1.5 rounded-3xl flex flex-wrap gap-2 w-fit border border-[#48BFE3]/15 shadow-sm no-print mb-6">
             <button
               onClick={() => setDevTab("stats")}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
                 devTab === "stats" 
-                  ? "bg-gradient-to-r from-[#36E08F] to-[#008075] text-white shadow-md shadow-[#36E08F]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#36E08F]/5"
+                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
+                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
               }`}
             >
               <BarChart3 className="w-4 h-4"/>
@@ -4386,8 +4386,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               onClick={() => setDevTab("assess")}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
                 devTab === "assess" 
-                  ? "bg-gradient-to-r from-[#36E08F] to-[#008075] text-white shadow-md shadow-[#36E08F]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#36E08F]/5"
+                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
+                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
               }`}
             >
               <Users className="w-4 h-4"/>
@@ -4397,8 +4397,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               onClick={() => setDevTab("xetDuyet")}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
                 devTab === "xetDuyet" 
-                  ? "bg-gradient-to-r from-[#36E08F] to-[#008075] text-white shadow-md shadow-[#36E08F]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#36E08F]/5"
+                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
+                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
               }`}
             >
               <CheckCircle2 className="w-4 h-4"/>
@@ -4408,8 +4408,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               onClick={() => setDevTab("dgkqHocThu")}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
                 devTab === "dgkqHocThu" 
-                  ? "bg-gradient-to-r from-[#36E08F] to-[#008075] text-white shadow-md shadow-[#36E08F]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#36E08F]/5"
+                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
+                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
               }`}
             >
               <Sparkles className="w-4 h-4"/>
@@ -4419,8 +4419,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               onClick={() => setDevTab("xuatThuChucMung")}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-xs font-black tracking-wider transition-all duration-300 border-none cursor-pointer ${
                 devTab === "xuatThuChucMung" 
-                  ? "bg-gradient-to-r from-[#36E08F] to-[#008075] text-white shadow-md shadow-[#36E08F]/20 scale-[1.02]" 
-                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#36E08F]/5"
+                  ? "bg-gradient-to-r from-[#48BFE3] to-[#008075] text-white shadow-md shadow-[#48BFE3]/20 scale-[1.02]" 
+                  : "bg-transparent text-slate-500 hover:text-slate-800 hover:bg-[#48BFE3]/5"
               }`}
             >
               <GraduationCap className="w-4 h-4"/>
@@ -4434,7 +4434,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <div className="space-y-8 animate-in fade-in duration-300 text-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm bg-white">
 
               {/* Premium Dashboard-style Filter Bar for Stats */}
-              <div className="bg-[#EBF5F4]/40 p-5 rounded-2xl border border-[#36E08F]/15 grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mb-6">
+              <div className="bg-[#EBF5F4]/40 p-5 rounded-2xl border border-[#48BFE3]/15 grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mb-6">
                 <div className="group relative w-full">
                   <label className="block text-[10px] font-black tracking-widest uppercase mb-2 text-[#008075] flex items-center gap-1.5 ml-1">
                     <Calendar className="w-3.5 h-3.5 text-slate-800"/> Kỳ Khảo sát
@@ -4443,7 +4443,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -4462,7 +4462,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -4477,7 +4477,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {/* KPI Cards Row */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Card 1: Tổng Học sinh */}
-                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 border-l-4 border-l-[#36E08F] shadow-sm flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(0,169,157,0.1)] hover:border-teal-300 transition-all duration-500 cursor-pointer">
+                <div className="relative overflow-hidden bg-white p-6 rounded-2xl border border-slate-200/80 border-l-4 border-l-[#48BFE3] shadow-sm flex flex-col justify-between group hover:-translate-y-1.5 hover:shadow-[0_12px_30px_rgba(0,169,157,0.1)] hover:border-teal-300 transition-all duration-500 cursor-pointer">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng trẻ Khảo sát</span>
                     <div className="p-2.5 bg-teal-50 text-slate-800 rounded-xl transition-all duration-300 group-hover:scale-110 group-hover:bg-teal-100">
@@ -4491,7 +4491,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="text-[10px] text-slate-500 mt-2 font-bold flex justify-between">
                     <span>Đã đánh giá: {overallKPIs.surveyed} ({overallKPIs.surveyedRate}%)</span>
                     <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden self-center">
-                      <div className="h-full bg-[#36E08F] rounded-full" style={{ width: `${overallKPIs.surveyedRate}%` }}></div>
+                      <div className="h-full bg-[#48BFE3] rounded-full" style={{ width: `${overallKPIs.surveyedRate}%` }}></div>
                     </div>
                   </div>
                 </div>
@@ -4688,7 +4688,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <select
                         value={chartCampusId}
                         onChange={e => setChartCampusId(e.target.value)}
-                        className="bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-700 py-1.5 px-3 outline-none cursor-pointer hover:border-[#36E08F] transition-colors shadow-sm"
+                        className="bg-slate-50 border border-slate-200 rounded-xl text-[10px] font-black text-slate-700 py-1.5 px-3 outline-none cursor-pointer hover:border-[#48BFE3] transition-colors shadow-sm"
                       >
                         <option value="all">Tất cả các cơ sở</option>
                         <option value="CS1">Cơ sở 1</option>
@@ -4704,8 +4704,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <ComposedChart data={gradeStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                           <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#36E08F" stopOpacity={0.15}/>
-                            <stop offset="95%" stopColor="#36E08F" stopOpacity={0.02}/>
+                            <stop offset="5%" stopColor="#48BFE3" stopOpacity={0.15}/>
+                            <stop offset="95%" stopColor="#48BFE3" stopOpacity={0.02}/>
                           </linearGradient>
                           <linearGradient id="colorSurveyed" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#008075" stopOpacity={0.8}/>
@@ -4791,7 +4791,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         {chartCampusId === "all" ? (
                           <>
                             <Bar yAxisId="left" dataKey="total" fill="url(#colorTotal)" radius={[4, 4, 0, 0]} barSize={26} name="Tổng Trẻ Khảo sát" />
-                            <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#36E08F" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
+                            <Line yAxisId="left" type="monotone" dataKey="CS1_total" stroke="#48BFE3" strokeWidth={3} dot={{ r: 3, strokeWidth: 1.5, fill: "#ffffff" }} activeDot={{ r: 6 }} name="Cơ sở 1" />
                             <Line yAxisId="left" type="monotone" dataKey="CS2_total" stroke="#db2777" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 2" />
                             <Line yAxisId="left" type="monotone" dataKey="CS3_total" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 3" />
                             <Line yAxisId="left" type="monotone" dataKey="CS4_total" stroke="#d97706" strokeWidth={2.5} dot={{ r: 2.5, strokeWidth: 1.5, fill: "#ffffff" }} name="Cơ sở 4" />
@@ -4823,7 +4823,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -4842,7 +4842,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -4862,7 +4862,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cCampusFilter} 
                       onChange={e => setCCampusFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Cơ sở</option>
                       {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
@@ -4881,7 +4881,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cAgeGroupFilter} 
                       onChange={e => setCAgeGroupFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Nhóm tuổi</option>
                       <option value="12 đến 18 tháng">12 đến 18 tháng</option>
@@ -4906,7 +4906,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -4914,7 +4914,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 <div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
-                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#36E08F] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
+                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#48BFE3] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
                   >
                     <Search className="w-4 h-4" /> Tìm kiếm
                   </button>
@@ -5018,7 +5018,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -5037,7 +5037,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -5057,7 +5057,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cCampusFilter} 
                       onChange={e => setCCampusFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Cơ sở</option>
                       {filteredCampuses.map(c => <option key={c.id} value={c.campusCode}>{c.campusName}</option>)}
@@ -5076,7 +5076,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cAgeGroupFilter} 
                       onChange={e => setCAgeGroupFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">Tất cả Nhóm tuổi</option>
                       <option value="12 đến 18 tháng">12 đến 18 tháng</option>
@@ -5099,7 +5099,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={approvalFilter} 
                       onChange={e => setApprovalFilter(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="">-- Tất cả --</option>
                       <option value="CHUA_DUYET">Chưa duyệt</option>
@@ -5124,7 +5124,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -5133,7 +5133,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
-                    className="h-10 px-4 text-xs font-black uppercase text-white bg-[#36E08F] hover:bg-[#008F89] hover:scale-[1.01] rounded-2xl shadow-sm hover:shadow-md shadow-[#36E08F]/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
+                    className="h-10 px-4 text-xs font-black uppercase text-white bg-[#48BFE3] hover:bg-[#008F89] hover:scale-[1.01] rounded-2xl shadow-sm hover:shadow-md shadow-[#48BFE3]/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
                   >
                     <Search className="w-4 h-4" /> Tìm
                   </button>
@@ -5251,7 +5251,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               const chuaDanhGiaCount = areaScores.length - datCount - khongDatCount;
 
                               let cardClass = "bg-slate-50 border-slate-200/80 text-slate-700 shadow-xs";
-                              let progressBg = "bg-[#36E08F]";
+                              let progressBg = "bg-[#48BFE3]";
                               let progressTrack = "bg-teal-50";
                               let pillClass = "text-slate-800 bg-teal-50 border-amber-200/50";
                               let headerIcon = "🧠";
@@ -5326,7 +5326,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 <td className="w-[170px] min-w-[170px] max-w-[170px] sticky left-10 z-10 shadow-[1px_0_0_0_#e2e8f0] whitespace-normal py-4 px-4 align-middle bg-inherit border border-slate-100">
                                   <div className="flex flex-col gap-1.5 w-full">
                                     <div className="font-bold text-slate-900 text-xs leading-snug">{s.fullName}</div>
-                                    <div className="text-[10px] text-slate-800 font-mono font-bold bg-[#36E08F]/5 px-2 py-0.5 rounded border border-[#36E08F]/15 w-fit">{s.studentCode}</div>
+                                    <div className="text-[10px] text-slate-800 font-mono font-bold bg-[#48BFE3]/5 px-2 py-0.5 rounded border border-[#48BFE3]/15 w-fit">{s.studentCode}</div>
                                     <div className="text-[10px] text-slate-400 leading-tight font-medium">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"} · {s.gender || "—"}</div>
                                   </div>
                                 </td>
@@ -5395,12 +5395,12 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                           <div className="flex flex-col gap-1 w-full items-start">
                                             <span className="text-[11px] font-extrabold text-slate-700 leading-snug">{s.probationaryTeacher}</span>
                                             {s.probationaryClass && <span className="text-[10px] text-slate-400 font-semibold">{s.probationaryClass}</span>}
-                                            <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[9px] font-extrabold text-slate-800 bg-teal-50/50 hover:bg-[#36E08F]/10 active:scale-[0.98] rounded-lg border border-[#36E08F]/30 transition-all cursor-pointer">
+                                            <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1 px-2.5 py-1 text-[9px] font-extrabold text-slate-800 bg-teal-50/50 hover:bg-[#48BFE3]/10 active:scale-[0.98] rounded-lg border border-[#48BFE3]/30 transition-all cursor-pointer">
                                               Phân công lại
                                             </button>
                                           </div>
                                         ) : (
-                                          <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-[#36E08F] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-sm border border-[#009085]/10 cursor-pointer">
+                                          <button onClick={() => openAssignModal(s)} className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1.5 text-[10px] font-bold text-white bg-[#48BFE3] hover:bg-[#009085] active:scale-[0.98] rounded-lg transition-all shadow-sm border border-[#009085]/10 cursor-pointer">
                                             Phân công
                                           </button>
                                         )}
@@ -5435,7 +5435,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -5454,7 +5454,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -5475,7 +5475,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -5484,7 +5484,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
-                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#36E08F] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
+                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#48BFE3] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
                   >
                     <Search className="w-4 h-4" /> Tìm kiếm
                   </button>
@@ -5556,7 +5556,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                       <span className="font-extrabold text-slate-700">{s.probationaryTeacher}</span>
                                       <button
                                         onClick={() => openAssignModal(s)}
-                                        className="inline-flex items-center justify-center gap-1 px-2 py-0.5 text-[9px] font-bold text-slate-800 hover:bg-[#36E08F]/10 rounded  transition-all w-fit cursor-pointer"
+                                        className="inline-flex items-center justify-center gap-1 px-2 py-0.5 text-[9px] font-bold text-slate-800 hover:bg-[#48BFE3]/10 rounded  transition-all w-fit cursor-pointer"
                                       >
                                         Phân công lại
                                       </button>
@@ -5564,7 +5564,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   ) : (
                                     <button
                                       onClick={() => openAssignModal(s)}
-                                      className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[10px] font-extrabold text-white bg-[#36E08F] hover:bg-[#008F89] hover:scale-[1.02] rounded-xl transition-all shadow-xs w-fit border-none cursor-pointer"
+                                      className="inline-flex items-center justify-center gap-1 px-3 py-1.5 text-[10px] font-extrabold text-white bg-[#48BFE3] hover:bg-[#008F89] hover:scale-[1.02] rounded-xl transition-all shadow-xs w-fit border-none cursor-pointer"
                                     >
                                       Phân công
                                     </button>
@@ -5642,7 +5642,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cPeriodId} 
                       onChange={e => { setCPeriodId(e.target.value); setCBatchId(""); }} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none"
                     >
                       <option value="all">Tất cả các kỳ</option>
                       {periods.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -5661,7 +5661,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     <select 
                       value={cBatchId} 
                       onChange={e => setCBatchId(e.target.value)} 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-3.5 pr-8 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs cursor-pointer appearance-none" 
                       disabled={!cPeriodId}
                     >
                       <option value="">Tất cả đợt</option>
@@ -5682,7 +5682,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       value={cSearch} 
                       onChange={e => setCSearch(e.target.value)} 
                       placeholder="Tên hoặc mã bé..." 
-                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
+                      className="w-full bg-[#FBFDFD] border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl pl-9 pr-3.5 py-2 outline-none font-semibold text-slate-700 shadow-2xs transition-all text-xs" 
                     />
                     <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   </div>
@@ -5691,7 +5691,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className="flex gap-2">
                   <button 
                     onClick={fetchStudentSummaries} 
-                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#36E08F] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
+                    className="h-9 px-4 text-xs font-black uppercase text-white bg-gradient-to-r from-[#48BFE3] to-teal-600 hover:from-[#009085] hover:to-teal-700 rounded-xl shadow-md shadow-teal-500/15 transition-all flex items-center justify-center gap-1.5 cursor-pointer border-none w-full"
                   >
                     <Search className="w-4 h-4" /> Tìm kiếm
                   </button>
@@ -5823,7 +5823,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   Tiêu chí Học thử (Probation)
                 </button>
               </div>
-                            <div className="flex flex-wrap gap-1.5 bg-[#36E08F]/5/50 p-1.5 rounded-none border border-slate-300 max-w-fit">
+                            <div className="flex flex-wrap gap-1.5 bg-[#48BFE3]/5/50 p-1.5 rounded-none border border-slate-300 max-w-fit">
                 {criteriaGrades.map(g => (
                   <button
                     key={g}
@@ -5872,7 +5872,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   }
                   const items = gradesStr.split("&").map(x => x.trim());
                   const tagBg = isPhase1 
-                    ? "bg-[#36E08F]/5/60 text-teal-800 border-slate-300 hover:bg-teal-100/40" 
+                    ? "bg-[#48BFE3]/5/60 text-teal-800 border-slate-300 hover:bg-teal-100/40" 
                     : "bg-indigo-50/60 text-indigo-800 border-indigo-100 hover:bg-indigo-100/40";
                   return (
                     <div className="flex flex-wrap gap-1.5 mt-2.5">
@@ -5907,10 +5907,10 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {/* Distribution Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       {/* Giai đoạn 1 */}
-                      <div className="bg-[#36E08F]/5/20 border border-slate-300/40 rounded-none p-4 flex flex-col justify-between hover:border-slate-300/60 transition-all">
+                      <div className="bg-[#48BFE3]/5/20 border border-slate-300/40 rounded-none p-4 flex flex-col justify-between hover:border-slate-300/60 transition-all">
                         <div>
                           <div className="flex items-center justify-between">
-                            <span className="bg-[#36E08F]/10 text-slate-800 px-2.5 py-0.5 rounded-none text-[9px] font-extrabold uppercase tracking-wider ">
+                            <span className="bg-[#48BFE3]/10 text-slate-800 px-2.5 py-0.5 rounded-none text-[9px] font-extrabold uppercase tracking-wider ">
                               Giai đoạn 1
                             </span>
                             <span className="text-[10px] text-slate-400 font-semibold">Từ 01/06 đến 31/12</span>
@@ -5945,7 +5945,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   {devAreas.map(area => (
                     <div key={area.id} className="bg-white rounded-none border border-slate-300 shadow-none overflow-hidden">
                       <div
-                        className="px-4 py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#36E08F]/5/20 transition-all"
+                        className="px-4 py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-[#48BFE3]/5/20 transition-all"
                         onClick={() => setExpAreaId(expAreaId === area.id ? null : area.id)}
                       >
                         <div className="flex items-center gap-3">
@@ -5971,7 +5971,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         </div>
                       </div>
                       {expAreaId === area.id && (
-                        <div className="border-t border-slate-300 p-4 bg-[#36E08F]/5/10">
+                        <div className="border-t border-slate-300 p-4 bg-[#48BFE3]/5/10">
                           {(!area.criteria || area.criteria.length === 0) ? (
                             <div className="text-center py-6 text-slate-400 font-bold text-xs bg-white rounded-none border border-dashed border-slate-300">
                               Chưa có tiêu chí nào cho nhóm tuổi này
@@ -5979,7 +5979,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           ) : (
                             <div className="overflow-x-auto bg-white border border-slate-300 rounded-none shadow-none">
                               <table className="w-full text-left border-collapse">
-                                <thead className="bg-[#36E08F]/5/50 border-b border-slate-300">
+                                <thead className="bg-[#48BFE3]/5/50 border-b border-slate-300">
                                   <tr>
                                     {["STT", "Mã", "Tên Tiêu Chí", "Nhóm tuổi", "Thao tác"].map(h => (
                                       <th key={h} className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-200">{h}</th>
@@ -5988,16 +5988,16 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 </thead>
                                 <tbody className="divide-y divide-teal-50">
                                   {area.criteria.map((crit, idx) => (
-                                    <tr key={crit.id} className="hover:bg-[#36E08F]/5/30 transition-colors">
+                                    <tr key={crit.id} className="hover:bg-[#48BFE3]/5/30 transition-colors">
                                       <td className="p-2 text-slate-400 text-xs border border-slate-200">{idx + 1}</td>
                                       <td className="p-2 font-mono text-xs font-bold text-slate-800 border border-slate-200">{crit.code}</td>
                                       <td className="p-2 text-sm font-semibold text-slate-700 max-w-[400px] break-words whitespace-normal border border-slate-200">{crit.name}</td>
-                                      <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-slate-800 bg-[#36E08F]/5 px-2 py-0.5 rounded-none ">{crit.ageGroup}</span></td>
+                                      <td className="p-2 border border-slate-200"><span className="text-[10px] font-black text-slate-800 bg-[#48BFE3]/5 px-2 py-0.5 rounded-none ">{crit.ageGroup}</span></td>
                                       <td className="p-2 text-right border border-slate-200">
                                         <div className="flex gap-1">
                                           <button
                                             onClick={() => openEditCriteria(crit)}
-                                            className="p-1.5 text-slate-300 hover:text-slate-800 hover:bg-[#36E08F]/5 rounded-none"
+                                            className="p-1.5 text-slate-300 hover:text-slate-800 hover:bg-[#48BFE3]/5 rounded-none"
                                           >
                                             <Edit2 className="w-3.5 h-3.5" />
                                           </button>
@@ -6074,7 +6074,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   return (
                     <div key={g.grade} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm"><span className="font-bold text-slate-700">{g.grade}</span><span className="font-black text-slate-800">{g.count} trẻ ({pct}%)</span></div>
-                      <div className="w-full bg-[#36E08F]/5 h-3 rounded-none overflow-hidden border border-slate-200"><div className="h-full bg-[#36E08F] transition-all duration-700" style={{ width: `${pct}%` }} /></div>
+                      <div className="w-full bg-[#48BFE3]/5 h-3 rounded-none overflow-hidden border border-slate-200"><div className="h-full bg-[#48BFE3] transition-all duration-700" style={{ width: `${pct}%` }} /></div>
                     </div>
                   );
                 })}
@@ -6090,7 +6090,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {/* Left: Settings Panel */}
           <div className="lg:col-span-5 bg-white border border-slate-300 shadow-none rounded-3xl p-8 space-y-6">
             <div className="flex items-center gap-3 border-b pb-4 mb-2">
-              <div className="w-10 h-10 bg-[#36E08F]/5 text-slate-800 rounded-none flex items-center justify-center">
+              <div className="w-10 h-10 bg-[#48BFE3]/5 text-slate-800 rounded-none flex items-center justify-center">
                 <Settings className="w-5 h-5"/>
               </div>
               <div>
@@ -6245,7 +6245,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               </div>
             </div>
 
-            <button onClick={savePreschoolReportConfig} className="w-full py-4 bg-[#36E08F] hover:bg-[#36E08F]-700 text-white font-black text-xs uppercase tracking-widest rounded-none shadow-none shadow-teal-100 transition-all flex items-center justify-center gap-2">
+            <button onClick={savePreschoolReportConfig} className="w-full py-4 bg-[#48BFE3] hover:bg-[#48BFE3]-700 text-white font-black text-xs uppercase tracking-widest rounded-none shadow-none shadow-teal-100 transition-all flex items-center justify-center gap-2">
               <CheckCircle2 className="w-4 h-4" /> Lưu cấu hình
             </button>
           </div>
@@ -6371,7 +6371,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             </div>
 
             {/* Info note */}
-            <div className="mt-4 bg-[#36E08F]/5 border border-slate-300 rounded-none p-3">
+            <div className="mt-4 bg-[#48BFE3]/5 border border-slate-300 rounded-none p-3">
               <p className="text-[11px] font-bold text-slate-800">💡 Lưu ý:</p>
               <p className="text-[10px] text-slate-800 mt-1">Cấu hình sẽ tự động được áp dụng khi xuất thư cho trẻ thuộc cơ sở <strong>{getCampusFullName(campuses.find(c => c.id === rcCampusId)?.campusName || "")}</strong>. Mỗi cơ sở có thể có cấu hình riêng.</p>
             </div>
@@ -6380,7 +6380,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       )}
 
       {/* Modal: Period */}
-      <Modal open={pModal} onClose={() => setPModal(false)} title={editP ? "Sửa Kỳ" : "Tạo Kỳ mới"} footer={<><button onClick={() => setPModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={savePeriod} className="flex-1 py-3.5 bg-[#36E08F] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
+      <Modal open={pModal} onClose={() => setPModal(false)} title={editP ? "Sửa Kỳ" : "Tạo Kỳ mới"} footer={<><button onClick={() => setPModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={savePeriod} className="flex-1 py-3.5 bg-[#48BFE3] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
         <div className="space-y-4">
           <Field label="Mã Kỳ" required>
             <input
@@ -6484,7 +6484,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       </Modal>
 
       {/* Modal: Batch */}
-      <Modal open={bModal} onClose={() => setBModal(false)} title={editB ? "Sửa Đợt" : "Thêm Đợt mới"} footer={<><button onClick={() => setBModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={saveBatch} className="flex-1 py-3.5 bg-[#36E08F] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
+      <Modal open={bModal} onClose={() => setBModal(false)} title={editB ? "Sửa Đợt" : "Thêm Đợt mới"} footer={<><button onClick={() => setBModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400 hover:text-slate-600">Hủy</button><button onClick={saveBatch} className="flex-1 py-3.5 bg-[#48BFE3] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Field label="Số đợt">
@@ -6622,9 +6622,9 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       </Modal>
 
       {/* Modal: Child */}
-      <Modal open={cModal} onClose={() => setCModal(false)} title={editC ? "Sửa thông tin Bé" : "Thêm Bé Mầm non"} size="lg" footer={<><button onClick={() => setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button><button onClick={saveChild} className="flex-1 py-3.5 bg-[#36E08F] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
+      <Modal open={cModal} onClose={() => setCModal(false)} title={editC ? "Sửa thông tin Bé" : "Thêm Bé Mầm non"} size="lg" footer={<><button onClick={() => setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Đóng</button><button onClick={saveChild} className="flex-1 py-3.5 bg-[#48BFE3] text-white rounded-none text-xs font-black uppercase tracking-widest shadow-none shadow-teal-100">Lưu</button></>}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Field label="Mã bé" required><input value={cForm.studentCode} onChange={e => setCForm({...cForm, studentCode: e.target.value})} disabled={!!editC} className={inp + (editC ? " bg-[#36E08F]/5/50" : "")} placeholder="MN001" /></Field>
+          <Field label="Mã bé" required><input value={cForm.studentCode} onChange={e => setCForm({...cForm, studentCode: e.target.value})} disabled={!!editC} className={inp + (editC ? " bg-[#48BFE3]/5/50" : "")} placeholder="MN001" /></Field>
           <Field label="Họ và tên" required><input value={cForm.fullName} onChange={e => setCForm({...cForm, fullName: e.target.value})} className={inp} placeholder="Họ và tên đầy đủ" /></Field>
           <Field label="Ngày sinh">
             <input
@@ -6644,7 +6644,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               className={inp}
             />
             {ageInfo.months !== null && (
-              <div className="text-[11px] font-black text-slate-800 mt-1.5 uppercase tracking-wider bg-[#36E08F]/5/50 rounded-none px-3 py-1.5 border border-slate-300 flex items-center gap-1.5 animate-in fade-in duration-200">
+              <div className="text-[11px] font-black text-slate-800 mt-1.5 uppercase tracking-wider bg-[#48BFE3]/5/50 rounded-none px-3 py-1.5 border border-slate-300 flex items-center gap-1.5 animate-in fade-in duration-200">
                 <Sparkles className="w-3.5 h-3.5" />
                 Xác minh: {ageInfo.months} tháng tuổi ({ageInfo.surveyDateStr})
               </div>
@@ -6760,7 +6760,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <div className="flex gap-2 text-[10px] font-bold">
                         <button 
                           onClick={() => setEmailCongratsRecipients(prev => prev.map(r => ({ ...r, checked: true })))}
-                          className="text-slate-800 hover:text-violet-800 bg-[#36E08F]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
+                          className="text-slate-800 hover:text-violet-800 bg-[#48BFE3]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
                         >
                           Chọn tất cả
                         </button>
@@ -6786,7 +6786,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                 role === "BGH" ? "bg-teal-50 text-slate-800 border-teal-300" :
                                 role === "Giáo vụ" ? "bg-slate-50 text-slate-700 border border-slate-300" :
                                 role === "Tổ/Môn" ? "bg-cyan-50 text-cyan-800 border border-cyan-300" :
-                                role === "Giáo viên" ? "bg-[#36E08F]/5 text-slate-800 border border-[#36E08F]/30" :
+                                role === "Giáo viên" ? "bg-[#48BFE3]/5 text-slate-800 border border-[#48BFE3]/30" :
                                 "bg-amber-50 text-amber-800 border border-amber-300"
                               }`}>
                                 {role === "GĐCS" ? "GIÁM ĐỐC CƠ SỞ" : role === "Tổ/Môn" ? "TỔ / MÔN DẠY" : role === "Giáo viên" ? "GIÁO VIÊN TỔ / MÔN DẠY" : role}
@@ -6802,7 +6802,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                     key={idx} 
                                     className={`flex items-start gap-2.5 p-2 rounded-none border transition-all cursor-pointer select-none text-xs font-semibold ${
                                       r.checked 
-                                        ? "bg-[#36E08F]/5/50 border-slate-300 text-violet-900 shadow-none" 
+                                        ? "bg-[#48BFE3]/5/50 border-slate-300 text-violet-900 shadow-none" 
                                         : "bg-white border-slate-300 text-slate-500 hover:bg-slate-50"
                                     }`}
                                   >
@@ -6848,7 +6848,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <button
                 type="button"
                 onClick={handleSendCongratsEmail}
-                className="flex items-center gap-1.5 px-6 py-2 text-xs font-black text-white bg-[#36E08F] hover:bg-[#36E08F]-700 rounded-none transition-all shadow-none shadow-teal-100 hover:shadow-violet-200 cursor-pointer"
+                className="flex items-center gap-1.5 px-6 py-2 text-xs font-black text-white bg-[#48BFE3] hover:bg-[#48BFE3]-700 rounded-none transition-all shadow-none shadow-teal-100 hover:shadow-violet-200 cursor-pointer"
                 disabled={emailCongratsSending || emailCongratsLoading}
               >
                 {emailCongratsSending ? (
@@ -6936,7 +6936,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setRecipientEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#36E08F]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#48BFE3]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -6973,7 +6973,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               setCcEmail(current ? (current + ", " + p.email) : p.email);
                             }
                           }}
-                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#36E08F]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
+                          className={"px-2 py-1 rounded-none text-[10px] font-bold border transition-all " + (isActive ? 'bg-[#48BFE3]/10 border-indigo-200 text-indigo-700' : 'bg-slate-50 border-slate-300 text-slate-500 hover:bg-slate-100')}
                         >
                           + {p.label}
                         </button>
@@ -7019,7 +7019,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <div className="flex gap-2 text-[10px] font-bold">
                     <button 
                       onClick={() => setEmailStudents(prev => prev.map(s => ({ ...s, checked: true })))}
-                      className="text-slate-800 hover:text-violet-800 bg-[#36E08F]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
+                      className="text-slate-800 hover:text-violet-800 bg-[#48BFE3]/5 px-2.5 py-1 rounded-none border border-slate-300 transition-colors cursor-pointer"
                     >
                       Chọn tất cả
                     </button>
@@ -7633,8 +7633,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   <img crossOrigin={(studentCampusConfig.background || "").startsWith("data:") ? undefined : "anonymous"} className="print-watermark" src={studentCampusConfig.background} alt="Watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} />
                 ) : (
                   <svg className="print-watermark" style={{ display: "block", position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "110mm", height: "auto", opacity: 0.04, zIndex: 0, pointerEvents: "none" }} viewBox="0 0 100 100">
-                    <path fill="#36E08F" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" />
-                    <path fill="#36E08F" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" />
+                    <path fill="#48BFE3" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" />
+                    <path fill="#48BFE3" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" />
                   </svg>
                 )}
 
@@ -7797,7 +7797,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {/* Dividing brand line */}
                     <div className="flex items-center gap-2 mb-2 w-full">
                       <span className="font-bold text-slate-800 whitespace-nowrap uppercase text-[9.5pt] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#36E08F]/70 h-0 mt-0.5"></div>
+                      <div className="flex-grow border-t border-[#48BFE3]/70 h-0 mt-0.5"></div>
                       <span className="font-semibold text-slate-800 whitespace-nowrap lowercase text-[9pt]">www.skylineschool.edu.vn</span>
                     </div>
                     
@@ -7927,7 +7927,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
                       <span className="font-bold text-slate-800 whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                      <div className="flex-grow border-t border-[#36E08F]/70 h-0 mt-0.5"></div>
+                      <div className="flex-grow border-t border-[#48BFE3]/70 h-0 mt-0.5"></div>
                       <span className="font-semibold text-slate-800 whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
                     
@@ -8118,7 +8118,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         <div className="w-full pt-1 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                           <div className="flex items-center gap-2 mb-2.5 w-full">
                             <span className="font-bold text-slate-800 whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
-                            <div className="flex-grow border-t border-[#36E08F]/70 h-0 mt-0.5"></div>
+                            <div className="flex-grow border-t border-[#48BFE3]/70 h-0 mt-0.5"></div>
                           </div>
                           <div className="flex flex-row justify-between w-full relative text-[9px]">
                             <div className="w-full text-center">
@@ -8139,7 +8139,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
     )}
       {/* Email Modal Overlay */}
                   {/* Modal: Config */}
-      <Modal open={cfgModal} onClose={() => setCfgModal(false)} title={editCfg ? "Sửa danh mục" : "Thêm danh mục"} footer={<><button onClick={() => setCfgModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button><button onClick={saveCfg} className="flex-1 py-3.5 bg-[#36E08F] text-white rounded-none text-xs font-black uppercase tracking-widest">Lưu</button></>}>
+      <Modal open={cfgModal} onClose={() => setCfgModal(false)} title={editCfg ? "Sửa danh mục" : "Thêm danh mục"} footer={<><button onClick={() => setCfgModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button><button onClick={saveCfg} className="flex-1 py-3.5 bg-[#48BFE3] text-white rounded-none text-xs font-black uppercase tracking-widest">Lưu</button></>}>
         <div className="space-y-4">
           <Field label="Loại" required><select value={cfgForm.categoryType} onChange={e => setCfgForm({...cfgForm, categoryType: e.target.value})} className={inp}><option value="">-- Chọn loại --</option><option value="criteria">Diện KS</option><option value="system">Hệ KS</option></select></Field>
           <Field label="Mã" required><input value={cfgForm.code} onChange={e => setCfgForm({...cfgForm, code: e.target.value})} disabled={!!editCfg} className={inp} placeholder="TUYEN_MOI" /></Field>
@@ -8165,7 +8165,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <button
               onClick={saveEvaluation}
               disabled={savingEval || devLoading}
-              className="px-6 py-2.5 bg-gradient-to-r from-[#36E08F] to-[#008075] hover:from-[#008075] hover:to-[#007067] text-white font-black rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer border-none text-[11px] tracking-wider uppercase shadow-md shadow-[#36E08F]/15"
+              className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#008075] hover:from-[#008075] hover:to-[#007067] text-white font-black rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer border-none text-[11px] tracking-wider uppercase shadow-md shadow-[#48BFE3]/15"
             >
               {savingEval ? "Đang lưu..." : "Lưu Đánh Giá"}
             </button>
@@ -8184,15 +8184,15 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           )}
 
           {/* Student Profile Card Header */}
-          <div className="bg-gradient-to-r from-[#EBF5F4]/60 via-[#F5FAF9]/20 to-[#EBF5F4]/40 p-5 rounded-3xl border border-[#36E08F]/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
+          <div className="bg-gradient-to-r from-[#EBF5F4]/60 via-[#F5FAF9]/20 to-[#EBF5F4]/40 p-5 rounded-3xl border border-[#48BFE3]/15 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#36E08F]/15 to-[#008075]/5 text-slate-800 flex items-center justify-center shadow-inner shrink-0">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#48BFE3]/15 to-[#008075]/5 text-slate-800 flex items-center justify-center shadow-inner shrink-0">
                 <Baby className="w-7 h-7" />
               </div>
               <div>
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Học sinh khảo sát</p>
                 <h4 className="text-lg font-black text-slate-800 tracking-tight leading-none">{evalStudent?.fullName}</h4>
-                <p className="text-[11px] font-extrabold text-slate-800 font-mono mt-1.5 bg-[#36E08F]/5 px-2 py-0.5 rounded-lg border border-[#36E08F]/10 w-fit">{evalStudent?.studentCode}</p>
+                <p className="text-[11px] font-extrabold text-slate-800 font-mono mt-1.5 bg-[#48BFE3]/5 px-2 py-0.5 rounded-lg border border-[#48BFE3]/10 w-fit">{evalStudent?.studentCode}</p>
               </div>
             </div>
             
@@ -8228,7 +8228,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           ) : (
             <div className="space-y-6">
               {devAreas.map(area => (
-                <div key={area.id} className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden hover:border-[#36E08F]/20 transition-all duration-300">
+                <div key={area.id} className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden hover:border-[#48BFE3]/20 transition-all duration-300">
                   
                   {/* Area Title Bar */}
                   <div className="flex items-center justify-between gap-4 px-6 py-4 bg-slate-50/60 border-b border-slate-100">
@@ -8320,7 +8320,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           {/* Suffix inputs for Thể chất (Chiều cao, Cân nặng, BMI) */}
                           {isPhysical && (
                             <div className="flex flex-wrap items-center gap-3 pl-8">
-                              <div className="flex items-center bg-[#F8FAFC] border border-slate-200 rounded-2xl overflow-hidden focus-within:border-[#36E08F] focus-within:ring-4 focus-within:ring-[#36E08F]/10 transition-all shadow-xs">
+                              <div className="flex items-center bg-[#F8FAFC] border border-slate-200 rounded-2xl overflow-hidden focus-within:border-[#48BFE3] focus-within:ring-4 focus-within:ring-[#48BFE3]/10 transition-all shadow-xs">
                                 <input
                                   type="number"
                                   step={isHeight ? "1" : "0.1"}
@@ -8374,7 +8374,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                               }}
                               placeholder={isAssessmentLocked ? "Không có ghi chú" : "Nhập ghi chú quan sát..."}
                               disabled={isAssessmentLocked}
-                              className="w-full text-xs font-semibold outline-none border border-slate-200 focus:border-[#36E08F] focus:bg-white focus:ring-4 focus:ring-[#36E08F]/10 rounded-xl px-3 py-2 bg-[#F8FAFC] transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-450"
+                              className="w-full text-xs font-semibold outline-none border border-slate-200 focus:border-[#48BFE3] focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10 rounded-xl px-3 py-2 bg-[#F8FAFC] transition-all disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-450"
                             />
                           </div>
                         </div>
@@ -8402,7 +8402,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   rows={3}
                   placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về sự phát triển chuyên môn của trẻ..."}
                   disabled={isAssessmentLocked}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
+                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
                 />
               </div>
 
@@ -8414,7 +8414,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   rows={3}
                   placeholder={isAssessmentLocked ? "Chưa có nhận xét" : "Nhận xét về trạng thái tâm lý, cảm xúc của trẻ..."}
                   disabled={isAssessmentLocked}
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
+                  className="w-full bg-white border border-slate-200 rounded-2xl px-4 py-3 text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 transition-all resize-none placeholder:text-slate-400 disabled:bg-slate-100/50 disabled:cursor-not-allowed disabled:text-slate-500"
                 />
               </div>
             </div>
@@ -8490,8 +8490,8 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             };
 
             return (
-              <div className="bg-[#EBF5F4]/40 border border-[#36E08F]/15 p-6 rounded-3xl space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#36E08F]/10 pb-4">
+              <div className="bg-[#EBF5F4]/40 border border-[#48BFE3]/15 p-6 rounded-3xl space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#48BFE3]/10 pb-4">
                   <div className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-slate-800" />
                     <h4 className="text-xs font-black text-[#003B3A] uppercase tracking-wider">PHÊ DUYỆT 2 BƯỚC XÉT DUYỆT</h4>
@@ -8507,7 +8507,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 <div className={`grid grid-cols-1 ${showBghSection && showGdcsSection ? 'md:grid-cols-2' : 'md:grid-cols-1'} gap-6`}>
                   {/* BGH MN Column */}
                   {showBghSection && (
-                    <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveBGH ? 'border-[#36E08F]/20 shadow-xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
+                    <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveBGH ? 'border-[#48BFE3]/20 shadow-xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
                       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${canApproveBGH ? 'bg-teal-400 animate-pulse' : 'bg-slate-300'}`} />
@@ -8532,7 +8532,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                           </span>
                         )}
                         {canApproveBGH && (
-                          <span className="text-[9px] font-bold text-slate-800 bg-[#36E08F]/5 px-2 py-1 rounded-lg">
+                          <span className="text-[9px] font-bold text-slate-800 bg-[#48BFE3]/5 px-2 py-1 rounded-lg">
                             ✍️ Quyền duyệt
                           </span>
                         )}
@@ -8560,7 +8560,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <div className="flex flex-wrap gap-2">
                         {[
                           { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "text-emerald-600 border-emerald-200 hover:bg-emerald-50/40 hover:border-emerald-350", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-xs" },
-                          { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-slate-800 border-[#36E08F]/20 hover:bg-teal-50/40 hover:border-[#36E08F]/40", activeColor: "bg-[#36E08F] text-white border-[#36E08F] shadow-xs" },
+                          { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-slate-800 border-[#48BFE3]/20 hover:bg-teal-50/40 hover:border-[#48BFE3]/40", activeColor: "bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs" },
                           { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "text-rose-600 border-rose-205 hover:bg-rose-50/40 hover:border-rose-350", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
                           { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "text-amber-600 border-amber-205 hover:bg-amber-50/40 hover:border-amber-350", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
                         ].map(opt => (
@@ -8596,7 +8596,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của BGH" : canApproveBGH ? "Ý kiến phê duyệt của BGH..." : "Chưa có ý kiến phê duyệt của BGH"}
                         className={`w-full border rounded-2xl px-4 py-2.5 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 ${
                           canApproveBGH && !isAssessmentLocked
-                            ? 'bg-slate-50 border-slate-200 focus:border-[#36E08F] focus:bg-white focus:ring-4 focus:ring-[#36E08F]/10' 
+                            ? 'bg-slate-50 border-slate-200 focus:border-[#48BFE3] focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10' 
                             : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                         }`}
                       />
@@ -8613,7 +8613,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
                   {/* GĐCS Column */}
                   {showGdcsSection && (
-                    <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveGDCS ? 'border-[#36E08F]/20 shadow-xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
+                    <div className={`space-y-4 bg-white p-5 rounded-2xl border transition-all ${canApproveGDCS ? 'border-[#48BFE3]/20 shadow-xs' : 'border-slate-200 bg-slate-50/50 opacity-85'}`}>
                       <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div className="flex items-center gap-2">
                           <div className={`w-2 h-2 rounded-full ${canApproveGDCS ? 'bg-fuchsia-400 animate-pulse' : 'bg-slate-300'}`} />
@@ -8664,7 +8664,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       <div className="flex flex-wrap gap-2">
                         {[
                           { status: "DAT_MIEN_HOC_THU", label: "ĐẠT - MIỄN HỌC THỬ", color: "text-emerald-600 border-emerald-200 hover:bg-emerald-50/40 hover:border-emerald-350", activeColor: "bg-emerald-500 text-white border-emerald-500 shadow-xs" },
-                          { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-slate-800 border-[#36E08F]/20 hover:bg-teal-50/40 hover:border-[#36E08F]/40", activeColor: "bg-[#36E08F] text-white border-[#36E08F] shadow-xs" },
+                          { status: "DAT_HOC_THU", label: "ĐẠT - HỌC THỬ", color: "text-slate-800 border-[#48BFE3]/20 hover:bg-teal-50/40 hover:border-[#48BFE3]/40", activeColor: "bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs" },
                           { status: "KHONG_DAT", label: "KHÔNG ĐẠT", color: "text-rose-600 border-rose-205 hover:bg-rose-50/40 hover:border-rose-350", activeColor: "bg-rose-500 text-white border-rose-500 shadow-xs" },
                           { status: "Y_KIEN_KHAC", label: "Ý KIẾN KHÁC", color: "text-amber-600 border-amber-205 hover:bg-amber-50/40 hover:border-amber-350", activeColor: "bg-amber-500 text-white border-amber-500 shadow-xs" }
                         ].map(opt => (
@@ -8700,7 +8700,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                         placeholder={isAssessmentLocked ? "Chưa có ý kiến phê duyệt của GĐCS" : canApproveGDCS ? "Ý kiến phê duyệt của GĐCS..." : "Chưa có ý kiến phê duyệt của GĐCS"}
                         className={`w-full border rounded-2xl px-4 py-2.5 text-xs font-semibold outline-none transition-all resize-none placeholder:text-slate-400 ${
                           canApproveGDCS && !isAssessmentLocked
-                            ? 'bg-slate-50 border-slate-200 focus:border-[#36E08F] focus:bg-white focus:ring-4 focus:ring-[#36E08F]/10' 
+                            ? 'bg-slate-50 border-slate-200 focus:border-[#48BFE3] focus:bg-white focus:ring-4 focus:ring-[#48BFE3]/10' 
                             : 'bg-slate-100/50 border-slate-200 text-slate-500 cursor-not-allowed'
                         }`}
                       />
@@ -8724,7 +8724,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             const pastAssessments = historyList.filter((h: any) => h.id !== evalStudent?.id);
             if (pastAssessments.length === 0) return null;
             return (
-              <div className="bg-[#EBF5F4]/30 border border-[#36E08F]/10 p-6 rounded-3xl space-y-4">
+              <div className="bg-[#EBF5F4]/30 border border-[#48BFE3]/10 p-6 rounded-3xl space-y-4">
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-200/60">
                   <ClipboardList className="w-4 h-4 text-teal-600" />
                   <h4 className="text-xs font-black text-teal-800 uppercase tracking-wider">Lược sử đánh giá mầm non</h4>
@@ -8740,7 +8740,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                     {pastAssessments.map((histRec: any) => {
                       const isExpanded = expandedHistoryId === histRec.id;
                       return (
-                        <div key={histRec.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#36E08F]/20 hover:scale-[1.002] transition-all">
+                        <div key={histRec.id} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-[#48BFE3]/20 hover:scale-[1.002] transition-all">
                           <div 
                             onClick={() => setExpandedHistoryId(isExpanded ? null : histRec.id)}
                             className="flex flex-col p-4 cursor-pointer gap-2 hover:bg-slate-50/20 transition-all"
@@ -8833,7 +8833,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <button
                 onClick={saveProbationary}
                 disabled={savingProb || devLoading}
-                className="px-6 py-2.5 bg-gradient-to-r from-[#36E08F] to-teal-600 hover:from-[#009085] hover:to-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-teal-500/20 disabled:opacity-50 transition-all flex items-center gap-2 cursor-pointer"
+                className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-teal-600 hover:from-[#009085] hover:to-teal-700 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-md shadow-teal-500/20 disabled:opacity-50 transition-all flex items-center gap-2 cursor-pointer"
               >
                 {savingProb ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                 {savingProb ? "Đang lưu..." : "Lưu Kết Quả Học Thử"}
@@ -8846,7 +8846,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
           {/* Child Details Card */}
           <div className="bg-gradient-to-r from-teal-50/90 via-emerald-50/60 to-teal-50/90 p-4 rounded-2xl border border-teal-200/70 shadow-sm flex flex-wrap items-center justify-between gap-4 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-[#36E08F]/10  flex items-center justify-center text-slate-800">
+              <div className="w-10 h-10 rounded-xl bg-[#48BFE3]/10  flex items-center justify-center text-slate-800">
                 <Baby className="w-5 h-5" />
               </div>
               <div>
@@ -8881,7 +8881,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 value={probPeriod}
                 onChange={e => setProbPeriod(e.target.value)}
                 placeholder="Ví dụ: 20/05/2026 ~ 03/06/2026"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 bg-white transition-all shadow-2xs"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 bg-white transition-all shadow-2xs"
               />
             </div>
             <div>
@@ -8893,7 +8893,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 value={probClass}
                 onChange={e => setProbClass(e.target.value)}
                 placeholder="Ví dụ: Jerry 1"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 bg-white transition-all shadow-2xs"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 bg-white transition-all shadow-2xs"
               />
             </div>
             <div>
@@ -8905,7 +8905,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 value={probTeacher}
                 onChange={e => setProbTeacher(e.target.value)}
                 placeholder="Ví dụ: Cô Mai, Cô Hằng"
-                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 bg-white transition-all shadow-2xs"
+                className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 bg-white transition-all shadow-2xs"
               />
             </div>
           </div>
@@ -8925,7 +8925,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               {devAreas.map(area => (
                 <div key={area.id} className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden transition-all">
                   <div className="flex items-center gap-2.5 px-4 py-3 bg-slate-50/80 border-b border-slate-200/80">
-                    <div className="w-3 h-3 rounded-full shadow-2xs" style={{ backgroundColor: area.color || "#36E08F" }} />
+                    <div className="w-3 h-3 rounded-full shadow-2xs" style={{ backgroundColor: area.color || "#48BFE3" }} />
                     <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider">{area.name}</h4>
                   </div>
                   
@@ -9009,7 +9009,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                                   value={currentScore.note || ""}
                                   onChange={e => setScoreNote(e.target.value)}
                                   placeholder="Ghi chú quan sát..."
-                                  className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-normal outline-none focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 bg-white"
+                                  className="w-full px-3 py-1.5 border border-slate-200 rounded-xl text-xs font-normal outline-none focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 bg-white"
                                 />
                               </td>
                             </tr>
@@ -9059,7 +9059,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 onChange={e => setProbComment(e.target.value)}
                 placeholder="Nhập ý kiến đánh giá chung, lý do đạt/chưa đạt hoặc hướng phát triển..."
                 rows={3}
-                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 bg-white transition-all shadow-2xs"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 bg-white transition-all shadow-2xs"
               />
             </div>
 
@@ -9110,7 +9110,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                       placeholder={canApproveBGH ? "Nhập ý kiến phê duyệt của Ban Giám Hiệu..." : "Chưa có ý kiến phê duyệt của BGH"}
                       disabled={!canApproveBGH}
                       rows={2}
-                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#36E08F] focus:ring-4 focus:ring-[#36E08F]/10 bg-white transition-all disabled:bg-slate-100/60 disabled:text-slate-500 disabled:cursor-not-allowed shadow-2xs"
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/10 bg-white transition-all disabled:bg-slate-100/60 disabled:text-slate-500 disabled:cursor-not-allowed shadow-2xs"
                     />
                   </div>
 
@@ -9217,7 +9217,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <button
               onClick={saveAssignment}
               disabled={savingAssignment}
-              className="px-6 py-2.5 bg-gradient-to-r from-[#36E08F] to-[#008075] hover:from-[#008075] hover:to-[#007067] text-white font-black rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer border-none text-[11px] tracking-wider uppercase shadow-md shadow-[#36E08F]/15"
+              className="px-6 py-2.5 bg-gradient-to-r from-[#48BFE3] to-[#008075] hover:from-[#008075] hover:to-[#007067] text-white font-black rounded-2xl transition-all disabled:opacity-50 active:scale-[0.98] cursor-pointer border-none text-[11px] tracking-wider uppercase shadow-md shadow-[#48BFE3]/15"
             >
               {savingAssignment ? "Đang lưu..." : "Xác nhận Phân công"}
             </button>
@@ -9243,7 +9243,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   setAssignClassId("");
                   setAssignTeacherId("");
                 }}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
               >
                 <option value="">-- Chọn Cơ sở --</option>
                 {filteredCampuses.map((c: any) => (
@@ -9265,7 +9265,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                   setAssignClassId("");
                   setAssignTeacherId("");
                 }}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
               >
                 <option value="">-- Tất cả Khối --</option>
                 {uniquePreschoolClassGrades.map((g: string) => (
@@ -9284,7 +9284,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
                 value={assignClassId}
                 onChange={e => handleAssignClassChange(e.target.value)}
                 disabled={!assignCampusId}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <option value="">-- Chọn Lớp --</option>
                 {filteredClassesForAssign.map((c: any) => (
@@ -9302,7 +9302,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
               <select
                 value={assignTeacherId}
                 onChange={e => setAssignTeacherId(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-200 hover:border-[#36E08F] focus:border-[#008075] focus:ring-4 focus:ring-[#36E08F]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
+                className="w-full px-4 py-3 border border-slate-200 hover:border-[#48BFE3] focus:border-[#008075] focus:ring-4 focus:ring-[#48BFE3]/10 rounded-2xl text-xs font-bold outline-none bg-[#FBFDFD] transition-all cursor-pointer appearance-none text-slate-700"
               >
                 <option value="">-- Chọn Giáo viên --</option>
                 {teachers.map((t: any) => (
@@ -9330,7 +9330,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             <button
               onClick={saveCriteria}
               disabled={savingCriteria}
-              className="flex-1 py-3.5 bg-[#36E08F] text-white rounded-none text-xs font-black uppercase tracking-widest"
+              className="flex-1 py-3.5 bg-[#48BFE3] text-white rounded-none text-xs font-black uppercase tracking-widest"
             >
               {savingCriteria ? "Đang lưu..." : "Lưu"}
             </button>

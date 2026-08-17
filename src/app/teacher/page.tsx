@@ -52,10 +52,10 @@ export default function TeacherDashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-5 font-sans">
         <div className="relative">
-          <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-gradient-to-tr from-[#003B3A] via-[#36E08F] to-emerald-400 shadow-xl text-white animate-pulse">
+          <div className="w-16 h-16 rounded-3xl flex items-center justify-center bg-gradient-to-tr from-[#003B3A] via-[#48BFE3] to-emerald-400 shadow-xl text-white animate-pulse">
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
-          <div className="absolute -inset-2 rounded-3xl bg-[#36E08F]/20 blur-lg -z-10 animate-pulse" />
+          <div className="absolute -inset-2 rounded-3xl bg-[#48BFE3]/20 blur-lg -z-10 animate-pulse" />
         </div>
         <div className="text-center space-y-1">
           <p className="text-slate-700 font-extrabold text-sm sm:text-base tracking-wide uppercase">
@@ -90,7 +90,7 @@ export default function TeacherDashboard() {
       value: finalMetrics.totalClasses,
       subtext: "Lớp chủ nhiệm & bộ môn",
       icon: Layers,
-      accentGradient: "from-teal-500 via-[#36E08F] to-emerald-400",
+      accentGradient: "from-teal-500 via-[#48BFE3] to-emerald-400",
       iconBg: "bg-emerald-500 text-white shadow-emerald-200",
       badge: "Đang dạy",
       badgeStyle: "bg-emerald-100 text-[#003B3A] border-emerald-200",
@@ -183,7 +183,7 @@ export default function TeacherDashboard() {
           title: "3. Cố vấn Học tập & Nhật ký Check-in",
           desc: "Quản lý mục tiêu K1-K12, ghi nhật ký tham vấn, theo dõi cảnh báo 🟢🟡🔴 & SOS",
           icon: Compass,
-          iconBg: "bg-teal-50 text-[#36E08F] border-teal-200"
+          iconBg: "bg-teal-50 text-[#48BFE3] border-teal-200"
         },
         {
           href: "/teacher/ho-so-hoc-sinh",
@@ -263,7 +263,7 @@ export default function TeacherDashboard() {
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-wider flex items-center gap-2.5">
-            <div className="w-2.5 h-6 rounded-full bg-[#36E08F]" />
+            <div className="w-2.5 h-6 rounded-full bg-[#48BFE3]" />
             <span>CHỈ SỐ CÔNG TÁC & ĐO LƯỜNG ĐÁNH GIÁ</span>
           </h2>
           <span className="text-xs sm:text-sm font-bold text-slate-500 flex items-center gap-1.5">
@@ -299,7 +299,7 @@ export default function TeacherDashboard() {
                 <div className="px-3.5 sm:px-4 pb-3 pt-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
                   <p className="text-[11px] sm:text-xs font-medium text-slate-600 truncate">{card.subtext}</p>
                   {card.href && (
-                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#36E08F] group-hover:translate-x-1 transition-all shrink-0 ml-1" />
+                    <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#48BFE3] group-hover:translate-x-1 transition-all shrink-0 ml-1" />
                   )}
                 </div>
               </div>
@@ -352,10 +352,10 @@ export default function TeacherDashboard() {
       <div className="space-y-5 pt-2">
         <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
           <h2 className="text-base sm:text-xl font-black text-slate-900 uppercase tracking-wider flex items-center gap-3">
-            <div className="w-3 h-7 rounded-full bg-[#36E08F]" />
+            <div className="w-3 h-7 rounded-full bg-[#48BFE3]" />
             <span>DANH MỤC THAO TÁC CHUYÊN MÔN</span>
           </h2>
-          <span className="text-xs sm:text-sm font-extrabold text-[#36E08F] hidden sm:inline-block bg-teal-50 border border-teal-200 px-3.5 py-1.5 rounded-full">
+          <span className="text-xs sm:text-sm font-extrabold text-[#48BFE3] hidden sm:inline-block bg-teal-50 border border-teal-200 px-3.5 py-1.5 rounded-full">
             Chọn chức năng để xử lý công việc
           </span>
         </div>
@@ -387,7 +387,7 @@ export default function TeacherDashboard() {
                     <Link
                       key={itemIdx}
                       href={item.href}
-                      className="group flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-gradient-to-r hover:from-teal-50/70 hover:to-emerald-50/40 border border-slate-200/80 hover:border-[#36E08F]/40 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+                      className="group flex items-center justify-between p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-gradient-to-r hover:from-teal-50/70 hover:to-emerald-50/40 border border-slate-200/80 hover:border-[#48BFE3]/40 shadow-xs hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
                     >
                       <div className="flex items-center gap-3.5 min-w-0">
                         <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 border ${item.iconBg} group-hover:scale-105 transition-transform duration-200 shadow-xs`}>

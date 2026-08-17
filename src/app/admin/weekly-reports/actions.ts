@@ -315,7 +315,7 @@ export async function sendWeeklyReportEmailReminders(targetWeek?: number, target
 
                   <div style="text-align: center; margin: 32px 0 16px 0;">
                     <a href="${appUrl}/admin/weekly-reports" 
-                       style="background-color: #36E08F; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
+                       style="background-color: #48BFE3; color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 12px; font-size: 15px; font-weight: 700; display: inline-block; box-shadow: 0 4px 12px rgba(0,169,157,0.3);">
                        📝 Nộp Báo Cáo Tuần Ngay
                     </a>
                   </div>

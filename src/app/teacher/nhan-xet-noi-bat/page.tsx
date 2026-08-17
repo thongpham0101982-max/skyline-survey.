@@ -226,7 +226,7 @@ export default function TeacherHighlightCommentsPage() {
   if (loadingStudents) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <Loader2 className="w-12 h-12 text-[#36E08F] animate-spin opacity-60" />
+        <Loader2 className="w-12 h-12 text-[#48BFE3] animate-spin opacity-60" />
         <p className="text-slate-400 font-bold tracking-wide uppercase text-xs">Đang tải danh sách học sinh lớp chủ nhiệm...</p>
       </div>
     )
@@ -237,7 +237,7 @@ export default function TeacherHighlightCommentsPage() {
       {/* Header Bar */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#36E08F] rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-[#48BFE3] rounded-lg flex items-center justify-center flex-shrink-0">
             <MessageSquare className="w-4 h-4 text-white" />
           </div>
           <div className="min-w-0">
@@ -264,7 +264,7 @@ export default function TeacherHighlightCommentsPage() {
                     onClick={() => setSelectedStudentId(s.id)}
                     className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-between ${
                       selectedStudentId === s.id
-                        ? "bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/30"
+                        ? "bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/30"
                         : "text-slate-600 hover:bg-slate-50 border border-transparent"
                     }`}
                   >
@@ -299,7 +299,7 @@ export default function TeacherHighlightCommentsPage() {
                 {!showForm && (
                   <button
                     onClick={startCreate}
-                    className="flex items-center gap-1 bg-[#36E08F] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                    className="flex items-center gap-1 bg-[#48BFE3] hover:bg-[#009085] text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Thêm nhận xét
@@ -328,7 +328,7 @@ export default function TeacherHighlightCommentsPage() {
                     <select
                       value={category}
                       onChange={e => setCategory(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#36E08F] transition-colors cursor-pointer"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none focus:border-[#48BFE3] transition-colors cursor-pointer"
                     >
                       <option value="Học tập">Học tập & Học thuật</option>
                       <option value="Rèn luyện">Rèn luyện & Đạo đức</option>
@@ -346,7 +346,7 @@ export default function TeacherHighlightCommentsPage() {
                       onChange={e => setCommentText(e.target.value)}
                       required
                       placeholder="Nhập nhận xét cụ thể về sự tiến bộ vượt bậc, thái độ rèn luyện, năng khiếu đặc biệt của học sinh..."
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#36E08F] transition-all resize-none"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-[#48BFE3] transition-all resize-none"
                     />
                   </div>
 
@@ -361,7 +361,7 @@ export default function TeacherHighlightCommentsPage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex items-center gap-1.5 bg-[#36E08F] hover:bg-[#009085] text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
+                      className="flex items-center gap-1.5 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all"
                     >
                       {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       Lưu lại
@@ -373,7 +373,7 @@ export default function TeacherHighlightCommentsPage() {
               {/* Comments List */}
               {loadingComments ? (
                 <div className="flex justify-center py-12">
-                  <Loader2 className="w-8 h-8 text-[#36E08F] animate-spin opacity-50" />
+                  <Loader2 className="w-8 h-8 text-[#48BFE3] animate-spin opacity-50" />
                 </div>
               ) : comments.length === 0 ? (
                 <p className="text-xs text-slate-400 font-medium italic text-center py-8">Chưa có nhận xét nổi bật nào được lưu cho học sinh này.</p>
@@ -384,7 +384,7 @@ export default function TeacherHighlightCommentsPage() {
                       <div className="flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <span className="inline-block px-2.5 py-0.5 bg-[#36E08F]/15 text-[#36E08F] text-[9px] font-black rounded-full uppercase tracking-wider">
+                            <span className="inline-block px-2.5 py-0.5 bg-[#48BFE3]/15 text-[#48BFE3] text-[9px] font-black rounded-full uppercase tracking-wider">
                               {c.category || "Khác"}
                             </span>
                           </div>

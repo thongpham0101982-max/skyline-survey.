@@ -262,7 +262,7 @@ export function TeachingAssignmentClient({
       {/* Header bar */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-2xl px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5 min-w-0">
-          <div className="w-10 h-10 bg-gradient-to-tr from-[#36E08F] to-[#0EA5E9] rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-teal-500/10">
+          <div className="w-10 h-10 bg-gradient-to-tr from-[#48BFE3] to-[#0EA5E9] rounded-xl flex items-center justify-center flex-shrink-0 shadow-md shadow-teal-500/10">
             <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <div className="min-w-0">
@@ -363,7 +363,7 @@ export function TeachingAssignmentClient({
             onClick={() => setActiveTab("me")}
             className={`py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
               activeTab === "me" 
-                ? "border-[#36E08F] text-[#36E08F]" 
+                ? "border-[#48BFE3] text-[#48BFE3]" 
                 : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
@@ -374,7 +374,7 @@ export function TeachingAssignmentClient({
             onClick={() => setActiveTab("department")}
             className={`py-3 text-xs font-black uppercase tracking-wider border-b-2 transition-all flex items-center gap-2 ${
               activeTab === "department" 
-                ? "border-[#36E08F] text-[#36E08F]" 
+                ? "border-[#48BFE3] text-[#48BFE3]" 
                 : "border-transparent text-slate-400 hover:text-slate-600"
             }`}
           >
@@ -398,7 +398,7 @@ export function TeachingAssignmentClient({
                 ? "Tìm lớp, môn học..." 
                 : "Tìm giáo viên, lớp, môn..."
             }
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-1.5 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#36E08F] focus:bg-white transition-all"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-9 pr-4 py-1.5 text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#48BFE3] focus:bg-white transition-all"
           />
         </div>
 
@@ -410,7 +410,7 @@ export function TeachingAssignmentClient({
                 onClick={() => setViewMode("grouped")}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
                   viewMode === "grouped"
-                    ? "bg-[#36E08F] text-white shadow-sm"
+                    ? "bg-[#48BFE3] text-white shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
                 title="Hiển thị gộp theo môn học"
@@ -421,7 +421,7 @@ export function TeachingAssignmentClient({
                 onClick={() => setViewMode("table")}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase transition-all ${
                   viewMode === "table"
-                    ? "bg-[#36E08F] text-white shadow-sm"
+                    ? "bg-[#48BFE3] text-white shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
                 title="Hiển thị bảng chi tiết"
@@ -588,7 +588,7 @@ export function TeachingAssignmentClient({
                         {a.academicYear.name}
                       </td>
                       <td className="px-6 py-4">
-                        <span className="inline-flex items-center gap-1 text-[#36E08F] font-extrabold text-[11px]">
+                        <span className="inline-flex items-center gap-1 text-[#48BFE3] font-extrabold text-[11px]">
                           <UserCheck className="w-3.5 h-3.5" /> Đang phụ trách
                         </span>
                       </td>
@@ -636,7 +636,7 @@ export function TeachingAssignmentClient({
                   key={t.id} 
                   className={`bg-white rounded-2xl border-2 overflow-hidden shadow-sm flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
                     t.id === teacher.id 
-                      ? "border-[#36E08F]/40 bg-teal-50/5" 
+                      ? "border-[#48BFE3]/40 bg-teal-50/5" 
                       : "border-slate-100 hover:border-slate-200"
                   }`}
                 >
@@ -646,7 +646,7 @@ export function TeachingAssignmentClient({
                       <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0 ${
                           t.id === teacher.id 
-                            ? "bg-[#36E08F] text-white" 
+                            ? "bg-[#48BFE3] text-white" 
                             : "bg-slate-100 text-slate-600"
                         }`}>
                           {t.teacherName.split(" ").slice(-1)[0].charAt(0).toUpperCase()}
@@ -655,7 +655,7 @@ export function TeachingAssignmentClient({
                           <h3 className="font-extrabold text-sm text-slate-800 flex items-center gap-1.5">
                             {t.teacherName}
                             {t.id === teacher.id && (
-                              <span className="bg-teal-50 text-[#36E08F] border border-teal-200 px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider">Bạn</span>
+                              <span className="bg-teal-50 text-[#48BFE3] border border-teal-200 px-1.5 py-0.2 rounded text-[8px] font-black uppercase tracking-wider">Bạn</span>
                             )}
                           </h3>
                           <p className="text-[10px] text-slate-400 font-bold tracking-wider uppercase mt-0.5">

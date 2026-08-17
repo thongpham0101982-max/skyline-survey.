@@ -12,11 +12,11 @@
   --color-indigo-200: #99EBC7;
   --color-indigo-300: #66E0AB;
   --color-indigo-400: #45E59B;
-  --color-indigo-500: #36E08F; /* Premium Brand Teal */
-  --color-indigo-600: #28C97B; /* Brand Teal Hover */
+  --color-indigo-500: #48BFE3; /* Premium Brand Teal */
+  --color-indigo-600: #4EA8DE; /* Brand Teal Hover */
   --color-indigo-700: #1FA864;
   --color-indigo-800: #16874E;
-  --color-indigo-900: #0F4D32; /* Primary Dark */
+  --color-indigo-900: #6930C3; /* Primary Dark */
   --color-indigo-950: #001F1E;
 
   --color-purple-50: #E6FAF1;
@@ -24,11 +24,11 @@
   --color-purple-200: #99EBC7;
   --color-purple-300: #66E0AB;
   --color-purple-400: #45E59B;
-  --color-purple-500: #36E08F;
-  --color-purple-600: #28C97B;
+  --color-purple-500: #48BFE3;
+  --color-purple-600: #4EA8DE;
   --color-purple-700: #1FA864;
   --color-purple-800: #16874E;
-  --color-purple-900: #0F4D32;
+  --color-purple-900: #6930C3;
   --color-purple-950: #001F1E;
 
   /* Sky-line brand override for emerald (green) to brand teal */
@@ -37,11 +37,11 @@
   --color-emerald-200: #99EBC7;
   --color-emerald-300: #66E0AB;
   --color-emerald-400: #45E59B;
-  --color-emerald-500: #36E08F;
-  --color-emerald-600: #28C97B;
+  --color-emerald-500: #48BFE3;
+  --color-emerald-600: #4EA8DE;
   --color-emerald-700: #1FA864;
   --color-emerald-800: #16874E;
-  --color-emerald-900: #0F4D32;
+  --color-emerald-900: #6930C3;
   --color-emerald-950: #001F1E;
 
   --color-background: var(--background);
@@ -95,7 +95,7 @@
   --card-foreground: #0F172A;
   --popover: #FFFFFF;
   --popover-foreground: #0F172A;
-  --primary: #36E08F;    /* brand primary */
+  --primary: #48BFE3;    /* brand primary */
   --primary-foreground: #FFFFFF;
   --accent-yellow: #D97706; /* Earthy yellow accent */
   --accent-yellow-light: rgba(217, 119, 6, 0.1);
@@ -104,21 +104,21 @@
   --secondary-foreground: #0F172A;
   --muted: #F1F5F9;
   --muted-foreground: #64748B;
-  --accent: #E6F6F5;
-  --accent-foreground: #36E08F;
+  --accent: #EBFBFF;
+  --accent-foreground: #6930C3;
   --destructive: #EF4444;
   --border: #E2E8F0;
   --input: #E2E8F0;
-  --ring: rgba(54, 224, 143, 0.15);
+  --ring: rgba(72, 191, 227, 0.25);
   --radius: 14px;
-  --sidebar: #0F4D32; /* Premium Dark Teal Sidebar */
+  --sidebar: #6930C3; /* Premium Dark Teal Sidebar */
   --sidebar-foreground: #E6F6F5;
-  --sidebar-primary: #36E08F;
+  --sidebar-primary: #48BFE3;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: rgba(255, 255, 255, 0.1);
   --sidebar-accent-foreground: #FFFFFF;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: rgba(54, 224, 143, 0.2);
+  --sidebar-ring: rgba(72, 191, 227, 0.2);
 }
 
 @layer base {
@@ -139,7 +139,7 @@
   }
   
   .premium-gradient-primary {
-    @apply bg-gradient-to-br from-[#36E08F] via-[#28C97B] to-[#0F4D32];
+    @apply bg-gradient-to-br from-[#48BFE3] via-[#4EA8DE] to-[#6930C3];
   }
   
   .hover-lift {
@@ -156,13 +156,13 @@
   a[class*="bg-indigo-"],
   a[class*="bg-violet-"],
   a[class*="bg-purple-"],
-  a[class*="bg-[#36E08F]"],
+  a[class*="bg-[#48BFE3]"],
   a[class*="bg-teal-"] {
     /* Gradients */
     &.bg-gradient-to-r,
     &.bg-gradient-to-br,
     &.bg-gradient-to-tr {
-      background-image: linear-gradient(to right, #36E08F, #28C97B) !important;
+      background-image: linear-gradient(to right, #48BFE3, #4EA8DE) !important;
       border: none !important;
     }
     
@@ -175,9 +175,9 @@
     &[class*="bg-purple-"],
     &[class*="bg-blue-"],
     &[class*="bg-teal-"] {
-      background-color: #36E08F !important;
+      background-color: #48BFE3 !important;
       color: #ffffff !important;
-      border-color: #36E08F !important;
+      border-color: #48BFE3 !important;
       background-image: none !important;
     }
 
@@ -190,7 +190,7 @@
     &[class*="bg-purple-"]:hover,
     &[class*="bg-blue-"]:hover,
     &[class*="bg-teal-"]:hover {
-      background-color: #28C97B !important;
+      background-color: #4EA8DE !important;
       background-image: none !important;
     }
 
@@ -201,7 +201,7 @@
     &[class*="shadow-purple-"],
     &[class*="shadow-blue-"],
     &[class*="shadow-orange-"] {
-      --tw-shadow-color: rgba(54, 224, 143, 0.25) !important;
+      --tw-shadow-color: rgba(72, 191, 227, 0.25) !important;
     }
 
     /* Light backgrounds (often used for sub-action / detail buttons) */
@@ -209,18 +209,18 @@
     &[class*="bg-violet-5"],
     &[class*="bg-indigo-5"],
     &[class*="bg-purple-5"] {
-      background-color: rgba(54, 224, 143, 0.05) !important;
-      border-color: rgba(54, 224, 143, 0.15) !important;
-      color: #36E08F !important;
+      background-color: rgba(72, 191, 227, 0.05) !important;
+      border-color: rgba(72, 191, 227, 0.15) !important;
+      color: #48BFE3 !important;
     }
     
     &[class*="bg-teal-5"]:hover,
     &[class*="bg-violet-5"]:hover,
     &[class*="bg-indigo-5"]:hover,
     &[class*="bg-purple-5"]:hover {
-      background-color: #36E08F !important;
+      background-color: #48BFE3 !important;
       color: #ffffff !important;
-      border-color: #36E08F !important;
+      border-color: #48BFE3 !important;
     }
   }
 }
@@ -291,8 +291,8 @@ input[type="date"]:focus,
 select:focus,
 textarea:focus {
   background-color: #FFFFFF !important;
-  border-color: #36E08F !important;
-  box-shadow: 0 0 0 4px rgba(54, 224, 143, 0.1) !important;
+  border-color: #48BFE3 !important;
+  box-shadow: 0 0 0 4px rgba(72, 191, 227, 0.1) !important;
   outline: none !important;
 }
 
@@ -300,7 +300,7 @@ textarea:focus {
 button,
 .btn,
 a[class*="bg-indigo-"],
-a[class*="bg-[#36E08F]"],
+a[class*="bg-[#48BFE3]"],
 a[class*="bg-teal-"] {
   border-radius: 14px !important;
 }
@@ -379,7 +379,7 @@ tr:hover {
   transition: all 0.3s ease;
 }
 .empty-state:hover {
-  border-color: #36E08F;
+  border-color: #48BFE3;
   background-color: #F0FDFA;
 }
 
@@ -409,8 +409,8 @@ tr:hover {
 
 /* 7. Loading state spinner */
 .loading-spinner {
-  border: 3px solid rgba(54, 224, 143, 0.1);
-  border-top: 3px solid #36E08F;
+  border: 3px solid rgba(72, 191, 227, 0.1);
+  border-top: 3px solid #48BFE3;
   border-radius: 50%;
   width: 24px;
   height: 24px;
@@ -433,7 +433,7 @@ tr:hover {
 
 .badge-primary {
   background-color: #E6F6F5 !important;
-  color: #36E08F !important;
+  color: #48BFE3 !important;
 }
 
 .badge-accent {
@@ -578,7 +578,7 @@ tr:hover {
 /* 14. Focus styling overrides */
 *:focus-visible {
   outline: none !important;
-  box-shadow: 0 0 0 3px rgba(54, 224, 143, 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(72, 191, 227, 0.3) !important;
 }
 
 
@@ -612,8 +612,8 @@ tr:hover {
   select:not(.raw-select):focus,
   textarea:not(.raw-textarea):focus
 ) {
-  border-color: #36E08F !important;
-  box-shadow: 0 0 0 4px rgba(54, 224, 143, 0.15) !important;
+  border-color: #48BFE3 !important;
+  box-shadow: 0 0 0 4px rgba(72, 191, 227, 0.15) !important;
 }
 
 /* 16. Premium Search Bar Focus Transitions */
@@ -623,7 +623,7 @@ tr:hover {
 }
 
 .relative:focus-within > svg.absolute {
-  color: #36E08F !important;
+  color: #48BFE3 !important;
   transform: translateY(-50%) scale(1.05) !important;
 }
 
@@ -633,9 +633,9 @@ tr:hover {
 
 /* Teacher CSS Custom Properties */
 :root {
-  --teacher-primary: #36E08F;
+  --teacher-primary: #48BFE3;
   --teacher-primary-dark: #008b82;
-  --teacher-dark: #0F4D32;
+  --teacher-dark: #6930C3;
   --teacher-sky: #0EA5E9;
   --teacher-sky-light: #E0F2FE;
   --teacher-sky-50: #F0F9FF;
@@ -651,14 +651,14 @@ tr:hover {
    TEACHER PAGE HEADER
    ========================================== */
 .teacher-page-header {
-  background: linear-gradient(135deg, #0F4D32 0%, #36E08F 50%, #0EA5E9 100%);
+  background: linear-gradient(135deg, #6930C3 0%, #48BFE3 50%, #0EA5E9 100%);
   border-radius: 20px;
   padding: 1.5rem 1.75rem;
   color: white;
   margin-bottom: 1.5rem;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(54, 224, 143, 0.25);
+  box-shadow: 0 4px 20px rgba(72, 191, 227, 0.25);
 }
 
 .teacher-page-header::before {
@@ -731,7 +731,7 @@ tr:hover {
   gap: 0.5rem;
   font-size: 0.8rem !important;
   font-weight: 800 !important;
-  color: #0F4D32 !important;
+  color: #6930C3 !important;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -741,9 +741,9 @@ tr:hover {
 }
 
 /* Card accent top borders */
-.teacher-card-teal    { border-top: 3px solid #36E08F !important; }
+.teacher-card-teal    { border-top: 3px solid #48BFE3 !important; }
 .teacher-card-sky     { border-top: 3px solid #0EA5E9 !important; }
-.teacher-card-dark    { border-top: 3px solid #0F4D32 !important; }
+.teacher-card-dark    { border-top: 3px solid #6930C3 !important; }
 .teacher-card-amber   { border-top: 3px solid #D97706 !important; }
 .teacher-card-emerald { border-top: 3px solid #059669 !important; }
 
@@ -778,13 +778,13 @@ tr:hover {
 }
 
 .teacher-btn-primary {
-  background: linear-gradient(135deg, #36E08F, #0EA5E9);
+  background: linear-gradient(135deg, #48BFE3, #0EA5E9);
   color: white;
-  box-shadow: 0 2px 8px rgba(54, 224, 143, 0.3);
+  box-shadow: 0 2px 8px rgba(72, 191, 227, 0.3);
 }
 .teacher-btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, #008b82, #0284C7);
-  box-shadow: 0 4px 16px rgba(54, 224, 143, 0.4);
+  box-shadow: 0 4px 16px rgba(72, 191, 227, 0.4);
   transform: translateY(-1px);
 }
 .teacher-btn-primary:active:not(:disabled) { transform: translateY(0) scale(0.98); }
@@ -795,8 +795,8 @@ tr:hover {
   border: 1px solid #E2E8F0;
 }
 .teacher-btn-secondary:hover:not(:disabled) {
-  border-color: #36E08F;
-  color: #36E08F;
+  border-color: #48BFE3;
+  color: #48BFE3;
   background: #F0FDFA;
 }
 
@@ -855,13 +855,13 @@ tr:hover {
   white-space: nowrap;
 }
 
-.teacher-badge-teal    { background: #E6F7F6; color: #36E08F; border-color: #CCEFED; }
+.teacher-badge-teal    { background: #E6F7F6; color: #48BFE3; border-color: #CCEFED; }
 .teacher-badge-sky     { background: #E0F2FE; color: #0284C7; border-color: #BAE6FD; }
 .teacher-badge-emerald { background: #ECFDF5; color: #059669; border-color: #A7F3D0; }
 .teacher-badge-amber   { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
 .teacher-badge-rose    { background: #FFF1F2; color: #E11D48; border-color: #FECDD3; }
 .teacher-badge-slate   { background: #F1F5F9; color: #475569; border-color: #E2E8F0; }
-.teacher-badge-dark    { background: #E6F7F6; color: #0F4D32; border-color: #CCEFED; }
+.teacher-badge-dark    { background: #E6F7F6; color: #6930C3; border-color: #CCEFED; }
 
 /* ==========================================
    TEACHER STAT CARD
@@ -993,9 +993,9 @@ tr:hover {
 }
 
 .teacher-form-input:focus {
-  border-color: #36E08F !important;
+  border-color: #48BFE3 !important;
   background: white;
-  box-shadow: 0 0 0 3px rgba(54, 224, 143, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(72, 191, 227, 0.12) !important;
 }
 
 .teacher-form-input::placeholder {
@@ -1033,7 +1033,7 @@ tr:hover {
 
 .teacher-tab-active {
   background: white;
-  color: #36E08F;
+  color: #48BFE3;
   box-shadow: 0 1px 3px rgba(15,23,42,0.1);
 }
 
@@ -1088,7 +1088,7 @@ tr:hover {
 }
 
 .teacher-slot-card-observed {
-  border-left: 3px solid #36E08F;
+  border-left: 3px solid #48BFE3;
   background: linear-gradient(to right, #F0FDFA, white);
 }
 
@@ -1168,7 +1168,7 @@ tr:hover {
 .teacher-progress-fill {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #36E08F, #0EA5E9);
+  background: linear-gradient(90deg, #48BFE3, #0EA5E9);
   transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1195,7 +1195,7 @@ tr:hover {
 }
 
 .teacher-modal-header {
-  background: linear-gradient(135deg, #0F4D32, #36E08F);
+  background: linear-gradient(135deg, #6930C3, #48BFE3);
   padding: 1.25rem 1.5rem;
   display: flex;
   align-items: center;
@@ -1290,7 +1290,7 @@ tr:hover {
   font-size: 1.5rem !important;
   font-weight: 900 !important;
   letter-spacing: -0.03em;
-  color: #36E08F;
+  color: #48BFE3;
   line-height: 1;
 }
 

@@ -51,7 +51,7 @@ export function NotificationBell() {
       <button 
         onClick={handleOpen}
         title="Thông báo hệ thống"
-        className="relative p-2 rounded-xl text-slate-600 hover:text-[#36E08F] hover:bg-slate-100/80 transition-all focus:outline-none"
+        className="relative p-2 rounded-xl text-slate-600 hover:text-[#48BFE3] hover:bg-slate-100/80 transition-all focus:outline-none"
       >
         <div className="relative">
           <Bell className="w-5 h-5" />
@@ -67,7 +67,7 @@ export function NotificationBell() {
         <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="p-4 bg-gradient-to-r from-teal-50 to-emerald-50 border-b border-teal-100/80 flex justify-between items-center">
             <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-[#36E08F]" />
+              <MessageSquare className="w-4 h-4 text-[#48BFE3]" />
               Thông báo hệ thống
             </h3>
             {unread > 0 && (
@@ -96,7 +96,7 @@ export function NotificationBell() {
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
                       <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5 leading-snug">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#36E08F] shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#48BFE3] shrink-0" />
                         {n.title}
                       </h4>
                       <span className="text-[10px] text-slate-400 font-normal whitespace-nowrap shrink-0">
@@ -105,7 +105,7 @@ export function NotificationBell() {
                     </div>
                     <p className="text-slate-600 text-xs leading-relaxed pl-5 font-normal">{n.message}</p>
                     {n.link && (
-                      <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#36E08F] font-medium gap-1">
+                      <div className="mt-1.5 pl-5 flex items-center text-[10px] text-[#48BFE3] font-medium gap-1">
                         Xem chi tiết <ExternalLink className="w-2.5 h-2.5" />
                       </div>
                     )}

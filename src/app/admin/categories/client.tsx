@@ -257,7 +257,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">Danh Mục Khảo Sát</h1>
-            <span className="bg-[#36E08F]/10 text-[#36E08F] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+            <span className="bg-[#48BFE3]/10 text-[#48BFE3] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               {totalCategories} Phân mục
             </span>
           </div>
@@ -268,7 +268,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
 
         <button
           onClick={() => openCreateModal("")}
-          className="inline-flex items-center justify-center gap-2 bg-[#36E08F] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-md shadow-teal-500/20 active:scale-95 transition-all cursor-pointer border-none"
+          className="inline-flex items-center justify-center gap-2 bg-[#48BFE3] hover:bg-[#009085] text-white px-5 py-2.5 rounded-xl font-extrabold text-xs shadow-md shadow-teal-500/20 active:scale-95 transition-all cursor-pointer border-none"
         >
           <Plus className="w-4 h-4" /> Tạo Danh Mục Mới
         </button>
@@ -277,7 +277,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
       {/* OVERVIEW STAT CARDS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 shadow-2xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#36E08F] flex items-center justify-center font-black">
+          <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#48BFE3] flex items-center justify-center font-black">
             <Folder className="w-5 h-5" />
           </div>
           <div>
@@ -327,7 +327,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo tên hoặc mã danh mục (#CSVC, #HOC_TAP...)"
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-8 py-2 text-xs font-bold text-slate-800 focus:border-[#36E08F] focus:bg-white outline-none transition-all"
+            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-8 py-2 text-xs font-bold text-slate-800 focus:border-[#48BFE3] focus:bg-white outline-none transition-all"
           />
           {searchQuery && (
             <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -340,19 +340,19 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-1">
           <button
             onClick={() => setFilterTab("ALL")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${filterTab === "ALL" ? "bg-[#36E08F] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${filterTab === "ALL" ? "bg-[#48BFE3] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
             Tất cả ({categories.length})
           </button>
           <button
             onClick={() => setFilterTab("ROOT")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${filterTab === "ROOT" ? "bg-[#36E08F] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${filterTab === "ROOT" ? "bg-[#48BFE3] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
             Danh mục gốc ({rootCategories.length})
           </button>
           <button
             onClick={() => setFilterTab("CHILD")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${filterTab === "CHILD" ? "bg-[#36E08F] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all whitespace-nowrap ${filterTab === "CHILD" ? "bg-[#48BFE3] text-white shadow-xs" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}
           >
             Danh mục con ({childCategories.length})
           </button>
@@ -372,7 +372,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
               className="ml-2 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all flex items-center gap-1 cursor-pointer border border-slate-200"
               title={isAllCollapsed ? "Mở rộng tất cả danh mục con" : "Thu gọn tất cả danh mục con"}
             >
-              {isAllCollapsed ? <ChevronsDown className="w-3.5 h-3.5 text-[#36E08F]" /> : <ChevronsUp className="w-3.5 h-3.5 text-[#36E08F]" />}
+              {isAllCollapsed ? <ChevronsDown className="w-3.5 h-3.5 text-[#48BFE3]" /> : <ChevronsUp className="w-3.5 h-3.5 text-[#48BFE3]" />}
               <span>{isAllCollapsed ? "Mở rộng tất cả" : "Thu gọn tất cả"}</span>
             </button>
           )}
@@ -386,7 +386,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
             type="checkbox"
             checked={isAllSelected}
             onChange={toggleSelectAll}
-            className="w-4 h-4 rounded text-[#36E08F] focus:ring-0 cursor-pointer"
+            className="w-4 h-4 rounded text-[#48BFE3] focus:ring-0 cursor-pointer"
           />
           <span>{isAllSelected ? "Đã chọn tất cả" : "Chọn tất cả trên trang này"}</span>
         </label>
@@ -453,7 +453,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
       {selectedIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-2xl z-50 flex flex-wrap items-center gap-4 animate-in slide-in-from-bottom-6 border border-slate-700/60 max-w-4xl w-[92%] justify-between">
           <div className="flex items-center gap-2 text-xs font-black">
-            <span className="w-6 h-6 rounded-full bg-[#36E08F] flex items-center justify-center text-white text-[11px]">
+            <span className="w-6 h-6 rounded-full bg-[#48BFE3] flex items-center justify-center text-white text-[11px]">
               {selectedIds.length}
             </span>
             <span>Đã chọn {selectedIds.length} mục</span>
@@ -511,7 +511,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
             
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <FolderPlus className="w-5 h-5 text-[#36E08F]" />
+                <FolderPlus className="w-5 h-5 text-[#48BFE3]" />
                 {modalMode === "CREATE" ? "Tạo Danh Mục Khảo Sát Mới" : "Chỉnh Sửa Danh Mục"}
               </h3>
               <button onClick={closeModal} className="text-slate-400 hover:text-slate-600 p-1"><X className="w-5 h-5"/></button>
@@ -533,7 +533,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="VD: Cơ sở vật chất, Học tập, NPS..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:bg-white transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] focus:bg-white transition-all"
                   autoFocus
                 />
               </div>
@@ -548,7 +548,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
                     placeholder="VD: CS_VAT_CHAT"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:bg-white transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-slate-800 outline-none focus:border-[#48BFE3] focus:bg-white transition-all"
                   />
                 </div>
 
@@ -559,7 +559,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                   <select
                     value={formData.parentId}
                     onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:bg-white cursor-pointer transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] focus:bg-white cursor-pointer transition-all"
                   >
                     <option value="">-- Mặc định: Danh mục gốc (Cấp cao nhất) --</option>
                     {parentOptions(editingId).map((opt: any) => (
@@ -578,7 +578,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                     type="number"
                     value={formData.sortOrder}
                     onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:bg-white transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] focus:bg-white transition-all"
                     min="0"
                   />
                 </div>
@@ -591,7 +591,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] focus:bg-white cursor-pointer transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] focus:bg-white cursor-pointer transition-all"
                     >
                       <option value="ACTIVE">Hoạt động (Đang dùng)</option>
                       <option value="INACTIVE">Tạm ẩn (Tắt)</option>
@@ -608,7 +608,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
               <button
                 onClick={modalMode === "CREATE" ? handleCreate : handleSaveEdit}
                 disabled={saving}
-                className="px-6 py-2 bg-[#36E08F] hover:bg-[#009085] text-white font-extrabold text-xs rounded-xl shadow-md shadow-teal-500/20 transition-all cursor-pointer border-none"
+                className="px-6 py-2 bg-[#48BFE3] hover:bg-[#009085] text-white font-extrabold text-xs rounded-xl shadow-md shadow-teal-500/20 transition-all cursor-pointer border-none"
               >
                 {saving ? "Đang lưu..." : (modalMode === "CREATE" ? "Tạo Danh Mục" : "Cập Nhật")}
               </button>
@@ -641,7 +641,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
               <select
                 value={bulkParentId}
                 onChange={(e) => setBulkParentId(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#36E08F] cursor-pointer"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-800 outline-none focus:border-[#48BFE3] cursor-pointer"
               >
                 <option value="">-- Mặc định: Chuyển thành Danh mục gốc (Không có cha) --</option>
                 {parentOptions().map((opt: any) => (
@@ -666,11 +666,11 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
 
       {/* HELPER GUIDELINES FOOTER */}
       <div className="p-4 bg-teal-50/60 rounded-2xl border border-teal-100 text-xs text-teal-800 flex items-start gap-3">
-        <Info className="w-5 h-5 text-[#36E08F] flex-shrink-0 mt-0.5" />
+        <Info className="w-5 h-5 text-[#48BFE3] flex-shrink-0 mt-0.5" />
         <div className="space-y-1">
           <span className="font-extrabold text-teal-900">Hướng dẫn phân cấp Danh Mục:</span>
           <p className="text-teal-800/90 leading-relaxed">
-            • <strong>Thu gọn / Mở rộng:</strong> Nhấp vào biểu tượng mũi tên <ChevronDown className="w-3.5 h-3.5 inline text-[#36E08F]" /> bên cạnh thư mục gốc để thu gọn hoặc mở rộng danh mục con.<br />
+            • <strong>Thu gọn / Mở rộng:</strong> Nhấp vào biểu tượng mũi tên <ChevronDown className="w-3.5 h-3.5 inline text-[#48BFE3]" /> bên cạnh thư mục gốc để thu gọn hoặc mở rộng danh mục con.<br />
             • <strong>Thao tác hàng loạt:</strong> Đánh dấu checkbox ở đầu dòng để chọn 1 hoặc nhiều danh mục để chuyển trạng thái, gán mục cha hoặc xóa hàng loạt.
           </p>
         </div>
@@ -691,7 +691,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
         key={cat.id}
         className={`p-4 rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 border ${
           isSelected
-            ? "bg-teal-50/50 border-[#36E08F] shadow-xs"
+            ? "bg-teal-50/50 border-[#48BFE3] shadow-xs"
             : (isRoot ? "bg-white border-slate-200/80 shadow-2xs hover:shadow-xs" : "bg-white/80 border-slate-200/60 hover:bg-white")
         }`}
       >
@@ -702,24 +702,24 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
             type="checkbox"
             checked={isSelected}
             onChange={() => toggleSelect(cat.id)}
-            className="w-4.5 h-4.5 rounded text-[#36E08F] focus:ring-0 cursor-pointer flex-shrink-0"
+            className="w-4.5 h-4.5 rounded text-[#48BFE3] focus:ring-0 cursor-pointer flex-shrink-0"
           />
 
           {/* Collapse / Expand Chevron Icon (for Root categories with children) */}
           {hasChildren ? (
             <button
               onClick={() => toggleCollapseRoot(cat.id)}
-              className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-[#36E08F] transition-colors cursor-pointer border-none bg-transparent flex-shrink-0"
+              className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-[#48BFE3] transition-colors cursor-pointer border-none bg-transparent flex-shrink-0"
               title={isCollapsed ? "Mở rộng danh mục con" : "Thu gọn danh mục con"}
             >
-              {isCollapsed ? <ChevronRight className="w-4 h-4 text-[#36E08F]" /> : <ChevronDown className="w-4 h-4 text-[#36E08F]" />}
+              {isCollapsed ? <ChevronRight className="w-4 h-4 text-[#48BFE3]" /> : <ChevronDown className="w-4 h-4 text-[#48BFE3]" />}
             </button>
           ) : (
             isRoot && <div className="w-6 flex-shrink-0" />
           )}
 
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 font-bold ${
-            isRoot ? "bg-[#36E08F]/10 text-[#36E08F]" : "bg-slate-100 text-slate-500"
+            isRoot ? "bg-[#48BFE3]/10 text-[#48BFE3]" : "bg-slate-100 text-slate-500"
           }`}>
             {isRoot ? <Folder className="w-4.5 h-4.5" /> : <CornerDownRight className="w-4 h-4 text-slate-400" />}
           </div>
@@ -728,7 +728,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
             <div className="flex flex-wrap items-center gap-2">
               <span
                 onClick={() => hasChildren && toggleCollapseRoot(cat.id)}
-                className={`font-black truncate ${isRoot ? "text-slate-800 text-sm cursor-pointer hover:text-[#36E08F]" : "text-slate-700 text-xs"} ${!isActive && "line-through text-slate-400"}`}
+                className={`font-black truncate ${isRoot ? "text-slate-800 text-sm cursor-pointer hover:text-[#48BFE3]" : "text-slate-700 text-xs"} ${!isActive && "line-through text-slate-400"}`}
               >
                 {cat.name}
               </span>
@@ -786,7 +786,7 @@ export function CategoriesClient({ initialCategories }: { initialCategories: any
           {isRoot && (
             <button
               onClick={() => openCreateModal(cat.id)}
-              className="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-[#36E08F] border border-teal-200/60 rounded-lg text-[11px] font-extrabold transition-all flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1 bg-teal-50 hover:bg-teal-100 text-[#48BFE3] border border-teal-200/60 rounded-lg text-[11px] font-extrabold transition-all flex items-center gap-1 cursor-pointer"
               title="Thêm danh mục con thuộc mục này"
             >
               <Plus className="w-3.5 h-3.5" /> + Con

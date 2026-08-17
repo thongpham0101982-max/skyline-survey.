@@ -137,13 +137,13 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-slate-800 font-extrabold text-sm tracking-tight">
-            <Filter className="w-4 h-4 text-[#36E08F]" />
+            <Filter className="w-4 h-4 text-[#48BFE3]" />
             Bộ lọc & Tìm kiếm nhanh
           </div>
           {(filterRole !== "ALL" || filterCampus !== "ALL" || search) && (
             <button 
               onClick={handleReset} 
-              className="text-xs font-bold text-slate-500 hover:text-[#36E08F] transition-colors flex items-center gap-1 cursor-pointer"
+              className="text-xs font-bold text-slate-500 hover:text-[#48BFE3] transition-colors flex items-center gap-1 cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" /> Xóa bộ lọc
             </button>
@@ -159,7 +159,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Tìm kiếm Họ tên, Mã NV..."
-              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] outline-none transition-all font-semibold bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white"
+              className="w-full pl-9 pr-8 py-2.5 rounded-xl text-sm border border-slate-200 focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] outline-none transition-all font-semibold bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white"
             />
             {search && (
               <button
@@ -176,7 +176,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
             >
               <option value="ALL">-- Tất cả Nhóm quyền --</option>
               {roles.map((r: any) => (
@@ -191,7 +191,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
               <select
                 value={filterCampus}
                 onChange={(e) => setFilterCampus(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#36E08F] focus:ring-2 focus:ring-[#36E08F]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
+                className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white transition-all font-bold cursor-pointer text-slate-700"
               >
                 <option value="ALL">-- Tất cả Cơ sở --</option>
                 {campuses.map((c: any) => (
@@ -207,7 +207,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
           <div className="flex items-center gap-2 flex-wrap pt-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">Đang lọc:</span>
             {filterRole !== "ALL" && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20">
                 Nhóm: {roles.find((r: any) => r.code === filterRole)?.name}
                 <button onClick={() => setFilterRole("ALL")} className="hover:text-red-500 ml-0.5"><X className="w-3.5 h-3.5" /></button>
               </span>
@@ -245,7 +245,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                      e.target.value = "";
                    }}
                    disabled={deleting || moving}
-                   className="p-1.5 rounded-md border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#36E08F]"
+                   className="p-1.5 rounded-md border text-xs bg-white border-slate-300 font-bold text-slate-700 cursor-pointer outline-none focus:border-[#48BFE3]"
                  >
                    <option value="">-- Chuyển sang Nhóm --</option>
                    {roles.map((r) => (
@@ -256,7 +256,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                    <button
                      onClick={() => handleMoveGroup(filterRole)}
                      disabled={moving}
-                     className="flex items-center bg-[#36E08F] text-white hover:bg-[#009085] font-semibold py-1.5 px-3 rounded-md text-sm cursor-pointer transition-all shadow-sm"
+                     className="flex items-center bg-[#48BFE3] text-white hover:bg-[#009085] font-semibold py-1.5 px-3 rounded-md text-sm cursor-pointer transition-all shadow-sm"
                    >
                      <CheckCircle2 className="w-4 h-4 mr-1.5" /> Chuyển {selectedIds.length} tài khoản sang nhóm {roles.find((r) => r.code === filterRole)?.name}
                    </button>
@@ -272,7 +272,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <thead className="text-slate-600 text-sm font-semibold text-xs font-semibold">
               <tr>
                 <th className="p-2 p-2 w-12 text-center border border-slate-200">
-                  <input type="checkbox" className="w-4 h-4 rounded text-[#36E08F]"
+                  <input type="checkbox" className="w-4 h-4 rounded text-[#48BFE3]"
                     checked={displayedUsers.length > 0 && selectedIds.length === displayedUsers.length}
                     onChange={(e) => {
                       if (e.target.checked) setSelectedIds(displayedUsers.map((u: any) => u.id));
@@ -290,7 +290,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
             <tbody className="divide-y divide-slate-100">
 
               {paginatedUsers.map((u:any) => editingId === u.id ? (
-                <tr key={u.id} className="bg-[#36E08F]/10/30">
+                <tr key={u.id} className="bg-[#48BFE3]/10/30">
                   <td className="p-2 p-2 border border-slate-200"></td>
                   <td className="p-2 p-2 border border-slate-200"><input value={formData.employeeCode} onChange={e=>setFormData({...formData, employeeCode: e.target.value})} className="w-32 p-1.5 rounded border text-sm font-semibold border-slate-300" /></td>
                   <td className="p-2 p-2 border border-slate-200"><input value={formData.fullName} onChange={e=>setFormData({...formData, fullName: e.target.value})} className="w-full p-1.5 rounded border text-sm border-slate-300" /></td>
@@ -319,9 +319,9 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                   </td>
                 </tr>
               ) : (
-                <tr key={u.id} className={"hover:bg-slate-50/50 transition-colors " + (selectedIds.includes(u.id) ? "bg-[#36E08F]/10/30" : "")}>
+                <tr key={u.id} className={"hover:bg-slate-50/50 transition-colors " + (selectedIds.includes(u.id) ? "bg-[#48BFE3]/10/30" : "")}>
                   <td className="p-2 p-2 text-center border border-slate-200">
-                    <input type="checkbox" className="w-4 h-4 rounded text-[#36E08F]"
+                    <input type="checkbox" className="w-4 h-4 rounded text-[#48BFE3]"
                       checked={selectedIds.includes(u.id)}
                       onChange={e => {
                          if (e.target.checked) setSelectedIds([...selectedIds, u.id]);
@@ -334,7 +334,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                   
                   <td className="p-2 p-2 border border-slate-200">
                     <div className="flex flex-col gap-1">
-                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#36E08F]/10 text-indigo-700 border border-[#36E08F]/20 w-fit">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold bg-[#48BFE3]/10 text-indigo-700 border border-[#48BFE3]/20 w-fit">
                         {roles.find((r:any) => r.code === u.role)?.name || u.role}
                       </span>
                       {u.campusIds && u.campusIds.length > 0 && (
@@ -350,7 +350,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
 
                   <td className="px-6 py-3 border-l border-slate-200 text-xs text-slate-400 italic">*** (Đã mã hóa)</td>
                   <td className="p-2 p-2 text-right border border-slate-200">
-                    <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-[#36E08F] rounded-lg"><Edit2 className="w-4 h-4"/></button>
+                    <button onClick={() => startEdit(u)} className="p-2 text-slate-400 hover:text-[#48BFE3] rounded-lg"><Edit2 className="w-4 h-4"/></button>
                     <button onClick={() => handleDelete(u.id, u.fullName)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg"><Trash2 className="w-4 h-4"/></button>
                   </td>
                 </tr>
@@ -387,7 +387,7 @@ export function UsersClient({ initialUsers, roles, campuses = [], isCampusLocked
                     onClick={() => setCurrentPage(pNum)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       currentPage === pNum
-                        ? "bg-[#36E08F] text-white border border-[#36E08F]"
+                        ? "bg-[#48BFE3] text-white border border-[#48BFE3]"
                         : "border border-slate-200 text-slate-700 bg-white hover:bg-slate-50"
                     }`}
                   >

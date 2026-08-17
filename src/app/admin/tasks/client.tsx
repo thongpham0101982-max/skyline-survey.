@@ -2,7 +2,7 @@
 
 function getCategoryBadgeStyle(catName: string) {
   const name = catName?.toLowerCase() || ""
-  if (name.includes("kỳ thi") || name.includes("đầu ra")) return "bg-teal-50 text-[#36E08F] border-teal-200"
+  if (name.includes("kỳ thi") || name.includes("đầu ra")) return "bg-teal-50 text-[#48BFE3] border-teal-200"
   if (name.includes("mầm non") || name.includes("mn")) return "bg-amber-50 text-amber-700 border-amber-200"
   if (name.includes("phổ thông") || name.includes("pt")) return "bg-sky-50 text-sky-700 border-sky-200"
   if (name.includes("quốc tế")) return "bg-indigo-50 text-indigo-700 border-indigo-200"
@@ -311,13 +311,13 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
       {/* Header Bar */}
       <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#36E08F] shadow-sm">
+          <div className="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-100 flex items-center justify-center text-[#48BFE3] shadow-sm">
             <ClipboardList className="w-6 h-6" />
           </div>
           <div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
               Điều hành Công việc
-              <span className="text-xs px-2.5 py-1 bg-teal-100 text-[#36E08F] rounded-full font-bold">
+              <span className="text-xs px-2.5 py-1 bg-teal-100 text-[#48BFE3] rounded-full font-bold">
                 {stats.total} việc
               </span>
             </h1>
@@ -333,7 +333,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             <button
               onClick={() => setViewMode("list")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === "list" ? "bg-white text-[#36E08F] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                viewMode === "list" ? "bg-white text-[#48BFE3] shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
             >
               <LayoutList className="w-4 h-4" /> Danh sách
@@ -341,7 +341,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             <button
               onClick={() => setViewMode("kanban")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === "kanban" ? "bg-white text-[#36E08F] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                viewMode === "kanban" ? "bg-white text-[#48BFE3] shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
             >
               <Kanban className="w-4 h-4" /> Bảng Thẻ
@@ -349,7 +349,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             <button
               onClick={() => setViewMode("timeline")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                viewMode === "timeline" ? "bg-white text-[#36E08F] shadow-sm" : "text-slate-500 hover:text-slate-800"
+                viewMode === "timeline" ? "bg-white text-[#48BFE3] shadow-sm" : "text-slate-500 hover:text-slate-800"
               }`}
             >
               <Calendar className="w-4 h-4" /> Tiến độ
@@ -366,7 +366,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               </button>
               <button
                 onClick={() => { resetForm(); setShowForm(!showForm) }}
-                className="flex items-center gap-2 bg-gradient-to-r from-[#36E08F] to-[#007A72] text-white px-5 py-2 rounded-xl hover:opacity-95 transition-all shadow-md font-bold text-xs"
+                className="flex items-center gap-2 bg-gradient-to-r from-[#48BFE3] to-[#007A72] text-white px-5 py-2 rounded-xl hover:opacity-95 transition-all shadow-md font-bold text-xs"
               >
                 <Plus className="w-4 h-4" /> Giao việc mới
               </button>
@@ -454,7 +454,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Tìm kiếm theo tiêu đề, danh mục, người nhận, người giao..."
-              className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#36E08F] bg-slate-50/50"
+              className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#48BFE3] bg-slate-50/50"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -497,7 +497,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             onClick={() => setFilterCategory("ALL")}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap border ${
               filterCategory === "ALL"
-                ? "bg-[#36E08F] border-[#36E08F] text-white shadow-sm"
+                ? "bg-[#48BFE3] border-[#48BFE3] text-white shadow-sm"
                 : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
             }`}
           >
@@ -512,7 +512,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                 onClick={() => setFilterCategory(isActive ? "ALL" : cat)}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap border flex items-center gap-1.5 ${
                   isActive
-                    ? "bg-[#36E08F] border-[#36E08F] text-white shadow-sm"
+                    ? "bg-[#48BFE3] border-[#48BFE3] text-white shadow-sm"
                     : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
                 }`}
               >
@@ -530,10 +530,10 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
 
       {/* Admin Task Assignment / Edit Form Modal */}
       {showForm && isAdmin && (
-        <div className="bg-white border-2 border-[#36E08F] rounded-3xl shadow-xl p-6 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="bg-white border-2 border-[#48BFE3] rounded-3xl shadow-xl p-6 space-y-4 animate-in zoom-in-95 duration-200">
           <div className="flex items-center justify-between border-b pb-3">
             <h2 className="font-extrabold text-lg text-slate-800 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-[#36E08F]" />
+              <Plus className="w-5 h-5 text-[#48BFE3]" />
               {editId ? "Cập nhật công việc" : "Giao công việc mới"}
             </h2>
             <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
@@ -545,7 +545,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               <select
                 value={category}
                 onChange={e => setCategory(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#36E08F] bg-white font-bold text-slate-700"
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white font-bold text-slate-700"
               >
                 <option value="">-- Chọn danh mục --</option>
                 {categoriesList.map((c: any) => (
@@ -565,7 +565,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                   setSelectedUserIds([])
                   setCollaboratorIds([])
                 }}
-                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#36E08F] bg-white font-bold text-slate-700"
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white font-bold text-slate-700"
               >
                 {roles.map((r: any) => (
                   <option key={r.code} value={r.code}>{r.name}</option>
@@ -578,9 +578,9 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-[#36E08F]" /> Chọn 1 hoặc nhiều cá nhân cụ thể thực hiện (Tùy chọn)
+                <User className="w-3.5 h-3.5 text-[#48BFE3]" /> Chọn 1 hoặc nhiều cá nhân cụ thể thực hiện (Tùy chọn)
               </label>
-              <span className="text-[11px] text-[#36E08F] font-bold">
+              <span className="text-[11px] text-[#48BFE3] font-bold">
                 {selectedUserIds.length === 0 ? `Đang chọn cả nhóm (${roleUsers.length} người)` : `Đã chọn ${selectedUserIds.length} người`}
               </span>
             </div>
@@ -590,7 +590,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                 type="button"
                 onClick={() => setSelectedUserIds([])}
                 className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all border ${
-                  selectedUserIds.length === 0 ? "bg-[#36E08F] text-white border-[#36E08F]" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
+                  selectedUserIds.length === 0 ? "bg-[#48BFE3] text-white border-[#48BFE3]" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100"
                 }`}
               >
                 Giao cho cả nhóm ({roleUsers.length})
@@ -620,7 +620,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
           <div className="bg-teal-50/50 border border-teal-200 rounded-2xl p-3 space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-teal-900 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-[#36E08F]" /> Người phối hợp (Đồng thực hiện / Hỗ trợ):
+                <Users className="w-3.5 h-3.5 text-[#48BFE3]" /> Người phối hợp (Đồng thực hiện / Hỗ trợ):
               </label>
               <span className="text-[11px] text-teal-700 font-bold">
                 {collaboratorIds.length === 0 ? "Chưa chọn" : `${collaboratorIds.length} người phối hợp`}
@@ -641,7 +641,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                       else setCollaboratorIds([...collaboratorIds, u.id])
                     }}
                     className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all border flex items-center gap-1 ${
-                      isChecked ? "bg-[#36E08F] text-white border-[#36E08F] shadow-sm" : "bg-white text-teal-900 border-teal-200 hover:bg-teal-100"
+                      isChecked ? "bg-[#48BFE3] text-white border-[#48BFE3] shadow-sm" : "bg-white text-teal-900 border-teal-200 hover:bg-teal-100"
                     }`}
                   >
                     <span>{isChecked ? '🤝 ' : ''}{u.fullName}</span>
@@ -659,7 +659,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="Nhập tên / tiêu đề công việc..."
-              className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#36E08F] bg-white"
+              className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3] bg-white"
             />
           </div>
 
@@ -671,7 +671,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               onChange={e => setDescription(e.target.value)}
               rows={3}
               placeholder="Nhập mô tả chi tiết công việc, các bước thực hiện hoặc tài liệu hướng dẫn..."
-              className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#36E08F] resize-none leading-relaxed bg-white"
+              className="w-full border border-slate-200 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[#48BFE3] resize-none leading-relaxed bg-white"
             />
             <div className="flex items-center gap-2 mt-2">
               <input
@@ -693,7 +693,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
               <select
                 value={academicYearId}
                 onChange={e => setAcademicYearId(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#36E08F]"
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3]"
               >
                 {(years || []).filter((y: any) => !y.isOff).map((y: any) => (
                   <option key={y.id} value={y.id}>{y.name}</option>
@@ -706,7 +706,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                 type="date"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#36E08F]"
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3]"
               />
             </div>
             <div>
@@ -715,7 +715,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                 type="date"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
-                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#36E08F]"
+                className="w-full border border-slate-200 rounded-xl p-2.5 text-xs font-bold outline-none focus:ring-2 focus:ring-[#48BFE3]"
               />
             </div>
           </div>
@@ -727,7 +727,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
             <button
               onClick={handleSubmit}
               disabled={submittingTask}
-              className="bg-gradient-to-r from-[#36E08F] to-[#007A72] text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:opacity-95 transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
+              className="bg-gradient-to-r from-[#48BFE3] to-[#007A72] text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:opacity-95 transition-all shadow-md disabled:opacity-50 flex items-center gap-2"
             >
               {submittingTask ? (
                 <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Đang gửi email thông báo...</>
@@ -808,7 +808,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                           if (e.target.checked) setSelectedTaskIds(displayedTasks.map((t: any) => t.id))
                           else setSelectedTaskIds([])
                         }}
-                        className="w-4 h-4 rounded text-[#36E08F] focus:ring-[#36E08F] cursor-pointer"
+                        className="w-4 h-4 rounded text-[#48BFE3] focus:ring-[#48BFE3] cursor-pointer"
                       />
                     </th>
                   )}
@@ -855,7 +855,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                               if (e.target.checked) setSelectedTaskIds([...selectedTaskIds, t.id])
                               else setSelectedTaskIds(selectedTaskIds.filter(id => id !== t.id))
                             }}
-                            className="w-4 h-4 rounded text-[#36E08F] focus:ring-[#36E08F] cursor-pointer"
+                            className="w-4 h-4 rounded text-[#48BFE3] focus:ring-[#48BFE3] cursor-pointer"
                           />
                         </td>
                       )}
@@ -874,7 +874,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                           )}
                           <span 
                             onClick={() => setDetailTask(t)}
-                            className={`font-bold cursor-pointer hover:text-[#36E08F] transition-colors leading-relaxed break-words ${
+                            className={`font-bold cursor-pointer hover:text-[#48BFE3] transition-colors leading-relaxed break-words ${
                               isOverdue ? "text-red-900" : "text-slate-800"
                             }`}
                           >
@@ -891,7 +891,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                         )}
                         {t.collaborators && (
                           <div className="text-[11px] text-teal-800 font-bold mt-1 flex items-center gap-1 bg-teal-50 px-2 py-0.5 rounded-md w-fit">
-                            <Users className="w-3 h-3 text-[#36E08F]" /> Phối hợp: {t.collaborators}
+                            <Users className="w-3 h-3 text-[#48BFE3]" /> Phối hợp: {t.collaborators}
                           </div>
                         )}
                         {t.staffNote && (
@@ -1043,7 +1043,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                       className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all space-y-3"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="bg-teal-50 text-[#36E08F] font-bold text-[10px] px-2 py-0.5 rounded-full">
+                        <span className="bg-teal-50 text-[#48BFE3] font-bold text-[10px] px-2 py-0.5 rounded-full">
                           {t.category || "Công việc"}
                         </span>
                         {t.isImportant && (
@@ -1055,7 +1055,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
 
                       <h4 
                         onClick={() => setDetailTask(t)}
-                        className="font-bold text-xs text-slate-800 cursor-pointer hover:text-[#36E08F] leading-snug"
+                        className="font-bold text-xs text-slate-800 cursor-pointer hover:text-[#48BFE3] leading-snug"
                       >
                         {t.title}
                       </h4>
@@ -1086,7 +1086,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
 
                         <button
                           onClick={() => setDetailTask(t)}
-                          className="text-[#36E08F] hover:underline text-xs font-bold"
+                          className="text-[#48BFE3] hover:underline text-xs font-bold"
                         >
                           Chi tiết &rarr;
                         </button>
@@ -1104,7 +1104,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
       {viewMode === "timeline" && (
         <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-6">
           <h3 className="font-extrabold text-base text-slate-800 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-[#36E08F]" /> Tiến độ & Thời gian thực hiện Công việc
+            <Calendar className="w-5 h-5 text-[#48BFE3]" /> Tiến độ & Thời gian thực hiện Công việc
           </h3>
 
           <div className="space-y-4">
@@ -1119,10 +1119,10 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                 <div key={t.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="bg-teal-100 text-[#36E08F] font-bold text-xs px-2.5 py-0.5 rounded-full">
+                      <span className="bg-teal-100 text-[#48BFE3] font-bold text-xs px-2.5 py-0.5 rounded-full">
                         {t.category || "Công việc"}
                       </span>
-                      <span onClick={() => setDetailTask(t)} className="font-bold text-xs text-slate-800 cursor-pointer hover:text-[#36E08F]">
+                      <span onClick={() => setDetailTask(t)} className="font-bold text-xs text-slate-800 cursor-pointer hover:text-[#48BFE3]">
                         {t.title}
                       </span>
                     </div>
@@ -1140,7 +1140,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                   <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
                     <div 
                       className={`h-2.5 rounded-full transition-all ${
-                        isCompleted ? "bg-emerald-500" : isOverdue ? "bg-red-500" : "bg-[#36E08F]"
+                        isCompleted ? "bg-emerald-500" : isOverdue ? "bg-red-500" : "bg-[#48BFE3]"
                       }`} 
                       style={{ width: isCompleted ? '100%' : isOverdue ? '100%' : '60%' }}
                     />
@@ -1187,7 +1187,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                       value={catName}
                       onChange={e => setCatName(e.target.value)}
                       placeholder="Nhập tên..."
-                      className="w-full border rounded-xl p-2 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#36E08F]"
+                      className="w-full border rounded-xl p-2 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3]"
                     />
                   </div>
                   <div>
@@ -1195,7 +1195,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                     <select
                       value={catRole}
                       onChange={e => setCatRole(e.target.value)}
-                      className="w-full border rounded-xl p-2 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#36E08F]"
+                      className="w-full border rounded-xl p-2 text-xs outline-none bg-white font-bold focus:ring-2 focus:ring-[#48BFE3]"
                     >
                       {roles.map((r: any) => (
                         <option key={r.code} value={r.code}>{r.name}</option>
@@ -1214,7 +1214,7 @@ export function TasksClient({ initialTasks, years, roles, dbCategories, currentR
                   )}
                   <button
                     onClick={handleSaveCategory}
-                    className="bg-[#36E08F] text-white px-4 py-1.5 rounded-xl text-xs font-bold hover:bg-[#007A72]"
+                    className="bg-[#48BFE3] text-white px-4 py-1.5 rounded-xl text-xs font-bold hover:bg-[#007A72]"
                   >
                     {catEditId ? "Cập nhật" : "Thêm mới"}
                   </button>

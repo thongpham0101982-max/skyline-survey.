@@ -35,7 +35,7 @@ export default async function SurveyPage({ params, searchParams }: any) {
           <p className="text-slate-500 text-base mb-8 max-w-sm leading-relaxed">
             Cam on Quy Phu huynh da tham gia danh gia chat luong cho hoc sinh <strong className="text-slate-800">{student.studentName}</strong>.
           </p>
-          <Link href="/parent/surveys" className="inline-flex items-center gap-2 px-8 py-3 bg-[#36E08F] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all shadow-lg shadow-teal-500/20">
+          <Link href="/parent/surveys" className="inline-flex items-center gap-2 px-8 py-3 bg-[#48BFE3] text-white font-bold rounded-2xl hover:bg-[#009085] transition-all shadow-lg shadow-teal-500/20">
             <ArrowLeft className="w-5 h-5" /> Ve Man hinh chinh
           </Link>
         </div>
@@ -52,10 +52,10 @@ export default async function SurveyPage({ params, searchParams }: any) {
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
       {/* Header */}
       <div className="text-center space-y-3">
-        <Link href="/parent/surveys" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-[#36E08F] transition-colors font-medium mb-2">
+        <Link href="/parent/surveys" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-[#48BFE3] transition-colors font-medium mb-2">
           <ArrowLeft className="w-4 h-4" />Quay lai
         </Link>
-        <div className="inline-flex items-center gap-2 text-xs font-bold text-[#36E08F] uppercase tracking-wider text-xs font-semibold">
+        <div className="inline-flex items-center gap-2 text-xs font-bold text-[#48BFE3] uppercase tracking-wider text-xs font-semibold">
           <BookOpen className="w-3.5 h-3.5" />{period.name}
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight">

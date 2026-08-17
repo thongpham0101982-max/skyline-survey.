@@ -285,7 +285,7 @@ export default function CreateActivityWizard() {
       <div key={sys.code} className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2">
         <label className="text-sm font-bold text-slate-700">{sys.name || sys.code} <span className="text-rose-500">*</span></label>
         <select 
-          className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+          className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
           value={stateValue || ''} 
           onChange={e => onChange(e.target.value)}
         >
@@ -391,7 +391,7 @@ export default function CreateActivityWizard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#36E08F]"></div>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#48BFE3]"></div>
           <span className="text-xs font-bold text-slate-500">Đang tải dữ liệu biểu mẫu...</span>
         </div>
       </div>
@@ -409,7 +409,7 @@ export default function CreateActivityWizard() {
           <div>
             <Link 
               href="/teacher/experiential-activities" 
-              className="text-xs font-bold text-[#36E08F] hover:underline flex items-center gap-1.5 mb-1"
+              className="text-xs font-bold text-[#48BFE3] hover:underline flex items-center gap-1.5 mb-1"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Trở về danh sách hoạt động</span>
@@ -430,7 +430,7 @@ export default function CreateActivityWizard() {
             <button 
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting}
-              className="px-5 py-2.5 bg-[#36E08F] text-white text-xs font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md flex items-center gap-1.5"
+              className="px-5 py-2.5 bg-[#48BFE3] text-white text-xs font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md flex items-center gap-1.5"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               <span>Hoàn tất & Lưu</span>
@@ -443,25 +443,25 @@ export default function CreateActivityWizard() {
           <div className="flex items-center gap-1.5 flex-wrap">
             <button 
               onClick={() => scrollToSection('section-1')}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-[#36E08F] transition-all flex items-center gap-2"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-[#48BFE3] transition-all flex items-center gap-2"
             >
-              <Info className="w-4 h-4 text-[#36E08F]" />
+              <Info className="w-4 h-4 text-[#48BFE3]" />
               <span>1. Thông tin chung</span>
             </button>
 
             <button 
               onClick={() => scrollToSection('section-2')}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-[#36E08F] transition-all flex items-center gap-2"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-[#48BFE3] transition-all flex items-center gap-2"
             >
-              <Users className="w-4 h-4 text-[#36E08F]" />
+              <Users className="w-4 h-4 text-[#48BFE3]" />
               <span>2. Đối tượng</span>
             </button>
 
             <button 
               onClick={() => scrollToSection('section-3')}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-[#36E08F] transition-all flex items-center gap-2"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-[#48BFE3] transition-all flex items-center gap-2"
             >
-              <Settings className="w-4 h-4 text-[#36E08F]" />
+              <Settings className="w-4 h-4 text-[#48BFE3]" />
               <span>3. Thiết lập kết quả</span>
             </button>
 
@@ -479,7 +479,7 @@ export default function CreateActivityWizard() {
             <button 
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting}
-              className="px-3 py-1.5 bg-[#36E08F] text-white text-xs font-bold rounded-xl"
+              className="px-3 py-1.5 bg-[#48BFE3] text-white text-xs font-bold rounded-xl"
             >
               Lưu
             </button>
@@ -490,7 +490,7 @@ export default function CreateActivityWizard() {
         <div id="section-1" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <span className="w-7 h-7 bg-[#36E08F]/10 text-[#36E08F] rounded-lg flex items-center justify-center text-sm font-black">1</span>
+              <span className="w-7 h-7 bg-[#48BFE3]/10 text-[#48BFE3] rounded-lg flex items-center justify-center text-sm font-black">1</span>
               <span>Thông tin chung</span>
             </h2>
             <p className="text-sm text-slate-500 font-medium ml-9">Chọn hoạt động và các thuộc tính phân loại</p>
@@ -500,7 +500,7 @@ export default function CreateActivityWizard() {
             <div className="space-y-1.5 md:col-span-2">
               <label className="text-sm font-bold text-slate-700">Nhóm hoạt động <span className="text-rose-500">*</span></label>
               <select 
-                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                 value={info.GROU || ''} 
                 onChange={e => setInfo({...info, GROU: e.target.value})}
               >
@@ -516,7 +516,7 @@ export default function CreateActivityWizard() {
               <input 
                 type="text"
                 placeholder="Nhập tên hoạt động cụ thể..."
-                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-bold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                 value={info.name || ''} 
                 onChange={e => setInfo({...info, name: e.target.value})}
               />
@@ -525,7 +525,7 @@ export default function CreateActivityWizard() {
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Năm học <span className="text-rose-500">*</span></label>
               <select 
-                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                 value={info.academicYear} 
                 onChange={e => setInfo({...info, academicYear: e.target.value})}
               >
@@ -541,7 +541,7 @@ export default function CreateActivityWizard() {
               <input 
                 type="text" 
                 readOnly
-                className="w-full bg-slate-100 border-0 ring-1 ring-slate-200 text-[#36E08F] text-sm font-black rounded-xl block p-3.5 opacity-80 cursor-not-allowed"
+                className="w-full bg-slate-100 border-0 ring-1 ring-slate-200 text-[#48BFE3] text-sm font-black rounded-xl block p-3.5 opacity-80 cursor-not-allowed"
                 value={generatedCode} 
               />
             </div>
@@ -550,7 +550,7 @@ export default function CreateActivityWizard() {
               <label className="text-sm font-bold text-slate-700">Ngày tổ chức <span className="text-rose-500">*</span></label>
               <input 
                 type="date" 
-                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                 value={info.date} 
                 onChange={e => setInfo({...info, date: e.target.value})} 
               />
@@ -559,7 +559,7 @@ export default function CreateActivityWizard() {
             <div className="space-y-1.5">
               <label className="text-sm font-bold text-slate-700">Học kỳ</label>
               <select 
-                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3.5 transition-all"
+                className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3.5 transition-all"
                 value={info.semester} 
                 onChange={e => setInfo({...info, semester: e.target.value})}
               >
@@ -581,7 +581,7 @@ export default function CreateActivityWizard() {
         <div id="section-2" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <span className="w-7 h-7 bg-[#36E08F]/10 text-[#36E08F] rounded-lg flex items-center justify-center text-sm font-black">2</span>
+              <span className="w-7 h-7 bg-[#48BFE3]/10 text-[#48BFE3] rounded-lg flex items-center justify-center text-sm font-black">2</span>
               <span>Đối tượng tham gia <span className="text-rose-500">*</span></span>
             </h2>
             <p className="text-sm text-slate-500 font-medium ml-9">Phạm vi học sinh tham gia hoạt động này</p>
@@ -591,13 +591,13 @@ export default function CreateActivityWizard() {
           <div className="flex bg-slate-100/80 p-1.5 rounded-2xl w-full max-w-sm mb-6">
             <button
               onClick={() => setTargetMode('class')}
-              className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'class' ? "bg-white text-[#36E08F] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+              className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'class' ? "bg-white text-[#48BFE3] shadow-sm" : "text-slate-500 hover:text-slate-700")}
             >
               Theo Khối/Lớp
             </button>
             <button
               onClick={() => setTargetMode('student')}
-              className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'student' ? "bg-white text-[#36E08F] shadow-sm" : "text-slate-500 hover:text-slate-700")}
+              className={"flex-1 py-2 text-sm font-bold rounded-xl transition-all " + (targetMode === 'student' ? "bg-white text-[#48BFE3] shadow-sm" : "text-slate-500 hover:text-slate-700")}
             >
               Theo Học sinh lẻ
             </button>
@@ -619,7 +619,7 @@ export default function CreateActivityWizard() {
                           : [...target.levels, ...lvl.originalLevels];
                         setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
                       }}
-                      className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (lvl.originalLevels.some((l: any) => target.levels.includes(l)) ? "bg-[#36E08F]/10 border-[#36E08F] text-[#36E08F] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                      className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (lvl.originalLevels.some((l: any) => target.levels.includes(l)) ? "bg-[#48BFE3]/10 border-[#48BFE3] text-[#48BFE3] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                     >
                       {lvl.name}
                     </button>
@@ -643,7 +643,7 @@ export default function CreateActivityWizard() {
                             : [...target.grades, grade];
                           setTarget({ ...target, grades: newGrades, classes: [] });
                         }}
-                        className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (target.grades.includes(grade) ? "bg-[#36E08F]/10 border-[#36E08F] text-[#36E08F] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
+                        className={"px-4 py-2 rounded-xl border text-sm font-bold transition-all " + (target.grades.includes(grade) ? "bg-[#48BFE3]/10 border-[#48BFE3] text-[#48BFE3] shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50")}
                       >
                         Khối {grade}
                       </button>
@@ -658,7 +658,7 @@ export default function CreateActivityWizard() {
                   <span>3. Chọn Lớp</span>
                   {target.grades.length > 0 && (
                     <button 
-                      className="text-[#36E08F] text-xs font-semibold hover:underline"
+                      className="text-[#48BFE3] text-xs font-semibold hover:underline"
                       onClick={() => {
                         const allClassesIds = availableClasses.map(c => c.id);
                         setTarget({ ...target, classes: allClassesIds });
@@ -704,7 +704,7 @@ export default function CreateActivityWizard() {
                   {/* Chọn Khối / Lớp */}
                   <div className="flex gap-2 mb-2">
                     <select 
-                      className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3 transition-all"
+                      className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3 transition-all"
                       value={studentFilterLevel}
                       onChange={e => {
                         setStudentFilterLevel(e.target.value);
@@ -720,7 +720,7 @@ export default function CreateActivityWizard() {
                     </select>
 
                     <select 
-                      className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block p-3 transition-all"
+                      className="w-1/2 bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block p-3 transition-all"
                       value={studentFilterClass}
                       onChange={e => setStudentFilterClass(e.target.value)}
                     >
@@ -738,11 +738,11 @@ export default function CreateActivityWizard() {
                     <input 
                       type="text" 
                       placeholder="Gõ tên hoặc mã học sinh để tìm..." 
-                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#36E08F] block pl-10 pr-4 py-3 transition-all"
+                      className="w-full bg-slate-50 border-0 ring-1 ring-slate-200 text-slate-800 text-sm font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3] block pl-10 pr-4 py-3 transition-all"
                       value={studentSearch}
                       onChange={e => setStudentSearch(e.target.value)}
                     />
-                    {isSearching && <Loader2 className="w-4 h-4 absolute right-3.5 top-3.5 text-[#36E08F] animate-spin" />}
+                    {isSearching && <Loader2 className="w-4 h-4 absolute right-3.5 top-3.5 text-[#48BFE3] animate-spin" />}
                   </div>
 
                   {displayedStudents.length > 0 && (
@@ -764,7 +764,7 @@ export default function CreateActivityWizard() {
                           setTarget({ ...target, specificStudents: newIds });
                           setSelectedStudentsData(newStudentsData);
                         }}
-                        className="text-[#36E08F] hover:underline"
+                        className="text-[#48BFE3] hover:underline"
                       >
                         + Chọn tất cả danh sách này
                       </button>
@@ -795,7 +795,7 @@ export default function CreateActivityWizard() {
                                   setSelectedStudentsData(prev => [...prev, st]);
                                 }
                               }}
-                              className={"px-3 py-1 rounded-lg text-xs font-bold transition-all " + (isAdded ? "bg-rose-50 text-rose-600 hover:bg-rose-100" : "bg-[#36E08F]/10 text-[#36E08F] hover:bg-[#36E08F]/20")}
+                              className={"px-3 py-1 rounded-lg text-xs font-bold transition-all " + (isAdded ? "bg-rose-50 text-rose-600 hover:bg-rose-100" : "bg-[#48BFE3]/10 text-[#48BFE3] hover:bg-[#48BFE3]/20")}
                             >
                               {isAdded ? 'Bỏ chọn' : '+ Chọn'}
                             </button>
@@ -856,17 +856,17 @@ export default function CreateActivityWizard() {
         <div id="section-3" className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-sm space-y-6 scroll-mt-24">
           <div className="border-b border-slate-100 pb-4">
             <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
-              <span className="w-7 h-7 bg-[#36E08F]/10 text-[#36E08F] rounded-lg flex items-center justify-center text-sm font-black">3</span>
+              <span className="w-7 h-7 bg-[#48BFE3]/10 text-[#48BFE3] rounded-lg flex items-center justify-center text-sm font-black">3</span>
               <span>Thiết lập kết quả mặc định</span>
             </h2>
             <p className="text-sm text-slate-500 font-medium ml-9">Gán kết quả tự động cho tất cả học sinh trong danh sách</p>
           </div>
           
-          <div className="bg-[#36E08F]/5 border border-[#36E08F]/20 rounded-2xl p-5">
+          <div className="bg-[#48BFE3]/5 border border-[#48BFE3]/20 rounded-2xl p-5">
             <label className="flex items-center gap-3 cursor-pointer">
               <input 
                 type="checkbox" 
-                className="w-5 h-5 rounded border-slate-300 text-[#36E08F] focus:ring-[#36E08F]"
+                className="w-5 h-5 rounded border-slate-300 text-[#48BFE3] focus:ring-[#48BFE3]"
                 checked={defaults.allParticipate} 
                 onChange={e => setDefaults({...defaults, allParticipate: e.target.checked})} 
               />
@@ -905,7 +905,7 @@ export default function CreateActivityWizard() {
             <button 
               onClick={() => handleSubmit(false)}
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-[#36E08F] text-white text-sm font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md flex items-center gap-2"
+              className="px-6 py-2.5 bg-[#48BFE3] text-white text-sm font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md flex items-center gap-2"
             >
               {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               <span>Hoàn tất & Lưu hoạt động</span>

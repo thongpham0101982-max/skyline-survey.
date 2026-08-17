@@ -5,7 +5,7 @@ import { submitSurveyAction } from "./actions"
 import { CheckCircle2, ChevronLeft, ChevronRight, Send, Star, AlertCircle, X, Edit3 } from "lucide-react"
 
 const npsColor = (n: number) => {
-  if (n <= 3) return "bg-[#36E08F] border-[#36E08F] text-white shadow-teal-100"
+  if (n <= 3) return "bg-[#48BFE3] border-[#48BFE3] text-white shadow-teal-100"
   if (n <= 6) return "bg-amber-500 border-amber-500 text-white shadow-amber-200"
   if (n <= 8) return "bg-lime-600 border-lime-600 text-white shadow-lime-200"
   return "bg-emerald-600 border-emerald-600 text-white shadow-emerald-200"
@@ -50,11 +50,11 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
       className="w-full font-outfit"
     >
       <div className="flex items-center gap-3 mb-6">
-        <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#36E08F] text-white text-sm font-black shadow-xl shadow-teal-100 flex-shrink-0">
+        <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-[#48BFE3] text-white text-sm font-black shadow-xl shadow-teal-100 flex-shrink-0">
           {idx + 1}
         </div>
         <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Câu hỏi {idx + 1}/{total}</span>
-        {q.isRequired && <span className="ml-auto text-[10px] font-black text-white bg-[#36E08F] px-3 py-1 rounded-full uppercase tracking-tighter">Bắt buộc</span>}
+        {q.isRequired && <span className="ml-auto text-[10px] font-black text-white bg-[#48BFE3] px-3 py-1 rounded-full uppercase tracking-tighter">Bắt buộc</span>}
       </div>
 
       <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-[1.3] mb-8">
@@ -68,9 +68,9 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
               key={i}
               onClick={() => handleRadio(opt)}
               className={`flex items-center gap-4 p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300 select-none
-                ${answer === opt ? "border-[#36E08F] bg-teal-50/50 shadow-xl shadow-teal-100/50 -translate-y-1" : "border-slate-100 bg-slate-50/50 hover:border-teal-300 hover:bg-white hover:shadow-lg"}`}
+                ${answer === opt ? "border-[#48BFE3] bg-teal-50/50 shadow-xl shadow-teal-100/50 -translate-y-1" : "border-slate-100 bg-slate-50/50 hover:border-teal-300 hover:bg-white hover:shadow-lg"}`}
             >
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${answer === opt ? "border-[#36E08F] bg-[#36E08F]" : "border-slate-300"}`}>
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${answer === opt ? "border-[#48BFE3] bg-[#48BFE3]" : "border-slate-300"}`}>
                 {answer === opt && <div className="w-2 h-2 rounded-full bg-white animate-in zoom-in duration-300" />}
               </div>
               <span className={`font-bold text-sm sm:text-base ${answer === opt ? "text-[#009085]" : "text-slate-600"}`}>{opt}</span>
@@ -121,9 +121,9 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
                   onChange(checked ? cur.filter((v: string) => v !== opt) : [...cur, opt])
                 }}
                 className={`flex items-center gap-4 p-5 rounded-3xl border-2 cursor-pointer transition-all duration-300
-                  ${checked ? "border-[#36E08F] bg-teal-50/50 shadow-xl shadow-teal-100/50 -translate-y-1" : "border-slate-100 bg-slate-50/50 hover:border-teal-300 hover:bg-white"}`}
+                  ${checked ? "border-[#48BFE3] bg-teal-50/50 shadow-xl shadow-teal-100/50 -translate-y-1" : "border-slate-100 bg-slate-50/50 hover:border-teal-300 hover:bg-white"}`}
               >
-                <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? "border-[#36E08F] bg-[#36E08F] shadow-md shadow-teal-100" : "border-slate-300"}`}>
+                <div className={`w-6 h-6 rounded-xl border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? "border-[#48BFE3] bg-[#48BFE3] shadow-md shadow-teal-100" : "border-slate-300"}`}>
                   {checked && <svg className="w-4 h-4 text-white animate-in zoom-in duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                 </div>
                 <span className={`font-bold text-sm sm:text-base ${checked ? "text-[#009085]" : "text-slate-600"}`}>{opt}</span>
@@ -184,7 +184,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
             {Array.from({ length: (q.ratingScaleMax ?? (q.questionType === "NPS" ? 10 : 4)) - (q.ratingScaleMin ?? 0) + 1 }, (_, k) => k + (q.ratingScaleMin ?? 0)).map((n: number) => (
               <button key={n} type="button" onClick={() => onChange(n)}
                 className={`aspect-square rounded-[1.25rem] border-2 font-black text-xs sm:text-lg transition-all duration-300 shadow-sm flex items-center justify-center
-                  ${answer === n ? npsColor(n) + " shadow-xl scale-110 -translate-y-2" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-[#36E08F]/50 hover:bg-white hover:text-[#36E08F] hover:shadow-lg"}`}
+                  ${answer === n ? npsColor(n) + " shadow-xl scale-110 -translate-y-2" : "border-slate-100 bg-slate-50 text-slate-400 hover:border-[#48BFE3]/50 hover:bg-white hover:text-[#48BFE3] hover:shadow-lg"}`}
               >{n}</button>
             ))}
           </div>
@@ -218,7 +218,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
         <textarea rows={5} placeholder="Chia sẻ cảm nghĩ, mong muốn của bạn với nhà trường..."
           value={answer || ""}
           onChange={(e: any) => onChange(e.target.value)}
-          className="w-full p-6 text-slate-800 font-bold resize-none focus:border-[#36E08F] focus:bg-white outline-none transition-all placeholder:text-slate-300 text-base sm:text-lg shadow-inner focus:shadow-2xl focus:shadow-teal-50/50 text-xs font-semibold"
+          className="w-full p-6 text-slate-800 font-bold resize-none focus:border-[#48BFE3] focus:bg-white outline-none transition-all placeholder:text-slate-300 text-base sm:text-lg shadow-inner focus:shadow-2xl focus:shadow-teal-50/50 text-xs font-semibold"
         />
       )}
 
@@ -238,7 +238,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
             <tbody className="divide-y-8 divide-transparent">
               {opts.rows?.map((row: string, rIndex: number) => (
                 <tr key={rIndex} className="group transition-all">
-                  <td className="p-2 text-sm font-black text-slate-700 group-hover:text-[#36E08F] transition-colors border border-slate-200">{row}</td>
+                  <td className="p-2 text-sm font-black text-slate-700 group-hover:text-[#48BFE3] transition-colors border border-slate-200">{row}</td>
                   {opts.columns?.map((col: string, cIndex: number) => {
                     const isCheckbox = q.questionType === "CB_GRID"
                     const isSelected = isCheckbox 
@@ -262,7 +262,7 @@ function QuestionCard({ q, idx, total, answer, onChange, onNext, visible }: any)
                           }}
                           className={`w-8 h-8 border-2 mx-auto cursor-pointer flex items-center justify-center transition-all duration-200
                             ${isCheckbox ? "rounded-xl" : "rounded-full"}
-                            ${isSelected ? "border-[#36E08F] bg-[#36E08F] shadow-xl shadow-teal-100" : "border-slate-100 bg-slate-100/50 group-hover:border-teal-300"}`}
+                            ${isSelected ? "border-[#48BFE3] bg-[#48BFE3] shadow-xl shadow-teal-100" : "border-slate-100 bg-slate-100/50 group-hover:border-teal-300"}`}
                         >
                           {isSelected && (
                             isCheckbox 
@@ -408,16 +408,16 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
       <div className="mb-10 animate-in fade-in slide-in-from-left duration-500">
         <div className="flex justify-between items-center mb-3">
           <span className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Tiến độ hoàn thành</span>
-          <div className="bg-[#36E08F] text-white px-3 py-1 rounded-lg text-[11px] font-black shadow-lg shadow-teal-100">{progress}%</div>
+          <div className="bg-[#48BFE3] text-white px-3 py-1 rounded-lg text-[11px] font-black shadow-lg shadow-teal-100">{progress}%</div>
         </div>
         <div className="h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
-          <div className="h-full bg-gradient-to-r from-red-600 via-[#36E08F] to-red-400 rounded-full transition-all duration-700 ease-out shadow-lg" style={{ width: `${progress}%` }} />
+          <div className="h-full bg-gradient-to-r from-red-600 via-[#48BFE3] to-red-400 rounded-full transition-all duration-700 ease-out shadow-lg" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
       {/* Card */}
       <div className="bg-white rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] border border-slate-50 overflow-hidden animate-in fade-in slide-in-from-bottom-10 duration-700">
-        <div className="h-2 bg-gradient-to-r from-[#36E08F] via-[#1E8B87] to-[#135E5B]" />
+        <div className="h-2 bg-gradient-to-r from-[#48BFE3] via-[#1E8B87] to-[#135E5B]" />
         <div className="p-8 sm:p-12 min-h-[420px] flex flex-col">
           <div className="flex-1 relative">
             {questions.map((q: any, i: number) => (
@@ -437,12 +437,12 @@ export function SurveyFormClient({ periodId, student, questions }: any) {
             </button>
             <div className="flex gap-2 items-center">
               {questions.map((_: any, i: number) => (
-                <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === current ? "w-8 bg-[#36E08F]" : (answers[questions[i].id] ? "w-3 bg-emerald-400" : "w-1.5 bg-slate-100")}`} />
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === current ? "w-8 bg-[#48BFE3]" : (answers[questions[i].id] ? "w-3 bg-emerald-400" : "w-1.5 bg-slate-100")}`} />
               ))}
             </div>
             {current < total - 1 ? (
               <button type="button" onClick={goNext}
-                className="flex items-center justify-center w-14 h-14 sm:w-auto sm:px-10 rounded-[1.5rem] font-black text-white bg-[#36E08F] hover:bg-[#009085] active:scale-95 shadow-2xl shadow-teal-100 transition-all"
+                className="flex items-center justify-center w-14 h-14 sm:w-auto sm:px-10 rounded-[1.5rem] font-black text-white bg-[#48BFE3] hover:bg-[#009085] active:scale-95 shadow-2xl shadow-teal-100 transition-all"
               >
                 <span className="hidden sm:inline mr-2">Tiếp theo</span>
                 <ChevronRight className="w-6 h-6" />

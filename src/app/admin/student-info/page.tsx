@@ -253,7 +253,7 @@ export default async function StudentInfoPage() {
       <div className="mb-4">
         <h1 className="text-2xl font-black text-slate-900 tracking-tight">Nhập TT HS, KQKS</h1>
         <p className="text-slate-500 mt-1 text-sm font-medium">
-          Năm học đang hoạt động: <span className="text-[#36E08F] font-bold">{activeYear ? activeYear.name : "Không xác định"}</span>. 
+          Năm học đang hoạt động: <span className="text-[#48BFE3] font-bold">{activeYear ? activeYear.name : "Không xác định"}</span>. 
           Tra cứu thông tin, kết quả khảo sát đầu vào của học sinh Phổ thông và Mầm non.
         </p>
       </div>

@@ -1661,7 +1661,7 @@ export function ImportKQHTClient({
       {/* Configuration Header Panel */}
       <div className="bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm">
         <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Settings className="w-4 h-4 text-[#36E08F]" />
+          <Settings className="w-4 h-4 text-[#48BFE3]" />
           1. Thiết lập Cấu hình Bảng điểm
         </h3>
         
@@ -1672,7 +1672,7 @@ export function ImportKQHTClient({
             <select 
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#36E08F]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#48BFE3]"
             >
               {academicYears.map((y: any) => (
                 <option key={y.id} value={y.id}>{y.name}</option>
@@ -1707,7 +1707,7 @@ export function ImportKQHTClient({
             <select 
               value={semester}
               onChange={(e: any) => setSemester(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#36E08F]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#48BFE3]"
             >
               {semesterOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -1728,7 +1728,7 @@ export function ImportKQHTClient({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={parsing || importing}
-              className="w-full bg-[#36E08F] hover:bg-[#008d83] text-white py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-bold shadow-md shadow-teal-500/10 cursor-pointer disabled:bg-slate-300 disabled:shadow-none"
+              className="w-full bg-[#48BFE3] hover:bg-[#008d83] text-white py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-all font-bold shadow-md shadow-teal-500/10 cursor-pointer disabled:bg-slate-300 disabled:shadow-none"
             >
               {parsing ? (
                 <>
@@ -1754,13 +1754,13 @@ export function ImportKQHTClient({
         
         <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-semibold">
           <div className="flex items-center gap-1.5 text-slate-500">
-            <Info className="w-4 h-4 text-[#36E08F]" />
+            <Info className="w-4 h-4 text-[#48BFE3]" />
             <span>Mã học sinh trong file điểm khác mã trong hệ thống?</span>
           </div>
           <a 
             href="/admin/ktdbcl/import-mapping" 
             target="_blank" 
-            className="text-[#36E08F] hover:underline font-bold"
+            className="text-[#48BFE3] hover:underline font-bold"
           >
             Cấu hình Ánh xạ mã học sinh &rarr;
           </a>
@@ -1778,14 +1778,14 @@ export function ImportKQHTClient({
                 {sheetNames.map(name => (
                   <label 
                     key={name}
-                    className={"flex items-center justify-between p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all " + (selectedSheets[name] ? "border-[#36E08F] bg-teal-50/20 text-[#36E08F]" : "border-slate-200 text-slate-500 hover:bg-slate-50")}
+                    className={"flex items-center justify-between p-2 rounded-xl border text-xs font-bold cursor-pointer transition-all " + (selectedSheets[name] ? "border-[#48BFE3] bg-teal-50/20 text-[#48BFE3]" : "border-slate-200 text-slate-500 hover:bg-slate-50")}
                   >
                     <div className="flex items-center gap-2">
                       <input 
                         type="checkbox"
                         checked={!!selectedSheets[name]}
                         onChange={() => handleToggleSheet(name)}
-                        className="rounded accent-[#36E08F]"
+                        className="rounded accent-[#48BFE3]"
                       />
                       <span>{name}</span>
                     </div>
@@ -1809,7 +1809,7 @@ export function ImportKQHTClient({
                     type="checkbox"
                     checked={updateProfile}
                     onChange={(e) => setUpdateProfile(e.target.checked)}
-                    className="mt-0.5 rounded accent-[#36E08F]"
+                    className="mt-0.5 rounded accent-[#48BFE3]"
                   />
                   <div>
                     <span className="block font-bold text-slate-800">Cập nhật Hồ sơ học sinh</span>
@@ -1822,7 +1822,7 @@ export function ImportKQHTClient({
                     type="checkbox"
                     checked={importAcademicRating}
                     onChange={(e) => setImportAcademicRating(e.target.checked)}
-                    className="mt-0.5 rounded accent-[#36E08F]"
+                    className="mt-0.5 rounded accent-[#48BFE3]"
                   />
                   <div>
                     <span className="block font-bold text-slate-800">
@@ -1840,7 +1840,7 @@ export function ImportKQHTClient({
                       type="checkbox"
                       checked={importConductRating}
                       onChange={(e) => setImportConductRating(e.target.checked)}
-                      className="mt-0.5 rounded accent-[#36E08F]"
+                      className="mt-0.5 rounded accent-[#48BFE3]"
                     />
                     <div>
                       <span className="block font-bold text-slate-800">Rèn luyện (Hạnh kiểm)</span>
@@ -1855,7 +1855,7 @@ export function ImportKQHTClient({
                       type="checkbox"
                       checked={importAbsences}
                       onChange={(e) => setImportAbsences(e.target.checked)}
-                      className="mt-0.5 rounded accent-[#36E08F]"
+                      className="mt-0.5 rounded accent-[#48BFE3]"
                     />
                     <div>
                       <span className="block font-bold text-slate-800">Chuyên cần (Số buổi nghỉ P/K)</span>
@@ -1869,7 +1869,7 @@ export function ImportKQHTClient({
                     type="checkbox"
                     checked={importReward}
                     onChange={(e) => setImportReward(e.target.checked)}
-                    className="mt-0.5 rounded accent-[#36E08F]"
+                    className="mt-0.5 rounded accent-[#48BFE3]"
                   />
                   <div>
                     <span className="block font-bold text-slate-800">Khen thưởng</span>
@@ -1883,7 +1883,7 @@ export function ImportKQHTClient({
                       type="checkbox"
                       checked={importPromotion}
                       onChange={(e) => setImportPromotion(e.target.checked)}
-                      className="mt-0.5 rounded accent-[#36E08F]"
+                      className="mt-0.5 rounded accent-[#48BFE3]"
                     />
                     <div>
                       <span className="block font-bold text-slate-800">Trạng thái Lên lớp</span>
@@ -2247,7 +2247,7 @@ export function ImportKQHTClient({
                     type="button"
                     onClick={runImport}
                     disabled={importing}
-                    className="w-full sm:w-auto bg-[#36E08F] hover:bg-[#008d83] text-white font-bold py-2.5 px-8 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-teal-505/10 cursor-pointer disabled:bg-slate-300 disabled:shadow-none"
+                    className="w-full sm:w-auto bg-[#48BFE3] hover:bg-[#008d83] text-white font-bold py-2.5 px-8 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-teal-505/10 cursor-pointer disabled:bg-slate-300 disabled:shadow-none"
                   >
                     <Play className="w-4 h-4" />
                     Bắt đầu Import Kết quả Học tập
@@ -2265,7 +2265,7 @@ export function ImportKQHTClient({
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl overflow-hidden border border-slate-200">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-101">
               <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <RefreshCw className="w-4 h-4 text-[#36E08F] animate-spin" />
+                <RefreshCw className="w-4 h-4 text-[#48BFE3] animate-spin" />
                 Đang import dữ liệu bảng điểm học sinh...
               </h4>
             </div>
@@ -2283,7 +2283,7 @@ export function ImportKQHTClient({
                 <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                   <div 
                     style={{ width: (((currentProgressIndex + 1) / Object.keys(selectedSheets).filter(n => selectedSheets[n]).length) * 100) + "%" }}
-                    className="h-full bg-[#36E08F] transition-all duration-300"
+                    className="h-full bg-[#48BFE3] transition-all duration-300"
                   />
                 </div>
               </div>
@@ -2294,7 +2294,7 @@ export function ImportKQHTClient({
                 <div className="bg-slate-950 text-slate-300 font-mono text-[10px] p-4 rounded-xl h-48 overflow-y-auto space-y-1">
                   {importLogs.map((log, idx) => (
                     <div key={idx} className="leading-relaxed border-b border-slate-900/50 pb-1">
-                      <span className="text-[#36E08F]">&gt;</span> {log}
+                      <span className="text-[#48BFE3]">&gt;</span> {log}
                     </div>
                   ))}
                 </div>
@@ -2442,13 +2442,13 @@ export function ImportKQHTClient({
       <div className="mt-8 bg-white border border-slate-200/80 p-6 rounded-2xl shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <h3 className="text-sm font-black text-slate-800 flex items-center gap-2">
-            <Layers className="w-5 h-5 text-[#36E08F]" />
+            <Layers className="w-5 h-5 text-[#48BFE3]" />
             Trạng thái cập nhật điểm số theo Lớp học ({filteredStatsClasses.length}/{statsClasses.length})
           </h3>
           <button
             type="button"
             onClick={fetchClassStats}
-            className="text-xs text-[#36E08F] hover:underline font-bold cursor-pointer"
+            className="text-xs text-[#48BFE3] hover:underline font-bold cursor-pointer"
           >
             Làm mới
           </button>
@@ -2461,7 +2461,7 @@ export function ImportKQHTClient({
             <select
               value={filterCampus}
               onChange={(e) => setFilterCampus(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
             >
               <option value="ALL">Tất cả Cơ sở</option>
               {uniqueCampuses.map(campus => (
@@ -2475,7 +2475,7 @@ export function ImportKQHTClient({
             <select
               value={filterGrade}
               onChange={(e) => setFilterGrade(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
             >
               <option value="ALL">Tất cả Khối</option>
               {uniqueGrades.map(grade => (
@@ -2489,7 +2489,7 @@ export function ImportKQHTClient({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 outline-none focus:border-[#36E08F] cursor-pointer"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 font-semibold text-slate-700 outline-none focus:border-[#48BFE3] cursor-pointer"
             >
               <option value="ALL">Tất cả Trạng thái</option>
               <option value="DONE">Đã hoàn thành tất cả</option>
@@ -2505,7 +2505,7 @@ export function ImportKQHTClient({
                 value={filterSearch}
                 onChange={(e) => setFilterSearch(e.target.value)}
                 placeholder="Nhập mã lớp hoặc tên lớp..."
-                className="w-full bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2 font-semibold text-slate-700 outline-none focus:border-[#36E08F] placeholder-slate-350"
+                className="w-full bg-white border border-slate-200 rounded-xl pl-3 pr-8 py-2 font-semibold text-slate-700 outline-none focus:border-[#48BFE3] placeholder-slate-350"
               />
               {filterSearch && (
                 <button

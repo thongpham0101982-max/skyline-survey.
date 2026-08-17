@@ -65,7 +65,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
   const logoHtml = config?.logo 
     ? getImgTag(config.logo, "logo-img", "max-height: 48px; object-fit: contain;", "Logo") 
-    : '<svg class="logo-svg" style="height: 48px; fill: #36E08F;" viewBox="0 0 260 50"><text x="0" y="38" font-family="Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>';
+    : '<svg class="logo-svg" style="height: 48px; fill: #48BFE3;" viewBox="0 0 260 50"><text x="0" y="38" font-family="Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="-1">SKY-LINE</text><circle cx="178" cy="26" r="6" /></svg>';
 
   const signatureHtml = config?.signature 
     ? getImgTag(config.signature, "signature-img", "max-height: 60px; object-fit: contain; margin: 8px 0;", "Signature") 
@@ -98,34 +98,34 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
   const customFooterHtml = config?.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
     '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
       '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-        '<span style="font-weight: bold; color: #36E08F; white-space: nowrap; text-transform: uppercase; font-size: 9.5pt; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
+        '<span style="font-weight: bold; color: #48BFE3; white-space: nowrap; text-transform: uppercase; font-size: 9.5pt; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
         '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
-        '<span style="font-weight: 600; color: #36E08F; white-space: nowrap; text-transform: lowercase; font-size: 9pt;">www.skylineschool.edu.vn</span>' +
+        '<span style="font-weight: 600; color: #48BFE3; white-space: nowrap; text-transform: lowercase; font-size: 9pt;">www.skylineschool.edu.vn</span>' +
       '</div>' +
       '<div style="display: flex; justify-content: space-between; font-size: 7.5pt; color: #555555; position: relative; width: 100%;">' +
         '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
           '<div>' +
-            '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Riverside</p>' +
+            '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Riverside</p>' +
             '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2.4 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
           '</div>' +
           '<div>' +
-            '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Central</p>' +
+            '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Central</p>' +
             '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 48 Nguyễn Du, Q. Hải Châu, TP. Đà Nẵng</p>' +
           '</div>' +
         '</div>' +
         '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
           '<div>' +
-            '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Global</p>' +
+            '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Global</p>' +
             '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Lô A2 Trần Đăng Ninh, Q. Hải Châu, TP. Đà Nẵng</p>' +
           '</div>' +
           '<div>' +
-            '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Beach</p>' +
+            '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Beach</p>' +
             '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Số 199 Trần Anh Tông, Q. Thanh Khê, TP. Đà Nẵng</p>' +
           '</div>' +
         '</div>' +
         '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
           '<div>' +
-            '<p style="font-weight: bold; color: #36E08F; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Hill</p>' +
+            '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 8pt; line-height: 1.25;">SKY-LINE Hill</p>' +
             '<p style="color: #555555; margin: 2px 0 0 0; line-height: 1.25;">Khối Hà My Đông A, Điện Bàn, Quảng Nam</p>' +
           '</div>' +
           '<div style="display: flex; flex-direction: column; line-height: 1.35; font-weight: 600; color: #1e293b;">' +
@@ -133,7 +133,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
             '<p style="margin: 0;">(+84.236) 356 8777</p>' +
           '</div>' +
         '</div>' +
-        '<div style="position: absolute; right: -4px; top: -4px; width: 50px; height: 38px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #36E08F;">' +
+        '<div style="position: absolute; right: -4px; top: -4px; width: 50px; height: 38px; pointer-events: none; display: flex; align-items: center; justify-content: center; color: #48BFE3;">' +
           '<svg viewBox="0 0 120 60" style="width: 100%; height: 100%; fill: currentColor;">' +
             '<path d="M 8 26 C 24 32, 50 52, 62 60 C 78 36, 102 16, 118 3 C 95 16, 76 44, 62 62 C 48 46, 25 32, 8 26 Z" />' +
           '</svg>' +
@@ -143,7 +143,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
   const bgHtml = config.background 
     ? getImgTag(config.background, "print-watermark", "", "Watermark") 
-    : '<svg class="print-watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110mm; height: auto; opacity: 0.04; z-index: 1; pointer-events: none;" viewBox="0 0 100 100"><path fill="#36E08F" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" /><path fill="#36E08F" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" /></svg>';
+    : '<svg class="print-watermark" style="display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 110mm; height: auto; opacity: 0.04; z-index: 1; pointer-events: none;" viewBox="0 0 100 100"><path fill="#48BFE3" d="M10,80 Q50,40 90,20 Q60,50 10,80 Z" /><path fill="#48BFE3" d="M30,80 Q60,55 90,35 Q65,60 30,80 Z" /></svg>';
 
   return '<!DOCTYPE html>' +
     '<html>' +
@@ -218,7 +218,7 @@ Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
       '<div class="a4-page">' +
         bgHtml +
         '<div style="position: relative; z-index: 10; display: flex; flex-direction: column; flex-grow: 1;">' +
-          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #36E08F; padding-bottom: 8px; margin-bottom: 24px;">' +
+          '<div class="header-container" style="display: flex; flex-direction: column; border-bottom: 1.5px solid #48BFE3; padding-bottom: 8px; margin-bottom: 24px;">' +
             '<div style="display: flex; align-items: center; justify-content: space-between;">' +
               logoHtml +
             '</div>' +
@@ -1234,8 +1234,8 @@ export async function POST(req) {
             <td align="center" className="p-2 border border-slate-200">
               <table width="680" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 40px 30px;" className="border border-slate-200 border-collapse">
                 <tr>
-                  <td align="left" style="border-bottom: 2px solid #36E08F; padding-bottom: 15px; margin-bottom: 20px;">
-                    <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #36E08F; letter-spacing: -0.5px;">SKY-LINE SYSTEM</div>
+                  <td align="left" style="border-bottom: 2px solid #48BFE3; padding-bottom: 15px; margin-bottom: 20px;">
+                    <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #48BFE3; letter-spacing: -0.5px;">SKY-LINE SYSTEM</div>
                     <div style="font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase; margin-top: 3px;">Hệ thống Giáo dục Sky-Line</div>
                   </td>
                 </tr>
@@ -1248,7 +1248,7 @@ export async function POST(req) {
                 </tr>
                 ${additionalNote ? `
                 <tr>
-                  <td style="padding: 12px 15px; background-color: #f0fdfa; border-left: 4px solid #36E08F; border-radius: 6px; font-family: Arial, sans-serif; font-size: 13px; color: #0f766e; margin-bottom: 20px; line-height: 1.5;">
+                  <td style="padding: 12px 15px; background-color: #f0fdfa; border-left: 4px solid #48BFE3; border-radius: 6px; font-family: Arial, sans-serif; font-size: 13px; color: #0f766e; margin-bottom: 20px; line-height: 1.5;">
                     <strong>Lời nhắn từ Tuyển sinh:</strong> ${additionalNote}
                   </td>
                 </tr>
@@ -1289,7 +1289,7 @@ export async function POST(req) {
                 <tr>
                   <td align="center" style="padding-top: 35px; border-top: 1px solid #e2e8f0; margin-top: 30px;">
                     <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Bạn có thể xem chi tiết hồ sơ học sinh trên hệ thống Portal Tuyển sinh.</p>
-                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #ffffff; background-color: #36E08F; text-decoration: none; border: 1px solid #008f91;">
+                    <a href="${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #ffffff; background-color: #48BFE3; text-decoration: none; border: 1px solid #008f91;">
                       Xem chi tiết trên Portal
                     </a>
                   </td>
@@ -1540,8 +1540,8 @@ export async function POST(req) {
               <td align="center" className="p-2 border border-slate-200">
                 <table width="680" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 40px 30px;" className="border border-slate-200 border-collapse">
                   <tr>
-                    <td align="left" style="border-bottom: 2px solid #36E08F; padding-bottom: 15px; margin-bottom: 20px;">
-                      <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #36E08F; letter-spacing: -0.5px;">SKY-LINE SYSTEM</div>
+                    <td align="left" style="border-bottom: 2px solid #48BFE3; padding-bottom: 15px; margin-bottom: 20px;">
+                      <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: 900; color: #48BFE3; letter-spacing: -0.5px;">SKY-LINE SYSTEM</div>
                       <div style="font-family: Arial, sans-serif; font-size: 12px; font-weight: bold; color: #475569; text-transform: uppercase; margin-top: 3px;">Hệ thống Giáo dục Sky-Line</div>
                     </td>
                   </tr>
@@ -1554,7 +1554,7 @@ export async function POST(req) {
                   </tr>
                   \${additionalNote ? \`
                   <tr>
-                    <td style="padding: 12px 15px; background-color: #f0fdfa; border-left: 4px solid #36E08F; border-radius: 6px; font-family: Arial, sans-serif; font-size: 13px; color: #0f766e; margin-bottom: 20px; line-height: 1.5;">
+                    <td style="padding: 12px 15px; background-color: #f0fdfa; border-left: 4px solid #48BFE3; border-radius: 6px; font-family: Arial, sans-serif; font-size: 13px; color: #0f766e; margin-bottom: 20px; line-height: 1.5;">
                       <strong>Lời nhắn từ Tuyển sinh:</strong> \${additionalNote}
                     </td>
                   </tr>
@@ -1595,7 +1595,7 @@ export async function POST(req) {
                   <tr>
                     <td align="center" style="padding-top: 35px; border-top: 1px solid #e2e8f0; margin-top: 30px;">
                       <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Bạn có thể xem chi tiết hồ sơ học sinh trên hệ thống Portal Tuyển sinh.</p>
-                      <a href="\${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #ffffff; background-color: #36E08F; text-decoration: none; border: 1px solid #008f91;">
+                      <a href="\${baseUrl}/admin/preschool-input-assessments" style="display: inline-block; padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: bold; color: #ffffff; background-color: #48BFE3; text-decoration: none; border: 1px solid #008f91;">
                         Xem chi tiết trên Portal
                       </a>
                     </td>

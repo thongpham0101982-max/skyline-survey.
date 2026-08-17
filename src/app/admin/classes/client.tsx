@@ -577,7 +577,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-[#36E08F]" />
+          <Building2 className="w-5 h-5 text-[#48BFE3]" />
           <label className="font-semibold text-slate-700 text-sm">Cơ sở:</label>
           <select value={selectedCampus} onChange={e => setSelectedCampus(e.target.value)}
             className="border rounded-lg p-2 text-sm min-w-[160px] outline-none focus:ring-2 focus:ring-indigo-300">
@@ -633,7 +633,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             <button onClick={() => handleOpenCreateModal()} className="flex items-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
               <Plus className="w-4 h-4 mr-2" /> Thêm Mới Lớp Học
             </button>
-            <button onClick={handleOpenTransferModal} className="flex items-center bg-[#36E08F] hover:bg-[#008075] text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
+            <button onClick={handleOpenTransferModal} className="flex items-center bg-[#48BFE3] hover:bg-[#008075] text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
               <ArrowRightLeft className="w-4 h-4 mr-2" /> Kết chuyển lớp
             </button>
             <button onClick={handleOpenCopyStudentModal} className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-md shadow-sm text-sm">
@@ -737,19 +737,19 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
         return (
           <div className="flex items-center justify-between px-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm">
             <span className="text-sm text-slate-500">
-              Hiển thị <span className="font-bold text-slate-700">{(classPage - 1) * CLASS_PAGE_SIZE + 1}</span>–<span className="font-bold text-slate-700">{Math.min(classPage * CLASS_PAGE_SIZE, filteredClasses.length)}</span> trong <span className="font-bold text-[#36E08F]">{filteredClasses.length}</span> lớp
+              Hiển thị <span className="font-bold text-slate-700">{(classPage - 1) * CLASS_PAGE_SIZE + 1}</span>–<span className="font-bold text-slate-700">{Math.min(classPage * CLASS_PAGE_SIZE, filteredClasses.length)}</span> trong <span className="font-bold text-[#48BFE3]">{filteredClasses.length}</span> lớp
             </span>
             <div className="flex items-center gap-1">
-              <button onClick={() => setClassPage(1)} disabled={classPage === 1} className="px-2 py-1.5 text-xs font-bold text-slate-500 hover:text-[#36E08F] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">«</button>
-              <button onClick={() => setClassPage(p => Math.max(1, p - 1))} disabled={classPage === 1} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-[#36E08F] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">‹ Trước</button>
+              <button onClick={() => setClassPage(1)} disabled={classPage === 1} className="px-2 py-1.5 text-xs font-bold text-slate-500 hover:text-[#48BFE3] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">«</button>
+              <button onClick={() => setClassPage(p => Math.max(1, p - 1))} disabled={classPage === 1} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-[#48BFE3] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">‹ Trước</button>
               {pages.map((p, idx) => p === '...' ? (
                 <span key={"el" + idx} className="px-2 text-slate-400 text-xs">...</span>
               ) : (
                 <button key={p} onClick={() => setClassPage(p as number)}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${classPage === p ? 'bg-[#36E08F] text-white shadow-sm' : 'text-slate-600 hover:text-[#36E08F] hover:bg-teal-50'}`}>{p}</button>
+                  className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors ${classPage === p ? 'bg-[#48BFE3] text-white shadow-sm' : 'text-slate-600 hover:text-[#48BFE3] hover:bg-teal-50'}`}>{p}</button>
               ))}
-              <button onClick={() => setClassPage(p => Math.min(totalPages, p + 1))} disabled={classPage === totalPages} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-[#36E08F] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">Sau ›</button>
-              <button onClick={() => setClassPage(totalPages)} disabled={classPage === totalPages} className="px-2 py-1.5 text-xs font-bold text-slate-500 hover:text-[#36E08F] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">»</button>
+              <button onClick={() => setClassPage(p => Math.min(totalPages, p + 1))} disabled={classPage === totalPages} className="px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-[#48BFE3] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">Sau ›</button>
+              <button onClick={() => setClassPage(totalPages)} disabled={classPage === totalPages} className="px-2 py-1.5 text-xs font-bold text-slate-500 hover:text-[#48BFE3] hover:bg-teal-50 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors">»</button>
             </div>
           </div>
         );
@@ -765,7 +765,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
              </div>
              <form onSubmit={handleSaveEdit} className="p-5 space-y-4">
                 <div><label className="block text-sm font-semibold text-slate-700 mb-1">Tên lớp</label><input type="text" required value={editModal.className} onChange={e => setEditModal({...editModal, className: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"/></div>
-                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#36E08F]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
+                <div><label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở</label><select required value={editModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setEditModal({...editModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#48BFE3]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>{campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}</select></div>
                 <div className="grid grid-cols-2 gap-4">
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">Bậc học</label><select required value={editModal.level} onChange={e => setEditModal({...editModal, level: e.target.value, grade: ""})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn bậc</option>{(activeTab === "mam-non" ? MN_LEVELS : K12_LEVELS).filter(l => l.value).map(l => <option key={l.value} value={l.value}>{l.label}</option>)}</select></div>
                   <div><label className="block text-sm font-semibold text-slate-700 mb-1">"Khối học"</label><select required value={editModal.grade} onChange={e => setEditModal({...editModal, grade: e.target.value})} className="w-full border rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-sm"><option value="">Chọn khối</option>{getGradesList(editModal.level, activeTab).map(g => <option key={g} value={g}>{g}</option>)}</select></div>
@@ -847,7 +847,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Cơ sở <span className="text-red-500">*</span></label>
-                  <select required value={createModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setCreateModal({...createModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#36E08F]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>
+                  <select required value={createModal.campusId} disabled={isCampusLocked} onChange={e => !isCampusLocked && setCreateModal({...createModal, campusId: e.target.value})} className={`w-full border rounded-xl p-2.5 outline-none text-sm ${isCampusLocked ? "bg-[#48BFE3]/10 border-indigo-200 text-indigo-700 cursor-not-allowed" : "focus:ring-2 focus:ring-blue-500 border-slate-200"}`}>
                     {campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}
                   </select>
                 </div>
@@ -935,7 +935,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#36E08F] to-[#006E68] text-white rounded-t-2xl">
+          <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-[#48BFE3] to-[#006E68] text-white rounded-t-2xl">
             <div className="flex items-center gap-3">
               <ArrowRightLeft className="w-5 h-5" />
               <h2 className="text-base font-bold tracking-tight">Kết chuyển lớp học sang năm học mới</h2>
@@ -951,7 +951,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học nguồn</label>
                 <select value={transferSourceYear} onChange={e => { setTransferSourceYear(e.target.value); setTransferPreview([]); setTransferResult(null); }}
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#36E08F]/40 min-w-[160px]">
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#48BFE3]/40 min-w-[160px]">
                   <option value="">-- Chọn --</option>
                   {academicYears.map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
                 </select>
@@ -960,13 +960,13 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               <div>
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Năm học đích</label>
                 <select value={transferTargetYear} onChange={e => { setTransferTargetYear(e.target.value); setTransferPreview([]); setTransferResult(null); }}
-                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#36E08F]/40 min-w-[160px]">
+                  className="border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#48BFE3]/40 min-w-[160px]">
                   <option value="">-- Chọn --</option>
                   {academicYears.filter((y: any) => y.id !== transferSourceYear).map((y: any) => <option key={y.id} value={y.id}>{y.name}</option>)}
                 </select>
               </div>
               <button onClick={handleTransferPreview} disabled={!transferSourceYear || !transferTargetYear || transferLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-[#36E08F] hover:bg-[#008075] disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
+                className="flex items-center gap-2 px-4 py-2 bg-[#48BFE3] hover:bg-[#008075] disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition-colors">
                 {transferLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                 Tải danh sách
               </button>
@@ -984,7 +984,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                     <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
                       <input type="radio" name="transferMode" value={opt.value} checked={transferMode === opt.value}
                         onChange={() => setTransferMode(opt.value as any)}
-                        className="w-4 h-4 accent-[#36E08F]" />
+                        className="w-4 h-4 accent-[#48BFE3]" />
                       <span className="text-sm text-slate-700">{opt.label}</span>
                     </label>
                   ))}
@@ -1013,7 +1013,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               </div>
             )}
             {transferLoading && (
-              <div className="flex items-center justify-center h-32 gap-3 text-[#36E08F]">
+              <div className="flex items-center justify-center h-32 gap-3 text-[#48BFE3]">
                 <Loader2 className="w-6 h-6 animate-spin" />
                 <span className="text-sm font-semibold">Đang tải dữ liệu...</span>
               </div>
@@ -1022,13 +1022,13 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
               <>
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-bold text-slate-700">
-                    Tổng: <span className="text-[#36E08F]">{transferPreview.length}</span> lớp nguồn •
+                    Tổng: <span className="text-[#48BFE3]">{transferPreview.length}</span> lớp nguồn •
                     Chọn: <span className="text-blue-600">{transferSelectedIds.length}</span> lớp •
                     Đã tồn tại: <span className="text-amber-600">{transferPreview.filter(p => p.alreadyExists).length}</span>
                   </span>
                   <div className="flex gap-2">
                     <button onClick={() => setTransferSelectedIds(transferPreview.filter(p => !p.alreadyExists).map(p => p.id))}
-                      className="text-xs font-semibold text-[#36E08F] hover:underline">Chọn lớp mới</button>
+                      className="text-xs font-semibold text-[#48BFE3] hover:underline">Chọn lớp mới</button>
                     <span className="text-slate-300">|</span>
                     <button onClick={() => setTransferSelectedIds([])}
                       className="text-xs font-semibold text-slate-400 hover:underline">Bỏ chọn</button>
@@ -1041,7 +1041,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                         <th className="px-3 py-2.5 text-center w-10"><input type="checkbox"
                           checked={transferSelectedIds.length === transferPreview.filter(p => !p.alreadyExists).length && transferPreview.filter(p => !p.alreadyExists).length > 0}
                           onChange={e => setTransferSelectedIds(e.target.checked ? transferPreview.filter(p => !p.alreadyExists).map(p => p.id) : [])}
-                          className="w-4 h-4 accent-[#36E08F]" /></th>
+                          className="w-4 h-4 accent-[#48BFE3]" /></th>
                         <th className="px-3 py-2.5 text-left">Tên lớp</th>
                         <th className="px-3 py-2.5 text-left">Cơ sở</th>
                         <th className="px-3 py-2.5 text-left">Khối</th>
@@ -1056,7 +1056,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
                           <td className="px-3 py-2.5 text-center">
                             <input type="checkbox" checked={transferSelectedIds.includes(p.id)} disabled={p.alreadyExists}
                               onChange={e => setTransferSelectedIds(e.target.checked ? [...transferSelectedIds, p.id] : transferSelectedIds.filter(id => id !== p.id))}
-                              className="w-4 h-4 accent-[#36E08F] disabled:opacity-40" />
+                              className="w-4 h-4 accent-[#48BFE3] disabled:opacity-40" />
                           </td>
                           <td className="px-3 py-2.5 font-semibold text-slate-800">{p.className}</td>
                           <td className="px-3 py-2.5 text-slate-600">{p.campus}</td>
@@ -1090,7 +1090,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
             {!transferResult?.success && (
               <button onClick={handleTransferExecute}
                 disabled={!transferSelectedIds.length || transferLoading}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-[#36E08F] hover:bg-[#008075] disabled:opacity-50 rounded-xl transition-colors shadow-sm">
+                className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white bg-[#48BFE3] hover:bg-[#008075] disabled:opacity-50 rounded-xl transition-colors shadow-sm">
                 {transferLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRightLeft className="w-4 h-4" />}
                 Kết chuyển {transferSelectedIds.length > 0 ? `${transferSelectedIds.length} lớp` : ""}
               </button>

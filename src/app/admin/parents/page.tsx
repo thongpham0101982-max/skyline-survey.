@@ -32,7 +32,7 @@ export default async function ParentAccountsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-sm">
         <div className="space-y-1.5">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#36E08F]" />
+            <span className="w-2 h-2 rounded-full bg-[#48BFE3]" />
             <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Hệ thống quản trị Sky-Line</span>
           </div>
           <h1 className="text-3xl font-black text-[#003B3A] tracking-tight">Danh Mục Tài Khoản PHHS</h1>

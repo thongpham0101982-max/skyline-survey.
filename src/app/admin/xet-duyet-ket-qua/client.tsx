@@ -89,7 +89,7 @@ export function XetDuyetKetQuaClient({
               onClick={() => setActiveTab("k12")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                 activeTab === "k12"
-                  ? "bg-[#36E08F] text-white shadow-md shadow-teal-500/10"
+                  ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10"
                   : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"
               }`}
             >
@@ -100,7 +100,7 @@ export function XetDuyetKetQuaClient({
               onClick={() => setActiveTab("preschool")}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
                 activeTab === "preschool"
-                  ? "bg-[#36E08F] text-white shadow-md shadow-teal-500/10"
+                  ? "bg-[#48BFE3] text-white shadow-md shadow-teal-500/10"
                   : "text-slate-600 hover:text-slate-800 hover:bg-slate-200/40"
               }`}
             >

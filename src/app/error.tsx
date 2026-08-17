@@ -74,7 +74,7 @@ export default function Error({
 
           <button
             onClick={handleClearCacheAndRelogin}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-[#36E08F] hover:bg-[#009085] text-white text-xs font-bold rounded-xl transition shadow-md hover:shadow-lg w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-[#48BFE3] hover:bg-[#009085] text-white text-xs font-bold rounded-xl transition shadow-md hover:shadow-lg w-full sm:w-auto"
           >
             <LogOut className="w-4 h-4" />
             Xóa Cache & Đăng nhập lại

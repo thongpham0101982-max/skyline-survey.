@@ -274,12 +274,12 @@ export function StudentProfilesAdminClient({
       <div className="bg-white border border-slate-200/80 shadow-xs rounded-2xl p-5 space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5 text-xs font-black text-slate-800 uppercase tracking-wider">
-            <div className="p-1.5 bg-[#36E08F]/10 text-[#36E08F] rounded-lg">
+            <div className="p-1.5 bg-[#48BFE3]/10 text-[#48BFE3] rounded-lg">
               <Building2 className="w-4 h-4" />
             </div>
             <span>Bộ Lọc Tra Cứu &amp; Xuất Báo Cáo Hồ Sơ Học Sinh</span>
           </div>
-          <span className="text-[10px] font-extrabold text-[#36E08F] bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200/60">
+          <span className="text-[10px] font-extrabold text-[#48BFE3] bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200/60">
             Năm học: {academicYears.find(y => y.id === selectedYearId)?.name || activeYearName}
           </span>
         </div>
@@ -289,13 +289,13 @@ export function StudentProfilesAdminClient({
           {/* Year selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-[#36E08F]" />
+              <Calendar className="w-3.5 h-3.5 text-[#48BFE3]" />
               Năm học
             </label>
             <select
               value={selectedYearId}
               onChange={(e) => setSelectedYearId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36E08F]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
             >
               {academicYears.map(y => (
                 <option key={y.id} value={y.id}>{y.name}</option>
@@ -306,21 +306,21 @@ export function StudentProfilesAdminClient({
           {/* School Block selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <School className="w-3.5 h-3.5 text-[#36E08F]" />
+              <School className="w-3.5 h-3.5 text-[#48BFE3]" />
               Bậc học
             </label>
             <div className="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-xl text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setSchoolBlock("k12")}
-                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "k12" ? "bg-white text-[#36E08F] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "k12" ? "bg-white text-[#48BFE3] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
               >
                 Phổ thông
               </button>
               <button
                 type="button"
                 onClick={() => setSchoolBlock("preschool")}
-                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "preschool" ? "bg-white text-[#36E08F] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
+                className={`py-1.5 rounded-lg transition-all ${schoolBlock === "preschool" ? "bg-white text-[#48BFE3] shadow-xs" : "text-slate-500 hover:text-slate-800"}`}
               >
                 Mầm non
               </button>
@@ -330,13 +330,13 @@ export function StudentProfilesAdminClient({
           {/* Campus selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Building2 className="w-3.5 h-3.5 text-[#36E08F]" />
+              <Building2 className="w-3.5 h-3.5 text-[#48BFE3]" />
               Cơ sở
             </label>
             <select
               value={selectedCampusId}
               onChange={(e) => setSelectedCampusId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36E08F]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
             >
               <option value="all">Tất cả cơ sở</option>
               {campuses.map(c => (
@@ -348,13 +348,13 @@ export function StudentProfilesAdminClient({
           {/* Grade selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5 text-[#36E08F]" />
+              <Layers className="w-3.5 h-3.5 text-[#48BFE3]" />
               Khối lớp
             </label>
             <select
               value={selectedGrade}
               onChange={(e) => setSelectedGrade(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36E08F]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
             >
               <option value="all">Tất cả Khối</option>
               {gradeOptions.map(g => (
@@ -366,13 +366,13 @@ export function StudentProfilesAdminClient({
           {/* Class selector */}
           <div className="flex flex-col space-y-1.5">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
-              <GraduationCap className="w-3.5 h-3.5 text-[#36E08F]" />
+              <GraduationCap className="w-3.5 h-3.5 text-[#48BFE3]" />
               Lớp học
             </label>
             <select
               value={selectedClassId}
               onChange={(e) => setSelectedClassId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#36E08F]"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#48BFE3]"
             >
               <option value="all">Tất cả Lớp ({filteredClassesList.length})</option>
               {filteredClassesList.map(c => (
@@ -386,7 +386,7 @@ export function StudentProfilesAdminClient({
         {/* Batch Export PDF buttons */}
         <div className="pt-3 border-t border-slate-100 flex flex-wrap gap-3 items-center justify-between text-xs font-bold">
           <div className="flex items-center gap-2 text-slate-500">
-            <Printer className="w-4 h-4 text-[#36E08F]" />
+            <Printer className="w-4 h-4 text-[#48BFE3]" />
             <span>Xuất báo cáo PDF đồng loạt:</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -416,7 +416,7 @@ export function StudentProfilesAdminClient({
             </button>
             <button
               onClick={() => handleBatchPdfExport("block")}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#36E08F] to-[#009085] hover:opacity-95 text-white rounded-xl shadow-md shadow-[#36E08F]/20 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#48BFE3] to-[#009085] hover:opacity-95 text-white rounded-xl shadow-md shadow-[#48BFE3]/20 transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Xuất PDF Bậc Học</span>
@@ -434,10 +434,10 @@ export function StudentProfilesAdminClient({
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-[#36E08F]" />
+                  <Users className="w-4 h-4 text-[#48BFE3]" />
                   Danh sách Học sinh
                 </h3>
-                <span className="text-[10px] font-extrabold bg-teal-50 text-[#36E08F] px-2.5 py-0.5 rounded-full border border-teal-200/80">
+                <span className="text-[10px] font-extrabold bg-teal-50 text-[#48BFE3] px-2.5 py-0.5 rounded-full border border-teal-200/80">
                   {filteredStudentsList.length} học sinh
                 </span>
               </div>
@@ -448,7 +448,7 @@ export function StudentProfilesAdminClient({
                   placeholder="Tìm theo mã hoặc tên học sinh..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#36E08F]/20 focus:border-[#36E08F] transition-all text-slate-700"
+                  className="w-full pl-9 pr-8 py-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#48BFE3]/20 focus:border-[#48BFE3] transition-all text-slate-700"
                 />
                 {searchQuery && (
                   <button
@@ -464,7 +464,7 @@ export function StudentProfilesAdminClient({
             <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
               {loadingStudents ? (
                 <div className="flex flex-col items-center justify-center py-10 space-y-2">
-                  <Loader2 className="w-6 h-6 text-[#36E08F] animate-spin opacity-60" />
+                  <Loader2 className="w-6 h-6 text-[#48BFE3] animate-spin opacity-60" />
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Đang tải...</span>
                 </div>
               ) : filteredStudentsList.length === 0 ? (
@@ -480,13 +480,13 @@ export function StudentProfilesAdminClient({
                     onClick={() => setSelectedStudentId(s.id)}
                     className={`w-full text-left p-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer border ${
                       selectedStudentId === s.id
-                        ? "bg-teal-50/80 text-[#36E08F] border-[#36E08F] shadow-xs"
+                        ? "bg-teal-50/80 text-[#48BFE3] border-[#48BFE3] shadow-xs"
                         : "bg-slate-50/40 hover:bg-slate-100/60 border-slate-200/60 text-slate-700"
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 pr-2">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs uppercase flex-shrink-0 ${
-                        selectedStudentId === s.id ? "bg-[#36E08F] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
+                        selectedStudentId === s.id ? "bg-[#48BFE3] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
                       }`}>
                         {s.studentName.split(" ").pop()?.charAt(0) || "H"}
                       </div>
@@ -512,9 +512,9 @@ export function StudentProfilesAdminClient({
               
               {/* Profile Details Header */}
               <div className="p-6 bg-gradient-to-r from-slate-50 to-slate-100/70 border-b border-slate-155 flex items-center justify-between gap-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#36E08F]/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-[#48BFE3]/5 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-50 border border-[#36E08F]/30 flex items-center justify-center text-[#36E08F] shadow-sm">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-teal-50 border border-[#48BFE3]/30 flex items-center justify-center text-[#48BFE3] shadow-sm">
                     <User className="w-7 h-7" />
                   </div>
                   <div className="space-y-1">
@@ -530,7 +530,7 @@ export function StudentProfilesAdminClient({
                 {/* Print individual PDF */}
                 <button
                   onClick={() => window.open(`/admin/ho-so-hoc-sinh/print?type=student&studentId=${selectedStudentId}&academicYearId=${selectedYearId}`, "_blank")}
-                  className="flex items-center gap-1.5 bg-[#36E08F] hover:bg-[#009085] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 bg-[#48BFE3] hover:bg-[#009085] text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all cursor-pointer"
                 >
                   <Printer className="w-3.5 h-3.5" />
                   <span>In CV</span>
@@ -548,7 +548,7 @@ export function StudentProfilesAdminClient({
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-1.5 px-4 py-3 text-xs font-black border-t-2 border-x rounded-t-xl transition-all cursor-pointer ${
                         isActive
-                          ? "bg-white text-[#36E08F] border-[#36E08F] border-x-slate-200 shadow-xs"
+                          ? "bg-white text-[#48BFE3] border-[#48BFE3] border-x-slate-200 shadow-xs"
                           : "text-slate-500 border-transparent hover:text-slate-800"
                       }`}
                     >
@@ -568,10 +568,10 @@ export function StudentProfilesAdminClient({
                       <div className="space-y-6">
                         <div className="bg-white border border-slate-200 shadow-lg rounded-2xl p-8 max-w-4xl mx-auto font-sans relative overflow-hidden">
                           {/* CV Header */}
-                          <div className="border-b-2 border-[#36E08F] pb-6 flex justify-between items-start gap-4">
+                          <div className="border-b-2 border-[#48BFE3] pb-6 flex justify-between items-start gap-4">
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
-                                <GraduationCap className="w-6 h-6 text-[#36E08F]" />
+                                <GraduationCap className="w-6 h-6 text-[#48BFE3]" />
                                 <span className="font-extrabold text-sm tracking-wider text-slate-700 font-sans">SKY-LINE SYSTEM</span>
                               </div>
                               <h2 className="text-xl font-black text-slate-805 uppercase tracking-tight font-sans">Hồ sơ Năng lực Học sinh</h2>
@@ -588,12 +588,12 @@ export function StudentProfilesAdminClient({
                             {/* Left Column */}
                             <div className="md:col-span-1 border-r border-slate-100 pr-6 space-y-6">
                               <div className="text-center space-y-3">
-                                <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#36E08F]/20 shadow-inner flex items-center justify-center bg-slate-50 text-slate-355">
+                                <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#48BFE3]/20 shadow-inner flex items-center justify-center bg-slate-50 text-slate-355">
                                   <User className="w-16 h-16" />
                                 </div>
                                 <div>
                                   <h3 className="font-black text-base text-slate-800">{selectedStudent?.studentName}</h3>
-                                  <p className="text-[10px] text-[#36E08F] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {selectedStudent.className || "N/A"}</p>
+                                  <p className="text-[10px] text-[#48BFE3] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {selectedStudent.className || "N/A"}</p>
                                 </div>
                               </div>
 
@@ -616,7 +616,7 @@ export function StudentProfilesAdminClient({
                               {/* Outstanding Achievements */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <Award className="w-4 h-4 text-[#36E08F]" />
+                                  <Award className="w-4 h-4 text-[#48BFE3]" />
                                   Thành tích nổi bật
                                 </h4>
                                 {(!selectedStudent.achievements || selectedStudent.achievements.length === 0) ? (
@@ -639,7 +639,7 @@ export function StudentProfilesAdminClient({
                               {/* Career Orientation */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <Compass className="w-4 h-4 text-[#36E08F]" />
+                                  <Compass className="w-4 h-4 text-[#48BFE3]" />
                                   Định hướng ngành nghề
                                 </h4>
                                 {selectedStudent.orientation ? (
@@ -658,14 +658,14 @@ export function StudentProfilesAdminClient({
                               {/* Section: Academic Intake Profile */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <ClipboardCheck className="w-4 h-4 text-[#36E08F]" />
+                                  <ClipboardCheck className="w-4 h-4 text-[#48BFE3]" />
                                   Hồ sơ học thuật đầu vào (Intake Evaluation)
                                 </h4>
                                 {selectedStudent.admitted !== "Không" ? (
                                   <div className="space-y-3">
                                     {schoolBlock === "preschool" ? (
                                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
-                                        <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#36E08F]">{selectedStudent.devAssessment || "N/A"}</span></div>
+                                        <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#48BFE3]">{selectedStudent.devAssessment || "N/A"}</span></div>
                                         {selectedStudent.probationaryComment && (
                                           <div className="bg-white p-2.5 rounded border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
                                             "{selectedStudent.probationaryComment}"
@@ -675,7 +675,7 @@ export function StudentProfilesAdminClient({
                                     ) : (
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                                          <div className="text-[9px] text-[#36E08F] font-bold uppercase tracking-wider">Toán học</div>
+                                          <div className="text-[9px] text-[#48BFE3] font-bold uppercase tracking-wider">Toán học</div>
                                           <div className="text-lg font-black text-slate-805 mt-0.5">{selectedStudent.mathScore || "—"}</div>
                                         </div>
                                         <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
@@ -701,7 +701,7 @@ export function StudentProfilesAdminClient({
                               {/* Section: Projects & Experiences */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <BookOpen className="w-4 h-4 text-[#36E08F]" />
+                                  <BookOpen className="w-4 h-4 text-[#48BFE3]" />
                                   Hoạt động trải nghiệm
                                 </h4>
                                 {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) && (!selectedStudent.projectExperiences || selectedStudent.projectExperiences.length === 0) ? (
@@ -716,7 +716,7 @@ export function StudentProfilesAdminClient({
                                             <div className="text-[9px] text-slate-400 mt-0.5">{act.groupName}</div>
                                           </div>
                                           <div className="flex gap-1.5 items-center">
-                                            <span className="text-[8px] font-black uppercase bg-[#36E08F]/10 text-[#36E08F] px-2 py-0.5 rounded">
+                                            <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
                                               {act.role}
                                             </span>
                                             <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -734,7 +734,7 @@ export function StudentProfilesAdminClient({
                                             <div className="text-[9px] text-slate-400 mt-0.5">Dự án học tập</div>
                                           </div>
                                           <div className="flex gap-1.5 items-center">
-                                            <span className="text-[8px] font-black uppercase bg-[#36E08F]/10 text-[#36E08F] px-2 py-0.5 rounded">
+                                            <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
                                               {p.role || "Thành viên"}
                                             </span>
                                             <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
@@ -752,7 +752,7 @@ export function StudentProfilesAdminClient({
                               {/* Section: Learning Support Progress */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <GraduationCap className="w-4 h-4 text-[#36E08F]" />
+                                  <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
                                   Kế hoạch hỗ trợ học tập & Phát triển
                                 </h4>
                                 {!selectedStudent.supportReason ? (
@@ -768,11 +768,11 @@ export function StudentProfilesAdminClient({
                               {/* Section: GVCN Testimonial */}
                               <div className="space-y-3">
                                 <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <MessageSquare className="w-4 h-4 text-[#36E08F]" />
+                                  <MessageSquare className="w-4 h-4 text-[#48BFE3]" />
                                   Nhận xét định kỳ từ Giáo viên Chủ nhiệm
                                 </h4>
                                 {selectedStudent.latestGvcnComment ? (
-                                  <div className="bg-teal-50/10 border-l-4 border-[#36E08F] p-3 rounded-r-lg space-y-2">
+                                  <div className="bg-teal-50/10 border-l-4 border-[#48BFE3] p-3 rounded-r-lg space-y-2">
                                     <p className="text-xs text-slate-705 font-semibold italic leading-relaxed whitespace-pre-wrap">
                                       "{selectedStudent.latestGvcnComment}"
                                     </p>
@@ -1013,7 +1013,7 @@ export function StudentProfilesAdminClient({
 
                         const str = String(val).trim()
                         if (isCheckSymbol(str)) {
-                          return <span className="inline-flex items-center justify-center bg-teal-50 text-[#36E08F] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
+                          return <span className="inline-flex items-center justify-center bg-teal-50 text-[#48BFE3] border border-teal-200 px-2 py-0.5 rounded-lg font-black text-xs shadow-2xs">✓</span>
                         }
                         if (str === "T" || str === "Tốt") {
                           return <span className="inline-block px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-50 text-emerald-700 border border-emerald-200">T</span>
@@ -1099,12 +1099,12 @@ return (
                           <div className="border-b border-slate-100 pb-3 flex justify-between items-center flex-wrap gap-2">
                             <div>
                               <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-[#36E08F]" />
+                                <FileText className="w-4 h-4 text-[#48BFE3]" />
                                 Kết quả Học tập Văn hóa (MOET)
                               </h4>
                               <p className="text-[10px] text-slate-400 font-bold mt-0.5">Bảng điểm môn học &amp; Đánh giá xếp loại tổng kết định kỳ</p>
                             </div>
-                            <span className="bg-teal-50 text-[#36E08F] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            <span className="bg-teal-50 text-[#48BFE3] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                               Năm học: {selectedStudent?.yearName || activeYearName}
                             </span>
                           </div>
@@ -1118,7 +1118,7 @@ return (
                             <div className="space-y-6">
                               <div className="space-y-3">
                                 <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <GraduationCap className="w-4 h-4 text-[#36E08F]" />
+                                  <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
                                   Tổng kết Đánh giá &amp; Xếp loại Học tập
                                 </h5>
 
@@ -1127,7 +1127,7 @@ return (
                                   <div className="bg-white border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                                       <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Học kỳ 1</span>
-                                      <span className="text-[9px] font-extrabold text-[#36E08F] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
+                                      <span className="text-[9px] font-extrabold text-[#48BFE3] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">HK1</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
@@ -1236,8 +1236,8 @@ return (
                                   {/* CN Card */}
                                   <div className="bg-gradient-to-br from-teal-50/40 to-slate-50 border border-teal-200/80 rounded-2xl p-4 space-y-3 shadow-2xs">
                                     <div className="flex items-center justify-between border-b border-teal-100 pb-2">
-                                      <span className="text-xs font-black text-[#36E08F] uppercase tracking-wider">Cả Năm</span>
-                                      <span className="text-[9px] font-extrabold text-white bg-[#36E08F] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
+                                      <span className="text-xs font-black text-[#48BFE3] uppercase tracking-wider">Cả Năm</span>
+                                      <span className="text-[9px] font-extrabold text-white bg-[#48BFE3] px-2.5 py-0.5 rounded-full shadow-2xs">CẢ NĂM</span>
                                     </div>
                                     <div className="space-y-2 text-xs font-semibold text-slate-600">
                                       {isPrimary ? (
@@ -1268,7 +1268,7 @@ return (
 
                               <div className="space-y-3">
                                 <h5 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                                  <BookOpen className="w-4 h-4 text-[#36E08F]" />
+                                  <BookOpen className="w-4 h-4 text-[#48BFE3]" />
                                   Bảng điểm Chi tiết Các Môn học
                                 </h5>
 
@@ -1341,7 +1341,7 @@ return (
                         <div className="border-b border-slate-100 pb-3 flex justify-between items-center">
                           <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide">Kết quả khảo sát đầu vào</h4>
                           {selectedStudent.entranceSurvey?.type && (
-                            <span className="bg-teal-50 text-[#36E08F] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                            <span className="bg-teal-50 text-[#48BFE3] border border-teal-100 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                               Hệ {selectedStudent.entranceSurvey.type}
                             </span>
                           )}
@@ -1355,7 +1355,7 @@ return (
                                 onClick={() => setEntranceSubTab("results")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "results"
-                                    ? "border-[#36E08F] text-[#36E08F]"
+                                    ? "border-[#48BFE3] text-[#48BFE3]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1366,7 +1366,7 @@ return (
                                 onClick={() => setEntranceSubTab("admin")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "admin"
-                                    ? "border-[#36E08F] text-[#36E08F]"
+                                    ? "border-[#48BFE3] text-[#48BFE3]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1377,7 +1377,7 @@ return (
                                 onClick={() => setEntranceSubTab("academic")}
                                 className={`flex items-center gap-1.5 pb-3 pt-1 text-xs font-bold uppercase tracking-wider transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                                   entranceSubTab === "academic"
-                                    ? "border-[#36E08F] text-[#36E08F]"
+                                    ? "border-[#48BFE3] text-[#48BFE3]"
                                     : "border-transparent text-slate-400 hover:text-slate-600"
                                 }`}
                               >
@@ -1479,8 +1479,8 @@ return (
                                     <div className="space-y-4 animate-in fade-in duration-200">
                                       <h5 className="text-xs font-black text-slate-700">Điểm số các môn khảo sát:</h5>
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        <div className="bg-[#36E08F]/5 border border-[#36E08F]/20 p-3.5 rounded-xl text-center">
-                                          <div className="text-[10px] text-[#36E08F] font-bold uppercase tracking-wider">Toán</div>
+                                        <div className="bg-[#48BFE3]/5 border border-[#48BFE3]/20 p-3.5 rounded-xl text-center">
+                                          <div className="text-[10px] text-[#48BFE3] font-bold uppercase tracking-wider">Toán</div>
                                           <div className="text-2xl font-extrabold text-slate-805 mt-1">{mathVal !== null && mathVal !== undefined ? mathVal : "—"}</div>
                                           <div className="text-[9px] text-slate-400 font-bold">Thang 10</div>
                                         </div>
@@ -1745,7 +1745,7 @@ return (
                         {selectedStudent.orientation ? (
                           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-2xs">
                             <div className="flex items-center gap-3 bg-teal-50/30 border border-teal-100 p-3.5 rounded-xl">
-                              <Compass className="w-5 h-5 text-[#36E08F]" />
+                              <Compass className="w-5 h-5 text-[#48BFE3]" />
                               <div>
                                 <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Định hướng nhóm ngành chủ đạo</div>
                                 <div className="text-sm font-black text-slate-805 mt-0.5">{selectedStudent.orientation.result}</div>
@@ -1797,7 +1797,7 @@ return (
                                       </span>
                                     </td>
                                     <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                      <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
                                         {act.role}
                                       </span>
                                     </td>
@@ -1818,7 +1818,7 @@ return (
                                       </span>
                                     </td>
                                     <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
+                                      <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
                                         {p.role || "Thành viên"}
                                       </span>
                                     </td>
@@ -1840,7 +1840,7 @@ return (
                       <div className="space-y-6 animate-in fade-in duration-300">
                         <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3 flex justify-between items-center">
                           <span>Nhận xét nổi bật định kỳ từ Giáo viên Chủ nhiệm</span>
-                          <span className="bg-[#36E08F]/10 text-[#36E08F] border border-[#36E08F]/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
+                          <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
                             GVCN Đánh giá
                           </span>
                         </h4>
@@ -1856,7 +1856,7 @@ return (
                               .map((c) => (
                                 <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 transition-all animate-in fade-in duration-200">
                                   <div className="flex justify-between items-center mb-2">
-                                    <span className="inline-block px-2.5 py-0.5 bg-[#36E08F]/15 text-[#36E08F] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#36E08F]/10">
+                                    <span className="inline-block px-2.5 py-0.5 bg-[#48BFE3]/15 text-[#48BFE3] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#48BFE3]/10">
                                       {c.category || "Chung"}
                                     </span>
                                   </div>
@@ -1936,17 +1936,17 @@ return (
                                       {!target.evaluations || target.evaluations.length === 0 ? (
                                         <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
                                       ) : (
-                                        <div className="relative border-l-2 border-[#36E08F]/30 pl-5 space-y-5 ml-1.5">
+                                        <div className="relative border-l-2 border-[#48BFE3]/30 pl-5 space-y-5 ml-1.5">
                                           {(target.evaluations || []).map((ev) => (
                                             <div key={ev.id} className="relative group">
-                                              <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#36E08F] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm">
-                                                <span className="h-1.5 w-1.5 bg-[#36E08F] rounded-full"></span>
+                                              <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#48BFE3] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm">
+                                                <span className="h-1.5 w-1.5 bg-[#48BFE3] rounded-full"></span>
                                               </span>
                                               <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1.5 transition-all">
                                                 <div className="text-[10px] text-slate-400 font-bold">
                                                   {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
                                                 </div>
-                                                <div className="text-xs font-black text-[#36E08F]">Tiến bộ: {ev.trackingLevel}</div>
+                                                <div className="text-xs font-black text-[#48BFE3]">Tiến bộ: {ev.trackingLevel}</div>
                                                 <p className="text-xs text-slate-655 font-semibold leading-relaxed">{ev.comment}</p>
                                               </div>
                                             </div>

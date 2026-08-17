@@ -29,7 +29,7 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
       {/* Header Bar */}
       <div className="bg-white border border-slate-200 shadow-sm rounded-xl px-4 py-3 flex items-center justify-between gap-3 min-h-[56px]">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 bg-[#36E08F] rounded-lg flex items-center justify-center flex-shrink-0">
+          <div className="w-9 h-9 bg-[#48BFE3] rounded-lg flex items-center justify-center flex-shrink-0">
              <ClipboardList className="w-4 h-4 text-white"/>
           </div>
           <div className="min-w-0">
@@ -67,20 +67,20 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredClasses.map((c) => (
-            <div key={c.id} className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 overflow-hidden hover:shadow-md hover:border-[#36E08F]/30 transition-all group flex flex-col justify-between">
+            <div key={c.id} className="bg-white rounded-2xl shadow-sm border-2 border-teal-100 overflow-hidden hover:shadow-md hover:border-[#48BFE3]/30 transition-all group flex flex-col justify-between">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="font-extrabold text-lg text-slate-800 group-hover:text-[#36E08F] transition-colors">{c.className}</h3>
-                    <p className="text-xs font-bold text-[#36E08F] mt-0.5">{c.classCode}</p>
+                    <h3 className="font-extrabold text-lg text-slate-800 group-hover:text-[#48BFE3] transition-colors">{c.className}</h3>
+                    <p className="text-xs font-bold text-[#48BFE3] mt-0.5">{c.classCode}</p>
                   </div>
                   <div className="flex flex-col items-end gap-1.5">
                     {c.isHomeroom && (
-                      <span className="text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full uppercase bg-[#36E08F] text-white border border-[#36E08F]">
+                      <span className="text-[9px] font-black tracking-wider px-2 py-0.5 rounded-full uppercase bg-[#48BFE3] text-white border border-[#48BFE3]">
                         Lớp chủ nhiệm
                       </span>
                     )}
-                    <span className={`text-[10px] font-black tracking-wider px-2.5 py-1 rounded-full uppercase ${c.status === "ACTIVE" ? "bg-teal-50 text-[#36E08F] border border-teal-100" : "bg-slate-100 text-slate-500"}`}>
+                    <span className={`text-[10px] font-black tracking-wider px-2.5 py-1 rounded-full uppercase ${c.status === "ACTIVE" ? "bg-teal-50 text-[#48BFE3] border border-teal-100" : "bg-slate-100 text-slate-500"}`}>
                       {c.status}
                     </span>
                   </div>
@@ -105,7 +105,7 @@ export function TeacherClassesClient({ initialClasses, academicYears }: { initia
               <div className="flex justify-end text-xs font-semibold p-6 pt-0">
                 <Link 
                   href={`/teacher/classes/${c.id}`} 
-                  className="text-xs font-bold text-[#36E08F] hover:text-[#009085] transition-colors flex items-center gap-1.5"
+                  className="text-xs font-bold text-[#48BFE3] hover:text-[#009085] transition-colors flex items-center gap-1.5"
                 >
                   {c.isHomeroom ? "Xem chi tiết Lớp chủ nhiệm →" : "Xem chi tiết kết quả khảo sát →"}
                 </Link>

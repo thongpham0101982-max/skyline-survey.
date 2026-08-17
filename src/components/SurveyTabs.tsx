@@ -23,7 +23,7 @@ export function SurveyTabs({ activeTab, role = 'ADMIN' }: SurveyTabsProps) {
   const tabs = role === 'TEACHER' ? teacherTabs : adminTabs
 
   return (
-    <div className="bg-white border border-[#36E08F]/20 shadow-xs rounded-xl px-1.5 py-1.5 mb-6 no-print">
+    <div className="bg-white border border-[#48BFE3]/20 shadow-xs rounded-xl px-1.5 py-1.5 mb-6 no-print">
       <div className="flex flex-wrap gap-1">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id
@@ -34,8 +34,8 @@ export function SurveyTabs({ activeTab, role = 'ADMIN' }: SurveyTabsProps) {
               href={tab.href}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-black transition-all duration-200 border ${
                 isActive
-                  ? 'bg-[#36E08F] text-white border-[#36E08F] shadow-xs'
-                  : 'text-slate-600 border-transparent hover:bg-[#36E08F]/5 hover:text-[#36E08F]'
+                  ? 'bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs'
+                  : 'text-slate-600 border-transparent hover:bg-[#48BFE3]/5 hover:text-[#48BFE3]'
               }`}
             >
               <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
