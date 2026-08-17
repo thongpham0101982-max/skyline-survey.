@@ -2,12 +2,49 @@
 
 import { useState, useEffect } from "react"
 import { 
-  Users, Loader2, User, Award, Compass, 
+  Users, Loader2, User, Award, Trophy, Medal, Sparkles, Compass, 
   FileText, BookOpen, MessageSquare, ClipboardCheck, ArrowLeftRight,
   Bell, ThumbsUp, MessageCircle, Share2, Send, Globe, Camera,
   Search, Printer, Plus, Heart, Trash2, Calendar, 
   MapPin, CheckCircle, AlertTriangle, GraduationCap
 } from "lucide-react"
+
+
+const getCategoryLabel = (cat: string) => {
+  if (!cat) return "Lĩnh vực khác";
+  const str = String(cat).toUpperCase();
+  if (str === "OLYMPIC") return "Olympic";
+  if (str === "KHKT") return "Khoa học kỹ thuật";
+  if (str === "THE_THAO") return "Thể dục thể thao";
+  if (str === "VAN_NGHE") return "Văn nghệ - Nghệ thuật";
+  if (str === "HOC_THUAT") return "Học thuật";
+  if (str === "STEM") return "STEM / Robotics";
+  return cat;
+};
+
+const getLevelLabel = (lvl: string) => {
+  if (!lvl) return "Cấp Trường";
+  const str = String(lvl).toUpperCase();
+  if (str === "CAP_QUOC_TE" || str === "5") return "Cấp Quốc tế";
+  if (str === "CAP_QUOC_GIA" || str === "4") return "Cấp Quốc gia";
+  if (str === "CAP_THANH_PHO" || str === "CAP_TINH" || str === "3") return "Cấp Thành phố / Tỉnh";
+  if (str === "CAP_QUAN" || str === "CAP_HUYEN" || str === "2") return "Cấp Quận / Huyện";
+  if (str === "CAP_TRUONG" || str === "1") return "Cấp Trường";
+  return lvl.startsWith("Cấp") ? lvl : `Cấp độ: ${lvl}`;
+};
+
+const getYearLabel = (ach: any) => {
+  if (ach?.academicYear?.name) return ach.academicYear.name;
+  if (ach?.yearName) return ach.yearName;
+  if (ach?.academicYearId) {
+    if (ach.academicYearId.startsWith("AY-")) {
+      const parts = ach.academicYearId.split("-");
+      if (parts[1]) return `Năm học 20${parts[1].slice(-2)}`;
+    }
+    return ach.academicYearId;
+  }
+  return "N/A";
+};
 
 export default function TeacherStudentProfilePage() {
   const [students, setStudents] = useState<any[]>([])
