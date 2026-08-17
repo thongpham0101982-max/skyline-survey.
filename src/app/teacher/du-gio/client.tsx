@@ -243,6 +243,8 @@ export function ObservationClient(props: ObservationClientProps) {
   const [declineReason, setDeclineReason] = useState("")
   const [decliningSlotId, setDecliningSlotId] = useState<string | null>(null)
   const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
+  const [historySlot, setHistorySlot] = useState<any | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [myScheduleMonth, setMyScheduleMonth] = useState<string>("ALL");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
 
