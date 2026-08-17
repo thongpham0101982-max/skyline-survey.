@@ -1389,7 +1389,7 @@ export function ResultsClient({
         if (selectedStudentProfile?.achievements) {
           selectedStudentProfile.achievements.forEach((ach: any) => {
             const examKey = ach.examName || "Kỳ thi khác";
-            const catKey = ach.examCategoryName || "Lĩnh vực khác";
+            const catKey = CATEGORY_LABELS[ach.category] || ach.category || "Lĩnh vực khác";
 
             if (!achievementsByExam[examKey]) achievementsByExam[examKey] = [];
             achievementsByExam[examKey].push(ach);
@@ -1398,6 +1398,61 @@ export function ResultsClient({
             achievementsByCategory[catKey].push(ach);
           });
         }
+
+        const renderAchievementCard = (ach: any) => {
+          const catName = CATEGORY_LABELS[ach.category] || ach.category || "Lĩnh vực khác";
+          const levelName = LEVEL_LABELS[ach.level] || ach.level || "";
+          const isGold = ach.name?.toLowerCase().includes("vàng") || ach.name?.toLowerCase().includes("nhất");
+          const isSilver = ach.name?.toLowerCase().includes("bạc") || ach.name?.toLowerCase().includes("nhì");
+          const isBronze = ach.name?.toLowerCase().includes("đồng") || ach.name?.toLowerCase().includes("ba");
+
+          return (
+            <div 
+              key={ach.id} 
+              className="bg-white border border-slate-200/80 rounded-xl p-4 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#009085] bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/80">
+                    {catName}
+                  </span>
+                  {levelName && (
+                    <span className="text-[10px] font-extrabold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200/80">
+                      {levelName}
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-start gap-2.5 pt-1">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                    isGold ? 'bg-amber-100 text-amber-600 border border-amber-300' :
+                    isSilver ? 'bg-slate-100 text-slate-600 border border-slate-300' :
+                    isBronze ? 'bg-orange-100 text-orange-600 border border-orange-300' :
+                    'bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20'
+                  }`}>
+                    {isGold ? <Trophy className="w-4 h-4" /> : isSilver || isBronze ? <Medal className="w-4 h-4" /> : <Award className="w-4 h-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-extrabold text-slate-800 text-sm leading-snug group-hover:text-[#009085] transition-colors">
+                      {ach.name}
+                    </h5>
+                    {ach.examName && (
+                      <p className="text-xs text-slate-500 font-medium flex items-center gap-1 mt-1 truncate">
+                        <Sparkles className="w-3.5 h-3.5 text-[#48BFE3] flex-shrink-0" />
+                        <span className="truncate">{ach.examName}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium gap-2">
+                <span className="truncate">GVHD: <strong className="text-slate-700">{ach.teacherName || "Chưa xác định"}</strong></span>
+                <span className="font-mono text-slate-400 font-bold bg-slate-50 px-2 py-0.5 rounded border border-slate-200/60 flex-shrink-0">{ach.yearName || "N/A"}</span>
+              </div>
+            </div>
+          );
+        };
 
         const renderGroupedContent = () => {
           const groupedData = viewGroup === 'exam' ? achievementsByExam : achievementsByCategory;
