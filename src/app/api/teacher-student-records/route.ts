@@ -1011,7 +1011,8 @@ export async function GET(req: Request) {
               include: {
                 exam: {
                   include: {
-                    round: true
+                    round: true,
+                    category: true
                   }
                 }
               }

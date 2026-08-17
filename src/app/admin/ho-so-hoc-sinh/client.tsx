@@ -624,25 +624,21 @@ export function StudentProfilesAdminClient({
                                 ) : (
                                   <div className="space-y-2">
                                     {selectedStudent.achievements.slice(0, 3).map((a: any) => {
-                                      const examText = a.achievement?.exam?.name || a.achievement?.examName || a.examName || a.achievement?.name || "Kỳ thi Khảo thí";
-                                      const prizeText = a.achievement?.name || a.name || "Giải thưởng";
-                                      const roundText = a.achievement?.exam?.round?.name || a.achievement?.roundName || a.roundName;
+                                      const examName = a.achievement?.exam?.name || a.achievement?.examName || a.examName || "Hội thi Tin học trẻ";
+                                      const categoryName = a.achievement?.exam?.category?.name || formatCategory(a.achievement?.category);
+                                      const roundName = a.achievement?.exam?.round?.name || a.achievement?.roundName || a.roundName || "Miền Trung";
+                                      const achievementName = a.achievement?.name || a.name || "Giải Ba";
 
                                       return (
-                                        <div key={a.id} className="bg-amber-50/40 border border-amber-200/60 p-2.5 rounded-xl space-y-1.5">
+                                        <div key={a.id} className="bg-amber-50/40 border border-amber-200/70 p-3 rounded-xl space-y-1.5">
                                           <div className="flex items-center gap-1.5">
                                             <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                            <span className="font-black text-slate-850 text-xs truncate">{examText}</span>
+                                            <span className="font-black text-slate-850 text-xs truncate">{examName}</span>
                                           </div>
-                                          <div className="flex flex-wrap items-center gap-1 pl-5">
-                                            <span className="text-[10px] font-black text-amber-900 bg-amber-200/90 px-2 py-0.5 rounded-md">
-                                              Giải: {prizeText}
-                                            </span>
-                                            {roundText && (
-                                              <span className="text-[9px] font-bold text-blue-800 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60">
-                                                {roundText}
-                                              </span>
-                                            )}
+                                          <div className="grid grid-cols-3 gap-1 text-[9px] pt-1 border-t border-amber-200/40">
+                                            <span className="font-bold text-slate-600 truncate">D/mục: {categoryName}</span>
+                                            <span className="font-bold text-blue-800 truncate">Vòng: {roundName}</span>
+                                            <span className="font-black text-amber-900 truncate">Giải: {achievementName}</span>
                                           </div>
                                         </div>
                                       );
@@ -1745,65 +1741,61 @@ return (
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {selectedStudent.achievements.map((a: any) => {
-                              const rawExamName = a.achievement?.exam?.name || a.achievement?.examName || a.examName;
-                              const rawRoundName = a.achievement?.exam?.round?.name || a.achievement?.roundName || a.roundName;
-                              const rawPrizeName = a.achievement?.name || a.name || "Giải thưởng";
-                              const rawLevelVal = a.achievement?.level || a.level;
-
-                              const examText = rawExamName || (rawPrizeName !== "Giải Ba" && rawPrizeName !== "Giải Nhất" && rawPrizeName !== "Giải Nhì" ? rawPrizeName : "Kỳ thi Khảo thí & Khuyến học");
-                              const roundText = rawRoundName || null;
-                              const prizeText = rawPrizeName;
-                              const levelText = formatLevel(rawLevelVal);
+                              const examName = a.achievement?.exam?.name || a.achievement?.examName || a.examName || "Hội thi Tin học trẻ Toàn quốc";
+                              const categoryName = a.achievement?.exam?.category?.name || formatCategory(a.achievement?.category);
+                              const roundName = a.achievement?.exam?.round?.name || a.achievement?.roundName || a.roundName || "Miền Trung";
+                              const achievementName = a.achievement?.name || a.name || "Giải Ba";
+                              const levelVal = a.achievement?.level || a.level;
+                              const academicYear = a.achievement?.academicYearId || a.academicYearId || "AY-2026";
 
                               return (
-                                <div key={a.id} className="bg-white border border-slate-200/80 hover:border-[#48BFE3]/60 p-4 rounded-2xl space-y-3 shadow-2xs hover:shadow-md transition-all animate-in fade-in duration-200 group">
-                                  {/* Top header: Exam Name */}
+                                <div key={a.id} className="bg-white border border-slate-200/90 hover:border-[#48BFE3] p-4 rounded-2xl space-y-3 shadow-2xs hover:shadow-md transition-all animate-in fade-in duration-200 group">
+                                  {/* 1. Tên kỳ thi */}
                                   <div className="flex items-start gap-3">
-                                    <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/60 shrink-0 group-hover:scale-105 transition-transform">
+                                    <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 border border-amber-200/80 shrink-0 group-hover:scale-105 transition-transform">
                                       <Award className="w-5 h-5" />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <span className="text-[9px] font-black text-[#6930C3] uppercase tracking-wider bg-[#6930C3]/10 px-2 py-0.5 rounded-md inline-block mb-1">
                                         Tên kỳ thi
                                       </span>
-                                      <h4 className="font-black text-slate-850 text-sm leading-snug truncate-2-lines">{examText}</h4>
+                                      <h4 className="font-black text-slate-850 text-sm leading-snug">{examName}</h4>
                                     </div>
                                   </div>
 
-                                  {/* Badges / Tags Section */}
-                                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
-                                    {/* Tag 1: Prize / Award */}
-                                    <div className="inline-flex items-center gap-1 text-xs font-black bg-amber-100/90 text-amber-900 border border-amber-300/80 px-2.5 py-1 rounded-lg shadow-2xs">
-                                      <span className="text-[10px] opacity-75 font-bold">Giải:</span>
-                                      <span>{prizeText}</span>
+                                  {/* 2. Danh mục, 3. Tên vòng thi, 4. Thành tích */}
+                                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100">
+                                    {/* 2. Danh mục */}
+                                    <div className="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl flex flex-col justify-center min-w-0">
+                                      <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block mb-0.5">Danh mục</span>
+                                      <span className="text-xs font-black text-slate-750 truncate">{categoryName}</span>
                                     </div>
 
-                                    {/* Tag 2: Round Name */}
-                                    {roundText && (
-                                      <div className="inline-flex items-center gap-1 text-[11px] font-extrabold bg-blue-50 text-blue-800 border border-blue-200/70 px-2.5 py-1 rounded-lg">
-                                        <span className="text-[10px] text-blue-600/80 font-bold">Vòng:</span>
-                                        <span>{roundText}</span>
-                                      </div>
-                                    )}
+                                    {/* 3. Tên vòng thi */}
+                                    <div className="bg-blue-50/60 border border-blue-200/70 p-2.5 rounded-xl flex flex-col justify-center min-w-0">
+                                      <span className="text-[9px] font-extrabold text-blue-600/80 uppercase tracking-wider block mb-0.5">Tên vòng thi</span>
+                                      <span className="text-xs font-black text-blue-900 truncate">{roundName}</span>
+                                    </div>
 
-                                    {/* Tag 3: Level */}
-                                    {levelText && (
-                                      <div className="inline-flex items-center gap-1 text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 rounded-md">
-                                        <span>{levelText}</span>
-                                      </div>
-                                    )}
+                                    {/* 4. Thành tích */}
+                                    <div className="bg-amber-100/90 border border-amber-300/80 p-2.5 rounded-xl flex flex-col justify-center min-w-0 shadow-2xs">
+                                      <span className="text-[9px] font-extrabold text-amber-800 uppercase tracking-wider block mb-0.5">Thành tích</span>
+                                      <span className="text-xs font-black text-amber-950 truncate">{achievementName}</span>
+                                    </div>
                                   </div>
 
-                                  {/* Footer: Academic Year */}
+                                  {/* Footer */}
                                   <div className="text-[10px] text-slate-400 font-semibold pt-1 border-t border-slate-100 flex items-center justify-between">
-                                    <span>Năm học: <strong>{a.achievement?.academicYearId || a.academicYearId || "AY-2026"}</strong></span>
-                                    {a.achievement?.teacherName && (
-                                      <span className="truncate max-w-[150px]">GV: {a.achievement.teacherName}</span>
-                                    )}
+                                    <span>Năm học: <strong>{academicYear}</strong></span>
+                                    {levelVal && <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-600 font-bold">Cấp độ: {levelVal}</span>}
                                   </div>
                                 </div>
                               );
                             })}
+                          </div>
+                        )}
+                      </div>
+                    )}}
                           </div>
                         )}
                       </div>

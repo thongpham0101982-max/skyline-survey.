@@ -77,7 +77,8 @@ export async function GET(req: NextRequest) {
               include: {
                 exam: {
                   include: {
-                    round: true
+                    round: true,
+                    category: true
                   }
                 }
               }
