@@ -1705,28 +1705,92 @@ export default function TeacherStudentProfilePage() {
 
                     {/* TAB: ACHIEVEMENTS */}
                     {activeTab === "achievements" && (
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-3">Thành tích & Khen thưởng của Học sinh</h4>
+                      <div className="space-y-5 animate-in fade-in duration-300">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                          <div>
+                            <h4 className="text-sm font-black text-slate-800 uppercase tracking-wide">Thành tích &amp; Khen thưởng của Học sinh</h4>
+                            <p className="text-xs text-slate-400 font-semibold mt-0.5">Danh sách các giải thưởng, huy chương &amp; chứng nhận học sinh đã đạt được</p>
+                          </div>
+                          {profileData?.achievements && profileData.achievements.length > 0 && (
+                            <span className="text-xs font-black bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20 px-3 py-1 rounded-full uppercase self-start sm:self-auto">
+                              {profileData.achievements.length} giải thưởng
+                            </span>
+                          )}
+                        </div>
+
                         {!profileData?.achievements || profileData.achievements.length === 0 ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa có ghi nhận giải thưởng hoặc thành tích nổi bật nào.</div>
+                          <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl py-14 text-center text-slate-400 space-y-2 shadow-2xs">
+                            <Award className="w-12 h-12 mx-auto opacity-20 text-slate-400 mb-1" />
+                            <h5 className="font-extrabold text-slate-600 text-sm">Chưa ghi nhận thành tích nào</h5>
+                            <p className="text-xs text-slate-400 font-medium">Học sinh chưa có giải thưởng hoặc kết quả khen thưởng trong hệ thống.</p>
+                          </div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {profileData.achievements.map((a: any) => (
-                              <div key={a.id} className="bg-amber-50/30 border border-amber-200/50 p-4 rounded-2xl flex items-start gap-3 hover:shadow-xs transition-all">
-                                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs border border-amber-100">
-                                  <Award className="w-5 h-5" />
-                                </div>
-                                <div className="text-xs font-semibold space-y-1">
-                                  <h4 className="font-black text-slate-800">{a.achievement?.name}</h4>
-                                  <div className="text-amber-800 font-extrabold uppercase tracking-wider text-[9px] bg-amber-100/50 border border-amber-200/40 px-2 py-0.5 rounded inline-block">
-                                    Cấp độ giải: {a.achievement?.level || "N/A"}
+                            {profileData.achievements.map((item: any) => {
+                              const ach = item.achievement || item;
+                              const achName = ach.name || "Giải thưởng / Khen thưởng";
+                              const catName = getCategoryLabel(ach.category || ach.examCategoryName);
+                              const levelName = getLevelLabel(ach.level);
+                              const yearName = getYearLabel(ach);
+                              const examName = ach.exam?.name || ach.examName;
+                              const teacherName = ach.teacherName || ach.teacher?.teacherName || "Chưa xác định";
+
+                              const nameLower = achName.toLowerCase();
+                              const isGold = nameLower.includes("vàng") || nameLower.includes("nhất");
+                              const isSilver = nameLower.includes("bạc") || nameLower.includes("nhì");
+                              const isBronze = nameLower.includes("đồng") || nameLower.includes("ba");
+
+                              return (
+                                <div 
+                                  key={item.id || ach.id} 
+                                  className="bg-white border border-slate-200/80 hover:border-teal-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between space-y-3.5 group relative overflow-hidden"
+                                >
+                                  {/* Background highlight */}
+                                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-teal-500/5 to-transparent rounded-bl-full pointer-events-none" />
+
+                                  <div className="space-y-2.5 relative z-10">
+                                    {/* Top Badges */}
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#009085] bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/80 shadow-2xs">
+                                        {catName}
+                                      </span>
+                                      <span className="text-[10px] font-extrabold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200/80 shadow-2xs">
+                                        {levelName}
+                                      </span>
+                                    </div>
+
+                                    {/* Title & Icon */}
+                                    <div className="flex items-start gap-3 pt-1">
+                                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-2xs ${
+                                        isGold ? 'bg-amber-100 text-amber-600 border border-amber-300' :
+                                        isSilver ? 'bg-slate-100 text-slate-600 border border-slate-300' :
+                                        isBronze ? 'bg-orange-100 text-orange-600 border border-orange-300' :
+                                        'bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20'
+                                      }`}>
+                                        {isGold ? <Trophy className="w-5 h-5" /> : isSilver || isBronze ? <Medal className="w-5 h-5" /> : <Award className="w-5 h-5" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <h5 className="font-black text-slate-850 text-sm leading-snug group-hover:text-[#009085] transition-colors">
+                                          {achName}
+                                        </h5>
+                                        {examName && (
+                                          <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1 truncate">
+                                            <Sparkles className="w-3.5 h-3.5 text-[#48BFE3] flex-shrink-0" />
+                                            <span className="truncate">{examName}</span>
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="text-[10px] text-slate-400 font-bold">
-                                    Năm học: {a.achievement?.academicYearId || "N/A"}
+
+                                  {/* Footer Meta */}
+                                  <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium gap-2 relative z-10">
+                                    <span className="truncate">GVHD: <strong className="text-slate-700 font-bold">{teacherName}</strong></span>
+                                    <span className="font-mono text-slate-500 font-bold bg-slate-100/80 px-2 py-0.5 rounded border border-slate-200/80 flex-shrink-0">{yearName}</span>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </div>
