@@ -174,14 +174,14 @@ export function StudentProfilesAdminClient({
 
   // Filter students by local search query for instant 0ms latency
   const filteredStudentsList = (students || []).filter((s: any) => {
+    if (!s) return false
     if (!searchQuery.trim()) return true
     const q = searchQuery.trim().toLowerCase()
-    return (
-      (s.studentName && s.studentName.toLowerCase().includes(q)) ||
-      (s.studentCode && s.studentCode.toLowerCase().includes(q)) ||
-      (s.className && s.className.toLowerCase().includes(q)) ||
-      (s.classCode && s.classCode.toLowerCase().includes(q))
-    );
+    const sName = (s.studentName || "").toLowerCase()
+    const sCode = (s.studentCode || "").toLowerCase()
+    const cName = (s.className || s.class?.className || "").toLowerCase()
+    const cCode = (s.classCode || s.class?.classCode || "").toLowerCase()
+    return sName.includes(q) || sCode.includes(q) || cName.includes(q) || cCode.includes(q)
   })
 
   // Load detailed profile for selected student
@@ -498,7 +498,7 @@ export function StudentProfilesAdminClient({
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs uppercase flex-shrink-0 ${
                         selectedStudentId === s.id ? "bg-[#48BFE3] text-white shadow-2xs" : "bg-slate-200/80 text-slate-700"
                       }`}>
-                        {s.studentName.split(" ").pop()?.charAt(0) || "H"}
+                        {(s.studentName || "H").split(" ").pop()?.charAt(0) || "H"}
                       </div>
                       <div className="min-w-0 truncate">
                         <div className="truncate font-black text-slate-800 text-xs">{s.studentName}</div>
