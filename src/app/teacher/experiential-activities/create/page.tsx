@@ -582,7 +582,7 @@ export default function CreateActivityWizard() {
                   targetMode === 'student' ? 'bg-white text-[#6930C3] shadow-sm font-black' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                Theo Học sinh lẻ
+                Theo Đội/Nhóm
               </button>
             </div>
 
@@ -709,7 +709,7 @@ export default function CreateActivityWizard() {
               /* Specific Students Search Mode */
               <div className="space-y-4">
                 <div className="p-4 bg-[#72EFDD]/15 border border-[#72EFDD]/40 rounded-2xl text-xs text-slate-700 font-medium leading-relaxed">
-                  Chọn học sinh lẻ áp dụng cho các CLB, đội tuyển ngoại khóa hoặc dự án chuyên đề. Học sinh được chọn ở đây sẽ được lập danh sách riêng.
+                  Chọn danh sách học sinh theo Đội/Nhóm áp dụng cho các CLB, đội tuyển ngoại khóa hoặc dự án chuyên đề. Học sinh được chọn ở đây sẽ được lập danh sách riêng.
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
