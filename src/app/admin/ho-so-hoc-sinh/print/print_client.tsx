@@ -2,7 +2,7 @@
 
 import { useSearchParams } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Loader2, GraduationCap, User, Award, FileText, Compass, ClipboardCheck, BookOpen, MessageSquare } from "lucide-react"
+import { Loader2, GraduationCap, User, UserCheck, Award, FileText, Compass, ClipboardCheck, BookOpen, MessageSquare } from "lucide-react"
 
 export default function AdminStudentProfilesPrintPage() {
   useEffect(() => {
