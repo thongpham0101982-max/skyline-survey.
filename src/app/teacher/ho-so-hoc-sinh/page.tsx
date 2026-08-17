@@ -1736,7 +1736,7 @@ export default function TeacherStudentProfilePage() {
                                     <th className="py-3.5 px-4">Kỳ thi / Cuộc thi</th>
                                     <th className="py-3.5 px-4">Lĩnh vực</th>
                                     <th className="py-3.5 px-4 text-center">Cấp độ / Hạng giải</th>
-                                    <th className="py-3.5 px-4">GV Hướng dẫn</th>
+                                    
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
@@ -1747,8 +1747,7 @@ export default function TeacherStudentProfilePage() {
                                     const levelName = getLevelLabel(ach.level);
                                     const yearName = getYearLabel(ach);
                                     const examName = ach.exam?.name || ach.examName || "Ngoài hệ thống";
-                                    const teacherName = ach.teacherName || ach.teacher?.teacherName || "Chưa xác định";
-
+                                    
                                     const nameLower = achName.toLowerCase();
                                     const isGold = nameLower.includes("vàng") || nameLower.includes("nhất");
                                     const isSilver = nameLower.includes("bạc") || nameLower.includes("nhì");
@@ -1802,9 +1801,7 @@ export default function TeacherStudentProfilePage() {
                                             {levelName}
                                           </span>
                                         </td>
-                                        <td className="py-3.5 px-4 text-slate-600 font-medium whitespace-nowrap">
-                                          {teacherName}
-                                        </td>
+                                        
                                       </tr>
                                     );
                                   })}
