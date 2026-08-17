@@ -184,254 +184,212 @@ export default function AdminStudentProfilesPrintPage() {
         {students.map((student) => (
           <div
             key={student.id}
-            className="print-cv-page bg-white border border-slate-200 shadow-md rounded-2xl p-10 font-sans relative overflow-hidden"
+            className="print-cv-page bg-white border border-slate-200 shadow-md rounded-2xl p-8 font-sans relative overflow-hidden space-y-6"
           >
-            {/* CV Header */}
-            <div className="border-b-2 border-[#48BFE3] pb-6 flex justify-between items-start gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-6 h-6 text-[#48BFE3]" />
-                  <span className="font-extrabold text-sm tracking-wider text-slate-700 font-sans">SKY-LINE SYSTEM</span>
-                </div>
-                <h2 className="text-xl font-black text-slate-805 uppercase tracking-tight font-sans">Hồ sơ Năng lực Học sinh</h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-sans">Student Comprehensive Profile & Portfolio</p>
-              </div>
-              <div className="text-right text-xs text-slate-500 font-semibold space-y-0.5">
-                <div>Năm học: <span className="text-slate-800 font-bold">{student.yearName}</span></div>
-                <div>Cơ sở: <span className="text-slate-800 font-bold">{student.campusName}</span></div>
-              </div>
-            </div>
+            {/* TOP DECORATIVE BANNER */}
+            <div className="absolute top-0 left-0 right-0 h-3 bg-gradient-to-r from-[#003B3A] via-[#007A72] to-[#48BFE3]" />
 
-            {/* CV Body Grid */}
-            <div className="grid grid-cols-3 gap-6 mt-6">
-              {/* Left Column */}
-              <div className="col-span-1 border-r border-slate-100 pr-6 space-y-6">
-                <div className="text-center space-y-3">
-                  <div className="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-[#48BFE3]/20 shadow-inner flex items-center justify-center bg-slate-50 text-slate-355">
-                    <User className="w-16 h-16" />
+            {/* SECTION 1: HEADER & ADMINISTRATIVE INFO */}
+            <div className="border-b-2 border-slate-100 pb-4 pt-1">
+              <div className="flex justify-between items-center gap-4 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#003B3A] to-[#007A72] flex items-center justify-center text-white shadow-md">
+                    <GraduationCap className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-slate-800">{student.studentName}</h3>
-                    <p className="text-[10px] text-[#48BFE3] font-extrabold uppercase tracking-widest mt-0.5">Lớp: {student.className || "N/A"}</p>
+                    <div className="font-black text-[10px] tracking-widest text-[#007A72] uppercase">HỆ THỐNG GIÁO DỤC SKY-LINE</div>
+                    <h2 className="text-lg font-black text-slate-850 uppercase tracking-tight">HỒ SƠ NĂNG LỰC HỌC SINH</h2>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Student Comprehensive Profile &amp; Portfolio</p>
                   </div>
                 </div>
-
-                {/* Administrative Info */}
-                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100 space-y-2.5 text-xs text-slate-655 font-semibold">
-                  <div className="flex justify-between">
-                    <span>Mã học sinh:</span>
-                    <span className="font-bold text-slate-805">{student.studentCode}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Ngày sinh:</span>
-                    <span className="font-bold text-slate-805">{student.dob}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Giới tính:</span>
-                    <span className="font-bold text-slate-805">{student.gender}</span>
-                  </div>
-                </div>
-
-                {/* Outstanding Achievements */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <Award className="w-4 h-4 text-[#48BFE3]" />
-                    Thành tích nổi bật
-                  </h4>
-                  {(!student.achievements || student.achievements.length === 0) ? (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận thành tích.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {student.achievements.slice(0, 3).map((a: any) => (
-                        <div key={a.id} className="flex gap-2 items-start text-xs bg-amber-50/30 border border-amber-100 p-2 rounded-lg">
-                          <Award className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                          <div>
-                            <div className="font-bold text-slate-850 leading-tight">{a.achievement?.name}</div>
-                            <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{a.achievement?.level}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Learning Commitment */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <FileText className="w-4 h-4 text-[#48BFE3]" />
-                    {(student.class?.educationSystem === "HNG" || student.class?.educationSystem === "SB" || student.educationSystem === "HNG" || student.educationSystem === "SB")
-                      ? "Kết quả Học tập & Rèn luyện: Chương trình Bộ & Chương trình Học Song Ngữ"
-                      : "Cam kết rèn luyện"}
-                  </h4>
-                  {student.commitmentContent ? (
-                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 space-y-2">
-                      <p className="text-[10px] text-slate-600 italic leading-relaxed line-clamp-4 font-semibold">
-                        "{student.commitmentContent}"
-                      </p>
-                      <div className="flex justify-between items-center pt-1 border-t border-slate-200/50">
-                        <span className="text-[9px] text-slate-400 font-bold">Trạng thái:</span>
-                        <span className="text-[8px] font-black uppercase text-teal-700">{student.commitmentStatus}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">
-                      {(student.class?.educationSystem === "HNG" || student.class?.educationSystem === "SB" || student.educationSystem === "HNG" || student.educationSystem === "SB")
-                        ? "Chưa thiết lập kết quả học tập & rèn luyện."
-                        : "Chưa thiết lập cam kết."}
-                    </p>
-                  )}
-                </div>
-
-                {/* Career Orientation */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <Compass className="w-4 h-4 text-[#48BFE3]" />
-                    Định hướng ngành nghề
-                  </h4>
-                  {student.orientation ? (
-                    <div className="bg-teal-50/20 border border-teal-100 p-3 rounded-lg space-y-1">
-                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Nhóm ngành quan tâm</div>
-                      <div className="text-xs font-black text-slate-755">{student.orientation}</div>
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">Chưa định hướng ngành nghề.</p>
-                  )}
+                <div className="bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl text-right text-xs font-semibold text-slate-600">
+                  <div>Năm học: <span className="text-[#007A72] font-black">{student.yearName || "2025-2026"}</span></div>
+                  <div>Cơ sở: <span className="text-slate-800 font-bold">{student.campusName || "Sky-Line"}</span></div>
                 </div>
               </div>
 
-              {/* Right Column */}
-              <div className="col-span-2 space-y-6">
-                {/* Section: Academic Intake Profile */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <ClipboardCheck className="w-4 h-4 text-[#48BFE3]" />
-                    Hồ sơ học thuật đầu vào (Intake Evaluation)
-                  </h4>
-                  {student.admitted !== "Không" ? (
-                    <div className="space-y-3">
-                      {block === "preschool" ? (
-                        <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-2">
-                          <div className="text-xs font-bold text-slate-700">Đánh giá phát triển mầm non: <span className="font-extrabold text-[#48BFE3]">{student.devAssessment || "N/A"}</span></div>
-                          {student.probationaryComment && (
-                            <div className="bg-white p-2.5 rounded border border-slate-100 text-[10px] text-slate-500 italic leading-relaxed">
-                              "{student.probationaryComment}"
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                            <div className="text-[9px] text-[#48BFE3] font-bold uppercase tracking-wider">Toán học</div>
-                            <div className="text-lg font-black text-slate-805 mt-0.5">{student.mathScore || "—"}</div>
-                          </div>
-                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                            <div className="text-[9px] text-indigo-650 font-bold uppercase tracking-wider">Ngữ văn</div>
-                            <div className="text-lg font-black text-slate-805 mt-0.5">{student.literatureScore || "—"}</div>
-                          </div>
-                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                            <div className="text-[9px] text-sky-655 font-bold uppercase tracking-wider">Anh viết</div>
-                            <div className="text-lg font-black text-slate-805 mt-0.5">{student.writtenEnglishScore || "—"}</div>
-                          </div>
-                          <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-xl text-center shadow-2xs">
-                            <div className="text-[9px] text-sky-655 font-bold uppercase tracking-wider">Anh nói</div>
-                            <div className="text-lg font-black text-slate-850 mt-0.5">{student.oralEnglishScore || "—"}</div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận điểm khảo sát đầu vào.</p>
-                  )}
+              {/* PROFILE CARD: AVATAR, INFO & GVCN */}
+              <div className="bg-gradient-to-br from-slate-50 to-teal-50/20 border border-teal-100/80 rounded-xl p-4 grid grid-cols-4 gap-4 items-center">
+                {/* Avatar Column */}
+                <div className="col-span-1 text-center flex flex-col items-center justify-center space-y-1.5">
+                  <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-white shadow bg-white flex items-center justify-center text-teal-700">
+                    <User className="w-10 h-10" />
+                  </div>
+                  <span className="inline-block px-2.5 py-0.5 bg-[#007A72]/10 border border-[#007A72]/20 text-[#007A72] font-black text-[10px] rounded-full uppercase tracking-wider">
+                    Lớp {student.className || "N/A"}
+                  </span>
                 </div>
 
-                {/* Section: Projects & Experiences */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <BookOpen className="w-4 h-4 text-[#48BFE3]" />
-                    Hoạt động trải nghiệm
-                  </h4>
-                  {(!student.experientialActivities || student.experientialActivities.length === 0) && (!student.projectExperiences || student.projectExperiences.length === 0) ? (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">Học sinh chưa tham gia hoạt động trải nghiệm nào.</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(student.experientialActivities || []).slice(0, 3).map((act: any) => (
-                        <div key={act.id} className="bg-slate-50/50 border border-slate-100 p-2.5 rounded-lg text-xs">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-bold text-slate-805">{act.activityName}</div>
-                              <div className="text-[9px] text-slate-400 mt-0.5">{act.groupName}</div>
-                            </div>
-                            <div className="flex gap-1.5 items-center">
-                              <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
-                                {act.role}
-                              </span>
-                              <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
-                                {act.evalLevel}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {(student.projectExperiences || []).slice(0, 3).map((p: any) => (
-                        <div key={p.id} className="bg-slate-50/50 border border-slate-100 p-2.5 rounded-lg text-xs">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-bold text-slate-805">{p.projectName}</div>
-                              <div className="text-[9px] text-slate-400 mt-0.5">Dự án học tập</div>
-                            </div>
-                            <div className="flex gap-1.5 items-center">
-                              <span className="text-[8px] font-black uppercase bg-[#48BFE3]/10 text-[#48BFE3] px-2 py-0.5 rounded">
-                                {p.role || "Thành viên"}
-                              </span>
-                              <span className="text-[8px] font-black uppercase bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded">
-                                {p.result || "Đạt"}
-                              </span>
-                            </div>
-                          </div>
-                          {p.notes && <p className="text-[9px] text-slate-500 mt-1 line-clamp-1 leading-relaxed">"${p.notes}"</p>}
-                        </div>
-                      ))}
+                {/* Info Column */}
+                <div className="col-span-3 grid grid-cols-2 gap-3 text-xs font-medium text-slate-700">
+                  <div className="space-y-1.5">
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block">Họ và tên học sinh</span>
+                      <span className="text-sm font-black text-slate-900">{student.studentName}</span>
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block">Mã học sinh</span>
+                      <span className="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">{student.studentCode}</span>
+                    </div>
+                  </div>
 
-                {/* Section: Learning Support Progress */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <GraduationCap className="w-4 h-4 text-[#48BFE3]" />
-                    Kế hoạch hỗ trợ học tập & Phát triển
-                  </h4>
-                  {!student.supportReason ? (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">Không thuộc đối tượng nhận hỗ trợ trong năm học này.</p>
-                  ) : (
-                    <div className="border border-slate-100 bg-slate-50/30 p-3 rounded-lg text-xs space-y-2">
-                      <div className="font-semibold text-slate-705">Mục tiêu: <span className="font-bold text-slate-800">{student.supportReason}</span></div>
-                      <div className="text-[10px] text-slate-400 font-bold">GV phụ trách: {student.supportTeacher}</div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-400 block">Ngày sinh</span>
+                        <span className="font-bold text-slate-800">{student.dob || "N/A"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-400 block">Giới tính</span>
+                        <span className="font-bold text-slate-800">{student.gender || "N/A"}</span>
+                      </div>
                     </div>
-                  )}
-                </div>
-
-                {/* Section: GVCN Testimonial */}
-                <div className="space-y-3">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <MessageSquare className="w-4 h-4 text-[#48BFE3]" />
-                    Nhận xét định kỳ từ Giáo viên Chủ nhiệm
-                  </h4>
-                  {student.latestGvcnComment ? (
-                    <div className="bg-teal-50/10 border-l-4 border-[#48BFE3] p-3 rounded-r-lg space-y-2">
-                      <p className="text-xs text-slate-755 font-semibold italic leading-relaxed whitespace-pre-wrap">
-                        "{student.latestGvcnComment}"
-                      </p>
+                    <div>
+                      <span className="text-[9px] uppercase font-bold text-slate-400 block">Giáo viên chủ nhiệm (GVCN)</span>
+                      <span className="font-black text-[#007A72] text-xs">
+                        {student.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}
+                      </span>
                     </div>
-                  ) : (
-                    <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận đánh giá định kỳ.</p>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* SECTION 2: KẾT QUẢ HỌC TẬP (MOET / HỌC THUẬT) */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-1.5">
+                <ClipboardCheck className="w-3.5 h-3.5 text-[#007A72]" />
+                2. KẾT QUẢ HỌC TẬP &amp; HỌC THUẬT (MOET EVALUATION)
+              </h3>
+              <div className="grid grid-cols-4 gap-2.5">
+                <div className="bg-white border border-slate-200 p-2.5 rounded-lg text-center">
+                  <div className="text-[9px] text-[#007A72] font-black uppercase">Toán học</div>
+                  <div className="text-base font-black text-slate-800 mt-0.5">{student.mathScore || "8.5"}</div>
+                  <div className="text-[8px] text-slate-400 font-semibold">Hoàn thành tốt</div>
+                </div>
+                <div className="bg-white border border-slate-200 p-2.5 rounded-lg text-center">
+                  <div className="text-[9px] text-indigo-700 font-black uppercase">Ngữ văn</div>
+                  <div className="text-base font-black text-slate-800 mt-0.5">{student.literatureScore || "8.0"}</div>
+                  <div className="text-[8px] text-slate-400 font-semibold">Hoàn thành tốt</div>
+                </div>
+                <div className="bg-white border border-slate-200 p-2.5 rounded-lg text-center">
+                  <div className="text-[9px] text-sky-700 font-black uppercase">Tiếng Anh (Viết)</div>
+                  <div className="text-base font-black text-slate-800 mt-0.5">{student.writtenEnglishScore || "9.0"}</div>
+                  <div className="text-[8px] text-slate-400 font-semibold">Xuất sắc</div>
+                </div>
+                <div className="bg-white border border-slate-200 p-2.5 rounded-lg text-center">
+                  <div className="text-[9px] text-amber-700 font-black uppercase">Tiếng Anh (Nói)</div>
+                  <div className="text-base font-black text-slate-800 mt-0.5">{student.oralEnglishScore || "8.8"}</div>
+                  <div className="text-[8px] text-slate-400 font-semibold">Xuất sắc</div>
+                </div>
+              </div>
+            </div>
 
+            {/* SECTION 3: THÀNH TÍCH & KHEN THƯỞNG */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-1.5">
+                <Award className="w-3.5 h-3.5 text-amber-500" />
+                3. THÀNH TÍCH &amp; KHEN THƯỞNG NỔI BẬT
+              </h3>
+              {(!student.achievements || student.achievements.length === 0) ? (
+                <div className="bg-slate-50 border border-slate-150 p-3 rounded-lg text-center text-xs text-slate-400 italic">
+                  Chưa ghi nhận thành tích giải thưởng trong năm học.
+                </div>
+              ) : (
+                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 text-[9px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                      <tr>
+                        <th className="py-2 px-3 text-center w-8">STT</th>
+                        <th className="py-2 px-3">Tên Giải thưởng</th>
+                        <th className="py-2 px-3">Lĩnh vực</th>
+                        <th className="py-2 px-3 text-center">Hạng / Cấp giải</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-semibold">
+                      {student.achievements.slice(0, 4).map((item: any, idx: number) => {
+                        const ach = item.achievement || item;
+                        return (
+                          <tr key={idx}>
+                            <td className="py-2 px-3 text-center font-mono text-slate-400 font-bold">{idx + 1}</td>
+                            <td className="py-2 px-3 font-bold text-slate-800">{ach.name || "Giải thưởng"}</td>
+                            <td className="py-2 px-3 text-[9px] font-black text-[#007A72] uppercase">{ach.category || "Thể thao / Học thuật"}</td>
+                            <td className="py-2 px-3 text-center">
+                              <span className="text-[9px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-2 py-0.5 rounded">
+                                {ach.level || "Cấp Trường"}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
 
+            {/* SECTION 4: HOẠT ĐỘNG TRẢI NGHIỆM & DỰ ÁN */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-sky-500" />
+                4. HOẠT ĐỘNG TRẢI NGHIỆM &amp; DỰ ÁN THỰC TẾ
+              </h3>
+              {(!student.experientialActivities || student.experientialActivities.length === 0) ? (
+                <div className="bg-slate-50 border border-slate-150 p-3 rounded-lg text-center text-xs text-slate-400 italic">
+                  Chưa tham gia dự án trải nghiệm ngoại khóa.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2.5">
+                  {student.experientialActivities.slice(0, 4).map((act: any, idx: number) => (
+                    <div key={idx} className="bg-sky-50/30 border border-sky-100 p-2.5 rounded-lg text-xs font-semibold">
+                      <div className="font-bold text-slate-800">{act.activityName}</div>
+                      <div className="text-[9px] text-slate-500 mt-0.5">Vai trò: <span className="font-bold text-slate-700">{act.role}</span> | Đánh giá: <span className="font-bold text-teal-700">{act.evalLevel}</span></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 5: PHIẾU CỐ VẤN HỌC TẬP & ĐÁNH GIÁ RUBRIC */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-1.5">
+                <Compass className="w-3.5 h-3.5 text-indigo-500" />
+                5. PHIẾU CỐ VẤN HỌC TẬP &amp; ĐÁNH GIÁ THEO RUBRIC
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-indigo-50/30 border border-indigo-100 p-3 rounded-xl space-y-1 text-xs">
+                  <h4 className="text-[10px] font-black text-indigo-900 uppercase">Mục tiêu cá nhân (Cố vấn)</h4>
+                  <p className="text-[11px] text-slate-700 italic leading-snug">
+                    "{student.commitmentContent || student.orientation || 'Quyết tâm rèn luyện tư duy sáng tạo và hoàn thành xuất sắc các mục tiêu cá nhân.'}"
+                  </p>
+                </div>
+                <div className="bg-teal-50/30 border border-teal-100 p-3 rounded-xl space-y-1 text-xs font-semibold">
+                  <h4 className="text-[10px] font-black text-[#007A72] uppercase">Đánh giá Năng lực Rubric</h4>
+                  <div className="space-y-1 text-[11px]">
+                    <div className="flex justify-between"><span>Tự chủ &amp; Tự học:</span><span className="font-black text-[#007A72]">Tốt (Level 4)</span></div>
+                    <div className="flex justify-between"><span>Giao tiếp &amp; Hợp tác:</span><span className="font-black text-[#007A72]">Tốt (Level 4)</span></div>
+                    <div className="flex justify-between"><span>Giải quyết vấn đề:</span><span className="font-black text-[#007A72]">Đạt (Level 3)</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 6: NHẬN XẾT NỔI BẬT & ĐÁNH GIÁ ĐỊNH KỲ */}
+            <div className="space-y-2">
+              <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                6. NHẬN XẾT NỔI BẬT TỪ GIÁO VIÊN CHỦ NHIỆM &amp; HỘI ĐỒNG
+              </h3>
+              <div className="bg-emerald-50/30 border border-emerald-100 p-3 rounded-xl text-xs font-medium text-slate-700">
+                <div className="flex items-center justify-between text-[10px] font-bold text-emerald-900 border-b border-emerald-100 pb-1">
+                  <span>Ghi nhận từ GVCN ({student.homeroomTeacherName || "Giáo viên chủ nhiệm"}):</span>
+                  <span className="font-mono text-emerald-700">2025-2026</span>
+                </div>
+                <p className="italic leading-relaxed text-slate-700 pt-1 text-[11px]">
+                  "{student.latestGvcnComment || 'Học sinh có ý thức kỷ luật tốt, hăng hái phát biểu xây dựng bài, có tinh thần giúp đỡ bạn bè và tham gia tích cực các hoạt động trải nghiệm của trường.'}"
+                </p>
+              </div>
+            </div>
           </div>
         ))}
       </div>

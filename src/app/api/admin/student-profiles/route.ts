@@ -64,7 +64,15 @@ export async function GET(req: NextRequest) {
     const students = await prisma.student.findMany({
       where,
       include: {
-        class: true,
+        class: {
+          include: {
+            teachers: {
+              include: {
+                teacher: true
+              }
+            }
+          }
+        },
         campus: true,
         academicYear: true,
         learningCommitments: true,
@@ -306,8 +314,17 @@ export async function GET(req: NextRequest) {
         }
       }
 
+      const gvcnAssignment = s.class?.teachers?.find((t: any) => 
+        t.roleInClass?.toUpperCase() === "HOMEROOM" || 
+        t.roleInClass?.toUpperCase() === "GVCN" || 
+        t.teacherId === s.class?.homeroomTeacherId
+      ) || s.class?.teachers?.[0];
+
+      const homeroomTeacherName = gvcnAssignment?.teacher?.teacherName || gvcnAssignment?.teacher?.fullName || "Chưa phân công";
+
       return {
         id: s.id,
+        homeroomTeacherName,
         yearName,
         campusName,
         classCode,
