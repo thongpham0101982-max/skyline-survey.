@@ -565,7 +565,7 @@ export function StudentProfilesAdminClient({
                       <Icon className="w-3.5 h-3.5" />
                       <span>{tab.label}</span>
                     </button>
-                  )
+                  );
                 })}
               </div>
 
@@ -652,7 +652,6 @@ export function StudentProfilesAdminClient({
                                           </div>
                                         </div>
                                       );
-                                    })}
                                   </div>
                                 )}
                               </div>
@@ -1801,15 +1800,6 @@ return (
                                   </div>
                                 </div>
                               );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}}
-                          </div>
-                        )}
-                      </div>
-                    )}}
                           </div>
                         )}
                       </div>

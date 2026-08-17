@@ -6,6 +6,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-border: #e2e8f0;
+  --color-input: #e2e8f0;
+  --color-ring: #00A99D;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-muted: #f1f5f9;
+  --color-muted-foreground: #64748b;
   /* SKY-LINE 2024 OFFICIAL 10-STEP COLOR PALETTE */
   /* 1. Deep Violet (116, 0, 184) */
   --color-brand-violet-dark: #7400B8;
@@ -113,10 +120,10 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-slate-200 outline-none;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white text-slate-800;
   }
   html {
     @apply font-sans;
