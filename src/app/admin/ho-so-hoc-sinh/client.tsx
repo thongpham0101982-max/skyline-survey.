@@ -652,9 +652,9 @@ export function StudentProfilesAdminClient({
                                           </div>
                                         </div>
                                       );
+                                     })}
                                   </div>
                                 )}
-                              </div>
 
                               {/* Career Orientation */}
                               <div className="space-y-3">
@@ -1800,9 +1800,9 @@ return (
                                   </div>
                                 </div>
                               );
-                          </div>
-                        )}
-                      </div>
+                                     })}
+                                  </div>
+                                )}
                     )}
 
                     {activeTab === "orientation" && (
