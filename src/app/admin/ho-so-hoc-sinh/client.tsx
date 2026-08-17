@@ -1777,72 +1777,92 @@ return (
                             <p className="text-xs text-slate-400 font-medium">Học sinh chưa có giải thưởng hoặc kết quả khen thưởng trong hệ thống.</p>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {selectedStudent.achievements.map((item: any) => {
-                              const ach = item.achievement || item;
-                              const achName = ach.name || "Giải thưởng / Khen thưởng";
-                              const catName = getCategoryLabel(ach.category || ach.examCategoryName);
-                              const levelName = getLevelLabel(ach.level);
-                              const yearName = getYearLabel(ach);
-                              const examName = ach.exam?.name || ach.examName;
-                              const teacherName = ach.teacherName || ach.teacher?.teacherName || "Chưa xác định";
+                          <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-left border-collapse">
+                                <thead>
+                                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                                    <th className="py-3.5 px-4 text-center w-12">STT</th>
+                                    <th className="py-3.5 px-4">Năm học</th>
+                                    <th className="py-3.5 px-4">Tên Giải thưởng / Thành tích</th>
+                                    <th className="py-3.5 px-4">Kỳ thi / Cuộc thi</th>
+                                    <th className="py-3.5 px-4">Lĩnh vực</th>
+                                    <th className="py-3.5 px-4 text-center">Cấp độ / Hạng giải</th>
+                                    <th className="py-3.5 px-4">GV Hướng dẫn</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                                  {selectedStudent.achievements.map((item: any, idx: number) => {
+                                    const ach = item.achievement || item;
+                                    const achName = ach.name || "Giải thưởng / Khen thưởng";
+                                    const catName = getCategoryLabel(ach.category || ach.examCategoryName);
+                                    const levelName = getLevelLabel(ach.level);
+                                    const yearName = getYearLabel(ach);
+                                    const examName = ach.exam?.name || ach.examName || "Ngoài hệ thống";
+                                    const teacherName = ach.teacherName || ach.teacher?.teacherName || "Chưa xác định";
 
-                              const nameLower = achName.toLowerCase();
-                              const isGold = nameLower.includes("vàng") || nameLower.includes("nhất");
-                              const isSilver = nameLower.includes("bạc") || nameLower.includes("nhì");
-                              const isBronze = nameLower.includes("đồng") || nameLower.includes("ba");
+                                    const nameLower = achName.toLowerCase();
+                                    const isGold = nameLower.includes("vàng") || nameLower.includes("nhất");
+                                    const isSilver = nameLower.includes("bạc") || nameLower.includes("nhì");
+                                    const isBronze = nameLower.includes("đồng") || nameLower.includes("ba");
 
-                              return (
-                                <div 
-                                  key={item.id || ach.id} 
-                                  className="bg-white border border-slate-200/80 hover:border-teal-200 rounded-2xl p-4 sm:p-5 shadow-2xs hover:shadow-md transition-all duration-300 flex flex-col justify-between space-y-3.5 group relative overflow-hidden"
-                                >
-                                  {/* Background highlight */}
-                                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-teal-500/5 to-transparent rounded-bl-full pointer-events-none" />
-
-                                  <div className="space-y-2.5 relative z-10">
-                                    {/* Top Badges */}
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-[#009085] bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200/80 shadow-2xs">
-                                        {catName}
-                                      </span>
-                                      <span className="text-[10px] font-extrabold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200/80 shadow-2xs">
-                                        {levelName}
-                                      </span>
-                                    </div>
-
-                                    {/* Title & Icon */}
-                                    <div className="flex items-start gap-3 pt-1">
-                                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-2xs ${
-                                        isGold ? 'bg-amber-100 text-amber-600 border border-amber-300' :
-                                        isSilver ? 'bg-slate-100 text-slate-600 border border-slate-300' :
-                                        isBronze ? 'bg-orange-100 text-orange-600 border border-orange-300' :
-                                        'bg-[#00A99D]/10 text-[#00A99D] border border-[#00A99D]/20'
-                                      }`}>
-                                        {isGold ? <Trophy className="w-5 h-5" /> : isSilver || isBronze ? <Medal className="w-5 h-5" /> : <Award className="w-5 h-5" />}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <h5 className="font-black text-slate-850 text-sm leading-snug group-hover:text-[#009085] transition-colors">
-                                          {achName}
-                                        </h5>
-                                        {examName && (
-                                          <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-1 truncate">
-                                            <Sparkles className="w-3.5 h-3.5 text-[#48BFE3] flex-shrink-0" />
-                                            <span className="truncate">{examName}</span>
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Footer Meta */}
-                                  <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium gap-2 relative z-10">
-                                    <span className="truncate">GVHD: <strong className="text-slate-700 font-bold">{teacherName}</strong></span>
-                                    <span className="font-mono text-slate-500 font-bold bg-slate-100/80 px-2 py-0.5 rounded border border-slate-200/80 flex-shrink-0">{yearName}</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                                    return (
+                                      <tr key={item.id || ach.id || idx} className="hover:bg-teal-50/20 transition-colors">
+                                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono text-[11px] font-bold">
+                                          {idx + 1}
+                                        </td>
+                                        <td className="py-3.5 px-4 font-mono font-bold text-slate-600 whitespace-nowrap">
+                                          <span className="bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200/60 text-[11px]">
+                                            {yearName}
+                                          </span>
+                                        </td>
+                                        <td className="py-3.5 px-4 font-black text-slate-800">
+                                          <div className="flex items-center gap-2">
+                                            <span className={`p-1 rounded-md flex-shrink-0 ${
+                                              isGold ? 'bg-amber-100 text-amber-600' :
+                                              isSilver ? 'bg-slate-100 text-slate-600' :
+                                              isBronze ? 'bg-orange-100 text-orange-600' :
+                                              'bg-[#00A99D]/10 text-[#00A99D]'
+                                            }`}>
+                                              {isGold ? <Trophy className="w-3.5 h-3.5" /> : isSilver || isBronze ? <Medal className="w-3.5 h-3.5" /> : <Award className="w-3.5 h-3.5" />}
+                                            </span>
+                                            <span>{achName}</span>
+                                          </div>
+                                        </td>
+                                        <td className="py-3.5 px-4 text-slate-600 font-medium">
+                                          {examName !== "Ngoài hệ thống" ? (
+                                            <span className="flex items-center gap-1 text-[#009085] font-semibold">
+                                              <Sparkles className="w-3 h-3 text-[#48BFE3] flex-shrink-0" />
+                                              {examName}
+                                            </span>
+                                          ) : (
+                                            <span className="text-slate-400 italic">Ngoài hệ thống</span>
+                                          )}
+                                        </td>
+                                        <td className="py-3.5 px-4 whitespace-nowrap">
+                                          <span className="text-[10px] font-black uppercase tracking-wider text-[#009085] bg-teal-50 px-2.5 py-1 rounded-md border border-teal-200/80">
+                                            {catName}
+                                          </span>
+                                        </td>
+                                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                                          <span className={`text-[10px] font-black px-2.5 py-1 rounded-md border ${
+                                            isGold ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                                            isSilver ? 'bg-slate-100 text-slate-700 border-slate-300' :
+                                            isBronze ? 'bg-orange-50 text-orange-800 border-orange-200' :
+                                            'bg-indigo-50 text-indigo-700 border-indigo-200'
+                                          }`}>
+                                            {levelName}
+                                          </span>
+                                        </td>
+                                        <td className="py-3.5 px-4 text-slate-600 font-medium whitespace-nowrap">
+                                          {teacherName}
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         )}
                       </div>
