@@ -3092,6 +3092,64 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
       )}
 
+      
+      {/* Modal Lược Sử Tiết Dạy */}
+      {showHistoryModal && historySlot && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
+            <div className="px-6 py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-[#48BFE3]" />
+                <h3 className="font-extrabold text-base sm:text-lg">📜 Lược Sử Hoạt Động Tiết Dạy</h3>
+              </div>
+              <button onClick={() => setShowHistoryModal(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4 flex-grow">
+              {/* Slot Summary */}
+              <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-100 space-y-1">
+                <p className="text-xs font-black text-[#003B3A] uppercase tracking-wide">{historySlot.subjectName} ({historySlot.level} - {historySlot.grade})</p>
+                <p className="text-sm font-extrabold text-[#008b82]">{historySlot.topic}</p>
+                <p className="text-xs text-slate-600 font-medium">👨‍🏫 GV Dạy: {historySlot.teacher?.teacherName || historySlot.teacherName} ({historySlot.teacher?.teacherCode || historySlot.teacherCode})</p>
+              </div>
+
+              {/* Timeline Items */}
+              <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200">
+                {getSlotHistoryLogs(historySlot).map((log, idx) => (
+                  <div key={idx} className="relative flex items-start gap-3 pl-2">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-xs shadow-sm z-10 ${
+                      log.color === "teal" ? "bg-[#00A99D]" :
+                      log.color === "blue" ? "bg-blue-500" :
+                      log.color === "emerald" ? "bg-emerald-600" :
+                      log.color === "amber" ? "bg-amber-500" :
+                      log.color === "purple" ? "bg-purple-600" : "bg-rose-500"
+                    }`}>
+                      {idx + 1}
+                    </div>
+                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex-grow text-xs space-y-1 shadow-2xs">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-extrabold text-slate-800">{log.title}</span>
+                        <span className="text-[10px] font-bold text-slate-400">{log.time}</span>
+                      </div>
+                      <p className="text-slate-600 font-medium leading-relaxed">{log.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+              <button onClick={() => setShowHistoryModal(false)} className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs">
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {/* Register Details Modal */}
       {registerDetailSlot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
