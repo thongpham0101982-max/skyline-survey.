@@ -1006,10 +1006,18 @@ export async function GET(req: Request) {
           highlightComments: true,
           studentTransfers: true,
           achievements: {
-            include: {
-              achievement: true
+          include: {
+            achievement: {
+              include: {
+                exam: {
+                  include: {
+                    round: true
+                  }
+                }
+              }
             }
-          },
+          }
+        },
           projectExperiences: true,
           learningSupportTargets: {
             include: {

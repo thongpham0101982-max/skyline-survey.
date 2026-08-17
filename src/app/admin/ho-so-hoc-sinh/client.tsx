@@ -623,15 +623,29 @@ export function StudentProfilesAdminClient({
                                   <p className="text-[10px] text-slate-400 italic font-semibold">Chưa ghi nhận thành tích.</p>
                                 ) : (
                                   <div className="space-y-2">
-                                    {selectedStudent.achievements.slice(0, 3).map((a: any) => (
-                                      <div key={a.id} className="flex gap-2 items-start text-xs bg-amber-50/30 border border-amber-100 p-2 rounded-lg">
-                                        <Award className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-                                        <div>
-                                          <div className="font-bold text-slate-850 leading-tight">{a.achievement?.name}</div>
-                                          <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{a.achievement?.level}</div>
+                                    {selectedStudent.achievements.slice(0, 3).map((a: any) => {
+                                      const examName = a.achievement?.exam?.name || a.achievement?.examName || a.achievement?.name || "Kỳ thi";
+                                      const roundName = a.achievement?.exam?.round?.name || a.achievement?.roundName;
+                                      const prizeName = a.achievement?.name || "Giải thưởng";
+                                      return (
+                                        <div key={a.id} className="bg-amber-50/40 border border-amber-200/60 p-2.5 rounded-xl space-y-1">
+                                          <div className="flex gap-2 items-center text-xs">
+                                            <Award className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                                            <span className="font-black text-slate-800 truncate">{examName}</span>
+                                          </div>
+                                          <div className="flex flex-wrap items-center gap-1 pl-5">
+                                            <span className="text-[10px] font-black text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded">
+                                              Giải: {prizeName}
+                                            </span>
+                                            {roundName && (
+                                              <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                                                Vòng: {roundName}
+                                              </span>
+                                            )}
+                                          </div>
                                         </div>
-                                      </div>
-                                    ))}
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -1718,233 +1732,50 @@ return (
                           <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa có ghi nhận giải thưởng hoặc thành tích nổi bật nào.</div>
                         ) : (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {selectedStudent.achievements.map((a) => (
-                              <div key={a.id} className="bg-amber-50/30 border border-amber-200/50 p-4 rounded-2xl flex items-start gap-3 hover:shadow-xs transition-all animate-in fade-in duration-200">
-                                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-2xs border border-amber-100">
-                                  <Award className="w-5 h-5" />
-                                </div>
-                                <div className="text-xs font-semibold space-y-1">
-                                  <h4 className="font-black text-slate-800">{a.achievement?.name}</h4>
-                                  <div className="text-amber-800 font-extrabold uppercase tracking-wider text-[9px] bg-amber-100/50 border border-amber-200/40 px-2 py-0.5 rounded inline-block">
-                                    Cấp độ giải: {a.achievement?.level || "N/A"}
-                                  </div>
-                                  <div className="text-[10px] text-slate-400 font-bold">
-                                    Năm học: {a.achievement?.academicYearId || "N/A"}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === "orientation" && (
-                      <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">Định hướng Nghề nghiệp & Hướng nghiệp</h4>
-                        {selectedStudent.orientation ? (
-                          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4 shadow-2xs">
-                            <div className="flex items-center gap-3 bg-teal-50/30 border border-teal-100 p-3.5 rounded-xl">
-                              <Compass className="w-5 h-5 text-[#48BFE3]" />
-                              <div>
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider font-bold">Định hướng nhóm ngành chủ đạo</div>
-                                <div className="text-sm font-black text-slate-805 mt-0.5">{selectedStudent.orientation.result}</div>
-                              </div>
-                            </div>
-                            {selectedStudent.orientation.notes && (
-                              <div className="pt-3 border-t border-slate-200">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết nhận xét & Đánh giá của GVBM</div>
-                                <p className="text-xs text-slate-655 font-semibold leading-relaxed bg-white p-3.5 rounded-xl border border-slate-200 italic shadow-2xs">
-                                  "${selectedStudent.orientation.notes}"
-                                </p>
-                              </div>
-                            )}
-                            <div className="text-[9px] text-slate-400 font-bold pt-1 text-right">
-                              Đánh giá bởi: {selectedStudent.orientation.teacherName} (GVBM)
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa có thông tin nhận xét định hướng nghề nghiệp.</div>
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === "projects" && (
-                      <div className="space-y-4 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3">HOẠT ĐỘNG TRẢI NGHIỆM</h4>
-                        {(!selectedStudent.experientialActivities || selectedStudent.experientialActivities.length === 0) && (!selectedStudent.projects || selectedStudent.projects.length === 0) ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh chưa tham gia hoạt động trải nghiệm nào.</div>
-                        ) : (
-                          <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
-                            <table className="w-full text-xs text-left border-collapse">
-                              <thead>
-                                <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
-                                  <th className="py-3.5 px-4 text-center w-14">STT</th>
-                                  <th className="py-3.5 px-4">Tên hoạt động</th>
-                                  <th className="py-3.5 px-4">Nhóm lĩnh vực</th>
-                                  <th className="py-3.5 px-4 text-center">Vai trò</th>
-                                  <th className="py-3.5 px-4 text-center">Mức đánh giá</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
-                                {(selectedStudent.experientialActivities || []).map((act: any, idx: number) => (
-                                  <tr key={act.id || idx} className="hover:bg-slate-50/80 transition-all">
-                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{idx + 1}</td>
-                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{act.activityName}</td>
-                                    <td className="py-3.5 px-4">
-                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
-                                        {act.groupName}
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {act.role}
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {act.evalLevel}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                                {(selectedStudent.projects || []).map((p: any, idx: number) => (
-                                  <tr key={p.id || idx} className="hover:bg-slate-50/80 transition-all">
-                                    <td className="py-3.5 px-4 text-center font-bold text-slate-400">{(selectedStudent.experientialActivities?.length || 0) + idx + 1}</td>
-                                    <td className="py-3.5 px-4 font-extrabold text-slate-800">{p.projectName}</td>
-                                    <td className="py-3.5 px-4">
-                                      <span className="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-200">
-                                        Dự án học tập
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {p.role || "Thành viên"}
-                                      </span>
-                                    </td>
-                                    <td className="py-3.5 px-4 text-center">
-                                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase">
-                                        {p.result || "Đạt"}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === "comments" && (
-                      <div className="space-y-6 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-805 uppercase tracking-wide border-b border-slate-100 pb-3 flex justify-between items-center">
-                          <span>Nhận xét nổi bật định kỳ từ Giáo viên Chủ nhiệm</span>
-                          <span className="bg-[#48BFE3]/10 text-[#48BFE3] border border-[#48BFE3]/20 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">
-                            GVCN Đánh giá
-                          </span>
-                        </h4>
-
-                        {((selectedStudent.highlightComments || []).filter((c) => c.category !== "ANNOUNCEMENT")).length === 0 ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                            Chưa có nhận xét nổi bật định kỳ nào từ giáo viên chủ nhiệm.
-                          </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {(selectedStudent.highlightComments || [])
-                              .filter((c) => c.category !== "ANNOUNCEMENT")
-                              .map((c) => (
-                                <div key={c.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold hover:border-slate-355 transition-all animate-in fade-in duration-200">
-                                  <div className="flex justify-between items-center mb-2">
-                                    <span className="inline-block px-2.5 py-0.5 bg-[#48BFE3]/15 text-[#48BFE3] text-[9px] font-black rounded-full uppercase tracking-wider shadow-2xs border border-[#48BFE3]/10">
-                                      {c.category || "Chung"}
-                                    </span>
-                                  </div>
-                                  <p className="text-xs text-slate-705 bg-white border border-slate-200 p-3 rounded-lg font-semibold leading-relaxed">
-                                    {c.comment}
-                                  </p>
-                                  <div className="text-[9px] text-slate-400 font-bold border-t border-slate-100 pt-2 mt-3 flex justify-between">
-                                    <span>Ghi nhận bởi: {c.teacherName} (GVCN)</span>
-                                    <span>{new Date(c.updatedAt).toLocaleDateString('vi-VN')}</span>
-                                  </div>
-                                </div>
-                              ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === "support" && (
-                      <div className="space-y-6 animate-in fade-in duration-300">
-                        <h4 className="text-sm font-black text-slate-850 uppercase tracking-wide border-b border-slate-100 pb-3">Lịch sử theo dõi Hỗ trợ Học tập & Tâm lý</h4>
-                        {!selectedStudent.learningSupportTargets || selectedStudent.learningSupportTargets.length === 0 ? (
-                          <div className="text-xs text-slate-400 italic text-center py-12">Học sinh không thuộc đối tượng nhận hỗ trợ học tập/tâm lý trong năm học này.</div>
-                        ) : (
-                          <div className="space-y-6">
-                            {selectedStudent.learningSupportTargets.map((target) => {
-                              const isTerminated = target.terminationStatus === "TERMINATED";
-                              const isPending = target.terminationStatus === "PENDING_TERMINATION";
-                              const gvName = target.assignments?.[0]?.teacher?.teacherName || "Chưa phân công";
+                            {selectedStudent.achievements.map((a: any) => {
+                              const examName = a.achievement?.exam?.name || a.achievement?.examName || a.achievement?.name || "Kỳ thi";
+                              const roundName = a.achievement?.exam?.round?.name || a.achievement?.roundName;
+                              const prizeName = a.achievement?.name || a.achievement?.awardLevel || "Giải thưởng";
+                              const levelVal = a.achievement?.level;
 
                               return (
-                                <div key={target.id} className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white hover:border-slate-355 transition-all animate-in fade-in duration-200">
-                                  <div className="px-5 py-4 border-b bg-slate-50 flex items-center justify-between flex-wrap gap-2 text-slate-700">
-                                    <div>
-                                      <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider mr-2 ${
-                                        target.supportType === "ACADEMIC" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
-                                      }`}>
-                                        {target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý"}
-                                      </span>
-                                      <span className="text-xs font-bold text-slate-800">{target.reason}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
-                                        isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
-                                      }`}>
-                                        {isTerminated ? "Đã hoàn thành" : isPending ? "Chờ duyệt hoàn thành" : target.status}
-                                      </span>
-                                    </div>
+                                <div key={a.id} className="bg-amber-50/40 border border-amber-200/70 p-4 rounded-2xl flex items-start gap-3.5 hover:shadow-sm transition-all animate-in fade-in duration-200">
+                                  <div className="p-3 rounded-2xl bg-amber-100/80 text-amber-700 flex items-center justify-center shadow-2xs border border-amber-200/80 shrink-0">
+                                    <Award className="w-6 h-6 text-amber-600" />
                                   </div>
-
-                                  <div className="p-5 space-y-4">
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-slate-500">
-                                      <div>
-                                        <span>Ngày bắt đầu: </span>
-                                        <span className="text-slate-800 font-bold">{new Date(target.startDate).toLocaleDateString("vi-VN")}</span>
-                                      </div>
-                                      <div>
-                                        <span>Giáo viên phụ trách: </span>
-                                        <span className="text-slate-800 font-bold">{gvName}</span>
-                                      </div>
-                                      {target.endDate && (
-                                        <div>
-                                          <span>Ngày chấm dứt: </span>
-                                          <span className="text-slate-800 font-bold">{new Date(target.endDate).toLocaleDateString("vi-VN")}</span>
-                                        </div>
+                                  <div className="text-xs space-y-1.5 flex-1 min-w-0">
+                                    <div>
+                                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tên kỳ thi</span>
+                                      <h4 className="font-black text-slate-800 text-sm leading-snug">{examName}</h4>
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                      <span className="text-amber-900 font-black text-xs bg-amber-200/80 border border-amber-300/80 px-2.5 py-0.5 rounded-lg shadow-2xs">
+                                        Giải: {prizeName}
+                                      </span>
+                                      {roundName && (
+                                        <span className="text-blue-800 font-bold text-[11px] bg-blue-50 border border-blue-200/60 px-2.5 py-0.5 rounded-lg">
+                                          Vòng thi: {roundName}
+                                        </span>
+                                      )}
+                                      {levelVal && (
+                                        <span className="text-slate-600 font-semibold text-[10px] bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                                          Cấp độ: {levelVal}
+                                        </span>
                                       )}
                                     </div>
 
-                                    {target.outcome && (
-                                      <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-lg text-xs font-semibold">
-                                        <span className="font-extrabold">Kết quả đạt được: </span> {target.outcome}
-                                      </div>
-                                    )}
-
-                                    {/* Evaluation timeline for this student target */}
-                                    <div className="pt-2 border-t border-slate-100">
-                                      <h5 className="font-black text-slate-705 text-xs uppercase tracking-wide mb-4">Nhật ký nhận xét định kỳ</h5>
-                                      {!target.evaluations || target.evaluations.length === 0 ? (
-                                        <div className="text-xs text-slate-400 italic py-2">Chưa có nhận xét định kỳ từ giáo viên phụ trách.</div>
-                                      ) : (
-                                        <div className="relative border-l-2 border-[#48BFE3]/30 pl-5 space-y-5 ml-1.5">
-                                          {(target.evaluations || []).map((ev) => (
-                                            <div key={ev.id} className="relative group">
-                                              <span className="absolute -left-[27px] top-1 bg-white border-2 border-[#48BFE3] rounded-full h-3.5 w-3.5 flex items-center justify-center shadow-sm">
-                                                <span className="h-1.5 w-1.5 bg-[#48BFE3] rounded-full"></span>
-                                              </span>
-                                              <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200 rounded-xl p-3 shadow-2xs space-y-1.5 transition-all">
-                                                <div className="text-[10px] text-slate-400 font-bold">
-                                                  {new Date(ev.createdAt).toLocaleDateString("vi-VN")} - {ev.periodName} ({ev.periodType === "WEEK" ? "Tuần" : "Tháng"})
+                                    <div className="text-[10px] text-slate-400 font-semibold pt-1">
+                                      Năm học: {a.achievement?.academicYearId || a.achievement?.academicYear?.name || "AY-2026"}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
                                                 </div>
                                                 <div className="text-xs font-black text-[#48BFE3]">Tiến bộ: {ev.trackingLevel}</div>
                                                 <p className="text-xs text-slate-655 font-semibold leading-relaxed">{ev.comment}</p>

@@ -381,15 +381,29 @@ export default function ParentStudentProfilePage() {
                       </p>
                     ) : (
                       <div className="space-y-2">
-                        {achievements.map((a: any, idx: number) => (
-                          <div key={idx} className="flex gap-2 items-start text-xs bg-amber-50/40 border border-amber-100 p-2.5 rounded-xl">
-                            <Award className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-bold text-slate-900 leading-tight">{a.achievement?.title || a.achievement?.name || "Khen thưởng"}</div>
-                              <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{a.achievement?.awardLevel || a.achievement?.category || "Cấp Trường"}</div>
+                        {achievements.map((a: any, idx: number) => {
+                          const examName = a.achievement?.exam?.name || a.achievement?.examName || a.achievement?.title || a.achievement?.name || "Kỳ thi";
+                          const roundName = a.achievement?.exam?.round?.name || a.achievement?.roundName;
+                          const prizeName = a.achievement?.name || a.achievement?.awardLevel || "Giải thưởng";
+                          return (
+                            <div key={idx} className="bg-amber-50/50 border border-amber-200/70 p-3 rounded-2xl space-y-1">
+                              <div className="flex gap-2 items-center text-xs font-black text-slate-800">
+                                <Award className="w-4 h-4 text-amber-600 shrink-0" />
+                                <span>{examName}</span>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-1.5 pl-6 text-xs">
+                                <span className="text-amber-900 font-black text-xs bg-amber-200/80 px-2 py-0.5 rounded-md">
+                                  Giải: {prizeName}
+                                </span>
+                                {roundName && (
+                                  <span className="text-blue-800 font-bold text-[10px] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200/50">
+                                    Vòng: {roundName}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>

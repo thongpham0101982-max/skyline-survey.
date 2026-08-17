@@ -50,7 +50,19 @@ export async function GET(req: Request) {
           where: academicYearId ? { academicYearId } : undefined,
           orderBy: { createdAt: "desc" }
         },
-        achievements: { include: { achievement: true } },
+        achievements: {
+          include: {
+            achievement: {
+              include: {
+                exam: {
+                  include: {
+                    round: true
+                  }
+                }
+              }
+            }
+          }
+        },
         careerOrientations: { where: academicYearId ? { academicYearId } : undefined },
         learningCommitments: { where: academicYearId ? { academicYearId } : undefined },
         highlightComments: { orderBy: { createdAt: "desc" } },

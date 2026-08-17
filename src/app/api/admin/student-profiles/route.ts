@@ -73,7 +73,15 @@ export async function GET(req: NextRequest) {
         studentTransfers: true,
         achievements: {
           include: {
-            achievement: true
+            achievement: {
+              include: {
+                exam: {
+                  include: {
+                    round: true
+                  }
+                }
+              }
+            }
           }
         },
         projectExperiences: true,
