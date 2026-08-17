@@ -114,6 +114,10 @@ export async function GET(req: NextRequest) {
       ]
     })
 
+    if (!students || students.length === 0) {
+      return NextResponse.json({ success: true, data: [] })
+    }
+
     // Fetch K12 and Preschool entrance surveys to match
     const k12Surveys = await prisma.inputAssessmentStudent.findMany({
       include: {
@@ -150,25 +154,27 @@ export async function GET(req: NextRequest) {
     const studentIds = students.map((s: any) => s.id)
     const studentCodesArr = students.map((s: any) => s.studentCode).filter(Boolean)
 
-    const allParticipants = await prisma.activityParticipant.findMany({
-      where: {
-        OR: [
-          { studentId: { in: studentIds } },
-          { student: { studentCode: { in: studentCodesArr } } }
-        ]
-      },
-      include: {
-        record: {
+    const allParticipants = (studentIds.length > 0 || studentCodesArr.length > 0)
+      ? await prisma.activityParticipant.findMany({
+          where: {
+            OR: [
+              ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
+              ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
+            ]
+          },
           include: {
-            catalog: {
-              include: { group: true }
-            }
-          }
-        },
-        student: true
-      },
-      orderBy: { createdAt: "desc" }
-    })
+            record: {
+              include: {
+                catalog: {
+                  include: { group: true }
+                }
+              }
+            },
+            student: true
+          },
+          orderBy: { createdAt: "desc" }
+        })
+      : []
 
     const categories = await prisma.activityCategory.findMany()
 

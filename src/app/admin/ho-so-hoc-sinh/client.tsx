@@ -113,38 +113,29 @@ export function StudentProfilesAdminClient({
 
   // Load students from API when filters change
   useEffect(() => {
-    // To prevent loading thousands of records, we require at least Campus or Grade or Class to be selected
-    // unless searchQuery is populated
-    if (selectedCampusId === "all" && selectedGrade === "all" && selectedClassId === "all" && !searchQuery.trim()) {
-      setStudents([])
-      setSelectedStudentId("")
-      setSelectedStudent(null)
-      return
-    }
-
     async function fetchStudentsList() {
       try {
         setLoadingStudents(true)
         const params = new URLSearchParams()
         params.set("action", "getProfiles")
-        params.set("academicYearId", selectedYearId)
+        if (selectedYearId) params.set("academicYearId", selectedYearId)
         
-        if (selectedCampusId !== "all") params.set("campusId", selectedCampusId)
-        if (selectedClassId !== "all") params.set("classId", selectedClassId)
+        if (selectedCampusId && selectedCampusId !== "all") params.set("campusId", selectedCampusId)
+        if (selectedClassId && selectedClassId !== "all") params.set("classId", selectedClassId)
         if (searchQuery.trim()) params.set("search", searchQuery.trim())
 
         // Fetch
         const res = await fetch(`/api/admin/student-profiles?${params.toString()}`)
         if (res.ok) {
           const result = await res.json()
-          let data = result.data || []
+          let data = Array.isArray(result.data) ? result.data : []
           
-          // If we filtered by grade locally (since database doesn't have grade on Student directly but has classId)
-          if (selectedGrade !== "all") {
+          // If we filtered by grade locally
+          if (selectedGrade && selectedGrade !== "all") {
             data = data.filter((s: any) => s.class?.grade === selectedGrade)
           }
 
-          // If block filter is preschool/k12
+          // Filter block (preschool vs k12)
           data = data.filter((s: any) => {
             const isPreschoolGrade = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"].includes(s.class?.grade)
             return schoolBlock === "k12" ? !isPreschoolGrade : isPreschoolGrade
@@ -152,7 +143,7 @@ export function StudentProfilesAdminClient({
 
           setStudents(data)
 
-          // Set default selected student if not empty
+          // Set default selected student if available
           if (data.length > 0) {
             const hasCurrentStudent = data.some((s: any) => s.id === selectedStudentId)
             if (!hasCurrentStudent) {
@@ -162,9 +153,16 @@ export function StudentProfilesAdminClient({
             setSelectedStudentId("")
             setSelectedStudent(null)
           }
+        } else {
+          setStudents([])
+          setSelectedStudentId("")
+          setSelectedStudent(null)
         }
       } catch (err) {
         console.error("Error loading students list:", err)
+        setStudents([])
+        setSelectedStudentId("")
+        setSelectedStudent(null)
       } finally {
         setLoadingStudents(false)
       }
@@ -173,6 +171,18 @@ export function StudentProfilesAdminClient({
     const timer = setTimeout(fetchStudentsList, 300) // Debounce search
     return () => clearTimeout(timer)
   }, [selectedYearId, schoolBlock, selectedCampusId, selectedGrade, selectedClassId, searchQuery])
+
+  // Filter students by local search query for instant 0ms latency
+  const filteredStudentsList = (students || []).filter((s: any) => {
+    if (!searchQuery.trim()) return true
+    const q = searchQuery.trim().toLowerCase()
+    return (
+      (s.studentName && s.studentName.toLowerCase().includes(q)) ||
+      (s.studentCode && s.studentCode.toLowerCase().includes(q)) ||
+      (s.className && s.className.toLowerCase().includes(q)) ||
+      (s.classCode && s.classCode.toLowerCase().includes(q))
+    );
+  })
 
   // Load detailed profile for selected student
   useEffect(() => {
