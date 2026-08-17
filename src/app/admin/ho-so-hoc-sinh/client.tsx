@@ -665,7 +665,7 @@ export function StudentProfilesAdminClient({
                                         <Award className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
                                         <div>
                                           <div className="font-bold text-slate-850 leading-tight">{a.achievement?.name}</div>
-                                          <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{a.achievement?.level}</div>
+                                          <div className="text-[9px] text-amber-700 font-extrabold uppercase mt-0.5">{getLevelLabel(a.achievement?.level || a.level)}</div>
                                         </div>
                                       </div>
                                     ))}
