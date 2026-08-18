@@ -262,25 +262,62 @@ export default function AdminDashboard() {
     return true
   })
 
-  const inTransfersCount = filteredTransfers.filter((t: any) => t.type === "IN").length
-  const outTransfersCount = filteredTransfers.filter((t: any) => t.type === "OUT").length
-  const netGrowthCount = inTransfersCount - outTransfersCount
+  // August Entrance Survey Baseline Count (Số học sinh tháng 8 thông qua khảo sát là Mốc bắt đầu cho IN)
+  const augustSurveyStudents = rawEntryStudents.filter((s: any) => {
+    const isPreschool = s.level === "Mầm non" || String(s.grade || s.rawGrade || "").includes("Mầm")
+    if (inOutLevelTab === "pho-thong" && isPreschool) return false
+    if (inOutLevelTab === "mam-non" && !isPreschool) return false
 
-  const inPercentage = ((inTransfersCount / totalBaseHeadcount) * 100).toFixed(2)
+    if (inOutCampusFilter === "BLANK") {
+      const info = getCampusInfo(s.campusName)
+      const isKnown = s.campusName && (
+        s.campusName.includes("CS1") || s.campusName.includes("CS2") || s.campusName.includes("CS3") ||
+        s.campusName.includes("CS4") || s.campusName.includes("CS5") ||
+        info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
+        info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
+      )
+      if (isKnown) return false
+    } else if (inOutCampusFilter !== "ALL") {
+      const info = getCampusInfo(s.campusName)
+      if (!s.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
+    }
+
+    if (inOutGradeFilter !== "ALL") {
+      const gStr = String(s.grade || s.rawGrade || "")
+      if (!gStr.includes(inOutGradeFilter)) return false
+    }
+
+    if (inOutClassFilter !== "ALL" && s.className !== inOutClassFilter) return false
+
+    return true
+  })
+
+  const augustSurveyBaselineCount = augustSurveyStudents.length
+  const inTransfersDirectCount = filteredTransfers.filter((t: any) => t.type === "IN").length
+
+  const includeAugustBaseline = (inOutMonthFilter === "ALL" || inOutMonthFilter === "8")
+  const totalInCount = inTransfersDirectCount + (includeAugustBaseline ? augustSurveyBaselineCount : 0)
+
+  const outTransfersCount = filteredTransfers.filter((t: any) => t.type === "OUT").length
+  const netGrowthCount = totalInCount - outTransfersCount
+
+  const inPercentage = ((totalInCount / totalBaseHeadcount) * 100).toFixed(2)
   const outPercentage = ((outTransfersCount / totalBaseHeadcount) * 100).toFixed(2)
   const netPercentage = ((netGrowthCount / totalBaseHeadcount) * 100).toFixed(2)
 
   const monthlyInOutChartData = Array.from({ length: 12 }, (_, i) => {
+    const monthNum = i + 1
     const monthTransfers = filteredTransfers.filter((t: any) => {
       const d = t.transferDate ? new Date(t.transferDate) : null
-      return d && (d.getMonth() + 1) === (i + 1)
+      return d && (d.getMonth() + 1) === monthNum
     })
-    const inCnt = monthTransfers.filter((t: any) => t.type === "IN").length
+    const inDirect = monthTransfers.filter((t: any) => t.type === "IN").length
+    const inCnt = inDirect + (monthNum === 8 ? augustSurveyBaselineCount : 0)
     const outCnt = monthTransfers.filter((t: any) => t.type === "OUT").length
     const netCnt = inCnt - outCnt
 
     return {
-      monthLabel: `Tháng ${i + 1}`,
+      monthLabel: `Tháng ${monthNum}`,
       IN: inCnt,
       OUT: outCnt,
       NET: netCnt
@@ -1134,8 +1171,8 @@ export default function AdminDashboard() {
             <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-100 flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Học sinh Nhập học qua Khảo sát (IN)</span>
-                <span className="text-3xl font-black text-emerald-600 block mt-1">{inTransfersCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
-                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số chuẩn Tháng 8: {totalBaseHeadcount} HS)</span></span>
+                <span className="text-3xl font-black text-emerald-600 block mt-1">{totalInCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
+                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(Mốc KS T8: {augustSurveyBaselineCount} HS | So với sĩ số chuẩn: {totalBaseHeadcount} HS)</span></span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
                 <Users className="w-6 h-6" />
