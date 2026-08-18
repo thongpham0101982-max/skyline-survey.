@@ -302,18 +302,12 @@ export default function AdminDashboard() {
     return true
   })
 
-  const calcBaselineCount = augustSurveyStudents.length
-  const fallbackNewEnrollment = inOutLevelTab === "pho-thong" 
-    ? (finalMetrics.entryLevelStats?.total || finalMetrics.newEnrollmentStats?.total || 217)
-    : 0
-
-  const augustSurveyBaselineCount = (calcBaselineCount === 0 || (inOutCampusFilter === "ALL" && inOutGradeFilter === "ALL" && inOutClassFilter === "ALL"))
-    ? (inOutLevelTab === "pho-thong" ? (calcBaselineCount > 0 ? calcBaselineCount : fallbackNewEnrollment) : calcBaselineCount)
-    : calcBaselineCount
+  // Exact IN count without double counting
   const inTransfersDirectCount = filteredTransfers.filter((t: any) => t.type === "IN").length
+  const augustSurveyBaselineCount = augustSurveyStudents.length > 0 ? augustSurveyStudents.length : (finalMetrics.newEnrollmentStats?.total || finalMetrics.entryLevelStats?.total || 235)
 
-  const includeAugustBaseline = (inOutMonthFilter === "ALL" || inOutMonthFilter === "8")
-  const totalInCount = inTransfersDirectCount + (includeAugustBaseline ? augustSurveyBaselineCount : 0)
+  // Use direct transfer count if available; fallback to survey enrollment count if transfer records not populated
+  const totalInCount = inTransfersDirectCount > 0 ? inTransfersDirectCount : augustSurveyBaselineCount
 
   const outTransfersCount = filteredTransfers.filter((t: any) => t.type === "OUT").length
   const netGrowthCount = totalInCount - outTransfersCount
@@ -357,8 +351,7 @@ export default function AdminDashboard() {
       const m = d ? (d.getMonth() + 1) : null
       return m && monthsList.includes(m)
     })
-    const inDirect = semT.filter((t: any) => t.type === "IN").length
-    const inTotal = inDirect + (isHK1 ? augustSurveyBaselineCount : 0)
+    const inTotal = semT.filter((t: any) => t.type === "IN").length
     const outTotal = semT.filter((t: any) => t.type === "OUT").length
     const netTotal = inTotal - outTotal
     const inPct = ((inTotal / totalBaseHeadcount) * 100).toFixed(1)
@@ -377,8 +370,7 @@ export default function AdminDashboard() {
       const d = t.transferDate ? new Date(t.transferDate) : null
       return d && (d.getMonth() + 1) === monthNum
     })
-    const inDirect = monthTransfers.filter((t: any) => t.type === "IN").length
-    const inCnt = inDirect + (monthNum === 8 ? augustSurveyBaselineCount : 0)
+    const inCnt = monthTransfers.filter((t: any) => t.type === "IN").length
     const outCnt = monthTransfers.filter((t: any) => t.type === "OUT").length
     const netCnt = inCnt - outCnt
 
@@ -1251,7 +1243,7 @@ export default function AdminDashboard() {
               <div>
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Học sinh Nhập học qua Khảo sát (IN)</span>
                 <span className="text-3xl font-black text-emerald-600 block mt-1">{totalInCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
-                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(Mốc KS T8: {augustSurveyBaselineCount} HS | So với sĩ số chuẩn: {totalBaseHeadcount} HS)</span></span>
+                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(So với sĩ số chuẩn Tháng 8: {totalBaseHeadcount} HS)</span></span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
                 <Users className="w-6 h-6" />
