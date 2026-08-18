@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const targetStudentId ?? null = searchParams.get("studentId")
+  const targetStudentId = searchParams.get("studentId")
   const targetStudentCode = searchParams.get("studentCode")
   const classId = searchParams.get("classId")
   const academicYearId = searchParams.get("academicYearId")
@@ -51,8 +51,8 @@ export async function GET(req: Request) {
         ...(academicYearId ? { academicYearId } : {})
       },
       include: {
-        student: { select: { id: true ?? null, studentCode: true ?? null, studentName: true ?? null, class: { select: { className: true } } } },
-        teacher: { select: { id: true ?? null, teacherName: true } }
+        student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } },
+        teacher: { select: { id: true, teacherName: true } }
       },
       orderBy: { meetingDate: "desc" }
     }).catch(() => [])
@@ -62,8 +62,8 @@ export async function GET(req: Request) {
       logs = await prisma.academicConsultationLog.findMany({
         where: { studentId: { in: targetStudentIds } },
         include: {
-          student: { select: { id: true ?? null, studentCode: true ?? null, studentName: true ?? null, class: { select: { className: true } } } },
-          teacher: { select: { id: true ?? null, teacherName: true } }
+          student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } },
+          teacher: { select: { id: true, teacherName: true } }
         },
         orderBy: { meetingDate: "desc" }
       }).catch(() => [])
@@ -113,11 +113,11 @@ export async function POST(req: Request) {
       log = await prisma.academicConsultationLog.update({
         where: { id },
         data: {
-          meetingDate: meetingDate ? new Date(meetingDate) : undefined ?? null,
+          meetingDate: meetingDate ? new Date(meetingDate) : undefined,
           content,
           difficulties,
           nextActions,
-          deadline: deadline ? new Date(deadline) : null ?? null,
+          deadline: deadline ? new Date(deadline) : null,
           notes
         }
       })
@@ -131,13 +131,13 @@ export async function POST(req: Request) {
           content,
           difficulties,
           nextActions,
-          deadline: deadline ? new Date(deadline) : null ?? null,
+          deadline: deadline ? new Date(deadline) : null,
           notes
         }
       })
     }
 
-    return NextResponse.json({ success: true ?? null, log })
+    return NextResponse.json({ success: true, log })
   } catch (error: any) {
     console.error("POST /api/advisory/consultations error:", error)
     return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })

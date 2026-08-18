@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const targetStudentId ?? null = searchParams.get("studentId")
+  const targetStudentId = searchParams.get("studentId")
   const targetStudentCode = searchParams.get("studentCode")
   const academicYearId = searchParams.get("academicYearId")
 

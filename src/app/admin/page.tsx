@@ -550,11 +550,19 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="px-3.5 py-1.5 bg-teal-50 text-[#48BFE3] rounded-xl border border-teal-200 text-xs font-extrabold flex items-center gap-1.5 shadow-2xs">
               <UserCheck className="w-4 h-4 text-[#48BFE3]" />
               Tổng HS Đầu cấp: {finalMetrics.entryLevelStats?.total || 0} HS
             </span>
+            <button
+              onClick={() => setShowStudentList(!showStudentList)}
+              className="px-3.5 py-1.5 bg-[#48BFE3] hover:bg-[#009085] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer"
+            >
+              {showStudentList ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              <span>{showStudentList ? "Thu gọn danh sách" : "Xem danh sách Học sinh (10 dòng/trang)"}</span>
+              {showStudentList ? <ChevronRight className="w-4 h-4 rotate-90" /> : <ChevronRight className="w-4 h-4" />}
+            </button>
           </div>
         </div>
 
