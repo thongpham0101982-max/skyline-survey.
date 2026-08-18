@@ -209,6 +209,11 @@ export function GoalMultiSelector({
         </div>
 
         <div className="space-y-3">
+          {customItems.length === 0 && (
+            <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-slate-400 text-xs font-medium text-center">
+              Chưa có mục tiêu cá nhân tự gõ. Nhấn nút <strong>"+ Thêm 1 mục tiêu cụ thể mới"</strong> bên dưới để bổ sung mục tiêu riêng của em.
+            </div>
+          )}
           {customItems.map((item, idx) => (
             <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 space-y-3 relative group">
               <div className="flex items-center justify-between">
@@ -219,7 +224,7 @@ export function GoalMultiSelector({
                   <span>Mục tiêu cụ thể khác #{idx + 1}</span>
                 </span>
 
-                {customItems.length > 1 && !readOnly && (
+                {!readOnly && (
                   <button
                     type="button"
                     onClick={() => handleRemoveCustomRow(idx)}
