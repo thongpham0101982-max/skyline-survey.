@@ -250,8 +250,11 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
     const allYearStudents = await prisma.student.findMany({
       where: {
-        academicYearId: targetYearId,
-        campusId: isFullAccess ? undefined : { in: allowedCampusIds }
+        OR: [
+          { academicYearId: targetYearId },
+          { class: { academicYearId: targetYearId } }
+        ],
+        ...(isFullAccess ? {} : { campusId: { in: allowedCampusIds } })
       },
       include: {
         class: {
