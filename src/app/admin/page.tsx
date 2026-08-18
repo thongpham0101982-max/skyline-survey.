@@ -17,6 +17,8 @@ import {
   PieChart as PieIcon,
   UserCheck,
   UserMinus,
+  Eye,
+  EyeOff,
   UserPlus,
   ClipboardList,
   History,
@@ -83,7 +85,14 @@ export default function AdminDashboard() {
   const [entrySourceFilter, setEntrySourceFilter] = useState<string>("ALL")
   const [entryCampusFilter, setEntryCampusFilter] = useState<string>("ALL")
   const [entrySearchQuery, setEntrySearchQuery] = useState<string>("")
+  const [showStudentList, setShowStudentList] = useState<boolean>(false)
+  const [entryPage, setEntryPage] = useState<number>(1)
+  const ITEMS_PER_PAGE = 10
 
+  
+  useEffect(() => {
+    setEntryPage(1)
+  }, [entryGradeFilter, entrySourceFilter, entryCampusFilter, entrySearchQuery])
   const userName = session?.user?.name || "Thành viên"
 
   const fetchMetrics = useCallback(async (isSilent = false) => {
@@ -171,6 +180,10 @@ export default function AdminDashboard() {
     }
     return true
   })
+
+    // Pagination for Entry Level Students
+  const totalEntryPages = Math.ceil(filteredEntryStudents.length / ITEMS_PER_PAGE) || 1
+  const paginatedEntryStudents = filteredEntryStudents.slice((entryPage - 1) * ITEMS_PER_PAGE, entryPage * ITEMS_PER_PAGE)
 
   // Level Colors
   const LEVEL_COLORS: Record<string, string> = {
@@ -622,6 +635,9 @@ export default function AdminDashboard() {
 
         </div>
 
+        {/* CHẾ ĐỘ XEM DANH SÁCH HỌC SINH ĐẦU CẤP KHI CẦN (10 DÒNG/TRANG) */}
+        {showStudentList && (
+          <div className="space-y-6 pt-4 border-t border-slate-100 animate-fade-in">
         {/* BỘ LỌC VÀ TÌM KIẾM HỌC SINH ĐẦU CẤP DẠNG MULTI-FILTER */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2 border-t border-slate-100">
           
@@ -720,11 +736,11 @@ export default function AdminDashboard() {
                   </td>
                 </tr>
               ) : (
-                filteredEntryStudents.slice(0, 50).map((st: any, idx: number) => {
+                paginatedEntryStudents.map((st: any, idx: number) => {
                   const campusInfo = getCampusInfo(st.campusName);
                   return (
                     <tr key={st.id || idx} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-400">{idx + 1}</td>
+                      <td className="py-3 px-4 font-bold text-slate-400">{(entryPage - 1) * ITEMS_PER_PAGE + idx + 1}</td>
                       <td className="py-3 px-4 font-black text-slate-800">{st.studentCode}</td>
                       <td className="py-3 px-4 font-bold text-slate-900">{st.studentName}</td>
                       <td className="py-3 px-4">
@@ -773,12 +789,34 @@ export default function AdminDashboard() {
               )}
             </tbody>
           </table>
-          {filteredEntryStudents.length > 50 && (
-            <div className="p-3 bg-slate-50 text-center text-xs font-bold text-slate-500 border-t border-slate-100">
-              Hiển thị 50 / {filteredEntryStudents.length} học sinh đầu cấp. Sử dụng bộ lọc hoặc từ khóa tìm kiếm để thu hẹp danh sách.
+          {/* THANH PHÂN TRANG 10 DÒNG / TRANG */}
+          <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-bold text-slate-600">
+            <div>
+              Hiển thị <strong className="text-slate-800">{filteredEntryStudents.length === 0 ? 0 : (entryPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(entryPage * ITEMS_PER_PAGE, filteredEntryStudents.length)}</strong> trên tổng số <strong className="text-[#48BFE3]">{filteredEntryStudents.length}</strong> học sinh
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setEntryPage(p => Math.max(1, p - 1))}
+                disabled={entryPage === 1}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-all text-xs font-bold shadow-2xs cursor-pointer"
+              >
+                Trang trước
+              </button>
+              <span className="px-3 py-1.5 bg-teal-50 text-[#48BFE3] border border-teal-200 rounded-xl text-xs font-black">
+                Trang {entryPage} / {totalEntryPages}
+              </span>
+              <button
+                onClick={() => setEntryPage(p => Math.min(totalEntryPages, p + 1))}
+                disabled={entryPage >= totalEntryPages}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 transition-all text-xs font-bold shadow-2xs cursor-pointer"
+              >
+                Trang sau
+              </button>
+            </div>
+          </div>
         </div>
+        </div>
+        )}
 
       </div>
 
