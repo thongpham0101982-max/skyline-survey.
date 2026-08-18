@@ -1158,16 +1158,7 @@ export default function AdminDashboard() {
                 <option value="CS5">CS5</option>
               </select>
 
-              <select
-                value={inOutGradeFilter}
-                onChange={(e) => setInOutGradeFilter(e.target.value)}
-                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20"
-              >
-                <option value="ALL">🎓 Tất cả khối Phổ thông</option>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={String(i + 1)}>Khối {i + 1}</option>
-                ))}
-              </select>
+
             </div>
           </div>
 
