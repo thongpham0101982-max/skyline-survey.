@@ -385,7 +385,7 @@ export function StudentProfilesAdminClient({
               onChange={(e) => setSelectedCampusId(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#00A99D]"
             >
-              <option value="">Tất cả cơ sở</option>
+              <option value=""></option>
               {campuses.map(c => (
                 <option key={c.id} value={c.id}>{c.campusName}</option>
               ))}
