@@ -80,6 +80,12 @@ export default function AdminDashboard() {
   const [entryCampusFilter, setEntryCampusFilter] = useState<string>("BLANK")
   const [entrySearchQuery, setEntrySearchQuery] = useState<string>("")
 
+  // Filter States for In/Out Movement Analytics
+  const [inOutMonthFilter, setInOutMonthFilter] = useState<string>("ALL")
+  const [inOutCampusFilter, setInOutCampusFilter] = useState<string>("BLANK")
+  const [inOutGradeFilter, setInOutGradeFilter] = useState<string>("ALL")
+  const [inOutClassFilter, setInOutClassFilter] = useState<string>("ALL")
+
   const userName = session?.user?.name || "Thành viên"
 
   const fetchMetrics = useCallback(async (isSilent = false) => {
@@ -185,6 +191,69 @@ export default function AdminDashboard() {
     "THPT": "#2E1065",
     "Khác": "#94a3b8"
   }
+
+  // In/Out Tracking Analytics Computation
+  const detailedTransfers = finalMetrics.detailedTransfers || []
+  const totalBaseHeadcount = finalMetrics.totalStudents || 1
+
+  const filteredTransfers = detailedTransfers.filter((t: any) => {
+    const tDate = t.transferDate ? new Date(t.transferDate) : null
+    const tMonth = tDate ? String(tDate.getMonth() + 1) : ""
+    
+    if (inOutMonthFilter !== "ALL" && tMonth !== inOutMonthFilter) return false
+    
+    if (inOutCampusFilter === "BLANK") {
+      const info = getCampusInfo(t.campusName)
+      const isKnown = t.campusName && (
+        t.campusName.includes("CS1") || t.campusName.includes("CS2") || t.campusName.includes("CS3") ||
+        t.campusName.includes("CS4") || t.campusName.includes("CS5") ||
+        info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
+        info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
+      )
+      if (isKnown) return false
+    } else if (inOutCampusFilter !== "ALL") {
+      const info = getCampusInfo(t.campusName)
+      if (!t.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
+    }
+
+    if (inOutGradeFilter !== "ALL") {
+      const gStr = String(t.grade || "")
+      if (!gStr.includes(inOutGradeFilter)) return false
+    }
+
+    if (inOutClassFilter !== "ALL" && t.className !== inOutClassFilter) return false
+
+    return true
+  })
+
+  const inTransfersCount = filteredTransfers.filter((t: any) => t.type === "IN").length
+  const outTransfersCount = filteredTransfers.filter((t: any) => t.type === "OUT").length
+  const netGrowthCount = inTransfersCount - outTransfersCount
+
+  const inPercentage = ((inTransfersCount / totalBaseHeadcount) * 100).toFixed(2)
+  const outPercentage = ((outTransfersCount / totalBaseHeadcount) * 100).toFixed(2)
+  const netPercentage = ((netGrowthCount / totalBaseHeadcount) * 100).toFixed(2)
+
+  const monthlyInOutChartData = Array.from({ length: 12 }, (_, i) => {
+    const monthTransfers = filteredTransfers.filter((t: any) => {
+      const d = t.transferDate ? new Date(t.transferDate) : null
+      return d && (d.getMonth() + 1) === (i + 1)
+    })
+    const inCnt = monthTransfers.filter((t: any) => t.type === "IN").length
+    const outCnt = monthTransfers.filter((t: any) => t.type === "OUT").length
+    const netCnt = inCnt - outCnt
+
+    return {
+      monthLabel: `Tháng ${i + 1}`,
+      IN: inCnt,
+      OUT: outCnt,
+      NET: netCnt
+    }
+  })
+
+  const availableClassesList = Array.from(
+    new Set(detailedTransfers.map((t: any) => t.className).filter(Boolean))
+  )
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
@@ -866,6 +935,207 @@ export default function AdminDashboard() {
               <span className="font-bold text-slate-500">Nước ngoài</span>
               <span className="font-black text-slate-800">{(finalMetrics.transferOutStats?.abroad || 0).toLocaleString()} HS</span>
             </div>
+          </div>
+        </div>
+
+        {/* IN / OUT MOVEMENT TRACKING SECTION WITH % CALCULATION */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#48BFE3] border border-teal-100 flex items-center justify-center font-bold">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-[#003B3A] tracking-tight">Báo cáo & Theo dõi Tỷ lệ % Biến động Học sinh (In / Out)</h2>
+                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Phân tích chi tiết số lượng và tỷ lệ phần trăm (%) nhập mới và chuyển trường đa chiều</p>
+                </div>
+              </div>
+            </div>
+
+            {/* BỘ LỌC ĐA CHIỀU: THÁNG, CƠ SỞ, KHỐI, LỚP */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* LỌC THÁNG */}
+              <select
+                value={inOutMonthFilter}
+                onChange={(e) => setInOutMonthFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20"
+              >
+                <option value="ALL">📅 Tất cả các tháng</option>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={String(i + 1)}>Tháng {i + 1}</option>
+                ))}
+              </select>
+
+              {/* LỌC CƠ SỞ */}
+              <select
+                value={inOutCampusFilter}
+                onChange={(e) => setInOutCampusFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20"
+              >
+                <option value="BLANK">-- Chưa phân cơ sở (Blank) --</option>
+                <option value="ALL">-- Tất cả cơ sở --</option>
+                <option value="CS1">CS1</option>
+                <option value="CS2">CS2</option>
+                <option value="CS3">CS3</option>
+                <option value="CS4">CS4</option>
+                <option value="CS5">CS5</option>
+              </select>
+
+              {/* LỌC KHỐI */}
+              <select
+                value={inOutGradeFilter}
+                onChange={(e) => setInOutGradeFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20"
+              >
+                <option value="ALL">🎓 Tất cả các khối</option>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={String(i + 1)}>Khối {i + 1}</option>
+                ))}
+                <option value="Mầm non">Mầm non</option>
+              </select>
+
+              {/* LỌC LỚP */}
+              <select
+                value={inOutClassFilter}
+                onChange={(e) => setInOutClassFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20 max-w-[160px]"
+              >
+                <option value="ALL">📚 Tất cả các lớp</option>
+                {availableClassesList.map((cls: any) => (
+                  <option key={cls} value={cls}>{cls}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* KPI STAT CARDS WITH % FORMULAS */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* IN CARD */}
+            <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Học sinh Nhập mới / Chuyển đến (IN)</span>
+                <span className="text-3xl font-black text-emerald-600 block mt-1">{inTransfersCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
+                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số base {totalBaseHeadcount})</span></span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+
+            {/* OUT CARD */}
+            <div className="p-5 rounded-2xl bg-rose-50/40 border border-rose-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-rose-700 uppercase tracking-widest block">Học sinh Chuyển trường / Thôi học (OUT)</span>
+                <span className="text-3xl font-black text-rose-600 block mt-1">{outTransfersCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
+                <span className="text-xs font-extrabold text-rose-700 mt-1 block">Tỷ lệ Out: {outPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số base {totalBaseHeadcount})</span></span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
+                <ArrowRightLeft className="w-6 h-6" />
+              </div>
+            </div>
+
+            {/* NET GROWTH CARD */}
+            <div className="p-5 rounded-2xl bg-sky-50/40 border border-sky-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-sky-700 uppercase tracking-widest block">Biến động Ròng (NET = IN - OUT)</span>
+                <span className={`text-3xl font-black block mt-1 ${netGrowthCount >= 0 ? "text-sky-600" : "text-rose-600"}`}>
+                  {netGrowthCount > 0 ? `+${netGrowthCount.toLocaleString()}` : netGrowthCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span>
+                </span>
+                <span className="text-xs font-extrabold text-sky-700 mt-1 block">Tỷ lệ Net: {netPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(Tăng trưởng ròng)</span></span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          {/* VISUAL CHART: GROUPED BAR CHART FOR IN VS OUT OVER 12 MONTHS */}
+          <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/80">
+            <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <PieIcon className="w-4 h-4 text-[#48BFE3]" />
+              Biểu đồ So sánh Số lượng IN (Nhập học) vs OUT (Chuyển đi) theo từng Tháng
+            </h4>
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyInOutChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="monthLabel" tick={{ fontSize: 11, fontWeight: 700, fill: "#64748b" }} />
+                  <YAxis tick={{ fontSize: 11, fontWeight: 700, fill: "#64748b" }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #cbd5e1", fontSize: "12px", fontWeight: "bold" }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: "12px", fontWeight: "bold", paddingTop: "8px" }} />
+                  <Bar dataKey="IN" name="Số HS Nhập mới (IN)" fill="#10b981" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="OUT" name="Số HS Chuyển đi (OUT)" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* DETAILED MATRIX TABLE */}
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full text-left text-xs font-semibold text-slate-700">
+              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
+                <tr>
+                  <th className="py-3 px-4">STT</th>
+                  <th className="py-3 px-4">Mã HS</th>
+                  <th className="py-3 px-4">Họ và Tên</th>
+                  <th className="py-3 px-4">Cơ sở</th>
+                  <th className="py-3 px-4">Khối</th>
+                  <th className="py-3 px-4">Lớp</th>
+                  <th className="py-3 px-4">Loại Biến động</th>
+                  <th className="py-3 px-4">Ngày phát sinh</th>
+                  <th className="py-3 px-4">Lý do / Điểm đến</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {filteredTransfers.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-slate-400 font-bold">
+                      Không tìm thấy dữ liệu học sinh biến động In/Out phù hợp với bộ lọc (Tháng/Cơ sở/Khối/Lớp)
+                    </td>
+                  </tr>
+                ) : (
+                  filteredTransfers.slice(0, 50).map((tr: any, idx: number) => {
+                    const campusInfo = getCampusInfo(tr.campusName)
+                    const isIn = tr.type === "IN"
+                    const formattedDate = tr.transferDate ? new Date(tr.transferDate).toLocaleDateString("vi-VN") : "---"
+
+                    return (
+                      <tr key={tr.id || idx} className="hover:bg-slate-50/80 transition-all">
+                        <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
+                        <td className="py-3 px-4 font-mono font-bold text-slate-800">{tr.studentCode}</td>
+                        <td className="py-3 px-4 font-bold text-slate-900">{tr.studentName}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border ${campusInfo.bg} ${campusInfo.border} ${campusInfo.text}`}>
+                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
+                            {tr.campusName || "Chưa phân"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 font-bold text-slate-700">{tr.grade || "---"}</td>
+                        <td className="py-3 px-4 font-bold text-slate-700">{tr.className || "---"}</td>
+                        <td className="py-3 px-4">
+                          {isIn ? (
+                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider">
+                              🟢 IN (Nhập học)
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black uppercase tracking-wider">
+                              🔴 OUT (Chuyển đi)
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-slate-600">{formattedDate}</td>
+                        <td className="py-3 px-4 text-slate-600 italic max-w-[200px] truncate">
+                          {tr.destinationSchool || tr.reason || tr.transferCategory || "---"}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

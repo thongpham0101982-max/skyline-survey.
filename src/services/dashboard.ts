@@ -190,6 +190,44 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     }
   }
 
+  // Query detailed transfer records for In/Out analytics
+  const detailedTransfersRaw = await prisma.studentTransfer.findMany({
+    where: transferWhere,
+    include: {
+      student: {
+        select: {
+          id: true,
+          studentCode: true,
+          studentName: true,
+          campus: { select: { id: true, campusCode: true, campusName: true } },
+          class: { select: { id: true, className: true, grade: true, level: true } }
+        }
+      }
+    },
+    orderBy: { transferDate: 'desc' }
+  })
+
+  const detailedTransfers = detailedTransfersRaw.map(t => ({
+    id: t.id,
+    type: t.type,
+    transferDate: t.transferDate,
+    reason: t.reason,
+    transferCategory: t.transferCategory,
+    destinationSchool: t.destinationSchool,
+    destinationProvince: t.destinationProvince,
+    destinationCountry: t.destinationCountry,
+    destinationType: t.destinationType,
+    studentCode: t.student?.studentCode || "---",
+    studentName: t.student?.studentName || "---",
+    campusId: t.student?.campus?.id || "",
+    campusCode: t.student?.campus?.campusCode || "Blank",
+    campusName: t.student?.campus?.campusName || "Chưa phân cơ sở",
+    classId: t.student?.class?.id || "",
+    className: t.student?.class?.className || "Chưa xếp lớp",
+    grade: t.student?.class?.grade || "Khác",
+    level: t.student?.class?.level || "Phổ thông"
+  }))
+
   // Reconstruct monthly headcount trend split by General vs Preschool
   let monthlyHeadcount: { month: string; count: number; generalCount: number; preschoolCount: number }[] = []
   if (academicYear) {
@@ -495,7 +533,8 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     gradeDistribution,
     campusDistribution,
     levelDistribution,
-    entryLevelStats
+    entryLevelStats,
+    detailedTransfers
   }
 }
 
