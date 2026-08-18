@@ -215,8 +215,20 @@ export default function AdminDashboard() {
     if (inOutLevelTab === "mam-non" && !isPreschool) return false
 
     const tDate = t.transferDate ? new Date(t.transferDate) : null
-    const tMonth = tDate ? String(tDate.getMonth() + 1) : ""
-    
+    const tMonthNum = tDate ? (tDate.getMonth() + 1) : null
+
+    // Quy định thời gian:
+    // - Phổ thông: Nhập học (IN) 01/08 - 31/05; Chuyển trường (OUT) 01/08 - 31/07.
+    // - Mầm non: Nhập học (IN) 01/06 - 31/05.
+    if (tDate && tMonthNum) {
+      if (inOutLevelTab === "pho-thong") {
+        if (t.type === "IN" && (tMonthNum === 6 || tMonthNum === 7)) {
+          return false
+        }
+      }
+    }
+
+    const tMonth = tMonthNum ? String(tMonthNum) : ""
     if (inOutMonthFilter !== "ALL" && tMonth !== inOutMonthFilter) return false
     
     if (inOutCampusFilter === "BLANK") {
@@ -1005,28 +1017,39 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* TÁCH 2 TAG: PHỔ THÔNG VÀ MẦM NON */}
-              <div className="flex items-center bg-slate-100 p-1 rounded-2xl gap-1 text-xs font-bold w-fit">
-                <button
-                  onClick={() => setInOutLevelTab("pho-thong")}
-                  className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                    inOutLevelTab === "pho-thong"
-                      ? "bg-[#48BFE3] text-white shadow-sm font-black"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  🏫 Phổ thông (K-12)
-                </button>
-                <button
-                  onClick={() => setInOutLevelTab("mam-non")}
-                  className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                    inOutLevelTab === "mam-non"
-                      ? "bg-rose-500 text-white shadow-sm font-black"
-                      : "text-slate-600 hover:text-slate-900"
-                  }`}
-                >
-                  👶 Mầm non
-                </button>
+              {/* TÁCH 2 TAG: PHỔ THÔNG VÀ MẦM NON KÈM KHUNG THỜI GIAN THỦ TỤC */}
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center bg-slate-100 p-1 rounded-2xl gap-1 text-xs font-bold w-fit">
+                  <button
+                    onClick={() => setInOutLevelTab("pho-thong")}
+                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                      inOutLevelTab === "pho-thong"
+                        ? "bg-[#48BFE3] text-white shadow-sm font-black"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    🏫 Phổ thông (K-12)
+                  </button>
+                  <button
+                    onClick={() => setInOutLevelTab("mam-non")}
+                    className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                      inOutLevelTab === "mam-non"
+                        ? "bg-rose-500 text-white shadow-sm font-black"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    👶 Mầm non
+                  </button>
+                </div>
+
+                <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-[#48BFE3]" />
+                  {inOutLevelTab === "pho-thong" ? (
+                    <span>Quy định: Nhập học (IN): <strong className="text-emerald-600">01/08 - 31/05</strong> | Chuyển trường (OUT): <strong className="text-rose-600">01/08 - 31/07</strong></span>
+                  ) : (
+                    <span>Quy định: Nhập học (IN): <strong className="text-emerald-600">01/06 - 31/05</strong></span>
+                  )}
+                </div>
               </div>
             </div>
 
