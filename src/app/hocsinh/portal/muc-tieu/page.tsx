@@ -138,30 +138,34 @@ export default function StudentGoalPortalPage() {
       setSaving(true)
       const goalListPayload: any[] = []
 
-      // 1. Collect checked preset goals for K1-K3
-      if (["K1", "K2", "K3"].includes(gradeLevel)) {
-        presets.forEach(p => {
-          if (selectedPresetGoals[p.id]) {
-            goalListPayload.push({
-              category: p.category,
-              presetId: p.id,
-              targetText: p.goalText,
-              actions: p.actionPreset ? p.actionPreset.split("|").map((act: string) => ({ actionText: act })) : []
-            })
-          }
-        })
-      }
+      // 1. Collect all selected preset goals (works for ALL grades K1-K12)
+      const selectedPresetIds = Object.keys(selectedPresetGoals).filter(id => selectedPresetGoals[id])
+      
+      presets.forEach(p => {
+        if (selectedPresetGoals[p.id]) {
+          const customItem = customGoals[p.category] || {}
+          goalListPayload.push({
+            category: p.category,
+            presetId: p.id,
+            targetText: p.goalText,
+            teacherSupportRequest: customItem.teacherSupport || null,
+            parentSupportRequest: customItem.parentSupport || null,
+            actions: p.actionPreset ? [{ actionText: p.actionPreset }] : []
+          })
+        }
+      })
 
-      // 2. Collect custom inputs for 4 categories
+      // 2. Collect custom written goals for categories where no preset was checked or custom text was entered
       Object.keys(customGoals).forEach(cat => {
         const item = customGoals[cat]
-        if (item.targetText && item.targetText.trim()) {
+        const hasCheckedPreset = presets.some(p => p.category === cat && selectedPresetGoals[p.id])
+        if (!hasCheckedPreset && item.targetText && item.targetText.trim()) {
           goalListPayload.push({
             category: cat,
-            targetText: item.targetText,
-            teacherSupportRequest: item.teacherSupport,
-            parentSupportRequest: item.parentSupport,
-            actions: item.actionText ? [{ actionText: item.actionText }] : []
+            targetText: item.targetText.trim(),
+            teacherSupportRequest: item.teacherSupport || null,
+            parentSupportRequest: item.parentSupport || null,
+            actions: item.actionText ? [{ actionText: item.actionText.trim() }] : []
           })
         }
       })
