@@ -42,6 +42,7 @@ export default function AdminAdvisoryDashboard() {
   const [savingPreset, setSavingPreset] = useState<boolean>(false)
   const [toastMessage, setToastMessage] = useState<string>("")
 
+  const [presetRows, setPresetRows] = useState<Array<{ goalText: string; actionPreset: string }>>([{ goalText: "", actionPreset: "" }])
   const [presetForm, setPresetForm] = useState({
     gradeGroup: "K6_K8",
     category: "HOC_TAP",
@@ -628,6 +629,16 @@ export default function AdminAdvisoryDashboard() {
             </div>
 
             <form onSubmit={handleSavePreset} className="space-y-4 text-xs font-bold">
+              {/* Dynamic Design Banner Notice */}
+              <div className="p-3 rounded-2xl bg-teal-50 border border-teal-200 text-teal-900 space-y-1">
+                <p className="font-black flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-teal-800">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                  <span>CẤU HÌNH MỤC TIÊU MẪU LINH ĐỘNG (MULTI-SELECT)</span>
+                </p>
+                <p className="text-[11px] text-teal-800 font-medium leading-relaxed">
+                  Mục tiêu mẫu tạo tại đây cho phép Học sinh <strong>chọn 1 hoặc nhiều mục tiêu</strong> trong cùng một nhóm. Phần <strong>Hành động gợi ý cho học sinh</strong> sẽ tự động ghép và hiện tương ứng khi học sinh tick chọn.
+                </p>
+              </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-slate-700 mb-1">Khối học áp dụng:</label>
@@ -656,27 +667,84 @@ export default function AdminAdvisoryDashboard() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-slate-700 mb-1">Nội dung mục tiêu gợi ý mẫu: <span className="text-rose-500">*</span></label>
-                <textarea
-                  rows={3}
-                  required
-                  placeholder="Nhập nội dung mục tiêu chuẩn để học sinh tham khảo chọn..."
-                  value={presetForm.goalText}
-                  onChange={e => setPresetForm(p => ({ ...p, goalText: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-medium outline-none"
-                />
-              </div>
+              {/* Dynamic Rows: Multi Goal Content & Action Pairs */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-slate-800 font-black text-xs uppercase tracking-wider">
+                    DANH SÁCH MỤC TIÊU CÓ THỂ CHỌN & HÀNH ĐỘNG GỢI Ý TƯƠNG ỨNG:
+                  </label>
+                  <span className="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                    {presetRows.length} mục tiêu mẫu
+                  </span>
+                </div>
 
-              <div>
-                <label className="block text-slate-700 mb-1">Hành động gợi ý cho học sinh:</label>
-                <textarea
-                  rows={2}
-                  placeholder="Gợi ý các bước hành động cụ thể học sinh nên làm..."
-                  value={presetForm.actionPreset}
-                  onChange={e => setPresetForm(p => ({ ...p, actionPreset: e.target.value }))}
-                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-300 font-medium outline-none"
-                />
+                {presetRows.map((row, idx) => (
+                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2.5 relative group">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-black text-teal-800 flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full bg-teal-600 text-white text-[10px] flex items-center justify-center font-bold">
+                          {idx + 1}
+                        </span>
+                        <span>Mục tiêu mẫu #{idx + 1}</span>
+                      </span>
+
+                      {presetRows.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setPresetRows(rows => rows.filter((_, i) => i !== idx))}
+                          className="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-0.5 rounded-lg hover:bg-rose-50 flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Xóa dòng này</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-slate-700 font-extrabold mb-1">
+                        Nội dung mục tiêu gợi ý mẫu: <span className="text-rose-500">*</span>
+                      </label>
+                      <textarea
+                        rows={2}
+                        required
+                        placeholder="Nhập nội dung mục tiêu chuẩn để học sinh tham khảo chọn..."
+                        value={row.goalText}
+                        onChange={e => {
+                          const val = e.target.value
+                          setPresetRows(rows => rows.map((r, i) => i === idx ? { ...r, goalText: val } : r))
+                        }}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 font-medium outline-none text-xs focus:border-teal-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] text-teal-900 font-extrabold mb-1">
+                        Hành động gợi ý tương ứng cho học sinh:
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Gợi ý các bước hành động cụ thể khi học sinh chọn mục tiêu này..."
+                        value={row.actionPreset}
+                        onChange={e => {
+                          const val = e.target.value
+                          setPresetRows(rows => rows.map((r, i) => i === idx ? { ...r, actionPreset: val } : r))
+                        }}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-300 font-medium outline-none text-xs focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                {!editingPreset && (
+                  <button
+                    type="button"
+                    onClick={() => setPresetRows(rows => [...rows, { goalText: "", actionPreset: "" }])}
+                    className="w-full py-2.5 rounded-2xl bg-teal-50 hover:bg-teal-100 text-teal-800 text-xs font-black border border-dashed border-teal-300 flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Plus className="w-4 h-4 text-teal-600" />
+                    <span>Thêm 1 dòng mục tiêu chọn & hành động gợi ý mới</span>
+                  </button>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -702,6 +770,32 @@ export default function AdminAdvisoryDashboard() {
                   </select>
                 </div>
               </div>
+
+              
+              {/* Live Preview Box */}
+              {presetRows.some(r => r.goalText) && (
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                  <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider flex items-center justify-between">
+                    <span>👁️ XEM TRƯỚC HỌC SINH CHỌN MỤC TIÊU (LIVE PREVIEW)</span>
+                    <span className="text-teal-700 font-bold">Tự động hiện hành động gợi ý</span>
+                  </span>
+                  <div className="space-y-2">
+                    {presetRows.filter(r => r.goalText).map((r, i) => (
+                      <div key={i} className="p-3 rounded-xl bg-white border border-teal-200 space-y-1 shadow-xs">
+                        <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                          <span className="w-4 h-4 rounded-md bg-teal-600 text-white flex items-center justify-center text-[10px]">✓</span>
+                          <span>{r.goalText}</span>
+                        </p>
+                        {r.actionPreset && (
+                          <p className="text-[11px] text-teal-800 font-semibold bg-teal-50 p-1.5 rounded-lg border border-teal-100 pl-6">
+                            ⚡ <strong>Hành động gợi ý:</strong> {r.actionPreset}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="pt-3 border-t flex justify-end gap-2">
                 <button

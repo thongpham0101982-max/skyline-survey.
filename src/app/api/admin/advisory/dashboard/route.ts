@@ -43,7 +43,7 @@ export async function GET(req: Request) {
         id: true,
         studentCode: true,
         studentName: true,
-        gradeLevel: true,
+        
         class: {
           select: {
             id: true,
@@ -106,7 +106,7 @@ export async function GET(req: Request) {
         id: st.id,
         studentCode: st.studentCode,
         studentName: st.studentName,
-        gradeLevel: st.gradeLevel,
+        gradeLevel: st.class?.gradeLevel || st.class?.className || "Khối 8",
         className: st.class?.className || "Chưa xếp lớp",
         campusName: st.class?.campus?.campusName || "Chưa xác định",
         campusCode: st.class?.campus?.campusCode || "CS",

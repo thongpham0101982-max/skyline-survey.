@@ -153,13 +153,13 @@ export async function GET(req: Request) {
     if (targetStudentId) targetStudentIds.push(targetStudentId)
 
     try {
-      let codeToLookup = targetStudentCode
+      let codeToLookup: string | null = targetStudentCode || null
       if (!codeToLookup && targetStudentId) {
         const stObj = await prisma.student.findUnique({
           where: { id: targetStudentId },
           select: { studentCode: true }
         })
-        codeToLookup = stObj?.studentCode
+        codeToLookup = stObj?.studentCode ?? null
       }
 
       if (codeToLookup) {
@@ -325,7 +325,7 @@ export async function POST(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const session = await auth()
-    const parentSess = await getParentSession()
+    const parentSess = null
     const studentSess = await getStudentSession()
 
     if (!session && !parentSess && !studentSess) {

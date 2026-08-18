@@ -7,6 +7,7 @@ import {
   ShieldCheck, Edit3, History, Clock, MessageSquare, AlertCircle, Users, Lock
 } from "lucide-react"
 import Link from "next/link"
+import { GoalMultiSelector } from "@/components/advisory/GoalMultiSelector"
 
 export default function StudentGoalPortalPage() {
   const [studentId, setStudentId] = useState("")
@@ -323,232 +324,100 @@ export default function StudentGoalPortalPage() {
         </div>
       )}
 
-      {/* ------------------- FORM KHỐI 1 - KHỐI 3 (CHECKBOXES) ------------------- */}
-      {isK1ToK3 && (
-        <div className="space-y-6">
-          <div className="bg-sky-50 border-2 border-sky-200 rounded-3xl p-5 text-sky-900 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl">🐧</div>
-              <div>
-                <h3 className="font-black text-sm uppercase">CHẾ ĐỘ NHẬP LIỆU TRỰC TIẾP — KHỐI {gradeLevel}</h3>
-                <p className="text-xs text-sky-700 font-medium">Em hãy nhấn vào ô vuông để tích chọn mục tiêu có sẵn, hoặc gõ thêm lời cam kết của em bên dưới nhé!</p>
-              </div>
+      {/* ------------------- FORM ĐIỀN MỤC TIÊU LINH ĐỘNG (TỰ ĐỘNG KHỚP HÀNH ĐỘNG GỢI Ý) ------------------- */}
+      <div className="space-y-6">
+        <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="text-3xl">✨</div>
+            <div>
+              <h3 className="font-black text-sm uppercase text-teal-900">BẢNG LẬP MỤC TIÊU NĂM HỌC — LỰA CHỌN LINH ĐỘNG</h3>
+              <p className="text-xs text-teal-700 font-medium">
+                Em có thể tick chọn <strong>1 hoặc nhiều mục tiêu mẫu</strong> bên dưới. Phần <strong>Hành động gợi ý tương ứng</strong> sẽ tự động hiển thị tương ứng theo từng mục tiêu đã chọn.
+              </p>
             </div>
           </div>
+          <span className="px-3 py-1.5 bg-teal-700 text-white rounded-2xl font-black text-xs shrink-0 shadow-xs">
+            Khối {gradeLevel.replace("K", "")}
+          </span>
+        </div>
 
-          {/* Preset Checkbox Categories */}
-          {["HOC_TAP", "THOI_QUEN", "KY_NANG_CAM_XUC", "DINH_HUONG"].map((cat) => {
-            const catTitles: Record<string, string> = {
-              HOC_TAP: "1. Mục tiêu học tập 📚",
-              THOI_QUEN: "2. Mục tiêu thói quen ⏰",
-              KY_NANG_CAM_XUC: "3. Mục tiêu kỹ năng, cảm xúc 🎨",
-              DINH_HUONG: "4. Mục tiêu định hướng 🚀"
-            }
-            const catPresets = presets.filter(p => p.category === cat)
+        {/* Render 4 Categories with Dynamic Goal & Action Multi-Selection */}
+        {secondaryCategories.map((catObj) => {
+          const item = customGoals[catObj.key] || {}
+          return (
+            <div key={catObj.key} className="space-y-4">
+              <GoalMultiSelector
+                categoryKey={catObj.key}
+                categoryTitle={`${catObj.number}. ${catObj.title}`}
+                categoryHint={catObj.hint}
+                presets={presets}
+                selectedPresetIds={Object.keys(selectedPresetGoals).filter(id => selectedPresetGoals[id])}
+                onSelectionChange={(selectedIds) => {
+                  const updatedMap = { ...selectedPresetGoals }
+                  presets.filter(p => p.category === catObj.key).forEach(p => {
+                    updatedMap[p.id] = selectedIds.includes(p.id)
+                  })
+                  setSelectedPresetGoals(updatedMap)
+                }}
+                customTargetText={item.targetText || ""}
+                onCustomTargetChange={(val) => setCustomGoals(prev => ({
+                  ...prev,
+                  [catObj.key]: { ...prev[catObj.key], targetText: val }
+                }))}
+                customActionText={item.actionText || ""}
+                onCustomActionChange={(val) => setCustomGoals(prev => ({
+                  ...prev,
+                  [catObj.key]: { ...prev[catObj.key], actionText: val }
+                }))}
+                readOnly={isSubmitted}
+              />
 
-            return (
-              <div key={cat} className="bg-white rounded-3xl p-6 border-2 border-slate-100 shadow-md space-y-4">
-                <h3 className="text-base font-black text-slate-800 border-b border-slate-100 pb-3">{catTitles[cat]}</h3>
-                
-                {catPresets.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {catPresets.map(p => {
-                      const isChecked = !!selectedPresetGoals[p.id]
-                      return (
-                        <div
-                          key={p.id}
-                          onClick={() => {
-                            if (!isSubmitted) {
-                              setSelectedPresetGoals(prev => ({ ...prev, [p.id]: !prev[p.id] }))
-                            }
-                          }}
-                          className={`p-4 rounded-2xl border-2 transition-all flex items-start gap-3 ${
-                            isSubmitted ? "cursor-not-allowed opacity-90" : "cursor-pointer"
-                          } ${
-                            isChecked
-                              ? "bg-teal-50 border-teal-500 shadow-sm"
-                              : "bg-slate-50 border-slate-200"
-                          }`}
-                        >
-                          <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 ${
-                            isChecked ? "bg-teal-500 border-teal-500 text-white" : "bg-white border-slate-300"
-                          }`}>
-                            {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs font-black text-slate-800">{p.goalText}</p>
-                            {p.actionPreset && (
-                              <p className="text-[11px] text-teal-700 font-bold bg-teal-100/60 px-2 py-0.5 rounded-md inline-block">
-                                👉 Việc làm: {p.actionPreset}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-xs text-slate-400 italic">Chưa có danh mục mẫu có sẵn cho phần này.</p>
-                )}
-
-                <div className="pt-3 border-t border-slate-100 space-y-2">
-                  <label className="text-xs font-black text-slate-700 flex items-center gap-1.5">
-                    <Edit3 className="w-3.5 h-3.5 text-amber-500" />
-                    <span>Ý kiến bổ sung / Mục tiêu khác của em (nếu có):</span>
+              {/* Support Questions from Teachers & Parents */}
+              <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-teal-800 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Em mong muốn Thầy Cô / bạn bè hỗ trợ mình như thế nào?</span>
                   </label>
                   <input
                     type="text"
                     readOnly={isSubmitted}
-                    value={customGoals[cat]?.targetText || ""}
+                    value={item.teacherSupport || ""}
                     onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
                       ...prev,
-                      [cat]: { ...prev[cat], targetText: e.target.value }
+                      [catObj.key]: { ...prev[catObj.key], teacherSupport: e.target.value }
                     }))}
-                    placeholder="Gõ mục tiêu riêng của em tại đây..."
-                    className={`w-full p-3 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
-                      isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
+                    placeholder="Thầy cô/bạn bè hỗ trợ em..."
+                    className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
+                      isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-teal-200 bg-white focus:border-teal-500"
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-amber-800 flex items-center gap-1.5">
+                    <Heart className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Em mong muốn Ba Mẹ hỗ trợ mình như thế nào?</span>
+                  </label>
+                  <input
+                    type="text"
+                    readOnly={isSubmitted}
+                    value={item.parentSupport || ""}
+                    onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
+                      ...prev,
+                      [catObj.key]: { ...prev[catObj.key], parentSupport: e.target.value }
+                    }))}
+                    placeholder="Ba mẹ hỗ trợ em..."
+                    className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
+                      isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-amber-200 bg-white focus:border-amber-500"
                     }`}
                   />
                 </div>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* ------------------- FORM CHUẨN ĐÚNG THEO MẪU WORD/PDF KHỐI 4 - KHỐI 12 ------------------- */}
-      {!isK1ToK3 && (
-        <div className="space-y-6">
-          <div className="bg-teal-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-900 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl">📝</div>
-              <div>
-                <h3 className="font-black text-sm uppercase">PHIẾU MỤC TIÊU NĂM HỌC — KHỐI {gradeLevel.replace("K", "")}</h3>
-                <p className="text-xs text-teal-700 font-medium">Bảng lập mục tiêu năm học gồm đúng 4 Nhóm mục tiêu chuẩn theo biểu mẫu của Hệ thống Trường Sky-Line.</p>
-              </div>
             </div>
-            <span className="px-3 py-1.5 bg-teal-600 text-white rounded-2xl font-black text-xs shadow-xs">
-              Mẫu biểu chuẩn Khối {gradeLevel.replace("K", "")}
-            </span>
-          </div>
-
-          {/* Render 4 Categories matching Word/PDF Template */}
-          {secondaryCategories.map((catObj) => {
-            const item = customGoals[catObj.key] || {}
-            return (
-              <div key={catObj.key} className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-md space-y-5">
-                
-                {/* Category Header */}
-                <div className="border-b border-slate-100 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-black text-slate-900">
-                      {catObj.number}. {catObj.title}
-                    </h3>
-                    <p className="text-xs text-slate-500 font-medium italic mt-0.5">
-                      Gợi ý: {catObj.hint}
-                    </p>
-                  </div>
-                  <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-xl text-[10px] font-black uppercase shrink-0">
-                    Nhóm {catObj.number}
-                  </span>
-                </div>
-                
-                {/* 2 Main Input Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Column 2: Các mục tiêu cụ thể của em */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-teal-500 inline-block" />
-                      <span>Các mục tiêu cụ thể của em:</span>
-                    </label>
-                    <textarea
-                      rows={4}
-                      readOnly={isSubmitted}
-                      value={item.targetText || ""}
-                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                        ...prev,
-                        [catObj.key]: { ...prev[catObj.key], targetText: e.target.value }
-                      }))}
-                      placeholder={catObj.placeholderTarget}
-                      className={`w-full p-3.5 rounded-2xl border-2 text-xs font-semibold focus:outline-none transition-colors ${
-                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
-                      }`}
-                    />
-                  </div>
-
-                  {/* Column 3: Em sẽ làm gì để đạt được những mục tiêu này? */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                      <span>Em sẽ làm gì để đạt được những mục tiêu này?</span>
-                    </label>
-                    <textarea
-                      rows={4}
-                      readOnly={isSubmitted}
-                      value={item.actionText || ""}
-                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                        ...prev,
-                        [catObj.key]: { ...prev[catObj.key], actionText: e.target.value }
-                      }))}
-                      placeholder={catObj.placeholderAction}
-                      className={`w-full p-3.5 rounded-2xl border-2 text-xs font-semibold focus:outline-none transition-colors ${
-                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* 2 Support Questions (Columns 4 & 5) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-100">
-                  
-                  {/* Column 4: Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào? */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-teal-800 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-teal-600" />
-                      <span>Em mong muốn thầy cô/ bạn bè hỗ trợ mình như thế nào?</span>
-                    </label>
-                    <input
-                      type="text"
-                      readOnly={isSubmitted}
-                      value={item.teacherSupport || ""}
-                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                        ...prev,
-                        [catObj.key]: { ...prev[catObj.key], teacherSupport: e.target.value }
-                      }))}
-                      placeholder="Thầy cô/bạn bè hỗ trợ em..."
-                      className={`w-full p-3 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
-                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-teal-100 bg-teal-50/40 focus:border-teal-500"
-                      }`}
-                    />
-                  </div>
-
-                  {/* Column 5: Em mong muốn ba mẹ hỗ trợ mình như thế nào? */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-black text-amber-800 flex items-center gap-1.5">
-                      <Heart className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Em mong muốn ba mẹ hỗ trợ mình như thế nào?</span>
-                    </label>
-                    <input
-                      type="text"
-                      readOnly={isSubmitted}
-                      value={item.parentSupport || ""}
-                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                        ...prev,
-                        [catObj.key]: { ...prev[catObj.key], parentSupport: e.target.value }
-                      }))}
-                      placeholder="Ba mẹ hỗ trợ em..."
-                      className={`w-full p-3 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
-                        isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-amber-100 bg-amber-50/40 focus:border-amber-500"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-              </div>
-            )
-          })}
-        </div>
-      )}
+          )
+        })}
+      </div>
 
       {/* ------------------- LỜI CAM KẾT & XÁC NHẬN ĐỒNG HÀNH ------------------- */}
       <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-md space-y-5">

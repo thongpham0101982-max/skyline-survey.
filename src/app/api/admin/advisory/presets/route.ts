@@ -89,6 +89,28 @@ export async function POST(req: Request) {
     if (!session) return jsonResponse({ error: "Chưa đăng nhập" }, 401)
 
     const body = await req.json()
+    if (body.items && Array.isArray(body.items)) {
+      const createdList = []
+      let baseOrder = Number(body.sortOrder) || 1
+      for (let i = 0; i < body.items.length; i++) {
+        const item = body.items[i]
+        if (item.goalText && item.goalText.trim()) {
+          const created = await prisma.goalPreset.create({
+            data: {
+              gradeGroup: body.gradeGroup,
+              category: body.category,
+              goalText: item.goalText.trim(),
+              actionPreset: item.actionPreset ? item.actionPreset.trim() : "",
+              sortOrder: baseOrder + i,
+              status: body.status || "ACTIVE"
+            }
+          })
+          createdList.push(created)
+        }
+      }
+      return jsonResponse({ success: true, data: createdList })
+    }
+
     const { gradeGroup, category, goalText, actionPreset, sortOrder, status } = body
 
     if (!gradeGroup || !category || !goalText) {
