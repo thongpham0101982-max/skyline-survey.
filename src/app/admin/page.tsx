@@ -1120,13 +1120,13 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h2 className="text-xl font-black text-[#003B3A] tracking-tight">🏫 Báo cáo Biến động Học sinh Phổ thông (K-12)</h2>
-                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Theo dõi tỷ lệ % nhập học qua khảo sát (01/08 - 31/05) và chuyển trường (01/08 - 31/07)</p>
+                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Theo dõi số lượng & tỷ lệ phần trăm (%) Học sinh Nhập học mới (từ 01/08/2026) và Chuyển trường (từ 31/05/2026 - HK Hè)</p>
                 </div>
               </div>
 
               <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 flex items-center gap-2 w-fit">
                 <Clock className="w-3.5 h-3.5 text-[#48BFE3]" />
-                <span>Quy định: IN (<strong className="text-emerald-600">01/08 - 31/05</strong>) | OUT (<strong className="text-rose-600">01/08 - 31/07</strong>)</span>
+                <span>Quy định: IN (<strong className="text-emerald-600">Từ 01/08/2026</strong>) | OUT (<strong className="text-rose-600">Từ 31/05/2026 - HK Hè</strong>)</span>
               </div>
             </div>
 

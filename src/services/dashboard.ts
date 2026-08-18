@@ -210,7 +210,10 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     transferWhereClause.student = { campusId: { in: allowedCampusIds } }
   }
 
-  const detailedTransfersRaw = await prisma.studentTransfer.findMany({
+  const inStartDate = new Date("2026-08-01T00:00:00.000Z")
+  const outStartDate = new Date("2026-05-31T00:00:00.000Z")
+
+  const rawTransfers = await prisma.studentTransfer.findMany({
     where: transferWhereClause,
     include: {
       student: {
@@ -224,6 +227,18 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
       }
     },
     orderBy: { transferDate: 'desc' }
+  })
+
+  // Filter IN transfers from 01/08/2026 & OUT transfers from 31/05/2026 (Summer Semester)
+  const detailedTransfersRaw = rawTransfers.filter(t => {
+    const tDate = t.transferDate ? new Date(t.transferDate) : new Date(t.createdAt)
+    if (t.type === "IN") {
+      return tDate >= inStartDate
+    }
+    if (t.type === "OUT") {
+      return tDate >= outStartDate
+    }
+    return true
   })
 
   const detailedTransfers = detailedTransfersRaw.map(t => ({
