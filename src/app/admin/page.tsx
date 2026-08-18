@@ -86,6 +86,7 @@ export default function AdminDashboard() {
   const [inOutGradeFilter, setInOutGradeFilter] = useState<string>("ALL")
   const [inOutClassFilter, setInOutClassFilter] = useState<string>("ALL")
   const [inOutLevelTab, setInOutLevelTab] = useState<"pho-thong" | "mam-non">("pho-thong")
+  const [inOutSemesterFilter, setInOutSemesterFilter] = useState<string>("ALL")
 
   const userName = session?.user?.name || "Thành viên"
 
@@ -235,6 +236,13 @@ export default function AdminDashboard() {
       }
     }
 
+    // Filter by Semester (HK1: 1/8 - 31/12, HK2: 1/1 - 31/5, Hè: 1/6 - 31/7)
+    if (tMonthNum) {
+      if (inOutSemesterFilter === "HK1" && ![8, 9, 10, 11, 12].includes(tMonthNum)) return false
+      if (inOutSemesterFilter === "HK2" && ![1, 2, 3, 4, 5].includes(tMonthNum)) return false
+      if (inOutSemesterFilter === "HE" && ![6, 7].includes(tMonthNum)) return false
+    }
+
     const tMonth = tMonthNum ? String(tMonthNum) : ""
     if (inOutMonthFilter !== "ALL" && tMonth !== inOutMonthFilter) return false
     
@@ -311,6 +319,55 @@ export default function AdminDashboard() {
   const inPercentage = ((totalInCount / totalBaseHeadcount) * 100).toFixed(2)
   const outPercentage = ((outTransfersCount / totalBaseHeadcount) * 100).toFixed(2)
   const netPercentage = ((netGrowthCount / totalBaseHeadcount) * 100).toFixed(2)
+
+  // Compute Semester Metrics (HK1: 1/8 - 31/12, HK2: 1/1 - 31/5, Hè: 1/6 - 31/7)
+  const baseTransfersForSem = detailedTransfers.filter((t: any) => {
+    const isPreschool = t.level === "Mầm non" || String(t.grade || "").includes("Mầm")
+    if (inOutLevelTab === "pho-thong" && isPreschool) return false
+    if (inOutLevelTab === "mam-non" && !isPreschool) return false
+
+    if (inOutCampusFilter === "BLANK") {
+      const info = getCampusInfo(t.campusName)
+      const isKnown = t.campusName && (
+        t.campusName.includes("CS1") || t.campusName.includes("CS2") || t.campusName.includes("CS3") ||
+        t.campusName.includes("CS4") || t.campusName.includes("CS5") ||
+        info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
+        info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
+      )
+      if (isKnown) return false
+    } else if (inOutCampusFilter !== "ALL") {
+      const info = getCampusInfo(t.campusName)
+      if (!t.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
+    }
+
+    if (inOutGradeFilter !== "ALL") {
+      const gStr = String(t.grade || "")
+      if (!gStr.includes(inOutGradeFilter)) return false
+    }
+
+    if (inOutClassFilter !== "ALL" && t.className !== inOutClassFilter) return false
+    return true
+  })
+
+  const getSemesterStats = (monthsList: number[], isHK1 = false) => {
+    const semT = baseTransfersForSem.filter((t: any) => {
+      const d = t.transferDate ? new Date(t.transferDate) : null
+      const m = d ? (d.getMonth() + 1) : null
+      return m && monthsList.includes(m)
+    })
+    const inDirect = semT.filter((t: any) => t.type === "IN").length
+    const inTotal = inDirect + (isHK1 ? augustSurveyBaselineCount : 0)
+    const outTotal = semT.filter((t: any) => t.type === "OUT").length
+    const netTotal = inTotal - outTotal
+    const inPct = ((inTotal / totalBaseHeadcount) * 100).toFixed(1)
+    const outPct = ((outTotal / totalBaseHeadcount) * 100).toFixed(1)
+    const netPct = ((netTotal / totalBaseHeadcount) * 100).toFixed(1)
+    return { inTotal, outTotal, netTotal, inPct, outPct, netPct }
+  }
+
+  const hk1Stats = getSemesterStats([8, 9, 10, 11, 12], true)
+  const hk2Stats = getSemesterStats([1, 2, 3, 4, 5], false)
+  const heStats = getSemesterStats([6, 7], false)
 
   const monthlyInOutChartData = Array.from({ length: 12 }, (_, i) => {
     const monthNum = i + 1
@@ -1104,8 +1161,20 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* BỘ LỌC ĐA CHIỀU: THÁNG, CƠ SỞ, KHỐI, LỚP */}
+            {/* BỘ LỌC ĐA CHIỀU: HỌC KỲ, THÁNG, CƠ SỞ, KHỐI, LỚP */}
             <div className="flex flex-wrap items-center gap-2.5">
+              {/* LỌC HỌC KỲ */}
+              <select
+                value={inOutSemesterFilter}
+                onChange={(e) => setInOutSemesterFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-xs font-black text-slate-800 outline-none focus:ring-2 focus:ring-teal-500/20"
+              >
+                <option value="ALL">🏫 Tất cả các Học kỳ</option>
+                <option value="HK1">📘 HK1 (01/08 - 31/12)</option>
+                <option value="HK2">📙 HK2 (01/01 - 31/05)</option>
+                <option value="HE">☀️ HK Hè (01/06 - 31/07)</option>
+              </select>
+
               {/* LỌC THÁNG */}
               <select
                 value={inOutMonthFilter}
@@ -1209,6 +1278,103 @@ export default function AdminDashboard() {
               </div>
               <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold">
                 <TrendingUp className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          {/* BÁO CÁO PHÂN TÍCH TỶ LỆ % BIẾN ĐỘNG THEO NĂM HỌC HIỆN HÀNH (HK1, HK2, HK HÈ) */}
+          <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-3">
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#48BFE3]" />
+                Phân tích Tỷ lệ % Biến động Học sinh Theo các Học kỳ trong Năm học
+              </span>
+              <span className="text-[11px] font-bold text-slate-500">Mốc sĩ số chuẩn Tháng 8: {totalBaseHeadcount} HS</span>
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* HK1 CARD */}
+              <div className="p-4 rounded-xl bg-white border border-blue-100 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">
+                    📘 Học kỳ 1 (01/08 - 31/12)
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-600 block">IN</span>
+                    <span className="text-sm font-black text-emerald-700 block">{hk1Stats.inTotal}</span>
+                    <span className="text-[10px] font-bold text-emerald-600">{hk1Stats.inPct}%</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-rose-600 block">OUT</span>
+                    <span className="text-sm font-black text-rose-700 block">{hk1Stats.outTotal}</span>
+                    <span className="text-[10px] font-bold text-rose-600">{hk1Stats.outPct}%</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-sky-600 block">NET</span>
+                    <span className={`text-sm font-black block ${hk1Stats.netTotal >= 0 ? "text-sky-700" : "text-rose-700"}`}>
+                      {hk1Stats.netTotal > 0 ? `+${hk1Stats.netTotal}` : hk1Stats.netTotal}
+                    </span>
+                    <span className="text-[10px] font-bold text-sky-600">{hk1Stats.netPct}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* HK2 CARD */}
+              <div className="p-4 rounded-xl bg-white border border-amber-100 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-black uppercase tracking-wider">
+                    📙 Học kỳ 2 (01/01 - 31/05)
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-600 block">IN</span>
+                    <span className="text-sm font-black text-emerald-700 block">{hk2Stats.inTotal}</span>
+                    <span className="text-[10px] font-bold text-emerald-600">{hk2Stats.inPct}%</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-rose-600 block">OUT</span>
+                    <span className="text-sm font-black text-rose-700 block">{hk2Stats.outTotal}</span>
+                    <span className="text-[10px] font-bold text-rose-600">{hk2Stats.outPct}%</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-sky-600 block">NET</span>
+                    <span className={`text-sm font-black block ${hk2Stats.netTotal >= 0 ? "text-sky-700" : "text-rose-700"}`}>
+                      {hk2Stats.netTotal > 0 ? `+${hk2Stats.netTotal}` : hk2Stats.netTotal}
+                    </span>
+                    <span className="text-[10px] font-bold text-sky-600">{hk2Stats.netPct}%</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* HK HÈ CARD */}
+              <div className="p-4 rounded-xl bg-white border border-purple-100 shadow-2xs space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-black uppercase tracking-wider">
+                    ☀️ Học kỳ Hè (01/06 - 31/07)
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
+                  <div>
+                    <span className="text-[10px] font-bold text-emerald-600 block">IN</span>
+                    <span className="text-sm font-black text-emerald-700 block">{heStats.inTotal}</span>
+                    <span className="text-[10px] font-bold text-emerald-600">{heStats.inPct}%</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-rose-600 block">OUT</span>
+                    <span className="text-sm font-black text-rose-700 block">{heStats.outTotal}</span>
+                    <span className="text-[10px] font-bold text-rose-600">{heStats.outPct}%</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-sky-600 block">NET</span>
+                    <span className={`text-sm font-black block ${heStats.netTotal >= 0 ? "text-sky-700" : "text-rose-700"}`}>
+                      {heStats.netTotal > 0 ? `+${heStats.netTotal}` : heStats.netTotal}
+                    </span>
+                    <span className="text-[10px] font-bold text-sky-600">{heStats.netPct}%</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
