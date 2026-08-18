@@ -681,11 +681,11 @@ export default function AdminDashboard() {
             >
               <option value="BLANK">-- Chưa phân cơ sở (Blank) --</option>
               <option value="ALL">-- Tất cả cơ sở --</option>
-              <option value="CS1">CS1 (Sky-Line Central - Xanh Sky-Line)</option>
-              <option value="CS2">CS2 (Sky-Line Riverside - Xanh tím)</option>
-              <option value="CS3">CS3 (Sky-Line Hill - Tím than)</option>
-              <option value="CS4">CS4 (Sky-Line International - Vàng đất)</option>
-              <option value="CS5">CS5 (Sky-Line Global - Xám xanh)</option>
+              <option value="CS1">CS1</option>
+              <option value="CS2">CS2</option>
+              <option value="CS3">CS3</option>
+              <option value="CS4">CS4</option>
+              <option value="CS5">CS5</option>
             </select>
 
             {/* LỌC NGUỒN NHẬP HỌC */}
