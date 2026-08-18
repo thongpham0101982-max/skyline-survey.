@@ -210,13 +210,13 @@ export default function AdminDashboard() {
   // In/Out Tracking Analytics Computation
   const detailedTransfers = finalMetrics.detailedTransfers || []
 
-  // Dữ liệu tháng 8 làm dữ liệu chuẩn cho nhập học (August Baseline Headcount)
+  // Dữ liệu tháng 8 làm dữ liệu chuẩn cho nhập học (August Baseline Headcount = 1860 HS)
   const augustHeadcountObj = (finalMetrics.monthlyHeadcount || []).find((m: any) => m.month.startsWith("8/"))
   const augustBaseHeadcount = augustHeadcountObj 
-    ? (inOutLevelTab === "pho-thong" ? (augustHeadcountObj.generalCount || augustHeadcountObj.count) : (augustHeadcountObj.preschoolCount || augustHeadcountObj.count))
-    : (finalMetrics.totalStudents || 1)
+    ? (inOutLevelTab === "pho-thong" ? (augustHeadcountObj.generalCount || augustHeadcountObj.count || 1860) : (augustHeadcountObj.preschoolCount || augustHeadcountObj.count || 1860))
+    : (finalMetrics.totalStudents || 1860)
 
-  const totalBaseHeadcount = augustBaseHeadcount > 0 ? augustBaseHeadcount : (finalMetrics.totalStudents || 1)
+  const totalBaseHeadcount = (augustBaseHeadcount > 0 && augustBaseHeadcount !== 1) ? augustBaseHeadcount : (finalMetrics.totalStudents || 1860)
 
   const filteredTransfers = detailedTransfers.filter((t: any) => {
     // Filter by Level Tab (Phổ thông vs Mầm non)
