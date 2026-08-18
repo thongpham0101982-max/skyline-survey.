@@ -47,6 +47,8 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
   const [
     totalStudents,
+    totalGeneralStudents,
+    totalPreschoolStudents,
     totalClasses,
     generalClasses,
     preschoolClasses,
@@ -57,6 +59,18 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     classSummaries
   ] = await Promise.all([
     prisma.student.count({ where: studentWhere }),
+    prisma.student.count({
+      where: {
+        ...studentWhere,
+        class: { level: { in: ["Tiểu học", "THCS", "THPT"] } }
+      }
+    }),
+    prisma.student.count({
+      where: {
+        ...studentWhere,
+        class: { level: "Mầm non" }
+      }
+    }),
     prisma.class.count({ where: classWhere }),
     prisma.class.count({
       where: {
@@ -565,6 +579,8 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   return {
     academicYearName,
     totalStudents,
+    totalGeneralStudents,
+    totalPreschoolStudents,
     totalClasses,
     generalClasses,
     preschoolClasses,

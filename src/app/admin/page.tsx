@@ -214,9 +214,9 @@ export default function AdminDashboard() {
   const augustHeadcountObj = (finalMetrics.monthlyHeadcount || []).find((m: any) => m.month.startsWith("8/"))
   const augustBaseHeadcount = augustHeadcountObj 
     ? (inOutLevelTab === "pho-thong" ? (augustHeadcountObj.generalCount || augustHeadcountObj.count) : (augustHeadcountObj.preschoolCount || augustHeadcountObj.count))
-    : finalMetrics.totalStudents
+    : (inOutLevelTab === "pho-thong" ? finalMetrics.totalGeneralStudents : finalMetrics.totalPreschoolStudents)
 
-  const totalBaseHeadcount = (augustBaseHeadcount && augustBaseHeadcount > 0) ? augustBaseHeadcount : (finalMetrics.totalStudents || 1872)
+  const totalBaseHeadcount = (augustBaseHeadcount && augustBaseHeadcount > 0) ? augustBaseHeadcount : (inOutLevelTab === "pho-thong" ? (finalMetrics.totalGeneralStudents || 1862) : (finalMetrics.totalPreschoolStudents || 10))
 
   const filteredTransfers = detailedTransfers.filter((t: any) => {
     // Filter by Level Tab (Phổ thông vs Mầm non)
