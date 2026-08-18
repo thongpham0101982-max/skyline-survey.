@@ -692,12 +692,13 @@ export default function TeacherStudentProfilePage() {
                 ) : profileData ? (
                   <div>
                     {/* TAB: CV INTERGRATED (NEW STANDARD) */}
-                    {/* TAB: CV INTEGRATED - REAL DATA FROM ALL TABS */}
+                    {/* TAB: CV INTEGRATED - 100% STRICT REAL DATA (NO FABRICATED DUMMY FALLBACKS) */}
                     {activeTab === "cv" && (() => {
                       const student = profileData;
                       const rawScores = student?.termScores || student?.student?.termScores || [];
                       const rawSummaries = student?.termSummaries || student?.student?.termSummaries || [];
 
+                      // Subject score mapping
                       const subjectMap = new Map();
                       rawScores.forEach((sc: any) => {
                         const subName = sc.subject?.name || sc.subjectName || sc.subjectCode || "Môn học";
@@ -736,33 +737,31 @@ export default function TeacherStudentProfilePage() {
                                   </div>
                                 </div>
                                 <div className="bg-slate-50 border border-slate-200/80 px-4 py-2 rounded-2xl text-right text-xs font-semibold text-slate-600 self-start sm:self-auto shadow-2xs">
-                                  <div>Năm học: <span className="text-[#007A72] font-black">{student?.yearName || "2025-2026"}</span></div>
+                                  <div>Năm học: <span className="text-[#007A72] font-black">{student?.yearName || "—"}</span></div>
                                   <div>Cơ sở: <span className="text-slate-800 font-bold">{student?.campusName || "Sky-Line"}</span></div>
                                 </div>
                               </div>
 
                               {/* PROFILE CARD: AVATAR, INFO & GVCN */}
                               <div className="bg-gradient-to-br from-slate-50/80 to-teal-50/20 border border-teal-100/80 rounded-2xl p-4 sm:p-5 grid grid-cols-1 md:grid-cols-4 gap-5 items-center">
-                                {/* Avatar Column */}
                                 <div className="md:col-span-1 text-center flex flex-col items-center justify-center space-y-2">
                                   <div className="w-24 h-24 rounded-2xl overflow-hidden border-4 border-white shadow-md bg-white flex items-center justify-center text-teal-700 relative">
                                     <User className="w-12 h-12" />
                                   </div>
                                   <span className="inline-block px-3 py-1 bg-[#007A72]/10 border border-[#007A72]/20 text-[#007A72] font-black text-[11px] rounded-full uppercase tracking-wider">
-                                    Lớp {student?.className || "N/A"}
+                                    Lớp {student?.className || "—"}
                                   </span>
                                 </div>
 
-                                {/* Info Column */}
                                 <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-medium text-slate-700">
                                   <div className="space-y-2">
                                     <div>
                                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Họ và tên học sinh</span>
-                                      <span className="text-base font-black text-slate-900">{student?.studentName}</span>
+                                      <span className="text-base font-black text-slate-900">{student?.studentName || "—"}</span>
                                     </div>
                                     <div>
                                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Mã học sinh</span>
-                                      <span className="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">{student?.studentCode}</span>
+                                      <span className="font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200 inline-block">{student?.studentCode || "—"}</span>
                                     </div>
                                   </div>
 
@@ -770,18 +769,18 @@ export default function TeacherStudentProfilePage() {
                                     <div className="flex items-center gap-4">
                                       <div>
                                         <span className="text-[10px] uppercase font-bold text-slate-400 block">Ngày sinh</span>
-                                        <span className="font-bold text-slate-800">{student?.dob || "N/A"}</span>
+                                        <span className="font-bold text-slate-800">{student?.dob || "—"}</span>
                                       </div>
                                       <div>
                                         <span className="text-[10px] uppercase font-bold text-slate-400 block">Giới tính</span>
-                                        <span className="font-bold text-slate-800">{student?.gender || "N/A"}</span>
+                                        <span className="font-bold text-slate-800">{student?.gender || "—"}</span>
                                       </div>
                                     </div>
                                     <div>
                                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Giáo viên chủ nhiệm (GVCN)</span>
                                       <span className="font-black text-[#007A72] flex items-center gap-1.5 text-xs mt-0.5">
                                         <User className="w-3.5 h-3.5" />
-                                        {student?.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}
+                                        {student?.homeroomTeacherName || "Chưa phân công"}
                                       </span>
                                     </div>
                                   </div>
@@ -798,12 +797,12 @@ export default function TeacherStudentProfilePage() {
                               </h3>
                               {subjectList.length === 0 ? (
                                 <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-center text-xs text-slate-400 italic">
-                                  Chưa ghi nhận điểm số môn học MOET trong năm học này.
+                                  Chưa có ghi nhận điểm số môn học MOET trong hệ thống.
                                 </div>
                               ) : (
                                 <div className="space-y-3">
                                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {subjectList.slice(0, 8).map(([subName, sc]: [string, any], idx: number) => {
+                                    {subjectList.map(([subName, sc]: [string, any], idx: number) => {
                                       const displayScore = sc.finalScore ?? sc.score ?? sc.midTermScore ?? sc.scoreStr ?? "—";
                                       const evalText = typeof displayScore === "number" 
                                         ? (displayScore >= 8 ? "Xuất sắc" : displayScore >= 6.5 ? "Khá" : "Đạt")
@@ -823,8 +822,8 @@ export default function TeacherStudentProfilePage() {
                                       {rawSummaries.map((sum: any, idx: number) => (
                                         <div key={idx} className="flex items-center gap-2">
                                           <span className="font-bold text-[#007A72]">{sum.term || `Học kỳ ${idx+1}`}:</span>
-                                          <span>Học lực: <strong className="text-slate-800">{sum.academicRank || sum.academicScore || "Tốt"}</strong></span>
-                                          <span>| Hạnh kiểm: <strong className="text-slate-800">{sum.conductRank || "Tốt"}</strong></span>
+                                          <span>Học lực: <strong className="text-slate-800">{sum.academicRank || sum.academicScore || "—"}</strong></span>
+                                          <span>| Hạnh kiểm: <strong className="text-slate-800">{sum.conductRank || "—"}</strong></span>
                                         </div>
                                       ))}
                                     </div>
@@ -842,7 +841,7 @@ export default function TeacherStudentProfilePage() {
                               </h3>
                               {achievementsList.length === 0 ? (
                                 <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-center text-xs text-slate-400 italic">
-                                  Học sinh chưa có ghi nhận giải thưởng hoặc khen thưởng trong năm học.
+                                  Chưa có ghi nhận giải thưởng hoặc khen thưởng trong hệ thống.
                                 </div>
                               ) : (
                                 <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
@@ -889,7 +888,7 @@ export default function TeacherStudentProfilePage() {
                               </h3>
                               {expList.length === 0 &amp;&amp; projList.length === 0 ? (
                                 <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-center text-xs text-slate-400 italic">
-                                  Học sinh chưa tham gia dự án trải nghiệm ngoại khóa nào.
+                                  Chưa có ghi nhận hoạt động trải nghiệm hoặc dự án trong hệ thống.
                                 </div>
                               ) : (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -899,7 +898,7 @@ export default function TeacherStudentProfilePage() {
                                       <div className="text-xs font-semibold space-y-0.5">
                                         <h5 className="font-bold text-slate-800">{act.activityName}</h5>
                                         <div className="text-[10px] text-slate-500">
-                                          Vai trò: <span className="font-bold text-slate-700">{act.role || "Thành viên"}</span> | Đánh giá: <span className="font-bold text-teal-700">{act.evalLevel || "Đạt"}</span>
+                                          Vai trò: <span className="font-bold text-slate-700">{act.role || "—"}</span> | Đánh giá: <span className="font-bold text-teal-700">{act.evalLevel || "—"}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -910,7 +909,7 @@ export default function TeacherStudentProfilePage() {
                                       <div className="text-xs font-semibold space-y-0.5">
                                         <h5 className="font-bold text-slate-800">{p.projectName}</h5>
                                         <div className="text-[10px] text-slate-500">
-                                          Vai trò: <span className="font-bold text-slate-700">{p.role || "Thành viên"}</span> | Kết quả: <span className="font-bold text-indigo-700">{p.result || "Hoàn thành"}</span>
+                                          Vai trò: <span className="font-bold text-slate-700">{p.role || "—"}</span> | Kết quả: <span className="font-bold text-indigo-700">{p.result || "—"}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -934,7 +933,7 @@ export default function TeacherStudentProfilePage() {
                                       "{commitmentText}"
                                     </p>
                                   ) : (
-                                    <p className="text-xs text-slate-400 italic">Chưa ghi nhận cam kết/mục tiêu cá nhân trong Phiếu Cố vấn.</p>
+                                    <p className="text-xs text-slate-400 italic">Chưa thiết lập mục tiêu cá nhân trong Phiếu Cố vấn.</p>
                                   )}
                                 </div>
                                 <div className="bg-teal-50/30 border border-teal-100 p-4 rounded-2xl space-y-2">
@@ -944,24 +943,13 @@ export default function TeacherStudentProfilePage() {
                                       {supportTargets.map((st: any, idx: number) => (
                                         <div key={idx} className="flex justify-between border-b border-teal-100/60 pb-1">
                                           <span className="truncate">{st.targetName || st.supportReason || "Mục tiêu hỗ trợ"}:</span>
-                                          <span className="font-black text-[#007A72] flex-shrink-0 ml-2">{st.status || "Đang thực hiện"}</span>
+                                          <span className="font-black text-[#007A72] flex-shrink-0 ml-2">{st.status || "—"}</span>
                                         </div>
                                       ))}
                                     </div>
                                   ) : (
-                                    <div className="space-y-1.5 text-xs font-semibold text-slate-700">
-                                      <div className="flex justify-between border-b border-teal-100/60 pb-1">
-                                        <span>Tự chủ &amp; Tự học:</span>
-                                        <span className="font-black text-[#007A72]">Tốt</span>
-                                      </div>
-                                      <div className="flex justify-between border-b border-teal-100/60 pb-1">
-                                        <span>Giao tiếp &amp; Hợp tác:</span>
-                                        <span className="font-black text-[#007A72]">Tốt</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span>Giải quyết vấn đề:</span>
-                                        <span className="font-black text-[#007A72]">Đạt</span>
-                                      </div>
+                                    <div className="text-xs text-slate-400 italic py-2">
+                                      Chưa có ghi nhận đánh giá năng lực cố vấn.
                                     </div>
                                   )}
                                 </div>
@@ -986,7 +974,7 @@ export default function TeacherStudentProfilePage() {
                                       <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900 border-b border-emerald-100 pb-1.5">
                                         <span>Ghi nhận từ GVCN ({c.teacherName || student?.homeroomTeacherName || "Giáo viên chủ nhiệm"}):</span>
                                         <span className="font-mono text-emerald-700 text-[10px]">
-                                          {c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('vi-VN') : (student?.yearName || "2025-2026")}
+                                          {c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('vi-VN') : (student?.yearName || "—")}
                                         </span>
                                       </div>
                                       <p className="italic leading-relaxed text-slate-800 pt-1">
