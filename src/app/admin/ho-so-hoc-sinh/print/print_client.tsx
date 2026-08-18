@@ -424,6 +424,8 @@ export default function AdminStudentProfilesPrintPage() {
               </div>
             </div>
           );
-        })}    </div>
+        })}
+      </div>
+    </div>
   )
 }
