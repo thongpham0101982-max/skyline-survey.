@@ -85,6 +85,7 @@ export default function AdminDashboard() {
   const [inOutCampusFilter, setInOutCampusFilter] = useState<string>("BLANK")
   const [inOutGradeFilter, setInOutGradeFilter] = useState<string>("ALL")
   const [inOutClassFilter, setInOutClassFilter] = useState<string>("ALL")
+  const [inOutLevelTab, setInOutLevelTab] = useState<"pho-thong" | "mam-non">("pho-thong")
 
   const userName = session?.user?.name || "Thành viên"
 
@@ -127,6 +128,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     setInOutClassFilter("ALL")
   }, [inOutCampusFilter, inOutGradeFilter])
+
+  // Reset Grade & Class Filter when Level Tab changes
+  useEffect(() => {
+    setInOutGradeFilter("ALL")
+    setInOutClassFilter("ALL")
+  }, [inOutLevelTab])
 
   if (status === "loading" || loading) {
     return (
@@ -202,6 +209,11 @@ export default function AdminDashboard() {
   const totalBaseHeadcount = finalMetrics.totalStudents || 1
 
   const filteredTransfers = detailedTransfers.filter((t: any) => {
+    // Filter by Level Tab (Phổ thông vs Mầm non)
+    const isPreschool = t.level === "Mầm non" || String(t.grade || "").includes("Mầm")
+    if (inOutLevelTab === "pho-thong" && isPreschool) return false
+    if (inOutLevelTab === "mam-non" && !isPreschool) return false
+
     const tDate = t.transferDate ? new Date(t.transferDate) : null
     const tMonth = tDate ? String(tDate.getMonth() + 1) : ""
     
@@ -266,6 +278,10 @@ export default function AdminDashboard() {
     new Set(
       allStudentsAndTransfers
         .filter((item: any) => {
+          const isPreschool = item.level === "Mầm non" || String(item.grade || item.rawGrade || "").includes("Mầm")
+          if (inOutLevelTab === "pho-thong" && isPreschool) return false
+          if (inOutLevelTab === "mam-non" && !isPreschool) return false
+
           if (inOutCampusFilter === "BLANK") {
             const info = getCampusInfo(item.campusName)
             const isKnown = item.campusName && (
@@ -978,7 +994,7 @@ export default function AdminDashboard() {
         {/* IN / OUT MOVEMENT TRACKING SECTION WITH % CALCULATION */}
         <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-            <div>
+            <div className="space-y-3">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#48BFE3] border border-teal-100 flex items-center justify-center font-bold">
                   <TrendingUp className="w-5 h-5" />
@@ -987,6 +1003,30 @@ export default function AdminDashboard() {
                   <h2 className="text-xl font-black text-[#003B3A] tracking-tight">Báo cáo & Theo dõi Tỷ lệ % Biến động Học sinh (In / Out)</h2>
                   <p className="text-slate-500 text-xs font-semibold mt-0.5">Phân tích chi tiết số lượng và tỷ lệ phần trăm (%) nhập mới và chuyển trường đa chiều</p>
                 </div>
+              </div>
+
+              {/* TÁCH 2 TAG: PHỔ THÔNG VÀ MẦM NON */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-2xl gap-1 text-xs font-bold w-fit">
+                <button
+                  onClick={() => setInOutLevelTab("pho-thong")}
+                  className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                    inOutLevelTab === "pho-thong"
+                      ? "bg-[#48BFE3] text-white shadow-sm font-black"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  🏫 Phổ thông (K-12)
+                </button>
+                <button
+                  onClick={() => setInOutLevelTab("mam-non")}
+                  className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                    inOutLevelTab === "mam-non"
+                      ? "bg-rose-500 text-white shadow-sm font-black"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  👶 Mầm non
+                </button>
               </div>
             </div>
 
@@ -1019,17 +1059,29 @@ export default function AdminDashboard() {
                 <option value="CS5">CS5</option>
               </select>
 
-              {/* LỌC KHỐI */}
+              {/* LỌC KHỐI THEO TAB PHỔ THÔNG / MẦM NON */}
               <select
                 value={inOutGradeFilter}
                 onChange={(e) => setInOutGradeFilter(e.target.value)}
                 className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20"
               >
-                <option value="ALL">🎓 Tất cả các khối</option>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={String(i + 1)}>Khối {i + 1}</option>
-                ))}
-                <option value="Mầm non">Mầm non</option>
+                {inOutLevelTab === "pho-thong" ? (
+                  <>
+                    <option value="ALL">🎓 Tất cả khối Phổ thông</option>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i + 1} value={String(i + 1)}>Khối {i + 1}</option>
+                    ))}
+                  </>
+                ) : (
+                  <>
+                    <option value="ALL">👶 Tất cả khối Mầm non</option>
+                    <option value="Nhà trẻ">Nhà trẻ</option>
+                    <option value="Mẫu giáo bé">Mẫu giáo bé</option>
+                    <option value="Mẫu giáo nhỡ">Mẫu giáo nhỡ</option>
+                    <option value="Mẫu giáo lớn">Mẫu giáo lớn</option>
+                    <option value="Mầm non">Khối Mầm non</option>
+                  </>
+                )}
               </select>
 
               {/* LỌC LỚP */}
