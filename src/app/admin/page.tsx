@@ -1374,70 +1374,7 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* DETAILED MATRIX TABLE */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="w-full text-left text-xs font-semibold text-slate-700">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[10px] border-b border-slate-200">
-                <tr>
-                  <th className="py-3 px-4">STT</th>
-                  <th className="py-3 px-4">Mã HS</th>
-                  <th className="py-3 px-4">Họ và Tên</th>
-                  <th className="py-3 px-4">Cơ sở</th>
-                  <th className="py-3 px-4">Khối</th>
-                  <th className="py-3 px-4">Lớp</th>
-                  <th className="py-3 px-4">Loại Biến động</th>
-                  <th className="py-3 px-4">Ngày phát sinh</th>
-                  <th className="py-3 px-4">Lý do / Điểm đến</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {filteredTransfers.length === 0 ? (
-                  <tr>
-                    <td colSpan={9} className="py-8 text-center text-slate-400 font-bold">
-                      Không tìm thấy dữ liệu học sinh biến động In/Out phù hợp với bộ lọc (Tháng/Cơ sở/Khối/Lớp)
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTransfers.slice(0, 50).map((tr: any, idx: number) => {
-                    const campusInfo = getCampusInfo(tr.campusName)
-                    const isIn = tr.type === "IN"
-                    const formattedDate = tr.transferDate ? new Date(tr.transferDate).toLocaleDateString("vi-VN") : "---"
 
-                    return (
-                      <tr key={tr.id || idx} className="hover:bg-slate-50/80 transition-all">
-                        <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">{idx + 1}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-800">{tr.studentCode}</td>
-                        <td className="py-3 px-4 font-bold text-slate-900">{tr.studentName}</td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black border ${campusInfo.bg} ${campusInfo.border} ${campusInfo.text}`}>
-                            <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
-                            {tr.campusName || "Chưa phân"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-bold text-slate-700">{tr.grade || "---"}</td>
-                        <td className="py-3 px-4 font-bold text-slate-700">{tr.className || "---"}</td>
-                        <td className="py-3 px-4">
-                          {isIn ? (
-                            <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider">
-                              🟢 IN (Nhập học qua Khảo sát)
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black uppercase tracking-wider">
-                              🔴 OUT (Chuyển đi)
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 font-mono text-slate-600">{formattedDate}</td>
-                        <td className="py-3 px-4 text-slate-600 italic max-w-[200px] truncate">
-                          {tr.destinationSchool || tr.reason || tr.transferCategory || "---"}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
         </SafeWidget>
       </div>
