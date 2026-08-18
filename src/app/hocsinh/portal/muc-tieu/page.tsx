@@ -201,7 +201,7 @@ export default function StudentGoalPortalPage() {
     }
   }
 
-  const isK1ToK3 = ["K1", "K2", "K3"].includes(gradeLevel)
+  const isK1 = gradeLevel === "K1"
   const isSubmitted = !!submittedAt
 
   // 4 Target Categories matching official Word/PDF Form Template
@@ -328,7 +328,16 @@ export default function StudentGoalPortalPage() {
         </div>
       )}
 
-      {/* ------------------- FORM ĐIỀN MỤC TIÊU LINH ĐỘNG (TỰ ĐỘNG KHỚP HÀNH ĐỘNG GỢI Ý) ------------------- */}
+      {isK1 ? (
+        <div className="bg-sky-50 border-2 border-sky-200 rounded-3xl p-6 text-sky-950 text-center space-y-2">
+          <div className="text-4xl">🎒</div>
+          <h3 className="font-black text-sm uppercase">PHIẾU MỤC TIÊU HỌC SINH KHỐI 1</h3>
+          <p className="text-xs font-medium text-sky-800">
+            Hệ thống Mẫu Mục Tiêu linh động áp dụng chính thức từ <strong>Khối 2 đến Khối 12</strong>. Học sinh Khối 1 thực hiện theo hướng dẫn trực tiếp từ Thầy Cô GVCN tại lớp.
+          </p>
+        </div>
+      ) : (
+      /* ------------------- FORM ĐIỀN MỤC TIÊU LINH ĐỘNG (TỰ ĐỘNG KHỚP HÀNH ĐỘNG GỢI Ý) ------------------- */
       <div className="space-y-6">
         <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
@@ -422,6 +431,9 @@ export default function StudentGoalPortalPage() {
           )
         })}
       </div>
+
+      </div>
+      )}
 
       {/* ------------------- LỜI CAM KẾT & XÁC NHẬN ĐỒNG HÀNH ------------------- */}
       <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-md space-y-5">

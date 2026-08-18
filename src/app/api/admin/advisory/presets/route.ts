@@ -12,11 +12,7 @@ function jsonResponse(data: any, status = 200) {
 
 const DEFAULT_PRESETS = [
   // Khối 1
-  { gradeGroup: "K1", category: "HOC_TAP", goalText: "Em tập trung lắng nghe cô giảng bài và giơ tay phát biểu", actionPreset: "Ngồi ngoan trong giờ học, hoàn thành bài tập tô chữ", sortOrder: 1 },
-  { gradeGroup: "K1", category: "THOI_QUEN", goalText: "Em tự xếp hàng ngay ngắn và tự cất cặp sách đúng nơi quy định", actionPreset: "Đi học đúng giờ, treo cặp sách lên móc sau khi vào lớp", sortOrder: 2 },
-  { gradeGroup: "K1", category: "KY_NANG_CAM_XUC", goalText: "Em biết chào hỏi Thầy Cô, Bác bảo vệ và hòa đồng với bạn bè", actionPreset: "Nói lời cảm ơn, xin lỗi và chia sẻ đồ chơi với bạn", sortOrder: 3 },
-  { gradeGroup: "K1", category: "DINH_HUONG", goalText: "Em phấn đấu đạt danh hiệu Học sinh Ngoan Ngoãn Khối 1", actionPreset: "Tự giác đọc sách 15 phút mỗi ngày cùng Ba Mẹ", sortOrder: 4 },
-
+        
   // Khối 2
   { gradeGroup: "K2", category: "HOC_TAP", goalText: "Em rèn luyện chữ viết đẹp và hoàn thành các bài toán hàng ngày", actionPreset: "Viết nắn nót từng câu chữ, kiểm tra bài trước khi nộp", sortOrder: 1 },
   { gradeGroup: "K2", category: "THOI_QUEN", goalText: "Em tự dọn dẹp góc học tập sạch sẽ sau khi học xong", actionPreset: "Chuẩn bị sách vở theo thời khóa biểu ngày hôm sau", sortOrder: 2 },

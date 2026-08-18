@@ -62,7 +62,6 @@ export default function AdminAdvisoryDashboard() {
   const [selectedStudentDetail, setSelectedStudentDetail] = useState<any>(null)
 
   const GRADE_GROUPS = [
-    { key: "K1", label: "Khối 1 🎒", desc: "Tập trung thói quen ngoan ngoãn, lắng nghe" },
     { key: "K2", label: "Khối 2 ✏️", desc: "Rèn chữ viết, tự giác hoàn thành bài tập" },
     { key: "K3", label: "Khối 3 📚", desc: "Nâng cao năng lực tự học, tự tin giao tiếp" },
     { key: "K4_K5", label: "Khối 4 - 5 🏆", desc: "Chuẩn bị hành trang chuyển cấp THCS" },
@@ -235,7 +234,7 @@ export default function AdminAdvisoryDashboard() {
             <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-emerald-400 text-emerald-950 uppercase">LIVE</span>
           </h1>
           <p className="text-xs sm:text-sm text-teal-100/90 font-medium">
-            Quản lý thư viện Phiếu Mẫu Mục Tiêu Khối 1 đến Khối 12 • Tự động đồng bộ Học sinh, GVCN, Phụ huynh • Giám sát 360° toàn hệ thống.
+            Quản lý thư viện Phiếu Mẫu Mục Tiêu Khối 2 đến Khối 12 • Tự động đồng bộ Học sinh, GVCN, Phụ huynh • Giám sát 360° toàn hệ thống.
           </p>
         </div>
 
@@ -285,7 +284,7 @@ export default function AdminAdvisoryDashboard() {
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 <Layers className="w-4 h-4 text-teal-600" />
-                <span>CHỌN KHỐI HỌC CẤU HÌNH PHIẾU MỤC TIÊU MẪU (6 NHÓM KHỐI):</span>
+                <span>CHỌN KHỐI HỌC CẤU HÌNH PHIẾU MỤC TIÊU MẪU (ÁP DỤNG KHỐI 2 - KHỐI 12):</span>
               </span>
               <button
                 onClick={handleSeedDefaults}
