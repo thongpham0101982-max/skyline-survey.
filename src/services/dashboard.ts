@@ -204,9 +204,14 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     }
   }
 
-  // Query detailed transfer records for In/Out analytics
+  // Query detailed transfer records for In/Out analytics (IN, OUT, CHANGE_CLASS)
+  const transferWhereClause: any = {}
+  if (!isFullAccess) {
+    transferWhereClause.student = { campusId: { in: allowedCampusIds } }
+  }
+
   const detailedTransfersRaw = await prisma.studentTransfer.findMany({
-    where: transferWhere,
+    where: transferWhereClause,
     include: {
       student: {
         select: {

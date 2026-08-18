@@ -306,10 +306,9 @@ export default function AdminDashboard() {
   })
 
   const inTransfersDirectCount = filteredTransfers.filter((t: any) => t.type === "IN").length
-  const surveyInCount = filteredSurveyCandidates.length
 
-  // Dynamically reflect real-time actual survey IN count or direct IN transfers for the selected Level/Campus/Grade/Class
-  const totalInCount = Math.max(inTransfersDirectCount, surveyInCount)
+  // Use actual IN transfer count (236 total / 226 Phổ thông / 10 Mầm non)
+  const totalInCount = inTransfersDirectCount
 
   const outTransfersCount = filteredTransfers.filter((t: any) => t.type === "OUT").length
   const netGrowthCount = totalInCount - outTransfersCount
