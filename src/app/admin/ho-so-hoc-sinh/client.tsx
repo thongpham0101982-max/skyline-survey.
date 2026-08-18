@@ -754,7 +754,7 @@ export function StudentProfilesAdminClient({
                                     </table>
                                   </div>
 
-                                  {rawSummaries.length > 0 &amp;&amp; (
+                                  {rawSummaries.length > 0 && (
                                     <div className="flex flex-wrap gap-4 text-xs font-semibold bg-teal-50/30 p-3.5 rounded-2xl border border-teal-100 text-slate-700">
                                       {rawSummaries.map((sum: any, idx: number) => (
                                         <div key={idx} className="flex items-center gap-2">
@@ -823,7 +823,7 @@ export function StudentProfilesAdminClient({
                                 <BookOpen className="w-4 h-4 text-sky-500" />
                                 4. HOẠT ĐỘNG TRẢI NGHIỆM &amp; DỰ ÁN THỰC TẾ
                               </h3>
-                              {expList.length === 0 &amp;&amp; projList.length === 0 ? (
+                              {expList.length === 0 && projList.length === 0 ? (
                                 <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-center text-xs text-slate-400 italic">
                                   Chưa có ghi nhận hoạt động trải nghiệm hoặc dự án trong hệ thống.
                                 </div>

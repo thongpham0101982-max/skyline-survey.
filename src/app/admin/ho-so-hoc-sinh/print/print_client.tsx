@@ -352,7 +352,7 @@ export default function AdminStudentProfilesPrintPage() {
                   <BookOpen className="w-3.5 h-3.5 text-sky-500" />
                   4. HOẠT ĐỘNG TRẢI NGHIỆM &amp; DỰ ÁN THỰC TẾ
                 </h3>
-                {expList.length === 0 &amp;&amp; projList.length === 0 ? (
+                {expList.length === 0 && projList.length === 0 ? (
                   <div className="bg-slate-50 border border-slate-150 p-3 rounded-lg text-center text-xs text-slate-400 italic">
                     Chưa tham gia dự án trải nghiệm ngoại khóa.
                   </div>
