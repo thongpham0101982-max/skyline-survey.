@@ -7,7 +7,7 @@ import {
   Calendar, Clock, MapPin, User, Users, BookOpen, Plus, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
-  Eye, TrendingUp, Sparkles, CheckSquare, Mail
+  Eye, TrendingUp, History, Sparkles, CheckSquare, Mail
 } from "lucide-react"
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,

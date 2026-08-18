@@ -16,6 +16,7 @@ import {
   Building2,
   PieChart as PieIcon,
   UserCheck,
+  UserMinus,
   Search,
   Filter,
   Sparkles,
