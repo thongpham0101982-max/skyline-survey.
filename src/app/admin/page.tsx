@@ -1107,8 +1107,213 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* IN / OUT MOVEMENT TRACKING SECTION WITH % CALCULATION */}
-        <SafeWidget title="Báo cáo Biến động Học sinh (In / Out)">
+        {/* 1. PHỔ THÔNG (K-12) MOVEMENT TRACKING SECTION */}
+        <SafeWidget title="Báo cáo Biến động Học sinh Phổ thông (K-12)">
+        <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-teal-50 text-[#48BFE3] border border-teal-100 flex items-center justify-center font-bold">
+                  <GraduationCap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-[#003B3A] tracking-tight">🏫 Báo cáo Biến động Học sinh Phổ thông (K-12)</h2>
+                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Theo dõi tỷ lệ % nhập học qua khảo sát (01/08 - 31/05) và chuyển trường (01/08 - 31/07)</p>
+                </div>
+              </div>
+
+              <div className="px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600 flex items-center gap-2 w-fit">
+                <Clock className="w-3.5 h-3.5 text-[#48BFE3]" />
+                <span>Quy định: IN (<strong className="text-emerald-600">01/08 - 31/05</strong>) | OUT (<strong className="text-rose-600">01/08 - 31/07</strong>)</span>
+              </div>
+            </div>
+
+            {/* BỘ LỌC PHỔ THÔNG */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <select
+                value={inOutSemesterFilter}
+                onChange={(e) => setInOutSemesterFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-100 border border-slate-300 rounded-xl text-xs font-black text-slate-800 outline-none focus:ring-2 focus:ring-teal-500/20"
+              >
+                <option value="ALL">🏫 Tất cả Học kỳ</option>
+                <option value="HK1">📘 HK1 (01/08 - 31/12)</option>
+                <option value="HK2">📙 HK2 (01/01 - 31/05)</option>
+                <option value="HE">☀️ HK Hè (01/06 - 31/07)</option>
+              </select>
+
+              <select
+                value={inOutCampusFilter}
+                onChange={(e) => setInOutCampusFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20"
+              >
+                <option value="BLANK">-- Chưa phân cơ sở --</option>
+                <option value="ALL">-- Tất cả cơ sở --</option>
+                <option value="CS1">CS1</option>
+                <option value="CS2">CS2</option>
+                <option value="CS3">CS3</option>
+                <option value="CS4">CS4</option>
+                <option value="CS5">CS5</option>
+              </select>
+
+              <select
+                value={inOutGradeFilter}
+                onChange={(e) => setInOutGradeFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-teal-500/20"
+              >
+                <option value="ALL">🎓 Tất cả khối Phổ thông</option>
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={String(i + 1)}>Khối {i + 1}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* KPI CARDS PHỔ THÔNG */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Phổ thông IN (Khảo sát)</span>
+                <span className="text-3xl font-black text-emerald-600 block mt-1">{totalInCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
+                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(Chuẩn T8: {totalBaseHeadcount} HS)</span></span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-rose-50/40 border border-rose-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-rose-700 uppercase tracking-widest block">Phổ thông OUT (Chuyển đi)</span>
+                <span className="text-3xl font-black text-rose-600 block mt-1">{outTransfersCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
+                <span className="text-xs font-extrabold text-rose-700 mt-1 block">Tỷ lệ Out: {outPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(Chuẩn T8: {totalBaseHeadcount} HS)</span></span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
+                <ArrowRightLeft className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-sky-50/40 border border-sky-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-sky-700 uppercase tracking-widest block">Phổ thông Biến động Ròng (NET)</span>
+                <span className={`text-3xl font-black block mt-1 ${netGrowthCount >= 0 ? "text-sky-600" : "text-rose-600"}`}>
+                  {netGrowthCount > 0 ? `+${netGrowthCount.toLocaleString()}` : netGrowthCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span>
+                </span>
+                <span className="text-xs font-extrabold text-sky-700 mt-1 block">Tỷ lệ Net: {netPercentage}%</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+
+          {/* HỌC KỲ PHỔ THÔNG */}
+          <div className="bg-slate-50/80 p-5 rounded-2xl border border-slate-200 space-y-3">
+            <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#48BFE3]" />
+                Phân tích Học kỳ Phổ thông (K-12)
+              </span>
+              <span className="text-[11px] font-bold text-slate-500">Mốc sĩ số chuẩn: {totalBaseHeadcount} HS</span>
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-white border border-blue-100 shadow-2xs space-y-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider">📘 HK1 (01/08 - 31/12)</span>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
+                  <div><span className="text-[10px] font-bold text-emerald-600 block">IN</span><span className="text-sm font-black text-emerald-700 block">{hk1Stats.inTotal}</span><span className="text-[10px] font-bold text-emerald-600">{hk1Stats.inPct}%</span></div>
+                  <div><span className="text-[10px] font-bold text-rose-600 block">OUT</span><span className="text-sm font-black text-rose-700 block">{hk1Stats.outTotal}</span><span className="text-[10px] font-bold text-rose-600">{hk1Stats.outPct}%</span></div>
+                  <div><span className="text-[10px] font-bold text-sky-600 block">NET</span><span className={`text-sm font-black block ${hk1Stats.netTotal >= 0 ? "text-sky-700" : "text-rose-700"}`}>{hk1Stats.netTotal > 0 ? `+${hk1Stats.netTotal}` : hk1Stats.netTotal}</span><span className="text-[10px] font-bold text-sky-600">{hk1Stats.netPct}%</span></div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-amber-100 shadow-2xs space-y-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-black uppercase tracking-wider">📙 HK2 (01/01 - 31/05)</span>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
+                  <div><span className="text-[10px] font-bold text-emerald-600 block">IN</span><span className="text-sm font-black text-emerald-700 block">{hk2Stats.inTotal}</span><span className="text-[10px] font-bold text-emerald-600">{hk2Stats.inPct}%</span></div>
+                  <div><span className="text-[10px] font-bold text-rose-600 block">OUT</span><span className="text-sm font-black text-rose-700 block">{hk2Stats.outTotal}</span><span className="text-[10px] font-bold text-rose-600">{hk2Stats.outPct}%</span></div>
+                  <div><span className="text-[10px] font-bold text-sky-600 block">NET</span><span className={`text-sm font-black block ${hk2Stats.netTotal >= 0 ? "text-sky-700" : "text-rose-700"}`}>{hk2Stats.netTotal > 0 ? `+${hk2Stats.netTotal}` : hk2Stats.netTotal}</span><span className="text-[10px] font-bold text-sky-600">{hk2Stats.netPct}%</span></div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white border border-purple-100 shadow-2xs space-y-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 text-[10px] font-black uppercase tracking-wider">☀️ HK Hè (01/06 - 31/07)</span>
+                <div className="grid grid-cols-3 gap-2 text-center pt-1 border-t border-slate-100">
+                  <div><span className="text-[10px] font-bold text-emerald-600 block">IN</span><span className="text-sm font-black text-emerald-700 block">{heStats.inTotal}</span><span className="text-[10px] font-bold text-emerald-600">{heStats.inPct}%</span></div>
+                  <div><span className="text-[10px] font-bold text-rose-600 block">OUT</span><span className="text-sm font-black text-rose-700 block">{heStats.outTotal}</span><span className="text-[10px] font-bold text-rose-600">{heStats.outPct}%</span></div>
+                  <div><span className="text-[10px] font-bold text-sky-600 block">NET</span><span className={`text-sm font-black block ${heStats.netTotal >= 0 ? "text-sky-700" : "text-rose-700"}`}>{heStats.netTotal > 0 ? `+${heStats.netTotal}` : heStats.netTotal}</span><span className="text-[10px] font-bold text-sky-600">{heStats.netPct}%</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </SafeWidget>
+
+        {/* 2. DEDICATED PRESCHOOL (MẦM NON) MOVEMENT TRACKING SECTION */}
+        <SafeWidget title="Báo cáo Biến động Học sinh Mầm non">
+        <div className="bg-white rounded-3xl border border-rose-200 p-6 md:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-rose-100 pb-5">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 text-rose-500 border border-rose-100 flex items-center justify-center font-bold">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-rose-950 tracking-tight">👶 Báo cáo Theo dõi Biến động Học sinh Mầm non</h2>
+                  <p className="text-slate-500 text-xs font-semibold mt-0.5">Theo dõi tỷ lệ % nhập học Mầm non quanh năm (01/06 - 31/05)</p>
+                </div>
+              </div>
+
+              <div className="px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-[11px] font-bold text-rose-700 flex items-center gap-2 w-fit">
+                <Clock className="w-3.5 h-3.5 text-rose-500" />
+                <span>Quy định: Nhập học (IN): <strong className="text-emerald-600">01/06 - 31/05</strong></span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="px-3 py-1.5 bg-rose-50 border border-rose-200 rounded-xl text-xs font-black text-rose-700">
+                Sĩ số chuẩn Mầm non: {finalMetrics.totalPreschoolStudents || 10} HS
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Mầm non IN (Khảo sát)</span>
+                <span className="text-3xl font-black text-emerald-600 block mt-1">{(finalMetrics.entryLevelStats?.allSurveyStudents || []).filter((s: any) => s.level === "Mầm non").length.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
+                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {(((finalMetrics.entryLevelStats?.allSurveyStudents || []).filter((s: any) => s.level === "Mầm non").length / (finalMetrics.totalPreschoolStudents || 10)) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                <Users className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-rose-50/40 border border-rose-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-rose-700 uppercase tracking-widest block">Mầm non OUT (Chuyển đi)</span>
+                <span className="text-3xl font-black text-rose-600 block mt-1">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT" && t.level === "Mầm non").length.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
+                <span className="text-xs font-extrabold text-rose-700 mt-1 block">Tỷ lệ Out: {(((finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT" && t.level === "Mầm non").length / (finalMetrics.totalPreschoolStudents || 10)) * 100).toFixed(1)}%</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
+                <ArrowRightLeft className="w-6 h-6" />
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-sky-50/40 border border-sky-100 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-sky-700 uppercase tracking-widest block">Mầm non Biến động Ròng (NET)</span>
+                <span className="text-3xl font-black text-sky-600 block mt-1">
+                  {((finalMetrics.entryLevelStats?.allSurveyStudents || []).filter((s: any) => s.level === "Mầm non").length - (finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT" && t.level === "Mầm non").length).toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span>
+                </span>
+                <span className="text-xs font-extrabold text-sky-700 mt-1 block">Biến động ròng Mầm non</span>
+              </div>
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+            </div>
+          </div>
+        </div>
+        </SafeWidget>
         <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div className="space-y-3">
