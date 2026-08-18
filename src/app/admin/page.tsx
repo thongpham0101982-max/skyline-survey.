@@ -353,7 +353,10 @@ export default function AdminDashboard() {
       const m = d ? (d.getMonth() + 1) : null
       return m && monthsList.includes(m)
     })
-    const inTotal = semT.filter((t: any) => t.type === "IN").length
+    const directIn = semT.filter((t: any) => t.type === "IN").length
+    const surveyIn = isHK1 ? filteredSurveyCandidates.length : 0
+    const inTotal = Math.max(directIn, surveyIn)
+
     const outTotal = semT.filter((t: any) => t.type === "OUT").length
     const netTotal = inTotal - outTotal
     const inPct = ((inTotal / totalBaseHeadcount) * 100).toFixed(1)
