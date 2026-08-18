@@ -206,7 +206,14 @@ export default function AdminDashboard() {
 
   // In/Out Tracking Analytics Computation
   const detailedTransfers = finalMetrics.detailedTransfers || []
-  const totalBaseHeadcount = finalMetrics.totalStudents || 1
+
+  // Dữ liệu tháng 8 làm dữ liệu chuẩn cho nhập học (August Baseline Headcount)
+  const augustHeadcountObj = (finalMetrics.monthlyHeadcount || []).find((m: any) => m.month.startsWith("8/"))
+  const augustBaseHeadcount = augustHeadcountObj 
+    ? (inOutLevelTab === "pho-thong" ? (augustHeadcountObj.generalCount || augustHeadcountObj.count) : (augustHeadcountObj.preschoolCount || augustHeadcountObj.count))
+    : (finalMetrics.totalStudents || 1)
+
+  const totalBaseHeadcount = augustBaseHeadcount > 0 ? augustBaseHeadcount : (finalMetrics.totalStudents || 1)
 
   const filteredTransfers = detailedTransfers.filter((t: any) => {
     // Filter by Level Tab (Phổ thông vs Mầm non)
@@ -1128,7 +1135,7 @@ export default function AdminDashboard() {
               <div>
                 <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Học sinh Nhập học qua Khảo sát (IN)</span>
                 <span className="text-3xl font-black text-emerald-600 block mt-1">{inTransfersCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
-                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số base {totalBaseHeadcount})</span></span>
+                <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số chuẩn Tháng 8: {totalBaseHeadcount} HS)</span></span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
                 <Users className="w-6 h-6" />
@@ -1140,7 +1147,7 @@ export default function AdminDashboard() {
               <div>
                 <span className="text-[10px] font-black text-rose-700 uppercase tracking-widest block">Học sinh Chuyển trường / Thôi học (OUT)</span>
                 <span className="text-3xl font-black text-rose-600 block mt-1">{outTransfersCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
-                <span className="text-xs font-extrabold text-rose-700 mt-1 block">Tỷ lệ Out: {outPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số base {totalBaseHeadcount})</span></span>
+                <span className="text-xs font-extrabold text-rose-700 mt-1 block">Tỷ lệ Out: {outPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số chuẩn Tháng 8: {totalBaseHeadcount} HS)</span></span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 flex items-center justify-center font-bold">
                 <ArrowRightLeft className="w-6 h-6" />
@@ -1154,7 +1161,7 @@ export default function AdminDashboard() {
                 <span className={`text-3xl font-black block mt-1 ${netGrowthCount >= 0 ? "text-sky-600" : "text-rose-600"}`}>
                   {netGrowthCount > 0 ? `+${netGrowthCount.toLocaleString()}` : netGrowthCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span>
                 </span>
-                <span className="text-xs font-extrabold text-sky-700 mt-1 block">Tỷ lệ Net: {netPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(Tăng trưởng ròng)</span></span>
+                <span className="text-xs font-extrabold text-sky-700 mt-1 block">Tỷ lệ Net: {netPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(Tăng trưởng ròng so với chuẩn Tháng 8)</span></span>
               </div>
               <div className="w-12 h-12 rounded-2xl bg-sky-500/10 text-sky-600 flex items-center justify-center font-bold">
                 <TrendingUp className="w-6 h-6" />
