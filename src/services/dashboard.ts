@@ -415,11 +415,32 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
   const generalInputs = await prisma.inputAssessmentStudent.findMany({
     where: inputAssessmentWhere,
-    select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
+    select: { 
+      id: true,
+      studentCode: true, 
+      fullName: true, 
+      grade: true, 
+      admissionResult: true, 
+      enrollmentCode: true,
+      className: true,
+      admissionCampus: true,
+      registeredCampus: true,
+      batch: { select: { campus: { select: { campusName: true } } } },
+      enrollmentClass: { select: { className: true } }
+    }
   })
   const preschoolInputs = await prisma.preschoolInputAssessmentStudent.findMany({
     where: inputAssessmentWhere,
-    select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
+    select: { 
+      id: true,
+      studentCode: true, 
+      fullName: true, 
+      grade: true, 
+      admissionResult: true, 
+      admissionCampus: true,
+      probationaryClass: true,
+      batch: { select: { campus: { select: { campusName: true } } } }
+    }
   })
 
   const genCodeSet = new Set<string>()
@@ -439,12 +460,41 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   })
 
   const entryStudentsList: any[] = []
+
+  const allSurveyStudents = [
+    ...generalInputs.map((g: any) => ({
+      id: g.id,
+      studentCode: g.studentCode || "---",
+      studentName: g.fullName || "---",
+      grade: g.grade ? (String(g.grade).includes("Khối") ? g.grade : `Khối ${g.grade}`) : "---",
+      rawGrade: g.grade ? String(g.grade).replace("Khối ", "").trim() : "",
+      className: g.className || g.enrollmentClass?.className || "Chưa xếp lớp",
+      campusName: g.admissionCampus || g.registeredCampus || g.batch?.campus?.campusName || "Chưa phân cơ sở",
+      level: (g.grade && ["Nhà trẻ", "Mầm", "Chồi", "Lá"].some(m => String(g.grade).includes(m))) ? "Mầm non" : "Phổ thông",
+      source: "KHAO_SAT",
+      sourceLabel: "Nhập học qua Khảo sát"
+    })),
+    ...preschoolInputs.map((p: any) => ({
+      id: p.id,
+      studentCode: p.studentCode || "---",
+      studentName: p.fullName || "---",
+      grade: p.grade || "Mầm non",
+      rawGrade: p.grade || "Mầm non",
+      className: p.probationaryClass || "Chưa xếp lớp",
+      campusName: p.admissionCampus || p.batch?.campus?.campusName || "Chưa phân cơ sở",
+      level: "Mầm non",
+      source: "KHAO_SAT",
+      sourceLabel: "Nhập học qua Khảo sát"
+    }))
+  ]
+
   const entryLevelStats = {
     total: 0,
     grade1: { total: 0, surveyCount: 0, preschoolCount: 0, otherCount: 0 },
     grade6: { total: 0, surveyCount: 0, otherCount: 0 },
     grade10: { total: 0, surveyCount: 0, otherCount: 0 },
-    students: entryStudentsList
+    students: entryStudentsList,
+    allSurveyStudents
   }
 
   activeStudentsForStats.forEach(s => {

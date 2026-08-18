@@ -272,9 +272,12 @@ export default function AdminDashboard() {
     return true
   })
 
-  // August Entrance Survey Baseline Count (Số học sinh tháng 8 thông qua khảo sát là Mốc bắt đầu cho IN)
-  const augustSurveyStudents = rawEntryStudents.filter((s: any) => {
-    const isPreschool = s.level === "Mầm non" || String(s.grade || s.rawGrade || "").includes("Mầm")
+  // Get comprehensive list of all survey entrance candidates (Phổ thông + Mầm non)
+  const allSurveyCandidates = finalMetrics.entryLevelStats?.allSurveyStudents || rawEntryStudents
+
+  // Dynamic Real-time Survey Enrollment Count matching Level, Campus, Grade, and Class
+  const filteredSurveyCandidates = allSurveyCandidates.filter((s: any) => {
+    const isPreschool = s.level === "Mầm non" || ["Nhà trẻ", "Mầm", "Chồi", "Lá"].some((m: string) => String(s.grade || s.rawGrade || "").includes(m))
     if (inOutLevelTab === "pho-thong" && isPreschool) return false
     if (inOutLevelTab === "mam-non" && !isPreschool) return false
 
@@ -302,12 +305,11 @@ export default function AdminDashboard() {
     return true
   })
 
-  // Exact IN count without double counting
   const inTransfersDirectCount = filteredTransfers.filter((t: any) => t.type === "IN").length
-  const augustSurveyBaselineCount = augustSurveyStudents.length > 0 ? augustSurveyStudents.length : (finalMetrics.newEnrollmentStats?.total || finalMetrics.entryLevelStats?.total || 235)
+  const surveyInCount = filteredSurveyCandidates.length
 
-  // Use direct transfer count if available; fallback to survey enrollment count if transfer records not populated
-  const totalInCount = inTransfersDirectCount > 0 ? inTransfersDirectCount : augustSurveyBaselineCount
+  // Dynamically reflect real-time actual survey IN count or direct IN transfers for the selected Level/Campus/Grade/Class
+  const totalInCount = Math.max(inTransfersDirectCount, surveyInCount)
 
   const outTransfersCount = filteredTransfers.filter((t: any) => t.type === "OUT").length
   const netGrowthCount = totalInCount - outTransfersCount
