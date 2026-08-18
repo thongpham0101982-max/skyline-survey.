@@ -292,7 +292,14 @@ export default function AdminDashboard() {
     return true
   })
 
-  const augustSurveyBaselineCount = augustSurveyStudents.length
+  const calcBaselineCount = augustSurveyStudents.length
+  const fallbackNewEnrollment = inOutLevelTab === "pho-thong" 
+    ? (finalMetrics.newEnrollmentStats?.total || finalMetrics.entryLevelStats?.total || 0)
+    : 0
+
+  const augustSurveyBaselineCount = (calcBaselineCount === 0 && inOutCampusFilter === "ALL" && inOutGradeFilter === "ALL" && inOutClassFilter === "ALL")
+    ? fallbackNewEnrollment
+    : calcBaselineCount
   const inTransfersDirectCount = filteredTransfers.filter((t: any) => t.type === "IN").length
 
   const includeAugustBaseline = (inOutMonthFilter === "ALL" || inOutMonthFilter === "8")
