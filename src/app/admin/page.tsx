@@ -1374,29 +1374,6 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* VISUAL CHART: GROUPED BAR CHART FOR IN VS OUT OVER 12 MONTHS */}
-          <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/80">
-            <h4 className="text-xs font-black text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-              <PieIcon className="w-4 h-4 text-[#48BFE3]" />
-              Biểu đồ So sánh Số lượng IN (Nhập học) vs OUT (Chuyển đi) theo từng Tháng
-            </h4>
-            <div className="h-64 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monthlyInOutChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="monthLabel" tick={{ fontSize: 11, fontWeight: 700, fill: "#64748b" }} />
-                  <YAxis tick={{ fontSize: 11, fontWeight: 700, fill: "#64748b" }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #cbd5e1", fontSize: "12px", fontWeight: "bold" }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: "12px", fontWeight: "bold", paddingTop: "8px" }} />
-                  <Bar dataKey="IN" name="Số HS Nhập học qua Khảo sát (IN)" fill="#10b981" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="OUT" name="Số HS Chuyển đi (OUT)" fill="#f43f5e" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
           {/* DETAILED MATRIX TABLE */}
           <div className="overflow-x-auto rounded-2xl border border-slate-200">
             <table className="w-full text-left text-xs font-semibold text-slate-700">
