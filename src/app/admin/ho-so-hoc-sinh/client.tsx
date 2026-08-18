@@ -676,7 +676,7 @@ export function StudentProfilesAdminClient({
                                   <div>
                                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Giáo viên chủ nhiệm (GVCN)</span>
                                     <span className="font-black text-[#007A72] flex items-center gap-1.5 text-xs mt-0.5">
-                                      <UserCheck className="w-3.5 h-3.5" />
+                                      <User className="w-3.5 h-3.5" />
                                       {selectedStudent?.homeroomTeacherName || "Thầy/Cô Chủ nhiệm"}
                                     </span>
                                   </div>
