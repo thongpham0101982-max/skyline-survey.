@@ -581,7 +581,7 @@ export function AdminClassesClient({ initialClasses, campuses, academicYears, te
           <label className="font-semibold text-slate-700 text-sm">Cơ sở:</label>
           <select value={selectedCampus} onChange={e => setSelectedCampus(e.target.value)}
             className="border rounded-lg p-2 text-sm min-w-[160px] outline-none focus:ring-2 focus:ring-indigo-300">
-            <option value=""></option>
+            <option value="">Tất cả cơ sở</option>
             {campuses.map((cp: any) => <option key={cp.id} value={cp.id}>{cp.campusName}</option>)}
           </select>
         </div>

@@ -47,8 +47,6 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
   const [
     totalStudents,
-    totalGeneralStudents,
-    totalPreschoolStudents,
     totalClasses,
     generalClasses,
     preschoolClasses,
@@ -59,18 +57,6 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     classSummaries
   ] = await Promise.all([
     prisma.student.count({ where: studentWhere }),
-    prisma.student.count({
-      where: {
-        ...studentWhere,
-        class: { level: { in: ["Tiểu học", "THCS", "THPT"] } }
-      }
-    }),
-    prisma.student.count({
-      where: {
-        ...studentWhere,
-        class: { level: "Mầm non" }
-      }
-    }),
     prisma.class.count({ where: classWhere }),
     prisma.class.count({
       where: {
@@ -204,74 +190,18 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     }
   }
 
-  // Query detailed transfer records for In/Out analytics (IN, OUT, CHANGE_CLASS)
-  const transferWhereClause: any = {}
-  if (!isFullAccess) {
-    transferWhereClause.student = { campusId: { in: allowedCampusIds } }
-  }
-
-  const inStartDate = new Date("2026-08-01T00:00:00.000Z")
-  const outStartDate = new Date("2026-05-31T00:00:00.000Z")
-
-  const rawTransfers = await prisma.studentTransfer.findMany({
-    where: transferWhereClause,
-    include: {
-      student: {
-        select: {
-          id: true,
-          studentCode: true,
-          studentName: true,
-          campus: { select: { id: true, campusCode: true, campusName: true } },
-          class: { select: { id: true, className: true, grade: true, level: true } }
-        }
-      }
-    },
-    orderBy: { transferDate: 'desc' }
-  })
-
-  // Filter IN transfers from 01/08/2026 & OUT transfers from 31/05/2026 (Summer Semester)
-  const detailedTransfersRaw = rawTransfers.filter(t => {
-    const tDate = t.transferDate ? new Date(t.transferDate) : new Date(t.createdAt)
-    if (t.type === "IN") {
-      return tDate >= inStartDate
-    }
-    if (t.type === "OUT") {
-      return tDate >= outStartDate
-    }
-    return true
-  })
-
-  const detailedTransfers = detailedTransfersRaw.map(t => ({
-    id: t.id,
-    type: t.type,
-    transferDate: t.transferDate,
-    reason: t.reason,
-    transferCategory: t.transferCategory,
-    destinationSchool: t.destinationSchool,
-    destinationProvince: t.destinationProvince,
-    destinationCountry: t.destinationCountry,
-    destinationType: t.destinationType,
-    studentCode: t.student?.studentCode || "---",
-    studentName: t.student?.studentName || "---",
-    campusId: t.student?.campus?.id || "",
-    campusCode: t.student?.campus?.campusCode || "Blank",
-    campusName: t.student?.campus?.campusName || "Chưa phân cơ sở",
-    classId: t.student?.class?.id || "",
-    className: t.student?.class?.className || "Chưa xếp lớp",
-    grade: t.student?.class?.grade || "Khác",
-    level: t.student?.class?.level || "Phổ thông"
-  }))
-
   // Reconstruct monthly headcount trend split by General vs Preschool
   let monthlyHeadcount: { month: string; count: number; generalCount: number; preschoolCount: number }[] = []
   if (academicYear) {
-    const startYr = academicYear ? new Date(academicYear.startDate).getFullYear() : 2026
+    const start = new Date(academicYear.startDate)
+    const end = new Date(academicYear.endDate)
+
     const months: { year: number; month: number }[] = []
-    const curr = new Date(startYr, 7, 1) // Month 8/startYr (August)
-    const last = new Date(startYr + 1, 6, 1) // Month 7/(startYr+1) (July)
+    const curr = new Date(start.getFullYear(), start.getMonth(), 1)
+    const last = new Date(end.getFullYear(), end.getMonth(), 1)
 
     let limit = 0
-    while (curr <= last && limit < 12) {
+    while (curr <= last && limit < 24) {
       months.push({
         year: curr.getFullYear(),
         month: curr.getMonth()
@@ -282,11 +212,8 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
     const allYearStudents = await prisma.student.findMany({
       where: {
-        OR: [
-          { academicYearId: targetYearId },
-          { class: { academicYearId: targetYearId } }
-        ],
-        ...(isFullAccess ? {} : { campusId: { in: allowedCampusIds } })
+        academicYearId: targetYearId,
+        campusId: isFullAccess ? undefined : { in: allowedCampusIds }
       },
       include: {
         class: {
@@ -450,32 +377,11 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
 
   const generalInputs = await prisma.inputAssessmentStudent.findMany({
     where: inputAssessmentWhere,
-    select: { 
-      id: true,
-      studentCode: true, 
-      fullName: true, 
-      grade: true, 
-      admissionResult: true, 
-      enrollmentCode: true,
-      className: true,
-      admissionCampus: true,
-      registeredCampus: true,
-      batch: { select: { campus: { select: { campusName: true } } } },
-      enrollmentClass: { select: { className: true } }
-    }
+    select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
   })
   const preschoolInputs = await prisma.preschoolInputAssessmentStudent.findMany({
     where: inputAssessmentWhere,
-    select: { 
-      id: true,
-      studentCode: true, 
-      fullName: true, 
-      grade: true, 
-      admissionResult: true, 
-      admissionCampus: true,
-      probationaryClass: true,
-      batch: { select: { campus: { select: { campusName: true } } } }
-    }
+    select: { studentCode: true, fullName: true, grade: true, admissionResult: true, enrollmentCode: true }
   })
 
   const genCodeSet = new Set<string>()
@@ -495,41 +401,12 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   })
 
   const entryStudentsList: any[] = []
-
-  const allSurveyStudents = [
-    ...generalInputs.map((g: any) => ({
-      id: g.id,
-      studentCode: g.studentCode || "---",
-      studentName: g.fullName || "---",
-      grade: g.grade ? (String(g.grade).includes("Khối") ? g.grade : `Khối ${g.grade}`) : "---",
-      rawGrade: g.grade ? String(g.grade).replace("Khối ", "").trim() : "",
-      className: g.className || g.enrollmentClass?.className || "Chưa xếp lớp",
-      campusName: g.admissionCampus || g.registeredCampus || g.batch?.campus?.campusName || "Chưa phân cơ sở",
-      level: (g.grade && ["Nhà trẻ", "Mầm", "Chồi", "Lá"].some(m => String(g.grade).includes(m))) ? "Mầm non" : "Phổ thông",
-      source: "KHAO_SAT",
-      sourceLabel: "Nhập học qua Khảo sát"
-    })),
-    ...preschoolInputs.map((p: any) => ({
-      id: p.id,
-      studentCode: p.studentCode || "---",
-      studentName: p.fullName || "---",
-      grade: p.grade || "Mầm non",
-      rawGrade: p.grade || "Mầm non",
-      className: p.probationaryClass || "Chưa xếp lớp",
-      campusName: p.admissionCampus || p.batch?.campus?.campusName || "Chưa phân cơ sở",
-      level: "Mầm non",
-      source: "KHAO_SAT",
-      sourceLabel: "Nhập học qua Khảo sát"
-    }))
-  ]
-
   const entryLevelStats = {
     total: 0,
     grade1: { total: 0, surveyCount: 0, preschoolCount: 0, otherCount: 0 },
     grade6: { total: 0, surveyCount: 0, otherCount: 0 },
     grade10: { total: 0, surveyCount: 0, otherCount: 0 },
-    students: entryStudentsList,
-    allSurveyStudents
+    students: entryStudentsList
   }
 
   activeStudentsForStats.forEach(s => {
@@ -599,8 +476,6 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   return {
     academicYearName,
     totalStudents,
-    totalGeneralStudents,
-    totalPreschoolStudents,
     totalClasses,
     generalClasses,
     preschoolClasses,
@@ -620,8 +495,7 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
     gradeDistribution,
     campusDistribution,
     levelDistribution,
-    entryLevelStats,
-    detailedTransfers
+    entryLevelStats
   }
 }
 

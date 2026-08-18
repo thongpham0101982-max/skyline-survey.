@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 import { getDefaultAcademicYearClient } from "@/lib/academicYear"
 const DEFAULT_WATERMARK_SVG = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='%23007A87'><path d='M10,80 Q50,40 90,20 Q60,50 10,80 Z'/><path d='M30,80 Q60,55 90,35 Q65,60 30,80 Z'/></svg>";
 
@@ -8,7 +8,7 @@ import {
   Upload, Download, Layers, Database, UserCheck, Calendar, X, Check, AlertCircle,
   ChevronDown, ChevronUp, Loader2, BookOpen, GraduationCap, RefreshCw,
   Tag, FolderOpen, Hash, MoreVertical, PenLine, CheckCircle2,
-  Filter, Building, ClipboardCheck, ClipboardList, ArrowRight, UserPlus, Info,
+  Filter, Building, ClipboardCheck, ArrowRight, UserPlus, Info,
   FileSpreadsheet, Pencil, Mail, FileText,
   Phone, Printer, Lock
 , RefreshCcw } from "lucide-react"
@@ -61,22 +61,22 @@ interface Props {
 
 // ========= CONSTANTS =========
 const CATEGORY_TYPES = [
-  { code: "DOI_TUONG_TS",  label: "�?i t�?ng Tuy?n sinh", color: "from-pink-500 to-rose-500" },
-  { code: "DIEN_KS",       label: "Di?n Kh?o s�t",      color: "from-violet-500 to-indigo-500" },
-  { code: "HINH_THUC_KS",  label: "H?nh th?c KS",        color: "from-blue-500 to-cyan-500" },
-  { code: "HS_HT_HOC_SINH", label: "H? s�/B?ng �i?m",   color: "from-emerald-500 to-teal-500" },
-  { code: "HOC_KY",        label: "H?c k? / N�m TS",     color: "from-amber-500 to-orange-500" },
-  { code: "KY_KS",          label: "K? Kh?o s�t",         color: "from-orange-500 to-red-500" },
-  { code: "KQ_HOC_TAP",    label: "K?t qu? H?c t?p",     color: "from-sky-500 to-blue-500" },
-  { code: "KQ_REN_LUYEN",  label: "K?t qu? R�n luy?n",   color: "from-green-500 to-emerald-500" },
+  { code: "DOI_TUONG_TS",  label: "Đối tượng Tuyển sinh", color: "from-pink-500 to-rose-500" },
+  { code: "DIEN_KS",       label: "Diện Khảo sát",      color: "from-violet-500 to-indigo-500" },
+  { code: "HINH_THUC_KS",  label: "Hình thức KS",        color: "from-blue-500 to-cyan-500" },
+  { code: "HS_HT_HOC_SINH", label: "Hồ sơ/Bảng điểm",   color: "from-emerald-500 to-teal-500" },
+  { code: "HOC_KY",        label: "Học kỳ / Năm TS",     color: "from-amber-500 to-orange-500" },
+  { code: "KY_KS",          label: "Kỳ Khảo sát",         color: "from-orange-500 to-red-500" },
+  { code: "KQ_HOC_TAP",    label: "Kết quả Học tập",     color: "from-sky-500 to-blue-500" },
+  { code: "KQ_REN_LUYEN",  label: "Kết quả Rèn luyện",   color: "from-green-500 to-emerald-500" },
 ]
 const STATUS_OPTS = ["ACTIVE", "LOCKED", "DRAFT", "CLOSED"]
 const STATUS_MAP: Record<string,{label:string,cls:string}> = {
-  ACTIVE:   { label:"�ang m?",   cls:"bg-emerald-50 text-emerald-700 rounded-full" },
-  LOCKED:   { label:"�? kh�a",   cls:"bg-slate-100 text-slate-700 rounded-full" },
-  DRAFT:    { label:"B?n nh�p",  cls:"bg-amber-50 text-amber-700 rounded-full" },
-  CLOSED:   { label:"K?t th�c", cls:"bg-red-50 text-red-750 rounded-full" },
-  INACTIVE: { label:"T?t",      cls:"bg-slate-100 text-slate-500 rounded-full" },
+  ACTIVE:   { label:"Đang mở",   cls:"bg-emerald-50 text-emerald-700 rounded-full" },
+  LOCKED:   { label:"Đã khóa",   cls:"bg-slate-100 text-slate-700 rounded-full" },
+  DRAFT:    { label:"Bản nháp",  cls:"bg-amber-50 text-amber-700 rounded-full" },
+  CLOSED:   { label:"Kết thúc", cls:"bg-red-50 text-red-750 rounded-full" },
+  INACTIVE: { label:"Tắt",      cls:"bg-slate-100 text-slate-500 rounded-full" },
 }
 
 function Badge({ s }: { s: string }) {
@@ -125,11 +125,11 @@ function ConfirmDialog({ open, onClose, onConfirm, message }: { open:boolean; on
       <div className="relative bg-white rounded-[28px] border border-slate-100 shadow-[0_24px_60px_-15px_rgba(15,23,42,0.15)] p-7 max-w-[360px] w-full text-center animate-in zoom-in-95 duration-300">
         <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"><X className="w-4 h-4" /></button>
         <div className="w-16 h-16 rounded-2xl bg-rose-50 border-4 border-rose-100/40 text-rose-500 flex items-center justify-center mx-auto mb-5 shadow-sm"><Trash2 className="w-6 h-6" /></div>
-        <h3 className="text-base font-black text-slate-800 tracking-tight mb-2">X�c nh?n x�a</h3>
+        <h3 className="text-base font-black text-slate-800 tracking-tight mb-2">Xác nhận xóa</h3>
         <p className="text-xs text-slate-500 font-semibold leading-relaxed mb-6 px-1">{message}</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.97]">H?y</button>
-          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>X�a</button>
+          <button onClick={onClose} className="flex-1 py-3 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-500 hover:bg-slate-50 transition-all cursor-pointer active:scale-[0.97]">Hủy</button>
+          <button onClick={() => { onConfirm(); onClose(); }} className="flex-1 py-3 px-4 rounded-xl text-xs font-bold text-white shadow-md shadow-rose-500/10 hover:brightness-105 active:scale-[0.97] transition-all cursor-pointer" style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' }}>Xóa</button>
         </div>
       </div>
     </div>
@@ -156,32 +156,32 @@ function Empty({ icon:Icon, text, sub }: { icon:any; text:string; sub?:string })
   )
 }
 
-const defaultThuChucMung = `Ch�c m?ng em �? v�?t qua k? kh?o s�t �?u v�o l?p {{grade}} h?c k? {{hocKy}} h? {{surveyFormType}} n�m h?c 2026-2027. Em �? ch�nh th?c �?t b�?c ch�n �?u ti�n tr�n con ��?ng tr? th�nh h?c sinh c?a Tr�?ng TH, THCS, THPT Sky-Line � m?t c?t m?c quan tr?ng trong h�nh tr?nh h?c t?p c?a em.
+const defaultThuChucMung = `Chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học 2026-2027. Em đã chính thức đặt bước chân đầu tiên trên con đường trở thành học sinh của Trường TH, THCS, THPT Sky-Line – một cột mốc quan trọng trong hành trình học tập của em.
 
-Th?y c� t?i Sky-Line vui m?ng ch�o ��n em �?n v?i ng�i tr�?ng h?nh ph�c, n�i kh�ng ch? gi�p em trau d?i ki?n th?c m� c?n ph�t tri?n to�n di?n c? v? n�ng l?c v� nh�n c�ch. Ch�ng t�i tin r?ng, v?i s? n? l?c v� quy?t t�m, em s? ti?p t?c g?t h�i nhi?u th�nh c�ng trong nh?ng n�m h?c s?p t?i.
+Thầy cô tại Sky-Line vui mừng chào đón em đến với ngôi trường hạnh phúc, nơi không chỉ giúp em trau dồi kiến thức mà còn phát triển toàn diện cả về năng lực và nhân cách. Chúng tôi tin rằng, với sự nỗ lực và quyết tâm, em sẽ tiếp tục gặt hái nhiều thành công trong những năm học sắp tới.
 
-Nh� tr�?ng hy v?ng r?ng, v?i tinh th?n ham h?c h?i, em s? l� m?t m?nh gh�p s?c m�u g�p ph?n l�m phong ph� th�m b?c tranh h?c ��?ng t?i Sky-Line. N�i ��y, em v� c�c b?n kh�ng ch? h?c t?p �? ph�t tri?n b?n th�n, m� c?n gi�p �? nhau ti?n b? v� ��ng g�p t�ch c?c cho c?ng �?ng.
+Nhà trường hy vọng rằng, với tinh thần ham học hỏi, em sẽ là một mảnh ghép sắc màu góp phần làm phong phú thêm bức tranh học đường tại Sky-Line. Nơi đây, em và các bạn không chỉ học tập để phát triển bản thân, mà còn giúp đỡ nhau tiến bộ và đóng góp tích cực cho cộng đồng.
 
-Ch�c em c� nh?ng n�m th�ng h?c t?p �?y ? ngh?a v� tr?i nghi?m th� v? t?i Sky-Line. H?y lu�n gi? v?ng ni?m �am m� h?c h?i v� kh�t khao kh�m ph� tri th?c em nh�!`;
+Chúc em có những năm tháng học tập đầy ý nghĩa và trải nghiệm thú vị tại Sky-Line. Hãy luôn giữ vững niềm đam mê học hỏi và khát khao khám phá tri thức em nhé!`;
 
-const defaultCamKet = `H? th?ng Gi�o d?c Sky-Line ch�c m?ng em �? v�?t qua k? kh?o s�t �?u v�o l?p {{grade}} h?c k? {{hocKy}} h? {{surveyFormType}} n�m h?c 2026-2027. �? t?o �i?u ki?n t?t nh?t cho h�nh tr?nh ph�t tri?n to�n di?n c?a h?c sinh t?i tr�?ng, Nh� tr�?ng v� Gia �?nh c�ng th?ng nh?t k? k?t B?n Cam k?t h?c t?p n�y.
+const defaultCamKet = `Hệ thống Giáo dục Sky-Line chúc mừng em đã vượt qua kỳ khảo sát đầu vào lớp {{grade}} học kì {{hocKy}} hệ {{surveyFormType}} năm học 2026-2027. Để tạo điều kiện tốt nhất cho hành trình phát triển toàn diện của học sinh tại trường, Nhà trường và Gia đình cùng thống nhất ký kết Bản Cam kết học tập này.
 
-Gia �?nh v� h?c sinh cam k?t th?c hi?n �?y �? c�c n?i dung sau:
-1. H?c sinh n? l?c r�n luy?n, ho�n th�nh t?t c�c m?c ti�u h?c t?p v� r�n luy?n theo �?nh h�?ng gi�o d?c c?a nh� tr�?ng.
-2. Gia �?nh ph?i h?p ch?t ch? v?i Nh� tr�?ng trong vi?c theo d?i, h? tr? h?c sinh h?c t?p t?i nh� v� tham gia �?y �? c�c ho?t �?ng gi�o d?c.
-3. Th?c hi?n nghi�m t�c n?i quy h?c sinh, t�n tr?ng th?y c�, b?n b� v� gi? g?n h?nh ?nh h?c sinh v�n minh Sky-Line.
+Gia đình và học sinh cam kết thực hiện đầy đủ các nội dung sau:
+1. Học sinh nỗ lực rèn luyện, hoàn thành tốt các mục tiêu học tập và rèn luyện theo định hướng giáo dục của nhà trường.
+2. Gia đình phối hợp chặt chẽ với Nhà trường trong việc theo dõi, hỗ trợ học sinh học tập tại nhà và tham gia đầy đủ các hoạt động giáo dục.
+3. Thực hiện nghiêm túc nội quy học sinh, tôn trọng thầy cô, bạn bè và giữ gìn hình ảnh học sinh văn minh Sky-Line.
 
-B?n cam k?t ��?c th?c hi?n d�?i s? �?ng thu?n c?a c? hai b�n v� c� gi� tr? k? t? ng�y k?.`;
+Bản cam kết được thực hiện dưới sự đồng thuận của cả hai bên và có giá trị kể từ ngày ký.`;
 
-const defaultThuMoi = `H?i �?ng Tuy?n sinh H? th?ng Gi�o d?c Sky-Line tr�n tr?ng g?i l?i ch�o v� l?i ch�c s?c kh?e, an khang �?n Qu? ph? huynh c�ng gia �?nh.
+const defaultThuMoi = `Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
 
-Nh?m t?o �i?u ki?n t?t nh?t �? nh� tr�?ng hi?u r? h�n v? n�ng l?c t� duy, ng�n ng? c?ng nh� thi�n h�?ng ph�t tri?n t? nhi�n c?a h?c sinh, qua �� x�y d?ng l? tr?nh r�n luy?n t?i �u nh?t, ch�ng t�i tr�n tr?ng k�nh m?i Qu? ph? huynh c�ng h?c sinh tham gia bu?i Kh?o s�t N�ng l?c �?u v�o h? {{surveyFormType}} n�m h?c 2026-2027.
+Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi Khảo sát Năng lực Đầu vào hệ {{surveyFormType}} năm học 2026-2027.
 
-* Qu? Ph? huynh vui l?ng chu?n b? c�c h? s� c?n thi?t v� theo d?i l?ch h?n kh?o s�t chi ti?t ��?c s?p x?p t? Ban Tuy?n sinh.
+* Quý Phụ huynh vui lòng chuẩn bị các hồ sơ cần thiết và theo dõi lịch hẹn khảo sát chi tiết được sắp xếp từ Ban Tuyển sinh.
 
-S? hi?n di?n v� �?ng h�nh c?a Qu? ph? huynh c�ng h?c sinh l� ni?m h�n h?nh l?n cho Sky-Line, gi�p nh� tr�?ng c� s? chu?n b? chu ��o nh?t ��n ch�o c�c em gia nh?p m�i tr�?ng h?nh ph�c c?a ch�ng ta.
+Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
 
-Tr�n tr?ng k�nh m?i Qu? ph? huynh v� c�c em h?c sinh!`;
+Trân trọng kính mời Quý phụ huynh và các em học sinh!`;
 
 const getDefaultContent = (type) => {
   if (type === "cam_ket_hoc_tap") return defaultCamKet;
@@ -204,20 +204,20 @@ const getCampusAndSchoolName = (rawCampusCode: string) => {
     actualCampusName = "Sky-Line Hill";
   } else if (clean.includes("CS5") || clean.includes("BEACH")) {
     actualCampusName = "Sky-Line Beach";
-  } else if (clean.includes("CS6") || clean.includes("QU?C T?") || clean.includes("INTERNATIONAL")) {
+  } else if (clean.includes("CS6") || clean.includes("QUỐC TẾ") || clean.includes("INTERNATIONAL")) {
     actualCampusName = "Sky-Line International";
-  } else if (clean.includes("CS7") || clean.includes("S�NG T?O")) {
-    actualCampusName = "Trung t�m S�ng t?o";
+  } else if (clean.includes("CS7") || clean.includes("SÁNG TẠO")) {
+    actualCampusName = "Trung tâm Sáng tạo";
   }
 
-  let schoolNameFull = "Tr�?ng TH, THCS v� THPT Sky-Line";
-  let truongName = "TH, THCS v� THPT Sky-Line";
+  let schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
+  let truongName = "TH, THCS và THPT Sky-Line";
   if (actualCampusName === "Sky-Line Hill") {
-    schoolNameFull = "Tr�?ng TH, THCS v� THPT Sky-Line Hill";
-    truongName = "TH, THCS v� THPT Sky-Line Hill";
+    schoolNameFull = "Trường TH, THCS và THPT Sky-Line Hill";
+    truongName = "TH, THCS và THPT Sky-Line Hill";
   } else {
-    schoolNameFull = "Tr�?ng TH, THCS v� THPT Sky-Line";
-    truongName = "TH, THCS v� THPT Sky-Line";
+    schoolNameFull = "Trường TH, THCS và THPT Sky-Line";
+    truongName = "TH, THCS và THPT Sky-Line";
   }
 
   return { actualCampusName, schoolNameFull, truongName };
@@ -249,14 +249,14 @@ const getStudentScoresForTemplate = (student) => {
     }
 
     if (scoreVal !== null && scoreVal !== undefined && scoreVal !== "") {
-      if (sNameLower.includes("to�n") || sCode.includes("math") || sCode.includes("mth")) {
+      if (sNameLower.includes("toán") || sCode.includes("math") || sCode.includes("mth")) {
         mathVal = scoreVal;
-      } else if (sNameLower.includes("ti?ng vi?t") || sNameLower.includes("ng? v�n") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van")) {
+      } else if (sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van")) {
         literatureVal = scoreVal;
-      } else if (sNameLower.includes("ti?ng anh") || sCode.includes("eng") || sCode.includes("esl")) {
-        if (sNameLower.includes("vi?t") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+      } else if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+        if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
           writtenEnglishVal = scoreVal;
-        } else if (sNameLower.includes("v?n ��p") || sNameLower.includes("n�i") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+        } else if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
           oralEnglishVal = scoreVal;
         }
       } else if (sCode.includes("tly")) {
@@ -299,10 +299,10 @@ const renderTemplate = (template, student) => {
   return template
     .replace(/\{\{schoolName\}\}/g, schoolNameFull)
     .replace(/\{\{truong\}\}/g, truongName)
-    .replace(/\{\{fullName\}\}/g, student?.fullName || "L� Tr� My")
+    .replace(/\{\{fullName\}\}/g, student?.fullName || "Lê Trà My")
     .replace(/\{\{grade\}\}/g, numericGrade)
     .replace(/\{\{hocKy\}\}/g, student?.hocKy || "1")
-    .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "H?i nh?p S")
+    .replace(/\{\{surveyFormType\}\}/g, student?.surveyFormType || "Hội nhập S")
     .replace(/\{\{admissionCampus\}\}/g, actualCampusName || "")
     .replace(/\{\{directorNote\}\}/g, student?.directorNote || "")
     .replace(/\{\{committedSubjects\}\}/g, comSubs)
@@ -317,120 +317,120 @@ const renderTemplate = (template, student) => {
 
 
 const danangWards = [
-  "H?i Ch�u", "H?a C�?ng", "Thanh Kh�", "An Kh�", "An H?i", "S�n Tr�", "Ng? H�nh S�n", "H?a Kh�nh", "H?i V�n", "Li�n Chi?u", 
-  "C?m L?", "H?a Xu�n", "H?a Vang", "H?a Ti?n", "B� N�", "Ho�ng Sa (�?c khu)", "N�i Th�nh", "Tam M?", "Tam Anh", "�?c Ph�", 
-  "Tam Xu�n", "Tam H?i", "Tam K?", "Qu?ng Ph�", "H��ng Tr�", "B�n Th?ch", "T�y H?", "Chi�n ��n", "Ph� Ninh", "L?nh Ng?c", 
-  "Ti�n Ph�?c", "Th?nh B?nh", "S�n C?m H�", "Tr� Li�n", "Tr� Gi�p", "Tr� T�n", "Tr� �?c", "Tr� My", "Nam Tr� My", "Tr� T?p", 
-  "Tr� V�n", "Tr� Linh", "Tr� Leng", "Th�ng B?nh", "Th�ng An", "Th�ng Tr�?ng", "Th�ng �i?n", "Th�ng Ph�", "�?ng D��ng", "Qu? S�n Trung", 
-  "Qu? S�n", "Xu�n Ph�", "N�ng S�n", "Qu? Ph�?c", "Duy Ngh?a", "Nam Ph�?c", "Duy Xuy�n", "Thu B?n", "�i?n B�n", "�i?n B�n ��ng", 
-  "An Th?ng", "�i?n B�n B?c", "�i?n B�n T�y", "G? N?i", "H?i An", "H?i An ��ng", "H?i An T�y", "T�n Hi?p", "�?i L?c", "H� Nha", 
-  "Th�?ng �?c", "Vu Gia", "Ph� Thu?n", "Th?nh M?", "B?n Gi?ng", "Nam Giang", "�?c Pring", "La D��", "La ��", "S�ng V�ng", 
-  "S�ng K�n", "��ng Giang", "B?n Hi�n", "Av��ng", "T�y Giang", "H�ng S�n", "Hi?p �?c", "Vi?t An", "Ph�?c Tr�", "Kh�m �?c", 
-  "Ph�?c N�ng", "Ph�?c Ch�nh", "Ph�?c Th�nh", "Ph�?c Hi?p"
+  "Hải Châu", "Hòa Cường", "Thanh Khê", "An Khê", "An Hải", "Sơn Trà", "Ngũ Hành Sơn", "Hòa Khánh", "Hải Vân", "Liên Chiểu", 
+  "Cẩm Lệ", "Hòa Xuân", "Hòa Vang", "Hòa Tiến", "Bà Nà", "Hoàng Sa (Đặc khu)", "Núi Thành", "Tam Mỹ", "Tam Anh", "Đức Phú", 
+  "Tam Xuân", "Tam Hải", "Tam Kỳ", "Quảng Phú", "Hương Trà", "Bàn Thạch", "Tây Hồ", "Chiên Đàn", "Phú Ninh", "Lãnh Ngọc", 
+  "Tiên Phước", "Thạnh Bình", "Sơn Cẩm Hà", "Trà Liên", "Trà Giáp", "Trà Tân", "Trà Đốc", "Trà My", "Nam Trà My", "Trà Tập", 
+  "Trà Vân", "Trà Linh", "Trà Leng", "Thăng Bình", "Thăng An", "Thăng Trường", "Thăng Điền", "Thăng Phú", "Đồng Dương", "Quế Sơn Trung", 
+  "Quế Sơn", "Xuân Phú", "Nông Sơn", "Quế Phước", "Duy Nghĩa", "Nam Phước", "Duy Xuyên", "Thu Bồn", "Điện Bàn", "Điện Bàn Đông", 
+  "An Thắng", "Điện Bàn Bắc", "Điện Bàn Tây", "Gò Nổi", "Hội An", "Hội An Đông", "Hội An Tây", "Tân Hiệp", "Đại Lộc", "Hà Nha", 
+  "Thượng Đức", "Vu Gia", "Phú Thuận", "Thạnh Mỹ", "Bến Giằng", "Nam Giang", "Đắc Pring", "La Dêê", "La Êê", "Sông Vàng", 
+  "Sông Kôn", "Đông Giang", "Bến Hiên", "Avương", "Tây Giang", "Hùng Sơn", "Hiệp Đức", "Việt An", "Phước Trà", "Khâm Đức", 
+  "Phước Năng", "Phước Chánh", "Phước Thành", "Phước Hiệp"
 ].sort();
 
 const vietnamProvinces = [
-  "Th�nh ph? �� N?ng",
-  "Th�nh ph? H� N?i",
-  "Th�nh ph? H? Ch� Minh",
-  "Th�nh ph? H?i Ph?ng",
-  "Th�nh ph? C?n Th�",
+  "Thành phố Đà Nẵng",
+  "Thành phố Hà Nội",
+  "Thành phố Hồ Chí Minh",
+  "Thành phố Hải Phòng",
+  "Thành phố Cần Thơ",
   "An Giang",
-  "B� R?a - V?ng T�u",
-  "B?c Giang",
-  "B?c K?n",
-  "B?c Li�u",
-  "B?c Ninh",
-  "B?n Tre",
-  "B?nh �?nh",
-  "B?nh D��ng",
-  "B?nh Ph�?c",
-  "B?nh Thu?n",
-  "C� Mau",
-  "Cao B?ng",
-  "�?c L?k",
-  "�?k N�ng",
-  "�i?n Bi�n",
-  "�?ng Nai",
-  "�?ng Th�p",
+  "Bà Rịa - Vũng Tàu",
+  "Bắc Giang",
+  "Bắc Kạn",
+  "Bạc Liêu",
+  "Bắc Ninh",
+  "Bến Tre",
+  "Bình Định",
+  "Bình Dương",
+  "Bình Phước",
+  "Bình Thuận",
+  "Cà Mau",
+  "Cao Bằng",
+  "Đắc Lắk",
+  "Đắk Nông",
+  "Điện Biên",
+  "Đồng Nai",
+  "Đồng Tháp",
   "Gia Lai",
-  "H� Giang",
-  "H� Nam",
-  "H� T?nh",
-  "H?i D��ng",
-  "H?u Giang",
-  "H?a B?nh",
-  "H�ng Y�n",
-  "Kh�nh H?a",
-  "Ki�n Giang",
+  "Hà Giang",
+  "Hà Nam",
+  "Hà Tĩnh",
+  "Hải Dương",
+  "Hậu Giang",
+  "Hòa Bình",
+  "Hưng Yên",
+  "Khánh Hòa",
+  "Kiên Giang",
   "Kon Tum",
-  "Lai Ch�u",
-  "L�m �?ng",
-  "L?ng S�n",
-  "L�o Cai",
+  "Lai Châu",
+  "Lâm Đồng",
+  "Lạng Sơn",
+  "Lào Cai",
   "Long An",
-  "Nam �?nh",
-  "Ngh? An",
-  "Ninh B?nh",
-  "Ninh Thu?n",
-  "Ph� Th?",
-  "Ph� Y�n",
-  "Qu?ng B?nh",
-  "Qu?ng Nam",
-  "Qu?ng Ng?i",
-  "Qu?ng Ninh",
-  "Qu?ng Tr?",
-  "S�c Tr�ng",
-  "S�n La",
-  "T�y Ninh",
-  "Th�i B?nh",
-  "Th�i Nguy�n",
-  "Thanh H�a",
-  "Th?a Thi�n Hu?",
-  "Ti?n Giang",
-  "Tr� Vinh",
-  "Tuy�n Quang",
-  "V?nh Long",
-  "V?nh Ph�c",
-  "Y�n B�i"
+  "Nam Định",
+  "Nghệ An",
+  "Ninh Bình",
+  "Ninh Thuận",
+  "Phú Thọ",
+  "Phú Yên",
+  "Quảng Bình",
+  "Quảng Nam",
+  "Quảng Ngãi",
+  "Quảng Ninh",
+  "Quảng Trị",
+  "Sóc Trăng",
+  "Sơn La",
+  "Tây Ninh",
+  "Thái Bình",
+  "Thái Nguyên",
+  "Thanh Hóa",
+  "Thừa Thiên Huế",
+  "Tiền Giang",
+  "Trà Vinh",
+  "Tuyên Quang",
+  "Vĩnh Long",
+  "Vĩnh Phúc",
+  "Yên Bái"
 ];
 
 const worldCountries = [
-  "Hoa K? (M?)", "�c (Australia)", "Singapore", "Anh (UK)", "Nh?t B?n", "H�n Qu?c", "Canada", "L�o",
-  "Ph�p", "�?c", "Trung Qu?c", "��i Loan", "H?ng K�ng", "Th�i Lan", "Malaysia", "Campuchia", "New Zealand",
-  "H� Lan", "Th?y S?", "? (Italy)", "Nga", "�an M?ch", "Th?y �i?n", "Ph?n Lan", "Na Uy", "T�y Ban Nha",
-  "B?", "�o", "Ireland", "?n �?", "Philippines", "Indonesia", "C�c Ti?u v��ng qu?c ? R?p Th?ng nh?t (UAE)",
-  "Saudi Arabia", "Qatar", "Ba Lan", "C?ng h?a S�c", "Hungary", "Hy L?p", "B? ��o Nha", "Brazil", "Argentina",
-  "Chile", "South Africa (Nam Phi)", "Ai C?p", "Th? Nh? K?", "Kh�c"
+  "Hoa Kỳ (Mỹ)", "Úc (Australia)", "Singapore", "Anh (UK)", "Nhật Bản", "Hàn Quốc", "Canada", "Lào",
+  "Pháp", "Đức", "Trung Quốc", "Đài Loan", "Hồng Kông", "Thái Lan", "Malaysia", "Campuchia", "New Zealand",
+  "Hà Lan", "Thụy Sĩ", "Ý (Italy)", "Nga", "Đan Mạch", "Thụy Điển", "Phần Lan", "Na Uy", "Tây Ban Nha",
+  "Bỉ", "Áo", "Ireland", "Ấn Độ", "Philippines", "Indonesia", "Các Tiểu vương quốc Ả Rập Thống nhất (UAE)",
+  "Saudi Arabia", "Qatar", "Ba Lan", "Cộng hòa Séc", "Hungary", "Hy Lạp", "Bồ Đào Nha", "Brazil", "Argentina",
+  "Chile", "South Africa (Nam Phi)", "Ai Cập", "Thổ Nhĩ Kỳ", "Khác"
 ];
 
 const defaultDanangSchools = [
-  { name: "THCS v� THPT Nguy?n Khuy?n", schoolType: "PUBLIC" },
-  { name: "THPT Phan Ch�u Trinh", schoolType: "PUBLIC" },
-  { name: "THPT Tr?n Ph�", schoolType: "PUBLIC" },
-  { name: "THPT Th�i Phi�n", schoolType: "PUBLIC" },
-  { name: "THPT Ho�ng Hoa Th�m", schoolType: "PUBLIC" },
-  { name: "THPT H?a Vang", schoolType: "PUBLIC" },
-  { name: "THPT Nguy?n Tr?i", schoolType: "PUBLIC" },
-  { name: "THPT �ng �ch Khi�m", schoolType: "PUBLIC" },
-  { name: "THPT Ng? H�nh S�n", schoolType: "PUBLIC" },
-  { name: "THPT Ng� Quy?n", schoolType: "PUBLIC" },
-  { name: "THPT Chuy�n L� Qu? ��n", schoolType: "PUBLIC" },
+  { name: "THCS và THPT Nguyễn Khuyến", schoolType: "PUBLIC" },
+  { name: "THPT Phan Châu Trinh", schoolType: "PUBLIC" },
+  { name: "THPT Trần Phú", schoolType: "PUBLIC" },
+  { name: "THPT Thái Phiên", schoolType: "PUBLIC" },
+  { name: "THPT Hoàng Hoa Thám", schoolType: "PUBLIC" },
+  { name: "THPT Hòa Vang", schoolType: "PUBLIC" },
+  { name: "THPT Nguyễn Trãi", schoolType: "PUBLIC" },
+  { name: "THPT Ông Ích Khiêm", schoolType: "PUBLIC" },
+  { name: "THPT Ngũ Hành Sơn", schoolType: "PUBLIC" },
+  { name: "THPT Ngô Quyền", schoolType: "PUBLIC" },
+  { name: "THPT Chuyên Lê Quý Đôn", schoolType: "PUBLIC" },
   { name: "TH, THCS & THPT Sky-Line", schoolType: "PRIVATE" },
-  { name: "TH, THCS, THPT Ho�ng Sa", schoolType: "PRIVATE" },
-  { name: "TH, THCS, THPT FPT �� N?ng", schoolType: "PRIVATE" },
-  { name: "Tr�?ng Ti?u h?c Ph� �?ng", schoolType: "PUBLIC" },
-  { name: "Tr�?ng Ti?u h?c L? C�ng U?n", schoolType: "PUBLIC" },
-  { name: "Tr�?ng Ti?u h?c N�i Th�nh", schoolType: "PUBLIC" },
-  { name: "Tr�?ng Ti?u h?c Ho�ng D� Kh�ng", schoolType: "PUBLIC" },
-  { name: "Tr�?ng Ti?u h?c L� �?nh Chinh", schoolType: "PUBLIC" },
-  { name: "Tr�?ng Ti?u h?c Tr?n �?i Ngh?a", schoolType: "PUBLIC" },
-  { name: "Tr�?ng THCS Kim �?ng", schoolType: "PUBLIC" },
-  { name: "Tr�?ng THCS T�y S�n", schoolType: "PUBLIC" },
-  { name: "Tr�?ng THCS L� �?", schoolType: "PUBLIC" },
-  { name: "Tr�?ng THCS Nguy?n Hu?", schoolType: "PUBLIC" },
-  { name: "Tr�?ng THCS L? Th�?ng Ki?t", schoolType: "PUBLIC" },
-  { name: "Tr�?ng THCS Nguy?n B?nh Khi�m", schoolType: "PUBLIC" }
+  { name: "TH, THCS, THPT Hoàng Sa", schoolType: "PRIVATE" },
+  { name: "TH, THCS, THPT FPT Đà Nẵng", schoolType: "PRIVATE" },
+  { name: "Trường Tiểu học Phù Đổng", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Lý Công Uẩn", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Núi Thành", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Hoàng Dư Khưng", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Lê Đình Chinh", schoolType: "PUBLIC" },
+  { name: "Trường Tiểu học Trần Đại Nghĩa", schoolType: "PUBLIC" },
+  { name: "Trường THCS Kim Đồng", schoolType: "PUBLIC" },
+  { name: "Trường THCS Tây Sơn", schoolType: "PUBLIC" },
+  { name: "Trường THCS Lê Độ", schoolType: "PUBLIC" },
+  { name: "Trường THCS Nguyễn Huệ", schoolType: "PUBLIC" },
+  { name: "Trường THCS Lý Thường Kiệt", schoolType: "PUBLIC" },
+  { name: "Trường THCS Nguyễn Bỉnh Khiêm", schoolType: "PUBLIC" }
 ];
 
 // ========= MAIN =========
@@ -479,7 +479,7 @@ export function InputAssessmentsClient({
     }
     
     // Fallback: Default role rules if no explicit permissions found in the DB
-    const isGDCS = ["GDCS", "G�_CS", "GIAO_VU_CS", "G�CS"].includes(userRole);
+    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
     if (isGDCS) {
       const allowed = ["students", "reports"].includes(tabId);
       return {
@@ -503,7 +503,7 @@ export function InputAssessmentsClient({
   const [isMoveBatchModalOpen, setIsMoveBatchModalOpen] = useState(false);
   const [tab, setTab] = useState(() => {
     const userRole = (currentUser?.role || "").toUpperCase();
-    const isGDCS = ["GDCS", "G�_CS", "GIAO_VU_CS", "G�CS"].includes(userRole);
+    const isGDCS = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
     
     const hasPeriods = userRole === "ADMIN" || userRole === "KT_DBCL" || (rolePermissions && rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_PERIODS" && p.canRead));
     if (hasPeriods) return "periods";
@@ -553,7 +553,7 @@ export function InputAssessmentsClient({
       cc: "cc@skylineschool.edu.vn"
     };
 
-    // 1. Dynamic G�CS Lookup from campuses
+    // 1. Dynamic GĐCS Lookup from campuses
     (campuses || []).forEach((c) => {
       const csCode = c.campusCode;
       if (csCode && csCode in map.gdcs) {
@@ -569,7 +569,7 @@ export function InputAssessmentsClient({
       }
     });
 
-    // 2. Dynamic Gi�o v? and T� v?n Lookup from teachers
+    // 2. Dynamic Giáo vụ and Tư vấn Lookup from teachers
     (teachers || []).forEach((t) => {
       const csCode = t.campus?.campusCode;
       if (csCode && csCode in map.giaovu) {
@@ -578,10 +578,10 @@ export function InputAssessmentsClient({
         const hasEmail = t.email && t.email.includes('@');
         
         if (hasEmail) {
-          if (deptName.includes('gi�o v?') || deptCode.includes('gvu') || deptCode.includes('giaovu')) {
+          if (deptName.includes('giáo vụ') || deptCode.includes('gvu') || deptCode.includes('giaovu')) {
             map.giaovu[csCode] = t.email;
           }
-          if (deptName.includes('t� v?n') || deptName.includes('tuy?n sinh') || deptCode.includes('tuvan') || deptCode.includes('tuyensinh')) {
+          if (deptName.includes('tư vấn') || deptName.includes('tuyển sinh') || deptCode.includes('tuvan') || deptCode.includes('tuyensinh')) {
             map.tuvan[csCode] = t.email;
           }
         }
@@ -598,7 +598,7 @@ export function InputAssessmentsClient({
     EMAIL_MAP.cc
   ], [EMAIL_MAP]);
 
-  // ????????? CONFIGS STATE (MOVED TO TOP TO PREVENT TDZ REFERENCE ERROR) ?????????
+  // ───────── CONFIGS STATE (MOVED TO TOP TO PREVENT TDZ REFERENCE ERROR) ─────────
   const [configs, setConfigs] = useState<AssessmentConfig[]>(initialConfigs)
   const [cLoading, setCLoading] = useState(false)
   const [cModal, setCModal] = useState(false)
@@ -607,14 +607,14 @@ export function InputAssessmentsClient({
 
   // Admission Documents State
   const defaultDocGroups = useMemo(() => [
-    { id: "khoi_1", label: "Kh?i 1" },
-    { id: "khoi_2_5", label: "Kh?i 2 �?n 5" },
-    { id: "khoi_6", label: "Kh?i 6" },
-    { id: "khoi_7_9", label: "Kh?i 7 �?n 9" },
-    { id: "khoi_10_noi_tinh", label: "Kh?i 10 - N?i t?nh" },
-    { id: "khoi_10_ngoai_tinh", label: "Kh?i 10 - Ngo?i t?nh" },
-    { id: "khoi_11_12", label: "Kh?i 11 �?n 12" },
-    { id: "doi_tuong_tuyen_sinh", label: "�?i t�?ng H? s�" },
+    { id: "khoi_1", label: "Khối 1" },
+    { id: "khoi_2_5", label: "Khối 2 đến 5" },
+    { id: "khoi_6", label: "Khối 6" },
+    { id: "khoi_7_9", label: "Khối 7 đến 9" },
+    { id: "khoi_10_noi_tinh", label: "Khối 10 - Nội tỉnh" },
+    { id: "khoi_10_ngoai_tinh", label: "Khối 10 - Ngoại tỉnh" },
+    { id: "khoi_11_12", label: "Khối 11 đến 12" },
+    { id: "doi_tuong_tuyen_sinh", label: "Đối tượng Hồ sơ" },
   ], []);
   const [customDocGroups, setCustomDocGroups] = useState<any[]>([]);
 
@@ -648,27 +648,27 @@ export function InputAssessmentsClient({
       }
       let updated = false;
       if (!parsed["khoi_1"]) {
-        parsed["khoi_1"] = ["N?i t?nh", "Ngo?i t?nh"];
+        parsed["khoi_1"] = ["Nội tỉnh", "Ngoại tỉnh"];
         updated = true;
       }
       if (!parsed["khoi_2_5"]) {
-        parsed["khoi_2_5"] = ["N?i t?nh", "Ngo?i t?nh"];
+        parsed["khoi_2_5"] = ["Nội tỉnh", "Ngoại tỉnh"];
         updated = true;
       }
       if (!parsed["khoi_6"]) {
-        parsed["khoi_6"] = ["N?i t?nh", "Ngo?i t?nh"];
+        parsed["khoi_6"] = ["Nội tỉnh", "Ngoại tỉnh"];
         updated = true;
       }
       if (!parsed["khoi_10_noi_tinh"]) {
-        parsed["khoi_10_noi_tinh"] = ["N?i t?nh"];
+        parsed["khoi_10_noi_tinh"] = ["Nội tỉnh"];
         updated = true;
       }
       if (!parsed["khoi_10_ngoai_tinh"]) {
-        parsed["khoi_10_ngoai_tinh"] = ["Ngo?i t?nh"];
+        parsed["khoi_10_ngoai_tinh"] = ["Ngoại tỉnh"];
         updated = true;
       }
       if (!parsed["khoi_10"]) {
-        parsed["khoi_10"] = ["N?i t?nh", "Ngo?i t?nh"];
+        parsed["khoi_10"] = ["Nội tỉnh", "Ngoại tỉnh"];
         updated = true;
       }
       if (updated) {
@@ -681,13 +681,13 @@ export function InputAssessmentsClient({
 
 
   const [docGroupGrades, setDocGroupGrades] = useState<Record<string, string[]>>({
-    "khoi_1": ["Kh?i 1"],
-    "khoi_2_5": ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"],
-    "khoi_6": ["Kh?i 6"],
-    "khoi_7_9": ["Kh?i 7", "Kh?i 8", "Kh?i 9"],
-    "khoi_10_noi_tinh": ["Kh?i 10"],
-    "khoi_10_ngoai_tinh": ["Kh?i 10"],
-    "khoi_11_12": ["Kh?i 11", "Kh?i 12"]
+    "khoi_1": ["Khối 1"],
+    "khoi_2_5": ["Khối 2", "Khối 3", "Khối 4", "Khối 5"],
+    "khoi_6": ["Khối 6"],
+    "khoi_7_9": ["Khối 7", "Khối 8", "Khối 9"],
+    "khoi_10_noi_tinh": ["Khối 10"],
+    "khoi_10_ngoai_tinh": ["Khối 10"],
+    "khoi_11_12": ["Khối 11", "Khối 12"]
   });
 
   useEffect(() => {
@@ -726,53 +726,53 @@ export function InputAssessmentsClient({
   const [docFormSelectedGrades, setDocFormSelectedGrades] = useState([]);
 
   const defaultDocumentsGrade1 = useMemo(() => [
-    { id: 1, name: "Gi?y khai sinh (c� d?u �?)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 1"] },
-    { id: 2, name: "��n xin nh?p h?c l?p 1", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 1"] },
-    { id: 3, name: "B?n cam k?t (n?u c�)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 1"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
+    { id: 2, name: "Đơn xin nhập học lớp 1", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
+    { id: 3, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 1"] },
   ], []);
 
   const defaultDocumentsGrade2_5 = useMemo(() => [
-    { id: 1, name: "Gi?y khai sinh (c� d?u �?)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"] },
-    { id: 2, name: "H?c b? Ti?u h?c (b?n g?c)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"] },
-    { id: 3, name: "Gi?y gi?i thi?u chuy?n c?a tr�?ng n�i �i", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"] },
-    { id: 4, name: "��n xin x�c nh?n v? vi?c �?ng ? ti?p nh?n h?c sinh", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"] },
-    { id: 5, name: "��n xin chuy?n tr�?ng", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"] },
-    { id: 6, name: "B?n cam k?t (n?u c�)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 4, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 5, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
+    { id: 6, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 2", "Khối 3", "Khối 4", "Khối 5"] },
   ], []);
 
   const defaultDocumentsGrade6 = useMemo(() => [
-    { id: 1, name: "Gi?y khai sinh (c� d?u �?)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 2, name: "H?c b? Ti?u h?c (b?n g?c)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 3, name: "Gi?y ch?ng nh?n HTCT Ti?u h?c", qty: "1", note: "N?u c�", targets: ["N?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 4, name: "Gi?y gi?i thi?u chuy?n c?a tr�?ng n�i �i (nh?p h?c sau 15/8)", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 5, name: "Gi?y gi?i thi?u chuy?n c?a tr�?ng n�i �i (n?u nh?p h?c sau 15/8)", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 6, name: "Gi?y gi?i thi?u chuy?n tr�?ng do UBND/ S? GD&�T n�i �i (Tr�?ng tr?c thu?c s?)", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 7, name: "B?n cam k?t (n?u c�)", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 8, name: "?nh th? 3x4", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 9, name: "��n xin x�c nh?n v? vi?c �?ng ? ti?p nh?n h?c sinh", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 6"] },
-    { id: 10, name: "��n xin chuy?n tr�?ng", qty: "1", note: "", targets: ["N?i t?nh", "Ngo?i t?nh"], grades: ["Kh?i 6"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 2, name: "Học bạ Tiểu học (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 3, name: "Giấy chứng nhận HTCT Tiểu học", qty: "1", note: "Nếu có", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
+    { id: 4, name: "Giấy giới thiệu chuyển của trường nơi đi (nhập học sau 15/8)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 6"] },
+    { id: 5, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 6, name: "Giấy giới thiệu chuyển trường do UBND/ Sở GD&ĐT nơi đi (Trường trực thuộc sở)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 7, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 8, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 9, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
+    { id: 10, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh", "Ngoại tỉnh"], grades: ["Khối 6"] },
   ], []);
 
   const defaultDocumentsGrade10NoiTinh = useMemo(() => [
-    { id: 1, name: "Gi?y khai sinh (c� d?u �?)", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 2, name: "H?c b? THCS (b?n g?c)", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 3, name: "Gi?y ch?ng nh?n t?t nghi?p THCS t?m th?i ho?c B?ng t?t nghi?p THCS", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 4, name: "Gi?y gi?i thi?u chuy?n c?a tr�?ng n�i �i (n?u nh?p h?c sau 15/8)", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 5, name: "B?n cam k?t (n?u c�)", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 6, name: "?nh th? 3x4", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 7, name: "��n xin x�c nh?n v? vi?c �?ng ? ti?p nh?n h?c sinh", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 8, name: "��n xin chuy?n tr�?ng", qty: "1", note: "", targets: ["N?i t?nh"], grades: ["Kh?i 10"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 3, name: "Giấy chứng nhận tốt nghiệp THCS tạm thời hoặc Bằng tốt nghiệp THCS", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 4, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 5, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 6, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 7, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
+    { id: 8, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Nội tỉnh"], grades: ["Khối 10"] },
   ], []);
 
   const defaultDocumentsGrade10NgoaiTinh = useMemo(() => [
-    { id: 1, name: "Gi?y khai sinh (c� d?u �?)", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 2, name: "H?c b? THCS (b?n g?c)", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 3, name: "Gi?y gi?i thi?u chuy?n c?a tr�?ng n�i �i (n?u nh?p h?c sau 15/8)", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 4, name: "Gi?y gi?i thi?u chuy?n tr�?ng do S? GD&�T n�i �i (Tr�?ng tr?c ph?c s? ho?c ngo?i t?nh)", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 5, name: "B?n cam k?t (n?u c�)", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 6, name: "?nh th? 3x4", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 7, name: "��n xin x�c nh?n v? vi?c �?ng ? ti?p nh?n h?c sinh", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
-    { id: 8, name: "��n xin chuy?n tr�?ng", qty: "1", note: "", targets: ["Ngo?i t?nh"], grades: ["Kh?i 10"] },
+    { id: 1, name: "Giấy khai sinh (có dấu đỏ)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 2, name: "Học bạ THCS (bản gốc)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 3, name: "Giấy giới thiệu chuyển của trường nơi đi (nếu nhập học sau 15/8)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 4, name: "Giấy giới thiệu chuyển trường do Sở GD&ĐT nơi đi (Trường trực phục sở hoặc ngoại tỉnh)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 5, name: "Bản cam kết (nếu có)", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 6, name: "Ảnh thẻ 3x4", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 7, name: "Đơn xin xác nhận về việc đồng ý tiếp nhận học sinh", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
+    { id: 8, name: "Đơn xin chuyển trường", qty: "1", note: "", targets: ["Ngoại tỉnh"], grades: ["Khối 10"] },
   ], []);
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -820,24 +820,24 @@ export function InputAssessmentsClient({
         
         // Setup default target assignments
         const defaultTargets = {
-          "khoi_1": ["N?i t?nh", "Ngo?i t?nh"],
-          "khoi_2_5": ["N?i t?nh", "Ngo?i t?nh"],
-          "khoi_6": ["N?i t?nh", "Ngo?i t?nh"],
-          "khoi_10_noi_tinh": ["N?i t?nh"],
-          "khoi_10_ngoai_tinh": ["Ngo?i t?nh"]
+          "khoi_1": ["Nội tỉnh", "Ngoại tỉnh"],
+          "khoi_2_5": ["Nội tỉnh", "Ngoại tỉnh"],
+          "khoi_6": ["Nội tỉnh", "Ngoại tỉnh"],
+          "khoi_10_noi_tinh": ["Nội tỉnh"],
+          "khoi_10_ngoai_tinh": ["Ngoại tỉnh"]
         };
         localStorage.setItem('admission_doc_targets', JSON.stringify(defaultTargets));
         setDocGroupTargets(defaultTargets);
 
         // Setup default grade mapping
         const defaultGradesMapping = {
-          "khoi_1": ["Kh?i 1"],
-          "khoi_2_5": ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"],
-          "khoi_6": ["Kh?i 6"],
-          "khoi_7_9": ["Kh?i 7", "Kh?i 8", "Kh?i 9"],
-          "khoi_10_noi_tinh": ["Kh?i 10"],
-          "khoi_10_ngoai_tinh": ["Kh?i 10"],
-          "khoi_11_12": ["Kh?i 11", "Kh?i 12"]
+          "khoi_1": ["Khối 1"],
+          "khoi_2_5": ["Khối 2", "Khối 3", "Khối 4", "Khối 5"],
+          "khoi_6": ["Khối 6"],
+          "khoi_7_9": ["Khối 7", "Khối 8", "Khối 9"],
+          "khoi_10_noi_tinh": ["Khối 10"],
+          "khoi_10_ngoai_tinh": ["Khối 10"],
+          "khoi_11_12": ["Khối 11", "Khối 12"]
         };
         localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(defaultGradesMapping));
         setDocGroupGrades(defaultGradesMapping);
@@ -863,7 +863,7 @@ export function InputAssessmentsClient({
   const [rcCampusId, setRcCampusId] = useState("")
   const [rcReportType, setRcReportType] = useState("thu_chuc_mung")
   const [rcTargetGroup, setRcTargetGroup] = useState("all")
-  const [rcTitle, setRcTitle] = useState("B�O C�O K?T QU? KH?O S�T N�NG L?C �?U V�O")
+  const [rcTitle, setRcTitle] = useState("BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO")
   const [rcLogo, setRcLogo] = useState("")
   const [rcSignature, setRcSignature] = useState("")
   const [rcBackground, setRcBackground] = useState("")
@@ -997,7 +997,7 @@ export function InputAssessmentsClient({
         }
       }
       
-      setRcTitle(globalData.title || (rcReportType === "thu_chuc_mung" ? "B�O C�O K?T QU? KH?O S�T N�NG L?C �?U V�O" : rcReportType === "thu_moi" ? "TH� M?I" : "B?N CAM K?T H?C T?P"));
+      setRcTitle(globalData.title || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : rcReportType === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP"));
       // Decoupled: Master branding assets (Logo, Background, Footer) persist across selections.
       setRcContent(globalData.content || getDefaultContent(rcReportType));
       
@@ -1053,9 +1053,9 @@ export function InputAssessmentsClient({
   }
 
   const saveReportConfig = () => {
-    if (!rcCampusId) return notify("Vui l?ng ch?n C� s?", "err")
-    if (!rcReportType) return notify("Vui l?ng ch?n Lo?i b�o c�o", "err")
-    if (!rcTargetGroup) return notify("Vui l?ng ch?n �?i t�?ng �p d?ng", "err")
+    if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
+    if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
+    if (!rcTargetGroup) return notify("Vui lòng chọn Đối tượng áp dụng", "err")
     
     const typeKey = rcTargetGroup === "all" ? rcReportType : rcReportType + '_' + rcTargetGroup;
     
@@ -1089,15 +1089,15 @@ export function InputAssessmentsClient({
     }
     localStorage.setItem('report_config_' + rcCampusId + '_' + typeKey, JSON.stringify(campusData))
     
-    notify("�? l�u c?u h?nh b�o c�o th�nh c�ng!")
+    notify("Đã lưu cấu hình báo cáo thành công!")
   }
 
   const exportConfigPdf = () => {
-    if (!rcCampusId) return notify("Vui l?ng ch?n C� s?", "err")
-    if (!rcReportType) return notify("Vui l?ng ch?n Lo?i b�o c�o", "err")
-    if (!rcTargetGroup) return notify("Vui l?ng ch?n �?i t�?ng �p d?ng", "err")
+    if (!rcCampusId) return notify("Vui lòng chọn Cơ sở", "err")
+    if (!rcReportType) return notify("Vui lòng chọn Loại báo cáo", "err")
+    if (!rcTargetGroup) return notify("Vui lòng chọn Đối tượng áp dụng", "err")
     
-    // PREVIEW ONLY: Do not update the database/localStorage when clicking In th?
+    // PREVIEW ONLY: Do not update the database/localStorage when clicking In thử
     
     const campusObj = campuses.find(c => c.id === rcCampusId);
     const campusName = campusObj ? campusObj.campusName : "Skyline Global";
@@ -1113,13 +1113,13 @@ export function InputAssessmentsClient({
     // Set high-fidelity structural preview data using a simulated mock student directly tied to the live config settings
     setMockPreviewStudent({
       id: "MOCK_PREVIEW_STUDENT",
-      fullName: "Nguy?n Minh Phong",
+      fullName: "Nguyễn Minh Phong",
       grade: mockGrade,
       academicYear: "2026-2027",
       admissionCampus: campusName.includes("Hill") ? campusName : "Skyline Hill",
-      surveyFormType: "H?i nh?p Global",
-      admissionCriteria: "Di?n X�t tuy?n",
-      admissionResult: rcReportType === "cam_ket_hoc_tap" ? "�?t cam k?t" : "�?t",
+      surveyFormType: "Hội nhập Global",
+      admissionCriteria: "Diện Xét tuyển",
+      admissionResult: rcReportType === "cam_ket_hoc_tap" ? "Đạt cam kết" : "Đạt",
       targetType: rcTargetGroup !== "all" ? rcTargetGroup : undefined
     });
     
@@ -1145,22 +1145,22 @@ export function InputAssessmentsClient({
   const handleDownloadTemplate = () => {
     const isOpenDay = selPeriod?.name?.toLowerCase().includes("open day");
     const rowObj: any = { 
-      "M? HS KS": "", 
-      "H? v� T�n *": "Nguy?n V�n A", 
-      "Ng�y sinh": "20/05/2010",
-      "Gi?i t�nh": "Nam",
-      "Kh?i": "6",
-      "H?c k? / N�m TS": "HK1",
-      "H? Kh?o s�t": "",
-      "H? s� / B?ng �i?m": "",
-      "�?i t�?ng Tuy?n sinh": "",
-      "Di?n kh?o s�t": "",
-      "H?nh th?c KS": "",
-      "K?t qu? H?c t?p": "",
-      "K?t qu? R�n luy?n": ""
+      "Mã HS KS": "", 
+      "Họ và Tên *": "Nguyễn Văn A", 
+      "Ngày sinh": "20/05/2010",
+      "Giới tính": "Nam",
+      "Khối": "6",
+      "Học kỳ / Năm TS": "HK1",
+      "Hệ Khảo sát": "",
+      "Hồ sơ / Bảng điểm": "",
+      "Đối tượng Tuyển sinh": "",
+      "Diện khảo sát": "",
+      "Hình thức KS": "",
+      "Kết quả Học tập": "",
+      "Kết quả Rèn luyện": ""
     };
     if (isOpenDay) {
-      rowObj["��ng k? CS"] = "";
+      rowObj["Đăng ký CS"] = "";
     }
     const ws = XLSX.utils.json_to_sheet([rowObj])
     const cols = [{ wch: 15 }, { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
@@ -1174,7 +1174,7 @@ export function InputAssessmentsClient({
   }
 
 
-  // ????????? COMMON STATES ?????????
+  // ───────── COMMON STATES ─────────
   const [periods, setPeriods] = useState<Period[]>([])
 
   const visiblePeriods = useMemo(() => {
@@ -1182,7 +1182,7 @@ export function InputAssessmentsClient({
     const userRole = (currentUser.role || "").toUpperCase();
     if (userRole === "ADMIN" || userRole === "KT_DBCL") return periods;
     
-    if (["GDCS", "G�_CS", "GIAO_VU_CS", "G�CS"].includes(userRole)) {
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const allowedIds = currentUser.campusIds || [];
       return periods.map(p => {
         const allowedBatches = (p.batches || []).filter(b => {
@@ -1216,12 +1216,12 @@ export function InputAssessmentsClient({
   const [confirm, setConfirm] = useState<{msg:string; fn:()=>void}|null>(null)
   const [sendingEmailBatchId, setSendingEmailBatchId] = useState<string | null>(null);
 
-  // ????????? PERIODS CRUD ?????????
+  // ───────── PERIODS CRUD ─────────
   const [pModal, setPModal] = useState(false)
   const [editP, setEditP] = useState<Period|null>(null)
   const [pForm, setPForm] = useState({ code:"", name:"", assignedUserId:"", startDate:"", endDate:"", description:"", status:"ACTIVE" })
 
-  // ????????? BATCH CRUD ?????????
+  // ───────── BATCH CRUD ─────────
   const [bModal, setBModal] = useState(false)
   const [editB, setEditB] = useState<Batch|null>(null)
   const [targetPeriodId, setTargetPeriodId] = useState("")
@@ -1229,7 +1229,7 @@ export function InputAssessmentsClient({
 
 
 
-  // ????????? STUDENTS STATE ?????????
+  // ───────── STUDENTS STATE ─────────
   const [students, setStudents] = useState<Student[]>([])
   const [sLoading, setSLoading] = useState(false)
   const [sPeriodId, setSPeriodId] = useState("")
@@ -1251,7 +1251,7 @@ export function InputAssessmentsClient({
 
   const [sSelected, setSSelected] = useState<string[]>([])
 
-  // ????????? REPORTS STATE ?????????
+  // ───────── REPORTS STATE ─────────
   const [reportPeriodId, setReportPeriodId] = useState("");
   const [reportBatchId, setReportBatchId] = useState("all");
   const [reportStudentId, setReportStudentId] = useState("");
@@ -1458,7 +1458,7 @@ export function InputAssessmentsClient({
         }
       }
       
-      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "B�O C�O K?T QU? KH?O S�T N�NG L?C �?U V�O" : typeKey === "thu_moi" ? "TH� M?I" : "B?N CAM K?T H?C T?P");
+      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : typeKey === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP");
       
       const mLogo = localStorage.getItem('report_config_master_logo');
       const mBg = localStorage.getItem('report_config_master_background');
@@ -1582,8 +1582,8 @@ export function InputAssessmentsClient({
     const paragraphs = renderedContent.split("\n").filter(Boolean);
     const bodyHtml = paragraphs.map((p: string) => '<p style="text-indent: 1cm; margin: 0 0 10px 0;">' + p + '</p>').join("");
     
-    const greetingHtml = 'Th�n g?i em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
-    const directorName = config.directorName || "�? Quang Trung";
+    const greetingHtml = 'Thân gửi em <strong style="font-weight: 900; font-style: normal; color: #0f172a;">' + student.fullName + '</strong>,';
+    const directorName = config.directorName || "Đỗ Quang Trung";
     const getImgTag = (src: string, className: string, style: string = "", alt: string = "") => {
       if (!src) return "";
       const cors = src.startsWith("data:") ? "" : ' crossorigin="anonymous"';
@@ -1599,17 +1599,17 @@ export function InputAssessmentsClient({
     const effCampus = (typeof reportForm !== "undefined" && reportForm?.admissionCampus && reportForm?.admissionCampus !== "all") ? reportForm.admissionCampus : student.admissionCampus;
     const campusObj = campuses.find((c: any) => c.id === effCampus || c.campusName === effCampus || c.campusCode === effCampus);
     const campusCodeStr = (campusObj ? campusObj.campusCode || campusObj.campusName : effCampus || "").toUpperCase();
-    let schoolName = "TR�?NG TH, THCS, THPT SKY-LINE";
+    let schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE";
     if (campusCodeStr.includes("CS4") || campusCodeStr.includes("HILL") || campusCodeStr.includes("HILLTOP")) {
-      schoolName = "TR�?NG TH, THCS, THPT SKY-LINE HILL";
+      schoolName = "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
     }
 
-    // Format current letter date y nguy�n m?u
+    // Format current letter date y nguyên mẫu
     const d = new Date();
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
-    const formattedLetterDate = `�� N?ng, ng�y ${day} th�ng ${month} n�m ${year}`;
+    const formattedLetterDate = `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
 
     const campusTitleSuffix = (campusCodeStr.includes("CS1") || campusCodeStr.includes("RIVERSIDE")) ? "RIVERSIDE"
       : (campusCodeStr.includes("CS2") || campusCodeStr.includes("CENTRAL")) ? "CENTRAL"
@@ -1618,15 +1618,15 @@ export function InputAssessmentsClient({
       : (campusCodeStr.includes("CS5") || campusCodeStr.includes("BEACH")) ? "BEACH"
       : campusCodeStr || "GLOBAL";
 
-    const titleText = isInvitationFlag ? "TM. H?I �?NG TUY?N SINH" : "TM. H?I �?NG TUY?N SINH";
-    const subTitleText = isInvitationFlag && !config.signature ? "TR�?NG BAN TUY?N SINH SKY-LINE"
-      : `GI�M �?C �I?U H�NH SKY-LINE ${campusTitleSuffix}`;
-    const signName = isInvitationFlag && !config.signature ? "Ban Tuy?n sinh" : directorName;
+    const titleText = isInvitationFlag ? "TM. HỘI ĐỒNG TUYỂN SINH" : "TM. HỘI ĐỒNG TUYỂN SINH";
+    const subTitleText = isInvitationFlag && !config.signature ? "TRƯỞNG BAN TUYỂN SINH SKY-LINE"
+      : `GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE ${campusTitleSuffix}`;
+    const signName = isInvitationFlag && !config.signature ? "Ban Tuyển sinh" : directorName;
 
     const customFooterHtml = config.footer ? getImgTag(config.footer, "footer-img", "width: 100%; max-height: 100px; object-fit: contain;", "Footer") :
       '<div style="width: 100%; font-family: Arial, sans-serif; box-sizing: border-box; text-align: left;">' +
         '<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; width: 100%;">' +
-          '<span style="font-weight: bold; color: #48BFE3; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">H? TH?NG GI�O D?C SKY-LINE</span>' +
+          '<span style="font-weight: bold; color: #48BFE3; white-space: nowrap; text-transform: uppercase; font-size: 11.5px; letter-spacing: 0.5px;">HỆ THỐNG GIÁO DỤC SKY-LINE</span>' +
           '<div style="flex-grow: 1; border-top: 1px solid rgba(0, 166, 169, 0.7); height: 0; margin-top: 2px;"></div>' +
           '<span style="font-weight: 600; color: #48BFE3; white-space: nowrap; text-transform: lowercase; font-size: 11px;">www.skylineschool.edu.vn</span>' +
         '</div>' +
@@ -1634,29 +1634,29 @@ export function InputAssessmentsClient({
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
               '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Riverside</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">L� A2.4 Tr?n ��ng Ninh, P. H?a C�?ng, TP. �� N?ng</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
               '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Central</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">S? 48 Nguy?n Du, P. H?i Ch�u, TP. �� N?ng</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
               '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Global</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">L� A2 Tr?n ��ng Ninh, P. H?a C�?ng, TP. �� N?ng</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
           '<div style="width: 32%; display: flex; flex-direction: column; gap: 4px;">' +
             '<div>' +
               '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Beach</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">S? 199 Tr?n Anh T�ng, P. Thanh Kh�, TP. �� N?ng</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
               '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 9.5px; line-height: 1.2;">SKY-LINE Hill</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Kh?i H� My ��ng A, P. �i?n B�n ��ng, TP. �� N?ng</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>' +
             '</div>' +
             '<div>' +
-              '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung t�m s?ng th�nh c�ng - SLS</p>' +
-              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">S? 48 Nguy?n Du, P. H?i Ch�u, TP. �� N?ng</p>' +
+              '<p style="font-weight: bold; color: #48BFE3; margin: 0; font-size: 9.5px; line-height: 1.2;">Trung tâm sống thành công - SLS</p>' +
+              '<p style="color: #555555; margin: 2px 0 0 0; font-size: 8px; line-height: 1.2;">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>' +
             '</div>' +
           '</div>' +
           '<div style="width: 32%; display: flex; align-items: center; justify-content: flex-end; text-align: right; gap: 6px; font-size: 8.5px; font-weight: 600; color: #1e293b;">' +
@@ -1675,9 +1675,9 @@ export function InputAssessmentsClient({
         '</div>' +
       '</div>';
 
-    // Page 2: Admission Documents Checklist (Danh m?c H? s� nh?p h?c) - Active for congratulations, invitations and commitments!
+    // Page 2: Admission Documents Checklist (Danh mục Hồ sơ nhập học) - Active for congratulations, invitations and commitments!
     let page2Html = "";
-    if (student.admissionResult === "�?t" || student.admissionResult === "�?t cam k?t" || isCommitmentFlag || isInvitationFlag) {
+    if (student.admissionResult === "Đạt" || student.admissionResult === "Đạt cam kết" || isCommitmentFlag || isInvitationFlag) {
       const docList = getStudentDocList(student);
       if (docList && docList.length > 0) {
         const rowsHtml = docList.map((item: any, idx: number) => {
@@ -1699,15 +1699,15 @@ export function InputAssessmentsClient({
               '</div>' +
             '</div>' +
             '<div class="letter-title">' +
-              '<h2>DANH M?C H? S� NH?P H?C</h2>' +
+              '<h2>DANH MỤC HỒ SƠ NHẬP HỌC</h2>' +
             '</div>' +
             '<div style="margin-top: 30px; border: 1px solid #000000; overflow: hidden; position: relative; z-index: 10;">' +
               '<table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; color: #000000; font-family: \'Times New Roman\', Times, serif;" className="border border-slate-200 border-collapse">' +
                 '<thead>' +
                   '<tr style="background-color: #ffffff; border-bottom: 1px solid #000000;">' +
                     '<th style="padding: 10px; border-right: 1px solid #000000; text-align: center; font-weight: bold; width: 60px; text-transform: uppercase; color: #000000;">STT</th>' +
-                    '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">T�n h? s�</th>' +
-                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="px-4 py-3 border-b border-slate-100">S? l�?ng</th>' +
+                    '<th style="padding: 10px 15px; border-right: 1px solid #000000; text-align: center; font-weight: bold; text-transform: uppercase; color: #000000;">Tên hồ sơ</th>' +
+                    '<th style="padding: 10px; text-align: center; font-weight: bold; width: 120px; text-transform: uppercase; color: #000000;" className="px-4 py-3 border-b border-slate-100">Số lượng</th>' +
                   '</tr>' +
                 '</thead>' +
                 '<tbody>' +
@@ -1716,7 +1716,7 @@ export function InputAssessmentsClient({
               '</table>' +
             '</div>' +
             '<p style="margin-top: 35px; font-size: 14px; font-weight: bold; color: #000000; line-height: 1.6; text-align: left; position: relative; z-index: 10;">' +
-              'Qu? ph? huynh vui l?ng b? sung h? s� thi?u (n?u c�) trong v?ng 10 ng�y k? t? ng�y n?p H? s�.' +
+              'Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.' +
             '</p>' +
             '<div class="footer-container">' +
               customFooterHtml +
@@ -1729,7 +1729,7 @@ export function InputAssessmentsClient({
       '<html>' +
       '<head>' +
         '<meta charset="utf-8">' +
-        '<title>' + (config.title || "T�i li?u") + '</title>' +
+        '<title>' + (config.title || "Tài liệu") + '</title>' +
         '<style>' +
           '@page {' +
             'size: A4;' +
@@ -1963,10 +1963,10 @@ export function InputAssessmentsClient({
     const targetStudents = reportStudents.filter(s => 
       (reportBatchId === "all" || s.batchId === reportBatchId)
     );
-    const activeBatchName = reportBatchId === "all" ? "T?t c? c�c �?t" : reportBatches.find(b => b.id === reportBatchId)?.name || "�?t kh?o s�t";
-    const activePeriodName = reportSelPeriod?.name || "K? kh?o s�t";
+    const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
+    const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
     
-    // Default checked recipient configurations (Gi�o v?, T� v?n, G�CS CS1, CS2, CS3, CS4 and CC)
+    // Default checked recipient configurations (Giáo vụ, Tư vấn, GĐCS CS1, CS2, CS3, CS4 and CC)
     const targetCampuses = ['CS1', 'CS2', 'CS3', 'CS4'];
     const defaultChecked = {
       tuvan: [...targetCampuses],
@@ -1990,7 +1990,7 @@ export function InputAssessmentsClient({
     const finalInitialEmails = Array.from(initialEmailsSet).join(', ');
     
     setRecipientEmail(finalInitialEmails);
-    setEmailSubject(`[B�o c�o nhanh] K?t qu? Kh?o s�t �?u v�o - K?: ${activePeriodName} - �?t: ${activeBatchName}`);
+    setEmailSubject(`[Báo cáo nhanh] Kết quả Khảo sát đầu vào - Kỳ: ${activePeriodName} - Đợt: ${activeBatchName}`);
     setEmailStudents(targetStudents);
     setEmailResult(null);
     setAttachLetters(true); // Default attachments is active
@@ -2052,30 +2052,30 @@ export function InputAssessmentsClient({
 
   const handleSendQuickEmailSubmit = async () => {
     if (!recipientEmail.trim()) {
-      alert("Vui l?ng nh?p email ng�?i nh?n!");
+      alert("Vui lòng nhập email người nhận!");
       return;
     }
     setEmailSending(true);
-    setEmailSendingStatus("�ang kh?i t?o...");
+    setEmailSendingStatus("Đang khởi tạo...");
     setEmailResult(null);
     try {
-      const activeBatchName = reportBatchId === "all" ? "T?t c? c�c �?t" : reportBatches.find(b => b.id === reportBatchId)?.name || "�?t kh?o s�t";
-      const activePeriodName = reportSelPeriod?.name || "K? kh?o s�t";
+      const activeBatchName = reportBatchId === "all" ? "Tất cả các đợt" : reportBatches.find(b => b.id === reportBatchId)?.name || "Đợt khảo sát";
+      const activePeriodName = reportSelPeriod?.name || "Kỳ khảo sát";
 
       const pdfAttachmentsList: any[] = [];
       if (attachLetters) {
         const html2pdf = await getHtml2Pdf();
         
-        const eligibleStudents = emailStudents.filter(s => s.admissionResult === "�?t" || s.admissionResult === "�?t cam k?t");
+        const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
         let currentPdfCount = 0;
         const totalPdfs = eligibleStudents.length;
 
         for (const s of emailStudents) {
-          if (s.admissionResult === "�?t" || s.admissionResult === "�?t cam k?t") {
+          if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
             const config = getStudentCampusConfig(s, false, false);
             if (config) {
               currentPdfCount++;
-              setEmailSendingStatus(`�ang t?o PDF (${currentPdfCount}/${totalPdfs}): Th� ch�c m?ng - ${s.fullName}`);
+              setEmailSendingStatus(`Đang tạo PDF (${currentPdfCount}/${totalPdfs}): Thư chúc mừng - ${s.fullName}`);
               const docHtml = buildLetterHtml(s, config, false);
               const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
               const opt = {
@@ -2107,7 +2107,7 @@ export function InputAssessmentsClient({
         }
       }
 
-      setEmailSendingStatus("�ang truy?n t?i & g?i Email...");
+      setEmailSendingStatus("Đang truyền tải & gửi Email...");
 
       const res = await fetch("/api/admin/send-quick-email", {
         method: "POST",
@@ -2126,13 +2126,13 @@ export function InputAssessmentsClient({
       if (res.ok && data.success) {
         setEmailResult({ sent: data.sent, error: data.error, html: data.html });
         if (data.sent) {
-          alert("�? g?i email b�o c�o nhanh th�nh c�ng!");
+          alert("Đã gửi email báo cáo nhanh thành công!");
         }
       } else {
-        alert("C� l?i x?y ra: " + (data.error || "Kh�ng r? nguy�n nh�n"));
+        alert("Có lỗi xảy ra: " + (data.error || "Không rõ nguyên nhân"));
       }
     } catch (err) {
-      alert("L?i k?t n?i: " + err.message);
+      alert("Lỗi kết nối: " + err.message);
     } finally {
       setEmailSending(false);
       setEmailSendingStatus("");
@@ -2140,14 +2140,14 @@ export function InputAssessmentsClient({
   };
 
   const handleExportDirectPDFs = async () => {
-    const eligibleStudents = emailStudents.filter(s => s.admissionResult === "�?t" || s.admissionResult === "�?t cam k?t");
+    const eligibleStudents = emailStudents.filter(s => s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết");
     if (eligibleStudents.length === 0) {
-      alert("Kh�ng c� h?c sinh n�o �?t ho?c �?t cam k?t �? xu?t PDF!");
+      alert("Không có học sinh nào đạt hoặc đạt cam kết để xuất PDF!");
       return;
     }
     
     setEmailSending(true);
-    setEmailSendingStatus("�ang kh?i t?o...");
+    setEmailSendingStatus("Đang khởi tạo...");
     
     try {
       const html2pdf = await getHtml2Pdf();
@@ -2156,11 +2156,11 @@ export function InputAssessmentsClient({
       const totalPdfs = eligibleStudents.length;
 
       for (const s of emailStudents) {
-        if (s.admissionResult === "�?t" || s.admissionResult === "�?t cam k?t") {
+        if (s.admissionResult === "Đạt" || s.admissionResult === "Đạt cam kết") {
           const config = getStudentCampusConfig(s, false, false);
           if (config) {
             count++;
-            setEmailSendingStatus(`�ang t?i (${count}/${totalPdfs}): Th� ch�c m?ng - ${s.fullName.split(' ').pop()}`);
+            setEmailSendingStatus(`Đang tải (${count}/${totalPdfs}): Thư chúc mừng - ${s.fullName.split(' ').pop()}`);
             const docHtml = buildLetterHtml(s, config, false);
             const filename = `Thu_Chuc_Mung_${s.fullName.replace(/\s+/g, '_')}.pdf`;
             const opt = {
@@ -2197,9 +2197,9 @@ export function InputAssessmentsClient({
           }
         }
       }
-      alert("�? t?i xu?ng to�n b? t?p PDF th�nh c�ng!");
+      alert("Đã tải xuống toàn bộ tệp PDF thành công!");
     } catch (err) {
-      alert("L?i xu?t PDF: " + err.message);
+      alert("Lỗi xuất PDF: " + err.message);
     } finally {
       setEmailSending(false);
       setEmailSendingStatus("");
@@ -2219,7 +2219,7 @@ export function InputAssessmentsClient({
     setSaveReportLoading(true);
     try {
       const userRole = (currentUser?.role || "").toUpperCase();
-      const isGDCSUser = ["GDCS", "G�_CS", "GIAO_VU_CS", "G�CS"].includes(userRole);
+      const isGDCSUser = ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole);
       
       let finalCampus = reportForm.admissionCampus;
       let finalSignature = reportForm.signatureName;
@@ -2241,12 +2241,12 @@ export function InputAssessmentsClient({
       }
 
       let finalNote = reportForm.directorNote;
-      if (reportForm.admissionResult === "�?t cam k?t" && reportForm.committedSubjects.length > 0) {
-        finalNote = `M�n cam k?t: [${reportForm.committedSubjects.join(", ")}]
+      if (reportForm.admissionResult === "Đạt cam kết" && reportForm.committedSubjects.length > 0) {
+        finalNote = `Môn cam kết: [${reportForm.committedSubjects.join(", ")}]
 
 ${reportForm.directorNote}`;
-      } else if (reportForm.admissionResult === "Kh�ng �?t - Ki?m tra l?i" && reportForm.committedSubjects.length > 0) {
-        finalNote = `M�n ki?m tra l?i: [${reportForm.committedSubjects.join(", ")}]
+      } else if (reportForm.admissionResult === "Không đạt - Kiểm tra lại" && reportForm.committedSubjects.length > 0) {
+        finalNote = `Môn kiểm tra lại: [${reportForm.committedSubjects.join(", ")}]
 
 ${reportForm.directorNote}`;
       }
@@ -2265,7 +2265,7 @@ ${reportForm.directorNote}`;
         })
       });
       if (r.ok) {
-        notify("�? l�u k?t qu? t?ng h?p th�nh c�ng!");
+        notify("Đã lưu kết quả tổng hợp thành công!");
         setReportStudents(prev => prev.map(s => s.id === selectedReportStudent.id ? { 
           ...s, 
           admissionResult: reportForm.admissionResult,
@@ -2274,10 +2274,10 @@ ${reportForm.directorNote}`;
           directorNote: finalNote
         } : s));
       } else {
-        notify("L?i khi l�u k?t qu? t?ng h?p", "err");
+        notify("Lỗi khi lưu kết quả tổng hợp", "err");
       }
     } catch(e) {
-      notify("L?i h? th?ng", "err");
+      notify("Lỗi hệ thống", "err");
     }
     setSaveReportLoading(false);
   };
@@ -2292,11 +2292,11 @@ ${reportForm.directorNote}`;
       // If we don't have campusCode, try to match from campusName or admissionCampus
       if (!csCode) {
         const campusName = selectedReportStudent.admissionCampus || reportForm.admissionCampus || "";
-        if (campusName.includes("CS1") || campusName.includes("C� s? 1")) csCode = "CS1";
-        else if (campusName.includes("CS2") || campusName.includes("C� s? 2")) csCode = "CS2";
-        else if (campusName.includes("CS3") || campusName.includes("C� s? 3")) csCode = "CS3";
-        else if (campusName.includes("CS4") || campusName.includes("C� s? 4")) csCode = "CS4";
-        else if (campusName.includes("CS5") || campusName.includes("C� s? 5")) csCode = "CS5";
+        if (campusName.includes("CS1") || campusName.includes("Cơ sở 1")) csCode = "CS1";
+        else if (campusName.includes("CS2") || campusName.includes("Cơ sở 2")) csCode = "CS2";
+        else if (campusName.includes("CS3") || campusName.includes("Cơ sở 3")) csCode = "CS3";
+        else if (campusName.includes("CS4") || campusName.includes("Cơ sở 4")) csCode = "CS4";
+        else if (campusName.includes("CS5") || campusName.includes("Cơ sở 5")) csCode = "CS5";
       }
 
       // Default to CS1 if not resolved, or look up in EMAIL_MAP.gdcs
@@ -2317,12 +2317,12 @@ ${reportForm.directorNote}`;
 
       const result = await res.json();
       if (res.ok && result.success) {
-        notify(`�? g?i y�u c?u ph� duy?t th�nh c�ng �?n email G�CS: ${gdcsEmail}!`);
+        notify(`Đã gửi yêu cầu phê duyệt thành công đến email GĐCS: ${gdcsEmail}!`);
       } else {
-        notify(result.error || "G?i y�u c?u ph� duy?t th?t b?i", "err");
+        notify(result.error || "Gửi yêu cầu phê duyệt thất bại", "err");
       }
     } catch (err) {
-      notify("C� l?i x?y ra khi g?i y�u c?u ph� duy?t", "err");
+      notify("Có lỗi xảy ra khi gửi yêu cầu phê duyệt", "err");
     } finally {
       setSendingApproval(false);
     }
@@ -2506,7 +2506,7 @@ ${reportForm.directorNote}`;
     // CRITICAL PREVIEW MODE: Bypass local storage entirely if loading mock student to ensure no database updates
     if (selectedReportStudent.id === "MOCK_PREVIEW_STUDENT") {
       return {
-        title: rcTitle || (rcReportType === "thu_chuc_mung" ? "B�O C�O K?T QU? KH?O S�T N�NG L?C �?U V�O" : rcReportType === "thu_moi" ? "TH� M?I" : "B?N CAM K?T H?C T?P"),
+        title: rcTitle || (rcReportType === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : rcReportType === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP"),
         logo: rcLogo,
         background: rcBackground,
         content: rcContent,
@@ -2586,7 +2586,7 @@ ${reportForm.directorNote}`;
       }
       
       // If global is not yet saved, use campus data as fallback for global fields
-      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "B�O C�O K?T QU? KH?O S�T N�NG L?C �?U V�O" : typeKey === "thu_moi" ? "TH� M?I" : "B?N CAM K?T H?C T?P");
+      const mergedTitle = globalData.title || campusData.title || (typeKey === "thu_chuc_mung" ? "BÁO CÁO KẾT QUẢ KHẢO SÁT NĂNG LỰC ĐẦU VÀO" : typeKey === "thu_moi" ? "THƯ MỜI" : "BẢN CAM KẾT HỌC TẬP");
       
       // Fetch Master Branding overrides
       const mLogo = localStorage.getItem('report_config_master_logo');
@@ -2657,9 +2657,9 @@ ${reportForm.directorNote}`;
     const campus = campuses.find(c => c.id === rcCampusId);
     const code = campus ? (campus.campusCode || "").toUpperCase() : "";
     if (code.includes("CS4") || code.includes("HILL")) {
-      return "TR�?NG TH, THCS, THPT SKY-LINE HILL";
+      return "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
     }
-    return "TR�?NG TH, THCS, THPT SKY-LINE";
+    return "TRƯỜNG TH, THCS, THPT SKY-LINE";
   }, [rcCampusId, campuses]);
 
   const previewTitleSuffix = useMemo(() => {
@@ -2670,15 +2670,15 @@ ${reportForm.directorNote}`;
     if (code.includes("CS3") || code.includes("GLOBAL")) return "GLOBAL";
     if (code.includes("CS4") || code.includes("HILL")) return "HILL";
     if (code.includes("CS5") || code.includes("BEACH")) return "BEACH";
-    return code || "C� S?";
+    return code || "CƠ SỞ";
   }, [rcCampusId, campuses]);
 
   const studentSchoolName = useMemo(() => {
     const code = campusNameSuffix ? campusNameSuffix.toUpperCase() : "";
     if (code.includes("CS4") || code.includes("HILL")) {
-      return "TR�?NG TH, THCS, THPT SKY-LINE HILL";
+      return "TRƯỜNG TH, THCS, THPT SKY-LINE HILL";
     }
-    return "TR�?NG TH, THCS, THPT SKY-LINE";
+    return "TRƯỜNG TH, THCS, THPT SKY-LINE";
   }, [campusNameSuffix]);
 
   const formattedLetterDate = useMemo(() => {
@@ -2686,7 +2686,7 @@ ${reportForm.directorNote}`;
     const day = String(d.getDate()).padStart(2, "0");
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const year = d.getFullYear();
-    return `�� N?ng, ng�y ${day} th�ng ${month} n�m ${year}`;
+    return `Đà Nẵng, ngày ${day} tháng ${month} năm ${year}`;
   }, []);
 
   const campusStats = useMemo(() => {
@@ -2714,7 +2714,7 @@ ${reportForm.directorNote}`;
     
     const fallbackId = "unassigned";
     map.set(fallbackId, {
-      campusName: "Kh�c / Ch�a ph�n",
+      campusName: "Khác / Chưa phân",
       total: 0,
       passed: 0,
       failed: 0,
@@ -2731,7 +2731,7 @@ ${reportForm.directorNote}`;
       let stat = map.get(campusId);
       if (!stat) {
         stat = {
-          campusName: campuses.find(c => c.id === campusId)?.campusName || "Kh�c / Ch�a ph�n",
+          campusName: campuses.find(c => c.id === campusId)?.campusName || "Khác / Chưa phân",
           total: 0,
           passed: 0,
           failed: 0,
@@ -2742,11 +2742,11 @@ ${reportForm.directorNote}`;
       }
       
       stat.total++;
-      if (s.admissionResult === "�?t" || s.admissionResult === "H?c th?") {
+      if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") {
         stat.passed++;
-      } else if (s.admissionResult === "Kh�ng �?t" || s.admissionResult === "Kh�ng �?t - Ki?m tra l?i" || s.admissionResult === "Kh�ng �?t - Kh�ng ki?m tra l?i") {
+      } else if (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") {
         stat.failed++;
-      } else if (s.admissionResult === "�?t cam k?t") {
+      } else if (s.admissionResult === "Đạt cam kết") {
         stat.committed++;
       } else {
         stat.pending++;
@@ -2766,9 +2766,9 @@ ${reportForm.directorNote}`;
     let pending = 0;
     
     filteredReportStudents.forEach(s => {
-      if (s.admissionResult === "�?t" || s.admissionResult === "H?c th?") passed++;
-      else if (s.admissionResult === "Kh�ng �?t" || s.admissionResult === "Kh�ng �?t - Ki?m tra l?i" || s.admissionResult === "Kh�ng �?t - Kh�ng ki?m tra l?i") failed++;
-      else if (s.admissionResult === "�?t cam k?t") committed++;
+      if (s.admissionResult === "Đạt" || s.admissionResult === "Học thử") passed++;
+      else if (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") failed++;
+      else if (s.admissionResult === "Đạt cam kết") committed++;
       else pending++;
     });
     
@@ -2781,14 +2781,14 @@ ${reportForm.directorNote}`;
     if (!currentUser) return false;
     const userRole = (currentUser.role || "").toUpperCase();
     
-    // Lock check for G�CS/GVBM
+    // Lock check for GĐCS/GVBM
     const isStudentBatchLocked = selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED";
-    if (isStudentBatchLocked && ["GDCS", "G�_CS", "GIAO_VU_CS", "G�CS"].includes(userRole)) {
+    if (isStudentBatchLocked && ["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       return false;
     }
 
     if (userRole === "ADMIN" || userRole === "KT_DBCL") return true;
-    if (["GDCS", "G�_CS", "GIAO_VU_CS", "G�CS"].includes(userRole)) {
+    if (["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes(userRole)) {
       const periodCampusId = reportSelPeriod?.campusId;
       const activeBatch = reportBatches.find(b => b.id === reportBatchId);
       const batchCampusId = activeBatch?.campusId;
@@ -2819,14 +2819,14 @@ ${reportForm.directorNote}`;
     if (selectedReportStudent) {
       let commSubs: string[] = [];
       let cleanNote = selectedReportStudent.directorNote || "";
-      const match = cleanNote.match(/^M�n cam k?t: \[(.*?)\](?:\r?\n\r?\n)?/);
-      const matchRetest = cleanNote.match(/^M�n ki?m tra l?i: \[(.*?)\](?:\r?\n\r?\n)?/);
+      const match = cleanNote.match(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/);
+      const matchRetest = cleanNote.match(/^Môn kiểm tra lại: \[(.*?)\](?:\r?\n\r?\n)?/);
       if (match) {
         commSubs = match[1] ? match[1].split(", ") : [];
-        cleanNote = cleanNote.replace(/^M�n cam k?t: \[(.*?)\](?:\r?\n\r?\n)?/, "");
+        cleanNote = cleanNote.replace(/^Môn cam kết: \[(.*?)\](?:\r?\n\r?\n)?/, "");
       } else if (matchRetest) {
         commSubs = matchRetest[1] ? matchRetest[1].split(", ") : [];
-        cleanNote = cleanNote.replace(/^M�n ki?m tra l?i: \[(.*?)\](?:\r?\n\r?\n)?/, "");
+        cleanNote = cleanNote.replace(/^Môn kiểm tra lại: \[(.*?)\](?:\r?\n\r?\n)?/, "");
       }
       setReportForm({
         admissionResult: selectedReportStudent.admissionResult || "",
@@ -2852,7 +2852,7 @@ ${reportForm.directorNote}`;
     cityName: "", districtName: "", wardName: "", countryName: "", oldSchoolName: "", oldSchoolType: ""
   });
 
-  const [selectedLocationType, setSelectedLocationType] = useState<"N?i t?nh" | "Ngo?i t?nh" | "N�?c ngo�i" | "">("");
+  const [selectedLocationType, setSelectedLocationType] = useState<"Nội tỉnh" | "Ngoại tỉnh" | "Nước ngoài" | "">("");
   const [selectedDistrict, setSelectedDistrict] = useState<string>("");
   const [selectedWard, setSelectedWard] = useState<string>("");
   const [selectedProvince, setSelectedProvince] = useState<string>("");
@@ -2861,7 +2861,7 @@ ${reportForm.directorNote}`;
   const [schoolTypeInput, setSchoolTypeInput] = useState<string>("");
   const [originalKqgd, setOriginalKqgd] = useState<string>("");
 
-// ????????? TRANSFER SYSTEM STATES ?????????
+// ───────── TRANSFER SYSTEM STATES ─────────
   const [transferCampusId, setTransferCampusId] = useState("");
   const [transferClassId, setTransferClassId] = useState("");
   const [transferStudents, setTransferStudents] = useState<any[]>([]);
@@ -2880,7 +2880,7 @@ ${reportForm.directorNote}`;
   const isChuyenHe = useMemo(() => {
     if (!selectedFormPeriod) return false;
     const name = selectedFormPeriod.name?.toLowerCase() || "";
-    return name.includes("chuy?n h?") || name.includes("chuyenhe") || name.includes("chuyen he");
+    return name.includes("chuyển hệ") || name.includes("chuyenhe") || name.includes("chuyen he");
   }, [selectedFormPeriod]);
 
   const activeFormBatches = useMemo(() => {
@@ -2932,7 +2932,7 @@ ${reportForm.directorNote}`;
           setAllClassesLoading(false);
         })
         .catch(err => {
-          console.error("L?i fetch l?p:", err);
+          console.error("Lỗi fetch lớp:", err);
           setAllClassesLoading(false);
         });
     }
@@ -2951,7 +2951,7 @@ ${reportForm.directorNote}`;
           setTransferStudentsLoading(false);
         })
         .catch(err => {
-          console.error("L?i fetch h?c sinh c?a l?p:", err);
+          console.error("Lỗi fetch học sinh của lớp:", err);
           setTransferStudentsLoading(false);
         });
     } else {
@@ -2964,12 +2964,12 @@ ${reportForm.directorNote}`;
   useEffect(() => {
     if (!sModal) return;
     const selectedTargets = sForm.targetType ? sForm.targetType.split(",").map((t) => t.trim()).filter(Boolean) : [];
-    if (selectedTargets.includes("N?i t?nh")) {
-      setSelectedLocationType("N?i t?nh"); setSelectedProvince("Th�nh ph? �� N?ng");
-    } else if (selectedTargets.includes("Ngo?i t?nh")) {
-      setSelectedLocationType("Ngo?i t?nh");
-    } else if (selectedTargets.includes("N�?c ngo�i")) {
-      setSelectedLocationType("N�?c ngo�i");
+    if (selectedTargets.includes("Nội tỉnh")) {
+      setSelectedLocationType("Nội tỉnh"); setSelectedProvince("Thành phố Đà Nẵng");
+    } else if (selectedTargets.includes("Ngoại tỉnh")) {
+      setSelectedLocationType("Ngoại tỉnh");
+    } else if (selectedTargets.includes("Nước ngoài")) {
+      setSelectedLocationType("Nước ngoài");
     } else {
       setSelectedLocationType("");
     }
@@ -2979,20 +2979,20 @@ ${reportForm.directorNote}`;
   useEffect(() => {
     if (sModal) {
       if (editS && sForm.kqgdTieuHoc) {
-        const match = sForm.kqgdTieuHoc.match(/Tr�?ng c?:\s*(.*?)\s*\((.*?)\)\s*\|\s*�?i t�?ng:\s*(N?i t?nh|Ngo?i t?nh|N�?c ngo�i)\s*-\s*(.*)/);
+        const match = sForm.kqgdTieuHoc.match(/Trường cũ:\s*(.*?)\s*\((.*?)\)\s*\|\s*Đối tượng:\s*(Nội tỉnh|Ngoại tỉnh|Nước ngoài)\s*-\s*(.*)/);
         if (match) {
           const [, sName, sType, locType, locDetail] = match;
           setSchoolNameInput(sName);
           setSchoolTypeInput(sType);
           setSelectedLocationType(locType as any);
           
-                    if (locType === "N?i t?nh") {
+                    if (locType === "Nội tỉnh") {
             const parts = locDetail.split(" - ");
             setSelectedDistrict("");
             setSelectedWard(parts[parts.length - 1].trim());
             setSelectedProvince("");
             setSelectedCountry("");
-          } else if (locType === "Ngo?i t?nh") {
+          } else if (locType === "Ngoại tỉnh") {
             const parts = locDetail.split(" - ");
             if (parts.length > 1) {
               setSelectedWard(parts[0].trim());
@@ -3003,7 +3003,7 @@ ${reportForm.directorNote}`;
             }
             setSelectedDistrict("");
             setSelectedCountry("");
-          } else if (locType === "N�?c ngo�i") {
+          } else if (locType === "Nước ngoài") {
             setSelectedCountry(locDetail.trim());
             setSelectedDistrict("");
             setSelectedWard("");
@@ -3022,9 +3022,9 @@ ${reportForm.directorNote}`;
           
           let locType = "";
           if (editS.targetType) {
-            if (editS.targetType.includes("N?i t?nh")) locType = "N?i t?nh";
-            else if (editS.targetType.includes("Ngo?i t?nh")) locType = "Ngo?i t?nh";
-            else if (editS.targetType.includes("N�?c ngo�i")) locType = "N�?c ngo�i";
+            if (editS.targetType.includes("Nội tỉnh")) locType = "Nội tỉnh";
+            else if (editS.targetType.includes("Ngoại tỉnh")) locType = "Ngoại tỉnh";
+            else if (editS.targetType.includes("Nước ngoài")) locType = "Nước ngoài";
           }
           setSelectedLocationType(locType as any);
           
@@ -3062,22 +3062,22 @@ ${reportForm.directorNote}`;
     
     if (selectedLocationType) {
       let locDetail = "";
-      if (selectedLocationType === "N?i t?nh") {
-        locDetail = "Th�nh ph? �� N?ng";
-      } else if (selectedLocationType === "Ngo?i t?nh") {
+      if (selectedLocationType === "Nội tỉnh") {
+        locDetail = "Thành phố Đà Nẵng";
+      } else if (selectedLocationType === "Ngoại tỉnh") {
         locDetail = selectedWard ? `${selectedWard} - ${selectedProvince}` : selectedProvince;
-      } else if (selectedLocationType === "N�?c ngo�i") {
+      } else if (selectedLocationType === "Nước ngoài") {
         locDetail = selectedCountry;
       }
       
-      const locationStr = `Tr�?ng c?: ${schoolNameInput} (${schoolTypeInput}) | �?i t�?ng: ${selectedLocationType} - ${locDetail}`;
+      const locationStr = `Trường cũ: ${schoolNameInput} (${schoolTypeInput}) | Đối tượng: ${selectedLocationType} - ${locDetail}`;
       const finalKq = originalKqgd ? `${locationStr}\n${originalKqgd}` : locationStr;
       
       setSForm(prev => {
-        const cityName = selectedLocationType === "N?i t?nh" ? "Th�nh ph? �� N?ng" : (selectedLocationType === "Ngo?i t?nh" ? selectedProvince : "");
-        const countryName = selectedLocationType === "N�?c ngo�i" ? selectedCountry : "Vi?t Nam";
+        const cityName = selectedLocationType === "Nội tỉnh" ? "Thành phố Đà Nẵng" : (selectedLocationType === "Ngoại tỉnh" ? selectedProvince : "");
+        const countryName = selectedLocationType === "Nước ngoài" ? selectedCountry : "Việt Nam";
         const districtName = "";
-        const wardName = (selectedLocationType === "N?i t?nh" || selectedLocationType === "Ngo?i t?nh") ? selectedWard : "";
+        const wardName = (selectedLocationType === "Nội tỉnh" || selectedLocationType === "Ngoại tỉnh") ? selectedWard : "";
         
         return {
           ...prev,
@@ -3108,7 +3108,7 @@ ${reportForm.directorNote}`;
   const fileRef = useRef<HTMLInputElement>(null)
 
 
-  // ????????? SUBJECTS & MAPPING STATE ?????????
+  // ───────── SUBJECTS & MAPPING STATE ─────────
   const [subjectsList, setSubjectsList] = useState<any[]>(initialSubjects||[]);
   const [isSubjectOpen, setIsSubjectOpen] = useState(false);
   const [isColumnConfigOpen, setIsColumnConfigOpen] = useState(false);
@@ -3133,7 +3133,7 @@ ${reportForm.directorNote}`;
   };
   useEffect(() => { if (tab === "mapping") fetchAllMappings(); }, [tab]);
 
-  // ????????? ASSIGNMENT STATE ?????????
+  // ───────── ASSIGNMENT STATE ─────────
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [asLoading, setAsLoading] = useState(false)
   const [asPeriodId, setAsPeriodId] = useState("")
@@ -3204,7 +3204,7 @@ ${reportForm.directorNote}`;
     }
   }, [sPeriodId, visiblePeriods]);
 
-  // ????????? FETCHERS ?????????
+  // ───────── FETCHERS ─────────
   const fetchPeriods = useCallback(async () => {
     if (!yearId) return
     setPLoading(true)
@@ -3263,7 +3263,7 @@ ${reportForm.directorNote}`;
   
   const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();if (editingSubjectId ? cannotUpdate : cannotCreate) return;const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status, exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status||"ACTIVE", exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else notify((await r.json()).error, "err")};
   
-  const deleteSubject=async(id:string)=>{if (cannotDelete) return;if(!window.confirm("X�a?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
+  const deleteSubject=async(id:string)=>{if (cannotDelete) return;if(!window.confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   
   const addMapping=async(sid:string)=>{if (cannotCreate) return;const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else notify((await r.json()).error, "err")};
   
@@ -3306,10 +3306,10 @@ ${reportForm.directorNote}`;
         fetchStudents();
       } else {
         const err = await res.json();
-        alert("L?i: " + (err.error || "Kh�ng th? c?p nh?t"));
+        alert("Lỗi: " + (err.error || "Không thể cập nhật"));
       }
     } catch (e) {
-      alert("L?i k?t n?i m�y ch?");
+      alert("Lỗi kết nối máy chủ");
     }
   };
 
@@ -3343,17 +3343,17 @@ ${reportForm.directorNote}`;
     }
   }, [asBatchId]);
 
-  // ????????? ACTIONS ?????????
+  // ───────── ACTIONS ─────────
   const openAddPeriod = () => { setEditP(null); setPForm({ code:"", name:"", assignedUserId:"", startDate:"", endDate:"", description:"", status:"ACTIVE" }); setPModal(true) }
   const openEditPeriod = (p:Period) => { setEditP(p); setPForm({ code:p.code, name:p.name, assignedUserId:p.assignedUserId||"", startDate:p.startDate?.slice(0,10)||"", endDate:p.endDate?.slice(0,10)||"", description:p.description||"", status:p.status }); setPModal(true) }
   const savePeriod = async () => {
     if (editP ? cannotUpdate : cannotCreate) return;
-    if (!pForm.code.trim()||!pForm.name.trim()) return notify("C?n nh?p M? v� T�n","err")
+    if (!pForm.code.trim()||!pForm.name.trim()) return notify("Cần nhập Mã và Tên","err")
     const r = await fetch("/api/input-assessments", { method: editP?"PUT":"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action: editP?"UPDATE_PERIOD":"CREATE_PERIOD", id:editP?.id, data:{...pForm, academicYearId:yearId} }) })
-    if (r.ok) { setPModal(false); fetchPeriods(); notify(editP?"�? c?p nh?t k? kh?o s�t":"�? t?o k? kh?o s�t m?i") }
-    else notify("L?i","err")
+    if (r.ok) { setPModal(false); fetchPeriods(); notify(editP?"Đã cập nhật kỳ khảo sát":"Đã tạo kỳ khảo sát mới") }
+    else notify("Lỗi","err")
   }
-  const doDeletePeriod = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessments?type=period&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("�? x�a k? kh?o s�t") } }
+  const doDeletePeriod = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessments?type=period&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa kỳ khảo sát") } }
 
   const openAddBatch = (pid:string) => { 
     setTargetPeriodId(pid); 
@@ -3371,7 +3371,7 @@ ${reportForm.directorNote}`;
     setEditB(b); 
     let baseName = b.name;
     const parts = b.name.split(" _ ");
-    if (parts.length >= 6 && parts[3] === "KS�V") {
+    if (parts.length >= 6 && parts[3] === "KSĐV") {
       baseName = parts[4];
     } else if (parts.length >= 6 && parts[4] === "") {
       baseName = parts[3];
@@ -3380,11 +3380,11 @@ ${reportForm.directorNote}`;
     } else if (parts.length >= 5) {
       baseName = parts[4];
     } else {
-      const match = b.name.match(/�?t \d+ - (.*?) \|/);
+      const match = b.name.match(/Đợt \d+ - (.*?) \|/);
       if (match) {
         baseName = match[1];
       } else {
-        const match2 = b.name.match(/�?t \d+ - (.*)/);
+        const match2 = b.name.match(/Đợt \d+ - (.*)/);
         if (match2) baseName = match2[1];
       }
     }
@@ -3393,20 +3393,20 @@ ${reportForm.directorNote}`;
   }
   const saveBatch = async () => {
     if (editB ? cannotUpdate : cannotCreate) return;
-    if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("C?n nh?p T�n �?t KS, Ng�y b?t/k?t th�c", "err")
+    if (!bForm.name.trim() || !bForm.startDate || !bForm.endDate) return notify("Cần nhập Tên Đợt KS, Ngày bắt/kết thúc", "err")
     
     const selectedCampus = campuses.find(c => c.id === bForm.campusId);
-    const campusName = selectedCampus ? (selectedCampus.campusCode || selectedCampus.campusName) : "T?t c?";
+    const campusName = selectedCampus ? (selectedCampus.campusCode || selectedCampus.campusName) : "Tất cả";
     const startStr = bForm.startDate ? bForm.startDate.split('-').reverse().join('/') : "";
     const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "";
     
     const period = periods.find(p => p.id === targetPeriodId);
-    const periodName = period ? period.name : "T�n �?t";
+    const periodName = period ? period.name : "Tên đợt";
     let periodCode = period ? (period.code || period.name) : "";
-    if (periodName.toLowerCase().normalize("NFC").includes("kh?o s�t l?") || periodName.toLowerCase().normalize("NFC").includes("kh?o s�t le")) {
+    if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
       periodCode = "KSL";
     }
-    const fullScientificName = `${campusName} _ ${periodCode} _ �?t ${bForm.batchNumber || "1"} _ ${bForm.name || "T�n �?t KS"} _ ${endStr}`;
+    const fullScientificName = `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
     
     const r = await fetch("/api/input-assessments", { 
       method: editB?"PUT":"POST", 
@@ -3417,10 +3417,10 @@ ${reportForm.directorNote}`;
         data:{...bForm, name: fullScientificName, periodId:targetPeriodId, batchNumber:parseInt(bForm.batchNumber)||1} 
       }) 
     })
-    if (r.ok) { setBModal(false); fetchPeriods(); notify(editB?"�? c?p nh?t �?t":"�? t?o �?t m?i") }
-    else notify("L?i","err")
+    if (r.ok) { setBModal(false); fetchPeriods(); notify(editB?"Đã cập nhật đợt":"Đã tạo đợt mới") }
+    else notify("Lỗi","err")
   }
-  const doDeleteBatch = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("�? x�a �?t") } }
+  const doDeleteBatch = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessments?type=batch&id=${id}`,{method:"DELETE"}); if (r.ok) { fetchPeriods(); notify("Đã xóa đợt") } }
 
     const openAddStudent = async () => {
     setEditS(null);
@@ -3457,10 +3457,10 @@ ${reportForm.directorNote}`;
     
     if (isChuyenHe && !editS) {
       if (selectedStudentIds.length === 0) {
-        return notify("Vui l?ng ch?n �t nh?t m?t h?c sinh �? chuy?n h?", "err");
+        return notify("Vui lòng chọn ít nhất một học sinh để chuyển hệ", "err");
       }
       if (!targetSystem) {
-        return notify("Vui l?ng ch?n h? chuy?n", "err");
+        return notify("Vui lòng chọn hệ chuyển", "err");
       }
       
       const currentClass = allClasses.find(c => c.id === transferClassId);
@@ -3479,8 +3479,8 @@ ${reportForm.directorNote}`;
           registeredCampus: campuses.find(c => c.id === transferCampusId)?.campusName || "",
           periodId: sForm.periodId || sPeriodId,
           batchId: sForm.batchId || sBatchId || null,
-          surveySystem: currentClass?.educationSystem || "", // H? �ang h?c
-          surveyFormType: targetSystem, // H? chuy?n
+          surveySystem: currentClass?.educationSystem || "", // Hệ đang học
+          surveyFormType: targetSystem, // Hệ chuyển
         }))
       };
       
@@ -3491,36 +3491,36 @@ ${reportForm.directorNote}`;
           body: JSON.stringify(bodyData)
         });
         if (res.ok) {
-          notify("�? ghi nh?n th�ng tin chuy?n h? cho " + selectedStudentIds.length + " h?c sinh!");
+          notify("Đã ghi nhận thông tin chuyển hệ cho " + selectedStudentIds.length + " học sinh!");
           setSModal(false);
           fetchStudents();
         } else {
           const err = await res.json();
-          notify("L?i: " + (err.error || "G?i y�u c?u th?t b?i"), "err");
+          notify("Lỗi: " + (err.error || "Gửi yêu cầu thất bại"), "err");
         }
       } catch (e) {
-        notify("L?i k?t n?i m�y ch?", "err");
+        notify("Lỗi kết nối máy chủ", "err");
       }
       return;
     }
 
-    if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("C?n nh?p M? HS v� H? t�n","err")
+    if (!sForm.studentCode.trim()||!sForm.fullName.trim()) return notify("Cần nhập Mã HS và Họ tên","err")
     const r = editS
       ? await fetch("/api/input-assessment-students", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editS.id, data:{ ...sForm, surveyFormType: isChuyenHe ? targetSystem : sForm.surveyFormType } }) })
       : await fetch("/api/input-assessment-students", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ action:"CREATE", data:{...sForm, periodId:sPeriodId, batchId:sForm.batchId || sBatchId || null, registeredCampus:sForm.registeredCampus || null} }) })
-    if (r.ok) { setSModal(false); fetchStudents(); notify(editS?"�? c?p nh?t h?c sinh":"�? th�m h?c sinh") }
-    else notify("L?i","err")
+    if (r.ok) { setSModal(false); fetchStudents(); notify(editS?"Đã cập nhật học sinh":"Đã thêm học sinh") }
+    else notify("Lỗi","err")
   }
-  const doDeleteStudent = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessment-students?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchStudents(); notify("�? x�a") } }
+  const doDeleteStudent = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/input-assessment-students?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchStudents(); notify("Đã xóa") } }
   const doDeleteSelected = async () => {
     if (cannotDelete) return;
     const r = await fetch(`/api/input-assessment-students?ids=${sSelected.join(",")}`,{method:"DELETE"})
-    if (r.ok) { setSSelected([]); fetchStudents(); notify(`�? x�a ${sSelected.length} h?c sinh`) }
+    if (r.ok) { setSSelected([]); fetchStudents(); notify(`Đã xóa ${sSelected.length} học sinh`) }
   }
 
   const [syncingMaster, setSyncingMaster] = useState(false);
   const handleSyncMasterStudentInfo = async () => {
-    if (!confirm("Th?c hi?n �?ng b? th�ng tin H? t�n, Gi?i t�nh, Ng�y sinh c?a h?c sinh trong danh s�ch kh?o s�t kh?p v?i Danh s�ch H?c sinh g?c?")) return;
+    if (!confirm("Thực hiện đồng bộ thông tin Họ tên, Giới tính, Ngày sinh của học sinh trong danh sách khảo sát khớp với Danh sách Học sinh gốc?")) return;
     setSyncingMaster(true);
     try {
       const res = await fetch("/api/input-assessment-students", {
@@ -3530,14 +3530,14 @@ ${reportForm.directorNote}`;
       });
       const data = await res.json();
       if (data.success) {
-        notify(data.message || "�? �?ng b? th�nh c�ng!");
+        notify(data.message || "Đã đồng bộ thành công!");
         if (typeof fetchStudents === 'function') fetchStudents();
         else window.location.reload();
       } else {
-        notify(data.error || "L?i �?ng b?", "err");
+        notify(data.error || "Lỗi đồng bộ", "err");
       }
     } catch (e: any) {
-      notify("L?i khi k?t n?i server: " + e.message, "err");
+      notify("Lỗi khi kết nối server: " + e.message, "err");
     } finally {
       setSyncingMaster(false);
     }
@@ -3563,7 +3563,7 @@ ${reportForm.directorNote}`;
           const row = rawData[i];
           if (row.some(cell => {
             const c = String(cell).toLowerCase();
-            return c.includes("m?") || c.includes("h?c sinh") || c.includes("t�n") || c.includes("hs") || c.includes("student");
+            return c.includes("mã") || c.includes("học sinh") || c.includes("tên") || c.includes("hs") || c.includes("student");
           })) {
             headerRowIndex = i;
             ws = currentWs;
@@ -3574,7 +3574,7 @@ ${reportForm.directorNote}`;
       }
 
       if (!ws || headerRowIndex === -1) {
-        notify("Kh�ng t?m th?y d? li?u h?c sinh trong file","err");
+        notify("Không tìm thấy dữ liệu học sinh trong file","err");
         setImporting(false);
         return;
       }
@@ -3593,8 +3593,8 @@ ${reportForm.directorNote}`;
         };
 
         let parsedDate = null;
-        const gender = row["Gi?i t�nh"] || row["Gioi tinh"] || row["gender"];
-          const rawDate = row["Ngay sinh"] || row["Ng�y sinh"] || row["dateOfBirth"];
+        const gender = row["Giới tính"] || row["Gioi tinh"] || row["gender"];
+          const rawDate = row["Ngay sinh"] || row["Ngày sinh"] || row["dateOfBirth"];
         if (rawDate) {
           if (typeof rawDate === "number") {
             const date = new Date(Math.round((rawDate - 25569)*86400*1000));
@@ -3609,18 +3609,18 @@ ${reportForm.directorNote}`;
             }
           }
         }
-        const studentCode = String(findVal(row, ["m? hs ks", "ma_hs_ks", "mahs", "studentcode"]) || "").trim();
-        const fullName = String(findVal(row, ["h? v� t�n", "h? t�n", "ho ten", "fullname", "full name"]) || "").trim();
+        const studentCode = String(findVal(row, ["mã hs ks", "ma_hs_ks", "mahs", "studentcode"]) || "").trim();
+        const fullName = String(findVal(row, ["họ và tên", "họ tên", "ho ten", "fullname", "full name"]) || "").trim();
         
-        const grade = String(findVal(row, ["kh?i", "khoi", "grade"]) || "").trim();
-        const className = String(findVal(row, ["l?p", "lop", "class"]) || "").trim();
-        const hocKy = String(findVal(row, ["h?c k?", "hoc ky", "semester"]) || "").trim();
-        const admissionCriteria = String(findVal(row, ["di?n kh?o s�t", "dien khao sat", "criteria"]) || "").trim();
-        const surveySystem = String(findVal(row, ["h?nh th?c ks", "hinh thuc ks", "survey system"]) || "").trim();
-        const targetType = String(findVal(row, ["�?i t�?ng", "doi tuong", "lo?i tuy?n sinh", "loai tuyen sinh", "target type"]) || "").trim();
-        const surveyFormType = String(findVal(row, ["h? kh?o s�t", "he khao sat", "h? kh?o st"]) || "").trim();
-          const hoSoCtQuocTe = String(findVal(row, ["h? s� / b?ng �i?m", "h? s�", "ho so"]) || "").trim();
-          const registeredCampusRaw = String(row["��ng k? CS"] || row["C� s? ��ng k?"] || findVal(row, ["��ng k? cs", "co so dang ky", "cs dang ky"]) || "").trim();
+        const grade = String(findVal(row, ["khối", "khoi", "grade"]) || "").trim();
+        const className = String(findVal(row, ["lớp", "lop", "class"]) || "").trim();
+        const hocKy = String(findVal(row, ["học kỳ", "hoc ky", "semester"]) || "").trim();
+        const admissionCriteria = String(findVal(row, ["diện khảo sát", "dien khao sat", "criteria"]) || "").trim();
+        const surveySystem = String(findVal(row, ["hình thức ks", "hinh thuc ks", "survey system"]) || "").trim();
+        const targetType = String(findVal(row, ["đối tượng", "doi tuong", "loại tuyển sinh", "loai tuyen sinh", "target type"]) || "").trim();
+        const surveyFormType = String(findVal(row, ["hệ khảo sát", "he khao sat", "h? kh?o st"]) || "").trim();
+          const hoSoCtQuocTe = String(findVal(row, ["hồ sơ / bảng điểm", "hồ sơ", "ho so"]) || "").trim();
+          const registeredCampusRaw = String(row["Đăng ký CS"] || row["Cơ sở đăng ký"] || findVal(row, ["đăng ký cs", "co so dang ky", "cs dang ky"]) || "").trim();
           let registeredCampus = null;
           if (registeredCampusRaw) {
             const matchedCampus = campuses.find(c => 
@@ -3633,8 +3633,8 @@ ${reportForm.directorNote}`;
               registeredCampus = matchedCampus.id;
             }
           }
-          const kqHocTap = String(findVal(row, ["k?t qu? h?c t?p", "kq hoc tap", "k?t qu? h?c t?p"]) || "").trim();
-          const kqRenLuyen = String(findVal(row, ["k?t qu? r�n luy?n", "kq ren luyen", "k?t qu? r?n luy?n"]) || "").trim();
+          const kqHocTap = String(findVal(row, ["kết quả học tập", "kq hoc tap", "k?t qu? h?c t?p"]) || "").trim();
+          const kqRenLuyen = String(findVal(row, ["kết quả rèn luyện", "kq ren luyen", "k?t qu? r?n luy?n"]) || "").trim();
 
 return {
           studentCode,
@@ -3660,15 +3660,15 @@ return {
       if (res.ok) { 
         const dr = await res.json();
         if (dr.errors && dr.errors.length > 0) {
-          notify(`Import xong nh�ng c� ${dr.errors.length} l?i. Ki?m tra console.`, "err");
+          notify(`Import xong nhưng có ${dr.errors.length} lỗi. Kiểm tra console.`, "err");
           console.error("Import Errors:", dr.errors);
         } else {
-          notify("Import th�nh c�ng " + (dr.created || "") + " h?c sinh"); 
+          notify("Import thành công " + (dr.created || "") + " học sinh"); 
         }
         fetchStudents() 
       } else {
         const errData = await res.json().catch(()=>({}));
-        notify("L?i server: " + (errData.error || res.statusText), "err");
+        notify("Lỗi server: " + (errData.error || res.statusText), "err");
       }
     } finally { setImporting(false); if (fileRef.current) fileRef.current.value="" }
   }
@@ -3677,15 +3677,15 @@ return {
   const openEditConfig = (c:AssessmentConfig) => { setEditC(c); setCForm({ categoryType:c.categoryType, code:c.code, name:c.name }); setCModal(true) }
   const saveConfig = async () => {
     if (editC ? cannotUpdate : cannotCreate) return;
-    if (!cForm.code.trim()||!cForm.name.trim()) return notify("C?n nh?p M? v� T�n","err")
+    if (!cForm.code.trim()||!cForm.name.trim()) return notify("Cần nhập Mã và Tên","err")
     const r = editC
       ? await fetch("/api/assessment-configs", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ id:editC.id, name:cForm.name, code:cForm.code }) })
       : await fetch("/api/assessment-configs", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(cForm) })
     if (r.ok) { setCModal(false); fetchConfigs(); notify("Xong") }
   }
-  const doDeleteConfig = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/assessment-configs?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchConfigs(); notify("X�a xong") } }
+  const doDeleteConfig = async (id:string) => { if (cannotDelete) return; const r = await fetch(`/api/assessment-configs?id=${id}`,{method:"DELETE"}); if (r.ok) { fetchConfigs(); notify("Xóa xong") } }
 
-  // ????????? ASSIGNMENT ACTIONS ?????????
+  // ───────── ASSIGNMENT ACTIONS ─────────
   const filteredTeachers = useMemo(() => {
     if (!asDeptId) return teachers
     return teachers.filter(t => t.departmentId === asDeptId)
@@ -3694,7 +3694,7 @@ return {
   const submitAssignment = async () => {
     if (cannotCreate || cannotUpdate) return;
     if (!asPeriodId || !asBatchId || !asTeacherId || !asSelSubjects.length || !asSelGrades.length || !asSelSystems.length) {
-      return notify("Vui l?ng ch?n �?y �? K?, �?t, GV, M�n, Kh?i v� H? h?c", "err")
+      return notify("Vui lòng chọn đầy đủ Kỳ, Đợt, GV, Môn, Khối và Hệ học", "err")
     }
     setAsSubmitting(true)
     try {
@@ -3723,13 +3723,13 @@ return {
       })
       if (res.ok) {
         const j = await res.json();
-        if (j.emailError) { notify(`Ph�n c�ng th�nh c�ng NH�NG g?i mail th?t b?i: ${j.emailError}`, "err") } else { notify("�? ho�n t?t ph�n c�ng v� g?i email") }
+        if (j.emailError) { notify(`Phân công thành công NHƯNG gửi mail thất bại: ${j.emailError}`, "err") } else { notify("Đã hoàn tất phân công và gửi email") }
         fetchAssignments()
         // Reset parts but keep period/dept
         setAsSelSubjects([]); setAsSelGrades([]); setAsSelSystems([])
       } else {
         const j = await res.json()
-        notify(j.error || "L?i ph�n c�ng", "err")
+        notify(j.error || "Lỗi phân công", "err")
       }
     } finally { setAsSubmitting(false) }
   }
@@ -3753,16 +3753,16 @@ return {
       if (res.ok) {
         const result = await res.json();
         if (result.success && result.sentCount > 0) {
-          notify(`�? g?i email th�ng b�o ph�n c�ng cho GV ${a.user?.fullName || ""}!`);
+          notify(`Đã gửi email thông báo phân công cho GV ${a.user?.fullName || ""}!`);
         } else {
-          notify(`G?i email th?t b?i: ${result.errors?.[0] || "Kh�ng g?i ��?c email"}`, "err");
+          notify(`Gửi email thất bại: ${result.errors?.[0] || "Không gửi được email"}`, "err");
         }
       } else {
-        notify("L?i khi k?t n?i g?i th�ng b�o", "err");
+        notify("Lỗi khi kết nối gửi thông báo", "err");
       }
     } catch (e) {
       console.error(e);
-      notify("C� l?i x?y ra", "err");
+      notify("Có lỗi xảy ra", "err");
     } finally {
       setAsNotifyingId(null);
     }
@@ -3770,7 +3770,7 @@ return {
 
   const sendAllNotifications = async () => {
     if (cannotUpdate) return;
-    if (groupedAssignments.length === 0) return notify("Kh�ng c� ph�n c�ng n�o �? g?i th�ng b�o", "err");
+    if (groupedAssignments.length === 0) return notify("Không có phân công nào để gửi thông báo", "err");
     setAsNotifyingAll(true);
     try {
       const res = await fetch("/api/input-assessment-assignments", {
@@ -3785,19 +3785,19 @@ return {
       if (res.ok) {
         const result = await res.json();
         if (result.success) {
-          notify(`�? g?i th�ng b�o th�nh c�ng cho ${result.sentCount} gi�o vi�n!`);
+          notify(`Đã gửi thông báo thành công cho ${result.sentCount} giáo viên!`);
           if (result.failedCount > 0) {
-            notify(`G?i th?t b?i cho ${result.failedCount} gi�o vi�n`, "err");
+            notify(`Gửi thất bại cho ${result.failedCount} giáo viên`, "err");
           }
         } else {
-          notify("G?i th�ng b�o h�ng lo?t th?t b?i", "err");
+          notify("Gửi thông báo hàng loạt thất bại", "err");
         }
       } else {
-        notify("L?i k?t n?i", "err");
+        notify("Lỗi kết nối", "err");
       }
     } catch (e) {
       console.error(e);
-      notify("C� l?i x?y ra", "err");
+      notify("Có lỗi xảy ra", "err");
     } finally {
       setAsNotifyingAll(false);
     }
@@ -3851,7 +3851,7 @@ return {
     if (cannotDelete) return;
     const res = await fetch(`/api/input-assessment-assignments?ids=${ids.join(",")}`, { method: "DELETE" })
     if (res.ok) {
-      notify("�? x�a ph�n c�ng")
+      notify("Đã xóa phân công")
       fetchAssignments()
     }
   }
@@ -3894,14 +3894,14 @@ return {
               <ClipboardCheck className="w-4 h-4 text-white"/>
             </div>
             <div className="min-w-0">
-              <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Ph? th�ng K-12</h1>
-              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">H? th?ng kh?o s�t & ph�n c�ng gi�o vi�n</p>
+              <h1 className="text-base font-black text-slate-800 tracking-tight leading-tight truncate">Phổ thông K-12</h1>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-widest hidden sm:block">Hệ thống khảo sát & phân công giáo viên</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0 text-xs font-semibold">
             <Calendar className="w-3.5 h-3.5 text-slate-400"/>
             <select value={yearId} onChange={e=>{setYearId(e.target.value); setSPeriodId(""); setAsPeriodId(""); setStudents([]); setAssignments([])}} className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer max-w-[140px] sm:max-w-none">
-              {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>N�m h?c {ay.name}</option>)}
+              {academicYears.filter(ay=>!ay.isOff).map(ay=><option key={ay.id} value={ay.id}>Năm học {ay.name}</option>)}
             </select>
           </div>
         </div>
@@ -3926,7 +3926,7 @@ return {
               <button
                 key={t.id}
                 onClick={() => { if (canRead) setTab(t.id); }}
-                title={!canRead ? "B?n kh�ng c� quy?n xem ch?c n�ng n�y" : isTabReadOnly ? `${t.tip} (Ch? xem)` : t.tip}
+                title={!canRead ? "Bạn không có quyền xem chức năng này" : isTabReadOnly ? `${t.tip} (Chỉ xem)` : t.tip}
                 className={"flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-2 sm:py-2.5 rounded-xl text-[9px] sm:text-[11px] font-bold transition-all duration-200 min-w-[44px] sm:min-w-0 " + 
                   (!canRead 
                     ? "opacity-35 cursor-not-allowed select-none" 
@@ -3950,7 +3950,7 @@ return {
       </div>
       )}
 
-      {/* ===== TAB: ASSIGNMENTS (PH�N C�NG) ===== */}
+      {/* ===== TAB: ASSIGNMENTS (PHÂN CÔNG) ===== */}
       {tab==="assignments" && (
         <div className={"space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 " + (isReadOnly ? "select-none" : "")}>
           {latestBatchInfo && (
@@ -3965,17 +3965,17 @@ return {
             <div className="flex-1 min-w-0 flex flex-col justify-center">
             <div className="text-[13px] font-semibold text-slate-700 leading-relaxed flex flex-wrap items-center gap-y-1.5 gap-x-1">
             <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-700 to-orange-600 uppercase tracking-widest text-xs py-0.5 px-2.5 rounded-lg bg-white/80 border border-amber-200/50 shadow-sm mr-2 flex items-center gap-1.5">
-            Th�ng b�o
+            Thông báo
             </span>
-            <span className="opacity-90">�?t kh?o s�t m?i nh?t:</span> 
+            <span className="opacity-90">Đợt khảo sát mới nhất:</span> 
             <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold shadow-md shadow-amber-900/10 mx-0.5 text-xs tracking-wide">
             {latestBatchInfo.name}
             </span> 
-            <span className="opacity-90 mx-1">thu?c K? kh?o s�t</span> 
+            <span className="opacity-90 mx-1">thuộc Kỳ khảo sát</span> 
             <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800 font-black border border-orange-200/60 shadow-sm mx-0.5 text-xs">
             {latestBatchInfo.periodName}
             </span>
-            <span className="opacity-90 ml-0.5">. Vui l?ng x�t duy?t.</span>
+            <span className="opacity-90 ml-0.5">. Vui lòng xét duyệt.</span>
             </div>
             </div>
             </div>
@@ -3984,7 +3984,7 @@ return {
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-              Ch? �? xem (�?c d? li?u). C�c ch?c n�ng Th�m m?i, Ch?nh s?a v� X�a b? kh�a �?i v?i t�i kho?n n�y.
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
           <div className="flex items-center gap-4 bg-white p-5 rounded-3xl border-2 border-teal-100 shadow-sm">
@@ -3992,8 +3992,8 @@ return {
                 <UserCheck className="w-6 h-6 text-indigo-500"/>
              </div>
              <div>
-                <h2 className="text-lg font-black text-slate-800">Ph�n c�ng Gi�o vi�n Kh?o s�t</h2>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Giao nhi?m v? ph? tr�ch m�n thi cho gi�o vi�n t? T? chuy�n m�n</p>
+                <h2 className="text-lg font-black text-slate-800">Phân công Giáo viên Khảo sát</h2>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Giao nhiệm vụ phụ trách môn thi cho giáo viên từ Tổ chuyên môn</p>
              </div>
           </div>
 
@@ -4005,34 +4005,34 @@ return {
                 <div>
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-indigo-100 text-xs font-semibold">1</div>
-                    <span className="font-black text-slate-800 tracking-tight">K? Kh?o s�t & Ng�?i ph? tr�ch</span>
+                    <span className="font-black text-slate-800 tracking-tight">Kỳ Khảo sát & Người phụ trách</span>
                   </div>
 
                   <div className="space-y-5">
-                    <Field label="K? kh?o s�t" required>
+                    <Field label="Kỳ khảo sát" required>
                       <select value={asPeriodId} onChange={e=>{setAsPeriodId(e.target.value); setAsBatchId("")}} className={inp} disabled={isReadOnly}>
-                        <option value="">-- Ch?n K? --</option>
+                        <option value="">-- Chọn Kỳ --</option>
                         {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
                     </Field>
 
-                    <Field label="�?t kh?o s�t" required>
+                    <Field label="Đợt khảo sát" required>
                       <select value={asBatchId} onChange={e=>setAsBatchId(e.target.value)} className={inp} disabled={!asPeriodId || isReadOnly}>
-                         <option value="">-- Ch?n �?t --</option>
+                         <option value="">-- Chọn Đợt --</option>
                          {visiblePeriods.find(p=>p.id===asPeriodId)?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
                     </Field>
 
-                    <Field label="L?c theo T? chuy�n m�n (Kh�ng b?t bu?c)">
+                    <Field label="Lọc theo Tổ chuyên môn (Không bắt buộc)">
                       <select value={asDeptId} onChange={e=>setAsDeptId(e.target.value)} className={inp} disabled={isReadOnly}>
-                        <option value="">T?t c? T? chuy�n m�n</option>
+                        <option value="">Tất cả Tổ chuyên môn</option>
                         {departments.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}
                       </select>
                     </Field>
 
-                    <Field label="Gi�o vi�n ph? tr�ch" required>
+                    <Field label="Giáo viên phụ trách" required>
                       <select value={asTeacherId} onChange={e=>setAsTeacherId(e.target.value)} className={inp+" bg-slate-50/50 border-indigo-100 hover:border-indigo-300 focus:bg-white"} disabled={isReadOnly}>
-                        <option value="">-- Ch?n Gi�o vi�n --</option>
+                        <option value="">-- Chọn Giáo viên --</option>
                         {filteredTeachers.map(t=><option key={t.userId} value={t.userId}>{t.teacherName}</option>)}
                       </select>
                     </Field>
@@ -4048,16 +4048,16 @@ return {
                  <div>
                   <div className="flex items-center gap-3 mb-6">
                     <div className="w-7 h-7 flex items-center justify-center text-[11px] font-black text-white shadow-lg shadow-emerald-100 text-xs font-semibold">2</div>
-                    <span className="font-black text-slate-800 tracking-tight">Ph?m vi Ph�n c�ng</span>
+                    <span className="font-black text-slate-800 tracking-tight">Phạm vi Phân công</span>
                   </div>
 
                   <div className="space-y-8">
                     {/* Subjects Tags */}
                     <div>
                       <div className="flex items-center justify-between mb-3 px-1">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5"/> M�n kh?o s�t *</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-3.5 h-3.5"/> Môn khảo sát *</label>
                         <button onClick={() => setAsSelSubjects(asSelSubjects.length === subjectsList.length ? [] : subjectsList.map(s=>s.id))} className={"text-[10px] font-black text-indigo-500 hover:bg-indigo-50 px-2 py-1 rounded-xl uppercase tracking-wider transition-colors " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>
-                          {asSelSubjects.length === subjectsList.length ? "B? ch?n h?t" : "Ch?n t?t c?"}
+                          {asSelSubjects.length === subjectsList.length ? "Bỏ chọn hết" : "Chọn tất cả"}
                         </button>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -4077,8 +4077,8 @@ return {
                       {/* Grades Tags */}
                       <div className="p-6 text-xs font-semibold">
                         <div className="flex items-center justify-between mb-4">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5"/> Kh?i *</label>
-                          <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-xl " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Ch?n h?t</button>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Layers className="w-3.5 h-3.5"/> Khối *</label>
+                          <button onClick={() => setAsSelGrades(asSelGrades.length === activeGrades.length ? [] : activeGrades)} className={"text-[9px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-xl " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="grid grid-cols-4 gap-2">
                           {activeGrades.map(g => (
@@ -4096,8 +4096,8 @@ return {
                       {/* System Tags */}
                       <div className="p-6 text-xs font-semibold">
                         <div className="flex items-center justify-between mb-4">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5"/> H? h?c *</label>
-                          <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-xl " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Ch?n h?t</button>
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><GraduationCap className="w-3.5 h-3.5"/> Hệ học *</label>
+                          <button onClick={() => setAsSelSystems(asSelSystems.length === currentEduSystems.length ? [] : currentEduSystems.map(es=>es.code))} className={"text-[9px] font-black text-amber-600 bg-amber-50 px-2 py-1 rounded-xl " + (isReadOnly ? "pointer-events-none opacity-40 cursor-not-allowed" : "")} disabled={isReadOnly}>Chọn hết</button>
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {currentEduSystems.map(es => (
@@ -4126,7 +4126,7 @@ return {
                className={"group flex items-center gap-3 px-12 py-5 bg-slate-900 text-white rounded-[2rem] font-black text-base hover:bg-black hover:scale-105 transition-all shadow-2xl shadow-indigo-200 disabled:opacity-50 " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
              >
                {asSubmitting ? <Loader2 className="w-6 h-6 animate-spin"/> : <UserPlus className="w-6 h-6 group-hover:rotate-12 transition-all"/>}
-               X�c nh?n Ph�n c�ng cho Gi�o vi�n
+               Xác nhận Phân công cho Giáo viên
              </button>
           </div>
 
@@ -4134,22 +4134,22 @@ return {
           <div className="space-y-4">
              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
                 <div className="flex items-center gap-3">
-                   <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh s�ch �? Ph�n c�ng</h3>
+                   <h3 className="text-base font-black text-slate-800 flex items-center gap-2"><Search className="w-5 h-5 text-indigo-500"/> Danh sách đã Phân công</h3>
                    {asFilterBatchId && (
-                      <span className="text-indigo-600 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nh�m ph�n c�ng</span>
+                      <span className="text-indigo-600 text-xs font-black text-xs font-semibold">{groupedAssignments.length} nhóm phân công</span>
                    )}
                 </div>
                 {asPeriodId && (
                    <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto text-xs font-semibold">
                       <div className="flex items-center gap-2">
                          <Filter className="w-4 h-4 text-indigo-500" />
-                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">L?c �?t:</span>
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Lọc đợt:</span>
                          <select 
                             value={asFilterBatchId} 
                             onChange={e=>setAsFilterBatchId(e.target.value)} 
                             className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 transition-all shadow-sm cursor-pointer min-w-[150px]"
                          >
-                            <option value="">-- Ch?n �?t --</option>
+                            <option value="">-- Chọn Đợt --</option>
                             {asSelPeriod?.batches?.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
                          </select>
                       </div>
@@ -4158,10 +4158,10 @@ return {
                             onClick={sendAllNotifications}
                             disabled={asNotifyingAll || groupedAssignments.length === 0 || cannotUpdate}
                             className={"flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-xl text-xs font-black hover:bg-indigo-700 transition-all shadow-sm disabled:opacity-50 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                            title="G?i email th�ng b�o ph�n c�ng cho t?t c? gi�o vi�n trong danh s�ch"
+                            title="Gửi email thông báo phân công cho tất cả giáo viên trong danh sách"
                          >
                             {asNotifyingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Mail className="w-3.5 h-3.5" />}
-                            G?i email h�ng lo?t
+                            Gửi email hàng loạt
                          </button>
                       )}
                    </div>
@@ -4174,23 +4174,23 @@ return {
                     <div className="w-16 h-16 flex items-center justify-center mb-4">
                       <Filter className="w-8 h-8 text-[#48BFE3]" />
                     </div>
-                    <p className="font-black text-slate-500 text-sm">Vui l?ng ch?n �?t l?c</p>
-                    <p className="text-xs text-slate-400 mt-1 font-medium">Ch?n m?t �?t ? b? l?c ph�a tr�n �? hi?n th? danh s�ch gi�o vi�n �? ��?c ph�n c�ng</p>
+                    <p className="font-black text-slate-500 text-sm">Vui lòng chọn Đợt lọc</p>
+                    <p className="text-xs text-slate-400 mt-1 font-medium">Chọn một Đợt ở bộ lọc phía trên để hiển thị danh sách giáo viên đã được phân công</p>
                   </div>
                 ) : asLoading ? <Spin/> : assignments.length === 0 ? (
-                  <Empty icon={UserPlus} text="Ch�a c� ph�n c�ng n�o" sub="S? d?ng form b�n tr�n �? ti?n h�nh ph�n c�ng GV"/>
+                  <Empty icon={UserPlus} text="Chưa có phân công nào" sub="Sử dụng form bên trên để tiến hành phân công GV"/>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-slate-50 border-b-2 border-slate-200">
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-8">#</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Gi�o vi�n</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">M�n h?c</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Kh?i</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">H? h?c</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nh?p h?c</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao t�c</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giáo viên</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Môn học</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khối</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ học</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nhập học</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4199,7 +4199,7 @@ return {
                             <td className="px-3 py-2 text-slate-400 font-bold">{idx + 1}</td>
                             <td className="px-3 py-2">
                               <p className="font-black text-slate-700">{a.user?.fullName}</p>
-                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{a.batch?.name || "T?t c? �?t"}</p>
+                              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">{a.batch?.name || "Tất cả đợt"}</p>
                             </td>
                             <td className="px-3 py-2">
                               <div className="flex flex-wrap gap-1">
@@ -4228,7 +4228,7 @@ return {
                                   onClick={() => sendTeacherNotification(a)}
                                   disabled={asNotifyingId === a.id || cannotUpdate}
                                   className={"p-1.5 text-slate-300 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all disabled:opacity-30 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}
-                                  title="G?i email th�ng b�o ph�n c�ng"
+                                  title="Gửi email thông báo phân công"
                                 >
                                   {asNotifyingId === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : <Mail className="w-3.5 h-3.5"/>}
                                 </button>
@@ -4240,7 +4240,7 @@ return {
                                   <Edit2 className="w-3.5 h-3.5"/>
                                 </button>
                                 <button
-                                  onClick={() => setConfirm({ msg: `X�a ph�n c�ng c?a GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.ids) })}
+                                  onClick={() => setConfirm({ msg: `Xóa phân công của GV ${a.user?.fullName}?`, fn: () => deleteAssignment(a.ids) })}
                                   disabled={cannotDelete}
                                   className={"p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all disabled:opacity-30 " + (cannotDelete ? "pointer-events-none opacity-40" : "")}
                                 >
@@ -4265,11 +4265,11 @@ return {
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-              Ch? �? xem (�?c d? li?u). C�c ch?c n�ng Th�m m?i, Ch?nh s?a v� X�a b? kh�a �?i v?i t�i kho?n n�y.
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4"/> K? & �?t Kh?o s�t</h2>
+            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Clock className="w-4 h-4"/> Kỳ & Đợt Khảo sát</h2>
             <div className="flex gap-2">
               <button onClick={fetchPeriods} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all"><RefreshCw className="w-4 h-4"/></button>
 
@@ -4278,44 +4278,44 @@ return {
             </div>
           </div>
 
-                    {/* TOP BATCH FILTER BAR FOR C� S? & TR?NG TH�I */}
+                    {/* TOP BATCH FILTER BAR FOR CƠ SỞ & TRẠNG THÁI */}
           <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-indigo-500" />
-              <span className="text-xs font-black text-slate-700 uppercase tracking-wider">B? l?c �?t kh?o s�t</span>
+              <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Bộ lọc Đợt khảo sát</span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              {/* B? l?c C� s? */}
+              {/* Bộ lọc Cơ sở */}
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                  <Building className="w-3.5 h-3.5 text-indigo-500"/> C� s?:
+                  <Building className="w-3.5 h-3.5 text-indigo-500"/> Cơ sở:
                 </label>
                 <select
                   value={batchCampusFilter}
                   onChange={e => setBatchCampusFilter(e.target.value)}
                   className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
                 >
-                  <option value="all">T?t c? C� s?</option>
+                  <option value="all">Tất cả Cơ sở</option>
                   {campuses.map(c => (
                     <option key={c.id} value={c.id}>{c.campusName}</option>
                   ))}
                 </select>
               </div>
 
-              {/* B? l?c Tr?ng th�i */}
+              {/* Bộ lọc Trạng thái */}
               <div className="flex items-center gap-2">
                 <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500"/> Tr?ng th�i:
+                  <CheckCircle2 className="w-3.5 h-3.5 text-indigo-500"/> Trạng thái:
                 </label>
                 <select
                   value={batchStatusFilter}
                   onChange={e => setBatchStatusFilter(e.target.value)}
                   className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none focus:border-indigo-500 cursor-pointer shadow-sm"
                 >
-                  <option value="all">T?t c? Tr?ng th�i</option>
-                  <option value="ACTIVE">�ang m? (ON)</option>
-                  <option value="LOCKED">�? kh�a (OFF)</option>
+                  <option value="all">Tất cả Trạng thái</option>
+                  <option value="ACTIVE">Đang mở (ON)</option>
+                  <option value="LOCKED">Đã khóa (OFF)</option>
                 </select>
               </div>
 
@@ -4328,13 +4328,13 @@ return {
                   }}
                   className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                 >
-                  <X className="w-3.5 h-3.5" /> X�a l?c
+                  <X className="w-3.5 h-3.5" /> Xóa lọc
                 </button>
               )}
             </div>
           </div>
 
-          {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Ch�a c� K? kh?o s�t n�o" sub="Li�n h? qu?n tr? vi�n �? t?o k? kh?o s�t m?i" /> : (
+          {pLoading ? <Spin/> : periods.length === 0 ? <Empty icon={Calendar} text="Chưa có Kỳ khảo sát nào" sub="Liên hệ quản trị viên để tạo kỳ khảo sát mới" /> : (
             <div className="space-y-3">
               {visiblePeriods.map(p => (
                 <div key={p.id} className="bg-white rounded-xl border border-slate-150 shadow-none overflow-hidden group/p hover:border-indigo-250 transition-all">
@@ -4349,37 +4349,37 @@ return {
                           <Badge s={p.status}/>
                         </div>
                         <div className="flex items-center gap-3 mt-1 text-[11px] text-slate-400 font-black uppercase tracking-widest">
-                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/> {p.startDate?.slice(0,10)} ? {p.endDate?.slice(0,10)||"?"}</span>
+                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5"/> {p.startDate?.slice(0,10)} → {p.endDate?.slice(0,10)||"?"}</span>
                           <span className="w-1 h-1 bg-slate-200 rounded-full"/>
-                          <span className="text-indigo-500">{p.batches?.length||0} �?t ghi nh?n</span>
+                          <span className="text-indigo-500">{p.batches?.length||0} đợt ghi nhận</span>
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 ">
                       <button onClick={e=>{e.stopPropagation(); if (cannotCreate) return; openAddBatch(p.id)}} className={"flex items-center gap-1.5 px-4 py-2 text-[11px] font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-600 hover:text-white rounded-xl transition-all border border-emerald-100 " + (cannotCreate ? "pointer-events-none opacity-40" : "")}>
-                        <Plus className="w-3.5 h-3.5"/> Th�m �?t
+                        <Plus className="w-3.5 h-3.5"/> Thêm Đợt
                       </button>
                       <button onClick={e=>{e.stopPropagation(); if (cannotUpdate) return; openEditPeriod(p)}} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")}><Edit2 className="w-4 h-4"/></button>
-                      <button onClick={e=>{e.stopPropagation(); setConfirm({msg:`X�a k? "${p.name}"?`,fn:()=>doDeletePeriod(p.id)})}} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")}><Trash2 className="w-4 h-4"/></button>
+                      <button onClick={e=>{e.stopPropagation(); setConfirm({msg:`Xóa kỳ "${p.name}"?`,fn:()=>doDeletePeriod(p.id)})}} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")}><Trash2 className="w-4 h-4"/></button>
                       <span className="text-slate-300 ml-2">{expandedId===p.id?<ChevronUp className="w-5 h-5"/>:<ChevronDown className="w-5 h-5"/>}</span>
                     </div>
                   </div>
                   {expandedId===p.id && (
                     <div className="p-6 text-xs font-semibold">
                        {(!p.batches || p.batches.length === 0) ? (
-                         <div className="text-center py-8 text-slate-400 font-bold text-xs uppercase tracking-wider bg-white rounded-2xl border-2 border-dashed border-slate-200">Ch�a c� �?t kh?o s�t n�o ghi nh?n</div>
+                         <div className="text-center py-8 text-slate-400 font-bold text-xs uppercase tracking-wider bg-white rounded-2xl border-2 border-dashed border-slate-200">Chưa có Đợt khảo sát nào ghi nhận</div>
                        ) : (
                          <div className="overflow-x-auto bg-white border border-slate-150 rounded-2xl shadow-none">
                            <table className="w-full text-left border-collapse">
                              <thead>
                                <tr className="text-xs font-semibold">
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest pl-6">M? �?t</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">N?i dung kh?o s�t</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">C� s?</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Th?i gian</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tr?ng th�i</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Ng�?i ph? tr�ch</th>
-                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right pr-6">Thao t�c</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest pl-6">Mã Đợt</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nội dung khảo sát</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Cơ sở</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Thời gian</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Trạng thái</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Người phụ trách</th>
+                                 <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right pr-6">Thao tác</th>
                                </tr>
                              </thead>
                              <tbody className="divide-y divide-slate-100">
@@ -4403,16 +4403,16 @@ return {
                                   return true;
                                 }).map(b => {
                                  const selectedCampus = campuses.find(c => c.id === b.campusId);
-                                 const campusName = selectedCampus ? selectedCampus.campusName : "T?t c?";
+                                 const campusName = selectedCampus ? selectedCampus.campusName : "Tất cả";
                                  const assignee = giaoVuCSUsers.find(u => u.id === b.assignedUserId);
-                                 const assigneeName = assignee ? assignee.fullName : "-- Ch�a g�n --";
+                                 const assigneeName = assignee ? assignee.fullName : "-- Chưa gán --";
                                  
                                  let baseName = b.name;
-                                 const match = b.name.match(/�?t \\d+ - (.*?) \\|/);
+                                 const match = b.name.match(/Đợt \\d+ - (.*?) \\|/);
                                  if (match) {
                                    baseName = match[1];
                                  } else {
-                                   const match2 = b.name.match(/�?t \\d+ - (.*)/);
+                                   const match2 = b.name.match(/Đợt \\d+ - (.*)/);
                                    if (match2) baseName = match2[1];
                                  }
 
@@ -4436,7 +4436,7 @@ return {
                                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
                                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
                                          <span>{b.startDate?.slice(0, 10).split('-').reverse().join('/')}</span>
-                                         <span className="text-slate-300">?</span>
+                                         <span className="text-slate-300">→</span>
                                          <span>{b.endDate?.slice(0, 10).split('-').reverse().join('/')}</span>
                                        </div>
                                      </td>
@@ -4452,13 +4452,13 @@ return {
                                                body: JSON.stringify({ action: "UPDATE_BATCH", id: b.id, data: { status: newStatus } })
                                              });
                                              if (res.ok) { fetchPeriods(); }
-                                             else { const d = await res.json(); alert(d.error || "L?i c?p nh?t"); }
-                                           } catch(e) { alert("L?i m?ng"); }
+                                             else { const d = await res.json(); alert(d.error || "Lỗi cập nhật"); }
+                                           } catch(e) { alert("Lỗi mạng"); }
                                          }}
                                          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
                                            b.status === "ACTIVE" ? "bg-emerald-500" : "bg-slate-300"
                                          }`}
-                                         title={b.status === "ACTIVE" ? "�ang m? (Click �? Kh�a)" : "�? kh�a (Click �? M?)"}
+                                         title={b.status === "ACTIVE" ? "Đang mở (Click để Khóa)" : "Đã khóa (Click để Mở)"}
                                        >
                                          <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                                            b.status === "ACTIVE" ? "translate-x-4" : "translate-x-0"
@@ -4489,20 +4489,20 @@ return {
                                                     body: JSON.stringify({ action: "SEND_ASSIGNMENT_EMAIL", id: b.id })
                                                   });
                                                   if (res.ok) {
-                                                    notify("�? g?i email th�ng b�o th�nh c�ng");
+                                                    notify("Đã gửi email thông báo thành công");
                                                   } else {
                                                     const d = await res.json();
-                                                    notify(d.error || "L?i g?i email", "err");
+                                                    notify(d.error || "Lỗi gửi email", "err");
                                                   }
                                                 } catch(e) {
-                                                  notify("L?i k?t n?i", "err");
+                                                  notify("Lỗi kết nối", "err");
                                                 } finally {
                                                   setSendingEmailBatchId(null);
                                                 }
                                               }}
                                               className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all ml-2 text-xs font-semibold"
                                               disabled={sendingEmailBatchId === b.id}
-                                              title="G?i email th�ng b�o cho ng�?i ph? tr�ch"
+                                              title="Gửi email thông báo cho người phụ trách"
                                             >
                                               {sendingEmailBatchId === b.id ? (
                                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -4515,10 +4515,10 @@ return {
                                       </td>
                                      <td className="px-4 py-3 border-b border-slate-100 text-right pr-6">
                                        <div className="flex items-center justify-end gap-1">
-                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Ch?nh s?a">
+                                         <button onClick={() => openEditBatch(b)} className={"p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa">
                                            <Edit2 className="w-3.5 h-3.5" />
                                          </button>
-                                         <button onClick={() => setConfirm({ msg: `X�a �?t "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="X�a">
+                                         <button onClick={() => setConfirm({ msg: `Xóa đợt "` + b.name + `"?`, fn: () => doDeleteBatch(b.id) })} className={"p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa">
                                            <Trash2 className="w-3.5 h-3.5" />
                                          </button>
                                        </div>
@@ -4545,41 +4545,41 @@ return {
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-              Ch? �? xem (�?c d? li?u). C�c ch?c n�ng Th�m m?i, Ch?nh s?a v� X�a b? kh�a �?i v?i t�i kho?n n�y.
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
           
           {/* Header & Stats */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-black text-slate-800 tracking-tight">Qu?n l? H? s� H?c sinh</h2>
+              <h2 className="text-xl font-black text-slate-800 tracking-tight">Quản lý Hồ sơ Học sinh</h2>
               <p className="text-sm text-slate-500 font-medium mt-1">
-                T?m ki?m, l?c v� c?p nh?t th�ng tin h?c sinh tham gia kh?o s�t n�ng l?c.
+                Tìm kiếm, lọc và cập nhật thông tin học sinh tham gia khảo sát năng lực.
               </p>
             </div>
             
             <div className="flex items-center gap-3">
               <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
-                T?ng c?ng: <span className="text-[#48BFE3] ml-1">{filtStu.length}</span> HS
+                Tổng cộng: <span className="text-[#48BFE3] ml-1">{filtStu.length}</span> HS
               </span>
               
               <button
                 onClick={handleSyncMasterStudentInfo}
                 disabled={syncingMaster}
                 className="h-10 px-3.5 bg-teal-50 text-teal-700 border border-teal-200 rounded-xl flex items-center justify-center hover:bg-teal-100 hover:text-teal-800 shadow-sm transition-all text-xs font-bold disabled:opacity-50 cursor-pointer"
-                title="�?ng b? H? t�n, Gi?i t�nh, Ng�y sinh kh?p v?i Danh s�ch H?c sinh g?c"
+                title="Đồng bộ Họ tên, Giới tính, Ngày sinh khớp với Danh sách Học sinh gốc"
               >
                 <RefreshCw className={`w-4 h-4 mr-1.5 ${syncingMaster ? 'animate-spin' : ''}`} />
-                <span className="hidden sm:inline">{syncingMaster ? "�ang �?ng b?..." : "�?ng b? TT HS"}</span>
+                <span className="hidden sm:inline">{syncingMaster ? "Đang đồng bộ..." : "Đồng bộ TT HS"}</span>
               </button>
 
-<button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui l?ng ch?n m?t k? c? th?" : ""}>
+<button onClick={handleDownloadTemplate} disabled={!sPeriodId} className="h-10 text-slate-600 flex items-center justify-center hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group text-xs font-semibold" title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Download className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
-                 <span className="hidden sm:inline">T?i m?u</span>
+                 <span className="hidden sm:inline">Tải mẫu</span>
               </button>
-              <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId || sPeriodId === "all" || importing || cannotCreate} className={"h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-emerald-600 hover:border-emerald-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui l?ng ch?n m?t k? c? th?" : ""}>
+              <button onClick={()=>fileRef.current?.click()} disabled={!sPeriodId || sPeriodId === "all" || importing || cannotCreate} className={"h-10 px-4 bg-white text-slate-600 border border-slate-200 rounded-xl flex items-center justify-center hover:bg-slate-50 hover:text-emerald-600 hover:border-emerald-200 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
                  <Upload className="w-4 h-4 sm:mr-2 group-hover:-translate-y-0.5 transition-transform"/>
-                 <span className="hidden sm:inline">Nh?p Excel</span>
+                 <span className="hidden sm:inline">Nhập Excel</span>
               </button>
                             <button 
                 onClick={() => {
@@ -4589,12 +4589,12 @@ return {
                 }} 
                 disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} 
                 className={"h-10 px-4 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl flex items-center justify-center hover:bg-emerald-100 hover:text-emerald-800 shadow-sm transition-all disabled:opacity-50 text-sm font-semibold group " + (cannotCreate ? "pointer-events-none opacity-40" : "")} 
-                title={sPeriodId === "all" ? "Vui l?ng ch?n m?t k? c? th?" : ""}
+                title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}
               >
-                <Plus className="w-4 h-4 mr-2"/> T?o �?t
+                <Plus className="w-4 h-4 mr-2"/> Tạo đợt
               </button>
-<button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#48BFE3] text-white text-sm font-bold rounded-xl hover:bg-[#009085] disabled:opacity-50 transition-all shadow-md shadow-[#48BFE3]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui l?ng ch?n m?t k? c? th?" : ""}>
-                <Plus className="w-4 h-4 mr-2"/> Th�m m?i
+<button onClick={openAddStudent} disabled={!sPeriodId || sPeriodId === "all" || cannotCreate} className={"h-10 px-5 bg-[#48BFE3] text-white text-sm font-bold rounded-xl hover:bg-[#009085] disabled:opacity-50 transition-all shadow-md shadow-[#48BFE3]/20 flex items-center justify-center " + (cannotCreate ? "pointer-events-none opacity-40" : "")} title={sPeriodId === "all" ? "Vui lòng chọn một kỳ cụ thể" : ""}>
+                <Plus className="w-4 h-4 mr-2"/> Thêm mới
               </button>
               <input type="file" ref={fileRef} accept=".xlsx" className="hidden" onChange={handleImport}/>
             </div>
@@ -4604,30 +4604,30 @@ return {
           <div className="bg-white border border-slate-200/60 rounded-[1.5rem] p-5 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
               <div className="md:col-span-3">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">K? kh?o s�t *</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Kỳ khảo sát *</label>
                 <select value={sPeriodId} onChange={e=>{setSPeriodId(e.target.value); setSBatchId("")}} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"}>
-                   <option value="">-- Ch?n K? --</option>
-                   <option value="all">-- T?t c? c�c k? --</option>
+                   <option value="">-- Chọn Kỳ --</option>
+                   <option value="all">-- Tất cả các kỳ --</option>
                    {visiblePeriods.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div className="md:col-span-3">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">�?t kh?o s�t</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Đợt khảo sát</label>
                 <select value={sBatchId} onChange={e=>setSBatchId(e.target.value)} className={inp + " bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"} disabled={!sPeriodId}>
-                   <option value="">-- T?t c? �?t --</option>
+                   <option value="">-- Tất cả đợt --</option>
                    {((sPeriodId && sPeriodId !== "all" ? selPeriod?.batches : visiblePeriods.flatMap(p => p.batches || [])) || []).map((b: any)=><option key={b.id} value={b.id}>{b.name} ({visiblePeriods.find(p => p.id === b.periodId)?.name || ""})</option>)}
                 </select>
               </div>
               <div className="md:col-span-4">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">T?m ki?m</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 ml-1">Tìm kiếm</label>
                 <div className="relative">
                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"/>
-                   <input value={sSearch} onChange={e=>setSSearch(e.target.value)} placeholder="T�n ho?c m? HS..." className={inp+" pl-10 bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"}/>
+                   <input value={sSearch} onChange={e=>setSSearch(e.target.value)} placeholder="Tên hoặc mã HS..." className={inp+" pl-10 bg-slate-50/50 hover:bg-white focus:bg-white transition-colors"}/>
                 </div>
               </div>
               <div className="md:col-span-2 flex items-end">
                 <button onClick={fetchStudents} disabled={!sPeriodId} className="w-full h-[42px] bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-black disabled:opacity-50 transition-all flex items-center justify-center gap-2">
-                  <Search className="w-4 h-4"/> L?c d? li?u
+                  <Search className="w-4 h-4"/> Lọc dữ liệu
                 </button>
               </div>
             </div>
@@ -4642,8 +4642,8 @@ return {
                 <div className="w-16 h-16 flex items-center justify-center mb-4 text-xs font-semibold">
                   <Users className="w-8 h-8 text-slate-300"/>
                 </div>
-                <p className="font-bold text-slate-700">Kh�ng t?m th?y d? li?u</p>
-                <p className="text-sm mt-1">H?y ch?n K? kh?o s�t v� b?m 'L?c d? li?u'</p>
+                <p className="font-bold text-slate-700">Không tìm thấy dữ liệu</p>
+                <p className="text-sm mt-1">Hãy chọn Kỳ khảo sát và bấm 'Lọc dữ liệu'</p>
               </div>
             ) : (
               <>
@@ -4653,19 +4653,19 @@ return {
                       <thead>
                         <tr className="bg-slate-50 border-b-2 border-slate-200">
                           <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest w-8">#</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">M? HS</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">H? t�n</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Kh?i</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Gi?i t�nh</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ng�y sinh</th>
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">H? KS</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Mã HS</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Họ tên</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Khối</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Giới tính</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ngày sinh</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Hệ KS</th>
                           {selPeriod?.name?.toLowerCase().includes("open day") && (
                             <>
-                              <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">��ng k? CS</th>
-                              <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">?y quy?n x�t duy?t</th>
+                              <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Đăng ký CS</th>
+                              <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ủy quyền xét duyệt</th>
                             </>
                           )}
-                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao t�c</th>
+                          <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -4691,7 +4691,7 @@ return {
                             <td className="px-3 py-2">
                               <div className="flex items-center justify-end gap-1">
                                 <button onClick={()=>openEditStudent(s)} className={"p-1.5 text-slate-400 hover:text-[#48BFE3] hover:bg-slate-50 rounded-lg transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
-                                <button onClick={()=>setConfirm({msg:`X�a h? s� h?c sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
+                                <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                               </div>
                             </td>
                           </tr>
@@ -4711,37 +4711,37 @@ return {
                         </div>
                         <div className="flex items-center gap-1">
                            <button onClick={()=>openEditStudent(s)} className={"p-2 text-slate-400 hover:text-[#48BFE3] bg-slate-50 rounded-xl " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
-                           <button onClick={()=>setConfirm({msg:`X�a h? s� h?c sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
+                           <button onClick={()=>setConfirm({msg:`Xóa hồ sơ học sinh ${s.fullName}?`,fn:()=>doDeleteStudent(s.id)})} className={"p-2 text-slate-400 hover:text-rose-600 bg-slate-50 rounded-xl " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                         </div>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t border-slate-100 pt-3 mt-2">
                         <div>
-                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Gi?i t�nh</span>
+                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Giới tính</span>
                           <span className="font-semibold text-slate-700">{s.gender || "-"}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Kh?i</span>
+                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Khối</span>
                           <span className="font-semibold text-slate-700">{s.grade}</span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Ng�y sinh</span>
+                          <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Ngày sinh</span>
                           <span className="font-semibold text-slate-700">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString('vi-VN') : "-"}</span>
                         </div>
                         <div>
-                           <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">H? KS</span>
+                           <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Hệ KS</span>
                            <span className="font-semibold text-[#48BFE3]">{s.surveyFormType || "-"}</span>
                          </div>
                          {selPeriod?.name?.toLowerCase().includes("open day") && (
                            <>
                              <div>
-                               <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">��ng k? CS</span>
+                               <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Đăng ký CS</span>
                                <span className="font-semibold text-slate-700">
                                  {campuses.find(c => c.id === s.registeredCampus)?.campusName || s.registeredCampus || "-"}
                                </span>
                              </div>
                              <div>
-                               <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">?y quy?n x�t duy?t</span>
+                               <span className="text-slate-400 block mb-0.5 text-[10px] uppercase font-bold">Ủy quyền xét duyệt</span>
                                <span className="font-semibold text-slate-700">
                                  {campuses.find(c => c.id === s.registeredCampus)?.manager?.fullName || "-"}
                                </span>
@@ -4757,9 +4757,9 @@ return {
                 {filtStu.length > 0 && (
                   <div className="p-4 flex items-center justify-between text-xs font-semibold border-t border-slate-100 bg-slate-50/50">
                     <span className="text-xs text-slate-500 font-medium">
-                      Hi?n th? {Math.min(filtStu.length, (studentsCurrentPage - 1) * studentsPageSize + 1)}-
-                      {Math.min(filtStu.length, studentsCurrentPage * studentsPageSize)} trong t?ng s?{" "}
-                      {filtStu.length} h?c sinh
+                      Hiển thị {Math.min(filtStu.length, (studentsCurrentPage - 1) * studentsPageSize + 1)}-
+                      {Math.min(filtStu.length, studentsCurrentPage * studentsPageSize)} trong tổng số{" "}
+                      {filtStu.length} học sinh
                     </span>
                     <div className="flex gap-2">
                       <button
@@ -4767,7 +4767,7 @@ return {
                         disabled={studentsCurrentPage === 1}
                         className="px-3 py-1.5 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-white text-slate-655 disabled:opacity-40 disabled:hover:border-slate-200 disabled:hover:bg-transparent transition-all cursor-pointer font-black bg-transparent border-none"
                       >
-                        Tr�?c
+                        Trước
                       </button>
                       <div className="flex items-center gap-1">
                         {Array.from({ length: Math.ceil(filtStu.length / studentsPageSize) }).map((_, i) => {
@@ -4816,7 +4816,7 @@ return {
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 col-span-full text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-              Ch? �? xem (�?c d? li?u). C�c ch?c n�ng Th�m m?i, Ch?nh s?a v� X�a b? kh�a �?i v?i t�i kho?n n�y.
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
            {CATEGORY_TYPES.map(type => (
@@ -4835,7 +4835,7 @@ return {
                         <span className="text-xs font-black text-slate-600 truncate">{c.name}</span>
                         <div className="flex items-center gap-0.5 ">
                            <button onClick={()=>openEditConfig(c)} className={"p-1.5 text-slate-300 hover:text-indigo-600 " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-3 h-3"/></button>
-                           <button onClick={()=>setConfirm({msg:`X�a "${c.name}"?`,fn:()=>doDeleteConfig(c.id)})} className={"p-1.5 text-slate-300 hover:text-rose-600 " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-3 h-3"/></button>
+                           <button onClick={()=>setConfirm({msg:`Xóa "${c.name}"?`,fn:()=>doDeleteConfig(c.id)})} className={"p-1.5 text-slate-300 hover:text-rose-600 " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-3 h-3"/></button>
                         </div>
                      </div>
                    ))}
@@ -4851,35 +4851,35 @@ return {
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-              Ch? �? xem (�?c d? li?u). C�c ch?c n�ng Th�m m?i, Ch?nh s?a v� X�a b? kh�a �?i v?i t�i kho?n n�y.
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh s�ch M�n Kh?o s�t</h2>
+            <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sách Môn Khảo sát</h2>
             <button
               onClick={() => { setEditingSubjectId(null); setSubjectForm({ code:"", name:"", subjectType:"", scoreColumns:1, commentColumns:1, status:"ACTIVE", exemptCriteria:[] as string[] }); setIsSubjectOpen(true) }}
               className={"flex items-center gap-2 px-5 py-2.5 bg-[#48BFE3] text-white text-[13px] font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md shadow-[#48BFE3]/20 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
             >
-              <Plus className="w-4 h-4"/> Th�m M�n m?i
+              <Plus className="w-4 h-4"/> Thêm Môn mới
             </button>
           </div>
 
           {subjectsList.length === 0 ? (
-            <Empty icon={BookOpen} text="Ch�a c� M�n kh?o s�t n�o" sub="B?m Th�m m?i �? b?t �?u"/>
+            <Empty icon={BookOpen} text="Chưa có Môn khảo sát nào" sub="Bấm Thêm mới để bắt đầu"/>
           ) : (
             <div className="bg-white border border-slate-200 rounded-[2rem] shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left whitespace-nowrap border-collapse">
                   <thead className="text-xs font-semibold">
                     <tr>
-                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">M? M�n</th>
-                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">T�n M�n</th>
+                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Mã Môn</th>
+                      <th className="px-4 py-3.5 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tên Môn</th>
                       
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">C?t �i?m</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">C?t NX</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Tr?ng th�i</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Mi?n gi?m</th>
-                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao t�c</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột Điểm</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Cột NX</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Trạng thái</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border border-slate-200">Miễn giảm</th>
+                      <th className="p-2 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -4895,13 +4895,13 @@ return {
                           <td className="p-2 text-center border border-slate-200"><span className="w-7 h-7 text-emerald-700 font-black text-xs inline-flex items-center justify-center text-xs font-semibold">{sub.commentColumns ?? 0}</span></td>
                           <td className="p-2 text-center border border-slate-200"><Badge s={sub.status || "ACTIVE"}/></td>
                           <td className="p-2 text-center border border-slate-200">
-                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return (Array.isArray(arr) && arr.length > 0) ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-violet-700 text-xs font-semibold">{c}</span>)}</div> : <span className="text-slate-300 text-xs">�</span>; } catch { return <span className="text-slate-300 text-xs">�</span>; } })()}
+                            {(() => { try { const arr = JSON.parse(sub.exemptCriteria || "[]"); return (Array.isArray(arr) && arr.length > 0) ? <div className="flex flex-wrap gap-1 justify-center">{arr.map((c: string) => <span key={c} className="text-[10px] font-bold text-violet-700 text-xs font-semibold">{c}</span>)}</div> : <span className="text-slate-300 text-xs">—</span>; } catch { return <span className="text-slate-300 text-xs">—</span>; } })()}
                           </td>
                           <td className="p-2 text-right border border-slate-200">
                             <div className="flex items-center justify-end gap-1">
-                              <button title="C?u h?nh t�n c?t" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className={"p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><PenLine className="w-4 h-4"/></button>
+                              <button title="Cấu hình tên cột" onClick={() => { setColumnConfigForm({ subjectId: sub.id, name: sub.name, scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, scoreNames: parsedCols.scores || [], commentNames: parsedCols.comments || [], showScoreInReport: parsedCols.showScoreInReport || [], showCommentInReport: parsedCols.showCommentInReport || [] }); setIsColumnConfigOpen(true); }} className={"p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><PenLine className="w-4 h-4"/></button>
                               <button onClick={() => { setEditingSubjectId(sub.id); setSubjectForm({ code: sub.code, name: sub.name, subjectType: sub.subjectType || "", scoreColumns: sub.scoreColumns ?? 1, commentColumns: sub.commentColumns ?? 1, status: sub.status || "ACTIVE", exemptCriteria: (() => { try { return JSON.parse(sub.exemptCriteria || "[]"); } catch { return []; } })() }); setIsSubjectOpen(true); }} className={"p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate}><Edit2 className="w-4 h-4"/></button>
-                              <button onClick={() => setConfirm({ msg: `X�a m�n ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className={"p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
+                              <button onClick={() => setConfirm({ msg: `Xóa môn ${sub.name}?`, fn: () => deleteSubject(sub.id) })} className={"p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete}><Trash2 className="w-4 h-4"/></button>
                             </div>
                           </td>
                         </tr>
@@ -4919,7 +4919,7 @@ return {
           {isReadOnly && (
             <div className="no-print text-amber-800 flex items-center gap-2.5 text-xs font-semibold shadow-sm mb-2 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 animate-pulse" />
-              Ch? �? xem (�?c d? li?u). C�c ch?c n�ng Th�m m?i, Ch?nh s?a v� X�a b? kh�a �?i v?i t�i kho?n n�y.
+              Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
           {/* TOP PANEL: Form ThemMoi / Sua */}
@@ -4928,9 +4928,9 @@ return {
             <div className="flex items-center gap-3 mb-5 border-b border-slate-200 pb-4">
               <div className="bg-[#48BFE3]/10 p-2 rounded-xl text-[#48BFE3]"><Settings className="w-5 h-5"/></div>
               <div>
-                <h3 className="font-black text-slate-800 text-lg">{editingMappingSubjectId ? "Ch?nh s?a C?u h?nh M�n" : "G�n M�n Kh?o S�t"}</h3>
-                <p className="text-xs font-semibold text-slate-500 mt-0.5">{editingMappingSubjectId ? "�ang ch?nh s?a - thay �?i Kh?i/H? r?i b?m C?p Nh?t" : "Ch?n Kh?i, H? h?c v� c�c M�n �? c?u h?nh �?ng lo?t"}</p>
-                {editingMappingSubjectId && <button onClick={() => { setEditingMappingSubjectId(null); setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); }} className="text-xs text-red-500 hover:underline font-bold mt-1">? H?y ch?nh s?a</button>}
+                <h3 className="font-black text-slate-800 text-lg">{editingMappingSubjectId ? "Chỉnh sửa Cấu hình Môn" : "Gán Môn Khảo Sát"}</h3>
+                <p className="text-xs font-semibold text-slate-500 mt-0.5">{editingMappingSubjectId ? "Đang chỉnh sửa - thay đổi Khối/Hệ rồi bấm Cập Nhật" : "Chọn Khối, Hệ học và các Môn để cấu hình đồng loạt"}</p>
+                {editingMappingSubjectId && <button onClick={() => { setEditingMappingSubjectId(null); setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); }} className="text-xs text-red-500 hover:underline font-bold mt-1">✕ Hủy chỉnh sửa</button>}
               </div>
             </div>
             
@@ -4939,8 +4939,8 @@ return {
               <div className="lg:col-span-5 space-y-6 p-5 text-xs font-semibold">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Kh?i:</span>
-                    <button onClick={() => setSelGrades(selGrades.length === activeGrades.length ? [] : [...activeGrades])} className={"text-[10px] font-black uppercase tracking-wider text-[#48BFE3] bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 px-2.5 py-1 rounded-md transition-colors border border-[#48BFE3]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Ch?n t?t c?</button>
+                    <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Khối:</span>
+                    <button onClick={() => setSelGrades(selGrades.length === activeGrades.length ? [] : [...activeGrades])} className={"text-[10px] font-black uppercase tracking-wider text-[#48BFE3] bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 px-2.5 py-1 rounded-md transition-colors border border-[#48BFE3]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {activeGrades.map((g: string) => (
@@ -4953,8 +4953,8 @@ return {
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">H? h?c:</span>
-                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-black uppercase tracking-wider text-[#48BFE3] bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 px-2.5 py-1 rounded-md transition-colors border border-[#48BFE3]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Ch?n t?t c?</button>
+                    <span className="block font-black text-slate-850 text-xs uppercase tracking-wider">Hệ học:</span>
+                    <button onClick={() => setSelEdus(selEdus.length === currentEduSystems.length ? [] : currentEduSystems.map((e: any) => e.code))} className={"text-[10px] font-black uppercase tracking-wider text-[#48BFE3] bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 px-2.5 py-1 rounded-md transition-colors border border-[#48BFE3]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {currentEduSystems.map((es: any) => (
@@ -4969,8 +4969,8 @@ return {
               {/* Right: Subjects to Assign */}
               <div className="lg:col-span-7 p-5 flex flex-col text-xs font-semibold">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="block font-black text-slate-855 text-xs uppercase tracking-wider">Ch?n M�n Kh?o S�t:</span>
-                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#48BFE3] bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 px-2.5 py-1 rounded-md transition-colors border border-[#48BFE3]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Ch?n t?t c?</button>
+                  <span className="block font-black text-slate-855 text-xs uppercase tracking-wider">Chọn Môn Khảo Sát:</span>
+                  <button onClick={() => setAssignSelSubjects(assignSelSubjects.length === subjectsList.length ? [] : subjectsList.map((s:any)=>s.id))} className={"text-[10px] font-black uppercase tracking-wider text-[#48BFE3] bg-[#48BFE3]/10 hover:bg-[#48BFE3]/20 px-2.5 py-1 rounded-md transition-colors border border-[#48BFE3]/20 " + (isReadOnly ? "pointer-events-none opacity-40" : "")} disabled={isReadOnly}>Chọn tất cả</button>
                 </div>
                 <div className="flex flex-wrap gap-2 mb-4 max-h-[150px] overflow-y-auto pr-1">
                   {subjectsList.map((s:any) => (
@@ -4984,7 +4984,7 @@ return {
                   <button 
                     onClick={async () => {
                       if(!selGrades.length || !selEdus.length || !assignSelSubjects.length) {
-                        notify("Vui l?ng ch?n �? Kh?i, H? h?c v� �t nh?t 1 M�n KS!", "err"); return;
+                        notify("Vui lòng chọn đủ Khối, Hệ học và ít nhất 1 Môn KS!", "err"); return;
                       }
                       setMappingLoading(true);
                       // If editing, delete ALL old mappings for these subjects first
@@ -5007,13 +5007,13 @@ return {
                       setMappingLoading(false);
                       await fetchAllMappings();
                       setSelGrades([]); setSelEdus([]); setAssignSelSubjects([]); setEditingMappingSubjectId(null);
-                      notify(wasEditing ? "C?p nh?t c?u h?nh th�nh c�ng!" : "L�u c?u h?nh th�nh c�ng!");
+                      notify(wasEditing ? "Cập nhật cấu hình thành công!" : "Lưu cấu hình thành công!");
                     }}
                     disabled={mappingLoading || (!selGrades.length || !selEdus.length || !assignSelSubjects.length) || cannotCreate || cannotUpdate}
                     className={"w-full py-3.5 bg-[#48BFE3] text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-[#1E8B87] transition-colors disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2 " + ((cannotCreate || cannotUpdate) ? "pointer-events-none opacity-40" : "")}
                   >
                     {mappingLoading ? <FileSpreadsheet className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
-                    {editingMappingSubjectId ? "C?p Nh?t C?u H?nh" : "L�u C?u H?nh"}
+                    {editingMappingSubjectId ? "Cập Nhật Cấu Hình" : "Lưu Cấu Hình"}
                   </button>
                 </div>
               </div>
@@ -5024,24 +5024,24 @@ return {
           {/* BOTTOM PANEL: Table of existing configurations */}
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
             <div className="flex justify-between items-center text-xs font-semibold">
-              <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#48BFE3]"/> Danh s�ch C?u h?nh �? l�u</h4>
-              <button onClick={fetchAllMappings} className="text-xs text-[#48BFE3] hover:underline font-bold">L�m m?i</button>
+              <h4 className="font-black text-slate-800 flex items-center gap-2"><Layers className="w-4 h-4 text-[#48BFE3]"/> Danh sách Cấu hình đã lưu</h4>
+              <button onClick={fetchAllMappings} className="text-xs text-[#48BFE3] hover:underline font-bold">Làm mới</button>
             </div>
             
             {allMappingsLoading ? (
-              <div className="p-8 text-center text-slate-450 font-semibold">�ang t?i danh s�ch...</div>
+              <div className="p-8 text-center text-slate-450 font-semibold">Đang tải danh sách...</div>
             ) : allMappings.length === 0 ? (
-              <div className="p-12 text-center text-slate-455 font-semibold">Ch�a c� c?u h?nh m�n kh?o s�t n�o.</div>
+              <div className="p-12 text-center text-slate-455 font-semibold">Chưa có cấu hình môn khảo sát nào.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm border-collapse">
                   <thead className="text-xs font-semibold">
                     <tr>
                       <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest w-16 border border-slate-200">STT</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">M�n Kh?o S�t</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Kh?i �p D?ng</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">H? �p D?ng</th>
-                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24 border border-slate-200">Thao t�c</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Môn Khảo Sát</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Khối Áp Dụng</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest border border-slate-200">Hệ Áp Dụng</th>
+                      <th className="p-2 p-2 text-xs font-black text-slate-400 uppercase tracking-widest text-center w-24 border border-slate-200">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -5079,7 +5079,7 @@ return {
                             </td>
                             <td className="p-2 p-2 border border-slate-200">
                               {allGrades ? (
-                                <span className="font-bold text-[#48BFE3] bg-[#48BFE3]/5 border border-[#48BFE3]/20 px-2.5 py-1 rounded-md text-xs">T?t c? Kh?i</span>
+                                <span className="font-bold text-[#48BFE3] bg-[#48BFE3]/5 border border-[#48BFE3]/20 px-2.5 py-1 rounded-md text-xs">Tất cả Khối</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Array.from(g.grades).sort((a:any, b:any) => parseInt(a) - parseInt(b)).map((grade:any) => (
@@ -5090,7 +5090,7 @@ return {
                             </td>
                             <td className="p-2 p-2 border border-slate-200">
                               {allEdus ? (
-                                <span className="font-bold text-teal-850 text-xs text-xs font-semibold">T?t c? H? h?c</span>
+                                <span className="font-bold text-teal-850 text-xs text-xs font-semibold">Tất cả Hệ học</span>
                               ) : (
                                 <div className="flex flex-wrap gap-1.5">
                                   {Array.from(g.edus).sort().map((edu:any) => (
@@ -5107,17 +5107,17 @@ return {
                                   setAssignSelSubjects([g.subject?.id]);
                                   setEditingMappingSubjectId(g.subject?.id);
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }} className={"p-2 text-slate-400 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Ch?nh s?a (S? n?p l�n form ph�a tr�n)">
+                                }} className={"p-2 text-slate-400 hover:text-[#48BFE3] hover:bg-[#48BFE3]/5 rounded-xl transition-all " + (cannotUpdate ? "pointer-events-none opacity-40" : "")} disabled={cannotUpdate} title="Chỉnh sửa (Sẽ nạp lên form phía trên)">
                                   <Pencil className="w-4 h-4"/>
                                 </button>
                                 <button onClick={async () => {
-                                  if(window.confirm(`X�a to�n b? c?u h?nh c?a m�n ${g.subject?.name}?`)) {
+                                  if(window.confirm(`Xóa toàn bộ cấu hình của môn ${g.subject?.name}?`)) {
                                     for (const id of g.ids) {
                                       await fetch("/api/grade-subject-mappings?id=" + id, { method: "DELETE" });
                                     }
                                     fetchAllMappings();
                                   }
-                                }} className={"p-2 text-slate-400 hover:text-red-655 hover:bg-red-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="X�a to�n b? m�n n�y">
+                                }} className={"p-2 text-slate-400 hover:text-red-655 hover:bg-red-50 rounded-xl transition-all " + (cannotDelete ? "pointer-events-none opacity-40" : "")} disabled={cannotDelete} title="Xóa toàn bộ môn này">
                                   <Trash2 className="w-4 h-4"/>
                                 </button>
                               </div>
@@ -5133,7 +5133,7 @@ return {
           </div>
         </div>
       )}
-      {/* ===== TAB: ADMISSION DOCUMENTS (H? S� NH?P H?C) ===== */}
+      {/* ===== TAB: ADMISSION DOCUMENTS (HỒ SƠ NHẬP HỌC) ===== */}
       {tab === "admission_documents" && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
           {/* Header Card */}
@@ -5147,10 +5147,10 @@ return {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-black text-white tracking-tight">Danh m?c H? s� nh?p h?c</h2>
-                  <span className="px-2.5 py-0.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full text-[10px] font-black uppercase tracking-wider">Kh? A4 Chu?n</span>
+                  <h2 className="text-xl font-black text-white tracking-tight">Danh mục Hồ sơ nhập học</h2>
+                  <span className="px-2.5 py-0.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-full text-[10px] font-black uppercase tracking-wider">Khổ A4 Chuẩn</span>
                 </div>
-                <p className="text-xs text-slate-300 font-medium mt-0.5">C?u h?nh danh s�ch gi?y t? c?n n?p theo t?ng �?i t�?ng tuy?n sinh & hi?n th? tr?c quan b?n in A4</p>
+                <p className="text-xs text-slate-300 font-medium mt-0.5">Cấu hình danh sách giấy tờ cần nộp theo từng đối tượng tuyển sinh & hiển thị trực quan bản in A4</p>
               </div>
             </div>
 
@@ -5158,7 +5158,7 @@ return {
               <button 
                 onClick={() => {
                   setConfirm({
-                    msg: "B?n c� ch?c ch?n mu?n kh�i ph?c danh s�ch h? s� m?u cho �?i t�?ng n�y kh�ng?",
+                    msg: "Bạn có chắc chắn muốn khôi phục danh sách hồ sơ mẫu cho đối tượng này không?",
                     fn: () => {
                       const defaultDocs = selectedDocGroup === "khoi_2_5" ? defaultDocumentsGrade2_5 : selectedDocGroup === "khoi_6" ? defaultDocumentsGrade6 : selectedDocGroup === "khoi_10_noi_tinh" ? defaultDocumentsGrade10NoiTinh : selectedDocGroup === "khoi_10_ngoai_tinh" ? defaultDocumentsGrade10NgoaiTinh : defaultDocumentsGrade1;
                       setDocList(defaultDocs);
@@ -5169,7 +5169,7 @@ return {
                 className="px-4 py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-sm"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-                Kh�i ph?c m?u
+                Khôi phục mẫu
               </button>
               <button 
                 onClick={() => {
@@ -5184,7 +5184,7 @@ return {
                 className="px-4 py-2.5 bg-[#00a884] hover:bg-[#008f70] text-white font-black rounded-xl text-xs transition-all flex items-center gap-2 shadow-md shadow-[#00a884]/20 border border-[#00a884]/30 cursor-pointer active:scale-95"
               >
                 <Plus className="w-4 h-4" />
-                Th�m h? s� m?i
+                Thêm hồ sơ mới
               </button>
             </div>
           </div>
@@ -5197,10 +5197,10 @@ return {
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-teal-500"></span>
-                    Ch?n �?i t�?ng H? s�
+                    Chọn Đối tượng Hồ sơ
                   </label>
                   <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
-                    {docGroups.length} �?i t�?ng
+                    {docGroups.length} đối tượng
                   </span>
                 </div>
 
@@ -5221,7 +5221,7 @@ return {
                   <div className="flex items-center gap-2">
                     <button 
                       onClick={() => {
-                        const newName = prompt("Nh?p t�n �?i t�?ng H? s� m?i:");
+                        const newName = prompt("Nhập tên Đối tượng Hồ sơ mới:");
                         if (newName && newName.trim()) {
                           const newId = "custom_" + Date.now();
                           const updated = [...customDocGroups, { id: newId, label: newName.trim() }];
@@ -5231,10 +5231,10 @@ return {
                         }
                       }}
                       className="flex-1 py-2 px-3 bg-emerald-50/90 hover:bg-emerald-100 text-[#00a884] border border-[#00a884]/30 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-95"
-                      title="Th�m �?i t�?ng m?i"
+                      title="Thêm đối tượng mới"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Th�m �?i t�?ng
+                      Thêm đối tượng
                     </button>
 
                     {selectedDocGroup && (
@@ -5242,7 +5242,7 @@ return {
                         <button 
                           onClick={() => {
                             const current = customDocGroups.find(g => g.id === selectedDocGroup);
-                            const newName = prompt("S?a t�n �?i t�?ng H? s�:", current?.label);
+                            const newName = prompt("Sửa tên Đối tượng Hồ sơ:", current?.label);
                             if (newName && newName.trim()) {
                               const updated = customDocGroups.map(g => g.id === selectedDocGroup ? { ...g, label: newName.trim() } : g);
                               setCustomDocGroups(updated);
@@ -5250,7 +5250,7 @@ return {
                             }
                           }}
                           className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 rounded-xl transition-all shadow-sm cursor-pointer"
-                          title="S?a t�n �?i t�?ng"
+                          title="Sửa tên đối tượng"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -5258,7 +5258,7 @@ return {
                           onClick={() => {
                             const current = customDocGroups.find(g => g.id === selectedDocGroup);
                             setConfirm({
-                              msg: `B?n c� ch?c ch?n mu?n x�a �?i t�?ng "${current?.label}" v� to�n b? h? s� �i k�m?`,
+                              msg: `Bạn có chắc chắn muốn xóa Đối tượng "${current?.label}" và toàn bộ hồ sơ đi kèm?`,
                               fn: () => {
                                 const updated = customDocGroups.filter(g => g.id !== selectedDocGroup);
                                 setCustomDocGroups(updated);
@@ -5269,7 +5269,7 @@ return {
                             });
                           }}
                           className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80 rounded-xl transition-all shadow-sm cursor-pointer"
-                          title="X�a �?i t�?ng"
+                          title="Xóa đối tượng"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -5283,17 +5283,17 @@ return {
               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                    �p d?ng cho �?i t�?ng Tuy?n sinh:
+                    Áp dụng cho Đối tượng Tuyển sinh:
                   </span>
                   <button
                     onClick={() => {
                       localStorage.setItem('admission_doc_targets', JSON.stringify(docGroupTargets));
-                      notify("�? l�u c?u h?nh �p d?ng �?i t�?ng tuy?n sinh th�nh c�ng!");
+                      notify("Đã lưu cấu hình áp dụng đối tượng tuyển sinh thành công!");
                     }}
                     className="px-3 py-1.5 bg-[#00a884] hover:bg-[#008f70] text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-[#00a884]/20 border border-[#00a884]/30 cursor-pointer active:scale-95"
                   >
                     <Check className="w-3 h-3" />
-                    L�u
+                    Lưu
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto pr-1">
@@ -5327,7 +5327,7 @@ return {
                     );
                   })}
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
-                    <span className="text-xs text-slate-400 italic">Ch�a c� �?i t�?ng Tuy?n sinh n�o trong Danh m?c</span>
+                    <span className="text-xs text-slate-400 italic">Chưa có Đối tượng Tuyển sinh nào trong Danh mục</span>
                   )}
                 </div>
               </div>
@@ -5336,12 +5336,12 @@ return {
               <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-5 space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-[11px] font-black uppercase tracking-wider text-slate-500">
-                    �p d?ng cho Kh?i l?p h?c:
+                    Áp dụng cho Khối lớp học:
                   </span>
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => {
-                        const updated = ["Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5"];
+                        const updated = ["Khối 2", "Khối 3", "Khối 4", "Khối 5"];
                         const updatedMappings = { ...docGroupGrades, [selectedDocGroup]: updated };
                         setDocGroupGrades(updatedMappings);
                         localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(updatedMappings));
@@ -5349,23 +5349,23 @@ return {
                       type="button"
                       className="px-2.5 py-1 bg-teal-50/90 hover:bg-teal-100 text-[#00a884] border border-[#00a884]/30 rounded-lg text-[10px] font-black transition-all cursor-pointer active:scale-95"
                     >
-                      Ch?n nhanh 2,3,4,5
+                      Chọn nhanh 2,3,4,5
                     </button>
                     <button
                       onClick={() => {
                         localStorage.setItem('admission_doc_grades_mapping', JSON.stringify(docGroupGrades));
-                        notify("�? l�u c?u h?nh �p d?ng kh?i l?p th�nh c�ng!");
+                        notify("Đã lưu cấu hình áp dụng khối lớp thành công!");
                       }}
                       type="button"
                       className="px-3 py-1.5 bg-[#00a884] hover:bg-[#008f70] text-white rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md shadow-[#00a884]/20 border border-[#00a884]/30 cursor-pointer active:scale-95"
                     >
                       <Check className="w-3 h-3" />
-                      L�u
+                      Lưu
                     </button>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 max-h-[140px] overflow-y-auto pr-1">
-                  {["Kh?i 1", "Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5", "Kh?i 6", "Kh?i 7", "Kh?i 8", "Kh?i 9", "Kh?i 10", "Kh?i 11", "Kh?i 12"].map(g => {
+                  {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                     const isChecked = (docGroupGrades[selectedDocGroup] || []).includes(g);
                     return (
                       <label key={g} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-all select-none ${
@@ -5402,14 +5402,14 @@ return {
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
                     <ClipboardList className="w-4 h-4 text-teal-600" />
-                    Danh s�ch H? s� ({filteredDocList.length})
+                    Danh sách Hồ sơ ({filteredDocList.length})
                   </span>
                 </div>
 
                 {filteredDocList.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                     <Tag className="w-8 h-8 text-slate-300 mb-2" />
-                    <p className="font-bold text-xs text-slate-400">Ch�a c?u h?nh h? s� n�o cho �?i t�?ng n�y</p>
+                    <p className="font-bold text-xs text-slate-400">Chưa cấu hình hồ sơ nào cho đối tượng này</p>
                   </div>
                 ) : (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm">
@@ -5417,9 +5417,9 @@ return {
                       <thead>
                         <tr className="bg-slate-100/90 text-slate-700 font-black text-[11px] uppercase tracking-wider border-b border-slate-200">
                           <th className="py-2.5 px-3 text-center w-12 border-r border-slate-200">TT</th>
-                          <th className="py-2.5 px-3 border-r border-slate-200">T�n H? s�</th>
+                          <th className="py-2.5 px-3 border-r border-slate-200">Tên Hồ sơ</th>
                           <th className="py-2.5 px-3 text-center w-16 border-r border-slate-200">SL</th>
-                          <th className="py-2.5 px-3 text-center w-20">Thao t�c</th>
+                          <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 bg-white">
@@ -5447,14 +5447,14 @@ return {
                                     setIsDocModalOpen(true);
                                   }}
                                   className="p-1.5 hover:bg-teal-50 text-teal-600 rounded-lg transition-colors cursor-pointer"
-                                  title="S?a h? s�"
+                                  title="Sửa hồ sơ"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button 
                                   onClick={() => {
                                     setConfirm({
-                                      msg: "B?n c� ch?c ch?n mu?n x�a h? s� n�y kh�ng?",
+                                      msg: "Bạn có chắc chắn muốn xóa hồ sơ này không?",
                                       fn: () => {
                                         const updated = docList.filter(d => d.id !== item.id);
                                         setDocList(updated);
@@ -5463,7 +5463,7 @@ return {
                                     });
                                   }}
                                   className="p-1.5 hover:bg-rose-50 text-rose-600 rounded-lg transition-colors cursor-pointer"
-                                  title="X�a h? s�"
+                                  title="Xóa hồ sơ"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -5484,11 +5484,11 @@ return {
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
                   <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                    Khung Xem tr�?c thi?t k? A4 th?c t?
+                    Khung Xem trước thiết kế A4 thực tế
                   </span>
                 </div>
                 <span className="px-3 py-1 bg-white text-slate-600 rounded-full border border-slate-200 text-[10px] font-bold shadow-xs">
-                  Kh? A4 (210 � 297 mm) � T? l? in 100%
+                  Khổ A4 (210 × 297 mm) • Tỷ lệ in 100%
                 </span>
               </div>
 
@@ -5521,14 +5521,14 @@ return {
                         <span className="text-xs font-black tracking-tight text-teal-700 uppercase">SKY-LINE</span>
                       )}
                       <h4 className="font-extrabold text-[10px] sm:text-xs uppercase tracking-wider text-slate-900" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        TR�?NG TH, THCS, THPT SKY-LINE
+                        TRƯỜNG TH, THCS, THPT SKY-LINE
                       </h4>
                     </div>
 
                     {/* Title */}
                     <div className="text-center my-5">
                       <h2 className="text-sm sm:text-base font-black tracking-widest text-slate-900 uppercase" style={{ fontFamily: '"Open Sans", sans-serif' }}>
-                        DANH M?C H? S� NH?P H?C
+                        DANH MỤC HỒ SƠ NHẬP HỌC
                       </h2>
                       <div className="w-12 h-0.5 bg-teal-600 mx-auto mt-1.5 rounded-full" />
                     </div>
@@ -5539,8 +5539,8 @@ return {
                         <thead>
                           <tr className="bg-[#0f766e] text-white font-bold uppercase tracking-wider">
                             <th className="px-3 py-2.5 border-r border-teal-800 text-center w-12">STT</th>
-                            <th className="px-4 py-2.5 border-r border-teal-800 text-left">T�n h? s� gi?y t?</th>
-                            <th className="px-3 py-2.5 text-center w-20">S? l�?ng</th>
+                            <th className="px-4 py-2.5 border-r border-teal-800 text-left">Tên hồ sơ giấy tờ</th>
+                            <th className="px-3 py-2.5 text-center w-20">Số lượng</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200 bg-white">
@@ -5553,7 +5553,7 @@ return {
                           ))}
                           {filteredDocList.length === 0 && (
                             <tr>
-                              <td colSpan={3} className="text-center py-6 text-slate-400 italic">Ch�a c?u h?nh h? s� n�o cho �?i t�?ng n�y</td>
+                              <td colSpan={3} className="text-center py-6 text-slate-400 italic">Chưa cấu hình hồ sơ nào cho đối tượng này</td>
                             </tr>
                           )}
                         </tbody>
@@ -5562,7 +5562,7 @@ return {
 
                     {/* Modern Callout Note Box */}
                     <div className="mt-5 p-3 bg-teal-50/80 border-l-4 border-teal-600 rounded-r-xl font-medium text-[10px] sm:text-xs text-teal-900 leading-relaxed shadow-2xs">
-                      * Qu? ph? huynh vui l?ng b? sung h? s� thi?u (n?u c�) trong v?ng 10 ng�y k? t? ng�y n?p H? s�.
+                      * Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
                     </div>
                   </div>
 
@@ -5573,7 +5573,7 @@ return {
                     </div>
                   ) : (
                     <div className="border-t border-teal-600/30 pt-2 text-[8px] text-slate-400 text-center font-medium">
-                      <p className="font-bold">www.skylineschool.edu.vn � Hotline: (+84.236) 378 7777</p>
+                      <p className="font-bold">www.skylineschool.edu.vn • Hotline: (+84.236) 378 7777</p>
                     </div>
                   )}
                 </div>
@@ -5583,7 +5583,7 @@ return {
         </div>
       )}
 
-      {/* ===== DOCUMENT MODAL (FORM TH�M/S?A H? S�) ===== */}
+      {/* ===== DOCUMENT MODAL (FORM THÊM/SỬA HỒ SƠ) ===== */}
       {isDocModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
@@ -5593,8 +5593,8 @@ return {
                   <Tag className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-800">{editingDoc ? "C?p nh?t H? s�" : "Th�m H? s� M?i"}</h3>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">�?i t�?ng: {selectedDocGroup === "khoi_1" ? "Kh?i 1" : selectedDocGroup === "khoi_2_5" ? "Kh?i 2 �?n 5" : selectedDocGroup === "khoi_6" ? "Kh?i 6" : selectedDocGroup === "khoi_7_9" ? "Kh?i 7 �?n 9" : selectedDocGroup === "khoi_10" ? "Kh?i 10" : selectedDocGroup === "khoi_11_12" ? "Kh?i 11 �?n 12" : "�?i t�?ng Tuy?n sinh"}</p>
+                  <h3 className="text-base font-black text-slate-800">{editingDoc ? "Cập nhật Hồ sơ" : "Thêm Hồ sơ Mới"}</h3>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Đối tượng: {selectedDocGroup === "khoi_1" ? "Khối 1" : selectedDocGroup === "khoi_2_5" ? "Khối 2 đến 5" : selectedDocGroup === "khoi_6" ? "Khối 6" : selectedDocGroup === "khoi_7_9" ? "Khối 7 đến 9" : selectedDocGroup === "khoi_10" ? "Khối 10" : selectedDocGroup === "khoi_11_12" ? "Khối 11 đến 12" : "Đối tượng Tuyển sinh"}</p>
                 </div>
               </div>
               <button onClick={() => setIsDocModalOpen(false)} className="w-8 h-8 rounded-xl bg-slate-200/50 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition-colors">
@@ -5604,42 +5604,42 @@ return {
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">T�n H? s� y�u c?u <span className="text-rose-500">*</span></label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Tên Hồ sơ yêu cầu <span className="text-rose-500">*</span></label>
                 <input 
                   type="text" 
                   value={docFormName} 
                   onChange={(e) => setDocFormName(e.target.value)} 
-                  placeholder="V� d?: ��n ��ng k? nh?p h?c" 
+                  placeholder="Ví dụ: Đơn đăng ký nhập học" 
                   className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">S? l�?ng</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Số lượng</label>
                   <input 
                     type="text" 
                     value={docFormQty} 
                     onChange={(e) => setDocFormQty(e.target.value)} 
-                    placeholder="V� d?: 01 b?n" 
+                    placeholder="Ví dụ: 01 bản" 
                     className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Ghi ch�</label>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Ghi chú</label>
                   <input 
                     type="text" 
                     value={docFormNote} 
                     onChange={(e) => setDocFormNote(e.target.value)} 
-                    placeholder="V� d?: B?n sao y" 
+                    placeholder="Ví dụ: Bản sao y" 
                     className="w-full text-sm font-bold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white transition-all animate-none text-xs font-semibold"
                   />
                 </div>
               </div>
               <div className="pt-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">�p d?ng cho Kh?i l?p h?c</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Khối lớp học</label>
                 <div className="flex flex-wrap gap-2 mb-3">
-                  {["Kh?i 1", "Kh?i 2", "Kh?i 3", "Kh?i 4", "Kh?i 5", "Kh?i 6", "Kh?i 7", "Kh?i 8", "Kh?i 9", "Kh?i 10", "Kh?i 11", "Kh?i 12"].map(g => {
+                  {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5", "Khối 6", "Khối 7", "Khối 8", "Khối 9", "Khối 10", "Khối 11", "Khối 12"].map(g => {
                     const isChecked = docFormSelectedGrades.includes(g);
                     return (
                       <label key={g} className="flex items-center gap-1 hover:bg-emerald-50/50 cursor-pointer select-none transition-colors text-xs font-semibold">
@@ -5649,7 +5649,7 @@ return {
                     );
                   })}
                 </div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">�p d?ng cho �?i t�?ng Tuy?n sinh</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2 ml-1">Áp dụng cho Đối tượng Tuyển sinh</label>
                 <div className="flex flex-wrap gap-2">
                   {configs.filter(c => c.categoryType === "DOI_TUONG_TS").map(c => {
                     const isChecked = docFormSelectedTargets.includes(c.name);
@@ -5680,12 +5680,12 @@ return {
                 onClick={() => setIsDocModalOpen(false)} 
                 className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-600 rounded-xl text-xs font-black transition-colors"
               >
-                H?y b?
+                Hủy bỏ
               </button>
               <button 
                 onClick={() => {
                   if (!docFormName.trim()) {
-                    notify("Vui l?ng nh?p t�n h? s�!", "err");
+                    notify("Vui lòng nhập tên hồ sơ!", "err");
                     return;
                   }
                   
@@ -5703,7 +5703,7 @@ return {
                 }} 
                 className="hover:bg-indigo-700 text-white text-xs font-black transition-colors shadow-lg shadow-indigo-100 text-xs font-semibold"
               >
-                L�u h? s�
+                Lưu hồ sơ
               </button>
             </div>
           </div>
@@ -5723,14 +5723,14 @@ return {
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${reportsSubTab === "stats" ? "bg-white text-indigo-600 shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
               >
                 <BarChart3 className="w-3.5 h-3.5 text-indigo-500"/>
-                Th?ng k� t?ng quan
+                Thống kê tổng quan
               </button>
               <button
                 onClick={() => setReportsSubTab("results")}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-tight transition-all duration-300 ${reportsSubTab === "results" ? "bg-white text-indigo-600 shadow-sm scale-[1.02]" : "text-slate-500 hover:text-slate-800"}`}
               >
                 <Users className="w-3.5 h-3.5 text-indigo-500"/>
-                K?t qu? chi ti?t m�n h?c
+                Kết quả chi tiết môn học
               </button>
             </div>
             <div className="flex-1 flex justify-end w-full md:w-auto"></div>
@@ -5740,7 +5740,7 @@ return {
           <div className={`bg-white/80 backdrop-blur-md p-6 rounded-3xl shadow-sm border border-slate-200/60 grid grid-cols-1 ${reportsSubTab === "stats" ? "md:grid-cols-2" : "md:grid-cols-3"} gap-6`}>
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                <Calendar className="w-3.5 h-3.5 text-indigo-500"/> K? Kh?o s�t
+                <Calendar className="w-3.5 h-3.5 text-indigo-500"/> Kỳ Khảo sát
               </label>
               <div className="relative">
                 <select 
@@ -5755,7 +5755,7 @@ return {
                   {visiblePeriods.map(p => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
-                  {periods.length === 0 && <option value="">Kh�ng c� k? KS n�o</option>}
+                  {periods.length === 0 && <option value="">Không có kỳ KS nào</option>}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -5765,7 +5765,7 @@ return {
 
             <div className="group">
               <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                <Layers className="w-3.5 h-3.5 text-indigo-500"/> �?t kh?o s�t
+                <Layers className="w-3.5 h-3.5 text-indigo-500"/> Đợt khảo sát
               </label>
               <div className="relative">
                 <select 
@@ -5776,7 +5776,7 @@ return {
                   }}
                   className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                 >
-                  <option value="all">T?t c? c�c �?t</option>
+                  <option value="all">Tất cả các đợt</option>
                   {reportBatches.map(b => (
                     <option key={b.id} value={b.id}>{b.name}</option>
                   ))}
@@ -5790,7 +5790,7 @@ return {
             {reportsSubTab === "results" && (
               <div className="group">
                 <label className="block text-xs font-bold tracking-widest uppercase mb-2 text-indigo-900/70 flex items-center gap-2 ml-1">
-                  <Users className="w-3.5 h-3.5 text-indigo-500"/> Ch?n H?c sinh ({filteredReportStudents.length})
+                  <Users className="w-3.5 h-3.5 text-indigo-500"/> Chọn Học sinh ({filteredReportStudents.length})
                 </label>
                 <div className="relative">
                   <select 
@@ -5799,9 +5799,9 @@ return {
                     className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-10 py-3.5 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 appearance-none font-semibold text-slate-700 shadow-sm transition-all group-hover:shadow-md cursor-pointer"
                   >
                     {filteredReportStudents.map(s => (
-                      <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""} {s.admissionResult ? `[? �? duy?t: ${s.admissionResult}]` : "[? Ch�a duy?t]"}</option>
+                      <option key={s.id} value={s.id}>{s.studentCode} - {s.fullName} {s.className ? `(${s.className})` : ""} {s.admissionResult ? `[✓ Đã duyệt: ${s.admissionResult}]` : "[⏳ Chưa duyệt]"}</option>
                     ))}
-                    {filteredReportStudents.length === 0 && <option value="">Kh�ng c� h?c sinh n�o</option>}
+                    {filteredReportStudents.length === 0 && <option value="">Không có học sinh nào</option>}
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400 group-hover:text-indigo-500 transition-colors">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path></svg>
@@ -5818,26 +5818,26 @@ return {
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
             {/* KPI Cards Grid */}
             <div className="xl:col-span-4 grid grid-cols-2 gap-4">
-              {/* Card 1: T?ng H?c sinh */}
+              {/* Card 1: Tổng Học sinh */}
               <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/50 p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between group hover:border-indigo-300 hover:shadow-lg hover:shadow-indigo-50/30 transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-450">T?ng H?c sinh</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-450">Tổng Học sinh</span>
                   <div className="p-2.5 text-indigo-600 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-indigo-100 text-xs font-semibold">
                     <Users className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1 mt-4 z-10">
                   <span className="text-3xl font-black text-slate-800 group-hover:text-indigo-600 transition-colors">{overallKPIs.total}</span>
-                  <span className="text-xs text-slate-450 font-bold">h?c sinh</span>
+                  <span className="text-xs text-slate-450 font-bold">học sinh</span>
                 </div>
               </div>
 
-              {/* Card 2: �? x�t duy?t */}
+              {/* Card 2: Đã xét duyệt */}
               <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/50 p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col justify-between group hover:border-violet-300 hover:shadow-lg hover:shadow-violet-50/30 transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">�? x�t duy?t</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">Đã xét duyệt</span>
                   <div className="p-2.5 text-violet-600 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-violet-100 text-xs font-semibold">
                     <CheckCircle2 className="w-5 h-5" />
                   </div>
@@ -5848,33 +5848,33 @@ return {
                 </div>
               </div>
 
-              {/* Card 3: T?ng �?t */}
+              {/* Card 3: Tổng Đạt */}
               <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50/35 to-emerald-50/10 p-6 rounded-[2rem] border border-emerald-100 shadow-sm flex flex-col justify-between group hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-50/30 transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">T?ng �?t</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Tổng Đạt</span>
                   <div className="p-2.5 text-emerald-700 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-emerald-100 text-xs font-semibold">
                     <GraduationCap className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1 mt-4 z-10">
                   <span className="text-3xl font-black text-emerald-700">{overallKPIs.passed}</span>
-                  <span className="text-xs text-emerald-600 font-bold">�?t KS</span>
+                  <span className="text-xs text-emerald-600 font-bold">đạt KS</span>
                 </div>
               </div>
 
-              {/* Card 4: �?t Cam k?t */}
+              {/* Card 4: Đạt Cam kết */}
               <div className="relative overflow-hidden bg-gradient-to-br from-amber-50/35 to-amber-50/10 p-6 rounded-[2rem] border border-amber-100 shadow-sm flex flex-col justify-between group hover:border-amber-300 hover:shadow-lg hover:shadow-amber-50/30 transition-all duration-300">
                 <div className="absolute top-0 right-0 w-24 h-24 -mt-8 -mr-8 mix-blend-multiply filter blur-xl opacity-70 group-hover:scale-110 transition-transform duration-300 text-xs font-semibold"></div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">�?t Cam k?t</span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Đạt Cam kết</span>
                   <div className="p-2.5 text-amber-700 group-hover:scale-115 transition-all duration-300 shadow-sm shadow-amber-100 text-xs font-semibold">
                     <ClipboardCheck className="w-5 h-5" />
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1 mt-4 z-10">
                   <span className="text-3xl font-black text-amber-700">{overallKPIs.committed}</span>
-                  <span className="text-xs text-amber-600 font-bold">cam k?t</span>
+                  <span className="text-xs text-amber-600 font-bold">cam kết</span>
                 </div>
               </div>
             </div>
@@ -5887,22 +5887,22 @@ return {
                     <span className="animate-ping absolute inline-flex h-full w-full opacity-75 text-xs font-semibold"></span>
                     <span className="relative inline-flex h-2.5 w-2.5 text-xs font-semibold"></span>
                   </span>
-                  S? li?u ph�n theo C� s? tuy?n sinh
+                  Số liệu phân theo Cơ sở tuyển sinh
                 </h4>
-                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-wider text-xs font-semibold">Chi ti?t c�c c� s?</span>
+                <span className="text-[9px] font-black text-indigo-600 uppercase tracking-wider text-xs font-semibold">Chi tiết các cơ sở</span>
               </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full text-left whitespace-nowrap table-auto border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100/50">
-                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 p-2 border border-slate-200">C� s?</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">T?ng HS</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest p-2 border border-slate-200">�?t</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest p-2 border border-slate-200">Cam k?t</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest p-2 border border-slate-200">Kh�ng �?t</th>
-                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Ch�a Duy?t</th>
-                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">T? l? duy?t</th>
+                      <th className="pb-3.5 text-[9px] font-black text-slate-400 uppercase tracking-widest pl-2 p-2 border border-slate-200">Cơ sở</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Tổng HS</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-emerald-500 uppercase tracking-widest p-2 border border-slate-200">Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-amber-500 uppercase tracking-widest p-2 border border-slate-200">Cam kết</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-rose-500 uppercase tracking-widest p-2 border border-slate-200">Không Đạt</th>
+                      <th className="pb-3.5 text-center text-[9px] font-black text-slate-400 uppercase tracking-widest p-2 border border-slate-200">Chưa Duyệt</th>
+                      <th className="pb-3.5 text-right text-[9px] font-black text-slate-400 uppercase tracking-widest pr-2 p-2 border border-slate-200">Tỷ lệ duyệt</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -5913,7 +5913,7 @@ return {
                           <td className="p-2 pl-2 border border-slate-200">
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 flex items-center justify-center group-hover/row:bg-white group-hover/row:border-indigo-100 transition-all duration-200 text-xs font-semibold">
-                                <span className="text-[10px] font-black text-slate-500 group-hover/row:text-indigo-600">{stat.campusName?.replace("C� s? ", "CS")}</span>
+                                <span className="text-[10px] font-black text-slate-500 group-hover/row:text-indigo-600">{stat.campusName?.replace("Cơ sở ", "CS")}</span>
                               </div>
                               <span className="text-sm font-black text-slate-700 group-hover/row:text-indigo-600 transition-colors">{stat.campusName}</span>
                             </div>
@@ -5925,28 +5925,28 @@ return {
                             {stat.passed > 0 ? (
                               <span className="font-black text-emerald-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.passed}</span>
                             ) : (
-                              <span className="text-slate-300 font-bold text-xs">�</span>
+                              <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
                           <td className="p-2 text-center border border-slate-200">
                             {stat.committed > 0 ? (
                               <span className="font-black text-amber-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.committed}</span>
                             ) : (
-                              <span className="text-slate-300 font-bold text-xs">�</span>
+                              <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
                           <td className="p-2 text-center border border-slate-200">
                             {stat.failed > 0 ? (
                               <span className="font-black text-rose-700 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.failed}</span>
                             ) : (
-                              <span className="text-slate-300 font-bold text-xs">�</span>
+                              <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
                           <td className="p-2 text-center border border-slate-200">
                             {stat.pending > 0 ? (
                               <span className="font-black text-slate-500 text-xs inline-block min-w-[32px] text-xs font-semibold">{stat.pending}</span>
                             ) : (
-                              <span className="text-slate-300 font-bold text-xs">�</span>
+                              <span className="text-slate-300 font-bold text-xs">—</span>
                             )}
                           </td>
                           <td className="p-2 text-right pr-2 border border-slate-200">
@@ -5962,7 +5962,7 @@ return {
                     })}
                     {campusStats.length === 0 && (
                       <tr>
-                        <td colSpan={7} className="p-2 text-center text-xs font-bold text-slate-400 uppercase border border-slate-200">Kh�ng c� d? li?u c� s?</td>
+                        <td colSpan={7} className="p-2 text-center text-xs font-bold text-slate-400 uppercase border border-slate-200">Không có dữ liệu cơ sở</td>
                       </tr>
                     )}
                   </tbody>
@@ -5977,11 +5977,11 @@ return {
           {reportLoading ? (
             <div className="p-20 text-center">
               <Loader2 className="w-10 h-10 text-indigo-500 animate-spin mx-auto mb-4 opacity-50"/>
-              <p className="font-bold text-slate-400">�ang t?i k?t qu?...</p>
+              <p className="font-bold text-slate-400">Đang tải kết quả...</p>
             </div>
           ) : !selectedReportStudent ? (
             <div className="bg-white border border-slate-200 rounded-[2rem] p-12 text-center text-slate-400">
-              Ch�a c� d? li?u h?c sinh trong k?/�?t kh?o s�t �? ch?n.
+              Chưa có dữ liệu học sinh trong kỳ/đợt khảo sát đã chọn.
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -6001,38 +6001,38 @@ return {
 
                   <div className="py-5 border-t border-slate-100 mt-4 grid grid-cols-2 gap-x-3 gap-y-4 text-sm">
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Ng�y sinh</span>
-                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "�"}</span>
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Ngày sinh</span>
+                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.dateOfBirth ? new Date(selectedReportStudent.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Gi?i t�nh</span>
-                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "N?" ? "N?" : selectedReportStudent.gender || "�"}</span>
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Giới tính</span>
+                      <span className="font-bold text-slate-800 text-[13px]">{selectedReportStudent.gender === "M" || selectedReportStudent.gender === "Nam" ? "Nam" : selectedReportStudent.gender === "F" || selectedReportStudent.gender === "Nữ" ? "Nữ" : selectedReportStudent.gender || "—"}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Kh?i h?c</span>
-                      <span className="font-black text-slate-900 text-sm">K{selectedReportStudent.grade || "�"}</span>
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Khối học</span>
+                      <span className="font-black text-slate-900 text-sm">K{selectedReportStudent.grade || "—"}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">�?i t�?ng TS</span>
-                      <span className="font-bold text-slate-800 text-[13px] truncate" title={selectedReportStudent.targetType}>{selectedReportStudent.targetType || "�"}</span>
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Đối tượng TS</span>
+                      <span className="font-bold text-slate-800 text-[13px] truncate" title={selectedReportStudent.targetType}>{selectedReportStudent.targetType || "—"}</span>
                     </div>
                     
                     <div className="col-span-2 h-px bg-slate-100/50 my-0.5"></div>
                     
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">H? Kh?o s�t</span>
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Hệ Khảo sát</span>
                       <div>
-                        <span className="font-black text-amber-700 text-[11px] inline-block text-xs font-semibold">{selectedReportStudent.surveyFormType || "�"}</span>
+                        <span className="font-black text-amber-700 text-[11px] inline-block text-xs font-semibold">{selectedReportStudent.surveyFormType || "—"}</span>
                       </div>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Di?n Kh?o s�t</span>
-                      <span className="font-bold text-slate-700 text-[13px]">{selectedReportStudent.admissionCriteria || "�"}</span>
+                      <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest mb-0.5">Diện Khảo sát</span>
+                      <span className="font-bold text-slate-700 text-[13px]">{selectedReportStudent.admissionCriteria || "—"}</span>
                     </div>
 
                     <div className="col-span-2 p-3 space-y-2 mt-1 text-xs font-semibold">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 font-black uppercase text-[9px] tracking-widest">Tr?ng th�i duy?t</span>
+                        <span className="text-slate-500 font-black uppercase text-[9px] tracking-widest">Trạng thái duyệt</span>
                         {selectedReportStudent.admissionResult ? (
                           <span className="font-black text-emerald-700 text-[10px] flex items-center gap-1 shadow-sm shadow-emerald-100/50 animate-fade-in text-xs font-semibold">
                             <span className="w-1 h-1 animate-pulse text-xs font-semibold"></span>
@@ -6040,19 +6040,19 @@ return {
                           </span>
                         ) : (
                           <span className="font-black text-slate-500 bg-white px-2 py-0.5 rounded-xl border border-slate-200 text-[10px]">
-                            Ch�a duy?t
+                            Chưa duyệt
                           </span>
                         )}
                       </div>
                       {selectedReportStudent.signatureName && (
                         <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[12px]">
-                          <span className="text-slate-400 font-bold">Ng�?i k?:</span>
+                          <span className="text-slate-400 font-bold">Người ký:</span>
                           <span className="font-bold text-slate-700">{selectedReportStudent.signatureName}</span>
                         </div>
                       )}
                       {selectedReportStudent.admissionResult && selectedReportStudent.updatedAt && (
                         <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 text-[12px]">
-                          <span className="text-slate-400 font-bold">Ng�y ph� duy?t:</span>
+                          <span className="text-slate-400 font-bold">Ngày phê duyệt:</span>
                           <span className="font-bold text-slate-700">{new Date(selectedReportStudent.updatedAt).toLocaleDateString("vi-VN")}</span>
                         </div>
                       )}
@@ -6065,16 +6065,16 @@ return {
                   <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
                     <span className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-emerald-500"/>
-                      X�t duy?t Tuy?n sinh
+                      Xét duyệt Tuyển sinh
                     </span>
                     {selectedReportStudent.admissionResult ? (
                       <span className="text-[10px] font-black text-emerald-700 uppercase tracking-wider flex items-center gap-1 shadow-sm text-xs font-semibold">
                         <span className="w-1.5 h-1.5 animate-pulse text-xs font-semibold"></span>
-                        �? duy?t ({selectedReportStudent.admissionResult})
+                        Đã duyệt ({selectedReportStudent.admissionResult})
                       </span>
                     ) : (
                       <span className="px-2.5 py-1 text-[10px] font-black bg-slate-100 text-slate-500 rounded-full border border-slate-200 uppercase tracking-wider">
-                        Ch�a duy?t
+                        Chưa duyệt
                       </span>
                     )}
                   </h4>
@@ -6083,30 +6083,30 @@ return {
                     <div className="text-rose-600 p-3.5 text-xs font-semibold flex items-center gap-2 animate-pulse mb-2 text-xs font-semibold">
                       <AlertCircle className="w-4 h-4 flex-shrink-0"/>
                       {selectedReportStudent?.batch?.status === "LOCKED" || selectedReportStudent?.batch?.status === "CLOSED" ? 
-                        "�?t kh?o s�t �? B? KH�A. Gi�o vi�n v� G�CS kh�ng th? �i?u ch?nh k?t qu?!" : 
-                        "B?n kh�ng c� quy?n x�t duy?t k?t qu? cho c� s? n�y."}
+                        "Đợt khảo sát đã BỊ KHÓA. Giáo viên và GĐCS không thể điều chỉnh kết quả!" : 
+                        "Bạn không có quyền xét duyệt kết quả cho cơ sở này."}
                     </div>
                   )}
 
-                  <Field label="K?t qu? X�t tuy?n">
+                  <Field label="Kết quả Xét tuyển">
                     <select 
                       value={reportForm.admissionResult} 
                       onChange={e => setReportForm(f => ({ ...f, admissionResult: e.target.value }))}
                       className={inp}
                       disabled={!canApprove}
                     >
-                      <option value="">-- Ch�a x�t duy?t --</option>
-                      <option value="�?t">�?t</option>
-                      <option value="Kh�ng �?t">Kh�ng �?t</option>
-                      <option value="Kh�ng �?t - Ki?m tra l?i">Kh�ng �?t - Ki?m tra l?i</option>
-                      <option value="Kh�ng �?t - Kh�ng ki?m tra l?i">Kh�ng �?t - Kh�ng ki?m tra l?i</option>
-                      <option value="�?t cam k?t">�?t cam k?t</option>
-                      <option value="H?c th?">H?c th?</option>
+                      <option value="">-- Chưa xét duyệt --</option>
+                      <option value="Đạt">Đạt</option>
+                      <option value="Không đạt">Không đạt</option>
+                      <option value="Không đạt - Kiểm tra lại">Không đạt - Kiểm tra lại</option>
+                      <option value="Không đạt - Không kiểm tra lại">Không đạt - Không kiểm tra lại</option>
+                      <option value="Đạt cam kết">Đạt cam kết</option>
+                      <option value="Học thử">Học thử</option>
                     </select>
                   </Field>
 
-                  {reportForm.admissionResult === "�?t cam k?t" && (
-                    <Field label="M�n Cam K?t">
+                  {reportForm.admissionResult === "Đạt cam kết" && (
+                    <Field label="Môn Cam Kết">
                       <div className="grid grid-cols-2 gap-2 p-4 max-h-48 overflow-y-auto text-xs font-semibold">
                         {initialSubjects.map(sub => {
                           const isChecked = reportForm.committedSubjects.includes(sub.name);
@@ -6134,8 +6134,8 @@ return {
                     </Field>
                   )}
 
-                  {reportForm.admissionResult === "Kh�ng �?t - Ki?m tra l?i" && (
-                    <Field label="M�n Ki?m tra l?i">
+                  {reportForm.admissionResult === "Không đạt - Kiểm tra lại" && (
+                    <Field label="Môn Kiểm tra lại">
                       <div className="grid grid-cols-2 gap-2 p-4 max-h-48 overflow-y-auto text-xs font-semibold">
                         {initialSubjects.map(sub => {
                           const isChecked = reportForm.committedSubjects.includes(sub.name);
@@ -6163,15 +6163,15 @@ return {
                     </Field>
                   )}
 
-                  {!(["GDCS", "G�_CS", "GIAO_VU_CS", "G�CS"].includes((currentUser?.role || "").toUpperCase())) && (
+                  {!(["GDCS", "GĐ_CS", "GIAO_VU_CS", "GĐCS"].includes((currentUser?.role || "").toUpperCase())) && (
                     <>
                       
 
-                      <Field label="Ng�?i duy?t / Ph� duy?t">
+                      <Field label="Người duyệt / Phê duyệt">
                         {selectedReportStudent.admissionResult ? (
                           <div className="text-sm font-black text-slate-700 flex items-center gap-2.5 shadow-sm select-none transition-all text-xs font-semibold">
                             <UserCheck className="w-4 h-4 text-indigo-500" />
-                            {reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || "H? th?ng ghi nh?n"}
+                            {reportForm.signatureName || selectedReportStudent.signatureName || autoCampusDirectorName || "Hệ thống ghi nhận"}
                           </div>
                         ) : (
                           <select 
@@ -6180,7 +6180,7 @@ return {
                             className={inp}
                             disabled={!canApprove}
                           >
-                            <option value="">-- Ch?n ng�?i ph� duy?t --</option>
+                            <option value="">-- Chọn người phê duyệt --</option>
                             {gdcsUsers.map(u => (
                               <option key={u.id} value={u.fullName || u.email}>{u.fullName || u.email}</option>
                             ))}
@@ -6190,12 +6190,12 @@ return {
                     </>
                   )}
 
-                  <Field label="? ki?n / Ghi ch� H?i �?ng">
+                  <Field label="Ý kiến / Ghi chú Hội đồng">
                     <textarea 
                       value={reportForm.directorNote}
                       onChange={e => setReportForm(f => ({ ...f, directorNote: e.target.value }))}
                       className={`${inp} h-24 resize-none`}
-                      placeholder="Nh?p ? ki?n ho?c l? do..."
+                      placeholder="Nhập ý kiến hoặc lý do..."
                       disabled={!canApprove}
                     />
                   </Field>
@@ -6206,7 +6206,7 @@ return {
                     className="w-full hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-indigo-100 disabled:opacity-50 transition-all flex justify-center items-center gap-2 text-xs font-semibold"
                   >
                     {saveReportLoading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Check className="w-4 h-4"/>}
-                    L�u k?t qu? t?ng h?p
+                    Lưu kết quả tổng hợp
                   </button>
 
                   {!selectedReportStudent.admissionResult && (
@@ -6216,7 +6216,7 @@ return {
                       className="w-full mt-3 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-orange-100 hover:shadow-orange-200 active:scale-[0.98] disabled:opacity-50 disabled:scale-100 transition-all flex justify-center items-center gap-2"
                     >
                       {sendingApproval ? <Loader2 className="w-4 h-4 animate-spin"/> : <Mail className="w-4 h-4"/>}
-                      G?i y�u c?u Ph� duy?t �?n G�CS
+                      Gửi yêu cầu Phê duyệt đến GĐCS
                     </button>
                   )}
                 </div>
@@ -6227,10 +6227,10 @@ return {
                     <h4 className="font-black text-slate-800 text-sm flex items-center justify-between border-b pb-3 mb-2">
                       <span className="flex items-center gap-2">
                         <RefreshCw className="w-4 h-4 text-indigo-500 animate-spin-slow shrink-0" />
-                        L?ch s? Kh?o s�t & Thi l?i
+                        Lịch sử Khảo sát & Thi lại
                       </span>
                       <span className="text-[10px] font-black text-indigo-700 shrink-0 shadow-sm text-xs font-semibold">
-                        {retestHistory.length} �?t thi
+                        {retestHistory.length} Đợt thi
                       </span>
                     </h4>
                     
@@ -6239,10 +6239,10 @@ return {
                         const isCurrent = selectedReportStudent && hist?.id === selectedReportStudent.id;
                         let sNote = hist?.directorNote || "";
                         let retestMuns = [];
-                        const matchRetest = sNote.match(/^M�n (?:ki?m tra l?i|cam k?t): \[(.*?)\](?:\r?\n\r?\n)?/);
+                        const matchRetest = sNote.match(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/);
                         if (matchRetest && matchRetest[1]) {
                           retestMuns = matchRetest[1].split(", ");
-                          sNote = sNote.replace(/^M�n (?:ki?m tra l?i|cam k?t): \[(.*?)\](?:\r?\n\r?\n)?/, "");
+                          sNote = sNote.replace(/^Môn (?:kiểm tra lại|cam kết): \[(.*?)\](?:\r?\n\r?\n)?/, "");
                         }
 
                         const parsedScores = Array.isArray(hist?.scores) ? hist.scores : [];
@@ -6259,41 +6259,41 @@ return {
                                 <span className={`text-xs font-black truncate max-w-[150px] ${
                                   isCurrent ? "text-indigo-700" : "text-slate-600 font-bold"
                                 }`} title={hist?.period?.name}>
-                                  {hist?.period?.name || "�?t kh?o s�t"}
+                                  {hist?.period?.name || "Đợt khảo sát"}
                                 </span>
                                 <span className={`text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
                                   isCurrent ? "bg-indigo-50 text-indigo-700 border-indigo-100" : "bg-slate-50 text-slate-500 border-slate-200"
                                 }`}>
-                                  {isCurrent ? "Hi?n t?i" : `�?t ${retestHistory.length - idx}`}
+                                  {isCurrent ? "Hiện tại" : `Đợt ${retestHistory.length - idx}`}
                                 </span>
                               </div>
                               
                               <p className="text-[10px] text-slate-400 font-bold leading-none">
-                                {hist?.batch?.name ? hist.batch.name.split("|")[0]?.trim() : "Kh?o s�t l?"} � {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "�"}
+                                {hist?.batch?.name ? hist.batch.name.split("|")[0]?.trim() : "Khảo sát lẻ"} • {hist?.createdAt ? new Date(hist.createdAt).toLocaleDateString("vi-VN") : "—"}
                               </p>
 
                               {/* Attempt Result Badge */}
                               <div className="flex items-center gap-1.5 mt-1">
-                                <span className="text-[9px] font-bold text-slate-400">K?t qu?:</span>
+                                <span className="text-[9px] font-bold text-slate-400">Kết quả:</span>
                                 {hist?.admissionResult ? (
                                   <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded ${
-                                    String(hist.admissionResult).includes("Kh�ng �?t")
+                                    String(hist.admissionResult).includes("Không đạt")
                                       ? "bg-rose-50 text-rose-700"
-                                      : String(hist.admissionResult).includes("�?t cam k?t")
+                                      : String(hist.admissionResult).includes("Đạt cam kết")
                                       ? "bg-amber-50 text-amber-700"
                                       : "bg-emerald-50 text-emerald-700"
                                   }`}>
                                     {hist.admissionResult}
                                   </span>
                                 ) : (
-                                  <span className="text-[9px] font-black text-slate-450 text-xs font-semibold">Ch�a duy?t</span>
+                                  <span className="text-[9px] font-black text-slate-450 text-xs font-semibold">Chưa duyệt</span>
                                 )}
                               </div>
 
                               {/* Retest subjects warning */}
                               {retestMuns.length > 0 && (
                                 <div className="text-[10px] p-2.5 mt-1.5 space-y-1.5 text-xs font-semibold">
-                                  <span className="font-black text-indigo-600 uppercase tracking-wider text-[8px] block">M�n c?n thi l?i/cam k?t:</span>
+                                  <span className="font-black text-indigo-600 uppercase tracking-wider text-[8px] block">Môn cần thi lại/cam kết:</span>
                                   <div className="flex flex-wrap gap-1">
                                     {retestMuns.map(m => (
                                       <span key={m} className="text-white text-[8px] font-black shadow-sm text-xs font-semibold">
@@ -6307,36 +6307,36 @@ return {
                               {/* Brief scores list from past attempt */}
                               {!isCurrent && (parsedScores.length > 0 || hist.psychologyScore != null || hist.mathScore != null || hist.literatureScore != null || hist.writtenEnglishScore != null || hist.oralEnglishScore != null) && (
                                 <div className="text-[10px] p-2.5 mt-1.5 space-y-1.5 text-xs font-semibold">
-                                  <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">B?ng �i?m �?t thi c?:</span>
+                                  <span className="font-black text-slate-400 uppercase tracking-wider text-[8px] block">Bảng điểm đợt thi cũ:</span>
                                   <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 text-[9px] font-bold text-slate-600">
-                                    {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">T�m l?:</span> {hist.psychologyScore}�</div>}
-                                    {hist.mathScore != null && <div><span className="text-slate-400 font-normal">To�n:</span> {hist.mathScore}�</div>}
-                                    {hist.literatureScore != null && <div><span className="text-slate-400 font-normal">Ng? V�n:</span> {hist.literatureScore}�</div>}
-                                    {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (vi?t):</span> {hist.writtenEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/70'}�</div>}
-                                    {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (n�i):</span> {hist.oralEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/30'}�</div>}
+                                    {hist.psychologyScore != null && <div><span className="text-slate-400 font-normal">Tâm lý:</span> {hist.psychologyScore}đ</div>}
+                                    {hist.mathScore != null && <div><span className="text-slate-400 font-normal">Toán:</span> {hist.mathScore}đ</div>}
+                                    {hist.literatureScore != null && <div><span className="text-slate-400 font-normal">Ngữ Văn:</span> {hist.literatureScore}đ</div>}
+                                    {hist.writtenEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (viết):</span> {hist.writtenEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/70'}đ</div>}
+                                    {hist.oralEnglishScore != null && <div><span className="text-slate-400 font-normal">Anh (nói):</span> {hist.oralEnglishScore}{hist?.grade?.match(/\d+/)?.[0] === '1' ? '' : '/30'}đ</div>}
                                     {parsedScores.filter(Boolean).map((sc, sIdx) => {
                                       const sub = sc?.subject || {};
                                       const subCode = (sub?.code || "").toLowerCase();
-                                      let vStr = "�";
+                                      let vStr = "—";
                                       try {
                                         if (sc?.scores) {
                                           const parsed = JSON.parse(sc.scores);
                                           const vArr = Array.isArray(parsed) ? parsed : [parsed];
                                           if (subCode.includes("tly")) {
-                                              vStr = parseFloat(vArr[6] || vArr[20] || "0") + "�";
+                                              vStr = parseFloat(vArr[6] || vArr[20] || "0") + "đ";
                                             } else if (subCode.includes("nltd")) {
                                               const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
-                                              vStr = pctVal !== undefined && pctVal !== null && pctVal !== "" ? pctVal + "%" : "�";
+                                              vStr = pctVal !== undefined && pctVal !== null && pctVal !== "" ? pctVal + "%" : "—";
                                           } else if (subCode.includes("tci") || subCode.includes("cpt")) {
-                                            vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " �?t" : "�";
+                                            vStr = Array.isArray(vArr) ? vArr.filter(x => x === "3").length + " Đạt" : "—";
                                           } else {
-                                            vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "�";
+                                            vStr = vArr.find(x => x !== undefined && x !== "" && x !== null) || "—";
                                           }
                                         }
                                       } catch {}
                                       return (
                                         <div key={sc?.id || sIdx} className="flex justify-between items-center border-b border-slate-200/20 pb-0.5">
-                                          <span className="text-slate-400 font-semibold truncate max-w-[80px]" title={sub?.name}>{sub?.name || "M�n"}</span>
+                                          <span className="text-slate-400 font-semibold truncate max-w-[80px]" title={sub?.name}>{sub?.name || "Môn"}</span>
                                           <span className="font-black text-slate-700">{vStr}</span>
                                         </div>
                                       );
@@ -6369,12 +6369,12 @@ return {
                       <BookOpen className="w-5 h-5" />
                     </div>
                     <div>
-                      <h3 className="font-black text-slate-800 text-base leading-snug">K?t qu? kh?o s�t c�c m�n</h3>
-                      <p className="text-xs text-slate-400 font-semibold mt-0.5">Chi ti?t nh?n �?nh n�ng l?c v� ��nh gi� chuy�n m�n</p>
+                      <h3 className="font-black text-slate-800 text-base leading-snug">Kết quả khảo sát các môn</h3>
+                      <p className="text-xs text-slate-400 font-semibold mt-0.5">Chi tiết nhận định năng lực và đánh giá chuyên môn</p>
                     </div>
                   </div>
                   <span className="text-xs text-indigo-700 font-black shadow-sm shrink-0 text-xs font-semibold">
-                    {(selectedReportStudent.scores || []).length} M�n �? ch?m
+                    {(selectedReportStudent.scores || []).length} Môn đã chấm
                   </span>
                 </div>
 
@@ -6384,8 +6384,8 @@ return {
                       <BookOpen className="w-8 h-8" />
                     </div>
                     <div>
-                      <p className="font-black text-slate-700 text-sm">Ch�a c� k?t qu? kh?o s�t</p>
-                      <p className="text-xs text-slate-400 font-semibold mt-1">H?c sinh n�y ch�a c� k?t qu? ��nh gi� m�n h?c n�o t? gi�o vi�n.</p>
+                      <p className="font-black text-slate-700 text-sm">Chưa có kết quả khảo sát</p>
+                      <p className="text-xs text-slate-400 font-semibold mt-1">Học sinh này chưa có kết quả đánh giá môn học nào từ giáo viên.</p>
                     </div>
                   </div>
                 ) : (
@@ -6403,19 +6403,19 @@ return {
                       const hasEnglish = scoresList.some((sc) => {
                         const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
                         const sCode = (sc.subject?.code || "").toLowerCase();
-                        return sName.includes("ti?ng anh") || sCode.includes("eng") || sCode.includes("esl");
+                        return sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl");
                       });
                       
                       let oralScoreVal = null;
                       let writtenScoreVal = null;
-                      let oralScoreText = "�";
-                      let writtenScoreText = "�";
+                      let oralScoreText = "—";
+                      let writtenScoreText = "—";
                       
                       if (!isGrade1 && hasEnglish) {
                         scoresList.forEach((sc) => {
                           const sName = (sc.subject?.name || "").toLowerCase().normalize("NFC");
                           const sCode = (sc.subject?.code || "").toLowerCase();
-                          if (sName.includes("ti?ng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                          if (sName.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
                             let scoreVal = undefined;
                             try {
                               if (sc.scores) {
@@ -6425,12 +6425,12 @@ return {
                               }
                             } catch {}
                             
-                            if (sName.includes("v?n ��p") || sName.includes("n�i") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                            if (sName.includes("vấn đáp") || sName.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
                               if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                 oralScoreVal = parseFloat(scoreVal);
                                 oralScoreText = scoreVal.toString();
                               }
-                            } else if (sName.includes("vi?t") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                            } else if (sName.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
                               if (scoreVal !== undefined && scoreVal !== null && scoreVal !== "") {
                                 writtenScoreVal = parseFloat(scoreVal);
                                 writtenScoreText = scoreVal.toString();
@@ -6439,7 +6439,7 @@ return {
                           }
                         });
                         
-                        let totalVal = "�";
+                        let totalVal = "—";
                         if (oralScoreVal !== null || writtenScoreVal !== null) {
                           totalVal = ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString();
                         }
@@ -6452,11 +6452,11 @@ return {
                             subject: {
                               id: "tong_diem_tieng_anh",
                               code: "eng_total",
-                              name: "T?ng �i?m Ti?ng Anh",
+                              name: "Tổng điểm Tiếng Anh",
                               subjectType: "VIET_NAM",
                               scoreColumns: 1,
                               commentColumns: 0,
-                              columnNames: JSON.stringify({ scores: ["T?ng �i?m Ti?ng Anh"], comments: [] })
+                              columnNames: JSON.stringify({ scores: ["Tổng điểm Tiếng Anh"], comments: [] })
                             }
                           });
                         }
@@ -6468,9 +6468,9 @@ return {
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {scoresList.map((sc) => {
                               const subject = sc.subject || {};
-                              const sName = subject.name || "M�n h?c";
+                              const sName = subject.name || "Môn học";
                               const sCode = (subject.code || "").toLowerCase();
-                              let val = "�";
+                              let val = "—";
                               let rawScore = "";
                               let badgeStyle = "bg-slate-50 text-slate-600 border-slate-200";
 
@@ -6481,25 +6481,25 @@ return {
                                   if (sCode.includes("tly")) {
                                     const scNum = parseFloat(vArr[6] || vArr[20] || "0");
                                     rawScore = scNum.toString();
-                                    let lvl = "B?nh th�?ng";
+                                    let lvl = "Bình thường";
                                     badgeStyle = "bg-emerald-50 text-emerald-700 border-emerald-200/50";
                                     if (scNum > 15 && scNum <= 31) {
-                                      lvl = "D?u hi?u nh?";
+                                      lvl = "Dấu hiệu nhẹ";
                                       badgeStyle = "bg-blue-50 text-blue-700 border-blue-200/50";
                                     } else if (scNum > 31 && scNum <= 47) {
-                                      lvl = "D?u hi?u v?a";
+                                      lvl = "Dấu hiệu vừa";
                                       badgeStyle = "bg-amber-50 text-amber-700 border-amber-200/50";
                                     } else if (scNum > 47 && scNum <= 63) {
-                                      lvl = "Nguy c� cao";
+                                      lvl = "Nguy cơ cao";
                                       badgeStyle = "bg-orange-50 text-orange-700 border-orange-200/50";
                                     } else if (scNum > 63) {
-                                      lvl = "Nguy c� r?t cao";
+                                      lvl = "Nguy cơ rất cao";
                                       badgeStyle = "bg-rose-50 text-rose-700 border-rose-200/50";
                                     }
                                     val = lvl;
                                   } else if (sCode.includes("tci") || sCode.includes("cpt")) {
                                     const passedCount = vArr.filter(x => x === "3").length;
-                                    val = passedCount + "/" + vArr.length + " �?t";
+                                    val = passedCount + "/" + vArr.length + " Đạt";
                                     badgeStyle = passedCount >= vArr.length * 0.7 ? "bg-emerald-50 text-emerald-700 border-emerald-200/50" : "bg-amber-50 text-amber-700 border-amber-200/50";
                                   } else if (sCode.includes("nltd")) {
                                     const pctVal = vArr.length >= 5 ? vArr[4] : vArr[0];
@@ -6508,38 +6508,38 @@ return {
                                       const pct = parseFloat(pctVal || "0");
                                       badgeStyle = pct >= 80 ? "bg-indigo-50 text-indigo-700 border-indigo-200/50" : pct >= 50 ? "bg-blue-50 text-blue-700 border-blue-200/50" : "bg-rose-50 text-rose-700 border-rose-200/50";
                                     } else {
-                                      val = "�";
+                                      val = "—";
                                       badgeStyle = "bg-slate-100 text-slate-600 border-slate-200";
                                     }
                                   } else {
                                     const firstVal = vArr.find(x => x !== undefined && x !== "" && x !== null);
-                                    val = firstVal !== undefined ? firstVal.toString() : "�";
+                                    val = firstVal !== undefined ? firstVal.toString() : "—";
                                     badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                                     
                                     if (!isGrade1) {
                                       const sNameLower = sName.toLowerCase().normalize("NFC");
-                                      if (sNameLower.includes("ti?ng anh") || sCode.includes("eng") || sCode.includes("esl")) {
-                                        if (sNameLower.includes("v?n ��p") || sNameLower.includes("n�i") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
-                                          val = firstVal !== undefined ? `${firstVal}/30` : "�/30";
-                                        } else if (sNameLower.includes("vi?t") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
-                                          val = firstVal !== undefined ? `${firstVal}/70` : "�/70";
+                                      if (sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl")) {
+                                        if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || sCode.includes("speaking") || sCode.includes("oral") || sCode.includes("vd")) {
+                                          val = firstVal !== undefined ? `${firstVal}/30` : "—/30";
+                                        } else if (sNameLower.includes("viết") || sCode.includes("writing") || sCode.includes("written") || sCode.includes("vt")) {
+                                          val = firstVal !== undefined ? `${firstVal}/70` : "—/70";
                                         } else if (sc.id === "tong_diem_tieng_anh") {
-                                          val = firstVal !== undefined && firstVal !== "�" ? `${firstVal}/100` : "�/100";
+                                          val = firstVal !== undefined && firstVal !== "—" ? `${firstVal}/100` : "—/100";
                                         }
                                       }
                                     }
                                   }
                                 }
                               } catch {
-                                val = sc.scores || "�";
+                                val = sc.scores || "—";
                                 badgeStyle = "bg-indigo-50 text-indigo-700 border-indigo-200/50";
                               }
 
                               const sNameLower = sName.toLowerCase().normalize("NFC");
-                              const isEnglish = sNameLower.includes("ti?ng anh") || sCode.includes("eng") || sCode.includes("esl") || sc.id === "tong_diem_tieng_anh";
-                              const isNLTD = sNameLower.includes("n�ng l?c t� duy") || sCode.includes("nltd");
-                              const isToan = sNameLower.includes("to�n") || sCode.includes("math") || sCode.includes("mth");
-                              const isTiengVietNguVan = sNameLower.includes("ti?ng vi?t") || sNameLower.includes("ng? v�n") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van");
+                              const isEnglish = sNameLower.includes("tiếng anh") || sCode.includes("eng") || sCode.includes("esl") || sc.id === "tong_diem_tieng_anh";
+                              const isNLTD = sNameLower.includes("năng lực tư duy") || sCode.includes("nltd");
+                              const isToan = sNameLower.includes("toán") || sCode.includes("math") || sCode.includes("mth");
+                              const isTiengVietNguVan = sNameLower.includes("tiếng việt") || sNameLower.includes("ngữ văn") || sCode.includes("lit") || sCode.includes("vie") || sCode.includes("van");
 
                               const isActive = activeSubjectId === sc.id;
                               let activeClasses = "";
@@ -6588,7 +6588,7 @@ return {
                                     </span>
                                     {subject.subjectType === "VIET_NAM" && sc.id !== "tong_diem_tieng_anh" && (
                                       <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border shrink-0 ${isActive ? "bg-white/20 text-white border-white/20" : "bg-[#48BFE3]/5 text-[#48BFE3] border-[#48BFE3]/20"}`}>
-                                        GV Vi?t Nam
+                                        GV Việt Nam
                                       </span>
                                     )}
                                   </div>
@@ -6601,10 +6601,10 @@ return {
                                       {sCode.includes("tly") ? (
                                         <>
                                           <span className={`w-1.5 h-1.5 rounded-full bg-current animate-pulse`}></span>
-                                          {rawScore}�
+                                          {rawScore}đ
                                         </>
                                       ) : (
-                                        <>{sc.id === "tong_diem_tieng_anh" ? "T?ng �i?m" : "�i?m s?"}</>
+                                        <>{sc.id === "tong_diem_tieng_anh" ? "Tổng điểm" : "Điểm số"}</>
                                       )}
                                     </div>
                                   </div>
@@ -6621,37 +6621,37 @@ return {
                                 if (sc.id === "tong_diem_tieng_anh") {
                                   const totalVal = oralScoreVal !== null || writtenScoreVal !== null 
                                     ? ((oralScoreVal || 0) + (writtenScoreVal || 0)).toString() 
-                                    : "�";
+                                    : "—";
                                     
                                   return (
                                     <div key={sc.id} className="p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden text-left text-xs font-semibold">
                                       <div className="absolute top-0 left-0 w-1.5 h-full bg-violet-600"></div>
                                       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4 mb-5">
                                         <div>
-                                          <h4 className="font-black text-violet-900 text-lg leading-none">T?ng �i?m Ti?ng Anh</h4>
+                                          <h4 className="font-black text-violet-900 text-lg leading-none">Tổng điểm Tiếng Anh</h4>
                                           <p className="text-xs text-slate-400 font-semibold mt-2.5">
-                                            T?ng h?p k?t qu? m�n Ti?ng Anh (V?n ��p + Vi?t)
+                                            Tổng hợp kết quả môn Tiếng Anh (Vấn đáp + Viết)
                                           </p>
                                         </div>
                                       </div>
                                       <div className="space-y-4">
                                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
                                           <div className="text-center shadow-sm flex flex-col justify-between text-slate-600 text-xs font-semibold">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Ti?ng Anh (V?n ��p)</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Vấn đáp)</span>
                                             <div className="text-xl font-black mt-2 leading-none text-slate-800">
-                                              {oralScoreText !== "�" ? `${oralScoreText}/30` : "�/30"}
+                                              {oralScoreText !== "—" ? `${oralScoreText}/30` : "—/30"}
                                             </div>
                                           </div>
                                           <div className="text-center shadow-sm flex flex-col justify-between text-slate-600 text-xs font-semibold">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Ti?ng Anh (Vi?t)</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tiếng Anh (Viết)</span>
                                             <div className="text-xl font-black mt-2 leading-none text-slate-800">
-                                              {writtenScoreText !== "�" ? `${writtenScoreText}/70` : "�/70"}
+                                              {writtenScoreText !== "—" ? `${writtenScoreText}/70` : "—/70"}
                                             </div>
                                           </div>
                                           <div className="text-center shadow-sm flex flex-col justify-between text-indigo-700 text-xs font-semibold">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">T?ng �i?m</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 truncate block leading-tight">Tổng điểm</span>
                                             <div className="text-xl font-black mt-2 leading-none text-indigo-700">
-                                              {totalVal !== "�" ? `${totalVal}/100` : "�/100"}
+                                              {totalVal !== "—" ? `${totalVal}/100` : "—/100"}
                                             </div>
                                           </div>
                                         </div>
@@ -6664,15 +6664,15 @@ return {
                                 const subName = (subject.name || "").toLowerCase();
                                 const subCode = (subject.code || "").toLowerCase();
                                 const subNameNormalized = subName.normalize("NFC");
-                                const isPsych = subName.includes("t�m l?") || subCode.includes("tly");
-                                const isChildDev = subNameNormalized.includes("chu?n ph�t tri?n") || subNameNormalized.includes("b? chu?n ph�t tri?n") || subCode.includes("cpt") || subCode.includes("tci");
-                                // Only use ThinkingSkillsForm UI when data has 5 criteria (Logic, Li�n t�?ng, Ph?n bi?n, Gi?i quy?t V�, % ho�n th�nh)
+                                const isPsych = subName.includes("tâm lý") || subCode.includes("tly");
+                                const isChildDev = subNameNormalized.includes("chuẩn phát triển") || subNameNormalized.includes("bộ chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
+                                // Only use ThinkingSkillsForm UI when data has 5 criteria (Logic, Liên tưởng, Phản biện, Giải quyết VĐ, % hoàn thành)
                                 const _nltdScoreArr = (() => { try { if (sc.scores) { const _p = JSON.parse(sc.scores); return Array.isArray(_p) ? _p : [_p]; } } catch {} return []; })();
-                                const isThinkingSkills = (subNameNormalized.includes("n�ng l?c t� duy") || subCode.includes("nltd")) && isGrade1 && _nltdScoreArr.length >= 5;
+                                const isThinkingSkills = (subNameNormalized.includes("năng lực tư duy") || subCode.includes("nltd")) && isGrade1 && _nltdScoreArr.length >= 5;
 
-                                const isEnglish = subName.includes("ti?ng anh") || subCode.includes("eng") || subCode.includes("esl");
-                                const isToan = subName.includes("to�n") || subCode.includes("math") || subCode.includes("mth");
-                                const isTiengVietNguVan = subName.includes("ti?ng vi?t") || subName.includes("ng? v�n") || subCode.includes("lit") || subCode.includes("vie") || subCode.includes("van");
+                                const isEnglish = subName.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl");
+                                const isToan = subName.includes("toán") || subCode.includes("math") || subCode.includes("mth");
+                                const isTiengVietNguVan = subName.includes("tiếng việt") || subName.includes("ngữ văn") || subCode.includes("lit") || subCode.includes("vie") || subCode.includes("van");
 
                                 let detailCardClass = "bg-white border border-slate-200";
                                 let accentBarClass = "bg-[#48BFE3]";
@@ -6710,17 +6710,17 @@ return {
                                           {subject.code && <span className="font-mono text-[10px] font-black text-slate-400 select-none text-xs font-semibold">{subject.code}</span>}
                                           {subject.subjectType === "VIET_NAM" && (
                                             <span className={`text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full border shadow-sm bg-[#48BFE3]/5 text-[#48BFE3] border-[#48BFE3]/20`}>
-                                              Gi�o vi�n Vi?t Nam
+                                              Giáo viên Việt Nam
                                             </span>
                                           )}
                                         </div>
                                         <div className="flex items-center gap-2 text-xs text-slate-400 font-semibold mt-2.5">
                                           <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-black text-[9px] border shadow-inner select-none shrink-0">
-                                            {sc.teacherName?.charAt(0) || "�"}
+                                            {sc.teacherName?.charAt(0) || "—"}
                                           </div>
-                                          <span>Gi�o vi�n ch?m: <strong className="text-slate-600 font-bold">{sc.teacherName || "Ch�a x�c �?nh"}</strong></span>
-                                          <span className="text-slate-200">�</span>
-                                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> C?p nh?t: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</span>
+                                          <span>Giáo viên chấm: <strong className="text-slate-600 font-bold">{sc.teacherName || "Chưa xác định"}</strong></span>
+                                          <span className="text-slate-200">•</span>
+                                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5"/> Cập nhật: {new Date(sc.updatedAt).toLocaleDateString("vi-VN")}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -6733,11 +6733,11 @@ return {
                                           const score = parseFloat(scoreVals[6] || scoreVals[20] || "0");
                                           
                                           const levels = [
-                                            { name: "B?nh th�?ng", min: 0, max: 15, bg: "bg-emerald-50 text-emerald-700 border-emerald-100", activeBg: "bg-emerald-500", scaleBg: "bg-emerald-100" },
-                                            { name: "D?u hi?u nh?", min: 16, max: 31, bg: "bg-blue-50 text-blue-700 border-blue-100", activeBg: "bg-blue-500", scaleBg: "bg-blue-100" },
-                                            { name: "D?u hi?u v?a", min: 32, max: 47, bg: "bg-amber-50 text-amber-700 border-amber-100", activeBg: "bg-amber-500", scaleBg: "bg-amber-100" },
-                                            { name: "Nguy c� cao", min: 48, max: 63, bg: "bg-orange-50 text-orange-700 border-orange-100", activeBg: "bg-orange-500", scaleBg: "bg-orange-100" },
-                                            { name: "Nguy c� r?t cao", min: 64, max: 80, bg: "bg-rose-50 text-rose-700 border-rose-100", activeBg: "bg-rose-500", scaleBg: "bg-rose-100" }
+                                            { name: "Bình thường", min: 0, max: 15, bg: "bg-emerald-50 text-emerald-700 border-emerald-100", activeBg: "bg-emerald-500", scaleBg: "bg-emerald-100" },
+                                            { name: "Dấu hiệu nhẹ", min: 16, max: 31, bg: "bg-blue-50 text-blue-700 border-blue-100", activeBg: "bg-blue-500", scaleBg: "bg-blue-100" },
+                                            { name: "Dấu hiệu vừa", min: 32, max: 47, bg: "bg-amber-50 text-amber-700 border-amber-100", activeBg: "bg-amber-500", scaleBg: "bg-amber-100" },
+                                            { name: "Nguy cơ cao", min: 48, max: 63, bg: "bg-orange-50 text-orange-700 border-orange-100", activeBg: "bg-orange-500", scaleBg: "bg-orange-100" },
+                                            { name: "Nguy cơ rất cao", min: 64, max: 80, bg: "bg-rose-50 text-rose-700 border-rose-100", activeBg: "bg-rose-500", scaleBg: "bg-rose-100" }
                                           ];
                                           
                                           const activeLvl = levels.find(l => score >= l.min && score <= l.max) || levels[0];
@@ -6747,20 +6747,20 @@ return {
                                               {/* Diagnosis Badge Box */}
                                               <div className="flex items-center justify-between p-4 shadow-inner text-xs font-semibold">
                                                 <div>
-                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">T?ng �i?m ��nh gi�</span>
-                                                  <div className="text-2xl font-black text-indigo-700 mt-1">{score} �i?m</div>
+                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Tổng điểm đánh giá</span>
+                                                  <div className="text-2xl font-black text-indigo-700 mt-1">{score} Điểm</div>
                                                 </div>
                                                 <div className={`px-4 py-2.5 rounded-2xl border font-black text-xs uppercase tracking-wider shadow-sm flex items-center gap-2 ${activeLvl.bg}`}>
                                                   <span className={`w-2 h-2 rounded-full ${activeLvl.activeBg} animate-pulse`}></span>
-                                                  Ch?n �o�n: {activeLvl.name}
+                                                  Chẩn đoán: {activeLvl.name}
                                                 </div>
                                               </div>
 
                                               {/* Interactive Diagnostic Gauge Scale */}
                                               <div className="space-y-2">
                                                 <div className="flex items-center justify-between">
-                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">Thang �o ch?n �o�n l�m s�ng</span>
-                                                  <span className="text-[10px] font-bold text-slate-400">�i?m t?i �a: 80</span>
+                                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-455">Thang đo chẩn đoán lâm sàng</span>
+                                                  <span className="text-[10px] font-bold text-slate-400">Điểm tối đa: 80</span>
                                                 </div>
                                                 <div className="grid grid-cols-5 gap-1.5">
                                                   {levels.map(l => {
@@ -6788,20 +6788,20 @@ return {
                                           <div className="space-y-1.5 p-4 text-xs font-semibold">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-455 flex items-center gap-1.5">
                                               <span className="w-1.5 h-1.5 text-xs font-semibold"></span>
-                                              K?t lu?n s� b? t? chuy�n vi�n
+                                              Kết luận sơ bộ từ chuyên viên
                                             </span>
                                             <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[0] ? "text-slate-700" : "text-slate-450 italic"}`}>
-                                              {commentVals[0] ? `"${commentVals[0]}"` : "Ch�a c?p nh?t n?i dung nh?n �?nh chi ti?t."}
+                                              {commentVals[0] ? `"${commentVals[0]}"` : "Chưa cập nhật nội dung nhận định chi tiết."}
                                             </p>
                                           </div>
                                           
                                           <div className="space-y-1.5 p-4 text-xs font-semibold">
                                             <span className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">
                                               <Info className="w-3.5 h-3.5 text-amber-500" />
-                                              Khuy?n ngh? d�nh cho ph? huynh
+                                              Khuyến nghị dành cho phụ huynh
                                             </span>
                                             <p className={`text-sm font-medium leading-relaxed whitespace-pre-wrap ${commentVals[1] ? "text-amber-800" : "text-slate-400 italic"}`}>
-                                              {commentVals[1] ? `"${commentVals[1]}"` : "Ch�a c� khuy?n ngh? c? th? t? chuy�n vi�n."}
+                                              {commentVals[1] ? `"${commentVals[1]}"` : "Chưa có khuyến nghị cụ thể từ chuyên viên."}
                                             </p>
                                           </div>
                                         </div>
@@ -6811,47 +6811,47 @@ return {
                                         {/* Segmented Metrics Row */}
                                         <div className="grid grid-cols-3 gap-3">
                                           <div className="p-3.5 text-center shadow-inner text-xs font-semibold">
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5"/> �?t</div>
+                                            <div className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center justify-center gap-1"><Check className="w-3.5 h-3.5"/> Đạt</div>
                                             <div className="text-2xl font-black text-emerald-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "3").length}</div>
                                           </div>
                                           <div className="p-3.5 text-center shadow-inner text-xs font-semibold">
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-1"><AlertCircle className="w-3.5 h-3.5"/> Kh�ng �?t</div>
+                                            <div className="text-[10px] font-black uppercase tracking-wider text-rose-600 flex items-center justify-center gap-1"><AlertCircle className="w-3.5 h-3.5"/> Không đạt</div>
                                             <div className="text-2xl font-black text-rose-700 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "2").length}</div>
                                           </div>
                                           <div className="p-3.5 text-center shadow-inner text-xs font-semibold">
-                                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-1"><Info className="w-3.5 h-3.5"/> Kh�ng l�m</div>
+                                            <div className="text-[10px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-center gap-1"><Info className="w-3.5 h-3.5"/> Không làm</div>
                                             <div className="text-2xl font-black text-slate-600 mt-1">{(Array.isArray(scoreVals) ? scoreVals : []).filter(v => v === "1").length}</div>
                                           </div>
                                         </div>
 
-                                        {/* Chi ti?t ti�u ch� kh�ng �?t ho?c kh�ng l�m */}
+                                        {/* Chi tiết tiêu chí không đạt hoặc không làm */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                           {scoreVals.some(v => v === "2") ? (
                                             <div className="p-4 text-xs font-semibold">
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-3 block flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-rose-500"/> Chi ti?t ti�u ch� Kh�ng �?t</span>
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-rose-600 mb-3 block flex items-center gap-1.5"><AlertCircle className="w-4 h-4 text-rose-500"/> Chi tiết tiêu chí Không đạt</span>
                                               <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
                                                 {scoreVals.map((v, idx) => v === "2" ? (
                                                   <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-rose-800 leading-normal bg-white border border-rose-100/50 p-2.5 rounded-xl shadow-sm">
                                                     <span className="mt-1.5 w-1.5 h-1.5 shrink-0 text-xs font-semibold"></span>
                                                     <span className="font-medium text-slate-700">
                                                       {parsedCols.scores[idx] || [
-                                                        "Ch? s? 65. C� th�i quen ch�o h?i, c?m �n, xin ph�p v� x�ng h� l? ph�p v?i ng�?i l?n",
-                                                        "Ch? s? 74. T?p trung ch� ? th?c hi?n nhi?m v? v� ho?t �?ng.",
-                                                        "Ch? s? 16. Nh?n bi?t v? t�n g?i, �?c �i?m b�n ngo�i, gi?i t�nh, s? th�ch, �i?m m?nh, �i?m y?u c?a b?n th�n.",
-                                                        "Ch? s? 14. Nh?n ra t?nh hu?ng nguy hi?m v� bi?t c�ch x? l? ph� h?p.",
-                                                        "Ch? s? 33. S? d?ng l?i n�i, h�nh vi l?ch s? trong giao ti?p.",
-                                                        "Ch? s? 31. Nghe v� ph?n h?i th�ng tin ��n gi?n.",
-                                                        "Ch? s? 48. G?i t�n c�c ng�y trong tu?n theo th? t?.",
-                                                        "Ch? s? 47. X�c �?nh ��?c v? tr� (trong, ngo�i, tr�n, d�?i, sau, ph?i, tr�i) c?a m?t v?t so v?i m?t v?t kh�c.",
-                                                        "Ch? s? 51. Ph�n lo?i m?t s? s? v?t th�nh nh�m theo �?c �i?m chung v� g?i t�n nh�m.",
-                                                        "Ch? s? 45. X�c �?nh m?t s? h?nh ph?ng v� h?nh kh?i ��n gi?n trong cu?c s?ng xung quanh.",
-                                                        "Ch? s? 42,43. T�ch, g?p s? l�?ng trong ph?m vi 10; so s�nh, th�m b?t s? l�?ng trong ph?m vi 10.",
-                                                        "Ch? s? 38. Nh?n bi?t v� g?i t�n ch? c�i trong b?ng ch? c�i Ti?ng Vi?t.",
-                                                        "Ch? s? 41. B?t ch�?c h�nh vi �vi?t�",
-                                                        "Ch? s? 9. Th?c hi?n c�c vi?c t? ph?c v? kh�ng c?n s? gi�p �?.",
-                                                        "Ch? s? 60. Th? hi?n ? t�?ng, c?m x�c c?a b?n th�n th�ng qua h�t, v?n �?ng theo nh?c.",
-                                                        "Ch? s? 61. T� m�u k�n, kh�ng ch?m ra ngo�i ��?ng vi?n c�c h?nh c� chi ti?t nh?."
-                                                      ][idx] || `Ti�u ch� ${idx + 1}`}
+                                                        "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+                                                        "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+                                                        "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+                                                        "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+                                                        "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+                                                        "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+                                                        "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+                                                        "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+                                                        "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+                                                        "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+                                                        "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+                                                        "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+                                                        "Chỉ số 41. Bắt chước hành vi “viết”",
+                                                        "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+                                                        "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+                                                        "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+                                                      ][idx] || `Tiêu chí ${idx + 1}`}
                                                     </span>
                                                   </div>
                                                 ) : null)}
@@ -6860,37 +6860,37 @@ return {
                                           ) : (
                                             <div className="p-5 text-center flex flex-col justify-center items-center gap-2 text-xs font-semibold">
                                               <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                                              <p className="text-xs font-black text-emerald-800 uppercase tracking-wider">Ho�n th�nh t?t!</p>
-                                              <p className="text-xs text-slate-555 font-semibold">H?c sinh ho�n th�nh xu?t s?c, kh�ng c� ti�u ch� n�o Kh�ng �?t.</p>
+                                              <p className="text-xs font-black text-emerald-800 uppercase tracking-wider">Hoàn thành tốt!</p>
+                                              <p className="text-xs text-slate-555 font-semibold">Học sinh hoàn thành xuất sắc, không có tiêu chí nào Không Đạt.</p>
                                             </div>
                                           )}
 
                                           {scoreVals.some(v => v === "1") && (
                                             <div className="bg-slate-55 border border-slate-200 rounded-2xl p-4">
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 block flex items-center gap-1.5"><Info className="w-4 h-4 text-slate-400"/> Chi ti?t ti�u ch� Kh�ng l�m</span>
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3 block flex items-center gap-1.5"><Info className="w-4 h-4 text-slate-400"/> Chi tiết tiêu chí Không làm</span>
                                               <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
                                                 {scoreVals.map((v, idx) => v === "1" ? (
                                                   <div key={idx} className="flex items-start gap-2.5 text-xs font-bold text-slate-750 leading-normal bg-white border border-slate-200/65 p-2.5 rounded-xl shadow-sm">
                                                     <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
                                                     <span className="font-medium text-slate-555">
                                                       {parsedCols.scores[idx] || [
-                                                        "Ch? s? 65. C� th�i quen ch�o h?i, c?m �n, xin ph�p v� x�ng h� l? ph�p v?i ng�?i l?n",
-                                                        "Ch? s? 74. T?p trung ch� ? th?c hi?n nhi?m v? v� ho?t �?ng.",
-                                                        "Ch? s? 16. Nh?n bi?t v? t�n g?i, �?c �i?m b�n ngo�i, gi?i t�nh, s? th�ch, �i?m m?nh, �i?m y?u c?a b?n th�n.",
-                                                        "Ch? s? 14. Nh?n ra t?nh hu?ng nguy hi?m v� bi?t c�ch x? l? ph� h?p.",
-                                                        "Ch? s? 33. S? d?ng l?i n�i, h�nh vi l?ch s? trong giao ti?p.",
-                                                        "Ch? s? 31. Nghe v� ph?n h?i th�ng tin ��n gi?n.",
-                                                        "Ch? s? 48. G?i t�n c�c ng�y trong tu?n theo th? t?.",
-                                                        "Ch? s? 47. X�c �?nh ��?c v? tr� (trong, ngo�i, tr�n, d�?i, sau, ph?i, tr�i) c?a m?t v?t so v?i m?t v?t kh�c.",
-                                                        "Ch? s? 51. Ph�n lo?i m?t s? s? v?t th�nh nh�m theo �?c �i?m chung v� g?i t�n nh�m.",
-                                                        "Ch? s? 45. X�c �?nh m?t s? h?nh ph?ng v� h?nh kh?i ��n gi?n trong cu?c s?ng xung quanh.",
-                                                        "Ch? s? 42,43. T�ch, g?p s? l�?ng trong ph?m vi 10; so s�nh, th�m b?t s? l�?ng trong ph?m vi 10.",
-                                                        "Ch? s? 38. Nh?n bi?t v� g?i t�n ch? c�i trong b?ng ch? c�i Ti?ng Vi?t.",
-                                                        "Ch? s? 41. B?t ch�?c h�nh vi �vi?t�",
-                                                        "Ch? s? 9. Th?c hi?n c�c vi?c t? ph?c v? kh�ng c?n s? gi�p �?.",
-                                                        "Ch? s? 60. Th? hi?n ? t�?ng, c?m x�c c?a b?n th�n th�ng qua h�t, v?n �?ng theo nh?c.",
-                                                        "Ch? s? 61. T� m�u k�n, kh�ng ch?m ra ngo�i ��?ng vi?n c�c h?nh c� chi ti?t nh?."
-                                                      ][idx] || `Ti�u ch� ${idx + 1}`}
+                                                        "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+                                                        "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+                                                        "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+                                                        "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+                                                        "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+                                                        "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+                                                        "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+                                                        "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+                                                        "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+                                                        "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+                                                        "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+                                                        "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+                                                        "Chỉ số 41. Bắt chước hành vi “viết”",
+                                                        "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+                                                        "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+                                                        "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+                                                      ][idx] || `Tiêu chí ${idx + 1}`}
                                                     </span>
                                                   </div>
                                                 ) : null)}
@@ -6901,7 +6901,7 @@ return {
 
                                         {commentVals[0] && (
                                           <div className="p-4 relative text-left text-xs font-semibold">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nh?n x�t t?ng quan t? gi�o vi�n</span>
+                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan từ giáo viên</span>
                                             <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
                                           </div>
                                         )}
@@ -6911,10 +6911,10 @@ return {
                                         {/* Gorgeous Thinking Skills Progress Matrix */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                           {[
-                                            { label: "N�ng l?c Logic", val: scoreVals[0], color: "text-indigo-600 bg-indigo-50 border-indigo-100", barColor: "bg-indigo-500" },
-                                            { label: "N�ng l?c L?p t�?ng", val: scoreVals[1], color: "text-violet-600 bg-violet-50 border-violet-100", barColor: "bg-violet-500" },
-                                            { label: "N�ng l?c Ph?n bi?n", val: scoreVals[2], color: "text-cyan-600 bg-cyan-50 border-cyan-100", barColor: "bg-cyan-500" },
-                                            { label: "Gi?i quy?t V?n �?", val: scoreVals[3], color: "text-teal-600 bg-teal-50 border-teal-100", barColor: "bg-teal-500" }
+                                            { label: "Năng lực Logic", val: scoreVals[0], color: "text-indigo-600 bg-indigo-50 border-indigo-100", barColor: "bg-indigo-500" },
+                                            { label: "Năng lực Lập tưởng", val: scoreVals[1], color: "text-violet-600 bg-violet-50 border-violet-100", barColor: "bg-violet-500" },
+                                            { label: "Năng lực Phản biện", val: scoreVals[2], color: "text-cyan-600 bg-cyan-50 border-cyan-100", barColor: "bg-cyan-500" },
+                                            { label: "Giải quyết Vấn đề", val: scoreVals[3], color: "text-teal-600 bg-teal-50 border-teal-100", barColor: "bg-teal-500" }
                                           ].map(item => {
                                             let pctVal = 0;
                                             if (item.val) {
@@ -6933,7 +6933,7 @@ return {
                                             return (
                                               <div key={item.label} className={`border rounded-2xl p-3.5 text-center flex flex-col justify-between shadow-sm relative overflow-hidden group ${item.color}`}>
                                                 <span className="text-[10px] font-black uppercase tracking-wider text-slate-555 block leading-tight">{item.label}</span>
-                                                <div className="text-lg font-black text-slate-800 mt-2 mb-2 leading-none">{item.val || "�"}</div>
+                                                <div className="text-lg font-black text-slate-800 mt-2 mb-2 leading-none">{item.val || "—"}</div>
                                                 
                                                 {/* Micro Progress Bar */}
                                                 <div className="w-full bg-slate-100 rounded-full h-1.5 mt-auto">
@@ -6951,8 +6951,8 @@ return {
                                               <BarChart3 className="w-4 h-4"/>
                                             </div>
                                             <div>
-                                              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-555">T? l? ho�n th�nh th? th�ch</span>
-                                              <p className="text-xs text-slate-555 font-bold mt-0.5">M?c �? ho�n th�nh c�c nhi?m v? t� duy</p>
+                                              <span className="text-[10px] font-black uppercase tracking-widest text-indigo-555">Tỷ lệ hoàn thành thử thách</span>
+                                              <p className="text-xs text-slate-555 font-bold mt-0.5">Mức độ hoàn thành các nhiệm vụ tư duy</p>
                                             </div>
                                           </div>
                                           <div className="text-right">
@@ -6965,7 +6965,7 @@ return {
 
                                         {commentVals[0] && (
                                           <div className="p-4 relative text-left text-xs font-semibold">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nh?n x�t t?ng quan</span>
+                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-1.5">Nhận xét tổng quan</span>
                                             <p className="text-sm font-semibold text-slate-700 italic leading-relaxed">"{commentVals[0]}"</p>
                                           </div>
                                         )}
@@ -6975,22 +6975,22 @@ return {
                                         {/* Display standard scores columns in premium structured layout */}
                                         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-left">
                                           {Array.from({length: (subject.scoreColumns ?? 1)}).map((_, colIdx) => {
-                                            let colName = "�i?m " + (colIdx + 1);
+                                            let colName = "Điểm " + (colIdx + 1);
                                             if (parsedCols.scores && parsedCols.scores[colIdx]) colName = parsedCols.scores[colIdx];
-                                            else if (subCode.includes("nltd")) colName = "K?t qu?";
-                                            const isTotal = colName.toLowerCase().includes("t?ng");
+                                            else if (subCode.includes("nltd")) colName = "Kết quả";
+                                            const isTotal = colName.toLowerCase().includes("tổng");
                                             const val = scoreVals[colIdx];
                                             
-                                            let displayVal = val !== undefined && val !== "" && val !== null ? val : "�";
+                                            let displayVal = val !== undefined && val !== "" && val !== null ? val : "—";
                                             if (subCode.includes("nltd")) {
-                                              displayVal = val !== undefined && val !== "" && val !== null ? `${val}%` : "�%";
+                                              displayVal = val !== undefined && val !== "" && val !== null ? `${val}%` : "—%";
                                             } else if (!isGrade1) {
                                               const sNameLower = subName.toLowerCase().normalize("NFC");
-                                              if (sNameLower.includes("ti?ng anh") || subCode.includes("eng") || subCode.includes("esl")) {
-                                                if (sNameLower.includes("v?n ��p") || sNameLower.includes("n�i") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {
-                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/30` : "�/30";
-                                                } else if (sNameLower.includes("vi?t") || subCode.includes("writing") || subCode.includes("written") || subCode.includes("vt")) {
-                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/70` : "�/70";
+                                              if (sNameLower.includes("tiếng anh") || subCode.includes("eng") || subCode.includes("esl")) {
+                                                if (sNameLower.includes("vấn đáp") || sNameLower.includes("nói") || subCode.includes("speaking") || subCode.includes("oral") || subCode.includes("vd")) {
+                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/30` : "—/30";
+                                                } else if (sNameLower.includes("viết") || subCode.includes("writing") || subCode.includes("written") || subCode.includes("vt")) {
+                                                  displayVal = val !== undefined && val !== "" && val !== null ? `${val}/70` : "—/70";
                                                 }
                                               }
                                             }
@@ -7009,10 +7009,10 @@ return {
                                         {/* Display standard comments comments columns */}
                                         {commentVals.length > 0 && commentVals.some(v => v) && (
                                           <div className="space-y-3 p-5 text-left text-xs font-semibold">
-                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-2">? ki?n nh?n x�t t? Gi�o vi�n b? m�n</span>
+                                            <span className="block text-[10px] font-black uppercase tracking-widest text-slate-455 mb-2">Ý kiến nhận xét từ Giáo viên bộ môn</span>
                                             <div className="space-y-3">
                                               {Array.from({length: (subject.commentColumns ?? 1)}).map((_, colIdx) => {
-                                                let colName = "Nh?n x�t";
+                                                let colName = "Nhận xét";
                                                 if (parsedCols.comments && parsedCols.comments[colIdx]) colName = parsedCols.comments[colIdx];
                                                 const val = commentVals[colIdx];
                                                 if (!val) return null;
@@ -7059,49 +7059,49 @@ return {
 
       {/* ============= MODALS ============= */}
 
-      <Modal open={isSubjectOpen} onClose={()=>setIsSubjectOpen(false)} title="Th�ng tin M�n Kh?o s�t" footer={<><button onClick={()=>setIsSubjectOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">H?y</button> <button onClick={handleSubjectSubmit} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 text-xs font-semibold">Ho�n t?t</button></>}>
+      <Modal open={isSubjectOpen} onClose={()=>setIsSubjectOpen(false)} title="Thông tin Môn Khảo sát" footer={<><button onClick={()=>setIsSubjectOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={handleSubjectSubmit} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 text-xs font-semibold">Hoàn tất</button></>}>
         <div className="space-y-4">
-           <Field label="M? M�n" required><input value={subjectForm.code} onChange={e=>setSubjectForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
-           <Field label="T�n M�n" required><input value={subjectForm.name} onChange={e=>setSubjectForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
+           <Field label="Mã Môn" required><input value={subjectForm.code} onChange={e=>setSubjectForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
+           <Field label="Tên Môn" required><input value={subjectForm.name} onChange={e=>setSubjectForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
            
-           <div className="grid grid-cols-2 gap-3"><Field label="S? c?t �i?m"><input type="number" min="0" max="5" value={subjectForm.scoreColumns} onChange={e=>setSubjectForm(f=>({...f,scoreColumns:parseInt(e.target.value)||0}))} className={inp}/></Field><Field label="S? c?t Nh?n x�t"><input type="number" min="0" max="5" value={subjectForm.commentColumns} onChange={e=>setSubjectForm(f=>({...f,commentColumns:parseInt(e.target.value)||0}))} className={inp}/></Field></div>
-           <Field label="Tr?ng th�i"><select value={subjectForm.status} onChange={e=>setSubjectForm(f=>({...f,status:e.target.value}))} className={inp}><option value="ACTIVE">Ho?t �?ng</option><option value="INACTIVE">Ng?ng</option></select></Field>
-           <Field label="Mi?n gi?m theo Di?n KS">
+           <div className="grid grid-cols-2 gap-3"><Field label="Số cột Điểm"><input type="number" min="0" max="5" value={subjectForm.scoreColumns} onChange={e=>setSubjectForm(f=>({...f,scoreColumns:parseInt(e.target.value)||0}))} className={inp}/></Field><Field label="Số cột Nhận xét"><input type="number" min="0" max="5" value={subjectForm.commentColumns} onChange={e=>setSubjectForm(f=>({...f,commentColumns:parseInt(e.target.value)||0}))} className={inp}/></Field></div>
+           <Field label="Trạng thái"><select value={subjectForm.status} onChange={e=>setSubjectForm(f=>({...f,status:e.target.value}))} className={inp}><option value="ACTIVE">Hoạt động</option><option value="INACTIVE">Ngừng</option></select></Field>
+           <Field label="Miễn giảm theo Diện KS">
              <div className="flex flex-wrap gap-2 p-3 text-xs font-semibold">
                {configs.filter(c => c.categoryType === "DIEN_KS").map(c => (
                  <button type="button" key={c.code} onClick={() => setSubjectForm(f => ({...f, exemptCriteria: f.exemptCriteria.includes(c.name) ? f.exemptCriteria.filter(x => x !== c.name) : [...f.exemptCriteria, c.name]}))}
                    className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition-all ${subjectForm.exemptCriteria.includes(c.name) ? 'bg-violet-500 text-white border-violet-500 shadow-md shadow-violet-200' : 'bg-white text-slate-600 border-slate-200 hover:border-violet-300'}`}
-                 >{subjectForm.exemptCriteria.includes(c.name) && <span className="mr-1">?</span>}{c.name}</button>
+                 >{subjectForm.exemptCriteria.includes(c.name) && <span className="mr-1">✓</span>}{c.name}</button>
                ))}
-               {configs.filter(c => c.categoryType === "DIEN_KS").length === 0 && <span className="text-xs text-slate-400">Ch�a c� Di?n KS n�o trong Danh m?c</span>}
+               {configs.filter(c => c.categoryType === "DIEN_KS").length === 0 && <span className="text-xs text-slate-400">Chưa có Diện KS nào trong Danh mục</span>}
              </div>
-             <p className="text-[10px] text-slate-400 mt-1">Ch?n c�c Di?n KS ��?c mi?n gi?m m�n n�y</p>
+             <p className="text-[10px] text-slate-400 mt-1">Chọn các Diện KS được miễn giảm môn này</p>
            </Field>
         </div>
       </Modal>
 
-      <Modal open={isColumnConfigOpen} onClose={()=>setIsColumnConfigOpen(false)} title={`C?u h?nh c?t: ${columnConfigForm.name}`} footer={<><button onClick={()=>setIsColumnConfigOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">H?y</button> <button onClick={handleColumnConfigSubmit} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 text-xs font-semibold">L�u c?u h?nh</button></>}>
+      <Modal open={isColumnConfigOpen} onClose={()=>setIsColumnConfigOpen(false)} title={`Cấu hình cột: ${columnConfigForm.name}`} footer={<><button onClick={()=>setIsColumnConfigOpen(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={handleColumnConfigSubmit} className="flex-1 text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-indigo-100 text-xs font-semibold">Lưu cấu hình</button></>}>
         <div className="space-y-6 max-h-[70vh] overflow-y-auto">
            <div>
-              <h4 className="text-sm font-black text-slate-700 mb-3 border-b pb-2">T�n c?t �i?m (T?i �a {columnConfigForm.scoreColumns})</h4>
+              <h4 className="text-sm font-black text-slate-700 mb-3 border-b pb-2">Tên cột Điểm (Tối đa {columnConfigForm.scoreColumns})</h4>
               <div className="space-y-3">
                  {Array.from({length: columnConfigForm.scoreColumns}).map((_, i) => (
                     <div key={i} className="flex items-center gap-3">
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">C?t {i+1}</span>
-                       <input value={columnConfigForm.scoreNames[i]||""} onChange={e=>{const n=[...columnConfigForm.scoreNames];n[i]=e.target.value;setColumnConfigForm(f=>({...f,scoreNames:n}))}} placeholder="Vd: �i?m vi?t" className={inp}/>
-                       <label className="flex items-center gap-1 text-[10px] font-black text-indigo-600 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showScoreInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showScoreInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showScoreInReport:r}))}} className="rounded text-indigo-600"/> L�n Phi?u</label>
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">Cột {i+1}</span>
+                       <input value={columnConfigForm.scoreNames[i]||""} onChange={e=>{const n=[...columnConfigForm.scoreNames];n[i]=e.target.value;setColumnConfigForm(f=>({...f,scoreNames:n}))}} placeholder="Vd: Điểm viết" className={inp}/>
+                       <label className="flex items-center gap-1 text-[10px] font-black text-indigo-600 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showScoreInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showScoreInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showScoreInReport:r}))}} className="rounded text-indigo-600"/> Lên Phiếu</label>
                     </div>
                  ))}
               </div>
            </div>
            <div>
-              <h4 className="text-sm font-black text-slate-700 mb-3 border-b pb-2">T�n c?t Nh?n x�t (T?i �a {columnConfigForm.commentColumns})</h4>
+              <h4 className="text-sm font-black text-slate-700 mb-3 border-b pb-2">Tên cột Nhận xét (Tối đa {columnConfigForm.commentColumns})</h4>
               <div className="space-y-3">
                  {Array.from({length: columnConfigForm.commentColumns}).map((_, i) => (
                     <div key={i} className="flex items-center gap-3">
                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 w-16">NX {i+1}</span>
-                       <input value={columnConfigForm.commentNames[i]||""} onChange={e=>{const n=[...columnConfigForm.commentNames];n[i]=e.target.value;setColumnConfigForm(f=>({...f,commentNames:n}))}} placeholder="Vd: Nh?n x�t chung" className={inp}/>
-                       <label className="flex items-center gap-1 text-[10px] font-black text-indigo-600 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showCommentInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showCommentInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showCommentInReport:r}))}} className="rounded text-indigo-600"/> L�n Phi?u</label>
+                       <input value={columnConfigForm.commentNames[i]||""} onChange={e=>{const n=[...columnConfigForm.commentNames];n[i]=e.target.value;setColumnConfigForm(f=>({...f,commentNames:n}))}} placeholder="Vd: Nhận xét chung" className={inp}/>
+                       <label className="flex items-center gap-1 text-[10px] font-black text-indigo-600 whitespace-nowrap"><input type="checkbox" checked={columnConfigForm.showCommentInReport[i]||false} onChange={e=>{const r=[...columnConfigForm.showCommentInReport];r[i]=e.target.checked;setColumnConfigForm(f=>({...f,showCommentInReport:r}))}} className="rounded text-indigo-600"/> Lên Phiếu</label>
                     </div>
                  ))}
               </div>
@@ -7109,10 +7109,10 @@ return {
         </div>
       </Modal>
 
-      <Modal open={pModal} onClose={()=>setPModal(false)} title="Th�ng tin K? kh?o s�t" footer={<><button onClick={()=>setPModal(false)} className="flex-1 py-3 font-black text-xs uppercase tracking-widest text-slate-500 hover:text-slate-700">H?y</button> <button onClick={savePeriod} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200">L�u th�ng tin</button></>}>
+      <Modal open={pModal} onClose={()=>setPModal(false)} title="Thông tin Kỳ khảo sát" footer={<><button onClick={()=>setPModal(false)} className="flex-1 py-3 font-black text-xs uppercase tracking-widest text-slate-500 hover:text-slate-700">Hủy</button> <button onClick={savePeriod} className="flex-1 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200">Lưu thông tin</button></>}>
         <div className="space-y-4">
-           <Field label="M? �?nh danh" required><input value={pForm.code} onChange={e=>setPForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
-           <Field label="K? Kh?o s�t" required>
+           <Field label="Mã định danh" required><input value={pForm.code} onChange={e=>setPForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
+           <Field label="Kỳ Khảo sát" required>
              <select
                value={pForm.name}
                onChange={e => {
@@ -7121,101 +7121,101 @@ return {
                }}
                className={inp}
              >
-               <option value="">-- Ch?n lo?i k? kh?o s�t --</option>
+               <option value="">-- Chọn loại kỳ khảo sát --</option>
                {configs.filter(c => c.categoryType === "KY_KS").map(c => (
                  <option key={c.id} value={c.name}>{c.name}</option>
                ))}
              </select>
            </Field>
-           <div className="grid grid-cols-2 gap-3"><Field label="Ng�y b?t �?u"><input type="date" value={pForm.startDate} onChange={e=>setPForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="Ng�y k?t th�c"><input type="date" value={pForm.endDate} onChange={e=>setPForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
-           <Field label="Ng�?i ph? tr�ch">
+           <div className="grid grid-cols-2 gap-3"><Field label="Ngày bắt đầu"><input type="date" value={pForm.startDate} onChange={e=>setPForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="Ngày kết thúc"><input type="date" value={pForm.endDate} onChange={e=>setPForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
+           <Field label="Người phụ trách">
                 <select value={pForm.assignedUserId} onChange={e=>setPForm(f=>({...f,assignedUserId:e.target.value}))} className={inp}>
-                   <option value="">-- Ch�a g�n --</option>
+                   <option value="">-- Chưa gán --</option>
                    {examBoardUsers.map(u=><option key={u.id} value={u.id}>{u.fullName}</option>)}
                 </select>
              </Field>
          </div>
       </Modal>
 
-      <Modal open={bModal} onClose={()=>setBModal(false)} title="Th�ng tin �?t kh?o s�t" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">H?y</button> <button onClick={saveBatch} className="flex-1 px-6 py-3 bg-[#48BFE3] hover:bg-[#0098C2] rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "C?p nh?t �?t" : "T?o �?t"}</button></>}>
+      <Modal open={bModal} onClose={()=>setBModal(false)} title="Thông tin Đợt khảo sát" size="md" footer={<><button onClick={()=>setBModal(false)} className="flex-1 py-3 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveBatch} className="flex-1 px-6 py-3 bg-[#48BFE3] hover:bg-[#0098C2] rounded-xl text-white text-xs font-black uppercase tracking-widest shadow-lg shadow-emerald-50 text-xs font-semibold">{editB ? "Cập nhật đợt" : "Tạo đợt"}</button></>}>
         <div className="space-y-4">
-           <div className="grid grid-cols-2 gap-3"><Field label="S? �?t"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Tr?ng th�i"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
-                       <Field label="T�n �?t KS" required>
+           <div className="grid grid-cols-2 gap-3"><Field label="Số đợt"><input type="number" value={bForm.batchNumber} onChange={e=>setBForm(f=>({...f,batchNumber:e.target.value}))} className={inp}/></Field><Field label="Trạng thái"><select value={bForm.status} onChange={e=>setBForm(f=>({...f,status:e.target.value}))} className={inp}>{STATUS_OPTS.map(o=><option key={o} value={o}>{STATUS_MAP[o].label}</option>)}</select></Field></div>
+                       <Field label="Tên Đợt KS" required>
               <input
                 value={bForm.name}
                 onChange={e => setBForm(f => ({ ...f, name: e.target.value }))}
-                placeholder="Nh?p t�n �?t kh?o s�t (Vd: KS�V, H?c th?...)"
+                placeholder="Nhập tên đợt khảo sát (Vd: KSĐV, Học thử...)"
                 className={inp}
               />
             </Field>
-            <Field label="T�n �?t (T? �?ng theo c?u tr�c)" required>
+            <Field label="Tên đợt (Tự động theo cấu trúc)" required>
               <input
                  value={(() => {
                    const campus = campuses.find(c => c.id === bForm.campusId);
-                   const campusName = campus ? (campus.campusCode || campus.campusName) : "Ch�a ch?n c� s?";
+                   const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
                    const period = periods.find(p => p.id === targetPeriodId);
-                   const periodName = period ? period.name : "T�n �?t";
-                   let periodCode = period ? (period.code || period.name) : "K? kh?o s�t";
-                   if (periodName.toLowerCase().normalize("NFC").includes("kh?o s�t l?") || periodName.toLowerCase().normalize("NFC").includes("kh?o s�t le")) {
+                   const periodName = period ? period.name : "Tên đợt";
+                   let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
+                   if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
                      periodCode = "KSL";
                    }
                    const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                   return `${campusName} _ ${periodCode} _ �?t ${bForm.batchNumber || "1"} _ ${bForm.name || "T�n �?t KS"} _ ${endStr}`;
+                   return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
                  })()}
                  disabled
                  className={`${inp} bg-slate-100 cursor-not-allowed`}
                />
               <div className="mt-1.5 p-3 text-xs font-semibold">
-                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hi?n th? khoa h?c & X�t duy?t:</p>
+                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Hiển thị khoa học & Xét duyệt:</p>
                 <p className="text-xs font-bold text-indigo-600 truncate">
                    {(() => {
                      const campus = campuses.find(c => c.id === bForm.campusId);
-                     const campusName = campus ? (campus.campusCode || campus.campusName) : "Ch�a ch?n c� s?";
+                     const campusName = campus ? (campus.campusCode || campus.campusName) : "Chưa chọn cơ sở";
                      const period = periods.find(p => p.id === targetPeriodId);
-                     const periodName = period ? period.name : "T�n �?t";
-                     let periodCode = period ? (period.code || period.name) : "K? kh?o s�t";
-                     if (periodName.toLowerCase().normalize("NFC").includes("kh?o s�t l?") || periodName.toLowerCase().normalize("NFC").includes("kh?o s�t le")) {
+                     const periodName = period ? period.name : "Tên đợt";
+                     let periodCode = period ? (period.code || period.name) : "Kỳ khảo sát";
+                     if (periodName.toLowerCase().normalize("NFC").includes("khảo sát lẻ") || periodName.toLowerCase().normalize("NFC").includes("khảo sát le")) {
                        periodCode = "KSL";
                      }
                      const endStr = bForm.endDate ? bForm.endDate.split('-').reverse().join('/') : "__/__/____";
-                     return `${campusName} _ ${periodCode} _ �?t ${bForm.batchNumber || "1"} _ ${bForm.name || "T�n �?t KS"} _ ${endStr}`;
+                     return `${campusName} _ ${periodCode} _ Đợt ${bForm.batchNumber || "1"} _ ${bForm.name || "Tên Đợt KS"} _ ${endStr}`;
                    })()}
                  </p>
               </div>
             </Field>
            <div className="grid grid-cols-2 gap-3">
-             <Field label="C� s?">
+             <Field label="Cơ sở">
                <select value={bForm.campusId} onChange={e=>setBForm(f=>({...f,campusId:e.target.value}))} className={inp}>
-                 <option value="">-- Ch?n C� s? --</option>
+                 <option value="">-- Chọn Cơ sở --</option>
                  {campuses.map(c => (
                    <option key={c.id} value={c.id}>{c.campusName}</option>
                  ))}
                </select>
              </Field>
-             <Field label="Ng�?i ph? tr�ch">
+             <Field label="Người phụ trách">
                <select value={bForm.assignedUserId} onChange={e=>setBForm(f=>({...f,assignedUserId:e.target.value}))} className={inp}>
-                 <option value="">-- Ch�a g�n --</option>
+                 <option value="">-- Chưa gán --</option>
                  {giaoVuCSUsers.map(u => (
                    <option key={u.id} value={u.id}>{u.fullName}</option>
                  ))}
                </select>
              </Field>
            </div>
-           <div className="grid grid-cols-2 gap-3"><Field label="T? ng�y"><input type="date" value={bForm.startDate} onChange={e=>setBForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="�?n ng�y"><input type="date" value={bForm.endDate} onChange={e=>setBForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
+           <div className="grid grid-cols-2 gap-3"><Field label="Từ ngày"><input type="date" value={bForm.startDate} onChange={e=>setBForm(f=>({...f,startDate:e.target.value}))} className={inp}/></Field><Field label="Đến ngày"><input type="date" value={bForm.endDate} onChange={e=>setBForm(f=>({...f,endDate:e.target.value}))} className={inp}/></Field></div>
         </div>
       </Modal>
 
-      <Modal open={sModal} onClose={()=>setSModal(false)} title="Th�ng tin H?c sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 px-6 py-3 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider">��ng</button> <button onClick={saveStudent} className="flex-1 px-6 py-3 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider">L�u d? li?u</button></>}>
+      <Modal open={sModal} onClose={()=>setSModal(false)} title="Thông tin Học sinh" size="lg" footer={<><button onClick={()=>setSModal(false)} className="flex-1 px-6 py-3 border border-[#D9E2EC] text-[#64748B] hover:text-[#1E293B] hover:bg-slate-100 rounded-xl transition-all cursor-pointer text-xs font-bold uppercase tracking-wider">Đóng</button> <button onClick={saveStudent} className="flex-1 px-6 py-3 bg-[#00B5E2] hover:bg-[#0098C2] text-white rounded-xl text-xs font-bold shadow-md shadow-[#00B5E2]/15 transition-all active:scale-95 cursor-pointer uppercase tracking-wider">Lưu dữ liệu</button></>}>
         {isChuyenHe && !editS ? (
           <div className="space-y-6 pt-1 text-left animate-in fade-in duration-200">
             <div className="bg-white border border-[#D9E2EC] p-5 rounded-2xl space-y-4 shadow-sm">
               <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
                 <span className="w-1.5 h-4 bg-[#004C97] inline-block rounded"></span>
-                <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Th�ng tin h?c sinh chuy?n h?</h4>
+                <h4 className="text-xs font-black text-[#1E293B] uppercase tracking-wider">Thông tin học sinh chuyển hệ</h4>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <Field label="K? kh?o s�t" required>
+                <Field label="Kỳ khảo sát" required>
                   <select
                     value={sForm.periodId || sPeriodId || ""}
                     onChange={(e) => {
@@ -7224,15 +7224,15 @@ return {
                     }}
                     className={inp}
                   >
-                    <option value="">-- Ch?n K? --</option>
+                    <option value="">-- Chọn Kỳ --</option>
                     {periods.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
                 </Field>
-                <Field label="�?t kh?o s�t">
+                <Field label="Đợt khảo sát">
                   <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
-                    <option value="">-- Kh�ng c� / M?c �?nh --</option>
+                    <option value="">-- Không có / Mặc định --</option>
                     {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || []).map(b => (
                       <option key={b.id} value={b.id}>{b.name}</option>
                     ))}
@@ -7241,7 +7241,7 @@ return {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <Field label="C� s?" required>
+                <Field label="Cơ sở" required>
                   <select
                     required
                     value={transferCampusId}
@@ -7254,13 +7254,13 @@ return {
                     }}
                     className={inp}
                   >
-                    <option value="">-- Ch?n C� s? --</option>
+                    <option value="">-- Chọn Cơ sở --</option>
                     {campuses.map((c) => (
                       <option key={c.id} value={c.id}>{c.campusName}</option>
                     ))}
                   </select>
                 </Field>
-                <Field label="L?p h?c" required>
+                <Field label="Lớp học" required>
                   <select
                     required
                     disabled={!transferCampusId}
@@ -7272,7 +7272,7 @@ return {
                     }}
                     className={inp + " disabled:opacity-50"}
                   >
-                    <option value="">-- Ch?n L?p h?c --</option>
+                    <option value="">-- Chọn Lớp học --</option>
                     {filteredClasses.map((c) => (
                       <option key={c.id} value={c.id}>{c.className}</option>
                     ))}
@@ -7282,22 +7282,22 @@ return {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">H? �ang h?c</label>
+                  <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Hệ đang học</label>
                   <input
                     type="text"
                     readOnly
-                    value={selectedClassObj?.educationSystem || "Kh�ng x�c �?nh"}
+                    value={selectedClassObj?.educationSystem || "Không xác định"}
                     className="h-10.5 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-slate-500 text-sm font-semibold rounded-xl outline-none"
                   />
                 </div>
-                <Field label="H? chuy?n" required>
+                <Field label="Hệ chuyển" required>
                   <select
                     required
                     value={targetSystem}
                     onChange={(e) => setTargetSystem(e.target.value)}
                     className={inp}
                   >
-                    <option value="">-- Ch?n H? chuy?n --</option>
+                    <option value="">-- Chọn Hệ chuyển --</option>
                     {currentEduSystems.map((es) => (
                       <option key={es.code} value={es.code}>{es.code} - {es.name}</option>
                     ))}
@@ -7307,12 +7307,12 @@ return {
 
               {/* Student Checklist Selection */}
               <div className="space-y-3 pt-2">
-                <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Danh s�ch H?c sinh *</label>
+                <label className="block text-xs font-bold text-[#64748B] uppercase tracking-wider">Danh sách Học sinh *</label>
                 <div className="border border-[#D9E2EC] rounded-2xl bg-white overflow-hidden shadow-sm">
                   <div className="p-3 bg-slate-50 border-b border-[#D9E2EC] flex justify-between items-center gap-4">
                     <input
                       type="text"
-                      placeholder="T?m nhanh h?c sinh..."
+                      placeholder="Tìm nhanh học sinh..."
                       value={studentSearchQuery}
                       onChange={(e) => setStudentSearchQuery(e.target.value)}
                       className="px-3 py-1.5 bg-white border border-[#D9E2EC] rounded-lg text-xs font-semibold outline-none focus:border-[#00B5E2] max-w-xs w-full"
@@ -7329,7 +7329,7 @@ return {
                         }}
                         className="px-3 py-1.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/25 text-[#004C97] border border-[#00B5E2]/30 rounded-lg text-[11px] font-bold transition-all active:scale-95 cursor-pointer whitespace-nowrap"
                       >
-                        {selectedStudentIds.length === transferStudents.length ? "B? ch?n t?t c?" : "Ch?n t?t c?"}
+                        {selectedStudentIds.length === transferStudents.length ? "Bỏ chọn tất cả" : "Chọn tất cả"}
                       </button>
                     )}
                   </div>
@@ -7338,15 +7338,15 @@ return {
                     {transferStudentsLoading ? (
                       <div className="py-6 flex justify-center items-center text-slate-400 text-xs font-semibold gap-2">
                         <span className="w-4 h-4 border-2 border-[#00B5E2] border-t-transparent rounded-full animate-spin"></span>
-                        �ang t?i danh s�ch h?c sinh...
+                        Đang tải danh sách học sinh...
                       </div>
                     ) : transferStudents.length === 0 ? (
                       <div className="py-6 text-center text-slate-400 text-xs font-semibold">
-                        {transferClassId ? "Kh�ng c� h?c sinh n�o trong l?p n�y." : "Vui l?ng ch?n L?p h?c tr�?c."}
+                        {transferClassId ? "Không có học sinh nào trong lớp này." : "Vui lòng chọn Lớp học trước."}
                       </div>
                     ) : filteredTransferStudents.length === 0 ? (
                       <div className="py-6 text-center text-slate-400 text-xs font-semibold">
-                        Kh�ng t?m th?y h?c sinh ph� h?p.
+                        Không tìm thấy học sinh phù hợp.
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -7382,7 +7382,7 @@ return {
                 </div>
                 {selectedStudentIds.length > 0 && (
                   <div className="text-[11px] font-bold text-[#004C97] mt-1">
-                    �? ch?n <span className="text-[#00B5E2]">{selectedStudentIds.length}</span> h?c sinh.
+                    Đã chọn <span className="text-[#00B5E2]">{selectedStudentIds.length}</span> học sinh.
                   </div>
                 )}
               </div>
@@ -7391,15 +7391,15 @@ return {
         ) : (
           <div className="space-y-4 pt-1">
            <div className="grid grid-cols-2 gap-4">
-              <Field label="M? HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
-              <Field label="Ng�y sinh"><input type="date" value={sForm.dateOfBirth} onChange={e=>setSForm(f=>({...f,dateOfBirth:e.target.value}))} className={inp}/></Field>
+              <Field label="Mã HS KS" required><input value={sForm.studentCode} onChange={e=>setSForm(f=>({...f,studentCode:e.target.value}))} className={inp} disabled={!!editS}/></Field>
+              <Field label="Ngày sinh"><input type="date" value={sForm.dateOfBirth} onChange={e=>setSForm(f=>({...f,dateOfBirth:e.target.value}))} className={inp}/></Field>
            </div>
-           <Field label="H? v� T�n" required><input value={sForm.fullName} onChange={e=>setSForm(f=>({...f,fullName:e.target.value}))} className={inp}/></Field>
+           <Field label="Họ và Tên" required><input value={sForm.fullName} onChange={e=>setSForm(f=>({...f,fullName:e.target.value}))} className={inp}/></Field>
             
             <div className="grid grid-cols-3 gap-4">
-               <Field label="Gi?i t�nh"><select value={sForm.gender} onChange={e=>setSForm(f=>({...f,gender:e.target.value}))} className={inp}><option value="">--</option><option value="Nam">Nam</option><option value="N?">N?</option></select></Field>
-               <Field label="Kh?i"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{activeGrades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
-               <Field label="H?c k? / N�m TS">
+               <Field label="Giới tính"><select value={sForm.gender} onChange={e=>setSForm(f=>({...f,gender:e.target.value}))} className={inp}><option value="">--</option><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></Field>
+               <Field label="Khối"><select value={sForm.grade} onChange={e=>setSForm(f=>({...f,grade:e.target.value}))} className={inp}><option value="">--</option>{activeGrades.map(g=><option key={g} value={g}>{g}</option>)}</select></Field>
+               <Field label="Học kỳ / Năm TS">
                  <select value={sForm.hocKy} onChange={e=>setSForm(f=>({...f,hocKy:e.target.value}))} className={inp}>
                    <option value="">--</option>
                    {configs.filter(c => c.categoryType === "HOC_KY").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -7408,13 +7408,13 @@ return {
             </div>
 
                          <div className="grid grid-cols-3 gap-4">
-                <Field label="H? s�/B?ng �i?m">
+                <Field label="Hồ sơ/Bảng điểm">
                   <select value={sForm.hoSoCtQuocTe} onChange={e=>setSForm(f=>({...f,hoSoCtQuocTe:e.target.value}))} className={inp}>
                     <option value="">--</option>
                     {configs.filter(c => c.categoryType === "HS_HT_HOC_SINH").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </Field>
-                <Field label="K? kh?o s�t" required>
+                <Field label="Kỳ khảo sát" required>
                   <select
                     value={sForm.periodId || sPeriodId || ""}
                     onChange={(e) => {
@@ -7423,15 +7423,15 @@ return {
                     }}
                     className={inp}
                   >
-                    <option value="">-- Ch?n K? --</option>
+                    <option value="">-- Chọn Kỳ --</option>
                     {periods.map(p => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
                 </Field>
-                <Field label="�?t kh?o s�t">
+                <Field label="Đợt khảo sát">
                    <select value={sForm.batchId} onChange={e=>setSForm(f=>({...f,batchId:e.target.value}))} className={inp}>
-                     <option value="">-- Kh�ng c� / M?c �?nh --</option>
+                     <option value="">-- Không có / Mặc định --</option>
                      {(periods.find(p => p.id === (sForm.periodId || sPeriodId))?.batches || []).map(b => (
                        <option key={b.id} value={b.id}>{b.name}</option>
                      ))}
@@ -7441,14 +7441,14 @@ return {
 
              {selPeriod?.name?.toLowerCase().includes("open day") && (
                <div className="grid grid-cols-2 gap-4">
-                 <Field label="��ng k? CS" required>
+                 <Field label="Đăng ký CS" required>
                    <select
                      required
                      value={sForm.registeredCampus}
                      onChange={(e) => setSForm(f => ({ ...f, registeredCampus: e.target.value }))}
                      className={inp}
                    >
-                     <option value="">-- Ch?n c� s? ��ng k? --</option>
+                     <option value="">-- Chọn cơ sở đăng ký --</option>
                      {campuses.map(c => (
                        <option key={c.id} value={c.id}>{c.campusName}</option>
                      ))}
@@ -7459,17 +7459,17 @@ return {
              )}
 
            <div className="space-y-4">
-             <Field label="�?i t�?ng Tuy?n sinh">
+             <Field label="Đối tượng Tuyển sinh">
                 <div className="p-4 bg-white border border-[#D9E2EC] rounded-xl space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Ch?n 1 �?i t�?ng tuy?n sinh:</span>
+                    <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">Chọn 1 đối tượng tuyển sinh:</span>
                     <button 
                       type="button"
                       onClick={() => openAddConfig("DOI_TUONG_TS")}
                       className="px-3 py-1.5 bg-[#E6F8FD] hover:bg-[#00B5E2]/25 text-[#004C97] border border-[#00B5E2]/30 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all active:scale-95 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      Th�m �?i t�?ng
+                      Thêm đối tượng
                     </button>
                   </div>
                   <div className="flex flex-wrap gap-2 pt-1">
@@ -7487,7 +7487,7 @@ return {
                           className={`px-4 py-2 border rounded-xl flex items-center gap-1.5 transition-all text-xs font-semibold select-none cursor-pointer ${isChecked ? 'bg-[#E6F8FD] border-[#00B5E2] text-[#004C97] font-bold shadow-sm' : 'bg-[#F8FAFC] border-[#D9E2EC] text-[#64748B] hover:bg-slate-100/50'}`}
                         >
                           {isChecked ? (
-                            <span className="text-[#00B5E2] font-black text-sm">?</span>
+                            <span className="text-[#00B5E2] font-black text-sm">✓</span>
                           ) : (
                             <span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>
                           )}
@@ -7496,7 +7496,7 @@ return {
                       );
                     })}
                     {configs.filter(c => c.categoryType === "DOI_TUONG_TS").length === 0 && (
-                       <span className="text-xs text-slate-400 italic">Ch�a c� �?i t�?ng tuy?n sinh n�o trong danh m?c</span>
+                       <span className="text-xs text-slate-400 italic">Chưa có đối tượng tuyển sinh nào trong danh mục</span>
                      )}
                    </div>
                  </div>
@@ -7507,30 +7507,30 @@ return {
                         <div className="mt-4 p-5 bg-[#F8FAFC] border border-[#D9E2EC] rounded-2xl space-y-4 animate-in slide-in-from-top-2 duration-200">
                           <div className="flex items-center gap-2 pb-2 border-b border-[#D9E2EC]/60">
                             <span className="w-1.5 h-4 bg-[#00B5E2] inline-block rounded"></span>
-                            <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Th�ng tin tr�?ng h?c c? ({selectedLocationType})</h4>
+                            <h4 className="text-xs font-black text-[#004C97] uppercase tracking-wider">Thông tin trường học cũ ({selectedLocationType})</h4>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            {selectedLocationType === "N?i t?nh" && (
+                            {selectedLocationType === "Nội tỉnh" && (
                               <div className="col-span-2 md:col-span-1">
-                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">T?nh / Th�nh ph? *</label>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
                                 <input
                                   readOnly
                                   type="text"
-                                  value="Th�nh ph? �� N?ng"
+                                  value="Thành phố Đà Nẵng"
                                   className="h-10 w-full px-3.5 bg-slate-100 border border-[#D9E2EC] text-[#1E293B] text-xs font-bold rounded-xl outline-none cursor-not-allowed"
                                 />
                               </div>
                             )}
 
-                            {selectedLocationType === "Ngo?i t?nh" && (
+                            {selectedLocationType === "Ngoại tỉnh" && (
                               <div className="col-span-2 md:col-span-1">
-                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">T?nh / Th�nh ph? *</label>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tỉnh / Thành phố *</label>
                                 <select value={selectedProvince}
                                   onChange={(e) => setSelectedProvince(e.target.value)}
                                   className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                                 >
-                                  <option value="">-- Ch?n T?nh/Th�nh --</option>
+                                  <option value="">-- Chọn Tỉnh/Thành --</option>
                                   {vietnamProvinces.map((p) => (
                                     <option key={p} value={p}>{p}</option>
                                   ))}
@@ -7538,14 +7538,14 @@ return {
                               </div>
                             )}
 
-                            {selectedLocationType === "N�?c ngo�i" && (
+                            {selectedLocationType === "Nước ngoài" && (
                               <div className="col-span-2 md:col-span-1">
-                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Qu?c gia *</label>
+                                <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Quốc gia *</label>
                                 <select value={selectedCountry}
                                   onChange={(e) => setSelectedCountry(e.target.value)}
                                   className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                                 >
-                                  <option value="">-- Ch?n Qu?c gia --</option>
+                                  <option value="">-- Chọn Quốc gia --</option>
                                   {worldCountries.map((c) => (
                                     <option key={c} value={c}>{c}</option>
                                   ))}
@@ -7556,8 +7556,8 @@ return {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">T�n tr�?ng h?c c? *</label>
-                              {(selectedLocationType === "N?i t?nh" || selectedProvince === "Th�nh ph? �� N?ng" || selectedProvince.includes("�� N?ng")) ? (
+                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Tên trường học cũ *</label>
+                              {(selectedLocationType === "Nội tỉnh" || selectedProvince === "Thành phố Đà Nẵng" || selectedProvince.includes("Đà Nẵng")) ? (
                                 <div className="space-y-2">
                                   <select
                                     value={
@@ -7574,26 +7574,26 @@ return {
                                         const list = ((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools);
                                         const matched = list.find(s => s.name === val);
                                         if (matched) {
-                                          const st = matched.schoolType === "PUBLIC" ? "C�ng l?p" : matched.schoolType === "PRIVATE" ? "T� th?c" : (matched.schoolType || "");
+                                          const st = matched.schoolType === "PUBLIC" ? "Công lập" : matched.schoolType === "PRIVATE" ? "Tư thục" : (matched.schoolType || "");
                                           if (st) setSchoolTypeInput(st);
                                         }
                                       }
                                     }}
                                     className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                                   >
-                                    <option value="">-- Ch?n ��n v? Tr�?ng h?c c? --</option>
+                                    <option value="">-- Chọn Đơn vị Trường học cũ --</option>
                                     {((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools).map((s) => (
                                       <option key={s.id || s.name} value={s.name}>
-                                        {s.name} ({s.schoolType === "PUBLIC" ? "C�ng l?p" : s.schoolType === "PRIVATE" ? "T� th?c" : (s.schoolType || "Kh�c")})
+                                        {s.name} ({s.schoolType === "PUBLIC" ? "Công lập" : s.schoolType === "PRIVATE" ? "Tư thục" : (s.schoolType || "Khác")})
                                       </option>
                                     ))}
-                                    <option value="__OTHER__">-- Kh�c (Nh?p th? c�ng b�n d�?i) --</option>
+                                    <option value="__OTHER__">-- Khác (Nhập thủ công bên dưới) --</option>
                                   </select>
 
                                   {(!schoolNameInput || !((typeof destinationSchools !== "undefined" && destinationSchools && destinationSchools.length > 0) ? destinationSchools : defaultDanangSchools).some(s => s.name === schoolNameInput)) && (
                                     <input type="text" value={schoolNameInput}
                                       onChange={(e) => setSchoolNameInput(e.target.value)}
-                                      placeholder="Nh?p t�n tr�?ng c? (VD: TH Ph� �?ng)"
+                                      placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
                                       className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
                                     />
                                   )}
@@ -7601,23 +7601,23 @@ return {
                               ) : (
                                 <input type="text" value={schoolNameInput}
                                   onChange={(e) => setSchoolNameInput(e.target.value)}
-                                  placeholder="Nh?p t�n tr�?ng c? (VD: TH Ph� �?ng)"
+                                  placeholder="Nhập tên trường cũ (VD: TH Phù Đổng)"
                                   className="h-10 w-full px-3.5 bg-white border border-[#D9E2EC] text-[#1E293B] placeholder-[#94A3B8] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10"
                                 />
                               )}
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Lo?i h?nh tr�?ng *</label>
+                              <label className="block text-[10px] font-bold text-[#64748B] uppercase tracking-wider mb-1.5">Loại hình trường *</label>
                               <select value={schoolTypeInput}
                                 onChange={(e) => setSchoolTypeInput(e.target.value)}
                                 className="h-10 w-full px-3 bg-white border border-[#D9E2EC] text-[#1E293B] text-xs font-semibold rounded-xl outline-none focus:border-[#00B5E2] focus:ring-4 focus:ring-[#00B5E2]/10 cursor-pointer"
                               >
-                                <option value="">-- Ch?n lo?i h?nh --</option>
-                                <option value="C�ng l?p">C�ng l?p</option>
-                                <option value="T� th?c">T� th?c</option>
-                                <option value="Song ng?">Song ng?</option>
-                                <option value="Qu?c t?">Qu?c t?</option>
+                                <option value="">-- Chọn loại hình --</option>
+                                <option value="Công lập">Công lập</option>
+                                <option value="Tư thục">Tư thục</option>
+                                <option value="Song ngữ">Song ngữ</option>
+                                <option value="Quốc tế">Quốc tế</option>
                               </select>
                             </div>
                           </div>
@@ -7626,13 +7626,13 @@ return {
 
 
              <div className="grid grid-cols-2 gap-4">
-                 <Field label="Di?n Kh?o s�t">
+                 <Field label="Diện Khảo sát">
                   <select value={sForm.admissionCriteria} onChange={e=>setSForm(f=>({...f,admissionCriteria:e.target.value}))} className={inp}>
                     <option value="">--</option>
                     {configs.filter(c => c.categoryType === "DIEN_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </Field>
-                <Field label="H?nh th?c KS">
+                <Field label="Hình thức KS">
                   <select value={sForm.surveySystem} onChange={e=>setSForm(f=>({...f,surveySystem:e.target.value}))} className={inp}>
                     <option value="">--</option>
                     {configs.filter(c => c.categoryType === "HINH_THUC_KS").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -7642,19 +7642,19 @@ return {
            </div>
 
            <div className="grid grid-cols-3 gap-4">
-                <Field label="K?t qu? H?c t?p">
+                <Field label="Kết quả Học tập">
                   <select value={sForm.kqHocTap} onChange={e=>setSForm(f=>({...f,kqHocTap:e.target.value}))} className={inp}>
                     <option value="">--</option>
                     {configs.filter(c => c.categoryType === "KQ_HOC_TAP").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </Field>
-                <Field label="K?t qu? R�n luy?n">
+                <Field label="Kết quả Rèn luyện">
                   <select value={sForm.kqRenLuyen} onChange={e=>setSForm(f=>({...f,kqRenLuyen:e.target.value}))} className={inp}>
                     <option value="">--</option>
                     {configs.filter(c => c.categoryType === "KQ_REN_LUYEN").map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                   </select>
                 </Field>
-                <Field label="H? Kh?o s�t">
+                <Field label="Hệ Khảo sát">
                   <select value={sForm.surveyFormType} onChange={e=>setSForm(f=>({...f,surveyFormType:e.target.value}))} className={inp}>
                     <option value="">--</option>
                     {currentEduSystems.map(es => <option key={es.code} value={es.code}>{es.code} - {es.name}</option>)}
@@ -7665,11 +7665,11 @@ return {
         )}
       </Modal>
 
-      <Modal open={cModal} onClose={()=>setCModal(false)} title="Gi� tr? Danh m?c" size="sm" footer={<><button onClick={()=>setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">H?y</button> <button onClick={saveConfig} className="flex-1 text-white text-xs font-black uppercase tracking-widest text-xs font-semibold">L�u</button></>}>
+      <Modal open={cModal} onClose={()=>setCModal(false)} title="Giá trị Danh mục" size="sm" footer={<><button onClick={()=>setCModal(false)} className="flex-1 text-xs font-black uppercase text-slate-400">Hủy</button> <button onClick={saveConfig} className="flex-1 text-white text-xs font-black uppercase tracking-widest text-xs font-semibold">Lưu</button></>}>
         <div className="space-y-4">
-           <Field label="Lo?i"><input value={cForm.categoryType} disabled className={inp}/></Field>
-           <Field label="M? (Code)"><input value={cForm.code} onChange={e=>setCForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
-           <Field label="T�n hi?n th?"><input value={cForm.name} onChange={e=>setCForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
+           <Field label="Loại"><input value={cForm.categoryType} disabled className={inp}/></Field>
+           <Field label="Mã (Code)"><input value={cForm.code} onChange={e=>setCForm(f=>({...f,code:e.target.value.toUpperCase()}))} className={inp}/></Field>
+           <Field label="Tên hiển thị"><input value={cForm.name} onChange={e=>setCForm(f=>({...f,name:e.target.value}))} className={inp}/></Field>
         </div>
       </Modal>
 
@@ -8139,7 +8139,7 @@ return {
             <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-b border-slate-200/90 no-print text-xs font-semibold z-10">
               <div className="flex items-center gap-2">
                 {isInvitation ? <Mail className="w-5 h-5 text-indigo-600"/> : <GraduationCap className="w-5 h-5 text-indigo-600"/>}
-                <h3 className="text-base font-black text-slate-800">{isInvitation ? "M?u Th� m?i kh?o s�t" : isCommitment ? "B?n Cam k?t h?c t?p" : "M?u Th� Ch�c m?ng"}</h3>
+                <h3 className="text-base font-black text-slate-800">{isInvitation ? "Mẫu Thư mời khảo sát" : isCommitment ? "Bản Cam kết học tập" : "Mẫu Thư Chúc mừng"}</h3>
               </div>
               <div className="flex items-center gap-4">
                 <button 
@@ -8159,7 +8159,7 @@ return {
                     
                     const btn = document.getElementById('export-pdf-btn') as HTMLButtonElement | null;
                     if(btn) {
-                      btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> �ang t?o PDF...';
+                      btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Đang tạo PDF...';
                       btn.disabled = true;
                     }
 
@@ -8183,11 +8183,11 @@ return {
                         }, 1000);
                       }, 100);
                     } catch (err: any) {
-                      alert('L?i khi g?i l?nh in: ' + (err.message || err));
+                      alert('Lỗi khi gọi lệnh in: ' + (err.message || err));
                       console.error(err);
                     } finally {
                       if(btn) {
-                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Xu?t File PDF / In';
+                        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Xuất File PDF / In';
                         btn.disabled = false;
                       }
                     }
@@ -8195,7 +8195,7 @@ return {
                   className="hover:bg-emerald-700 text-white text-xs font-black uppercase tracking-wider shadow-md shadow-emerald-100 flex items-center gap-2 transition-all text-xs font-semibold"
                 >
                   <Download className="w-4 h-4" />
-                  Xu?t File PDF / In
+                  Xuất File PDF / In
                 </button>
                 
                 <button type="button"
@@ -8240,16 +8240,16 @@ return {
                   {/* Letter Title */}
                   <div className="text-center my-4">
                     <h2 className="text-2xl font-black tracking-widest text-indigo-950 uppercase mb-2" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                      {isInvitation ? (studentCampusConfig?.title || "TH� M?I") : isCommitment ? (studentCampusConfig?.title || "B?N CAM K?T H?C T?P") : (studentCampusConfig?.title || "TH� CH�C M?NG")}
+                      {isInvitation ? (studentCampusConfig?.title || "THƯ MỜI") : isCommitment ? (studentCampusConfig?.title || "BẢN CAM KẾT HỌC TẬP") : (studentCampusConfig?.title || "THƯ CHÚC MỪNG")}
                     </h2>
                   </div>
 
                   {/* Greeting */}
                   <p className="text-[16px] italic mb-3 text-slate-800">
                     {isInvitation ? (
-                      <>K�nh g?i Qu? Ph? huynh v� em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
+                      <>Kính gửi Quý Phụ huynh và em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     ) : (
-                      <>Th�n g?i em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
+                      <>Thân gửi em <strong className="font-black not-italic text-slate-900">{selectedReportStudent.fullName}</strong>,</>
                     )}
                   </p>
 
@@ -8267,25 +8267,25 @@ return {
                     ) : (
                       <div className="space-y-6 text-justify text-[15px] leading-relaxed">
                         <p className="" style={{ textIndent: "1cm" }}>
-                          H?i �?ng Tuy?n sinh H? th?ng Gi�o d?c Sky-Line tr�n tr?ng g?i l?i ch�o v� l?i ch�c s?c kh?e, an khang �?n Qu? ph? huynh c�ng gia �?nh.
+                          Hội đồng Tuyển sinh Hệ thống Giáo dục Sky-Line trân trọng gửi lời chào và lời chúc sức khỏe, an khang đến Quý phụ huynh cùng gia đình.
                         </p>
                         
                         <p className="" style={{ textIndent: "1cm" }}>
-                          Nh?m t?o �i?u ki?n t?t nh?t �? nh� tr�?ng hi?u r? h�n v? n�ng l?c t� duy, ng�n ng? c?ng nh� thi�n h�?ng ph�t tri?n t? nhi�n c?a h?c sinh, qua �� x�y d?ng l? tr?nh r�n luy?n t?i �u nh?t, ch�ng t�i tr�n tr?ng k�nh m?i Qu? ph? huynh c�ng h?c sinh tham gia bu?i <strong className="font-bold">Kh?o s�t N�ng l?c �?u v�o</strong> h? <strong className="font-bold">{selectedReportStudent.surveyFormType || "H?i nh?p Global"}</strong> n�m h?c <strong className="font-bold">2026-2027</strong>.
+                          Nhằm tạo điều kiện tốt nhất để nhà trường hiểu rõ hơn về năng lực tư duy, ngôn ngữ cũng như thiên hướng phát triển tự nhiên của học sinh, qua đó xây dựng lộ trình rèn luyện tối ưu nhất, chúng tôi trân trọng kính mời Quý phụ huynh cùng học sinh tham gia buổi <strong className="font-bold">Khảo sát Năng lực Đầu vào</strong> hệ <strong className="font-bold">{selectedReportStudent.surveyFormType || "Hội nhập Global"}</strong> năm học <strong className="font-bold">2026-2027</strong>.
                         </p>
                         
                         <div className="p-5 space-y-2 text-sm text-slate-700 ml-4 font-sans leading-relaxed shadow-inner text-xs font-semibold">
-                          <p><strong>� Th?i gian kh?o s�t:</strong> Theo l?ch h?n c? th? ��?c s?p x?p t? Ban Tuy?n sinh.</p>
+                          <p><strong>• Thời gian khảo sát:</strong> Theo lịch hẹn cụ thể được sắp xếp từ Ban Tuyển sinh.</p>
                           
-                          <p><strong>� N?i dung kh?o s�t:</strong> ��nh gi� t� duy ng�n ng?, t� duy logic t? nhi�n v� kh? n�ng t��ng t�c x? h?i ph� h?p theo �? tu?i.</p>
+                          <p><strong>• Nội dung khảo sát:</strong> Đánh giá tư duy ngôn ngữ, tư duy logic tự nhiên và khả năng tương tác xã hội phù hợp theo độ tuổi.</p>
                         </div>
                         
                         <p className="" style={{ textIndent: "1cm" }}>
-                          S? hi?n di?n v� �?ng h�nh c?a Qu? ph? huynh c�ng h?c sinh l� ni?m h�n h?nh l?n cho Sky-Line, gi�p nh� tr�?ng c� s? chu?n b? chu ��o nh?t ��n ch�o c�c em gia nh?p m�i tr�?ng h?nh ph�c c?a ch�ng ta.
+                          Sự hiện diện và đồng hành của Quý phụ huynh cùng học sinh là niềm hân hạnh lớn cho Sky-Line, giúp nhà trường có sự chuẩn bị chu đáo nhất đón chào các em gia nhập mái trường hạnh phúc của chúng ta.
                         </p>
                         
                         <p className="italic text-slate-600">
-                          Tr�n tr?ng k�nh m?i Qu? ph? huynh v� c�c em h?c sinh!
+                          Trân trọng kính mời Quý phụ huynh và các em học sinh!
                         </p>
                       </div>
                     )
@@ -8298,7 +8298,7 @@ return {
                           signatureName: studentCampusConfig?.directorName || selectedReportStudent?.signatureName || ""
                         }
                       ).split('\n').filter(Boolean).map((para, idx) => {
-                        const isList = /^[\d�\-*]+/.test(para.trim());
+                        const isList = /^[\d•\-*]+/.test(para.trim());
                         return (
                           <p key={idx} className={isList ? "pl-4" : ""} style={isList ? {} : { textIndent: "1cm" }}>
                             {para}
@@ -8328,17 +8328,17 @@ return {
                 {isCommitment ? (
                   <div className="grid grid-cols-2 gap-8 mt-4 text-center">
                     <div className="flex flex-col items-center">
-                      <p className="font-bold uppercase text-slate-700 text-xs tracking-wider">�?I DI?N GIA �?NH</p>
-                      <p className="italic text-[10px] text-slate-400 mt-1">(K? v� ghi r? h? t�n)</p>
+                      <p className="font-bold uppercase text-slate-700 text-xs tracking-wider">ĐẠI DIỆN GIA ĐÌNH</p>
+                      <p className="italic text-[10px] text-slate-400 mt-1">(Ký và ghi rõ họ tên)</p>
                       <div className="h-16 flex items-end justify-center">
-                        <span className="text-slate-300 italic text-xs">K? t�n</span>
+                        <span className="text-slate-300 italic text-xs">Ký tên</span>
                       </div>
                     </div>
                     
                     <div className="flex flex-col items-center">
                       <p className="italic text-slate-500 mb-1 text-xs">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. H?I �?NG TUY?N SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">GI�M �?C �I?U H�NH SKY-LINE {campusTitleSuffix}</p>
+                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-4">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
@@ -8347,7 +8347,7 @@ return {
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {studentCampusConfig?.directorName || "�? Quang Trung"}
+                        {studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
                   </div>
@@ -8355,8 +8355,8 @@ return {
                   <div className="flex flex-col items-end mt-4 pr-4">
                     <div className="flex flex-col items-center text-center" style={{ minWidth: "240px" }}>
                       <p className="italic text-slate-500 mb-1">{formattedLetterDate}</p>
-                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. H?I �?NG TUY?N SINH</p>
-                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GI�M �?C �I?U H�NH SKY-LINE {campusTitleSuffix}</p>
+                      <p className="font-bold uppercase text-indigo-950 text-xs tracking-wider">TM. HỘI ĐỒNG TUYỂN SINH</p>
+                      <p className="font-bold uppercase text-indigo-900/80 text-[10px] tracking-wider mb-6">GIÁM ĐỐC ĐIỀU HÀNH SKY-LINE {campusTitleSuffix}</p>
                       
                       <div className="h-16 flex items-center justify-center">
                         {studentCampusConfig?.signature ? (
@@ -8365,7 +8365,7 @@ return {
                       </div>
                       
                       <p className="font-bold text-slate-700 mt-2 text-sm">
-                        {studentCampusConfig?.directorName || "�? Quang Trung"}
+                        {studentCampusConfig?.directorName || "Đỗ Quang Trung"}
                       </p>
                     </div>
                   </div>
@@ -8383,7 +8383,7 @@ return {
                   <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#48BFE3] whitespace-nowrap uppercase text-[11.5px] tracking-wide">H? TH?NG GI�O D?C SKY-LINE</span>
+                      <span className="font-bold text-[#48BFE3] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                       <div className="flex-grow border-t border-[#48BFE3]/70 h-0 mt-0.5"></div>
                       <span className="font-semibold text-[#48BFE3] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
@@ -8394,15 +8394,15 @@ return {
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">L� A2.4 Tr?n ��ng Ninh, P. H?a C�?ng, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Central</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">S? 48 Nguy?n Du, P. H?i Ch�u, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Global</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">L� A2 Tr?n ��ng Ninh, P. H?a C�?ng, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
 
@@ -8410,15 +8410,15 @@ return {
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Beach</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">S? 199 Tr?n Anh T�ng, P. Thanh Kh�, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Hill</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Kh?i H� My ��ng A, P. �i?n B�n ��ng, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">Trung t�m s?ng th�nh c�ng - SLS</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">S? 48 Nguy?n Du, P. H?i Ch�u, TP. �� N?ng</p>
+                          <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
 
@@ -8477,7 +8477,7 @@ return {
                       {/* Page Title */}
                       <div className="text-center my-6">
                         <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-4" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                          DANH M?C H? S� NH?P H?C
+                          DANH MỤC HỒ SƠ NHẬP HỌC
                         </h2>
                       </div>
 
@@ -8487,8 +8487,8 @@ return {
                           <thead>
                             <tr className="bg-white border-b border-slate-950">
                               <th className="px-3 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950 w-16" style={{ borderRightWidth: '1px', borderColor: '#000' }}>STT</th>
-                              <th className="px-5 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>T�n h? s�</th>
-                              <th className="p-2 p-2 font-bold text-center uppercase text-slate-950 w-32 border border-slate-200">S? l�?ng</th>
+                              <th className="px-5 py-2.5 font-bold border-r border-slate-950 text-center uppercase text-slate-950" style={{ borderRightWidth: '1px', borderColor: '#000' }}>Tên hồ sơ</th>
+                              <th className="p-2 p-2 font-bold text-center uppercase text-slate-950 w-32 border border-slate-200">Số lượng</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -8504,7 +8504,7 @@ return {
                       </div>
 
                       <p className="mt-8 text-[13px] text-slate-950 font-bold text-left leading-relaxed" style={{ fontFamily: "'Times New Roman', Times, serif" }}>
-                        Qu? ph? huynh vui l?ng b? sung h? s� thi?u (n?u c�) trong v?ng 10 ng�y k? t? ng�y n?p H? s�.
+                        Quý phụ huynh vui lòng bổ sung hồ sơ thiếu (nếu có) trong vòng 10 ngày kể từ ngày nộp Hồ sơ.
                       </p>
                     </div>
 
@@ -8519,7 +8519,7 @@ return {
                       <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                     {/* High-fidelity Header Title & Line */}
                     <div className="flex items-center gap-2 mb-2.5 w-full">
-                      <span className="font-bold text-[#48BFE3] whitespace-nowrap uppercase text-[11.5px] tracking-wide">H? TH?NG GI�O D?C SKY-LINE</span>
+                      <span className="font-bold text-[#48BFE3] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                       <div className="flex-grow border-t border-[#48BFE3]/70 h-0 mt-0.5"></div>
                       <span className="font-semibold text-[#48BFE3] whitespace-nowrap lowercase text-[11px]">www.skylineschool.edu.vn</span>
                     </div>
@@ -8530,15 +8530,15 @@ return {
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Riverside</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">L� A2.4 Tr?n ��ng Ninh, P. H?a C�?ng, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2.4 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Central</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">S? 48 Nguy?n Du, P. H?i Ch�u, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Global</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">L� A2 Tr?n ��ng Ninh, P. H?a C�?ng, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Lô A2 Trần Đăng Ninh, P. Hòa Cường, TP. Đà Nẵng</p>
                         </div>
                       </div>
 
@@ -8546,15 +8546,15 @@ return {
                       <div className="w-[30%] flex flex-col gap-1.5 text-left">
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Beach</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">S? 199 Tr?n Anh T�ng, P. Thanh Kh�, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 199 Trần Anh Tông, P. Thanh Khê, TP. Đà Nẵng</p>
                         </div>
                         <div>
                           <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">SKY-LINE Hill</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Kh?i H� My ��ng A, P. �i?n B�n ��ng, TP. �� N?ng</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Khối Hà My Đông A, P. Điện Bàn Đông, TP. Đà Nẵng</p>
                         </div>
                         <div>
-                          <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">Trung t�m s?ng th�nh c�ng - SLS</p>
-                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">S? 48 Nguy?n Du, P. H?i Ch�u, TP. �� N?ng</p>
+                          <p className="font-bold text-[#48BFE3] text-[9.5px] leading-tight">Trung tâm sống thành công - SLS</p>
+                          <p className="text-[#555555] text-[8.5px] leading-tight mt-0.5">Số 48 Nguyễn Du, P. Hải Châu, TP. Đà Nẵng</p>
                         </div>
                       </div>
 
@@ -8586,7 +8586,7 @@ return {
                   const subject = sc.subject || {};
                   const subName = (subject.name || "").toLowerCase().normalize("NFC");
                   const subCode = (subject.code || "").toLowerCase();
-                  const isChildDev = subName.includes("chu?n ph�t tri?n") || subCode.includes("cpt") || subCode.includes("tci");
+                  const isChildDev = subName.includes("chuẩn phát triển") || subCode.includes("cpt") || subCode.includes("tci");
                   
                   if (!isChildDev) return null;
 
@@ -8597,41 +8597,41 @@ return {
                   try { if (subject.columnNames) { const parsed = JSON.parse(subject.columnNames); parsedCols = { scores: Array.isArray(parsed.scores) ? parsed.scores : [] }; } } catch {}
 
                   const failedCriteria = scoreVals.map((v, idx) => v === "2" ? (parsedCols.scores[idx] || (isChildDev ? [
-    "Ch? s? 65. C� th�i quen ch�o h?i, c?m �n, xin ph�p v� x�ng h� l? ph�p v?i ng�?i l?n",
-    "Ch? s? 74. T?p trung ch� ? th?c hi?n nhi?m v? v� ho?t �?ng.",
-    "Ch? s? 16. Nh?n bi?t v? t�n g?i, �?c �i?m b�n ngo�i, gi?i t�nh, s? th�ch, �i?m m?nh, �i?m y?u c?a b?n th�n.",
-    "Ch? s? 14. Nh?n ra t?nh hu?ng nguy hi?m v� bi?t c�ch x? l? ph� h?p.",
-    "Ch? s? 33. S? d?ng l?i n�i, h�nh vi l?ch s? trong giao ti?p.",
-    "Ch? s? 31. Nghe v� ph?n h?i th�ng tin ��n gi?n.",
-    "Ch? s? 48. G?i t�n c�c ng�y trong tu?n theo th? t?.",
-    "Ch? s? 47. X�c �?nh ��?c v? tr� (trong, ngo�i, tr�n, d�?i, sau, ph?i, tr�i) c?a m?t v?t so v?i m?t v?t kh�c.",
-    "Ch? s? 51. Ph�n lo?i m?t s? s? v?t th�nh nh�m theo �?c �i?m chung v� g?i t�n nh�m.",
-    "Ch? s? 45. X�c �?nh m?t s? h?nh ph?ng v� h?nh kh?i ��n gi?n trong cu?c s?ng xung quanh.",
-    "Ch? s? 42,43. T�ch, g?p s? l�?ng trong ph?m vi 10; so s�nh, th�m b?t s? l�?ng trong ph?m vi 10.",
-    "Ch? s? 38. Nh?n bi?t v� g?i t�n ch? c�i trong b?ng ch? c�i Ti?ng Vi?t.",
-    "Ch? s? 41. B?t ch�?c h�nh vi �vi?t�",
-    "Ch? s? 9. Th?c hi?n c�c vi?c t? ph?c v? kh�ng c?n s? gi�p �?.",
-    "Ch? s? 60. Th? hi?n ? t�?ng, c?m x�c c?a b?n th�n th�ng qua h�t, v?n �?ng theo nh?c.",
-    "Ch? s? 61. T� m�u k�n, kh�ng ch?m ra ngo�i ��?ng vi?n c�c h?nh c� chi ti?t nh?."
-][idx] : ("Ti�u ch� " + (idx + 1)))) : null).filter(Boolean);
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
                   const skippedCriteria = scoreVals.map((v, idx) => v === "1" ? (parsedCols.scores[idx] || (isChildDev ? [
-    "Ch? s? 65. C� th�i quen ch�o h?i, c?m �n, xin ph�p v� x�ng h� l? ph�p v?i ng�?i l?n",
-    "Ch? s? 74. T?p trung ch� ? th?c hi?n nhi?m v? v� ho?t �?ng.",
-    "Ch? s? 16. Nh?n bi?t v? t�n g?i, �?c �i?m b�n ngo�i, gi?i t�nh, s? th�ch, �i?m m?nh, �i?m y?u c?a b?n th�n.",
-    "Ch? s? 14. Nh?n ra t?nh hu?ng nguy hi?m v� bi?t c�ch x? l? ph� h?p.",
-    "Ch? s? 33. S? d?ng l?i n�i, h�nh vi l?ch s? trong giao ti?p.",
-    "Ch? s? 31. Nghe v� ph?n h?i th�ng tin ��n gi?n.",
-    "Ch? s? 48. G?i t�n c�c ng�y trong tu?n theo th? t?.",
-    "Ch? s? 47. X�c �?nh ��?c v? tr� (trong, ngo�i, tr�n, d�?i, sau, ph?i, tr�i) c?a m?t v?t so v?i m?t v?t kh�c.",
-    "Ch? s? 51. Ph�n lo?i m?t s? s? v?t th�nh nh�m theo �?c �i?m chung v� g?i t�n nh�m.",
-    "Ch? s? 45. X�c �?nh m?t s? h?nh ph?ng v� h?nh kh?i ��n gi?n trong cu?c s?ng xung quanh.",
-    "Ch? s? 42,43. T�ch, g?p s? l�?ng trong ph?m vi 10; so s�nh, th�m b?t s? l�?ng trong ph?m vi 10.",
-    "Ch? s? 38. Nh?n bi?t v� g?i t�n ch? c�i trong b?ng ch? c�i Ti?ng Vi?t.",
-    "Ch? s? 41. B?t ch�?c h�nh vi �vi?t�",
-    "Ch? s? 9. Th?c hi?n c�c vi?c t? ph?c v? kh�ng c?n s? gi�p �?.",
-    "Ch? s? 60. Th? hi?n ? t�?ng, c?m x�c c?a b?n th�n th�ng qua h�t, v?n �?ng theo nh?c.",
-    "Ch? s? 61. T� m�u k�n, kh�ng ch?m ra ngo�i ��?ng vi?n c�c h?nh c� chi ti?t nh?."
-][idx] : ("Ti�u ch� " + (idx + 1)))) : null).filter(Boolean);
+    "Chỉ số 65. Có thói quen chào hỏi, cảm ơn, xin phép và xưng hô lễ phép với người lớn",
+    "Chỉ số 74. Tập trung chú ý thực hiện nhiệm vụ và hoạt động.",
+    "Chỉ số 16. Nhận biết về tên gọi, đặc điểm bên ngoài, giới tính, sở thích, điểm mạnh, điểm yếu của bản thân.",
+    "Chỉ số 14. Nhận ra tình huống nguy hiểm và biết cách xử lý phù hợp.",
+    "Chỉ số 33. Sử dụng lời nói, hành vi lịch sự trong giao tiếp.",
+    "Chỉ số 31. Nghe và phản hồi thông tin đơn giản.",
+    "Chỉ số 48. Gọi tên các ngày trong tuần theo thứ tự.",
+    "Chỉ số 47. Xác định được vị trí (trong, ngoài, trên, dưới, sau, phải, trái) của một vật so với một vật khác.",
+    "Chỉ số 51. Phân loại một số sự vật thành nhóm theo đặc điểm chung và gọi tên nhóm.",
+    "Chỉ số 45. Xác định một số hình phẳng và hình khối đơn giản trong cuộc sống xung quanh.",
+    "Chỉ số 42,43. Tách, gộp số lượng trong phạm vi 10; so sánh, thêm bớt số lượng trong phạm vi 10.",
+    "Chỉ số 38. Nhận biết và gọi tên chữ cái trong bảng chữ cái Tiếng Việt.",
+    "Chỉ số 41. Bắt chước hành vi “viết”",
+    "Chỉ số 9. Thực hiện các việc tự phục vụ không cần sự giúp đỡ.",
+    "Chỉ số 60. Thể hiện ý tưởng, cảm xúc của bản thân thông qua hát, vận động theo nhạc.",
+    "Chỉ số 61. Tô màu kín, không chờm ra ngoài đường viền các hình có chi tiết nhỏ."
+][idx] : ("Tiêu chí " + (idx + 1)))) : null).filter(Boolean);
 
                   if (failedCriteria.length === 0 && skippedCriteria.length === 0) return null;
 
@@ -8660,14 +8660,14 @@ return {
                         </div>
 
                         <div className="text-center my-6">
-                          <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-2">CHI TI?T ��NH GI�</h2>
+                          <h2 className="text-xl font-bold tracking-widest text-indigo-950 uppercase mb-2">CHI TIẾT ĐÁNH GIÁ</h2>
                           <h3 className="text-lg font-bold text-slate-700 uppercase">{subject.name}</h3>
                         </div>
 
                         <div className="space-y-8 mt-4">
                           {failedCriteria.length > 0 && (
                             <div className="space-y-3">
-                              <h4 className="text-base font-bold text-rose-700 border-b border-rose-200 pb-1 uppercase tracking-wide">C�c ti�u ch� ch�a �?t</h4>
+                              <h4 className="text-base font-bold text-rose-700 border-b border-rose-200 pb-1 uppercase tracking-wide">Các tiêu chí chưa đạt</h4>
                               <ul className="space-y-2 list-none">
                                 {failedCriteria.map((name, i) => (
                                   <li key={i} className="flex items-start gap-3 text-[14px]">
@@ -8681,7 +8681,7 @@ return {
 
                           {skippedCriteria.length > 0 && (
                             <div className="space-y-3">
-                              <h4 className="text-base font-bold text-slate-600 border-b border-slate-200 pb-1 uppercase tracking-wide">C�c ti�u ch� ch�a th?c hi?n</h4>
+                              <h4 className="text-base font-bold text-slate-600 border-b border-slate-200 pb-1 uppercase tracking-wide">Các tiêu chí chưa thực hiện</h4>
                               <ul className="space-y-2 list-none">
                                 {skippedCriteria.map((name, i) => (
                                   <li key={i} className="flex items-start gap-3 text-[14px]">
@@ -8703,7 +8703,7 @@ return {
                       ) : (
                         <div className="w-full pt-1 mt-4 z-10 print-footer" style={{ marginTop: "40px", width: "100%", paddingLeft: "15mm", paddingRight: "15mm", boxSizing: "border-box", fontFamily: "Arial, sans-serif" }}>
                           <div className="flex items-center gap-2 mb-2.5 w-full">
-                            <span className="font-bold text-[#48BFE3] whitespace-nowrap uppercase text-[11.5px] tracking-wide">H? TH?NG GI�O D?C SKY-LINE</span>
+                            <span className="font-bold text-[#48BFE3] whitespace-nowrap uppercase text-[11.5px] tracking-wide">HỆ THỐNG GIÁO DỤC SKY-LINE</span>
                             <div className="flex-grow border-t border-[#48BFE3]/70 h-0 mt-0.5"></div>
                           </div>
                           <div className="flex flex-row justify-between w-full relative text-[9px]">
@@ -8739,9 +8739,9 @@ return {
                   </div>
                   <div>
                     <h2 className="text-lg font-black tracking-wide flex items-center gap-2 text-white">
-                      G?i B�o c�o nhanh qua Email
+                      Gửi Báo cáo nhanh qua Email
                     </h2>
-                    <p className="text-slate-300 text-xs mt-0.5 font-medium">G?i tr?c ti?p danh s�ch k?t qu? kh?o s�t qua h? th?ng email</p>
+                    <p className="text-slate-300 text-xs mt-0.5 font-medium">Gửi trực tiếp danh sách kết quả khảo sát qua hệ thống email</p>
                   </div>
                 </div>
                 <button 
@@ -8761,10 +8761,10 @@ return {
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                   <div>
                     <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">
-                      THI?T L?P CHECK EMAIL NH?N
+                      THIẾT LẬP CHECK EMAIL NHẬN
                     </span>
                     <span className="text-[10px] text-slate-400 font-semibold mt-0.5 block">
-                      Ch?n nhanh nh�m nh?n th� t? �?ng d?a tr�n C� s? (CS)
+                      Chọn nhanh nhóm nhận thư tự động dựa trên Cơ sở (CS)
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -8791,7 +8791,7 @@ return {
                       }}
                       className="px-3 py-1.5 bg-[#0c363f]/5 hover:bg-[#0c363f]/10 text-[#0c363f] font-bold text-[10px] rounded-xl transition-colors cursor-pointer select-none"
                     >
-                      Ch?n nhanh CS1-CS4
+                      Chọn nhanh CS1-CS4
                     </button>
                     <button
                       onClick={() => {
@@ -8803,15 +8803,15 @@ return {
                       }}
                       className="hover:bg-rose-100 text-rose-600 font-bold text-[10px] transition-colors cursor-pointer select-none text-xs font-semibold"
                     >
-                      X�a ch?n
+                      Xóa chọn
                     </button>
                   </div>
                 </div>
                 
                 <div className="divide-y divide-slate-50 text-xs">
-                  {/* Row 1: T� v?n */}
+                  {/* Row 1: Tư vấn */}
                   <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">T� v?n:</span>
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Tư vấn:</span>
                     <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
                       {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
                         <label key={`tuvan-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
@@ -8827,9 +8827,9 @@ return {
                     </div>
                   </div>
 
-                  {/* Row 2: Gi�o v? */}
+                  {/* Row 2: Giáo vụ */}
                   <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Gi�o v?:</span>
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">Giáo vụ:</span>
                     <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
                       {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
                         <label key={`giaovu-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
@@ -8845,9 +8845,9 @@ return {
                     </div>
                   </div>
 
-                  {/* Row 3: G�CS */}
+                  {/* Row 3: GĐCS */}
                   <div className="grid grid-cols-1 md:grid-cols-6 items-center gap-2 py-3">
-                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">G�CS:</span>
+                    <span className="text-[11px] font-bold text-slate-500 md:col-span-1 tracking-wider uppercase">GĐCS:</span>
                     <div className="md:col-span-5 flex flex-wrap gap-x-6 gap-y-3">
                       {['CS1', 'CS2', 'CS3', 'CS4', 'CS5'].map(cs => (
                         <label key={`gdcs-${cs}`} className="inline-flex items-center gap-2 cursor-pointer text-xs font-semibold text-slate-600 hover:text-[#0c363f] transition-colors select-none">
@@ -8885,23 +8885,23 @@ return {
               <div className="bg-white p-6 rounded-3xl border-2 border-amber-200/70 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    NG�?I NH?N (EMAIL)
+                    NGƯỜI NHẬN (EMAIL)
                   </label>
                   <input
                     type="text"
                     value={recipientEmail}
                     onChange={e => handleRecipientEmailChange(e.target.value)}
                     className="w-full bg-[#f8fafc] border border-slate-200/80 rounded-2xl px-4.5 py-3.5 text-sm font-semibold text-slate-700 outline-none focus:bg-white focus:border-[#0c363f] focus:ring-4 focus:ring-[#0c363f]/5 transition-all shadow-sm placeholder:text-slate-300"
-                    placeholder="Nh?p �?a ch? email ng�?i nh?n..."
+                    placeholder="Nhập địa chỉ email người nhận..."
                   />
                   <p className="text-[10px] text-slate-400 font-semibold mt-0.5 ml-1">
-                    C� th? nh?p nhi?u email, ph�n c�ch b?ng d?u ph?y ( , )
+                    Có thể nhập nhiều email, phân cách bằng dấu phẩy ( , )
                   </p>
                 </div>
                 
                 <div className="flex flex-col gap-2">
                   <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    TI�U �? TH�
+                    TIÊU ĐỀ THƯ
                   </label>
                   <input
                     type="text"
@@ -8915,8 +8915,8 @@ return {
               {/* Attach Letters Option Switch */}
               <div className="bg-white p-5 rounded-3xl border-2 border-blue-100/80 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">C� ��nh k�m File PDF (Th� ch�c m?ng & B?n cam k?t)</span>
-                  <span className="text-[11px] text-slate-400 font-semibold leading-relaxed">T? �?ng t?o v� ��nh k�m li�n k?t t?p PDF Th� ch�c m?ng / B?n cam k?t cho t?ng h?c sinh �?t y�u c?u</span>
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-widest">Có đính kèm File PDF (Thư chúc mừng & Bản cam kết)</span>
+                  <span className="text-[11px] text-slate-400 font-semibold leading-relaxed">Tự động tạo và đính kèm liên kết tệp PDF Thư chúc mừng / Bản cam kết cho từng học sinh đạt yêu cầu</span>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer select-none">
                   <input
@@ -8933,10 +8933,10 @@ return {
               <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
                 <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-white">
                   <span className="text-xs font-black text-slate-800 uppercase tracking-widest">
-                    DANH S�CH H?C SINH G?I �I ({emailStudents.length} H?C SINH)
+                    DANH SÁCH HỌC SINH GỬI ĐI ({emailStudents.length} HỌC SINH)
                   </span>
                   <span className="text-[10px] font-black text-[#14b8a6] bg-[#14b8a6]/10 px-3 py-1 rounded-full">
-                    B?n xem tr�?c
+                    Bản xem trước
                   </span>
                 </div>
                 
@@ -8946,17 +8946,17 @@ return {
                     <thead className="bg-[#f8fafc] sticky top-0 border-b border-slate-100 z-10">
                       <tr>
                         <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">STT</th>
-                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">H? V� T�N</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KH?I</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">PH�I</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">NG�Y SINH</th>
-                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">H? KH?O S�T</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">K?T QU? H?C T?P</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">K?T QU? R�N LUY?N</th>
-                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">K?T QU?</th>
-                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">C� S? NH?N</th>
+                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỌ VÀ TÊN</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KHỐI</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">PHÁI</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">NGÀY SINH</th>
+                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỆ KHẢO SÁT</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ HỌC TẬP</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ RÈN LUYỆN</th>
+                        <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">KẾT QUẢ</th>
+                        <th className="p-2 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">CƠ SỞ NHẬN</th>
                         {attachLetters && (
-                          <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">H? S� ��NH K�M</th>
+                          <th className="p-2 text-center text-[10px] font-black text-slate-400 uppercase tracking-widest bg-[#f8fafc] border border-slate-200">HỒ SƠ ĐÍNH KÈM</th>
                         )}
                       </tr>
                     </thead>
@@ -8966,43 +8966,43 @@ return {
                           <td className="p-2 text-center text-slate-400 font-semibold border border-slate-200">{idx + 1}</td>
                           <td className="p-2 font-bold text-slate-700 border border-slate-200">{s.fullName}</td>
                           <td className="p-2 text-center font-bold text-slate-600 border border-slate-200">K{s.grade}</td>
-                          <td className="p-2 text-center font-medium text-slate-500 border border-slate-200">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "N?" ? "N?" : s.gender || "�"}</td>
-                          <td className="p-2 text-center text-slate-500 border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "�"}</td>
-                          <td className="p-2 text-slate-600 font-medium border border-slate-200">{s.surveyFormType || s.surveySystem || "�"}</td>
-                          <td className="p-2 text-center text-slate-600 font-medium border border-slate-200">{s.kqHocTap || "�"}</td>
-                          <td className="p-2 text-center text-slate-600 font-medium border border-slate-200">{s.kqRenLuyen || "�"}</td>
+                          <td className="p-2 text-center font-medium text-slate-500 border border-slate-200">{s.gender === "M" || s.gender === "Nam" ? "Nam" : s.gender === "F" || s.gender === "Nữ" ? "Nữ" : s.gender || "—"}</td>
+                          <td className="p-2 text-center text-slate-500 border border-slate-200">{s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString("vi-VN") : "—"}</td>
+                          <td className="p-2 text-slate-600 font-medium border border-slate-200">{s.surveyFormType || s.surveySystem || "—"}</td>
+                          <td className="p-2 text-center text-slate-600 font-medium border border-slate-200">{s.kqHocTap || "—"}</td>
+                          <td className="p-2 text-center text-slate-600 font-medium border border-slate-200">{s.kqRenLuyen || "—"}</td>
                           <td className="p-2 text-center border border-slate-200">
                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black ${
-                              s.admissionResult === "�?t" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                              s.admissionResult === "�?t cam k?t" ? "bg-amber-50 text-amber-600 border border-amber-100" :
-                              (s.admissionResult === "Kh�ng �?t" || s.admissionResult === "Kh�ng �?t - Ki?m tra l?i" || s.admissionResult === "Kh�ng �?t - Kh�ng ki?m tra l?i") ? "bg-rose-50 text-rose-600 border border-rose-100" :
-                              s.admissionResult === "H?c th?" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
+                              s.admissionResult === "Đạt" ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                              s.admissionResult === "Đạt cam kết" ? "bg-amber-50 text-amber-600 border border-amber-100" :
+                              (s.admissionResult === "Không đạt" || s.admissionResult === "Không đạt - Kiểm tra lại" || s.admissionResult === "Không đạt - Không kiểm tra lại") ? "bg-rose-50 text-rose-600 border border-rose-100" :
+                              s.admissionResult === "Học thử" ? "bg-indigo-50 text-indigo-600 border border-indigo-100" :
                               "bg-slate-50 text-slate-500"
                             }`}>
-                              {s.admissionResult || "Ch�a duy?t"}
+                              {s.admissionResult || "Chưa duyệt"}
                             </span>
                           </td>
-                          <td className="p-2 font-bold text-slate-600 border border-slate-200">{s.admissionCampus || "�"}</td>
+                          <td className="p-2 font-bold text-slate-600 border border-slate-200">{s.admissionCampus || "—"}</td>
                           {attachLetters && (
                             <td className="p-2 text-center border border-slate-200">
                               <div className="flex flex-col gap-1 items-center justify-center">
-                                {s.admissionResult === "�?t" && (
+                                {s.admissionResult === "Đạt" && (
                                   <span className="text-emerald-600 text-[10px] font-black text-xs font-semibold">
-                                    Th� ch�c m?ng
+                                    Thư chúc mừng
                                   </span>
                                 )}
-                                {s.admissionResult === "�?t cam k?t" && (
+                                {s.admissionResult === "Đạt cam kết" && (
                                   <>
                                     <span className="text-emerald-600 text-[10px] font-black mb-0.5 text-xs font-semibold">
-                                      Th� ch�c m?ng
+                                      Thư chúc mừng
                                     </span>
                                     <span className="text-amber-600 text-[10px] font-black text-xs font-semibold">
-                                      B?n cam k?t
+                                      Bản cam kết
                                     </span>
                                   </>
                                 )}
-                                {s.admissionResult !== "�?t" && s.admissionResult !== "�?t cam k?t" && (
-                                  <span className="text-slate-400">�</span>
+                                {s.admissionResult !== "Đạt" && s.admissionResult !== "Đạt cam kết" && (
+                                  <span className="text-slate-400">—</span>
                                 )}
                               </div>
                             </td>
@@ -9011,7 +9011,7 @@ return {
                       ))}
                       {emailStudents.length === 0 && (
                         <tr>
-                          <td colSpan={attachLetters ? 9 : 8} className="p-2 text-center text-slate-400 font-bold text-xs font-semibold">Kh�ng c� h?c sinh n�o c� k?t qu? x�t duy?t d�?i �?t/k? n�y.</td>
+                          <td colSpan={attachLetters ? 9 : 8} className="p-2 text-center text-slate-400 font-bold text-xs font-semibold">Không có học sinh nào có kết quả xét duyệt dưới đợt/kỳ này.</td>
                         </tr>
                       )}
                     </tbody>
@@ -9036,18 +9036,18 @@ return {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-bold text-sm mb-1">
-                        {emailResult.sent ? "G?i Email Th�nh c�ng!" : "H? th?ng SMTP kh�ng ph?n h?i (B?n xem tr�?c s?n s�ng)"}
+                        {emailResult.sent ? "Gửi Email Thành công!" : "Hệ thống SMTP không phản hồi (Bản xem trước sẵn sàng)"}
                       </h4>
                       <p className="text-xs leading-relaxed opacity-90">
                         {emailResult.sent 
-                          ? `B�o c�o nhanh �? ��?c g?i tr?c ti?p t?i h?m th� ${recipientEmail}. B�o c�o ��nh k�m b?n cam k?t h?c t?p.`
-                          : `M�y ch? SMTP kh�ng th? g?i th� tr?c ti?p (L?i: ${emailResult.error || "Timeout"}). Tuy nhi�n, Skyline �? t?o s?n m? HTML email chuy�n nghi?p ph�a d�?i cho th?y c�.`}
+                          ? `Báo cáo nhanh đã được gửi trực tiếp tới hòm thư ${recipientEmail}. Báo cáo đính kèm bản cam kết học tập.`
+                          : `Máy chủ SMTP không thể gửi thư trực tiếp (Lỗi: ${emailResult.error || "Timeout"}). Tuy nhiên, Skyline đã tạo sẵn mã HTML email chuyên nghiệp phía dưới cho thầy cô.`}
                       </p>
                       
                       {/* Live Iframe Preview if SMTP failed */}
                       {!emailResult.sent && emailResult.html && (
                         <div className="mt-4 space-y-3">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-white/60 px-2 py-1 rounded border">Xem tr�?c Th� & Sao ch�p:</span>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-white/60 px-2 py-1 rounded border">Xem trước Thư & Sao chép:</span>
                           <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-inner">
                             <iframe 
                               srcDoc={emailResult.html}
@@ -9059,17 +9059,17 @@ return {
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(emailResult.html || "");
-                                alert("�? sao ch�p n?i dung HTML! B?n c� th? d�n tr?c ti?p v�o Outlook/Gmail �? g?i.");
+                                alert("Đã sao chép nội dung HTML! Bạn có thể dán trực tiếp vào Outlook/Gmail để gửi.");
                               }}
                               className="hover:bg-slate-50 text-slate-700 font-bold text-xs transition-all cursor-pointer text-xs font-semibold"
                             >
-                              ?? Sao ch�p HTML Email
+                              📋 Sao chép HTML Email
                             </button>
                             <a
-                              href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin m?i xem b?ng HTML b�o c�o kh?o s�t ��nh k�m.`}
+                              href={`mailto:${recipientEmail}?subject=${encodeURIComponent(emailSubject)}&body=Xin mời xem bảng HTML báo cáo khảo sát đính kèm.`}
                               className="hover:bg-indigo-700 text-white font-bold text-xs transition-all text-xs font-semibold"
                             >
-                              ?? M? H?m th� Outlook/Gmail
+                              📧 Mở Hòm thư Outlook/Gmail
                             </a>
                           </div>
                         </div>
@@ -9087,22 +9087,22 @@ return {
                 onClick={() => setIsEmailModalOpen(false)} 
                 className="px-5 py-2.5 rounded-xl hover:bg-slate-100 font-bold text-slate-700 text-xs transition-colors"
               >
-                ��ng l?i
+                Đóng lại
               </button>
               <button
                 onClick={handleExportDirectPDFs}
                 disabled={emailSending || emailStudents.length === 0}
                 className="hover:bg-emerald-700 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-xs font-semibold"
               >
-                {emailSending && emailSendingStatus.includes("t?i") ? (
+                {emailSending && emailSendingStatus.includes("tải") ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{emailSendingStatus || "�ang t?i..."}</span>
+                    <span>{emailSendingStatus || "Đang tải..."}</span>
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4" />
-                    Xu?t & T?i tr?c ti?p PDF
+                    Xuất & Tải trực tiếp PDF
                   </>
                 )}
               </button>
@@ -9114,12 +9114,12 @@ return {
                 {emailSending ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{emailSendingStatus || "�ang g?i..."}</span>
+                    <span>{emailSendingStatus || "Đang gửi..."}</span>
                   </>
                 ) : (
                   <>
                     <Mail className="w-4 h-4" />
-                    X�c nh?n & G?i Email
+                    Xác nhận & Gửi Email
                   </>
                 )}
               </button>
@@ -9136,7 +9136,7 @@ return {
             <div className="bg-[#48BFE3]/20 text-[#48BFE3] w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
               {selectedIds.length}
             </div>
-            <span className="font-medium">h?c sinh �ang ch?n</span>
+            <span className="font-medium">học sinh đang chọn</span>
           </div>
           
           <div className="flex items-center gap-3">
@@ -9145,13 +9145,13 @@ return {
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-semibold transition-all flex items-center gap-2"
             >
               <RefreshCcw className="w-4 h-4" />
-              Chuy?n �?t KS
+              Chuyển đợt KS
             </button>
 
             <button
               onClick={() => setSelectedIds([])}
               className="p-2 hover:bg-slate-800 text-slate-400 hover:text-slate-200 rounded-xl transition-all"
-              title="B? ch?n"
+              title="Bỏ chọn"
             >
               <Trash2 className="w-4 h-4" />
             </button>

@@ -437,7 +437,7 @@ export default function AdminAdvisoryDashboard() {
                   onChange={e => setSelectedCampusId(e.target.value)}
                   className="px-3 py-2 rounded-xl bg-slate-100 text-slate-800 text-xs font-black border border-slate-300 outline-none"
                 >
-                  <option value=""></option>
+                  <option value="">🏫 Tất cả Cơ sở</option>
                   {campuses.map(c => (
                     <option key={c.id} value={c.id}>{c.campusName}</option>
                   ))}

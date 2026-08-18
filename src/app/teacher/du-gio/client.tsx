@@ -7,7 +7,7 @@ import {
   Calendar, Clock, MapPin, User, Users, BookOpen, Plus, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
-  Eye, TrendingUp, History, Sparkles, CheckSquare, Mail
+  Eye, TrendingUp, Sparkles, CheckSquare, Mail
 } from "lucide-react"
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
@@ -2300,7 +2300,7 @@ export function ObservationClient(props: ObservationClientProps) {
               <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
               <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
-                <option value="all"></option>
+                <option value="all">Tất cả cơ sở</option>
                 {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
               </select>
             </div>

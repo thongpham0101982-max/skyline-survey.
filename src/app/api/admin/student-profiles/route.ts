@@ -205,32 +205,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Helper to process student record
-    // Pre-fetch all Teachers and Users for homeroom teacher lookup
-    const [allTeachersList, allUsersList] = await Promise.all([
-      prisma.teacher.findMany({ include: { user: true } }).catch(() => []),
-      prisma.user.findMany({ where: { role: { in: ["TEACHER", "TEACHER_PRIMARY", "TEACHER_SECONDARY", "HOMEROOM"] } } }).catch(() => [])
-    ]);
-
-    const teacherLookupMap = new Map<string, string>();
-    const classTeacherMap = new Map<string, string>();
-
-    allTeachersList.forEach((t: any) => {
-      const name = t.teacherName || t.user?.fullName || t.fullName;
-      if (name) {
-        if (t.id) teacherLookupMap.set(t.id, name);
-        if (t.teacherCode) teacherLookupMap.set(t.teacherCode, name);
-        if (t.userId) teacherLookupMap.set(t.userId, name);
-        if (t.homeroomClass) classTeacherMap.set(t.homeroomClass, name);
-      }
-    });
-
-    allUsersList.forEach((u: any) => {
-      if (u.fullName) {
-        if (u.id) teacherLookupMap.set(u.id, u.fullName);
-        if (u.email) teacherLookupMap.set(u.email, u.fullName);
-      }
-    });
-
     const processedStudents = students.map((s: any) => {
       // 1. Basic Info
       const yearName = s.academicYear?.name || ""
@@ -340,34 +314,13 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      // Multi-step GVCN resolution
-      let homeroomTeacherName = "Chưa phân công";
-
-      // Method 1: TeacherClassAssignment
       const gvcnAssignment = s.class?.teachers?.find((t: any) => 
         t.roleInClass?.toUpperCase() === "HOMEROOM" || 
         t.roleInClass?.toUpperCase() === "GVCN" || 
         t.teacherId === s.class?.homeroomTeacherId
       ) || s.class?.teachers?.[0];
 
-      if (gvcnAssignment?.teacher) {
-        homeroomTeacherName = gvcnAssignment.teacher.teacherName || gvcnAssignment.teacher.user?.fullName || gvcnAssignment.teacher.fullName || "Chưa phân công";
-      }
-
-      // Method 2: Lookup via teacherMap (by homeroomTeacherId or homeroomClass)
-      if ((!homeroomTeacherName || homeroomTeacherName === "Chưa phân công") && s.class) {
-        const hId = s.class.homeroomTeacherId;
-        const cName = s.class.className;
-        const cCode = s.class.classCode;
-
-        if (hId && teacherLookupMap.has(hId)) {
-          homeroomTeacherName = teacherLookupMap.get(hId);
-        } else if (cName && classTeacherMap.has(cName)) {
-          homeroomTeacherName = classTeacherMap.get(cName);
-        } else if (cCode && classTeacherMap.has(cCode)) {
-          homeroomTeacherName = classTeacherMap.get(cCode);
-        }
-      }
+      const homeroomTeacherName = gvcnAssignment?.teacher?.teacherName || gvcnAssignment?.teacher?.fullName || "Chưa phân công";
 
       return {
         id: s.id,
