@@ -610,11 +610,20 @@ export function StudentProfilesAdminClient({
               <div className="p-6 flex-grow">
                 {selectedStudent ? (
                   <div>
-                    {/* TAB: CV INTEGRATED - 100% STRICT REAL DATA (NO FABRICATED DUMMY FALLBACKS) */}
+                    {/* TAB: CV INTEGRATED - MOET VĂN HÓA & REAL DATA */}
                     {activeTab === "cv" && (() => {
                       const student = selectedStudent;
                       const rawScores = student?.termScores || student?.student?.termScores || [];
                       const rawSummaries = student?.termSummaries || student?.student?.termSummaries || [];
+
+                      const teacherDisplayName = 
+                        student?.homeroomTeacherName || 
+                        student?.class?.homeroomTeacherName || 
+                        student?.student?.homeroomTeacherName || 
+                        student?.highlightComments?.[0]?.teacherName || 
+                        student?.class?.teachers?.[0]?.teacher?.teacherName || 
+                        student?.class?.teachers?.[0]?.teacher?.fullName || 
+                        "Chưa phân công";
 
                       // Subject score mapping
                       const subjectMap = new Map();
@@ -698,7 +707,7 @@ export function StudentProfilesAdminClient({
                                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Giáo viên chủ nhiệm (GVCN)</span>
                                       <span className="font-black text-[#007A72] flex items-center gap-1.5 text-xs mt-0.5">
                                         <User className="w-3.5 h-3.5" />
-                                        {student?.homeroomTeacherName || "Chưa phân công"}
+                                        {teacherDisplayName}
                                       </span>
                                     </div>
                                   </div>
@@ -706,12 +715,12 @@ export function StudentProfilesAdminClient({
                               </div>
                             </div>
 
-                            {/* SECTION 2: KẾT QUẢ HỌC TẬP MOET */}
+                            {/* SECTION 2: KẾT QUẢ HỌC TẬP VĂN HÓA (MOET) */}
                             <div className="space-y-3">
                               <h3 className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
                                 <div className="w-2 h-2 rounded-full bg-[#007A72]" />
                                 <ClipboardCheck className="w-4 h-4 text-[#007A72]" />
-                                2. KẾT QUẢ HỌC TẬP MOET
+                                2. KẾT QUẢ HỌC TẬP VĂN HÓA (MOET)
                               </h3>
                               {subjectList.length === 0 ? (
                                 <div className="bg-slate-50 border border-slate-150 p-4 rounded-xl text-center text-xs text-slate-400 italic">
@@ -719,29 +728,39 @@ export function StudentProfilesAdminClient({
                                 </div>
                               ) : (
                                 <div className="space-y-3">
-                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                    {subjectList.map(([subName, sc]: [string, any], idx: number) => {
-                                      const displayScore = sc.finalScore ?? sc.score ?? sc.midTermScore ?? sc.scoreStr ?? "—";
-                                      const evalText = typeof displayScore === "number" 
-                                        ? (displayScore >= 8 ? "Xuất sắc" : displayScore >= 6.5 ? "Khá" : "Đạt")
-                                        : (sc.evaluation || "Đạt");
-
-                                      return (
-                                        <div key={idx} className="bg-white border border-slate-200/80 p-3 rounded-xl text-center shadow-2xs hover:border-teal-200 transition-colors">
-                                          <div className="text-[10px] text-[#007A72] font-black uppercase tracking-wider truncate">{subName}</div>
-                                          <div className="text-lg font-black text-slate-800 mt-0.5">{displayScore}</div>
-                                          <div className="text-[9px] text-slate-400 font-semibold mt-0.5">{evalText}</div>
-                                        </div>
-                                      );
-                                    })}
+                                  <div className="border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                                    <table className="w-full text-left text-xs">
+                                      <thead className="bg-slate-50 text-[10px] font-black text-slate-500 uppercase tracking-wider border-b border-slate-200/80">
+                                        <tr>
+                                          <th className="py-2.5 px-3">Môn học MOET</th>
+                                          <th className="py-2.5 px-3 text-center">Học kỳ I</th>
+                                          <th className="py-2.5 px-3 text-center">Học kỳ II</th>
+                                          <th className="py-2.5 px-3 text-center">Cả năm</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-slate-100 font-semibold text-slate-800">
+                                        {subjectList.map(([subName, sc]: [string, any], idx: number) => {
+                                          const displayScore = sc.finalScore ?? sc.score ?? sc.midTermScore ?? sc.scoreStr ?? "—";
+                                          return (
+                                            <tr key={idx} className="hover:bg-teal-50/20">
+                                              <td className="py-2 px-3 font-bold text-[#007A72]">{subName}</td>
+                                              <td className="py-2 px-3 text-center font-bold">{sc.hk1 ?? displayScore}</td>
+                                              <td className="py-2 px-3 text-center font-bold">{sc.hk2 ?? "—"}</td>
+                                              <td className="py-2 px-3 text-center font-black text-slate-900">{sc.cn ?? displayScore}</td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
                                   </div>
-                                  {rawSummaries.length > 0 && (
-                                    <div className="flex flex-wrap gap-4 text-xs font-semibold bg-slate-50 p-3 rounded-xl border border-slate-200/80 text-slate-700">
+
+                                  {rawSummaries.length > 0 &amp;&amp; (
+                                    <div className="flex flex-wrap gap-4 text-xs font-semibold bg-teal-50/30 p-3.5 rounded-2xl border border-teal-100 text-slate-700">
                                       {rawSummaries.map((sum: any, idx: number) => (
                                         <div key={idx} className="flex items-center gap-2">
-                                          <span className="font-bold text-[#007A72]">{sum.term || `Học kỳ ${idx+1}`}:</span>
-                                          <span>Học lực: <strong className="text-slate-800">{sum.academicRank || sum.academicScore || "—"}</strong></span>
-                                          <span>| Hạnh kiểm: <strong className="text-slate-800">{sum.conductRank || "—"}</strong></span>
+                                          <span className="font-black text-[#007A72] uppercase text-[11px]">{sum.term || `Học kỳ ${idx+1}`}:</span>
+                                          <span>Xếp loại Học lực: <strong className="text-slate-900 font-black">{sum.academicRank || sum.academicScore || "—"}</strong></span>
+                                          <span>| Rèn luyện / Hạnh kiểm: <strong className="text-slate-900 font-black">{sum.conductRank || "—"}</strong></span>
                                         </div>
                                       ))}
                                     </div>
@@ -890,7 +909,7 @@ export function StudentProfilesAdminClient({
                                   {gvcnComments.map((c: any, idx: number) => (
                                     <div key={c.id || idx} className="bg-emerald-50/30 border border-emerald-100 p-4 rounded-2xl space-y-2 text-xs font-medium text-slate-700">
                                       <div className="flex items-center justify-between text-[11px] font-bold text-emerald-900 border-b border-emerald-100 pb-1.5">
-                                        <span>Ghi nhận từ GVCN ({c.teacherName || student?.homeroomTeacherName || "Giáo viên chủ nhiệm"}):</span>
+                                        <span>Ghi nhận từ GVCN ({c.teacherName || teacherDisplayName}):</span>
                                         <span className="font-mono text-emerald-700 text-[10px]">
                                           {c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('vi-VN') : (student?.yearName || "—")}
                                         </span>
