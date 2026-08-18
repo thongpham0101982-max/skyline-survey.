@@ -16,6 +16,7 @@ import {
   Building2,
   PieChart as PieIcon,
   UserCheck,
+  UserMinus,
   Search,
   Filter,
   Sparkles,
@@ -520,28 +521,35 @@ export default function AdminDashboard() {
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">HS Lưu chuyển</p>
               <h3 className="text-2xl font-black text-slate-800 mt-1">
-                {((finalMetrics.newEnrollmentsCount || 0) + (finalMetrics.transferCount || 0) + (finalMetrics.changeClassCount || 0)).toLocaleString()}
+                {((finalMetrics.detailedTransfers || []).length || ((finalMetrics.newEnrollmentsCount || 0) + (finalMetrics.transferCount || 0) + (finalMetrics.changeClassCount || 0))).toLocaleString()}
               </h3>
               <div className="text-[10px] text-slate-500 font-semibold mt-1 space-x-1.5 flex flex-wrap">
-                <span>Mới: <strong className="text-emerald-600">{finalMetrics.newEnrollmentsCount || 0}</strong></span>
+                <span>Mới: <strong className="text-emerald-600">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "IN").length || finalMetrics.newEnrollmentsCount || 0}</strong></span>
                 <span>•</span>
-                <span>Đi: <strong className="text-rose-500">{finalMetrics.transferCount || 0}</strong></span>
+                <span>Đi: <strong className="text-rose-500">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT").length || finalMetrics.transferCount || 0}</strong></span>
                 <span>•</span>
-                <span>Lớp: <strong className="text-[#48BFE3]">{finalMetrics.changeClassCount || 0}</strong></span>
+                <span>Lớp: <strong className="text-[#48BFE3]">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "CHANGE_CLASS").length || finalMetrics.changeClassCount || 0}</strong></span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* CARD 4: TỶ LỆ HOÀN THÀNH */}
-        <div className="relative bg-white rounded-2xl border-2 border-slate-200 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
+        {/* CARD 4: HS CHUYỂN ĐI (BỎ TỶ LỆ HOÀN THÀNH -> THÊM HS CHUYỂN ĐI) */}
+        <div className="relative bg-white rounded-2xl border-2 border-rose-100 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center text-[#475569] bg-slate-100 rounded-xl shadow-2xs">
-              <ClipboardCheck className="w-6 h-6" />
+            <div className="w-12 h-12 flex items-center justify-center text-rose-600 bg-rose-50 rounded-xl shadow-2xs">
+              <UserMinus className="w-6 h-6 text-rose-600" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tỷ lệ Hoàn thành</p>
-              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.completionRate.toFixed(1)}%</h3>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">HS Chuyển đi</p>
+              <h3 className="text-2xl font-black text-rose-600 mt-1">
+                {((finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT").length || finalMetrics.transferCount || 0).toLocaleString()} <span className="text-xs font-bold text-slate-400">HS</span>
+              </h3>
+              <div className="text-[11px] text-slate-500 font-semibold mt-1 space-x-2">
+                <span>Phổ thông: <strong className="text-rose-600">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT" && t.level !== "Mầm non").length}</strong></span>
+                <span>•</span>
+                <span>Mầm non: <strong className="text-rose-500">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT" && t.level === "Mầm non").length}</strong></span>
+              </div>
             </div>
           </div>
         </div>
