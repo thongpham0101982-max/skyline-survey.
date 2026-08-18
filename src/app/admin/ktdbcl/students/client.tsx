@@ -504,7 +504,7 @@ export function StudentsClient({ exams, campuses, classes, academicYears }: Stud
                 <div>
                   <div className="text-[10px] text-[#009085] font-bold uppercase tracking-wider">Trạng thái bộ lọc</div>
                   <div className="text-[11px] font-bold text-slate-600 mt-1 truncate max-w-[200px]">
-                    {selectedCampus ? campuses.find(c => c.id === selectedCampus)?.campusName : "Tất cả cơ sở"}
+                    {selectedCampus ? campuses.find(c => c.id === selectedCampus)?.campusName : ""}
                   </div>
                 </div>
               </div>
