@@ -231,15 +231,13 @@ async function _getAdminMetrics(academicYearId?: string, allowedCampusIds: strin
   // Reconstruct monthly headcount trend split by General vs Preschool
   let monthlyHeadcount: { month: string; count: number; generalCount: number; preschoolCount: number }[] = []
   if (academicYear) {
-    const start = new Date(academicYear.startDate)
-    const end = new Date(academicYear.endDate)
-
+    const startYr = academicYear ? new Date(academicYear.startDate).getFullYear() : 2026
     const months: { year: number; month: number }[] = []
-    const curr = new Date(start.getFullYear(), start.getMonth(), 1)
-    const last = new Date(end.getFullYear(), end.getMonth(), 1)
+    const curr = new Date(startYr, 7, 1) // Month 8/startYr (August)
+    const last = new Date(startYr + 1, 6, 1) // Month 7/(startYr+1) (July)
 
     let limit = 0
-    while (curr <= last && limit < 24) {
+    while (curr <= last && limit < 12) {
       months.push({
         year: curr.getFullYear(),
         month: curr.getMonth()
