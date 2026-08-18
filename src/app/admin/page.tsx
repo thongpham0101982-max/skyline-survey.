@@ -123,6 +123,11 @@ export default function AdminDashboard() {
     return () => clearInterval(timer)
   }, [isAutoRefresh, fetchMetrics])
 
+  // Reset Class Filter when Campus or Grade changes
+  useEffect(() => {
+    setInOutClassFilter("ALL")
+  }, [inOutCampusFilter, inOutGradeFilter])
+
   if (status === "loading" || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
@@ -251,9 +256,41 @@ export default function AdminDashboard() {
     }
   })
 
+  // Dynamically filter classes by currently selected Campus and Grade
+  const allStudentsAndTransfers = [
+    ...detailedTransfers,
+    ...rawEntryStudents
+  ]
+
   const availableClassesList = Array.from(
-    new Set(detailedTransfers.map((t: any) => t.className).filter(Boolean))
-  )
+    new Set(
+      allStudentsAndTransfers
+        .filter((item: any) => {
+          if (inOutCampusFilter === "BLANK") {
+            const info = getCampusInfo(item.campusName)
+            const isKnown = item.campusName && (
+              item.campusName.includes("CS1") || item.campusName.includes("CS2") || item.campusName.includes("CS3") ||
+              item.campusName.includes("CS4") || item.campusName.includes("CS5") ||
+              info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
+              info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
+            )
+            if (isKnown) return false
+          } else if (inOutCampusFilter !== "ALL") {
+            const info = getCampusInfo(item.campusName)
+            if (!item.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
+          }
+
+          if (inOutGradeFilter !== "ALL") {
+            const gStr = String(item.grade || item.rawGrade || "")
+            if (!gStr.includes(inOutGradeFilter)) return false
+          }
+
+          return true
+        })
+        .map((item: any) => item.className)
+        .filter((name: any) => name && name !== "---" && name !== "Chưa xếp lớp")
+    )
+  ).sort()
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
