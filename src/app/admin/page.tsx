@@ -77,7 +77,7 @@ export default function AdminDashboard() {
   // Filters for Entry Level Students
   const [entryGradeFilter, setEntryGradeFilter] = useState<string>("ALL")
   const [entrySourceFilter, setEntrySourceFilter] = useState<string>("ALL")
-  const [entryCampusFilter, setEntryCampusFilter] = useState<string>("ALL")
+  const [entryCampusFilter, setEntryCampusFilter] = useState<string>("")
   const [entrySearchQuery, setEntrySearchQuery] = useState<string>("")
 
   const userName = session?.user?.name || "Thành viên"
@@ -153,7 +153,7 @@ export default function AdminDashboard() {
   const filteredEntryStudents = rawEntryStudents.filter((s: any) => {
     if (entryGradeFilter !== "ALL" && s.rawGrade !== entryGradeFilter) return false
     if (entrySourceFilter !== "ALL" && s.source !== entrySourceFilter) return false
-    if (entryCampusFilter !== "ALL") {
+    if (entryCampusFilter && entryCampusFilter !== "ALL") {
       const info = getCampusInfo(s.campusName)
       if (!s.campusName?.includes(entryCampusFilter) && info.name !== entryCampusFilter) return false
     }
@@ -670,7 +670,7 @@ export default function AdminDashboard() {
               onChange={(e) => setEntryCampusFilter(e.target.value)}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
             >
-              <option value="ALL">-- Tất cả cơ sở --</option>
+              <option value="">-- Tất cả cơ sở --</option>
               <option value="CS1">CS1 (Sky-Line Central - Xanh Sky-Line)</option>
               <option value="CS2">CS2 (Sky-Line Riverside - Xanh tím)</option>
               <option value="CS3">CS3 (Sky-Line Hill - Tím than)</option>
