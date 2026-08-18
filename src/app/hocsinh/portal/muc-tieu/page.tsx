@@ -24,13 +24,13 @@ export default function StudentGoalPortalPage() {
   const [submittedAt, setSubmittedAt] = useState<string | null>(null)
   const [trackingLogs, setTrackingLogs] = useState<any[]>([])
 
-  // Goal Form Data States - Strictly 4 Categories
+  // Goal Form Data States - Dynamic Multi Custom Goals per Category
   const [selectedPresetGoals, setSelectedPresetGoals] = useState<Record<string, boolean>>({})
   const [customGoals, setCustomGoals] = useState<Record<string, any>>({
-    HOC_TAP: { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" },
-    THOI_QUEN: { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" },
-    KY_NANG_CAM_XUC: { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" },
-    DINH_HUONG: { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" }
+    HOC_TAP: { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" },
+    THOI_QUEN: { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" },
+    KY_NANG_CAM_XUC: { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" },
+    DINH_HUONG: { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" }
   })
   
   const [studentCommitment, setStudentCommitment] = useState("")
@@ -94,7 +94,12 @@ export default function StudentGoalPortalPage() {
             setSubmittedAt(new Date(data.existingSheet.submittedAt).toLocaleDateString("vi-VN"))
           }
           const presetMap: Record<string, boolean> = {}
-          const customMap = { ...customGoals }
+          const customMap: Record<string, any> = {
+            HOC_TAP: { items: [], teacherSupport: "", parentSupport: "" },
+            THOI_QUEN: { items: [], teacherSupport: "", parentSupport: "" },
+            KY_NANG_CAM_XUC: { items: [], teacherSupport: "", parentSupport: "" },
+            DINH_HUONG: { items: [], teacherSupport: "", parentSupport: "" }
+          }
 
           data.existingSheet.goals.forEach((g: any) => {
             if (g.presetId) presetMap[g.presetId] = true
@@ -104,14 +109,24 @@ export default function StudentGoalPortalPage() {
             if (catKey === "KY_NANG_SO_THICH" || catKey === "PHAM_CHAT") catKey = "KY_NANG_CAM_XUC"
 
             if (catKey && customMap[catKey]) {
-              customMap[catKey] = {
-                targetText: g.targetText || "",
-                actionText: g.actions?.[0]?.actionText || "",
-                teacherSupport: g.teacherSupportRequest || "",
-                parentSupport: g.parentSupportRequest || ""
+              if (g.teacherSupportRequest) customMap[catKey].teacherSupport = g.teacherSupportRequest
+              if (g.parentSupportRequest) customMap[catKey].parentSupport = g.parentSupportRequest
+              
+              if (!g.presetId && g.targetText) {
+                customMap[catKey].items.push({
+                  targetText: g.targetText || "",
+                  actionText: g.actions?.[0]?.actionText || ""
+                })
               }
             }
           })
+
+          Object.keys(customMap).forEach(cat => {
+            if (customMap[cat].items.length === 0) {
+              customMap[cat].items = [{ targetText: "", actionText: "" }]
+            }
+          })
+
           setSelectedPresetGoals(presetMap)
           setCustomGoals(customMap)
         }
@@ -138,9 +153,7 @@ export default function StudentGoalPortalPage() {
       setSaving(true)
       const goalListPayload: any[] = []
 
-      // 1. Collect all selected preset goals (works for ALL grades K1-K12)
-      const selectedPresetIds = Object.keys(selectedPresetGoals).filter(id => selectedPresetGoals[id])
-      
+      // 1. Collect all selected preset goals (works for ALL grades K2 to K12)
       presets.forEach(p => {
         if (selectedPresetGoals[p.id]) {
           const customItem = customGoals[p.category] || {}
@@ -155,20 +168,29 @@ export default function StudentGoalPortalPage() {
         }
       })
 
-      // 2. Collect custom written goals for categories where no preset was checked or custom text was entered
+      // 2. Collect ALL custom specific goals added by student
       Object.keys(customGoals).forEach(cat => {
-        const item = customGoals[cat]
-        const hasCheckedPreset = presets.some(p => p.category === cat && selectedPresetGoals[p.id])
-        if (!hasCheckedPreset && item.targetText && item.targetText.trim()) {
-          goalListPayload.push({
-            category: cat,
-            targetText: item.targetText.trim(),
-            teacherSupportRequest: item.teacherSupport || null,
-            parentSupportRequest: item.parentSupport || null,
-            actions: item.actionText ? [{ actionText: item.actionText.trim() }] : []
+        const catObj = customGoals[cat]
+        if (catObj && catObj.items && Array.isArray(catObj.items)) {
+          catObj.items.forEach((item: any) => {
+            if (item.targetText && item.targetText.trim()) {
+              goalListPayload.push({
+                category: cat,
+                targetText: item.targetText.trim(),
+                teacherSupportRequest: catObj.teacherSupport || null,
+                parentSupportRequest: catObj.parentSupport || null,
+                actions: item.actionText ? [{ actionText: item.actionText.trim() }] : []
+              })
+            }
           })
         }
       })
+
+      if (goalListPayload.length === 0) {
+        alert("Vui lòng chọn hoặc gõ ít nhất 1 mục tiêu cụ thể trước khi lưu phiếu.")
+        setSaving(false)
+        return
+      }
 
       const res = await fetch("/api/advisory/goals", {
         method: "POST",
@@ -211,32 +233,24 @@ export default function StudentGoalPortalPage() {
       number: "1",
       title: "Mục tiêu học tập",
       hint: "Môn học, phương pháp học, điểm số...",
-      placeholderTarget: "Các mục tiêu học tập cụ thể của em...",
-      placeholderAction: "Em sẽ làm gì để đạt được những mục tiêu học tập này?"
     },
     {
       key: "THOI_QUEN",
       number: "2",
       title: "Mục tiêu thói quen",
       hint: "Kỷ luật, tự học, hoàn thành nhiệm vụ đúng thời hạn, thói quen ăn uống, nghỉ ngơi...",
-      placeholderTarget: "Các mục tiêu thói quen cụ thể của em...",
-      placeholderAction: "Em sẽ làm gì để đạt được những mục tiêu thói quen này?"
     },
     {
       key: "KY_NANG_CAM_XUC",
       number: "3",
       title: "Mục tiêu kỹ năng, cảm xúc",
       hint: "Giao tiếp, thuyết trình, làm việc nhóm, tư duy phản biện, quản lý cảm xúc...",
-      placeholderTarget: "Các mục tiêu kỹ năng & cảm xúc cụ thể của em...",
-      placeholderAction: "Em sẽ làm gì để rèn luyện kỹ năng & quản lý cảm xúc?"
     },
     {
       key: "DINH_HUONG",
       number: "4",
       title: "Mục tiêu định hướng",
       hint: "Khám phá bản thân, ngành nghề, lộ trình tương lai...",
-      placeholderTarget: "Các mục tiêu định hướng bản thân của em...",
-      placeholderAction: "Em sẽ làm gì để thực hiện định hướng này?"
     }
   ]
 
@@ -278,7 +292,7 @@ export default function StudentGoalPortalPage() {
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">MỤC TIÊU NĂM HỌC 2026 - 2027</h1>
           <p className="text-xs sm:text-sm text-teal-100 font-medium italic">
-            Em hãy dành thời gian suy nghĩ và viết mục tiêu của mình cho năm học này. Mục tiêu tốt cần rõ ràng, đo lường được và có việc làm cụ thể đi kèm.
+            Em hãy dành thời gian suy nghĩ và viết mục tiêu của mình cho năm học này. Em có thể chọn 1 hoặc nhiều mục tiêu mẫu và tự gõ thêm nhiều mục tiêu cụ thể khác nhé!
           </p>
         </div>
 
@@ -337,100 +351,95 @@ export default function StudentGoalPortalPage() {
           </p>
         </div>
       ) : (
-      /* ------------------- FORM ĐIỀN MỤC TIÊU LINH ĐỘNG (TỰ ĐỘNG KHỚP HÀNH ĐỘNG GỢI Ý) ------------------- */
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <div className="flex items-center gap-3">
-            <div className="text-3xl">✨</div>
-            <div>
-              <h3 className="font-black text-sm uppercase text-teal-900">BẢNG LẬP MỤC TIÊU NĂM HỌC — LỰA CHỌN LINH ĐỘNG</h3>
-              <p className="text-xs text-teal-700 font-medium">
-                Em có thể tick chọn <strong>1 hoặc nhiều mục tiêu mẫu</strong> bên dưới. Phần <strong>Hành động gợi ý tương ứng</strong> sẽ tự động hiển thị tương ứng theo từng mục tiêu đã chọn.
-              </p>
-            </div>
-          </div>
-          <span className="px-3 py-1.5 bg-teal-700 text-white rounded-2xl font-black text-xs shrink-0 shadow-xs">
-            Khối {gradeLevel.replace("K", "")}
-          </span>
-        </div>
-
-        {/* Render 4 Categories with Dynamic Goal & Action Multi-Selection */}
-        {secondaryCategories.map((catObj) => {
-          const item = customGoals[catObj.key] || {}
-          return (
-            <div key={catObj.key} className="space-y-4">
-              <GoalMultiSelector
-                categoryKey={catObj.key}
-                categoryTitle={`${catObj.number}. ${catObj.title}`}
-                categoryHint={catObj.hint}
-                presets={presets}
-                selectedPresetIds={Object.keys(selectedPresetGoals).filter(id => selectedPresetGoals[id])}
-                onSelectionChange={(selectedIds) => {
-                  const updatedMap = { ...selectedPresetGoals }
-                  presets.filter(p => p.category === catObj.key).forEach(p => {
-                    updatedMap[p.id] = selectedIds.includes(p.id)
-                  })
-                  setSelectedPresetGoals(updatedMap)
-                }}
-                customTargetText={item.targetText || ""}
-                onCustomTargetChange={(val) => setCustomGoals(prev => ({
-                  ...prev,
-                  [catObj.key]: { ...prev[catObj.key], targetText: val }
-                }))}
-                customActionText={item.actionText || ""}
-                onCustomActionChange={(val) => setCustomGoals(prev => ({
-                  ...prev,
-                  [catObj.key]: { ...prev[catObj.key], actionText: val }
-                }))}
-                readOnly={isSubmitted}
-              />
-
-              {/* Support Questions from Teachers & Parents */}
-              <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-teal-800 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-teal-600" />
-                    <span>Em mong muốn Thầy Cô / bạn bè hỗ trợ mình như thế nào?</span>
-                  </label>
-                  <input
-                    type="text"
-                    readOnly={isSubmitted}
-                    value={item.teacherSupport || ""}
-                    onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                      ...prev,
-                      [catObj.key]: { ...prev[catObj.key], teacherSupport: e.target.value }
-                    }))}
-                    placeholder="Thầy cô/bạn bè hỗ trợ em..."
-                    className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                      isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-teal-200 bg-white focus:border-teal-500"
-                    }`}
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-black text-amber-800 flex items-center gap-1.5">
-                    <Heart className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Em mong muốn Ba Mẹ hỗ trợ mình như thế nào?</span>
-                  </label>
-                  <input
-                    type="text"
-                    readOnly={isSubmitted}
-                    value={item.parentSupport || ""}
-                    onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                      ...prev,
-                      [catObj.key]: { ...prev[catObj.key], parentSupport: e.target.value }
-                    }))}
-                    placeholder="Ba mẹ hỗ trợ em..."
-                    className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                      isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-amber-200 bg-white focus:border-amber-500"
-                    }`}
-                  />
-                </div>
+        /* ------------------- FORM ĐIỀN MỤC TIÊU LINH ĐỘNG (TỰ ĐỘNG KHỚP HÀNH ĐỘNG GỢI Ý) ------------------- */
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="text-3xl">✨</div>
+              <div>
+                <h3 className="font-black text-sm uppercase text-teal-900">BẢNG LẬP MỤC TIÊU NĂM HỌC — LỰA CHỌN LINH ĐỘNG (KHỐI 2 - KHỐI 12)</h3>
+                <p className="text-xs text-teal-700 font-medium">
+                  Em có thể tick chọn <strong>1 hoặc nhiều mục tiêu mẫu</strong> và tự gõ thêm <strong>nhiều mục tiêu cụ thể khác</strong> bên dưới. Phần <strong>Hành động gợi ý tương ứng</strong> sẽ tự động hiện theo từng mục tiêu đã chọn.
+                </p>
               </div>
             </div>
-          )
-        })}
-      </div>
+            <span className="px-3 py-1.5 bg-teal-700 text-white rounded-2xl font-black text-xs shrink-0 shadow-xs">
+              Khối {gradeLevel.replace("K", "")}
+            </span>
+          </div>
+
+          {/* Render 4 Categories with Dynamic Goal & Action Multi-Selection */}
+          {secondaryCategories.map((catObj) => {
+            const item = customGoals[catObj.key] || { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" }
+            return (
+              <div key={catObj.key} className="space-y-4">
+                <GoalMultiSelector
+                  categoryKey={catObj.key}
+                  categoryTitle={`${catObj.number}. ${catObj.title}`}
+                  categoryHint={catObj.hint}
+                  presets={presets}
+                  selectedPresetIds={Object.keys(selectedPresetGoals).filter(id => selectedPresetGoals[id])}
+                  onSelectionChange={(selectedIds) => {
+                    const updatedMap = { ...selectedPresetGoals }
+                    presets.filter(p => p.category === catObj.key).forEach(p => {
+                      updatedMap[p.id] = selectedIds.includes(p.id)
+                    })
+                    setSelectedPresetGoals(updatedMap)
+                  }}
+                  customItems={item.items || [{ targetText: "", actionText: "" }]}
+                  onCustomItemsChange={(newItems) => setCustomGoals(prev => ({
+                    ...prev,
+                    [catObj.key]: { ...prev[catObj.key], items: newItems }
+                  }))}
+                  readOnly={isSubmitted}
+                />
+
+                {/* Support Questions from Teachers & Parents */}
+                <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-teal-800 flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-teal-600" />
+                      <span>Em mong muốn Thầy Cô / bạn bè hỗ trợ mình như thế nào?</span>
+                    </label>
+                    <input
+                      type="text"
+                      readOnly={isSubmitted}
+                      value={item.teacherSupport || ""}
+                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
+                        ...prev,
+                        [catObj.key]: { ...prev[catObj.key], teacherSupport: e.target.value }
+                      }))}
+                      placeholder="Thầy cô/bạn bè hỗ trợ em..."
+                      className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
+                        isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-teal-200 bg-white focus:border-teal-500"
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-black text-amber-800 flex items-center gap-1.5">
+                      <Heart className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Em mong muốn Ba Mẹ hỗ trợ mình như thế nào?</span>
+                    </label>
+                    <input
+                      type="text"
+                      readOnly={isSubmitted}
+                      value={item.parentSupport || ""}
+                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
+                        ...prev,
+                        [catObj.key]: { ...prev[catObj.key], parentSupport: e.target.value }
+                      }))}
+                      placeholder="Ba mẹ hỗ trợ em..."
+                      className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
+                        isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-amber-200 bg-white focus:border-amber-500"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       )}
 
       {/* ------------------- LỜI CAM KẾT & XÁC NHẬN ĐỒNG HÀNH ------------------- */}
