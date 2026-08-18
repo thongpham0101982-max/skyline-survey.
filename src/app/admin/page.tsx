@@ -27,6 +27,7 @@ import {
   Radio
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
+import { SafeWidget } from "@/components/SafeWidget"
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -1113,6 +1114,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* IN / OUT MOVEMENT TRACKING SECTION WITH % CALCULATION */}
+        <SafeWidget title="Báo cáo Biến động Học sinh (In / Out)">
         <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-xs space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
             <div className="space-y-3">
@@ -1468,6 +1470,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+        </SafeWidget>
       </div>
     </div>
   )
