@@ -431,8 +431,6 @@ export default function StudentGoalPortalPage() {
           )
         })}
       </div>
-
-      </div>
       )}
 
       {/* ------------------- LỜI CAM KẾT & XÁC NHẬN ĐỒNG HÀNH ------------------- */}
