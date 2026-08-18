@@ -16,7 +16,6 @@ import {
   Building2,
   PieChart as PieIcon,
   UserCheck,
-  UserMinus,
   Search,
   Filter,
   Sparkles,
@@ -24,11 +23,9 @@ import {
   ChevronRight,
   RefreshCw,
   Clock,
-  Calendar,
   Radio
 } from "lucide-react"
 import { WelcomeAlert } from "@/components/WelcomeAlert"
-import { SafeWidget } from "@/components/SafeWidget"
 import { 
   ResponsiveContainer, 
   LineChart, 
@@ -80,16 +77,8 @@ export default function AdminDashboard() {
   // Filters for Entry Level Students
   const [entryGradeFilter, setEntryGradeFilter] = useState<string>("ALL")
   const [entrySourceFilter, setEntrySourceFilter] = useState<string>("ALL")
-  const [entryCampusFilter, setEntryCampusFilter] = useState<string>("BLANK")
+  const [entryCampusFilter, setEntryCampusFilter] = useState<string>("ALL")
   const [entrySearchQuery, setEntrySearchQuery] = useState<string>("")
-
-  // Filter States for In/Out Movement Analytics
-  const [inOutMonthFilter, setInOutMonthFilter] = useState<string>("ALL")
-  const [inOutCampusFilter, setInOutCampusFilter] = useState<string>("BLANK")
-  const [inOutGradeFilter, setInOutGradeFilter] = useState<string>("ALL")
-  const [inOutClassFilter, setInOutClassFilter] = useState<string>("ALL")
-  const [inOutLevelTab, setInOutLevelTab] = useState<"pho-thong" | "mam-non">("pho-thong")
-  const [inOutSemesterFilter, setInOutSemesterFilter] = useState<string>("ALL")
 
   const userName = session?.user?.name || "Thành viên"
 
@@ -128,17 +117,6 @@ export default function AdminDashboard() {
     return () => clearInterval(timer)
   }, [isAutoRefresh, fetchMetrics])
 
-  // Reset Class Filter when Campus or Grade changes
-  useEffect(() => {
-    setInOutClassFilter("ALL")
-  }, [inOutCampusFilter, inOutGradeFilter])
-
-  // Reset Grade & Class Filter when Level Tab changes
-  useEffect(() => {
-    setInOutGradeFilter("ALL")
-    setInOutClassFilter("ALL")
-  }, [inOutLevelTab])
-
   if (status === "loading" || loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32 space-y-4">
@@ -175,16 +153,7 @@ export default function AdminDashboard() {
   const filteredEntryStudents = rawEntryStudents.filter((s: any) => {
     if (entryGradeFilter !== "ALL" && s.rawGrade !== entryGradeFilter) return false
     if (entrySourceFilter !== "ALL" && s.source !== entrySourceFilter) return false
-    if (entryCampusFilter === "BLANK") {
-      const info = getCampusInfo(s.campusName)
-      const isKnownCampus = s.campusName && (
-        s.campusName.includes("CS1") || s.campusName.includes("CS2") || s.campusName.includes("CS3") ||
-        s.campusName.includes("CS4") || s.campusName.includes("CS5") ||
-        info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
-        info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
-      )
-      if (isKnownCampus) return false
-    } else if (entryCampusFilter !== "ALL") {
+    if (entryCampusFilter !== "ALL") {
       const info = getCampusInfo(s.campusName)
       if (!s.campusName?.includes(entryCampusFilter) && info.name !== entryCampusFilter) return false
     }
@@ -207,225 +176,6 @@ export default function AdminDashboard() {
     "THPT": "#2E1065",
     "Khác": "#94a3b8"
   }
-
-  // In/Out Tracking Analytics Computation
-  const detailedTransfers = finalMetrics.detailedTransfers || []
-
-  // Dữ liệu sĩ số thực tế Năm học hiện hành làm mốc chuẩn (August Baseline Headcount)
-  const augustHeadcountObj = (finalMetrics.monthlyHeadcount || []).find((m: any) => m.month.startsWith("8/"))
-  const augustBaseHeadcount = augustHeadcountObj 
-    ? (inOutLevelTab === "pho-thong" ? (augustHeadcountObj.generalCount || augustHeadcountObj.count) : (augustHeadcountObj.preschoolCount || augustHeadcountObj.count))
-    : (inOutLevelTab === "pho-thong" ? finalMetrics.totalGeneralStudents : finalMetrics.totalPreschoolStudents)
-
-  const totalBaseHeadcount = (augustBaseHeadcount && augustBaseHeadcount > 0) ? augustBaseHeadcount : (inOutLevelTab === "pho-thong" ? (finalMetrics.totalGeneralStudents || 1862) : (finalMetrics.totalPreschoolStudents || 10))
-
-  const filteredTransfers = detailedTransfers.filter((t: any) => {
-    // Filter by Level Tab (Phổ thông vs Mầm non)
-    const isPreschool = t.level === "Mầm non" || String(t.grade || "").includes("Mầm")
-    if (inOutLevelTab === "pho-thong" && isPreschool) return false
-    if (inOutLevelTab === "mam-non" && !isPreschool) return false
-
-    const tDate = t.transferDate ? new Date(t.transferDate) : null
-    const tMonthNum = tDate ? (tDate.getMonth() + 1) : null
-
-    // Quy định thời gian:
-    // - Phổ thông: Nhập học (IN) 01/08 - 31/05; Chuyển trường (OUT) 01/08 - 31/07.
-    // - Mầm non: Nhập học (IN) 01/06 - 31/05.
-    if (tDate && tMonthNum) {
-      if (inOutLevelTab === "pho-thong") {
-        if (t.type === "IN" && (tMonthNum === 6 || tMonthNum === 7)) {
-          return false
-        }
-      }
-    }
-
-    // Filter by Semester (HK1: 1/8 - 31/12, HK2: 1/1 - 31/5, Hè: 1/6 - 31/7)
-    if (tMonthNum) {
-      if (inOutSemesterFilter === "HK1" && ![8, 9, 10, 11, 12].includes(tMonthNum)) return false
-      if (inOutSemesterFilter === "HK2" && ![1, 2, 3, 4, 5].includes(tMonthNum)) return false
-      if (inOutSemesterFilter === "HE" && ![6, 7].includes(tMonthNum)) return false
-    }
-
-    const tMonth = tMonthNum ? String(tMonthNum) : ""
-    if (inOutMonthFilter !== "ALL" && tMonth !== inOutMonthFilter) return false
-    
-    if (inOutCampusFilter === "BLANK") {
-      const info = getCampusInfo(t.campusName)
-      const isKnown = t.campusName && (
-        t.campusName.includes("CS1") || t.campusName.includes("CS2") || t.campusName.includes("CS3") ||
-        t.campusName.includes("CS4") || t.campusName.includes("CS5") ||
-        info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
-        info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
-      )
-      if (isKnown) return false
-    } else if (inOutCampusFilter !== "ALL") {
-      const info = getCampusInfo(t.campusName)
-      if (!t.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
-    }
-
-    if (inOutGradeFilter !== "ALL") {
-      const gStr = String(t.grade || "")
-      if (!gStr.includes(inOutGradeFilter)) return false
-    }
-
-    if (inOutClassFilter !== "ALL" && t.className !== inOutClassFilter) return false
-
-    return true
-  })
-
-  // Get comprehensive list of all survey entrance candidates (Phổ thông + Mầm non)
-  const allSurveyCandidates = finalMetrics.entryLevelStats?.allSurveyStudents || rawEntryStudents
-
-  // Dynamic Real-time Survey Enrollment Count matching Level, Campus, Grade, and Class
-  const filteredSurveyCandidates = allSurveyCandidates.filter((s: any) => {
-    const isPreschool = s.level === "Mầm non" || ["Nhà trẻ", "Mầm", "Chồi", "Lá"].some((m: string) => String(s.grade || s.rawGrade || "").includes(m))
-    if (inOutLevelTab === "pho-thong" && isPreschool) return false
-    if (inOutLevelTab === "mam-non" && !isPreschool) return false
-
-    if (inOutCampusFilter === "BLANK") {
-      const info = getCampusInfo(s.campusName)
-      const isKnown = s.campusName && (
-        s.campusName.includes("CS1") || s.campusName.includes("CS2") || s.campusName.includes("CS3") ||
-        s.campusName.includes("CS4") || s.campusName.includes("CS5") ||
-        info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
-        info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
-      )
-      if (isKnown) return false
-    } else if (inOutCampusFilter !== "ALL") {
-      const info = getCampusInfo(s.campusName)
-      if (!s.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
-    }
-
-    if (inOutGradeFilter !== "ALL") {
-      const gStr = String(s.grade || s.rawGrade || "")
-      if (!gStr.includes(inOutGradeFilter)) return false
-    }
-
-    if (inOutClassFilter !== "ALL" && s.className !== inOutClassFilter) return false
-
-    return true
-  })
-
-  const inTransfersDirectCount = filteredTransfers.filter((t: any) => t.type === "IN").length
-
-  // Use actual IN transfer count (236 total / 226 Phổ thông / 10 Mầm non)
-  const totalInCount = inTransfersDirectCount
-
-  const outTransfersCount = filteredTransfers.filter((t: any) => t.type === "OUT").length
-  const netGrowthCount = totalInCount - outTransfersCount
-
-  const inPercentage = ((totalInCount / totalBaseHeadcount) * 100).toFixed(2)
-  const outPercentage = ((outTransfersCount / totalBaseHeadcount) * 100).toFixed(2)
-  const netPercentage = ((netGrowthCount / totalBaseHeadcount) * 100).toFixed(2)
-
-  // Compute Semester Metrics (HK1: 1/8 - 31/12, HK2: 1/1 - 31/5, Hè: 1/6 - 31/7)
-  const baseTransfersForSem = detailedTransfers.filter((t: any) => {
-    const isPreschool = t.level === "Mầm non" || String(t.grade || "").includes("Mầm")
-    if (inOutLevelTab === "pho-thong" && isPreschool) return false
-    if (inOutLevelTab === "mam-non" && !isPreschool) return false
-
-    if (inOutCampusFilter === "BLANK") {
-      const info = getCampusInfo(t.campusName)
-      const isKnown = t.campusName && (
-        t.campusName.includes("CS1") || t.campusName.includes("CS2") || t.campusName.includes("CS3") ||
-        t.campusName.includes("CS4") || t.campusName.includes("CS5") ||
-        info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
-        info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
-      )
-      if (isKnown) return false
-    } else if (inOutCampusFilter !== "ALL") {
-      const info = getCampusInfo(t.campusName)
-      if (!t.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
-    }
-
-    if (inOutGradeFilter !== "ALL") {
-      const gStr = String(t.grade || "")
-      if (!gStr.includes(inOutGradeFilter)) return false
-    }
-
-    if (inOutClassFilter !== "ALL" && t.className !== inOutClassFilter) return false
-    return true
-  })
-
-  const getSemesterStats = (monthsList: number[], isHK1 = false) => {
-    const semT = baseTransfersForSem.filter((t: any) => {
-      const d = t.transferDate ? new Date(t.transferDate) : null
-      const m = d ? (d.getMonth() + 1) : null
-      return m && monthsList.includes(m)
-    })
-    const directIn = semT.filter((t: any) => t.type === "IN").length
-    const surveyIn = isHK1 ? filteredSurveyCandidates.length : 0
-    const inTotal = Math.max(directIn, surveyIn)
-
-    const outTotal = semT.filter((t: any) => t.type === "OUT").length
-    const netTotal = inTotal - outTotal
-    const inPct = ((inTotal / totalBaseHeadcount) * 100).toFixed(1)
-    const outPct = ((outTotal / totalBaseHeadcount) * 100).toFixed(1)
-    const netPct = ((netTotal / totalBaseHeadcount) * 100).toFixed(1)
-    return { inTotal, outTotal, netTotal, inPct, outPct, netPct }
-  }
-
-  const hk1Stats = getSemesterStats([8, 9, 10, 11, 12], true)
-  const hk2Stats = getSemesterStats([1, 2, 3, 4, 5], false)
-  const heStats = getSemesterStats([6, 7], false)
-
-  const monthlyInOutChartData = Array.from({ length: 12 }, (_, i) => {
-    const monthNum = i + 1
-    const monthTransfers = filteredTransfers.filter((t: any) => {
-      const d = t.transferDate ? new Date(t.transferDate) : null
-      return d && (d.getMonth() + 1) === monthNum
-    })
-    const inCnt = monthTransfers.filter((t: any) => t.type === "IN").length
-    const outCnt = monthTransfers.filter((t: any) => t.type === "OUT").length
-    const netCnt = inCnt - outCnt
-
-    return {
-      monthLabel: `Tháng ${monthNum}`,
-      IN: inCnt,
-      OUT: outCnt,
-      NET: netCnt
-    }
-  })
-
-  // Dynamically filter classes by currently selected Campus and Grade
-  const allStudentsAndTransfers = [
-    ...detailedTransfers,
-    ...rawEntryStudents
-  ]
-
-  const availableClassesList = Array.from(
-    new Set(
-      allStudentsAndTransfers
-        .filter((item: any) => {
-          const isPreschool = item.level === "Mầm non" || String(item.grade || item.rawGrade || "").includes("Mầm")
-          if (inOutLevelTab === "pho-thong" && isPreschool) return false
-          if (inOutLevelTab === "mam-non" && !isPreschool) return false
-
-          if (inOutCampusFilter === "BLANK") {
-            const info = getCampusInfo(item.campusName)
-            const isKnown = item.campusName && (
-              item.campusName.includes("CS1") || item.campusName.includes("CS2") || item.campusName.includes("CS3") ||
-              item.campusName.includes("CS4") || item.campusName.includes("CS5") ||
-              info.name.includes("Cơ sở 1") || info.name.includes("Cơ sở 2") || info.name.includes("Cơ sở 3") ||
-              info.name.includes("Cơ sở 4") || info.name.includes("Cơ sở 5")
-            )
-            if (isKnown) return false
-          } else if (inOutCampusFilter !== "ALL") {
-            const info = getCampusInfo(item.campusName)
-            if (!item.campusName?.includes(inOutCampusFilter) && info.name !== inOutCampusFilter) return false
-          }
-
-          if (inOutGradeFilter !== "ALL") {
-            const gStr = String(item.grade || item.rawGrade || "")
-            if (!gStr.includes(inOutGradeFilter)) return false
-          }
-
-          return true
-        })
-        .map((item: any) => item.className)
-        .filter((name: any) => name && name !== "---" && name !== "Chưa xếp lớp")
-    )
-  ).sort()
 
   return (
     <div className="space-y-8 animate-fade-in pb-12">
@@ -521,35 +271,28 @@ export default function AdminDashboard() {
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">HS Lưu chuyển</p>
               <h3 className="text-2xl font-black text-slate-800 mt-1">
-                {((finalMetrics.detailedTransfers || []).length || ((finalMetrics.newEnrollmentsCount || 0) + (finalMetrics.transferCount || 0) + (finalMetrics.changeClassCount || 0))).toLocaleString()}
+                {((finalMetrics.newEnrollmentsCount || 0) + (finalMetrics.transferCount || 0) + (finalMetrics.changeClassCount || 0)).toLocaleString()}
               </h3>
               <div className="text-[10px] text-slate-500 font-semibold mt-1 space-x-1.5 flex flex-wrap">
-                <span>Mới: <strong className="text-emerald-600">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "IN").length || finalMetrics.newEnrollmentsCount || 0}</strong></span>
+                <span>Mới: <strong className="text-emerald-600">{finalMetrics.newEnrollmentsCount || 0}</strong></span>
                 <span>•</span>
-                <span>Đi: <strong className="text-rose-500">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT").length || finalMetrics.transferCount || 0}</strong></span>
+                <span>Đi: <strong className="text-rose-500">{finalMetrics.transferCount || 0}</strong></span>
                 <span>•</span>
-                <span>Lớp: <strong className="text-[#48BFE3]">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "CHANGE_CLASS").length || finalMetrics.changeClassCount || 0}</strong></span>
+                <span>Lớp: <strong className="text-[#48BFE3]">{finalMetrics.changeClassCount || 0}</strong></span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* CARD 4: HS CHUYỂN ĐI (BỎ TỶ LỆ HOÀN THÀNH -> THÊM HS CHUYỂN ĐI) */}
-        <div className="relative bg-white rounded-2xl border-2 border-rose-100 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
+        {/* CARD 4: TỶ LỆ HOÀN THÀNH */}
+        <div className="relative bg-white rounded-2xl border-2 border-slate-200 p-5 shadow-xs hover:shadow-md transition-all duration-300 group overflow-hidden">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 flex items-center justify-center text-rose-600 bg-rose-50 rounded-xl shadow-2xs">
-              <UserMinus className="w-6 h-6 text-rose-600" />
+            <div className="w-12 h-12 flex items-center justify-center text-[#475569] bg-slate-100 rounded-xl shadow-2xs">
+              <ClipboardCheck className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">HS Chuyển đi</p>
-              <h3 className="text-2xl font-black text-rose-600 mt-1">
-                {((finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT").length || finalMetrics.transferCount || 0).toLocaleString()} <span className="text-xs font-bold text-slate-400">HS</span>
-              </h3>
-              <div className="text-[11px] text-slate-500 font-semibold mt-1 space-x-2">
-                <span>Phổ thông: <strong className="text-rose-600">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT" && t.level !== "Mầm non").length}</strong></span>
-                <span>•</span>
-                <span>Mầm non: <strong className="text-rose-500">{(finalMetrics.detailedTransfers || []).filter((t: any) => t.type === "OUT" && t.level === "Mầm non").length}</strong></span>
-              </div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tỷ lệ Hoàn thành</p>
+              <h3 className="text-2xl font-black text-slate-800 mt-1">{finalMetrics.completionRate.toFixed(1)}%</h3>
             </div>
           </div>
         </div>
@@ -927,13 +670,12 @@ export default function AdminDashboard() {
               onChange={(e) => setEntryCampusFilter(e.target.value)}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-[#48BFE3]"
             >
-              <option value="BLANK">-- Chưa phân cơ sở (Blank) --</option>
               <option value="ALL">-- Tất cả cơ sở --</option>
-              <option value="CS1">CS1</option>
-              <option value="CS2">CS2</option>
-              <option value="CS3">CS3</option>
-              <option value="CS4">CS4</option>
-              <option value="CS5">CS5</option>
+              <option value="CS1">CS1 (Sky-Line Central - Xanh Sky-Line)</option>
+              <option value="CS2">CS2 (Sky-Line Riverside - Xanh tím)</option>
+              <option value="CS3">CS3 (Sky-Line Hill - Tím than)</option>
+              <option value="CS4">CS4 (Sky-Line International - Vàng đất)</option>
+              <option value="CS5">CS5 (Sky-Line Global - Xám xanh)</option>
             </select>
 
             {/* LỌC NGUỒN NHẬP HỌC */}
@@ -1116,8 +858,7 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
-
-              </div>
+      </div>
     </div>
   )
 }
