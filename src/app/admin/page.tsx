@@ -1051,7 +1051,7 @@ export default function AdminDashboard() {
             {/* IN CARD */}
             <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-100 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Học sinh Nhập mới / Chuyển đến (IN)</span>
+                <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest block">Học sinh Nhập học qua Khảo sát (IN)</span>
                 <span className="text-3xl font-black text-emerald-600 block mt-1">{inTransfersCount.toLocaleString()} <span className="text-xs font-bold text-slate-500">HS</span></span>
                 <span className="text-xs font-extrabold text-emerald-700 mt-1 block">Tỷ lệ In: {inPercentage}% <span className="text-[10px] text-slate-400 font-semibold">(so với sĩ số base {totalBaseHeadcount})</span></span>
               </div>
@@ -1103,7 +1103,7 @@ export default function AdminDashboard() {
                     contentStyle={{ backgroundColor: "#ffffff", borderRadius: "12px", border: "1px solid #cbd5e1", fontSize: "12px", fontWeight: "bold" }}
                   />
                   <Legend wrapperStyle={{ fontSize: "12px", fontWeight: "bold", paddingTop: "8px" }} />
-                  <Bar dataKey="IN" name="Số HS Nhập mới (IN)" fill="#10b981" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="IN" name="Số HS Nhập học qua Khảo sát (IN)" fill="#10b981" radius={[6, 6, 0, 0]} />
                   <Bar dataKey="OUT" name="Số HS Chuyển đi (OUT)" fill="#f43f5e" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -1155,7 +1155,7 @@ export default function AdminDashboard() {
                         <td className="py-3 px-4">
                           {isIn ? (
                             <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black uppercase tracking-wider">
-                              🟢 IN (Nhập học)
+                              🟢 IN (Nhập học qua Khảo sát)
                             </span>
                           ) : (
                             <span className="px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 text-[10px] font-black uppercase tracking-wider">
