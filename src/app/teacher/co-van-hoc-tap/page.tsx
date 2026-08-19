@@ -1570,6 +1570,17 @@ export default function TeacherAdvisoryPage() {
 
                       {/* 4. Viết chi tiết điều em muốn thầy cô hỗ trợ */}
                       <td className="p-3.5 border-r border-slate-200 align-top space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-500 pb-1.5 border-b border-slate-100">
+                          <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
+                            <Clock className="w-3.5 h-3.5 text-rose-500" />
+                            <span>Thời gian gửi: <strong className="text-slate-800">{new Date(req.createdAt).toLocaleString("vi-VN")}</strong></span>
+                          </span>
+                          {req.student?.studentName && (
+                            <span className="text-[10px] text-teal-800 bg-teal-50 px-2 py-0.5 rounded-lg font-black border border-teal-200">
+                              HS: {req.student.studentName}
+                            </span>
+                          )}
+                        </div>
                         <div className="p-3 rounded-2xl bg-rose-50/50 border border-rose-100 text-slate-900 text-xs font-bold leading-relaxed">
                           "{req.content}"
                         </div>
