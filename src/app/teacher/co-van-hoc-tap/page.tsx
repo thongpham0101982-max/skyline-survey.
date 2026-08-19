@@ -1102,11 +1102,11 @@ export default function TeacherAdvisoryPage() {
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 min-w-[280px]">Mục tiêu năm học</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[170px]">Kết quả theo dõi</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Mức hoàn thành mục tiêu (1-5)</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Mức độ chủ động (1-5)</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[180px]">Thái độ tham gia (1-5)</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[400px]">Mục tiêu năm học</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành mục tiêu (1-5)</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[140px]">Thái độ tham gia (1-5)</th>
                     <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
                   </tr>
                 </thead>
@@ -1181,9 +1181,9 @@ export default function TeacherAdvisoryPage() {
                                 : "bg-slate-100 text-slate-700 border-slate-300"
                             }`}
                           >
-                            <option value={0}>- (Chưa đánh giá)</option>
+                            <option value={0}>- Chưa đánh giá</option>
                             {[1, 2, 3, 4, 5].map(v => (
-                              <option key={v} value={v}>Mức {v} - {RUBRICS.goalCompletion[v-1].text.slice(0, 28)}...</option>
+                              <option key={v} value={v}>Mức {v}</option>
                             ))}
                           </select>
                         </td>
@@ -1204,9 +1204,9 @@ export default function TeacherAdvisoryPage() {
                                 : "bg-slate-100 text-slate-700 border-slate-300"
                             }`}
                           >
-                            <option value={0}>- (Chưa đánh giá)</option>
+                            <option value={0}>- Chưa đánh giá</option>
                             {[1, 2, 3, 4, 5].map(v => (
-                              <option key={v} value={v}>Mức {v} - {RUBRICS.initiative[v-1].text.slice(0, 28)}...</option>
+                              <option key={v} value={v}>Mức {v}</option>
                             ))}
                           </select>
                         </td>
@@ -1227,9 +1227,9 @@ export default function TeacherAdvisoryPage() {
                                 : "bg-slate-100 text-slate-700 border-slate-300"
                             }`}
                           >
-                            <option value={0}>- (Chưa đánh giá)</option>
+                            <option value={0}>- Chưa đánh giá</option>
                             {[1, 2, 3, 4, 5].map(v => (
-                              <option key={v} value={v}>Mức {v} - {RUBRICS.participation[v-1].text.slice(0, 28)}...</option>
+                              <option key={v} value={v}>Mức {v}</option>
                             ))}
                           </select>
                         </td>

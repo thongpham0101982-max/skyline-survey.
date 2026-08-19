@@ -994,11 +994,11 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
                         <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                          <th className="p-3 border-r border-slate-200 min-w-[280px]">Mục tiêu năm học</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[400px]">Mục tiêu năm học</th>
                           <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[170px]">Mức hoàn thành mục tiêu (1-5)</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[170px]">Mức độ chủ động (1-5)</th>
-                          <th className="p-3 border-r border-slate-200 min-w-[170px]">Thái độ tham gia (1-5)</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành mục tiêu (1-5)</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
+                          <th className="p-3 border-r border-slate-200 min-w-[140px]">Thái độ tham gia (1-5)</th>
                           <th className="p-3 min-w-[220px]">Khuyến nghị cho phụ huynh / giáo viên bộ môn</th>
                         </tr>
                       </thead>
