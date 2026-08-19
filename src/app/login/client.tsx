@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import { signIn } from 'next-auth/react'
 import { GraduationCap, CheckCircle2, Loader2 } from 'lucide-react'
-import { LoginForm, PageFooter, SchoolLineArt, SkyLineSwooshBg, FeatureDrawer } from './components'
+import { LoginForm, PageFooter, SchoolLineArt, SkyLineSwooshBg, FeatureDrawer, ForgotPasswordModal } from './components'
 
 export function LoginClient() {
   const [role, setRole] = useState('STAFF')
@@ -15,6 +15,7 @@ export function LoginClient() {
   const [loading, setLoading] = useState(false)
   const [loadingSteps, setLoadingSteps] = useState([])
   const [mounted, setMounted] = useState(false)
+  const [showForgotModal, setShowForgotModal] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -135,7 +136,7 @@ export function LoginClient() {
   }
 
   const handleForgotPassword = () => {
-    setError('Vui lòng liên hệ Ban Khảo thí & Đảm bảo chất lượng để được cấp lại mật khẩu.')
+    setShowForgotModal(true)
   }
 
   if (!mounted) return null
@@ -281,6 +282,8 @@ export function LoginClient() {
         </div>
 
       </div>
+
+      <ForgotPasswordModal isOpen={showForgotModal} onClose={() => setShowForgotModal(false)} />
     </>
   )
 }

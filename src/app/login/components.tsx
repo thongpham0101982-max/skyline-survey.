@@ -317,3 +317,124 @@ export function LoginForm({
     </form>
   )
 }
+
+// ─── ForgotPasswordModal ──────────────────────────────────────────────────────
+export function ForgotPasswordModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const [identifier, setIdentifier] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  if (!isOpen) return null
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+
+    if (!identifier.trim()) {
+      setError('Vui lòng nhập Email hoặc Mã tài khoản.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: identifier.trim() })
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'Gửi yêu cầu thất bại. Vui lòng thử lại.')
+        setLoading(false)
+        return
+      }
+
+      setSuccess(data.message)
+      setLoading(false)
+    } catch {
+      setError('Lỗi kết nối máy chủ. Vui lòng thử lại sau.')
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#001D1C]/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-2xl max-w-md w-full border border-slate-100 relative animate-in zoom-in-95 duration-200">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-black text-lg p-2 cursor-pointer"
+        >
+          ✕
+        </button>
+
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-[#003B3A] text-[#00D2C4] flex items-center justify-center mx-auto mb-3 shadow-md">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h3 className="text-xl font-black text-[#003B3A]">Quên Mật Khẩu</h3>
+          <p className="text-xs text-slate-500 font-semibold mt-1">
+            Nhập Email hoặc Mã cán bộ / Mã phụ huynh để nhận liên kết đặt lại mật khẩu qua email.
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-2xl text-xs font-bold text-red-600 flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {success ? (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs font-bold text-emerald-800 text-center space-y-3">
+            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+            <p>{success}</p>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-2.5 bg-[#48BFE3] text-white font-extrabold rounded-xl hover:bg-[#009085] transition-all cursor-pointer"
+            >
+              Đã hiểu & Đóng
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="relative flex items-center">
+              <span className="absolute left-4 z-10 flex items-center justify-center pointer-events-none">
+                <User className="w-4 h-4 text-slate-400" />
+              </span>
+              <input
+                type="text"
+                required
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value)}
+                placeholder="Nhập Email hoặc Mã cán bộ / Mã phụ huynh"
+                className="w-full h-[48px] rounded-2xl border border-slate-200 bg-white !pl-11 pr-4 text-sm font-semibold text-[#003B3A] placeholder-[#94A3B8] outline-none focus:border-[#48BFE3] focus:ring-4 focus:ring-[#48BFE3]/15 shadow-sm"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 h-[48px] border border-slate-200 text-slate-600 rounded-2xl font-extrabold text-xs hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 h-[48px] bg-[#48BFE3] hover:bg-[#009085] text-white rounded-2xl font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all disabled:opacity-60 cursor-pointer"
+              >
+                {loading ? 'Đang gửi...' : 'Gửi liên kết khôi phục'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
