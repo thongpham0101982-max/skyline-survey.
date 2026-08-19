@@ -138,6 +138,7 @@ export async function GET(req: Request) {
     const [goals, trackingLogs, consultations, termEvals] = await Promise.all([
       ((prisma as any).studentGoal?.findMany ? (prisma as any).studentGoal.findMany({
         where: { studentId: { in: studentIds } },
+        include: { actions: true },
         orderBy: { createdAt: "asc" }
       }) : Promise.resolve([])).catch(() => []),
       ((prisma as any).studentGoalTrackingLog?.findMany ? (prisma as any).studentGoalTrackingLog.findMany({

@@ -49,6 +49,16 @@ export async function POST(req: Request) {
       return jsonResponse({ error: "Invalid payload" }, 400)
     }
 
+    if (studentId && checkPoint) {
+      await prisma.studentGoalTrackingLog.deleteMany({
+        where: {
+          studentId,
+          checkPoint,
+          ...(academicYearId ? { academicYearId } : {})
+        }
+      }).catch(() => {})
+    }
+
     const createdRecords = []
     for (const item of items) {
       if (!item.targetText) continue

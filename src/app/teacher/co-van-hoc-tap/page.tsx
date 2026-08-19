@@ -174,23 +174,32 @@ export default function TeacherAdvisoryPage() {
 
       const rows: any[] = []
 
+      function getCategoryKey(cat: string): string {
+        const c = String(cat || "").toUpperCase().trim()
+        if (c.includes("HOC_TAP") || c.includes("HỌC TẬP")) return "HOC_TAP"
+        if (c.includes("THOI_QUEN") || c.includes("THÓI QUEN") || c.includes("SUC_KHOE") || c.includes("SỨC KHỎE")) return "THOI_QUEN"
+        if (c.includes("KY_NANG") || c.includes("KỸ NĂNG") || c.includes("CAM_XUC") || c.includes("CẢM XÚC") || c.includes("SO_THICH")) return "KY_NANG_CAM_XUC"
+        if (c.includes("DINH_HUONG") || c.includes("ĐỊNH HƯỚNG") || c.includes("PHAM_CHAT") || c.includes("PHẨM CHẤT")) return "DINH_HUONG"
+        return "HOC_TAP"
+      }
+
       standardCats.forEach(catObj => {
         const studentGoalsInCat = goalData?.goals?.filter((g: any) => {
-          if (g.category === catObj.key) return true
-          if (catObj.key === "THOI_QUEN" && (g.category === "THOI_QUEN" || g.category === "THOI_QUEN_SUC_KHOE")) return true
-          if (catObj.key === "KY_NANG_CAM_XUC" && (g.category === "KY_NANG_CAM_XUC" || g.category === "KY_NANG_SO_THICH")) return true
-          if (catObj.key === "DINH_HUONG" && (g.category === "DINH_HUONG" || g.category === "PHAM_CHAT")) return true
-          return false
+          return getCategoryKey(g.category) === catObj.key
         }) || []
 
         if (studentGoalsInCat.length > 0) {
           studentGoalsInCat.forEach((g: any) => {
-            const matchedLog = existingLogs.find((t: any) => t.targetText === g.targetText || t.goalId === g.id)
+            const matchedLog = existingLogs.find((t: any) => 
+              (t.goalId && t.goalId === g.id) || 
+              (t.targetText && g.targetText && t.targetText.trim() === g.targetText.trim())
+            )
             rows.push({
               studentId: st.id,
               studentName: st.studentName,
               studentCode: st.studentCode,
               goalId: g.id,
+              categoryKey: catObj.key,
               category: catObj.label,
               targetText: g.targetText || "",
               actionText: g.actions?.[0]?.actionText || "",
@@ -204,11 +213,12 @@ export default function TeacherAdvisoryPage() {
             })
           })
         } else {
-          const matchedLog = existingLogs.find((l: any) => l.category === catObj.key || l.category === catObj.label)
+          const matchedLog = existingLogs.find((l: any) => getCategoryKey(l.category) === catObj.key || l.category === catObj.label)
           rows.push({
             studentId: st.id,
             studentName: st.studentName,
             studentCode: st.studentCode,
+            categoryKey: catObj.key,
             category: catObj.label,
             targetText: matchedLog?.targetText || "Em chưa điền nội dung mục tiêu nhóm này",
             actionText: "",
@@ -919,10 +929,16 @@ export default function TeacherAdvisoryPage() {
                         </td>
                         <td className="p-3.5 border-r border-slate-200 text-slate-800 align-top">
                           {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
-                            <div className="space-y-2 text-xs">
+                            <div className="space-y-1.5 text-xs">
                               <p className="font-bold text-slate-900">{item.targetText}</p>
                               {item.actionText && (
-                                <p className="font-semibold text-slate-700 text-[11px]">👉 Việc làm: {item.actionText}</p>
+                                <p className="font-semibold text-amber-900 text-[11px]">⚡ Việc làm: {item.actionText}</p>
+                              )}
+                              {item.teacherSupportRequest && (
+                                <p className="font-medium text-sky-800 text-[11px]">💬 Thầy/Cô & Bạn hỗ trợ: {item.teacherSupportRequest}</p>
+                              )}
+                              {item.parentSupportRequest && (
+                                <p className="font-medium text-rose-800 text-[11px]">🏡 Ba/Mẹ hỗ trợ: {item.parentSupportRequest}</p>
                               )}
                             </div>
                           ) : (
