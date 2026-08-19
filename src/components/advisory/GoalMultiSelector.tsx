@@ -104,103 +104,17 @@ export function GoalMultiSelector({
 
         <div className="flex items-center gap-2 shrink-0">
           <span className="px-3 py-1 bg-teal-50 text-teal-800 border border-teal-200 rounded-full text-[11px] font-black">
-            {selectedPresetIds.length + customItems.filter(i => i.targetText.trim()).length} mục tiêu chọn/điền
+            {customItems.filter(i => i.targetText.trim()).length} mục tiêu đã điền
           </span>
         </div>
       </div>
 
-      {/* SECTION 1: Linh động chọn 1 hoặc nhiều Mục tiêu mẫu (Multi-select goal options) */}
+      {/* NỘI DUNG MỤC TIÊU CỤ THỂ CỦA EM (ĐI KÈM HÀNH ĐỘNG & NỘI DUNG HỖ TRỢ) */}
       <div className="space-y-3">
-        <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-teal-800">
-            <Sparkles className="w-4 h-4 text-teal-600" />
-            <span>1. CHỌN 1 HOẶC NHIỀU MỤC TIÊU MẪU (BGH GỢI Ý):</span>
-          </span>
-          <span className="text-[10px] text-slate-400 font-normal normal-case">
-            (Có thể chọn nhiều mục tiêu cùng lúc)
-          </span>
-        </label>
-
-        {catPresets.length === 0 ? (
-          <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-slate-400 text-xs font-medium text-center">
-            Chưa có mục tiêu mẫu BGH trong nhóm này. Bạn có thể tự gõ thêm các mục tiêu bên dưới.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {catPresets.map((item) => {
-              const isSelected = selectedPresetIds.includes(item.id)
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => handleTogglePreset(item.id)}
-                  className={`p-3.5 rounded-2xl border-2 transition-all flex items-start justify-between gap-3 ${
-                    readOnly ? "cursor-not-allowed opacity-90" : "cursor-pointer hover:border-teal-400"
-                  } ${
-                    isSelected
-                      ? "bg-teal-50/80 border-teal-500 text-teal-950 shadow-xs ring-1 ring-teal-400"
-                      : "bg-slate-50/70 border-slate-200 text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                    <div
-                      className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                        isSelected
-                          ? "bg-teal-600 border-teal-600 text-white"
-                          : "bg-white border-slate-300"
-                      }`}
-                    >
-                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                    </div>
-
-                    <div className="space-y-1">
-                      <p className="text-xs font-extrabold leading-snug">
-                        {item.goalText}
-                      </p>
-                      {item.actionPreset && (
-                        <p className={`text-[10px] font-medium leading-tight flex items-center gap-1 ${
-                          isSelected ? "text-teal-800 font-bold" : "text-slate-500"
-                        }`}>
-                          <span>⚡ Hành động gợi ý:</span>
-                          <span className="truncate">{item.actionPreset}</span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* SECTION 2: TỰ ĐỘNG ĐỒNG BỘ HÀNH ĐỘNG GỢI Ý THEO NỘI DUNG ĐÃ CHỌN */}
-      {selectedPresets.length > 0 && (
-        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2 animate-in fade-in duration-200">
-          <div className="flex items-center gap-2 text-amber-900 font-black text-xs uppercase tracking-wider">
-            <Lightbulb className="w-4 h-4 text-amber-600" />
-            <span>HÀNH ĐỘNG GỢI Ý TƯƠNG ỨNG VỚI {selectedPresets.length} MỤC TIÊU ĐÃ CHỌN:</span>
-          </div>
-
-          <div className="space-y-1.5 pl-6">
-            {selectedPresets.map((p, i) => (
-              <div key={p.id} className="text-xs text-amber-950 font-semibold flex items-start gap-2">
-                <span className="text-amber-600 font-bold shrink-0">{i + 1}.</span>
-                <div>
-                  <span className="font-extrabold text-slate-800">[{p.goalText}]:</span>{" "}
-                  <span className="text-amber-900">{p.actionPreset || "Chưa có hành động mẫu"}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* SECTION 3: MULTI CUSTOM GOALS VỚI HÀNH ĐỘNG & MONG MUỐN HỖ TRỢ ĐI KÈM CỤ THỂ */}
-      <div className="space-y-3 pt-3 border-t border-slate-100">
         <div className="flex items-center justify-between">
           <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
             <Edit3 className="w-4 h-4 text-amber-500" />
-            <span>2. TỰ GÕ / BỔ SUNG CÁC MỤC TIÊU CỤ THỂ KHÁC CỦA EM (ĐI KÈM HÀNH ĐỘNG & NỘI DUNG HỖ TRỢ):</span>
+            <span>NỘI DUNG MỤC TIÊU CỤ THỂ CỦA EM (ĐI KÈM HÀNH ĐỘNG & NỘI DUNG HỖ TRỢ):</span>
           </label>
           <span className="text-[10px] text-slate-400 font-medium">
             ({customItems.length} mục tiêu bổ sung)

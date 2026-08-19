@@ -292,7 +292,7 @@ export default function StudentGoalPortalPage() {
         <div className="space-y-1">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">MỤC TIÊU NĂM HỌC 2026 - 2027</h1>
           <p className="text-xs sm:text-sm text-teal-100 font-medium italic">
-            Em hãy dành thời gian suy nghĩ và viết mục tiêu của mình cho năm học này. Em có thể chọn 1 hoặc nhiều mục tiêu mẫu và tự gõ thêm nhiều mục tiêu cụ thể khác nhé!
+            Em hãy dành thời gian suy nghĩ và tự điền các mục tiêu cụ thể của mình cho năm học này cùng các hành động và nội dung cần Thầy Cô / Ba Mẹ hỗ trợ nhé!
           </p>
         </div>
 
@@ -359,7 +359,7 @@ export default function StudentGoalPortalPage() {
               <div>
                 <h3 className="font-black text-sm uppercase text-teal-900">BẢNG LẬP MỤC TIÊU NĂM HỌC — LỰA CHỌN LINH ĐỘNG (KHỐI 2 - KHỐI 12)</h3>
                 <p className="text-xs text-teal-700 font-medium">
-                  Em có thể tick chọn <strong>1 hoặc nhiều mục tiêu mẫu</strong> và tự gõ thêm <strong>nhiều mục tiêu cụ thể khác</strong> bên dưới. Phần <strong>Hành động gợi ý tương ứng</strong> sẽ tự động hiện theo từng mục tiêu đã chọn.
+                  Em hãy tự điền các <strong>mục tiêu cụ thể của mình</strong> bên dưới cùng <strong>hành động cụ thể</strong> và <strong>nội dung mong muốn Thầy Cô / Ba Mẹ hỗ trợ</strong>.
                 </p>
               </div>
             </div>
