@@ -674,6 +674,24 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            onClick={handleRunAutoScheduler}
+            disabled={isAutoScheduling}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            title="Tự động xếp TKB cho tất cả các lớp dựa trên Phân công giảng dạy & 10 Quy tắc Ràng buộc"
+          >
+            <Sparkles className="w-4 h-4 animate-spin-slow" />
+            {isAutoScheduling ? "Đang xếp tự động..." : "⚡ TỰ ĐỘNG CHIA TKB (10 QUY TẮC)"}
+          </button>
+
+          <button
+            onClick={() => setShowAudits(!showAudits)}
+            className="px-3.5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <CheckCircle className="w-4 h-4" />
+            Rà soát 10 Quy tắc ({constraintAudits.filter(a => a.passed).length}/10)
+          </button>
+
+          <button
             onClick={handleSaveAll}
             disabled={isSaving}
             className="px-5 py-2.5 bg-[#48BFE3] hover:bg-[#008b82] text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
@@ -729,6 +747,85 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           <UserCheck className="w-4 h-4" />
           3. TRA CỨU THEO GIÁO VIÊN & TỔ CM
         </button>
+      </div>
+
+      {/* STEP 1: CONFIG SHHT-CD & AUDIT DASHBOARD */}
+      <div className="space-y-4">
+        <div className="bg-amber-50/80 border border-amber-200 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="bg-amber-500 text-white text-xs font-black px-2.5 py-1 rounded-lg uppercase shadow-xs">BƯỚC 1</span>
+            <span className="text-xs font-black text-amber-900">Cấu hình Tiết SHHT-CĐ (Chào cờ / Chuyên đề toàn trường):</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={shhtMode}
+              onChange={e => setShhtMode(e.target.value as any)}
+              className="bg-white border border-amber-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-amber-400"
+            >
+              <option value="DEFAULT">Mặc định: Tiết 1 Thứ 2 Sáng</option>
+              <option value="PRESERVE">Giữ vị trí đã xếp trong TKB hiện tại</option>
+              <option value="CUSTOM">Tùy chọn vị trí Thứ / Buổi / Tiết</option>
+            </select>
+
+            {shhtMode === "CUSTOM" && (
+              <div className="flex items-center gap-2">
+                <select value={shhtDay} onChange={e => setShhtDay(e.target.value)} className="bg-white border border-slate-300 rounded-xl px-2 py-1 text-xs font-bold">
+                  {DAYS.map(d => <option key={d.key} value={d.key}>{d.label}</option>)}
+                </select>
+                <select value={shhtSession} onChange={e => setShhtSession(e.target.value)} className="bg-white border border-slate-300 rounded-xl px-2 py-1 text-xs font-bold">
+                  <option value="MORNING">Sáng</option>
+                  <option value="AFTERNOON">Chiều</option>
+                </select>
+                <select value={shhtPeriod} onChange={e => setShhtPeriod(Number(e.target.value))} className="bg-white border border-slate-300 rounded-xl px-2 py-1 text-xs font-bold">
+                  <option value={1}>Tiết 1</option>
+                  <option value={2}>Tiết 2</option>
+                  <option value={3}>Tiết 3</option>
+                  <option value={4}>Tiết 4</option>
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {showAudits && (
+          <div className="bg-white p-5 rounded-2xl border border-indigo-200 shadow-md space-y-3 animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between border-b border-slate-150 pb-2">
+              <h3 className="font-black text-xs text-indigo-900 uppercase tracking-wide flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-indigo-600" />
+                Báo cáo Rà soát 10 Quy tắc Ràng buộc & Di chuyển Liên Cơ sở (CS1 - CS5)
+              </h3>
+              <button onClick={() => setShowAudits(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              {constraintAudits.map(audit => (
+                <div key={audit.ruleId} className={`p-3 rounded-xl border text-xs font-bold flex flex-col justify-between space-y-1.5 ${
+                  audit.passed ? "bg-emerald-50/70 border-emerald-200 text-emerald-900" : "bg-rose-50/70 border-rose-200 text-rose-900"
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-wider">Quy tắc {audit.ruleId}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                      audit.passed ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"
+                    }`}>
+                      {audit.passed ? "ĐẠT" : `${audit.warningCount} LỖI`}
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-bold leading-snug">{audit.ruleName}</p>
+                  {audit.details.length > 0 && (
+                    <div className="text-[9px] font-mono text-rose-700 space-y-0.5 max-h-20 overflow-y-auto pt-1 border-t border-rose-200">
+                      {audit.details.slice(0, 3).map((d, idx) => (
+                        <div key={idx}>• {d}</div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* LEVEL & CAMPUS TABS */}
