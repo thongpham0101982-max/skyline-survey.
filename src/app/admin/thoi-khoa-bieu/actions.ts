@@ -345,3 +345,124 @@ export async function batchSaveAllTimetableSlots(campusId: string, level: string
     return { success: false, error: e.message }
   }
 }
+
+
+export async function applySlotToAllClasses(data: {
+  campusId: string
+  level: string
+  dayOfWeek: string
+  session: string
+  periodNumber: number
+  subjectId?: string
+  subjectName?: string
+  teacherId?: string
+  teacherName?: string
+  weekType?: string
+  altSubjectName?: string
+  altTeacherName?: string
+  colorCode?: string
+}) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+    const yearFilter = activeYear ? { academicYearId: activeYear.id } : {}
+
+    let levelGradeFilter: any = {}
+    if (data.level === "TIEU_HOC") {
+      levelGradeFilter = { level: { in: ["Tiểu học", "Mầm non"] } }
+    } else if (data.level === "TRUNG_HOC") {
+      levelGradeFilter = { level: { in: ["THCS", "THPT"] } }
+    }
+
+    let targetClasses = await prisma.class.findMany({
+      where: {
+        status: "ACTIVE",
+        ...(data.campusId ? { campusId: data.campusId } : {}),
+        ...levelGradeFilter,
+        ...yearFilter
+      },
+      select: { id: true, className: true }
+    })
+
+    if (targetClasses.length === 0 && data.campusId) {
+      targetClasses = await prisma.class.findMany({
+        where: {
+          status: "ACTIVE",
+          campusId: data.campusId,
+          ...yearFilter
+        },
+        select: { id: true, className: true }
+      })
+    }
+
+    const updatedSlots: any[] = []
+
+    for (const cls of targetClasses) {
+      const existingSlot = await prisma.timetableSlot.findFirst({
+        where: {
+          campusId: data.campusId,
+          level: data.level,
+          classId: cls.id,
+          dayOfWeek: data.dayOfWeek,
+          session: data.session,
+          periodNumber: data.periodNumber
+        }
+      })
+
+      let savedSlot: any
+      if (existingSlot) {
+        savedSlot = await prisma.timetableSlot.update({
+          where: { id: existingSlot.id },
+          data: {
+            subjectId: data.subjectId || null,
+            subjectName: data.subjectName || null,
+            teacherId: data.teacherId || null,
+            teacherName: data.teacherName || null,
+            weekType: data.weekType || "ALL",
+            altSubjectName: data.altSubjectName || null,
+            altTeacherName: data.altTeacherName || null,
+            colorCode: data.colorCode || "#FEF08A"
+          }
+        })
+      } else {
+        savedSlot = await prisma.timetableSlot.create({
+          data: {
+            campusId: data.campusId,
+            level: data.level,
+            classId: cls.id,
+            className: cls.className,
+            dayOfWeek: data.dayOfWeek,
+            session: data.session,
+            periodNumber: data.periodNumber,
+            subjectId: data.subjectId || null,
+            subjectName: data.subjectName || null,
+            teacherId: data.teacherId || null,
+            teacherName: data.teacherName || null,
+            weekType: data.weekType || "ALL",
+            altSubjectName: data.altSubjectName || null,
+            altTeacherName: data.altTeacherName || null,
+            colorCode: data.colorCode || "#FEF08A"
+          }
+        })
+      }
+      updatedSlots.push(savedSlot)
+    }
+
+    revalidatePath("/admin/thoi-khoa-bieu")
+    revalidatePath("/teacher/thoi-khoa-bieu")
+
+    return {
+      success: true,
+      updatedCount: targetClasses.length,
+      updatedSlots
+    }
+  } catch (e: any) {
+    return { success: false, error: e.message }
+  }
+}

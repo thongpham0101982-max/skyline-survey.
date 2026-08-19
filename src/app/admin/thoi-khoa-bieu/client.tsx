@@ -21,7 +21,7 @@ import {
   Search,
   Filter
 } from "lucide-react"
-import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots } from "./actions"
+import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots, applySlotToAllClasses } from "./actions"
 import * as XLSX from "xlsx"
 
 const DAYS = [
@@ -280,6 +280,45 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
     } else {
       setEditAltDepartment("ALL")
     }
+  }
+
+  // Apply slot to all classes for this period
+  const handleApplyToAllClasses = async () => {
+    if (!editingCell) return
+    const dayLabel = DAYS.find(d => d.key === editingCell.dayOfWeek)?.label
+    const sessionLabel = editingCell.session === "MORNING" ? "Sáng" : "Chiều"
+    if (!confirm(`Áp dụng tiết học này (${editSubjectName || "Môn"}) cho TẤT CẢ các lớp ở ${dayLabel} (${sessionLabel} - Tiết ${editingCell.periodNumber})?`)) return
+
+    startTransition(async () => {
+      const res = await applySlotToAllClasses({
+        campusId: currentCampusId,
+        level: activeLevel,
+        dayOfWeek: editingCell.dayOfWeek,
+        session: editingCell.session,
+        periodNumber: editingCell.periodNumber,
+        subjectName: editSubjectName,
+        teacherName: editTeacherName,
+        weekType: editWeekType,
+        altSubjectName: editAltSubjectName,
+        altTeacherName: editAltTeacherName,
+        colorCode: editColorCode
+      })
+
+      if (res.success && Array.isArray(res.updatedSlots)) {
+        setSlots(prev => {
+          const map = new Map(prev.map(s => [s.id, s]))
+          res.updatedSlots.forEach((s: any) => {
+            map.set(s.id, s)
+          })
+          return Array.from(map.values())
+        })
+
+        showToast(`Đã áp dụng tiết học cho tất cả ${res.updatedCount} lớp!`, "success")
+        setEditingCell(null)
+      } else {
+        showToast(res.error || "Không thể áp dụng cho tất cả các lớp!", "error")
+      }
+    })
   }
 
   // Save Edit Cell
@@ -1487,7 +1526,16 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                 </button>
               ) : <div />}
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={handleApplyToAllClasses}
+                  className="px-3.5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Áp dụng tiết học này cho tất cả các lớp trong Khối"
+                >
+                  <Layers className="w-4 h-4" />
+                  Áp dụng cho tất cả Khối lớp
+                </button>
                 <button
                   type="button"
                   onClick={() => setEditingCell(null)}
