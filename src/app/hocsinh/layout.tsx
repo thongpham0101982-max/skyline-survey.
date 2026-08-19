@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  ClipboardCheck, Compass, Feather, Heart, Sparkles, LogOut,
+  ClipboardCheck, Compass, Feather, Heart, Sparkles, LogOut, BookOpen,
   User, Home, ShieldCheck
 } from "lucide-react"
 
@@ -65,8 +65,13 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
       icon: Feather
     },
     {
+      href: "/hocsinh/portal/nhat-ky-co-van",
+      label: "4. Nhật ký Cố vấn GVCN",
+      icon: BookOpen
+    },
+    {
       href: "/hocsinh/portal/ho-tro",
-      label: "4. Em Cần Hỗ Trợ (SOS)",
+      label: "5. Em Cần Hỗ Trợ (SOS)",
       icon: Heart
     }
   ]

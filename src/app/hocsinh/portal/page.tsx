@@ -199,7 +199,23 @@ export default function StudentPortalHomePage() {
       <div className="space-y-4">
         <h3 className="text-sm font-black text-[#003B3A]">CÁC TIỆN ÍCH ĐỒNG HÀNH KHÁC</h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+          {/* Consultation Diary Card */}
+          <Link
+            href="/hocsinh/portal/nhat-ky-co-van"
+            className="p-5 bg-white rounded-2xl border border-slate-200 hover:border-teal-500 hover:shadow-md transition-all flex items-center gap-4 group"
+          >
+            <div className="p-3 rounded-xl bg-teal-100 text-teal-700 group-hover:scale-110 transition-transform">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-slate-900 group-hover:text-teal-600 transition-colors">
+                Nhật Ký Cố Vấn GVCN
+              </h4>
+              <p className="text-[10px] text-slate-500 font-medium">Xem ghi nhận làm việc từ GVCN</p>
+            </div>
+          </Link>
 
           {/* Reflection Card */}
           <Link
