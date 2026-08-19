@@ -8,7 +8,7 @@ const client = createClient({
 
 async function run() {
   const email = 'admin@skyline.edu';
-  const password = 'Pnt@01011982!'; 
+  const password = 'password123'; 
   
   const hash = await bcrypt.hash(password, 10);
   console.log(`Setting password for ${email} to "${password}"`);

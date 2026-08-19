@@ -11,7 +11,7 @@ if (!rawUrl || (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://") 
 const TURSO_URL = rawUrl.replace(/^libsql:\/\//, 'https://')
 
 let envToken = (process.env.TURSO_AUTH_TOKEN || "").trim()
-if (!envToken || envToken.includes("AE_ZAw")) {
+if (!envToken || envToken.includes("AE_ZAw") || !envToken.includes("AE9_ZAw")) {
   envToken = DEFAULT_FALLBACK_TOKEN
 }
 const TURSO_TOKEN = envToken
