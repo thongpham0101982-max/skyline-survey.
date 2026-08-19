@@ -1,17 +1,7 @@
 "use client"
 
 import React from "react"
-import { Check, Sparkles, Lightbulb, Plus, Trash2, Edit3, Users, Heart } from "lucide-react"
-
-export interface GoalPreset {
-  id: string
-  gradeGroup: string
-  category: string
-  goalText: string
-  actionPreset?: string
-  sortOrder?: number
-  status?: string
-}
+import { Plus, Trash2, Edit3, Users, Heart } from "lucide-react"
 
 export interface CustomGoalItem {
   targetText: string
@@ -24,9 +14,6 @@ interface GoalMultiSelectorProps {
   categoryKey: string
   categoryTitle: string
   categoryHint?: string
-  presets: GoalPreset[]
-  selectedPresetIds: string[]
-  onSelectionChange: (selectedIds: string[], calculatedActions: string[]) => void
   customItems: CustomGoalItem[]
   onCustomItemsChange: (items: CustomGoalItem[]) => void
   readOnly?: boolean
@@ -36,40 +23,10 @@ export function GoalMultiSelector({
   categoryKey,
   categoryTitle,
   categoryHint,
-  presets = [],
-  selectedPresetIds = [],
-  onSelectionChange,
   customItems = [{ targetText: "", actionText: "", teacherSupport: "", parentSupport: "" }],
   onCustomItemsChange,
   readOnly = false
 }: GoalMultiSelectorProps) {
-  const catPresets = presets.filter(p => p.category === categoryKey && p.status !== "INACTIVE")
-
-  const handleTogglePreset = (presetId: string) => {
-    if (readOnly) return
-
-    const isAlreadySelected = selectedPresetIds.includes(presetId)
-    let newSelectedIds: string[] = []
-
-    if (isAlreadySelected) {
-      newSelectedIds = selectedPresetIds.filter(id => id !== presetId)
-    } else {
-      newSelectedIds = [...selectedPresetIds, presetId]
-    }
-
-    const actions: string[] = []
-    newSelectedIds.forEach(id => {
-      const match = presets.find(p => p.id === id)
-      if (match?.actionPreset) {
-        actions.push(match.actionPreset)
-      }
-    })
-
-    onSelectionChange(newSelectedIds, actions)
-  }
-
-  const selectedPresets = presets.filter(p => selectedPresetIds.includes(p.id))
-
   const handleAddCustomRow = () => {
     if (readOnly) return
     onCustomItemsChange([...customItems, { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" }])
@@ -109,7 +66,7 @@ export function GoalMultiSelector({
         </div>
       </div>
 
-      {/* NỘI DUNG MỤC TIÊU CỤ THỂ CỦA EM (ĐI KÈM HÀNH ĐỘNG & NỘI DUNG HỖ TRỢ) */}
+      {/* NỘI DUNG MỤC TIÊU CỤ THỂ CỦA EM */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -117,7 +74,7 @@ export function GoalMultiSelector({
             <span>NỘI DUNG MỤC TIÊU CỤ THỂ CỦA EM (ĐI KÈM HÀNH ĐỘNG & NỘI DUNG HỖ TRỢ):</span>
           </label>
           <span className="text-[10px] text-slate-400 font-medium">
-            ({customItems.length} mục tiêu bổ sung)
+            ({customItems.length} mục tiêu)
           </span>
         </div>
 
@@ -184,7 +141,7 @@ export function GoalMultiSelector({
                 </div>
               </div>
 
-              {/* Row 2: Support Questions (Teacher & Parent Support per specific goal item) */}
+              {/* Row 2: Support Questions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
                 <div className="space-y-1">
                   <label className="text-[11px] font-extrabold text-teal-800 flex items-center gap-1.5">

@@ -93,7 +93,6 @@ export default function StudentGoalPortalPage() {
           if (data.existingSheet.submittedAt) {
             setSubmittedAt(new Date(data.existingSheet.submittedAt).toLocaleDateString("vi-VN"))
           }
-          const presetMap: Record<string, boolean> = {}
           const customMap: Record<string, any> = {
             HOC_TAP: { items: [], teacherSupport: "", parentSupport: "" },
             THOI_QUEN: { items: [], teacherSupport: "", parentSupport: "" },
@@ -102,8 +101,6 @@ export default function StudentGoalPortalPage() {
           }
 
           data.existingSheet.goals.forEach((g: any) => {
-            if (g.presetId) presetMap[g.presetId] = true
-            
             let catKey = g.category
             if (catKey === "THOI_QUEN_SUC_KHOE") catKey = "THOI_QUEN"
             if (catKey === "KY_NANG_SO_THICH" || catKey === "PHAM_CHAT") catKey = "KY_NANG_CAM_XUC"
@@ -112,10 +109,12 @@ export default function StudentGoalPortalPage() {
               if (g.teacherSupportRequest) customMap[catKey].teacherSupport = g.teacherSupportRequest
               if (g.parentSupportRequest) customMap[catKey].parentSupport = g.parentSupportRequest
               
-              if (!g.presetId && g.targetText) {
+              if (g.targetText) {
                 customMap[catKey].items.push({
                   targetText: g.targetText || "",
-                  actionText: g.actions?.[0]?.actionText || ""
+                  actionText: g.actions?.[0]?.actionText || "",
+                  teacherSupport: g.teacherSupportRequest || "",
+                  parentSupport: g.parentSupportRequest || ""
                 })
               }
             }
@@ -127,7 +126,6 @@ export default function StudentGoalPortalPage() {
             }
           })
 
-          setSelectedPresetGoals(presetMap)
           setCustomGoals(customMap)
         }
       }
@@ -153,22 +151,7 @@ export default function StudentGoalPortalPage() {
       setSaving(true)
       const goalListPayload: any[] = []
 
-      // 1. Collect all selected preset goals (works for ALL grades K2 to K12)
-      presets.forEach(p => {
-        if (selectedPresetGoals[p.id]) {
-          const customItem = customGoals[p.category] || {}
-          goalListPayload.push({
-            category: p.category,
-            presetId: p.id,
-            targetText: p.goalText,
-            teacherSupportRequest: customItem.teacherSupport || null,
-            parentSupportRequest: customItem.parentSupport || null,
-            actions: p.actionPreset ? [{ actionText: p.actionPreset }] : []
-          })
-        }
-      })
-
-      // 2. Collect ALL custom specific goals added by student
+      // Collect ALL custom specific goals added by student
       Object.keys(customGoals).forEach(cat => {
         const catObj = customGoals[cat]
         if (catObj && catObj.items && Array.isArray(catObj.items)) {
@@ -177,8 +160,8 @@ export default function StudentGoalPortalPage() {
               goalListPayload.push({
                 category: cat,
                 targetText: item.targetText.trim(),
-                teacherSupportRequest: catObj.teacherSupport || null,
-                parentSupportRequest: catObj.parentSupport || null,
+                teacherSupportRequest: item.teacherSupport || catObj.teacherSupport || null,
+                parentSupportRequest: item.parentSupport || catObj.parentSupport || null,
                 actions: item.actionText ? [{ actionText: item.actionText.trim() }] : []
               })
             }
