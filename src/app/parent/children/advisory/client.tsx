@@ -623,7 +623,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                                     <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
                                       <div>
                                         <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                                          🎯 MỤC TIÊU CỤ THỂ CỦA CON:
+                                          🎯 Nội dung mục tiêu cụ thể của em:
                                         </span>
                                         <p className="font-bold text-slate-900 leading-relaxed text-xs">
                                           {gItem.targetText || "Chưa nhập nội dung"}
@@ -633,7 +633,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                                       {actionTextStr && (
                                         <div className="pt-2.5 border-t border-slate-100">
                                           <span className="text-[11px] font-black text-amber-900 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                                            ⚡ CON SẼ LÀM GÌ ĐỂ ĐẠT MỤC TIÊU NÀY:
+                                            ⚡ Em sẽ làm gì để đạt được mục tiêu này (Hành động cụ thể):
                                           </span>
                                           <p className="font-semibold text-slate-800 leading-relaxed text-xs">
                                             {actionTextStr}
@@ -657,7 +657,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                                       {gItem.teacherSupportRequest && (
                                         <div className="p-3.5 rounded-xl bg-sky-50/90 border border-sky-200/80 space-y-1">
                                           <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
-                                            💬 Thầy/Cô & Bạn bè hỗ trợ:
+                                            💬 Em mong muốn Thầy Cô / bạn bè hỗ trợ mình như thế nào?
                                           </span>
                                           <p className="font-medium text-slate-800 text-xs leading-relaxed">
                                             {gItem.teacherSupportRequest}
@@ -668,7 +668,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                                       {gItem.parentSupportRequest && (
                                         <div className="p-3.5 rounded-xl bg-rose-50/90 border border-rose-200/80 space-y-1">
                                           <span className="font-black text-rose-950 text-xs flex items-center gap-1.5">
-                                            🏡 Ba/Mẹ hỗ trợ:
+                                            🏡 Em mong muốn Ba Mẹ hỗ trợ mình như thế nào?
                                           </span>
                                           <p className="font-medium text-slate-800 text-xs leading-relaxed">
                                             {gItem.parentSupportRequest}
