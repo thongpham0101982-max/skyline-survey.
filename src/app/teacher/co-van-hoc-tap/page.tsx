@@ -1134,9 +1134,14 @@ export default function TeacherAdvisoryPage() {
                         {/* Mục tiêu học tập (Nhập liệu chi tiết cho từng nhóm mục tiêu 1, 2, 3, 4) */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <div className="space-y-1.5">
-                            <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
-                              {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
+                                #{singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length} MỤC TIÊU CỤ THỂ #{singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length}
+                              </span>
+                              <span className="inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                                {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
+                              </span>
+                            </div>
                             <textarea
                               rows={3}
                               value={item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : ""}

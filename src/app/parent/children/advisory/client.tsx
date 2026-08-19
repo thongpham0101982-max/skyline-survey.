@@ -1037,9 +1037,14 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                               {/* Mục tiêu học tập */}
                               <td className="p-3 border-r border-slate-200 align-top">
                                 <div className="space-y-1.5">
-                                  <span className="inline-block px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
-                                    {catDef.label}
-                                  </span>
+                                  <div className="flex flex-wrap items-center gap-1">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
+                                      # MỤC TIÊU CỤ THỂ #1
+                                    </span>
+                                    <span className="inline-block px-2 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                                      {catDef.label}
+                                    </span>
+                                  </div>
                                   <p className="text-xs font-bold text-slate-800 leading-snug">
                                     {firstGoal.targetText || "Em chưa điền nội dung mục tiêu nhóm này"}
                                   </p>
