@@ -1102,7 +1102,8 @@ export default function TeacherAdvisoryPage() {
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 min-w-[400px]">Mục tiêu năm học</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[160px]">Nhóm mục tiêu</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[320px]">Mục tiêu cụ thể</th>
                     <th className="p-3 border-r border-slate-200 min-w-[150px]">Kết quả theo dõi</th>
                     <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức hoàn thành mục tiêu (1-5)</th>
                     <th className="p-3 border-r border-slate-200 min-w-[140px]">Mức độ chủ động (1-5)</th>
@@ -1112,29 +1113,38 @@ export default function TeacherAdvisoryPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-200">
                   {singleStudentTrackingRows.length > 0 ? (
-                    singleStudentTrackingRows.map((item, idx) => (
-                      <tr key={idx} className="bg-white hover:bg-slate-50/50">
-                        {/* Mục tiêu năm học */}
-                        <td className="p-3 border-r border-slate-200 align-top">
-                          <div className="space-y-1.5">
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
-                                #{singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length} MỤC TIÊU CỤ THỂ #{singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length}
-                              </span>
-                              <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                    singleStudentTrackingRows.map((item, idx) => {
+                      const sameCatRows = singleStudentTrackingRows.filter(r => r.categoryKey === item.categoryKey || r.category === item.category)
+                      const isFirstInCat = singleStudentTrackingRows.findIndex(r => r.categoryKey === item.categoryKey || r.category === item.category) === idx
+                      const itemSubIdx = singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length
+
+                      return (
+                        <tr key={idx} className="bg-white hover:bg-slate-50/50">
+                          {/* 1. Nhóm mục tiêu */}
+                          {isFirstInCat && (
+                            <td rowSpan={sameCatRows.length} className="p-3 border-r border-slate-200 align-top bg-slate-50/40">
+                              <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-black bg-teal-100 text-teal-900 border border-teal-200">
                                 {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
                               </span>
-                            </div>
-                            <p className="text-xs font-bold text-slate-900 leading-snug p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                              {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : "Em chưa điền nội dung mục tiêu nhóm này"}
-                            </p>
-                            {item.actionText && (
-                              <p className="text-[11px] font-semibold text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200">
-                                ⚡ Việc làm: {item.actionText}
+                            </td>
+                          )}
+
+                          {/* 2. Mục tiêu cụ thể */}
+                          <td className="p-3 border-r border-slate-200 align-top">
+                            <div className="space-y-1.5">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
+                                #{itemSubIdx} MỤC TIÊU CỤ THỂ #{itemSubIdx}
+                              </span>
+                              <p className="text-xs font-bold text-slate-900 leading-snug p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                                {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : "Em chưa điền nội dung mục tiêu nhóm này"}
                               </p>
-                            )}
-                          </div>
-                        </td>
+                              {item.actionText && (
+                                <p className="text-[11px] font-semibold text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200">
+                                  ⚡ Việc làm: {item.actionText}
+                                </p>
+                              )}
+                            </div>
+                          </td>
 
                         {/* Kết quả theo dõi */}
                         <td className="p-3 border-r border-slate-200 align-top">
@@ -1249,8 +1259,9 @@ export default function TeacherAdvisoryPage() {
                           />
                         </td>
                       </tr>
-                    ))
-                  ) : (
+                    )
+                  })
+                ) : (
                     <tr className="bg-white">
                       <td className="p-3 border-r border-slate-200 font-black text-slate-900">
                         {activeStudent?.studentName || "N/A"}
