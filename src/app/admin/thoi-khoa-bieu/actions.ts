@@ -201,10 +201,25 @@ export async function saveTimetableSlot(data: {
       }
     }
 
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+    const yearId = activeYear?.id || null
+
+    let subId = data.subjectId || null
+    if (!subId && data.subjectName) {
+      const s = await prisma.subject.findFirst({ where: { subjectName: data.subjectName } })
+      if (s) subId = s.id
+    }
+
+    let tId = data.teacherId || null
+    if (!tId && data.teacherName) {
+      const t = await prisma.teacher.findFirst({ where: { teacherName: data.teacherName } })
+      if (t) tId = t.id
+    }
+
     const existingSlot = await prisma.timetableSlot.findFirst({
       where: {
-        campusId: data.campusId,
-        level: data.level,
         classId: data.classId,
         dayOfWeek: data.dayOfWeek,
         session: data.session,
@@ -217,9 +232,12 @@ export async function saveTimetableSlot(data: {
       savedSlot = await prisma.timetableSlot.update({
         where: { id: existingSlot.id },
         data: {
-          subjectId: data.subjectId || null,
+          campusId: data.campusId || existingSlot.campusId,
+          level: data.level || existingSlot.level,
+          academicYearId: yearId || existingSlot.academicYearId,
+          subjectId: subId,
           subjectName: data.subjectName || null,
-          teacherId: data.teacherId || null,
+          teacherId: tId,
           teacherName: data.teacherName || null,
           weekType: data.weekType || "ALL",
           altSubjectName: data.altSubjectName || null,
@@ -232,14 +250,15 @@ export async function saveTimetableSlot(data: {
         data: {
           campusId: data.campusId,
           level: data.level,
+          academicYearId: yearId,
           classId: data.classId,
           className: data.className,
           dayOfWeek: data.dayOfWeek,
           session: data.session,
           periodNumber: data.periodNumber,
-          subjectId: data.subjectId || null,
+          subjectId: subId,
           subjectName: data.subjectName || null,
-          teacherId: data.teacherId || null,
+          teacherId: tId,
           teacherName: data.teacherName || null,
           weekType: data.weekType || "ALL",
           altSubjectName: data.altSubjectName || null,
@@ -258,6 +277,7 @@ export async function saveTimetableSlot(data: {
       conflictNotice
     }
   } catch (e: any) {
+    console.error("saveTimetableSlot error:", e)
     return { success: false, error: e.message }
   }
 }
@@ -289,13 +309,29 @@ export async function batchSaveAllTimetableSlots(campusId: string, level: string
       return { success: false, error: "Unauthorized" }
     }
 
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+    const yearId = activeYear?.id || null
+
     let savedCount = 0
     for (const slot of slotsData) {
       if (!slot.classId || !slot.dayOfWeek) continue
+
+      let subId = slot.subjectId || null
+      if (!subId && slot.subjectName) {
+        const s = await prisma.subject.findFirst({ where: { subjectName: slot.subjectName } })
+        if (s) subId = s.id
+      }
+
+      let tId = slot.teacherId || null
+      if (!tId && slot.teacherName) {
+        const t = await prisma.teacher.findFirst({ where: { teacherName: slot.teacherName } })
+        if (t) tId = t.id
+      }
+
       const existing = await prisma.timetableSlot.findFirst({
         where: {
-          campusId: campusId,
-          level: level,
           classId: slot.classId,
           dayOfWeek: slot.dayOfWeek,
           session: slot.session || "MORNING",
@@ -307,7 +343,12 @@ export async function batchSaveAllTimetableSlots(campusId: string, level: string
         await prisma.timetableSlot.update({
           where: { id: existing.id },
           data: {
+            campusId: campusId || existing.campusId,
+            level: level || existing.level,
+            academicYearId: yearId || existing.academicYearId,
+            subjectId: subId,
             subjectName: slot.subjectName || null,
+            teacherId: tId,
             teacherName: slot.teacherName || null,
             weekType: slot.weekType || "ALL",
             altSubjectName: slot.altSubjectName || null,
@@ -320,12 +361,15 @@ export async function batchSaveAllTimetableSlots(campusId: string, level: string
           data: {
             campusId: campusId,
             level: level,
+            academicYearId: yearId,
             classId: slot.classId,
             className: slot.className || "Class",
             dayOfWeek: slot.dayOfWeek,
             session: slot.session || "MORNING",
             periodNumber: slot.periodNumber || 1,
+            subjectId: subId,
             subjectName: slot.subjectName || null,
+            teacherId: tId,
             teacherName: slot.teacherName || null,
             weekType: slot.weekType || "ALL",
             altSubjectName: slot.altSubjectName || null,
@@ -342,6 +386,7 @@ export async function batchSaveAllTimetableSlots(campusId: string, level: string
 
     return { success: true, savedCount }
   } catch (e: any) {
+    console.error("batchSaveAllTimetableSlots error:", e)
     return { success: false, error: e.message }
   }
 }
@@ -401,13 +446,23 @@ export async function applySlotToAllClasses(data: {
       })
     }
 
+    let subId = data.subjectId || null
+    if (!subId && data.subjectName) {
+      const s = await prisma.subject.findFirst({ where: { subjectName: data.subjectName } })
+      if (s) subId = s.id
+    }
+
+    let tId = data.teacherId || null
+    if (!tId && data.teacherName) {
+      const t = await prisma.teacher.findFirst({ where: { teacherName: data.teacherName } })
+      if (t) tId = t.id
+    }
+
     const updatedSlots: any[] = []
 
     for (const cls of targetClasses) {
       const existingSlot = await prisma.timetableSlot.findFirst({
         where: {
-          campusId: data.campusId,
-          level: data.level,
           classId: cls.id,
           dayOfWeek: data.dayOfWeek,
           session: data.session,
@@ -420,14 +475,17 @@ export async function applySlotToAllClasses(data: {
         savedSlot = await prisma.timetableSlot.update({
           where: { id: existingSlot.id },
           data: {
-            subjectId: data.subjectId || null,
+            campusId: data.campusId || existingSlot.campusId,
+            level: data.level || existingSlot.level,
+            academicYearId: activeYear?.id || existingSlot.academicYearId,
+            subjectId: subId,
             subjectName: data.subjectName || null,
-            teacherId: data.teacherId || null,
+            teacherId: tId,
             teacherName: data.teacherName || null,
             weekType: data.weekType || "ALL",
             altSubjectName: data.altSubjectName || null,
             altTeacherName: data.altTeacherName || null,
-            colorCode: data.colorCode || "#FEF08A"
+            colorCode: data.colorCode || "#3B82F6"
           }
         })
       } else {
@@ -435,19 +493,20 @@ export async function applySlotToAllClasses(data: {
           data: {
             campusId: data.campusId,
             level: data.level,
+            academicYearId: activeYear?.id || null,
             classId: cls.id,
             className: cls.className,
             dayOfWeek: data.dayOfWeek,
             session: data.session,
             periodNumber: data.periodNumber,
-            subjectId: data.subjectId || null,
+            subjectId: subId,
             subjectName: data.subjectName || null,
-            teacherId: data.teacherId || null,
+            teacherId: tId,
             teacherName: data.teacherName || null,
             weekType: data.weekType || "ALL",
             altSubjectName: data.altSubjectName || null,
             altTeacherName: data.altTeacherName || null,
-            colorCode: data.colorCode || "#FEF08A"
+            colorCode: data.colorCode || "#3B82F6"
           }
         })
       }
@@ -463,6 +522,7 @@ export async function applySlotToAllClasses(data: {
       updatedSlots
     }
   } catch (e: any) {
+    console.error("applySlotToAllClasses error:", e)
     return { success: false, error: e.message }
   }
 }
