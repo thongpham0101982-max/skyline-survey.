@@ -215,10 +215,54 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
 
   const getCategoriesForForm = () => {
     return [
-      { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚", number: "01", altKeys: ["HOC_TAP", "ACADEMIC", "HỌC TẬP", "NHÓM 1"] },
-      { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰", number: "02", altKeys: ["THOI_QUEN", "HEALTH", "THOI_QUEN_SUC_KHOE", "THÓI QUEN", "NHÓM 2"] },
-      { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨", number: "03", altKeys: ["KY_NANG_CAM_XUC", "SKILLS", "KY_NANG_SO_THICH", "KỸ NĂNG", "CẢM XÚC", "NHÓM 3"] },
-      { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀", number: "04", altKeys: ["DINH_HUONG", "ORIENTATION", "PHAM_CHAT", "ĐỊNH HƯỚNG", "PHẨM CHẤT", "NHÓM 4"] }
+      {
+        key: "HOC_TAP",
+        label: "1. Mục tiêu học tập 📚",
+        number: "01",
+        altKeys: ["HOC_TAP", "ACADEMIC", "HỌC TẬP", "NHÓM 1"],
+        theme: {
+          border: "border-sky-200 hover:border-sky-300",
+          badgeBg: "bg-sky-50 border-sky-200",
+          badgeText: "text-sky-800",
+          numberBadge: "bg-sky-600 text-white"
+        }
+      },
+      {
+        key: "THOI_QUEN",
+        label: "2. Mục tiêu thói quen ⏰",
+        number: "02",
+        altKeys: ["THOI_QUEN", "HEALTH", "THOI_QUEN_SUC_KHOE", "THÓI QUEN", "NHÓM 2"],
+        theme: {
+          border: "border-emerald-200 hover:border-emerald-300",
+          badgeBg: "bg-emerald-50 border-emerald-200",
+          badgeText: "text-emerald-800",
+          numberBadge: "bg-emerald-600 text-white"
+        }
+      },
+      {
+        key: "KY_NANG_CAM_XUC",
+        label: "3. Mục tiêu kỹ năng, cảm xúc 🎨",
+        number: "03",
+        altKeys: ["KY_NANG_CAM_XUC", "SKILLS", "KY_NANG_SO_THICH", "KỸ NĂNG", "CẢM XÚC", "NHÓM 3"],
+        theme: {
+          border: "border-purple-200 hover:border-purple-300",
+          badgeBg: "bg-purple-50 border-purple-200",
+          badgeText: "text-purple-800",
+          numberBadge: "bg-purple-600 text-white"
+        }
+      },
+      {
+        key: "DINH_HUONG",
+        label: "4. Mục tiêu định hướng 🚀",
+        number: "04",
+        altKeys: ["DINH_HUONG", "ORIENTATION", "PHAM_CHAT", "ĐỊNH HƯỚNG", "PHẨM CHẤT", "NHÓM 4"],
+        theme: {
+          border: "border-amber-200 hover:border-amber-300",
+          badgeBg: "bg-amber-50 border-amber-200",
+          badgeText: "text-amber-950",
+          numberBadge: "bg-amber-600 text-white"
+        }
+      }
     ]
   }
 
@@ -503,129 +547,141 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                 </div>
               </div>
 
-              {/* CARD DASHBOARD VIEW (ĐỒNG NHẤT HOÀN TOÀN VỚI TEACHER VIEW) */}
+              {/* CARD DASHBOARD VIEW (ĐỒNG NHẤT HOÀN TOÀN VỚI HỌC SINH & TEACHER VIEW) */}
               {viewMode === "card" ? (
-                <div className="grid grid-cols-1 gap-5">
+                <div className="grid grid-cols-1 gap-6">
                   {currentCategories.map((catDef, catIdx) => {
                     const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
-                    const firstGoal = catGoalsList[0] || {}
-                    const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
-                    
-                    const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
-                    const teacherNotes = matchedLog?.teacherNotes || ""
-
-                    const actionTextStr = firstGoal?.actions && firstGoal.actions.length > 0 
-                      ? firstGoal.actions.map((a: any) => a.actionText).join("; ")
-                      : firstGoal?.actionText || ""
+                    const theme = catDef.theme
 
                     return (
-                      <div key={catDef.key} className="bg-white rounded-3xl border-2 border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden font-sans">
-                        {/* Card Header (Category Title + Progress Status + Teacher Note) */}
-                        <div className="bg-slate-50 p-4 sm:p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div key={catDef.key} className={`bg-white rounded-3xl border-2 ${theme.border} shadow-xs hover:shadow-md transition-all overflow-hidden font-sans space-y-4 p-5 sm:p-6`}>
+                        {/* Category Header */}
+                        <div className="border-b border-slate-100 pb-3 flex items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <span className="w-9 h-9 rounded-2xl bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                            <span className={`w-8 h-8 rounded-2xl ${theme.numberBadge} flex items-center justify-center font-black text-xs shadow-xs shrink-0`}>
                               {catDef.number}
                             </span>
-                            <h4 className="font-black text-sm text-slate-900">
+                            <h4 className="font-black text-base text-slate-900 tracking-tight">
                               {catDef.label}
                             </h4>
                           </div>
 
-                          {/* Status Pill & Teacher Note */}
-                          <div className="flex flex-wrap items-center gap-2.5">
-                            <span className="text-[11px] font-bold text-slate-600 bg-white px-3 py-1.5 rounded-xl border border-slate-200">
-                              Mốc: {selectedCheckPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : selectedCheckPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : selectedCheckPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
-                            </span>
+                          <span className={`px-3 py-1 ${theme.badgeBg} ${theme.badgeText} border rounded-full text-xs font-black shadow-2xs`}>
+                            {catGoalsList.length} mục tiêu đã tạo
+                          </span>
+                        </div>
 
-                            <span className={"px-3 py-1.5 rounded-xl font-black text-xs border shadow-xs flex items-center gap-1.5 " + (
-                              progressStatus === "DAT" ? "bg-emerald-500 text-white border-emerald-600" :
-                              progressStatus === "CHUA_DAT" ? "bg-rose-500 text-white border-rose-600" :
-                              progressStatus === "TIEN_TRIEN" ? "bg-amber-400 text-amber-950 border-amber-500" :
-                              "bg-slate-100 text-slate-700 border-slate-300"
-                            )}>
-                              {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : progressStatus === "TIEN_TRIEN" ? "🟡 Đang tiến triển" : "🟣 Chưa đánh giá"}
-                            </span>
-
-                            {teacherNotes && (
-                              <span className="text-xs font-semibold text-slate-700 bg-teal-50 px-3 py-1.5 rounded-xl border border-teal-200 max-w-xs truncate" title={teacherNotes}>
-                                💬 GVCN: {teacherNotes}
-                              </span>
-                            )}
+                        {/* List of Goals under this Category */}
+                        {catGoalsList.length === 0 ? (
+                          <div className="p-6 text-center text-slate-400 font-bold text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                            Học sinh chưa điền nội dung mục tiêu nhóm này
                           </div>
-                        </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {catGoalsList.map((gItem: any, gIdx: number) => {
+                              const matchedLog = trackingLogs.find((t: any) => 
+                                (t.goalId && t.goalId === gItem.id) || 
+                                (t.targetText && gItem.targetText && t.targetText.trim() === gItem.targetText.trim())
+                              )
+                              const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
+                              const teacherNotes = matchedLog?.teacherNotes || ""
+                              const actionTextStr = gItem?.actions && gItem.actions.length > 0 
+                                ? gItem.actions.map((a: any) => a.actionText).join("; ")
+                                : gItem?.actionText || ""
 
-                        {/* Card Body */}
-                        <div className="p-5 sm:p-6">
-                          {firstGoal && (firstGoal.targetText || actionTextStr) ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                              
-                              {/* Left Box: Mục tiêu cụ thể & Kế hoạch */}
-                              <div className="space-y-4 bg-slate-50/90 p-5 rounded-2xl border border-slate-200/80">
-                                <div>
-                                  <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-teal-500 inline-block" />
-                                    MỤC TIÊU CỤ THỂ:
-                                  </span>
-                                  <p className="font-bold text-slate-900 leading-relaxed text-xs">
-                                    {firstGoal.targetText || "Chưa điền mục tiêu"}
-                                  </p>
+                              return (
+                                <div key={gItem.id || gIdx} className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
+                                  {/* Sub-Header: Item Index & Progress Status Pill */}
+                                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/80 pb-2.5">
+                                    <span className="text-xs font-black text-slate-800 flex items-center gap-2">
+                                      <span className="w-5 h-5 rounded-full bg-slate-700 text-white text-[11px] flex items-center justify-center font-bold">
+                                        #{gIdx + 1}
+                                      </span>
+                                      <span>MỤC TIÊU CỤ THỂ #{gIdx + 1}</span>
+                                    </span>
+
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="text-[11px] font-bold text-slate-600 bg-white px-2.5 py-1 rounded-xl border border-slate-200">
+                                        Mốc: {selectedCheckPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : selectedCheckPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : selectedCheckPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
+                                      </span>
+
+                                      <span className={"px-3 py-1 rounded-xl font-black text-xs border shadow-xs flex items-center gap-1.5 " + (
+                                        progressStatus === "DAT" ? "bg-emerald-500 text-white border-emerald-600" :
+                                        progressStatus === "CHUA_DAT" ? "bg-rose-500 text-white border-rose-600" :
+                                        progressStatus === "TIEN_TRIEN" ? "bg-amber-400 text-amber-950 border-amber-500" :
+                                        "bg-slate-200 text-slate-700 border-slate-300"
+                                      )}>
+                                        {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : progressStatus === "TIEN_TRIEN" ? "🟡 Đang tiến triển" : "⚪ Chưa đánh giá"}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  {/* Content Grid */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Left: Target & Action */}
+                                    <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                                      <div>
+                                        <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                          🎯 MỤC TIÊU CỤ THỂ CỦA CON:
+                                        </span>
+                                        <p className="font-bold text-slate-900 leading-relaxed text-xs">
+                                          {gItem.targetText || "Chưa nhập nội dung"}
+                                        </p>
+                                      </div>
+
+                                      {actionTextStr && (
+                                        <div className="pt-2.5 border-t border-slate-100">
+                                          <span className="text-[11px] font-black text-amber-900 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                            ⚡ CON SẼ LÀM GÌ ĐỂ ĐẠT MỤC TIÊU NÀY:
+                                          </span>
+                                          <p className="font-semibold text-slate-800 leading-relaxed text-xs">
+                                            {actionTextStr}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Right: GVCN Evaluation & Support Requests */}
+                                    <div className="space-y-3">
+                                      {/* GVCN Check-in Note */}
+                                      <div className="p-3.5 rounded-xl bg-teal-50/90 border border-teal-200/90 space-y-1 shadow-2xs">
+                                        <span className="font-black text-teal-950 text-xs flex items-center gap-1.5 uppercase">
+                                          📝 Đánh Giá & Ghi Chú Từ GVCN:
+                                        </span>
+                                        <p className="font-semibold text-teal-900 text-xs leading-relaxed italic">
+                                          {teacherNotes ? '"' + teacherNotes + '"' : "Chưa có ghi chú nhận xét từ GVCN cho mốc kiểm tra này."}
+                                        </p>
+                                      </div>
+
+                                      {gItem.teacherSupportRequest && (
+                                        <div className="p-3.5 rounded-xl bg-sky-50/90 border border-sky-200/80 space-y-1">
+                                          <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
+                                            💬 Thầy/Cô & Bạn bè hỗ trợ:
+                                          </span>
+                                          <p className="font-medium text-slate-800 text-xs leading-relaxed">
+                                            {gItem.teacherSupportRequest}
+                                          </p>
+                                        </div>
+                                      )}
+
+                                      {gItem.parentSupportRequest && (
+                                        <div className="p-3.5 rounded-xl bg-rose-50/90 border border-rose-200/80 space-y-1">
+                                          <span className="font-black text-rose-950 text-xs flex items-center gap-1.5">
+                                            🏡 Ba/Mẹ hỗ trợ:
+                                          </span>
+                                          <p className="font-medium text-slate-800 text-xs leading-relaxed">
+                                            {gItem.parentSupportRequest}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-
-                                {actionTextStr && (
-                                  <div className="pt-3 border-t border-slate-200">
-                                    <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-                                      EM SẼ LÀM GÌ ĐỂ ĐẠT MỤC TIÊU NÀY:
-                                    </span>
-                                    <p className="font-semibold text-slate-800 leading-relaxed text-xs">
-                                      {actionTextStr}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Right Box: Yêu cầu Hỗ trợ */}
-                              <div className="space-y-3">
-                                {/* Dedicated GVCN Check-in Assessment Box */}
-                                <div className="p-4 rounded-2xl bg-teal-50/90 border-2 border-teal-200/90 space-y-1 shadow-2xs">
-                                  <span className="font-black text-teal-950 text-xs flex items-center gap-1.5 uppercase">
-                                    📝 Đánh Giá & Ghi Chú Tiến Độ Từ GVCN:
-                                  </span>
-                                  <p className="font-semibold text-teal-900 text-xs leading-relaxed italic">
-                                    {teacherNotes ? '"' + teacherNotes + '"' : "Chưa có ghi chú nhận xét từ GVCN cho mốc kiểm tra này."}
-                                  </p>
-                                </div>
-
-                                {firstGoal.teacherSupportRequest && (
-                                  <div className="p-4 rounded-2xl bg-sky-50/90 border border-sky-200/80 space-y-1">
-                                    <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
-                                      💬 Thầy/Cô & Bạn bè hỗ trợ:
-                                    </span>
-                                    <p className="font-medium text-slate-800 text-xs leading-relaxed">
-                                      {firstGoal.teacherSupportRequest}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {firstGoal.parentSupportRequest && (
-                                  <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200/80 space-y-1">
-                                    <span className="font-black text-rose-950 text-xs flex items-center gap-1.5">
-                                      🏫 Ba/Mẹ hỗ trợ:
-                                    </span>
-                                    <p className="font-medium text-slate-800 text-xs leading-relaxed">
-                                      {firstGoal.parentSupportRequest}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-
-                            </div>
-                          ) : (
-                            <div className="p-6 text-center text-slate-400 font-bold text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                              Học sinh chưa điền nội dung mục tiêu nhóm này
-                            </div>
-                          )}
-                        </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
                     )
                   })}
@@ -638,33 +694,64 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                       <tr className="bg-slate-100 text-slate-700 font-black border-b border-slate-200">
                         <th className="p-4">Nhóm Mục Tiêu</th>
                         <th className="p-4">Mục Tiêu Cụ Thể</th>
-                        <th className="p-4">Kế Hoạch Thực Hiện</th>
+                        <th className="p-4">Hành Động Cụ Thể</th>
+                        <th className="p-4">Nội Dung Hỗ Trợ</th>
                         <th className="p-4">Tiến Độ Check-in</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-medium">
                       {currentCategories.map((catDef, catIdx) => {
                         const catGoalsList = filterCategoryGoals(catIdx, catDef.key, catDef.altKeys)
-                        const firstGoal = catGoalsList[0] || {}
-                        const matchedLog = trackingLogs.find((t: any) => t.category?.includes(catDef.key) || t.targetText === firstGoal?.targetText)
-                        const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
 
-                        return (
-                          <tr key={catDef.key} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="p-4 font-black text-slate-900">{catDef.label}</td>
-                            <td className="p-4 font-bold text-slate-800">{firstGoal.targetText || "Chưa nhập"}</td>
-                            <td className="p-4 text-slate-700">{firstGoal.actionText || "Chưa nhập"}</td>
-                            <td className="p-4">
-                              <span className={"px-2.5 py-1 rounded-lg text-[11px] font-black border " + (
-                                progressStatus === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
-                                progressStatus === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-300" :
-                                "bg-amber-100 text-amber-900 border-amber-300"
-                              )}>
-                                {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : "🟡 Đang tiến triển"}
-                              </span>
-                            </td>
-                          </tr>
-                        )
+                        if (catGoalsList.length === 0) {
+                          return (
+                            <tr key={catDef.key} className="hover:bg-slate-50/80 transition-colors">
+                              <td className="p-4 font-black text-slate-900">{catDef.label}</td>
+                              <td colSpan={4} className="p-4 text-slate-400 italic">Chưa nhập mục tiêu nhóm này</td>
+                            </tr>
+                          )
+                        }
+
+                        return catGoalsList.map((gItem: any, gIdx: number) => {
+                          const matchedLog = trackingLogs.find((t: any) => 
+                            (t.goalId && t.goalId === gItem.id) || 
+                            (t.targetText && gItem.targetText && t.targetText.trim() === gItem.targetText.trim())
+                          )
+                          const progressStatus = matchedLog?.progressStatus || "CHUA_DANH_GIA"
+                          const actionTextStr = gItem?.actions && gItem.actions.length > 0 
+                            ? gItem.actions.map((a: any) => a.actionText).join("; ")
+                            : gItem?.actionText || ""
+
+                          return (
+                            <tr key={gItem.id || gIdx} className="hover:bg-slate-50/80 transition-colors">
+                              {gIdx === 0 && (
+                                <td rowSpan={catGoalsList.length} className="p-4 font-black text-slate-900 bg-slate-50/40 align-top">
+                                  {catDef.label}
+                                </td>
+                              )}
+                              <td className="p-4 font-bold text-slate-800">{gItem.targetText || "Chưa nhập"}</td>
+                              <td className="p-4 text-slate-700">{actionTextStr || "Chưa nhập"}</td>
+                              <td className="p-4 space-y-1 text-[11px]">
+                                {gItem.teacherSupportRequest && (
+                                  <p className="text-sky-800 font-semibold">💬 GV: {gItem.teacherSupportRequest}</p>
+                                )}
+                                {gItem.parentSupportRequest && (
+                                  <p className="text-rose-800 font-semibold">🏡 Ba/Mẹ: {gItem.parentSupportRequest}</p>
+                                )}
+                              </td>
+                              <td className="p-4">
+                                <span className={"px-2.5 py-1 rounded-lg text-[11px] font-black border " + (
+                                  progressStatus === "DAT" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+                                  progressStatus === "CHUA_DAT" ? "bg-rose-100 text-rose-800 border-rose-300" :
+                                  progressStatus === "TIEN_TRIEN" ? "bg-amber-100 text-amber-950 border-amber-300" :
+                                  "bg-slate-100 text-slate-700 border-slate-200"
+                                )}>
+                                  {progressStatus === "DAT" ? "🟢 Đạt" : progressStatus === "CHUA_DAT" ? "🔴 Chưa Đạt" : progressStatus === "TIEN_TRIEN" ? "🟡 Tiến triển" : "⚪ Chưa đánh giá"}
+                                </span>
+                              </td>
+                            </tr>
+                          )
+                        })
                       })}
                     </tbody>
                   </table>
