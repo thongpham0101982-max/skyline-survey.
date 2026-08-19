@@ -1102,9 +1102,7 @@ export default function TeacherAdvisoryPage() {
               <table className="w-full text-xs text-left border-collapse border border-slate-200">
                 <thead>
                   <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                    <th className="p-3 border-r border-slate-200 min-w-[130px]">Học sinh</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[90px]">Kỳ đánh giá</th>
-                    <th className="p-3 border-r border-slate-200 min-w-[220px]">Mục tiêu học tập</th>
+                    <th className="p-3 border-r border-slate-200 min-w-[280px]">Mục tiêu năm học</th>
                     <th className="p-3 border-r border-slate-200 min-w-[170px]">Kết quả theo dõi</th>
                     <th className="p-3 border-r border-slate-200 min-w-[180px]">Mức hoàn thành mục tiêu (1-5)</th>
                     <th className="p-3 border-r border-slate-200 min-w-[180px]">Mức độ chủ động (1-5)</th>
@@ -1116,43 +1114,25 @@ export default function TeacherAdvisoryPage() {
                   {singleStudentTrackingRows.length > 0 ? (
                     singleStudentTrackingRows.map((item, idx) => (
                       <tr key={idx} className="bg-white hover:bg-slate-50/50">
-                        {idx === 0 && (
-                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 font-black text-slate-900 align-top bg-slate-50/40">
-                            <div>{activeStudent?.studentName || "N/A"}</div>
-                            {activeStudent?.studentCode && (
-                              <div className="text-[11px] font-medium text-slate-500 mt-0.5">MS: {activeStudent.studentCode}</div>
-                            )}
-                          </td>
-                        )}
-
-                        {idx === 0 && (
-                          <td rowSpan={singleStudentTrackingRows.length} className="p-3 border-r border-slate-200 font-bold text-slate-700 align-top bg-slate-50/40">
-                            {evalTerm === "HK1" ? "Học kỳ I" : "Học kỳ II"}
-                          </td>
-                        )}
-
-                        {/* Mục tiêu học tập (Nhập liệu chi tiết cho từng nhóm mục tiêu 1, 2, 3, 4) */}
+                        {/* Mục tiêu năm học */}
                         <td className="p-3 border-r border-slate-200 align-top">
                           <div className="space-y-1.5">
                             <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#003B3A] text-white text-[10px] font-black shadow-2xs">
                                 #{singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length} MỤC TIÊU CỤ THỂ #{singleStudentTrackingRows.filter((r, i) => i <= idx && (r.categoryKey === item.categoryKey || r.category === item.category)).length}
                               </span>
-                              <span className="inline-block px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
+                              <span className="inline-block px-2.5 py-1 rounded-lg text-[10px] font-black bg-teal-100 text-teal-900 border border-teal-200">
                                 {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
                               </span>
                             </div>
-                            <textarea
-                              rows={3}
-                              value={item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : ""}
-                              onChange={(e) => {
-                                const updated = [...singleStudentTrackingRows]
-                                updated[idx].targetText = e.target.value
-                                setSingleStudentTrackingRows(updated)
-                              }}
-                              placeholder={"Bổ sung nội dung chi tiết cho " + (item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "Mục tiêu định hướng" : item.category) + "..."}
-                              className="w-full p-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
-                            />
+                            <p className="text-xs font-bold text-slate-900 leading-snug p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                              {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? item.targetText : "Em chưa điền nội dung mục tiêu nhóm này"}
+                            </p>
+                            {item.actionText && (
+                              <p className="text-[11px] font-semibold text-amber-900 bg-amber-50/70 p-2 rounded-lg border border-amber-200">
+                                ⚡ Việc làm: {item.actionText}
+                              </p>
+                            )}
                           </div>
                         </td>
 
