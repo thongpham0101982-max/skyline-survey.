@@ -394,48 +394,7 @@ export default function StudentGoalPortalPage() {
                   readOnly={isSubmitted}
                 />
 
-                {/* Support Questions from Teachers & Parents */}
-                <div className="bg-slate-50/80 rounded-3xl p-4 border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-teal-800 flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-teal-600" />
-                      <span>Em mong muốn Thầy Cô / bạn bè hỗ trợ mình như thế nào?</span>
-                    </label>
-                    <input
-                      type="text"
-                      readOnly={isSubmitted}
-                      value={item.teacherSupport || ""}
-                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                        ...prev,
-                        [catObj.key]: { ...prev[catObj.key], teacherSupport: e.target.value }
-                      }))}
-                      placeholder="Thầy cô/bạn bè hỗ trợ em..."
-                      className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                        isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-teal-200 bg-white focus:border-teal-500"
-                      }`}
-                    />
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-black text-amber-800 flex items-center gap-1.5">
-                      <Heart className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Em mong muốn Ba Mẹ hỗ trợ mình như thế nào?</span>
-                    </label>
-                    <input
-                      type="text"
-                      readOnly={isSubmitted}
-                      value={item.parentSupport || ""}
-                      onChange={(e) => !isSubmitted && setCustomGoals(prev => ({
-                        ...prev,
-                        [catObj.key]: { ...prev[catObj.key], parentSupport: e.target.value }
-                      }))}
-                      placeholder="Ba mẹ hỗ trợ em..."
-                      className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
-                        isSubmitted ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-amber-200 bg-white focus:border-amber-500"
-                      }`}
-                    />
-                  </div>
-                </div>
               </div>
             )
           })}

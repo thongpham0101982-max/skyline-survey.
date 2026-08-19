@@ -48,6 +48,7 @@ export async function POST(req: NextRequest) {
     });
     
     if (!student) return NextResponse.json({ error: 'Mã học sinh không đúng.' }, { status: 401 })
+    if (student.status && student.status !== 'ACTIVE') return NextResponse.json({ error: 'Tài khoản học sinh đã bị khóa hoặc ngừng hoạt động.' }, { status: 403 })
     
     const token = signStudentToken({
       studentId: student.id, 

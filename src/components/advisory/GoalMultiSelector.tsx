@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Check, Sparkles, Lightbulb, Plus, Trash2, Edit3 } from "lucide-react"
+import { Check, Sparkles, Lightbulb, Plus, Trash2, Edit3, Users, Heart } from "lucide-react"
 
 export interface GoalPreset {
   id: string
@@ -16,6 +16,8 @@ export interface GoalPreset {
 export interface CustomGoalItem {
   targetText: string
   actionText: string
+  teacherSupport?: string
+  parentSupport?: string
 }
 
 interface GoalMultiSelectorProps {
@@ -37,14 +39,12 @@ export function GoalMultiSelector({
   presets = [],
   selectedPresetIds = [],
   onSelectionChange,
-  customItems = [{ targetText: "", actionText: "" }],
+  customItems = [{ targetText: "", actionText: "", teacherSupport: "", parentSupport: "" }],
   onCustomItemsChange,
   readOnly = false
 }: GoalMultiSelectorProps) {
-  // Filter presets matching this category
   const catPresets = presets.filter(p => p.category === categoryKey && p.status !== "INACTIVE")
 
-  // Toggle selecting a preset
   const handleTogglePreset = (presetId: string) => {
     if (readOnly) return
 
@@ -68,12 +68,11 @@ export function GoalMultiSelector({
     onSelectionChange(newSelectedIds, actions)
   }
 
-  // Calculate matching actions for selected presets
   const selectedPresets = presets.filter(p => selectedPresetIds.includes(p.id))
 
   const handleAddCustomRow = () => {
     if (readOnly) return
-    onCustomItemsChange([...customItems, { targetText: "", actionText: "" }])
+    onCustomItemsChange([...customItems, { targetText: "", actionText: "", teacherSupport: "", parentSupport: "" }])
   }
 
   const handleRemoveCustomRow = (idx: number) => {
@@ -81,7 +80,7 @@ export function GoalMultiSelector({
     onCustomItemsChange(customItems.filter((_, i) => i !== idx))
   }
 
-  const handleUpdateCustomRow = (idx: number, field: "targetText" | "actionText", val: string) => {
+  const handleUpdateCustomRow = (idx: number, field: keyof CustomGoalItem, val: string) => {
     if (readOnly) return
     const updated = customItems.map((item, i) => i === idx ? { ...item, [field]: val } : item)
     onCustomItemsChange(updated)
@@ -196,32 +195,32 @@ export function GoalMultiSelector({
         </div>
       )}
 
-      {/* SECTION 3: MULTI CUSTOM GOALS (TỰ GÕ / THÊM NHIỀU MỤC TIÊU CỤ THỂ KHÁC CỦA HỌC SINH) */}
+      {/* SECTION 3: MULTI CUSTOM GOALS VỚI HÀNH ĐỘNG & MONG MUỐN HỖ TRỢ ĐI KÈM CỤ THỂ */}
       <div className="space-y-3 pt-3 border-t border-slate-100">
         <div className="flex items-center justify-between">
           <label className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
             <Edit3 className="w-4 h-4 text-amber-500" />
-            <span>2. TỰ GÕ / BỔ SUNG CÁC MỤC TIÊU CỤ THỂ KHÁC CỦA EM (CÓ THỂ THÊM NHIỀU MỤC TIÊU):</span>
+            <span>2. TỰ GÕ / BỔ SUNG CÁC MỤC TIÊU CỤ THỂ KHÁC CỦA EM (ĐI KÈM HÀNH ĐỘNG & NỘI DUNG HỖ TRỢ):</span>
           </label>
           <span className="text-[10px] text-slate-400 font-medium">
             ({customItems.length} mục tiêu bổ sung)
           </span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {customItems.length === 0 && (
             <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-slate-400 text-xs font-medium text-center">
               Chưa có mục tiêu cá nhân tự gõ. Nhấn nút <strong>"+ Thêm 1 mục tiêu cụ thể mới"</strong> bên dưới để bổ sung mục tiêu riêng của em.
             </div>
           )}
           {customItems.map((item, idx) => (
-            <div key={idx} className="p-3.5 rounded-2xl bg-slate-50 border-2 border-slate-200 space-y-3 relative group">
-              <div className="flex items-center justify-between">
+            <div key={idx} className="p-4 rounded-2xl bg-slate-50/90 border-2 border-slate-200 space-y-3.5 relative group">
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                 <span className="text-[11px] font-black text-teal-800 flex items-center gap-1.5">
                   <span className="w-4 h-4 rounded-full bg-teal-600 text-white text-[10px] flex items-center justify-center font-bold">
                     {idx + 1}
                   </span>
-                  <span>Mục tiêu cụ thể khác #{idx + 1}</span>
+                  <span>Mục tiêu cụ thể #{idx + 1}</span>
                 </span>
 
                 {!readOnly && (
@@ -236,8 +235,8 @@ export function GoalMultiSelector({
                 )}
               </div>
 
+              {/* Row 1: Target Text & Action Text */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Input Target */}
                 <div className="space-y-1">
                   <label className="text-[11px] font-extrabold text-slate-700 block">
                     Nội dung mục tiêu cụ thể của em:
@@ -254,7 +253,6 @@ export function GoalMultiSelector({
                   />
                 </div>
 
-                {/* Input Actions */}
                 <div className="space-y-1">
                   <label className="text-[11px] font-extrabold text-amber-900 block">
                     Em sẽ làm gì để đạt được mục tiêu này (Hành động cụ thể):
@@ -267,6 +265,43 @@ export function GoalMultiSelector({
                     placeholder="Các bước hành động cụ thể em sẽ làm..."
                     className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
                       readOnly ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "bg-white border-slate-300 focus:border-amber-500"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Support Questions (Teacher & Parent Support per specific goal item) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-slate-200/60">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-extrabold text-teal-800 flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-teal-600" />
+                    <span>Em mong muốn Thầy Cô / bạn bè hỗ trợ mình như thế nào?</span>
+                  </label>
+                  <input
+                    type="text"
+                    readOnly={readOnly}
+                    value={item.teacherSupport || ""}
+                    onChange={e => handleUpdateCustomRow(idx, "teacherSupport", e.target.value)}
+                    placeholder="Thầy cô/bạn bè hỗ trợ em..."
+                    className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
+                      readOnly ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-teal-200 bg-white focus:border-teal-500"
+                    }`}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-extrabold text-amber-800 flex items-center gap-1.5">
+                    <Heart className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Em mong muốn Ba Mẹ hỗ trợ mình như thế nào?</span>
+                  </label>
+                  <input
+                    type="text"
+                    readOnly={readOnly}
+                    value={item.parentSupport || ""}
+                    onChange={e => handleUpdateCustomRow(idx, "parentSupport", e.target.value)}
+                    placeholder="Ba mẹ hỗ trợ em..."
+                    className={`w-full p-2.5 rounded-xl border text-xs font-semibold focus:outline-none ${
+                      readOnly ? "bg-slate-100 text-slate-700 border-slate-200 cursor-not-allowed" : "border-amber-200 bg-white focus:border-amber-500"
                     }`}
                   />
                 </div>
