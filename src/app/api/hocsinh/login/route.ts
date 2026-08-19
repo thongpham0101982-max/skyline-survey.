@@ -9,9 +9,13 @@ export async function POST(req: NextRequest) {
     const { studentCode, password } = await req.json()
     const code = String(studentCode || '').trim()
     
-    // Tìm học sinh
-    const defaultYear = await getDefaultAcademicYear(prisma);
-    const student = await prisma.student.findFirst({
+    if (!code) {
+      return NextResponse.json({ error: 'Vui lòng nhập Mã học sinh.' }, { status: 400 })
+    }
+
+    const defaultYear = await getDefaultAcademicYear(prisma).catch(() => null);
+    
+    let student = await prisma.student.findFirst({
       where: { 
         OR: [
           { studentCode: code },
@@ -31,24 +35,40 @@ export async function POST(req: NextRequest) {
         class: { select: { className: true, grade: true } }, 
         campus: { select: { campusName: true } } 
       }
-    }) || await prisma.student.findFirst({
-      where: { studentCode: code },
-      orderBy: { academicYear: { startDate: 'desc' } },
-      select: { 
-        id: true, 
-        studentCode: true, 
-        studentName: true, 
-        classId: true, 
-        campusId: true,
-        academicYearId: true,
-        status: true, 
-        class: { select: { className: true, grade: true } }, 
-        campus: { select: { campusName: true } } 
-      }
-    });
+    }).catch(() => null);
+
+    if (!student) {
+      const candidates = await prisma.student.findMany({
+        where: {
+          OR: [
+            { studentCode: code },
+            { studentCode: code.toUpperCase() },
+            { studentCode: code.toLowerCase() }
+          ]
+        },
+        select: { 
+          id: true, 
+          studentCode: true, 
+          studentName: true, 
+          classId: true, 
+          campusId: true,
+          academicYearId: true,
+          status: true, 
+          class: { select: { className: true, grade: true } }, 
+          campus: { select: { campusName: true } } 
+        }
+      }).catch(() => []);
+
+      student = candidates[0] || null;
+    }
     
-    if (!student) return NextResponse.json({ error: 'Mã học sinh không đúng.' }, { status: 401 })
-    if (student.status && student.status !== 'ACTIVE') return NextResponse.json({ error: 'Tài khoản học sinh đã bị khóa hoặc ngừng hoạt động.' }, { status: 403 })
+    if (!student) {
+      return NextResponse.json({ error: 'Mã học sinh không tồn tại trong hệ thống.' }, { status: 401 })
+    }
+
+    if (student.status && student.status !== 'ACTIVE') {
+      return NextResponse.json({ error: 'Tài khoản học sinh đã bị khóa hoặc ngừng hoạt động.' }, { status: 403 })
+    }
     
     const token = signStudentToken({
       studentId: student.id, 
@@ -81,6 +101,7 @@ export async function POST(req: NextRequest) {
     return res
     
   } catch (e: any) {
-    return NextResponse.json({ error: 'Lỗi hệ thống: ' + e.message }, { status: 500 })
+    console.error('[STUDENT LOGIN ERROR]', e)
+    return NextResponse.json({ error: 'Lỗi hệ thống: ' + (e?.message || 'Không thể xác thực học sinh') }, { status: 500 })
   }
 }
