@@ -734,21 +734,7 @@ export function K1GoalForm({
 
         </div>
 
-        {/* 3-Party Signatures Footer (Style of printed form) */}
-        <div className="grid grid-cols-3 gap-3 pt-3 border-t-2 border-slate-100 text-center text-xs font-extrabold text-slate-700">
-          <div className="p-3 bg-sky-50/70 rounded-2xl border border-sky-200">
-            <p className="font-black text-sky-950">✍️ Học sinh Khối 1</p>
-            <p className="text-[11px] text-sky-800 italic mt-0.5">{studentName}</p>
-          </div>
-          <div className="p-3 bg-amber-50/70 rounded-2xl border border-amber-200">
-            <p className="font-black text-amber-950">✍️ Phụ huynh</p>
-            <p className="text-[11px] text-amber-800 italic mt-0.5">Ký cam kết đồng hành</p>
-          </div>
-          <div className="p-3 bg-teal-50/70 rounded-2xl border border-teal-200">
-            <p className="font-black text-teal-950">✍️ Giáo viên chủ nhiệm</p>
-            <p className="text-[11px] text-teal-800 italic mt-0.5">Duyệt & Theo dõi tiến độ</p>
-          </div>
-        </div>
+
 
       </div>
 
