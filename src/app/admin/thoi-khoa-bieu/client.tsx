@@ -124,6 +124,8 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
   const [editAltSubjectName, setEditAltSubjectName] = useState("")
   const [editAltTeacherName, setEditAltTeacherName] = useState("")
   const [editColorCode, setEditColorCode] = useState("#FEF08A")
+  const [editDepartment, setEditDepartment] = useState("ALL")
+  const [editAltDepartment, setEditAltDepartment] = useState("ALL")
 
   const showToast = (msg: string, type: "success" | "error" | "info" | "warning") => {
     setToast({ msg, type })
@@ -262,6 +264,22 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
     setEditAltSubjectName(slot?.altSubjectName || "")
     setEditAltTeacherName(slot?.altTeacherName || "")
     setEditColorCode(slot?.colorCode || SUBJECT_COLORS[slot?.subjectName || ""] || "#FEF08A")
+
+    if (slot?.teacherName) {
+      const tObj = teachers.find((t: any) => t.teacherName === slot.teacherName)
+      const dept = tObj?.departmentRel?.name || tObj?.departmentName || "ALL"
+      setEditDepartment(dept)
+    } else {
+      setEditDepartment("ALL")
+    }
+
+    if (slot?.altTeacherName) {
+      const altTObj = teachers.find((t: any) => t.teacherName === slot.altTeacherName)
+      const altDept = altTObj?.departmentRel?.name || altTObj?.departmentName || "ALL"
+      setEditAltDepartment(altDept)
+    } else {
+      setEditAltDepartment("ALL")
+    }
   }
 
   // Save Edit Cell
@@ -444,6 +462,25 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
     }
   }, [selectedClassObj, slots])
 
+
+  // Modal Filtered Teachers for Main & Alt
+  const modalMainTeachers = useMemo(() => {
+    if (!Array.isArray(teachers)) return []
+    if (editDepartment === "ALL") return teachers
+    return teachers.filter((t: any) => {
+      const deptName = t.departmentRel?.name || t.departmentName || ""
+      return deptName.trim().toLowerCase() === editDepartment.trim().toLowerCase()
+    })
+  }, [teachers, editDepartment])
+
+  const modalAltTeachers = useMemo(() => {
+    if (!Array.isArray(teachers)) return []
+    if (editAltDepartment === "ALL") return teachers
+    return teachers.filter((t: any) => {
+      const deptName = t.departmentRel?.name || t.departmentName || ""
+      return deptName.trim().toLowerCase() === editAltDepartment.trim().toLowerCase()
+    })
+  }, [teachers, editAltDepartment])
 
   // Unique Departments for filter dropdown
   const uniqueDepartments = useMemo(() => {
@@ -1293,6 +1330,31 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
               <span className="text-[10px] font-black text-amber-900 uppercase tracking-wider block">
                 {editWeekType === "SPLIT" ? "1. Môn học & GV Tuần Chẵn" : "Môn học & Giáo viên chính"}
               </span>
+
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold text-slate-500">Tổ chuyên môn</label>
+                <select
+                  value={editDepartment}
+                  onChange={e => {
+                    const newDept = e.target.value
+                    setEditDepartment(newDept)
+                    if (newDept !== "ALL" && editTeacherName) {
+                      const tObj = teachers.find((t: any) => t.teacherName === editTeacherName)
+                      const tDept = tObj?.departmentRel?.name || tObj?.departmentName || ""
+                      if (tDept.trim().toLowerCase() !== newDept.trim().toLowerCase()) {
+                        setEditTeacherName("")
+                      }
+                    }
+                  }}
+                  className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white"
+                >
+                  <option value="ALL">-- Tất cả Tổ chuyên môn --</option>
+                  {uniqueDepartments.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[9px] font-bold text-slate-500">Môn học</label>
@@ -1314,12 +1376,24 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   <label className="text-[9px] font-bold text-slate-500">Giáo viên</label>
                   <select
                     value={editTeacherName}
-                    onChange={e => setEditTeacherName(e.target.value)}
+                    onChange={e => {
+                      const tName = e.target.value
+                      setEditTeacherName(tName)
+                      if (tName) {
+                        const tObj = teachers.find((t: any) => t.teacherName === tName)
+                        const tDept = tObj?.departmentRel?.name || tObj?.departmentName
+                        if (tDept && editDepartment === "ALL") {
+                          setEditDepartment(tDept)
+                        }
+                      }
+                    }}
                     className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white"
                   >
                     <option value="">-- Chọn GV --</option>
-                    {teachers.map((t: any) => (
-                      <option key={t.id} value={t.teacherName}>{t.teacherName} ({t.teacherCode})</option>
+                    {modalMainTeachers.map((t: any) => (
+                      <option key={t.id} value={t.teacherName}>
+                        {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} - {t.departmentRel?.name || t.departmentName || "GV"}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -1332,6 +1406,31 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                 <span className="text-[10px] font-black text-indigo-900 uppercase tracking-wider block">
                   2. Môn học & GV Tuần Lẻ
                 </span>
+
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-slate-500">Tổ chuyên môn (Tuần Lẻ)</label>
+                  <select
+                    value={editAltDepartment}
+                    onChange={e => {
+                      const newDept = e.target.value
+                      setEditAltDepartment(newDept)
+                      if (newDept !== "ALL" && editAltTeacherName) {
+                        const tObj = teachers.find((t: any) => t.teacherName === editAltTeacherName)
+                        const tDept = tObj?.departmentRel?.name || tObj?.departmentName || ""
+                        if (tDept.trim().toLowerCase() !== newDept.trim().toLowerCase()) {
+                          setEditAltTeacherName("")
+                        }
+                      }
+                    }}
+                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white"
+                  >
+                    <option value="ALL">-- Tất cả Tổ chuyên môn --</option>
+                    {uniqueDepartments.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-[9px] font-bold text-slate-500">Môn học (Tuần Lẻ)</label>
@@ -1350,12 +1449,24 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                     <label className="text-[9px] font-bold text-slate-500">Giáo viên (Tuần Lẻ)</label>
                     <select
                       value={editAltTeacherName}
-                      onChange={e => setEditAltTeacherName(e.target.value)}
+                      onChange={e => {
+                        const tName = e.target.value
+                        setEditAltTeacherName(tName)
+                        if (tName) {
+                          const tObj = teachers.find((t: any) => t.teacherName === tName)
+                          const tDept = tObj?.departmentRel?.name || tObj?.departmentName
+                          if (tDept && editAltDepartment === "ALL") {
+                            setEditAltDepartment(tDept)
+                          }
+                        }
+                      }}
                       className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white"
                     >
                       <option value="">-- Chọn GV --</option>
-                      {teachers.map((t: any) => (
-                        <option key={t.id} value={t.teacherName}>{t.teacherName} ({t.teacherCode})</option>
+                      {modalAltTeachers.map((t: any) => (
+                        <option key={t.id} value={t.teacherName}>
+                          {t.teacherName} {t.teacherCode ? `(${t.teacherCode})` : ""} - {t.departmentRel?.name || t.departmentName || "GV"}
+                        </option>
                       ))}
                     </select>
                   </div>
