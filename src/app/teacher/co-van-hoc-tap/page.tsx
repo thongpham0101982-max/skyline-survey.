@@ -771,128 +771,164 @@ export default function TeacherAdvisoryPage() {
             </div>
           </div>
 
-          {/* CARD DASHBOARD VIEW (KHOA HỌC, TIỆN QUAN SÁT) */}
+          {/* CARD DASHBOARD VIEW (KHOA HỌC, ĐỒNG NHẤT KHỐI MỤC TIÊU VỚI GIAO DIỆN HỌC SINH) */}
           {viewMode === "card" && (
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-6">
               {singleStudentTrackingRows.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 font-bold bg-slate-50 rounded-2xl border border-dashed border-slate-200">
                   Đang nạp mục tiêu của học sinh...
                 </div>
               ) : (
-                singleStudentTrackingRows.map((item, idx) => (
-                  <div key={idx} className="bg-white rounded-3xl border-2 border-slate-200 shadow-sm hover:shadow-md transition-all overflow-hidden">
-                    {/* Card Header (Category Title + Progress Status + Notes) */}
-                    <div className="bg-slate-50 p-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-8 h-8 rounded-2xl bg-[#003B3A] text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
-                          0{idx + 1}
+                [
+                  { key: "HOC_TAP", label: "1. Mục tiêu học tập 📚", number: "01", theme: { border: "border-sky-200", badgeBg: "bg-sky-50 border-sky-200", badgeText: "text-sky-800", numberBadge: "bg-sky-600 text-white" } },
+                  { key: "THOI_QUEN", label: "2. Mục tiêu thói quen ⏰", number: "02", theme: { border: "border-emerald-200", badgeBg: "bg-emerald-50 border-emerald-200", badgeText: "text-emerald-800", numberBadge: "bg-emerald-600 text-white" } },
+                  { key: "KY_NANG_CAM_XUC", label: "3. Mục tiêu kỹ năng, cảm xúc 🎨", number: "03", theme: { border: "border-purple-200", badgeBg: "bg-purple-50 border-purple-200", badgeText: "text-purple-800", numberBadge: "bg-purple-600 text-white" } },
+                  { key: "DINH_HUONG", label: "4. Mục tiêu định hướng 🚀", number: "04", theme: { border: "border-amber-200", badgeBg: "bg-amber-50 border-amber-200", badgeText: "text-amber-950", numberBadge: "bg-amber-600 text-white" } }
+                ].map((catObj) => {
+                  const catItems = singleStudentTrackingRows.filter(r => r.categoryKey === catObj.key || r.category === catObj.label || (r.category && r.category.includes(catObj.key)))
+                  const theme = catObj.theme
+
+                  return (
+                    <div key={catObj.key} className={`bg-white rounded-3xl border-2 ${theme.border} shadow-xs hover:shadow-md transition-all overflow-hidden space-y-4 p-5 sm:p-6`}>
+                      {/* Category Header */}
+                      <div className="border-b border-slate-100 pb-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`w-8 h-8 rounded-2xl ${theme.numberBadge} flex items-center justify-center font-black text-xs shadow-xs shrink-0`}>
+                            {catObj.number}
+                          </span>
+                          <h4 className="font-black text-base text-slate-900 tracking-tight">
+                            {catObj.label}
+                          </h4>
+                        </div>
+                        <span className={`px-3 py-1 ${theme.badgeBg} ${theme.badgeText} border rounded-full text-xs font-black shadow-2xs`}>
+                          {catItems.length} mục tiêu
                         </span>
-                        <h4 className="font-black text-sm text-slate-900">
-                          {item.category.includes("phẩm chất") || item.category.includes("PHAM_CHAT") ? "4. Mục tiêu định hướng 🚀" : item.category}
-                        </h4>
                       </div>
 
-                      {/* Controls Row */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[11px] font-bold text-slate-600 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
-                          Mốc: {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
-                        </span>
-
-                        <select
-                          value={item.progressStatus}
-                          onChange={(e) => {
-                            const updated = [...singleStudentTrackingRows]
-                            updated[idx].progressStatus = e.target.value
-                            setSingleStudentTrackingRows(updated)
-                          }}
-                          className={`px-3 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
-                            item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
-                              ? "bg-emerald-500 text-white border-emerald-600"
-                              : item.progressStatus === "CHUA_DAT"
-                              ? "bg-rose-500 text-white border-rose-600"
-                              : item.progressStatus === "CAN_CO_GANG"
-                              ? "bg-amber-500 text-white border-amber-600"
-                              : item.progressStatus === "TIEN_TRIEN"
-                              ? "bg-amber-400 text-amber-950 border-amber-500"
-                              : "bg-slate-200 text-slate-800 border-slate-300"
-                          }`}
-                        >
-                          <option value="CHUA_DANH_GIA" className="bg-white text-slate-900">⚪ Chưa đánh giá</option>
-                          <option value="TIEN_TRIEN" className="bg-white text-slate-900">🟡 Đang tiến triển</option>
-                          <option value="DAT" className="bg-white text-slate-900">🟢 Đạt</option>
-                          <option value="CHUA_DAT" className="bg-white text-slate-900">🔴 Chưa Đạt</option>
-                        </select>
-
-                        <input
-                          type="text"
-                          value={item.teacherNotes}
-                          onChange={(e) => {
-                            const updated = [...singleStudentTrackingRows]
-                            updated[idx].teacherNotes = e.target.value
-                            setSingleStudentTrackingRows(updated)
-                          }}
-                          placeholder="Ghi chú nhận xét từ GVCN..."
-                          className="p-1.5 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:border-teal-500 focus:outline-none w-full md:w-56"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Card Body */}
-                    <div className="p-4 sm:p-5">
-                      {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          
-                          {/* Left Box: Mục tiêu cụ thể & Kế hoạch */}
-                          <div className="space-y-3 bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80">
-                            <div>
-                              <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-teal-500 inline-block" />
-                                Mục tiêu cụ thể:
-                              </span>
-                              <p className="font-bold text-slate-900 leading-relaxed text-xs">{item.targetText}</p>
-                            </div>
-
-                            {item.actionText && (
-                              <div className="pt-2.5 border-t border-slate-200">
-                                <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
-                                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
-                                  Em sẽ làm gì để đạt mục tiêu này:
-                                </span>
-                                <p className="font-semibold text-slate-800 leading-relaxed text-xs">{item.actionText}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Right Box: Yêu cầu Hỗ trợ */}
-                          <div className="space-y-2.5">
-                            {item.teacherSupportRequest && (
-                              <div className="p-3.5 rounded-2xl bg-sky-50/90 border border-sky-200/80 space-y-1">
-                                <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
-                                  💬 Thầy/Cô & Bạn bè hỗ trợ:
-                                </span>
-                                <p className="font-medium text-slate-800 text-xs leading-relaxed">{item.teacherSupportRequest}</p>
-                              </div>
-                            )}
-
-                            {item.parentSupportRequest && (
-                              <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200/80 space-y-1">
-                                <span className="font-black text-rose-950 text-xs flex items-center gap-1.5">
-                                  🏡 Ba/Mẹ hỗ trợ:
-                                </span>
-                                <p className="font-medium text-slate-800 text-xs leading-relaxed">{item.parentSupportRequest}</p>
-                              </div>
-                            )}
-                          </div>
-
+                      {/* Goal items under this category */}
+                      {catItems.length === 0 ? (
+                        <div className="p-6 text-center text-slate-400 font-bold text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                          Học sinh chưa điền nội dung mục tiêu nhóm này
                         </div>
                       ) : (
-                        <div className="p-4 text-center text-slate-400 font-bold text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                          Học sinh chưa điền nội dung mục tiêu nhóm này
+                        <div className="space-y-4">
+                          {catItems.map((item, itemIdx) => {
+                            const globalIdx = singleStudentTrackingRows.findIndex(r => r === item)
+
+                            return (
+                              <div key={item.goalId || itemIdx} className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 border border-slate-200/90 space-y-4">
+                                {/* Sub-Header: MỤC TIÊU CỤ THỂ #1 + Status Selector + Teacher Note input */}
+                                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+                                  <span className="text-xs font-black text-slate-800 flex items-center gap-2">
+                                    <span className="w-5 h-5 rounded-full bg-slate-700 text-white text-[11px] flex items-center justify-center font-bold">
+                                      #{itemIdx + 1}
+                                    </span>
+                                    <span>MỤC TIÊU CỤ THỂ #{itemIdx + 1}</span>
+                                  </span>
+
+                                  {/* Controls Row */}
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-[11px] font-bold text-slate-600 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
+                                      Mốc: {checkPoint === "GIUA_KY_1" ? "Giữa kỳ 1" : checkPoint === "CUOI_KY_1" ? "Cuối kỳ 1" : checkPoint === "GIUA_KY_2" ? "Giữa kỳ 2" : "Cuối kỳ 2"}
+                                    </span>
+
+                                    <select
+                                      value={item.progressStatus || "CHUA_DANH_GIA"}
+                                      onChange={(e) => {
+                                        const updated = [...singleStudentTrackingRows]
+                                        if (globalIdx !== -1) updated[globalIdx].progressStatus = e.target.value
+                                        setSingleStudentTrackingRows(updated)
+                                      }}
+                                      className={`px-3 py-1.5 rounded-xl font-black text-xs border focus:outline-none cursor-pointer shadow-xs ${
+                                        item.progressStatus === "DAT" || item.progressStatus === "HOAN_THANH"
+                                          ? "bg-emerald-500 text-white border-emerald-600"
+                                          : item.progressStatus === "CHUA_DAT"
+                                          ? "bg-rose-500 text-white border-rose-600"
+                                          : item.progressStatus === "CAN_CO_GANG"
+                                          ? "bg-amber-500 text-white border-amber-600"
+                                          : item.progressStatus === "TIEN_TRIEN"
+                                          ? "bg-amber-400 text-amber-950 border-amber-500"
+                                          : "bg-slate-200 text-slate-800 border-slate-300"
+                                      }`}
+                                    >
+                                      <option value="CHUA_DANH_GIA" className="bg-white text-slate-900">⚪ Chưa đánh giá</option>
+                                      <option value="TIEN_TRIEN" className="bg-white text-slate-900">🟡 Đang tiến triển</option>
+                                      <option value="DAT" className="bg-white text-slate-900">🟢 Đạt</option>
+                                      <option value="CHUA_DAT" className="bg-white text-slate-900">🔴 Chưa Đạt</option>
+                                    </select>
+
+                                    <input
+                                      type="text"
+                                      value={item.teacherNotes || ""}
+                                      onChange={(e) => {
+                                        const updated = [...singleStudentTrackingRows]
+                                        if (globalIdx !== -1) updated[globalIdx].teacherNotes = e.target.value
+                                        setSingleStudentTrackingRows(updated)
+                                      }}
+                                      placeholder="Ghi chú nhận xét từ GVCN..."
+                                      className="p-1.5 px-3 rounded-xl border border-slate-300 text-xs font-semibold bg-white focus:border-teal-500 focus:outline-none w-full md:w-56"
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Card Body */}
+                                {item.targetText && item.targetText !== "Em chưa điền nội dung mục tiêu nhóm này" ? (
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    
+                                    {/* Left Box: Mục tiêu cụ thể & Kế hoạch */}
+                                    <div className="space-y-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+                                      <div>
+                                        <span className="text-[11px] font-black text-teal-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                          🎯 Nội dung mục tiêu cụ thể của em:
+                                        </span>
+                                        <p className="font-bold text-slate-900 leading-relaxed text-xs">{item.targetText}</p>
+                                      </div>
+
+                                      {item.actionText && (
+                                        <div className="pt-2.5 border-t border-slate-100">
+                                          <span className="text-[11px] font-black text-amber-800 uppercase tracking-wider block mb-1 flex items-center gap-1.5">
+                                            ⚡ Em sẽ làm gì để đạt được mục tiêu này (Hành động cụ thể):
+                                          </span>
+                                          <p className="font-semibold text-slate-800 leading-relaxed text-xs">{item.actionText}</p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Right Box: Yêu cầu Hỗ trợ */}
+                                    <div className="space-y-2.5">
+                                      {item.teacherSupportRequest && (
+                                        <div className="p-3.5 rounded-xl bg-sky-50/90 border border-sky-200/80 space-y-1">
+                                          <span className="font-black text-sky-950 text-xs flex items-center gap-1.5">
+                                            💬 Em mong muốn Thầy Cô / bạn bè hỗ trợ mình như thế nào?
+                                          </span>
+                                          <p className="font-medium text-slate-800 text-xs leading-relaxed">{item.teacherSupportRequest}</p>
+                                        </div>
+                                      )}
+
+                                      {item.parentSupportRequest && (
+                                        <div className="p-3.5 rounded-xl bg-rose-50/90 border border-rose-200/80 space-y-1">
+                                          <span className="font-black text-rose-950 text-xs flex items-center gap-1.5">
+                                            🏡 Em mong muốn Ba Mẹ hỗ trợ mình như thế nào?
+                                          </span>
+                                          <p className="font-medium text-slate-800 text-xs leading-relaxed">{item.parentSupportRequest}</p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                  </div>
+                                ) : (
+                                  <div className="p-4 text-center text-slate-400 font-bold text-xs italic bg-white rounded-xl border border-dashed border-slate-200">
+                                    Học sinh chưa điền nội dung mục tiêu nhóm này
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           )}
