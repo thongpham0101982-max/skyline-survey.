@@ -3,6 +3,19 @@
 import { useState, useEffect } from "react"
 import { Heart, Send, CheckCircle2, Clock, AlertCircle, MessageSquare, Sparkles, X, Plus, ShieldCheck, ArrowRight } from "lucide-react"
 
+function formatFullDateTime(dateStr?: string | Date) {
+  if (!dateStr) return "—"
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return "—"
+  const hours = String(d.getHours()).padStart(2, "0")
+  const mins = String(d.getMinutes()).padStart(2, "0")
+  const secs = String(d.getSeconds()).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+  const year = d.getFullYear()
+  return `${hours}:${mins}:${secs} ${day}/${month}/${year}`
+}
+
 export default function StudentHelpPortalPage() {
   const [studentId, setStudentId] = useState("")
   const [studentName, setStudentName] = useState("")
@@ -221,58 +234,66 @@ export default function StudentHelpPortalPage() {
 
                   <div className="flex items-center gap-2">
                     {item.status === "RESOLVED" ? (
-                      <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black flex items-center gap-1 border border-emerald-300 shadow-2xs">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>🟢 GVCN Đã Xử Lý Xong</span>
+                      <span className="px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-black flex items-center gap-1.5 border border-emerald-300 shadow-2xs">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        <span>🟢 Đã xử lý xong</span>
                       </span>
                     ) : item.status === "PROCESSING" || item.status === "IN_PROGRESS" ? (
-                      <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-[11px] font-black flex items-center gap-1 border border-amber-300 shadow-2xs">
-                        <Clock className="w-3.5 h-3.5 text-amber-600" />
-                        <span>🔵 Thầy Cô Đang Xử Lý / Tư Vấn</span>
+                      <span className="px-3.5 py-1 rounded-full bg-amber-100 text-amber-950 text-xs font-black flex items-center gap-1.5 border border-amber-300 shadow-2xs">
+                        <Clock className="w-4 h-4 text-amber-600 animate-spin" />
+                        <span>🔵 Đang xử lý / Tư vấn</span>
                       </span>
                     ) : (
-                      <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-[11px] font-black flex items-center gap-1 border border-slate-300">
-                        <Clock className="w-3.5 h-3.5 text-slate-500" />
-                        <span>🟡 Chờ GVCN Phản Hồi</span>
+                      <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-black flex items-center gap-1.5 border border-slate-300">
+                        <Clock className="w-4 h-4 text-slate-500" />
+                        <span>🟡 Chờ phản hồi</span>
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 space-y-1">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">NỘI DUNG YÊU CẦU HỖ TRỢ CỦA EM:</span>
-                  <p className="text-xs font-bold text-slate-900 leading-relaxed">"{item.content}"</p>
-                  <p className="text-[10px] text-slate-400 mt-1 font-medium flex items-center gap-1">
+                {/* 4. Nội dung yêu cầu hỗ trợ */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 space-y-1.5 shadow-2xs">
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider block">4. CHI TIẾT ĐIỀU EM MUỐN THẦY/CÔ HỖ TRỢ:</span>
+                  <p className="text-xs font-bold text-slate-900 leading-relaxed bg-rose-50/50 p-3 rounded-xl border border-rose-100">"{item.content}"</p>
+                  <p className="text-[10px] text-slate-400 font-semibold flex items-center gap-1 pt-1">
                     <Clock className="w-3 h-3 text-slate-400" />
-                    <span>Mốc thời gian gửi: {new Date(item.createdAt).toLocaleString("vi-VN")}</span>
+                    <span>Mốc thời gian gửi: <strong>{formatFullDateTime(item.createdAt)}</strong></span>
                   </p>
                 </div>
 
-                {/* Teacher Response Box & Timestamp */}
-                {(item.responseNotes || item.status !== "PENDING") && (
-                  <div className="p-4 rounded-2xl bg-teal-50/90 border border-teal-200 space-y-2 shadow-2xs">
-                    <div className="flex items-center justify-between border-b border-teal-200/60 pb-1.5">
-                      <p className="text-[11px] font-black text-[#003B3A] flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-teal-600 animate-spin" />
-                        <span>💬 LỜI NHẮN / PHẢN HỒI TỪ GVCN ({item.teacher?.teacherName || "Giáo Viên Chủ Nhiệm"}):</span>
-                      </p>
-                      <span className="text-[10px] font-bold text-teal-800 bg-white/80 px-2 py-0.5 rounded-md border border-teal-200">
-                        {item.status === "RESOLVED" ? "Đã xử lý xong" : "Đang xử lý"}
-                      </span>
-                    </div>
-
-                    <p className="text-xs font-bold text-teal-950 leading-relaxed">
-                      {item.responseNotes ? '"' + item.responseNotes + '"' : "Thầy Cô đang tiếp nhận và hỗ trợ em..."}
-                    </p>
-
-                    <div className="pt-1.5 border-t border-teal-200/60 flex items-center justify-between text-[10px] text-teal-700 font-semibold">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-teal-600" />
-                        <span>Nhật ký thời gian GVCN xử lý: <strong>{new Date(item.updatedAt || item.resolvedAt || item.createdAt).toLocaleString("vi-VN")}</strong></span>
-                      </span>
-                    </div>
+                {/* 5. Phản hồi & Xử lý của GVCN + 6. Lời nhắn + Mốc thời gian xử lý */}
+                <div className="p-4 rounded-2xl bg-teal-50/90 border border-teal-200/90 space-y-2.5 shadow-2xs">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-teal-200/70 pb-2">
+                    <span className="text-xs font-black text-[#003B3A] uppercase tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-4 h-4 text-teal-600" />
+                      <span>5. Phản hồi & Xử lý của GVCN:</span>
+                    </span>
+                    <span className={`px-3 py-1 rounded-xl text-xs font-black border ${
+                      item.status === "RESOLVED"
+                        ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                        : item.status === "PROCESSING" || item.status === "IN_PROGRESS"
+                        ? "bg-amber-100 text-amber-950 border-amber-300"
+                        : "bg-slate-100 text-slate-800 border-slate-300"
+                    }`}>
+                      {item.status === "RESOLVED" ? "🟢 Đã xử lý xong" : item.status === "PROCESSING" || item.status === "IN_PROGRESS" ? "🔵 Đang xử lý / Tư vấn" : "🟡 Chờ phản hồi"}
+                    </span>
                   </div>
-                )}
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-black text-teal-900 uppercase tracking-wider block">6. LỜI NHẮN / PHẢN HỒI TỪ GVCN ({item.teacher?.teacherName || "Giáo Viên Chủ Nhiệm"}):</span>
+                    <p className="text-xs font-bold text-teal-950 leading-relaxed bg-white/80 p-3 rounded-xl border border-teal-200/70">
+                      {item.responseNotes ? '"' + item.responseNotes + '"' : <span className="text-slate-400 font-medium italic">Thầy Cô đang tiếp nhận yêu cầu và sẽ gửi lời nhắn phản hồi hỗ trợ em...</span>}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 border-t border-teal-200/70 flex flex-wrap items-center justify-between text-[11px] text-teal-900 font-bold">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-teal-700" />
+                      <span>Mốc thời gian xử lý thực tế: <strong className="text-[#003B3A]">{formatFullDateTime(item.updatedAt || item.resolvedAt || item.createdAt)}</strong></span>
+                    </span>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
