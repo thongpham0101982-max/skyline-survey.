@@ -15,7 +15,9 @@ export async function POST(req: NextRequest) {
 
     let userEmail: string | null = null
     let userName: string = 'Người dùng'
+    let targetUserId: string | null = null
 
+    // 1. Direct User table match
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -29,46 +31,56 @@ export async function POST(req: NextRequest) {
     if (user) {
       userEmail = user.email
       userName = user.fullName
+      targetUserId = user.id
     }
 
-    if (!userEmail) {
+    // 2. Teacher match (check teacherCode AND email)
+    if (!userEmail || !userEmail.includes('@')) {
       const teacher = await prisma.teacher.findFirst({
         where: {
           OR: [
             { teacherCode: raw },
             { teacherCode: raw.toUpperCase() },
-            { teacherCode: raw.toLowerCase() }
+            { teacherCode: raw.toLowerCase() },
+            { email: raw },
+            { email: raw.toLowerCase() },
+            { email: raw.toUpperCase() }
           ]
         },
         include: { user: true }
       })
-      if (teacher?.user?.email) {
-        userEmail = teacher.user.email
-        userName = teacher.teacherName || teacher.user.fullName
+
+      if (teacher) {
+        userEmail = teacher.email || teacher.user?.email || userEmail
+        userName = teacher.teacherName || teacher.user?.fullName || userName
+        targetUserId = teacher.user?.id || teacher.userId || targetUserId
       }
     }
 
-    if (!userEmail) {
+    // 3. Parent match (check parentCode AND email)
+    if (!userEmail || !userEmail.includes('@')) {
       const parent = await prisma.parent.findFirst({
         where: {
           OR: [
             { parentCode: raw },
             { parentCode: raw.toUpperCase() },
-            { parentCode: raw.toLowerCase() }
+            { parentCode: raw.toLowerCase() },
+            { email: raw },
+            { email: raw.toLowerCase() },
+            { email: raw.toUpperCase() }
           ]
         },
         include: { user: true }
       })
-      if (parent?.user?.email) {
-        userEmail = parent.user.email
-        userName = parent.parentName || parent.user.fullName
-      } else if (parent?.email) {
-        userEmail = parent.email
-        userName = parent.parentName
+
+      if (parent) {
+        userEmail = parent.email || parent.user?.email || userEmail
+        userName = parent.parentName || parent.user?.fullName || userName
+        targetUserId = parent.user?.id || parent.userId || targetUserId
       }
     }
 
-    if (!userEmail) {
+    if (!userEmail || !userEmail.includes('@')) {
       return NextResponse.json({
         error: 'Không tìm thấy thông tin Email liên kết với tài khoản này. Vui lòng liên hệ Ban Khảo thí & ĐBCL để được trợ giúp.'
       }, { status: 404 })

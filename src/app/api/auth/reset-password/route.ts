@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     const passwordHash = await bcrypt.hash(password, 10)
 
-    const user = await prisma.user.findFirst({
+    let user = await prisma.user.findFirst({
       where: {
         OR: [
           { email: resetRecord.email },
@@ -46,6 +46,32 @@ export async function POST(req: NextRequest) {
         ]
       }
     })
+
+    if (!user) {
+      const teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { email: resetRecord.email },
+            { email: resetRecord.email.toLowerCase() }
+          ]
+        },
+        include: { user: true }
+      })
+      if (teacher?.user) user = teacher.user
+    }
+
+    if (!user) {
+      const parent = await prisma.parent.findFirst({
+        where: {
+          OR: [
+            { email: resetRecord.email },
+            { email: resetRecord.email.toLowerCase() }
+          ]
+        },
+        include: { user: true }
+      })
+      if (parent?.user) user = parent.user
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'Không tìm thấy người dùng sở hữu email này.' }, { status: 404 })
