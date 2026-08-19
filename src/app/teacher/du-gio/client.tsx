@@ -294,14 +294,43 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [slots, currentTeacher?.id]);
 
 
-  // Filter classes for GVBM request form based on Level and Grade
+  // Filter classes for GVBM request form based on Level, Grade, Campus, and AcademicYear
   const filteredReqClasses = useMemo(() => {
+    const activeYearId = filterAcademicYearId || selectedYearId || "";
+    const effectiveCampusId = reqCampusId || currentTeacher?.campusId || "";
+
+    let cleanDbLevel = "";
+    if (reqLevel && reqLevel !== "all") {
+      if (reqLevel === "Tiểu học") cleanDbLevel = "tieu hoc";
+      else if (reqLevel === "THCS") cleanDbLevel = "thcs";
+      else if (reqLevel === "THPT") cleanDbLevel = "thpt";
+      else if (reqLevel === "Mầm non") cleanDbLevel = "mam non";
+      else cleanDbLevel = reqLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    const numGrade = reqGrade ? reqGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
+
     return classes.filter((c: any) => {
-      if (reqLevel && reqLevel !== "all" && c.level !== reqLevel) return false;
-      if (reqGrade && reqGrade !== "all" && c.grade !== reqGrade) return false;
-      return true;
+      if (activeYearId && c.academicYearId && c.academicYearId !== activeYearId) return false;
+      if (effectiveCampusId && c.campusId !== effectiveCampusId) return false;
+
+      if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
+        const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (cLevelClean !== cleanDbLevel) return false;
+      }
+
+      if (!reqGrade || reqGrade === "all") return true;
+
+      if (cleanDbLevel === "mam non") {
+        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const cleanNGrade = reqGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        return cleanCGrade === cleanNGrade || cleanCGrade.includes(cleanNGrade) || cleanNGrade.includes(cleanCGrade);
+      }
+
+      const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+      return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
-  }, [classes, reqLevel, reqGrade]);
+  }, [classes, reqLevel, reqGrade, reqCampusId, currentTeacher?.campusId, filterAcademicYearId, selectedYearId]);
 
 
   // Filter teachers for request form by selected department
@@ -637,6 +666,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const resetCreateForm = () => {
     setEditSlotId(null);
+    setNewCampusId(currentTeacher?.campusId || "");
     setNewSubjectId(""); setNewSubjectName(""); setNewLevel(isMamNonTeacher ? "Mầm non" : ""); setNewGrade(""); setNewClassId("");
     setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1");
     setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId(""); setNewNotifMode("ALL"); setSelectedMemberIds([]); setSendEmailNotif(false);
@@ -691,7 +721,7 @@ export function ObservationClient(props: ObservationClientProps) {
 
   const getGradesForLevel = (level: string) => {
     switch (level) {
-      case "Mầm non": return ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
+      case "Mầm non": return mamNonGrades.length > 0 ? mamNonGrades : ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]
       case "Tiểu học": return ["Khối 1","Khối 2","Khối 3","Khối 4","Khối 5"]
       case "THCS": return ["Khối 6","Khối 7","Khối 8","Khối 9"]
       case "THPT": return ["Khối 10","Khối 11","Khối 12"]
@@ -705,46 +735,63 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const filteredClassesForCreation = useMemo(() => {
-    if (!newCampusId || !newLevel) return []
-    let dbLevel = ""
-    if (newLevel === "Tiểu học") dbLevel = "Tiểu học"
-    else if (newLevel === "THCS") dbLevel = "THCS"
-    else if (newLevel === "THPT") dbLevel = "THPT"
-    else dbLevel = "Mầm non"
+    const effectiveCampusId = newCampusId || currentTeacher?.campusId || "";
+    if (!effectiveCampusId || !newLevel) return [];
 
-    const cleanDbLevel = dbLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-    const numGrade = newGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+    let cleanDbLevel = "";
+    if (newLevel === "Tiểu học") cleanDbLevel = "tieu hoc";
+    else if (newLevel === "THCS") cleanDbLevel = "thcs";
+    else if (newLevel === "THPT") cleanDbLevel = "thpt";
+    else if (newLevel === "Mầm non") cleanDbLevel = "mam non";
+    else cleanDbLevel = newLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    const numGrade = newGrade ? newGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
     const activeYearId = filterAcademicYearId || selectedYearId || "";
 
     return classes.filter(c => {
-      if (activeYearId && c.academicYearId !== activeYearId) return false;
-      if (c.campusId !== newCampusId) return false;
+      if (activeYearId && c.academicYearId && c.academicYearId !== activeYearId) return false;
+      if (effectiveCampusId && c.campusId !== effectiveCampusId) return false;
 
-      const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-      if (cLevelClean !== cleanDbLevel) return false;
+      if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
+        const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (cLevelClean !== cleanDbLevel) return false;
+      }
+
+      if (!newGrade || newGrade === "all") return true;
 
       if (cleanDbLevel === "mam non") {
-        if (!newGrade) return true;
-        return (c.grade || "") === newGrade;
+        const cleanCGrade = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const cleanNGrade = newGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        return cleanCGrade === cleanNGrade || cleanCGrade.includes(cleanNGrade) || cleanNGrade.includes(cleanCGrade);
       }
-      return (c.grade || "").trim() === numGrade;
-    })
-  }, [classes, newCampusId, newLevel, newGrade, filterAcademicYearId, selectedYearId])
+
+      const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+      return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
+    });
+  }, [classes, newCampusId, currentTeacher?.campusId, newLevel, newGrade, filterAcademicYearId, selectedYearId]);
 
   // Derive unique Khoi hoc values for Mam non from actual class data
   const mamNonGrades = useMemo(() => {
     const activeYearId = filterAcademicYearId || selectedYearId || "";
+    const effectiveCampusId = newCampusId || reqCampusId || currentTeacher?.campusId || "";
     const gradeSet = new Set<string>();
     classes.forEach((cls: any) => {
-      if (activeYearId && cls.academicYearId !== activeYearId) return;
-      if (newCampusId && cls.campusId !== newCampusId) return;
+      if (activeYearId && cls.academicYearId && cls.academicYearId !== activeYearId) return;
+      if (effectiveCampusId && cls.campusId !== effectiveCampusId) return;
       const lvlClean = (cls.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       if (lvlClean !== "mam non") return;
       if (cls.grade) gradeSet.add(cls.grade);
     });
-    const ORDER = ["Nh\u00e0 tr\u1ebb 24-36 th\u00e1ng", "M\u1eabu gi\u00e1o b\u00e9", "M\u1eabu gi\u00e1o nh\u1ee1", "M\u1eabu gi\u00e1o l\u1edbn"];
-    return [...gradeSet].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b));
-  }, [classes, newCampusId, filterAcademicYearId, selectedYearId]);
+    const ORDER = ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
+    return [...gradeSet].sort((a, b) => {
+      const idxA = ORDER.indexOf(a);
+      const idxB = ORDER.indexOf(b);
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b, "vi");
+    });
+  }, [classes, newCampusId, reqCampusId, currentTeacher?.campusId, filterAcademicYearId, selectedYearId]);
 
   const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiết ${n+1}` } return p }
   const handleStartTimeChange = (val: string) => { setNewStartTime(val); setNewEndTime(newIsDoublePeriod ? getNextPeriod(val) : val) }
@@ -2312,6 +2359,9 @@ export function ObservationClient(props: ObservationClientProps) {
                 className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
                 <option value="all">Tất cả bậc</option>
                 <option value="Mầm non">Mầm non</option>
+                <option value="Tiểu học">Tiểu học</option>
+                <option value="THCS">THCS</option>
+                <option value="THPT">THPT</option>
                 <option value="Phổ thông K-12">Phổ thông K-12</option>
               </select>
             </div>

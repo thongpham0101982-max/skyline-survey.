@@ -160,3 +160,37 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })
   }
 }
+
+
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json()
+    const { id, studentReflection, content, difficulties, nextActions, deadline, notes } = body
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing log id" }, { status: 400 })
+    }
+
+    const updateData: any = { updatedAt: new Date() }
+    if (studentReflection !== undefined) updateData.studentReflection = studentReflection
+    if (content !== undefined) updateData.content = content
+    if (difficulties !== undefined) updateData.difficulties = difficulties
+    if (nextActions !== undefined) updateData.nextActions = nextActions
+    if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null
+    if (notes !== undefined) updateData.notes = notes
+
+    const updated = await prisma.academicConsultationLog.update({
+      where: { id },
+      data: updateData,
+      include: {
+        student: { select: { id: true, studentCode: true, studentName: true, class: { select: { className: true } } } },
+        teacher: { select: { id: true, teacherName: true } }
+      }
+    })
+
+    return NextResponse.json({ success: true, log: updated })
+  } catch (error: any) {
+    console.error("PUT /api/advisory/consultations error:", error)
+    return NextResponse.json({ error: error.message || "Server error" }, { status: 500 })
+  }
+}

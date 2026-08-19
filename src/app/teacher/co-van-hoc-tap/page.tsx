@@ -1439,14 +1439,15 @@ export default function TeacherAdvisoryPage() {
                   <th className="p-3 border-r border-slate-200">Khó khăn ghi nhận</th>
                   <th className="p-3 border-r border-slate-200">Hành động tiếp theo</th>
                   <th className="p-3 border-r border-slate-200 w-28">Thời hạn</th>
-                  <th className="p-3 border-r border-slate-200 w-32">Ghi chú</th>
+                  <th className="p-3 border-r border-slate-200 w-28">Ghi chú</th>
+                  <th className="p-3 border-r border-slate-200 min-w-[160px] bg-amber-50/70 text-amber-950">Tự đánh giá của Học sinh</th>
                   <th className="p-3 text-center w-24">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
                 {consultations.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="p-8 text-center text-slate-400 font-medium">
+                    <td colSpan={10} className="p-8 text-center text-slate-400 font-medium">
                       Chưa có nhật ký tham vấn nào trong lớp {selectedClass?.className}. Vui lòng bấm "+ Thêm Mới Nhật Ký Tham Vấn" để tạo mới.
                     </td>
                   </tr>
@@ -1468,6 +1469,15 @@ export default function TeacherAdvisoryPage() {
                         {c.deadline ? new Date(c.deadline).toLocaleDateString("vi-VN") : "—"}
                       </td>
                       <td className="p-3 border-r border-slate-200 text-slate-600 font-normal">{c.notes || "—"}</td>
+                      <td className="p-3 border-r border-slate-200 align-top bg-amber-50/20">
+                        {c.studentReflection ? (
+                          <div className="p-2 rounded-xl bg-emerald-100/90 border border-emerald-300 text-emerald-950 text-[11px] font-bold leading-relaxed shadow-2xs">
+                            💬 "{c.studentReflection}"
+                          </div>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 font-semibold italic">🟡 HS chưa tự đánh giá</span>
+                        )}
+                      </td>
                       <td className="p-3 text-center space-x-1 whitespace-nowrap">
                         <button
                           onClick={() => handleOpenEditConsultation(c)}

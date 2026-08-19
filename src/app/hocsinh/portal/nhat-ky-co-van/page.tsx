@@ -5,7 +5,7 @@ import Link from "next/link"
 import {
   BookOpen, Calendar, User, Clock, AlertCircle, CheckCircle2,
   Sparkles, ArrowRight, MessageSquare, ShieldCheck, RefreshCw, ChevronRight, HelpCircle,
-  Table, LayoutGrid
+  Table, LayoutGrid, Edit3, Save, X, Feather
 } from "lucide-react"
 
 export default function StudentConsultationDiaryPage() {
@@ -16,6 +16,12 @@ export default function StudentConsultationDiaryPage() {
   const [consultations, setConsultations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"table" | "cards">("table")
+
+  // Modal Student Self-Reflection State
+  const [selectedLog, setSelectedLog] = useState<any>(null)
+  const [reflectionText, setReflectionText] = useState("")
+  const [savingReflection, setSavingReflection] = useState(false)
+  const [toastMessage, setToastMessage] = useState("")
 
   useEffect(() => {
     fetch("/api/hocsinh/me", { cache: "no-store" })
@@ -57,6 +63,39 @@ export default function StudentConsultationDiaryPage() {
     }
   }
 
+  function handleOpenReflectionModal(log: any) {
+    setSelectedLog(log)
+    setReflectionText(log.studentReflection || "")
+  }
+
+  async function handleSaveReflection() {
+    if (!selectedLog) return
+    try {
+      setSavingReflection(true)
+      const res = await fetch("/api/advisory/consultations", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedLog.id,
+          studentReflection: reflectionText
+        })
+      })
+
+      if (res.ok) {
+        setToastMessage("Đã cập nhật tự đánh giá thành công! Kết quả đã tự động đồng bộ sang Nhật ký GVCN.")
+        setTimeout(() => setToastMessage(""), 4000)
+        setSelectedLog(null)
+        loadConsultationLogs(studentId, studentCode)
+      } else {
+        alert("Cập nhật không thành công, vui lòng thử lại.")
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSavingReflection(false)
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 font-sans text-slate-800 pb-20">
       
@@ -71,10 +110,10 @@ export default function StudentConsultationDiaryPage() {
               <span>SỔ NHẬT KÝ THAM VẤN CỐ VẤN HỌC TẬP</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Nhật Ký Cố Vấn Từ Giáo Viên Chủ Nhiệm
+              Nhật Ký Cố Vấn & Tự Đánh Giá Sau Buổi Gặp
             </h1>
             <p className="text-xs sm:text-sm text-teal-100 font-medium max-w-2xl leading-relaxed">
-              Hiển thị đầy đủ 6 trường thông tin: <strong>Ngày gặp, Nội dung trao đổi, Khó khăn ghi nhận, Hành động tiếp theo, Thời hạn và Ghi chú</strong> do GVCN ghi nhận.
+              Theo dõi 6 nội dung từ GVCN và <strong>thực hiện Tự Đánh Giá Sau Buổi Cố Vấn</strong>. Kết quả tự đánh giá sẽ tự động cập nhật vào Nhật Ký Tham Vấn của Giáo viên Chủ nhiệm!
             </p>
           </div>
 
@@ -89,6 +128,13 @@ export default function StudentConsultationDiaryPage() {
           </div>
         </div>
       </div>
+
+      {toastMessage && (
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-black flex items-center gap-3 animate-bounce shadow-xs">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
 
       {/* Quick Stats Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -122,9 +168,9 @@ export default function StudentConsultationDiaryPage() {
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Lớp học sinh</span>
-            <h4 className="text-xs font-black text-slate-900">Lớp {className || "Sky-Line"}</h4>
-            <span className="text-[10px] text-slate-500 font-semibold">Theo mẫu Excel Sổ quan sát GVCN</span>
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Đồng bộ tự động</span>
+            <h4 className="text-xs font-black text-slate-900">Sổ quan sát GVCN Lớp {className}</h4>
+            <span className="text-[10px] text-teal-700 font-bold">Kết nối 2 chiều GV - Học sinh</span>
           </div>
         </div>
       </div>
@@ -135,10 +181,10 @@ export default function StudentConsultationDiaryPage() {
           <div>
             <h3 className="text-base font-black text-[#003B3A] uppercase flex items-center gap-2">
               <MessageSquare className="w-5 h-5 text-amber-500" />
-              <span>Bảng Nhật Ký Cố Vấn Làm Việc Chi Tiết (Đầy Đủ 6 Trường)</span>
+              <span>Bảng Nhật Ký Tham Vấn Chi Tiết & Tự Đánh Giá</span>
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Tất cả ghi nhận: 1. Ngày gặp, 2. Nội dung trao đổi, 3. Khó khăn ghi nhận, 4. Hành động tiếp theo, 5. Thời hạn, 6. Ghi chú.
+              Học sinh có thể xem nội dung làm việc và viết <strong>Tự đánh giá sau buổi cố vấn</strong> để tự phản chiếu tiến độ.
             </p>
           </div>
 
@@ -151,7 +197,7 @@ export default function StudentConsultationDiaryPage() {
                 }`}
               >
                 <Table className="w-3.5 h-3.5" />
-                <span>Xem Dạng Bảng</span>
+                <span>Dạng Bảng</span>
               </button>
               <button
                 onClick={() => setViewMode("cards")}
@@ -160,7 +206,7 @@ export default function StudentConsultationDiaryPage() {
                 }`}
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span>Xem Dạng Thẻ</span>
+                <span>Dạng Thẻ</span>
               </button>
             </div>
 
@@ -191,18 +237,19 @@ export default function StudentConsultationDiaryPage() {
           </div>
         ) : viewMode === "table" ? (
           
-          /* 1. TABLE VIEW: FULL 6 FIELDS */
+          /* 1. TABLE VIEW */
           <div className="overflow-x-auto border border-slate-200 rounded-2xl shadow-xs">
             <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
                   <th className="p-3.5 border-r border-slate-200 w-12 text-center">STT</th>
                   <th className="p-3.5 border-r border-slate-200 w-32">1. Ngày gặp</th>
-                  <th className="p-3.5 border-r border-slate-200 min-w-[200px]">2. Nội dung trao đổi</th>
-                  <th className="p-3.5 border-r border-slate-200 min-w-[180px]">3. Khó khăn ghi nhận</th>
-                  <th className="p-3.5 border-r border-slate-200 min-w-[200px]">4. Hành động tiếp theo</th>
-                  <th className="p-3.5 border-r border-slate-200 w-32">5. Thời hạn</th>
-                  <th className="p-3.5 min-w-[160px]">6. Ghi chú</th>
+                  <th className="p-3.5 border-r border-slate-200 min-w-[180px]">2. Nội dung trao đổi</th>
+                  <th className="p-3.5 border-r border-slate-200 min-w-[160px]">3. Khó khăn ghi nhận</th>
+                  <th className="p-3.5 border-r border-slate-200 min-w-[180px]">4. Hành động tiếp theo</th>
+                  <th className="p-3.5 border-r border-slate-200 w-28">5. Thời hạn</th>
+                  <th className="p-3.5 border-r border-slate-200 min-w-[140px]">6. Ghi chú</th>
+                  <th className="p-3.5 min-w-[200px] bg-amber-50/60 text-amber-950">7. Tự đánh giá sau buổi cố vấn</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
@@ -252,8 +299,33 @@ export default function StudentConsultationDiaryPage() {
                     </td>
 
                     {/* 6. Ghi chú */}
-                    <td className="p-3.5 align-top italic text-slate-700">
+                    <td className="p-3.5 border-r border-slate-200 align-top italic text-slate-700">
                       {item.notes ? '"' + item.notes + '"' : <span className="text-slate-400 font-normal">- Chưa có ghi chú</span>}
+                    </td>
+
+                    {/* 7. Tự đánh giá của Học sinh sau tham vấn */}
+                    <td className="p-3.5 align-top space-y-2 bg-amber-50/20">
+                      {item.studentReflection ? (
+                        <div className="p-2.5 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-950 font-bold leading-relaxed space-y-1.5 shadow-2xs">
+                          <span className="text-[10px] font-black text-emerald-900 uppercase block">💬 Đã tự đánh giá:</span>
+                          <p className="text-xs font-bold">"{item.studentReflection}"</p>
+                          <button
+                            onClick={() => handleOpenReflectionModal(item)}
+                            className="text-[10px] text-teal-800 hover:underline font-black flex items-center gap-1 pt-1"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Chỉnh sửa tự đánh giá</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenReflectionModal(item)}
+                          className="w-full p-2.5 rounded-xl bg-amber-400 text-slate-950 font-black hover:bg-amber-500 transition-all text-xs flex items-center justify-center gap-1.5 shadow-2xs"
+                        >
+                          <Feather className="w-4 h-4" />
+                          <span>+ Tự Đánh Giá Sau Cố Vấn</span>
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -262,7 +334,7 @@ export default function StudentConsultationDiaryPage() {
           </div>
         ) : (
 
-          /* 2. CARDS VIEW: FULL 6 FIELDS */
+          /* 2. CARDS VIEW */
           <div className="space-y-6">
             {consultations.map((item, idx) => (
               <div
@@ -292,7 +364,7 @@ export default function StudentConsultationDiaryPage() {
                   </div>
                 </div>
 
-                {/* 6 Fields Card Grid */}
+                {/* 6 Fields Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* 2. Nội dung trao đổi */}
                   <div className="p-4 rounded-2xl bg-teal-50/60 border border-teal-200/70 space-y-1.5">
@@ -326,11 +398,104 @@ export default function StudentConsultationDiaryPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* 7. Student Self Reflection Card */}
+                <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black text-amber-950 uppercase tracking-wider flex items-center gap-1.5">
+                      <Feather className="w-4 h-4 text-amber-600" />
+                      <span>7. TỰ ĐÁNH GIÁ CỦA HỌC SINH SAU BUỔI CỐ VẤN:</span>
+                    </span>
+
+                    <button
+                      onClick={() => handleOpenReflectionModal(item)}
+                      className="px-3 py-1 rounded-xl bg-amber-400 text-slate-950 text-xs font-black hover:bg-amber-500 transition-all shadow-2xs flex items-center gap-1"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>{item.studentReflection ? "Chỉnh Sửa Đánh Giá" : "+ Tự Đánh Giá Sau Cố Vấn"}</span>
+                    </button>
+                  </div>
+
+                  <div className="p-3 bg-white rounded-xl border border-amber-200 text-xs font-bold text-amber-950 leading-relaxed">
+                    {item.studentReflection ? (
+                      <p>"{item.studentReflection}"</p>
+                    ) : (
+                      <p className="text-slate-400 font-medium italic">
+                        Em chưa tự đánh giá sau buổi gặp này. Hãy nhấn nút "+ Tự Đánh Giá Sau Cố Vấn" để phản chiếu tiến độ thực hiện nhé!
+                      </p>
+                    )}
+                  </div>
+                </div>
+
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* MODAL THỰC HIỆN TỰ ĐÁNH GIÁ SAU BUỔI CỐ VẤN */}
+      {selectedLog && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150 border border-slate-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2.5 rounded-2xl bg-amber-100 text-amber-800 font-black">
+                  <Feather className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">
+                    Tự Đánh Giá Sau Buổi Cố Vấn ({selectedLog.meetingDate ? new Date(selectedLog.meetingDate).toLocaleDateString("vi-VN") : ""})
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">Kết quả sẽ tự động đồng bộ sang Sổ quan sát của Thầy/Cô GVCN</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedLog(null)}
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Summary Context */}
+            <div className="p-3.5 rounded-2xl bg-teal-50/80 border border-teal-200 text-xs font-semibold text-teal-950 space-y-1">
+              <span className="text-[10px] font-black text-teal-800 uppercase block">🚀 Hành động GVCN giao:</span>
+              <p className="font-bold">"{selectedLog.nextActions || "Tiếp tục duy trì kế hoạch học tập hiện tại"}"</p>
+            </div>
+
+            {/* Reflection Textarea */}
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                Nội dung em tự đánh giá / Kết quả tự rèn luyện (*):
+              </label>
+              <textarea
+                rows={4}
+                value={reflectionText}
+                onChange={(e) => setReflectionText(e.target.value)}
+                placeholder="Ví dụ: Em đã hoàn thành 80% thời gian biểu buổi tối, tự tin hơn trong các bài kiểm tra môn Toán và chủ động trao đổi với bạn..."
+                className="w-full p-3 rounded-2xl border border-slate-300 text-xs font-semibold focus:border-amber-500 focus:ring-1 focus:ring-amber-300 bg-white"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setSelectedLog(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-extrabold text-xs hover:bg-slate-50 transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleSaveReflection}
+                disabled={savingReflection || !reflectionText.trim()}
+                className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs flex items-center gap-2 shadow-md transition-all disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{savingReflection ? "Đang lưu tự đánh giá..." : "Lưu & Đồng Bộ Sang GVCN"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )

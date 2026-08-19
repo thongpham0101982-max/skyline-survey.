@@ -1818,6 +1818,7 @@ model AcademicConsultationLog {
   nextActions    String?  // Hanh dong tiep theo
   deadline       DateTime? // Thoi han
   notes          String?  // Ghi chu
+  studentReflection String? // Tu danh gia sau buoi co van tu hoc sinh
   status         String   @default("COMPLETED") // "PENDING", "COMPLETED"
   
   createdAt      DateTime @default(now())
