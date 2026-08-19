@@ -1519,39 +1519,22 @@ export default function TeacherAdvisoryPage() {
             <table className="w-full text-xs text-left border-collapse border border-slate-200">
               <thead>
                 <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                  <th className="p-3.5 border-r border-slate-200 w-12 text-center">STT</th>
-                  <th className="p-3.5 border-r border-slate-200 w-1/5">1. Thông tin Học sinh</th>
-                  <th className="p-3.5 border-r border-slate-200 w-44">2. Phân loại cần giúp đỡ</th>
-                  <th className="p-3.5 border-r border-slate-200 w-36">3. Mức độ khẩn cấp</th>
-                  <th className="p-3.5 border-r border-slate-200">4. Chi tiết điều em muốn Thầy/Cô hỗ trợ</th>
-                  <th className="p-3.5 w-64">5. Phản hồi & Xử lý của GVCN</th>
+                  <th className="p-3.5 border-r border-slate-200 w-44">1. Phân loại cần giúp đỡ</th>
+                  <th className="p-3.5 border-r border-slate-200 w-36">2. Mức độ khẩn cấp</th>
+                  <th className="p-3.5 border-r border-slate-200">3. Chi tiết điều em muốn Thầy/Cô hỗ trợ</th>
+                  <th className="p-3.5 w-72">4. Phản hồi & Xử lý của GVCN</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
                 {helpRequests.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
-                      Chưa có yêu cầu hỗ trợ khẩn cấp (SOS) nào từ học sinh trong lớp {selectedClass?.className}.
+                    <td colSpan={4} className="p-8 text-center text-slate-400 font-bold">
+                      Chưa có yêu cầu hỗ trợ khẩn cấp (SOS) nào từ học sinh {activeStudent ? activeStudent.studentName : ("lớp " + selectedClass?.className)}.
                     </td>
                   </tr>
                 ) : (
-                  helpRequests.map((req, idx) => (
+                  helpRequests.map((req) => (
                     <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 border-r border-slate-200 text-center font-bold text-slate-500 align-top">{idx + 1}</td>
-                      
-                      {/* 1. Học sinh */}
-                      <td className="p-3.5 border-r border-slate-200 bg-slate-50/50 align-top space-y-1">
-                        <span className="font-black text-slate-900 block text-sm">{req.student?.studentName || "Học sinh"}</span>
-                        {req.student?.studentCode ? (
-                          <span className="text-[11px] text-teal-800 font-bold block">Mã HS: {req.student?.studentCode}</span>
-                        ) : null}
-                        <span className="inline-block px-2 py-0.5 rounded bg-slate-200 text-slate-700 text-[10px] font-extrabold">
-                          Lớp {req.student?.class?.className || selectedClass?.className}
-                        </span>
-                        <span className="block text-[10px] text-slate-400 font-medium pt-1">
-                          🕒 {new Date(req.createdAt).toLocaleString("vi-VN")}
-                        </span>
-                      </td>
 
                       {/* 2. Phân loại nội dung cần giúp đỡ */}
                       <td className="p-3.5 border-r border-slate-200 align-top">
