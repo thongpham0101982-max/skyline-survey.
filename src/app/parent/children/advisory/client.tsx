@@ -30,6 +30,7 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
   const [profile, setProfile] = useState<any>(initialProfile || null)
   const [goalsData, setGoalsData] = useState<any>(null)
   const [trackingLogs, setTrackingLogs] = useState<any[]>([])
+  const [parentHelpRequests, setParentHelpRequests] = useState<any[]>([])
   const [consultations, setConsultations] = useState<any[]>([])
   const [termEvals, setTermEvals] = useState<any[]>([])
   
@@ -848,6 +849,57 @@ export default function ParentAdvisoryClient({ initialProfile }: { initialProfil
                   ))}
                 </div>
               )}
+
+              {/* SECTION: YÊU CẦU SOS CỦA CON & PHẢN HỒI GVCN */}
+              <div className="pt-6 border-t border-slate-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-black text-slate-900 uppercase flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
+                    <span>Yêu Cầu Hỗ Trợ Khẩn Cấp (SOS) Của Con & Phản Hồi Từ GVCN ({parentHelpRequests.length})</span>
+                  </h4>
+                </div>
+
+                {parentHelpRequests.length === 0 ? (
+                  <div className="p-6 text-center text-slate-400 font-medium text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                    Con chưa gửi yêu cầu hỗ trợ khẩn cấp (SOS) nào trong thời gian này.
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    {parentHelpRequests.map((req: any, idx: number) => (
+                      <div key={req.id || idx} className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className={"px-3 py-1 rounded-full text-[11px] font-black border " + (
+                            req.status === "RESOLVED" ? "bg-emerald-100 text-emerald-800 border-emerald-300" :
+                            req.status === "PROCESSING" ? "bg-amber-100 text-amber-900 border-amber-300" :
+                            "bg-slate-100 text-slate-700 border-slate-300"
+                          )}>
+                            {req.status === "RESOLVED" ? "🟢 GVCN Đã Xử Lý Xong" : req.status === "PROCESSING" ? "🔵 GVCN Đang Hỗ Trợ / Xử Lý" : "🟡 Chờ Phản Hồi"}
+                          </span>
+                          <span className="text-[10px] font-semibold text-slate-400">
+                            Mốc gửi: {new Date(req.createdAt).toLocaleString("vi-VN")}
+                          </span>
+                        </div>
+
+                        <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-900">
+                          <span className="text-[10px] font-black text-rose-600 uppercase block mb-1">Nội dung con cần giúp đỡ:</span>
+                          "{req.content}"
+                        </div>
+
+                        {req.responseNotes && (
+                          <div className="p-3.5 bg-teal-50 rounded-xl border border-teal-200 text-xs text-teal-950 font-bold space-y-1">
+                            <span className="text-[10px] font-black text-teal-900 uppercase block">💬 Lời nhắn / Phản hồi từ Thầy/Cô GVCN:</span>
+                            <p>"{req.responseNotes}"</p>
+                            <span className="text-[10px] font-semibold text-teal-700 block pt-1 border-t border-teal-200/60 mt-1">
+                              Nhật ký ngày giờ xử lý: {new Date(req.updatedAt || req.resolvedAt || req.createdAt).toLocaleString("vi-VN")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
 

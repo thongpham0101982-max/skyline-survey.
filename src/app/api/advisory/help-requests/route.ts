@@ -98,12 +98,17 @@ export async function PUT(req: Request) {
 
     if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
 
+    const updateData: any = { updatedAt: new Date() }
+    if (status !== undefined) updateData.status = status
+    if (responseNotes !== undefined) updateData.responseNotes = responseNotes
+    if (status === "RESOLVED") updateData.resolvedAt = new Date()
+
     const updated = await prisma.studentHelpRequest.update({
       where: { id },
-      data: {
-        status: status || "PROCESSING",
-        responseNotes: responseNotes || undefined,
-        resolvedAt: status === "RESOLVED" ? new Date() : undefined
+      data: updateData,
+      include: {
+        student: { select: { id: true, studentCode: true, studentName: true } },
+        teacher: { select: { id: true, teacherName: true } }
       }
     })
 
