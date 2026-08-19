@@ -617,3 +617,99 @@ export async function resetCampusTimetableSlots(campusId: string, level: string)
     return { success: false, error: e.message }
   }
 }
+
+
+export async function saveSubjectPeriodQuotaAction(subjectId: string, periodsPerWeek: number) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+
+    if (activeYear) {
+      const existing = await prisma.subjectQuota.findFirst({
+        where: {
+          subjectId: subjectId,
+          academicYearId: activeYear.id
+        }
+      })
+
+      if (existing) {
+        await prisma.subjectQuota.update({
+          where: { id: existing.id },
+          data: { quota: periodsPerWeek }
+        })
+      } else {
+        await prisma.subjectQuota.create({
+          data: {
+            subjectId: subjectId,
+            academicYearId: activeYear.id,
+            quota: periodsPerWeek
+          }
+        })
+      }
+    }
+
+    revalidatePath("/admin/thoi-khoa-bieu")
+    return { success: true }
+  } catch (e: any) {
+    console.error("saveSubjectPeriodQuotaAction error:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+export async function saveTeachingAssignmentQuickAction(data: {
+  classId: string
+  subjectId: string
+  teacherId: string
+}) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const activeYear = await prisma.academicYear.findFirst({
+      where: { status: "ACTIVE" }
+    })
+    if (!activeYear) {
+      return { success: false, error: "Chưa có Năm học Kích hoạt!" }
+    }
+
+    const existing = await prisma.teachingAssignment.findFirst({
+      where: {
+        classId: data.classId,
+        subjectId: data.subjectId,
+        academicYearId: activeYear.id,
+        semester: 1
+      }
+    })
+
+    if (existing) {
+      await prisma.teachingAssignment.update({
+        where: { id: existing.id },
+        data: { teacherId: data.teacherId }
+      })
+    } else {
+      await prisma.teachingAssignment.create({
+        data: {
+          classId: data.classId,
+          subjectId: data.subjectId,
+          teacherId: data.teacherId,
+          academicYearId: activeYear.id,
+          semester: 1
+        }
+      })
+    }
+
+    revalidatePath("/admin/thoi-khoa-bieu")
+    return { success: true }
+  } catch (e: any) {
+    console.error("saveTeachingAssignmentQuickAction error:", e)
+    return { success: false, error: e.message }
+  }
+}

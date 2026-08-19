@@ -22,7 +22,7 @@ import {
   RotateCcw,
   Filter
 } from "lucide-react"
-import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots, applySlotToAllClasses, runAutoSchedulerWith10RulesAction, resetCampusTimetableSlots } from "./actions"
+import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots, applySlotToAllClasses, runAutoSchedulerWith10RulesAction, resetCampusTimetableSlots, saveSubjectPeriodQuotaAction, saveTeachingAssignmentQuickAction } from "./actions"
 import { auditTimetable10Rules, getCampusTravelGap } from "./solver"
 import * as XLSX from "xlsx"
 
@@ -137,6 +137,8 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
   const [shhtPeriod, setShhtPeriod] = useState(1)
   const [isAutoScheduling, setIsAutoScheduling] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
+  const [selectedAssignmentClassId, setSelectedAssignmentClassId] = useState<string>("")
+  const [subjectQuotas, setSubjectQuotas] = useState<Record<string, number>>({})
   const [showAudits, setShowAudits] = useState(false)
 
   const showToast = (msg: string, type: "success" | "error" | "info" | "warning") => {
@@ -778,6 +780,30 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           <UserCheck className="w-4 h-4" />
           3. TRA CỨU THEO GIÁO VIÊN & TỔ CM
         </button>
+
+        <button
+          onClick={() => setMainViewMode("QUOTAS" as any)}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            (mainViewMode as any) === "QUOTAS"
+              ? "bg-amber-600 text-white shadow-md"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <BookOpen className="w-4 h-4" />
+          4. QUY ĐỊNH SỐ TIẾT MÔN HỌC
+        </button>
+
+        <button
+          onClick={() => setMainViewMode("ASSIGNMENTS" as any)}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+            (mainViewMode as any) === "ASSIGNMENTS"
+              ? "bg-indigo-600 text-white shadow-md"
+              : "text-slate-600 hover:bg-slate-100"
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          5. PHÂN CÔNG GV THEO LỚP
+        </button>
       </div>
 
       {/* STEP 1: CONFIG SHHT-CD & AUDIT DASHBOARD */}
@@ -1314,6 +1340,146 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
       )}
 
       {/* TAB 2: TEACHER SCHEDULE LOOKUP VIEW */}
+      {(mainViewMode as any) === "QUOTAS" && (
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6 animate-in fade-in zoom-in duration-200">
+          <div className="flex items-center justify-between border-b border-slate-150 pb-4">
+            <div>
+              <h2 className="text-base font-black text-slate-850 uppercase tracking-wide flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-amber-500" />
+                QUY ĐỊNH SỐ TIẾT THEO MÔN HỌC (QUOTA / TUẦN)
+              </h2>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                Cấu hình định mức số tiết học quy định mỗi tuần cho từng môn học trong chương trình giảng dạy
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {subjects.map((sub: any) => {
+              const currentQ = subjectQuotas[sub.id] || (sub.subjectName === "Toán" || sub.subjectName === "Tiếng Việt" || sub.subjectName === "Tiếng Anh" ? 5 : 2)
+              return (
+                <div key={sub.id} className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-slate-800">{sub.subjectName}</h4>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900">{sub.category || "MOET"}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <label className="text-[11px] font-bold text-slate-500">Số tiết quy định/tuần:</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={currentQ}
+                      onChange={e => {
+                        const val = Number(e.target.value)
+                        setSubjectQuotas(prev => ({ ...prev, [sub.id]: val }))
+                      }}
+                      className="w-20 bg-white border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:border-amber-500"
+                    />
+                    <button
+                      onClick={async () => {
+                        const res = await saveSubjectPeriodQuotaAction(sub.id, currentQ)
+                        if (res.success) showToast(`Đã lưu định mức môn ${sub.subjectName}: ${currentQ} tiết/tuần`, "success")
+                      }}
+                      className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+                    >
+                      Lưu
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {(mainViewMode as any) === "ASSIGNMENTS" && (
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6 animate-in fade-in zoom-in duration-200">
+          <div className="flex items-center justify-between border-b border-slate-150 pb-4">
+            <div>
+              <h2 className="text-base font-black text-slate-850 uppercase tracking-wide flex items-center gap-2">
+                <Layers className="w-5 h-5 text-indigo-600" />
+                PHÂN CÔNG GIÁO VIÊN THEO LỚP HỌC
+              </h2>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                Rà soát và phân công Giáo viên phụ trách giảng dạy cho từng Môn học của các Lớp
+              </p>
+            </div>
+
+            <div className="w-64">
+              <select
+                value={selectedAssignmentClassId}
+                onChange={e => setSelectedAssignmentClassId(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"
+              >
+                <option value="">-- Chọn Lớp học để xem --</option>
+                {displayClasses.map((c: any) => (
+                  <option key={c.id} value={c.id}>Lớp {c.className} ({c.grade || "Cấp"})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {selectedAssignmentClassId ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {subjects.map((sub: any) => {
+                  const assigned = teachingAssignments.find((ta: any) => 
+                    (ta.classId === selectedAssignmentClassId || ta.class?.id === selectedAssignmentClassId) &&
+                    (ta.subjectId === sub.id || ta.subject?.subjectName === sub.subjectName)
+                  )
+                  const currentTeacherId = assigned?.teacherId || assigned?.teacher?.id || ""
+
+                  const slotsCount = slots.filter(s => s.classId === selectedAssignmentClassId && s.subjectName === sub.subjectName).length
+
+                  return (
+                    <div key={sub.id} className="p-4 rounded-2xl border border-slate-200 bg-indigo-50/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-indigo-950">{sub.subjectName}</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                          Đã xếp: {slotsCount} tiết
+                        </span>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-slate-500">Giáo viên phụ trách:</label>
+                        <select
+                          value={currentTeacherId}
+                          onChange={async (e) => {
+                            const tId = e.target.value
+                            if (tId) {
+                              const res = await saveTeachingAssignmentQuickAction({
+                                classId: selectedAssignmentClassId,
+                                subjectId: sub.id,
+                                teacherId: tId
+                              })
+                              if (res.success) {
+                                showToast(`Đã phân công GV phụ trách môn ${sub.subjectName}!`, "success")
+                              }
+                            }
+                          }}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-2.5 py-2 text-xs font-bold text-slate-800 outline-none focus:border-indigo-500"
+                        >
+                          <option value="">-- Chọn GV Phụ trách --</option>
+                          {teachers.map((t: any) => (
+                            <option key={t.id} value={t.id}>{t.teacherName} ({t.teacherCode}) - {t.departmentRel?.name || t.departmentName || "GV"}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="p-12 text-center text-slate-400 font-bold text-xs bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+              Vui lòng chọn 1 Lớp học ở danh sách trên để xem và cấu hình Phân công Giáo viên.
+            </div>
+          )}
+        </div>
+      )}
+
       {mainViewMode === "TEACHER_LOOKUP" && (
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6">
           {/* FILTER CONTROLS */}
