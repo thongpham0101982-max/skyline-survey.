@@ -1519,22 +1519,38 @@ export default function TeacherAdvisoryPage() {
             <table className="w-full text-xs text-left border-collapse border border-slate-200">
               <thead>
                 <tr className="bg-slate-100 text-slate-800 font-black border-b border-slate-300">
-                  <th className="p-3.5 border-r border-slate-200 w-44">1. Phân loại cần giúp đỡ</th>
-                  <th className="p-3.5 border-r border-slate-200 w-36">2. Mức độ khẩn cấp</th>
-                  <th className="p-3.5 border-r border-slate-200">3. Chi tiết điều em muốn Thầy/Cô hỗ trợ</th>
-                  <th className="p-3.5 w-72">4. Phản hồi & Xử lý của GVCN</th>
+                  <th className="p-3.5 border-r border-slate-200 w-36">1. Mốc thời gian</th>
+                  <th className="p-3.5 border-r border-slate-200 w-44">2. Phân loại cần giúp đỡ</th>
+                  <th className="p-3.5 border-r border-slate-200 w-36">3. Mức độ khẩn cấp</th>
+                  <th className="p-3.5 border-r border-slate-200 min-w-[240px]">4. Chi tiết điều em muốn Thầy/Cô hỗ trợ</th>
+                  <th className="p-3.5 border-r border-slate-200 w-44">5. Phản hồi & Xử lý của GVCN</th>
+                  <th className="p-3.5 min-w-[220px]">6. Lời nhắn / Phản hồi từ GVCN</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 font-semibold text-slate-800">
                 {helpRequests.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400 font-bold">
+                    <td colSpan={6} className="p-8 text-center text-slate-400 font-bold">
                       Chưa có yêu cầu hỗ trợ khẩn cấp (SOS) nào từ học sinh {activeStudent ? activeStudent.studentName : ("lớp " + selectedClass?.className)}.
                     </td>
                   </tr>
                 ) : (
                   helpRequests.map((req) => (
                     <tr key={req.id} className="hover:bg-slate-50/80 transition-colors">
+                      {/* 1. Mốc thời gian */}
+                      <td className="p-3.5 border-r border-slate-200 align-top font-bold text-slate-700 whitespace-nowrap bg-slate-50/40">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1.5 text-xs text-slate-900 font-black">
+                            <Clock className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                            <span>{new Date(req.createdAt).toLocaleString("vi-VN")}</span>
+                          </div>
+                          {req.student?.studentName && (
+                            <span className="inline-block text-[10px] text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md font-black border border-teal-200">
+                              HS: {req.student.studentName}
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
                       {/* 2. Phân loại nội dung cần giúp đỡ */}
                       <td className="p-3.5 border-r border-slate-200 align-top">
@@ -1570,72 +1586,58 @@ export default function TeacherAdvisoryPage() {
 
                       {/* 4. Viết chi tiết điều em muốn thầy cô hỗ trợ */}
                       <td className="p-3.5 border-r border-slate-200 align-top space-y-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold text-slate-500 pb-1.5 border-b border-slate-100">
-                          <span className="flex items-center gap-1.5 text-slate-600 font-semibold">
-                            <Clock className="w-3.5 h-3.5 text-rose-500" />
-                            <span>Thời gian gửi: <strong className="text-slate-800">{new Date(req.createdAt).toLocaleString("vi-VN")}</strong></span>
-                          </span>
-                          {req.student?.studentName && (
-                            <span className="text-[10px] text-teal-800 bg-teal-50 px-2 py-0.5 rounded-lg font-black border border-teal-200">
-                              HS: {req.student.studentName}
-                            </span>
-                          )}
-                        </div>
                         <div className="p-3 rounded-2xl bg-rose-50/50 border border-rose-100 text-slate-900 text-xs font-bold leading-relaxed">
                           "{req.content}"
                         </div>
                       </td>
 
                       {/* 5. Phản hồi & Xử lý của GVCN */}
-                      <td className="p-3.5 align-top space-y-2">
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Trạng thái xử lý:</label>
-                          <select
-                            value={req.status || "PENDING"}
-                            onChange={async (e) => {
-                              const newStatus = e.target.value
-                              await fetch("/api/advisory/help-requests", {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: req.id, status: newStatus })
-                              })
-                              fetch("/api/advisory/help-requests?classId=" + selectedClassId)
-                                .then(r => r.json())
-                                .then(d => { if (Array.isArray(d)) setHelpRequests(d) })
-                            }}
-                            className={
-                              req.status === "RESOLVED"
-                                ? "w-full p-2 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-emerald-100 text-emerald-900 border-emerald-300"
-                                : req.status === "PROCESSING"
-                                ? "w-full p-2 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-amber-100 text-amber-900 border-amber-300"
-                                : "w-full p-2 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-slate-100 text-slate-800 border-slate-300"
-                            }
-                          >
-                            <option value="PENDING">🟡 Chờ phản hồi</option>
-                            <option value="PROCESSING">🔵 Đang hỗ trợ</option>
-                            <option value="RESOLVED">🟢 Đã xử lý xong</option>
-                          </select>
-                        </div>
+                      <td className="p-3.5 border-r border-slate-200 align-top">
+                        <select
+                          value={req.status || "PENDING"}
+                          onChange={async (e) => {
+                            const newStatus = e.target.value
+                            await fetch("/api/advisory/help-requests", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: req.id, status: newStatus })
+                            })
+                            fetch("/api/advisory/help-requests?classId=" + selectedClassId)
+                              .then(r => r.json())
+                              .then(d => { if (Array.isArray(d)) setHelpRequests(d) })
+                          }}
+                          className={
+                            req.status === "RESOLVED"
+                              ? "w-full p-2.5 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-emerald-100 text-emerald-900 border-emerald-300 shadow-2xs"
+                              : req.status === "PROCESSING"
+                              ? "w-full p-2.5 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-amber-100 text-amber-900 border-amber-300 shadow-2xs"
+                              : "w-full p-2.5 rounded-xl text-xs font-black border focus:outline-none cursor-pointer bg-slate-100 text-slate-800 border-slate-300 shadow-2xs"
+                          }
+                        >
+                          <option value="PENDING">🟡 Chờ phản hồi</option>
+                          <option value="PROCESSING">🔵 Đang hỗ trợ</option>
+                          <option value="RESOLVED">🟢 Đã xử lý xong</option>
+                        </select>
+                      </td>
 
-                        <div className="space-y-1.5">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Lời nhắn / Phản hồi từ GVCN:</label>
-                          <textarea
-                            rows={2}
-                            defaultValue={req.responseNotes || ""}
-                            onBlur={async (e) => {
-                              const noteVal = e.target.value
-                              await fetch("/api/advisory/help-requests", {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: req.id, responseNotes: noteVal, status: req.status || "PROCESSING" })
-                              })
-                              setToastMessage("Đã lưu lời nhắn phản hồi SOS cho học sinh!")
-                              setTimeout(() => setToastMessage(""), 3000)
-                            }}
-                            placeholder="Nhập lời nhắn hỗ trợ học sinh..."
-                            className="w-full p-2 rounded-xl border border-slate-200 text-xs font-semibold bg-white"
-                          />
-                        </div>
+                      {/* 6. Lời nhắn / Phản hồi từ GVCN */}
+                      <td className="p-3.5 align-top">
+                        <textarea
+                          rows={3}
+                          defaultValue={req.responseNotes || ""}
+                          onBlur={async (e) => {
+                            const noteVal = e.target.value
+                            await fetch("/api/advisory/help-requests", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: req.id, responseNotes: noteVal, status: req.status || "PROCESSING" })
+                            })
+                            setToastMessage("Đã lưu lời nhắn phản hồi SOS cho học sinh!")
+                            setTimeout(() => setToastMessage(""), 3000)
+                          }}
+                          placeholder="Nhập lời nhắn hỗ trợ học sinh..."
+                          className="w-full p-2.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white focus:border-teal-500 focus:ring-1 focus:ring-teal-300"
+                        />
                       </td>
                     </tr>
                   ))
