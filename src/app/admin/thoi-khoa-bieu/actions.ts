@@ -133,6 +133,19 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       console.error("Error fetching timetableSlots:", e)
     }
 
+    let teachingAssignments: any[] = []
+    try {
+      teachingAssignments = await prisma.teachingAssignment.findMany({
+        include: {
+          teacher: { select: { id: true, teacherName: true, teacherCode: true, departmentId: true } },
+          subject: { select: { id: true, subjectName: true, subjectCode: true } },
+          class: { select: { id: true, className: true, level: true, grade: true } }
+        }
+      })
+    } catch (e) {
+      console.error("Error fetching teachingAssignments:", e)
+    }
+
     return {
       success: true,
       campuses: campuses || [],
@@ -141,6 +154,7 @@ export async function getTimetableMatrixData(campusId?: string, level: string = 
       subjects: subjects || [],
       teachers: teachers || [],
       timetableSlots: timetableSlots || [],
+      teachingAssignments: teachingAssignments || [],
       academicYear: activeYear
     }
   } catch (e: any) {
@@ -523,6 +537,58 @@ export async function applySlotToAllClasses(data: {
     }
   } catch (e: any) {
     console.error("applySlotToAllClasses error:", e)
+    return { success: false, error: e.message }
+  }
+}
+
+
+export async function runAutoSchedulerWith10RulesAction(
+  campusId: string,
+  level: string,
+  shhtConfig?: any
+) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    const initialData = await getTimetableMatrixData(campusId, level)
+    if (!initialData.success) {
+      return { success: false, error: "Không thể nạp dữ liệu lập lịch!" }
+    }
+
+    const { autoScheduleTimetableWith10Rules } = await import("./solver")
+    const res = autoScheduleTimetableWith10Rules(
+      campusId,
+      level,
+      initialData.classes,
+      initialData.subjects,
+      initialData.teachers,
+      initialData.teachingAssignments,
+      initialData.timetableSlots,
+      shhtConfig
+    )
+
+    if (!res.success || !Array.isArray(res.generatedSlots)) {
+      return { success: false, error: "Không thể tự động xếp thời khóa biểu!" }
+    }
+
+    const saveRes = await batchSaveAllTimetableSlots(campusId, level, res.generatedSlots)
+    if (!saveRes.success) {
+      return { success: false, error: saveRes.error || "Lỗi khi lưu thời khóa biểu tự động!" }
+    }
+
+    revalidatePath("/admin/thoi-khoa-bieu")
+    revalidatePath("/teacher/thoi-khoa-bieu")
+
+    return {
+      success: true,
+      stats: res.stats,
+      generatedSlots: res.generatedSlots
+    }
+  } catch (e: any) {
+    console.error("runAutoSchedulerWith10RulesAction error:", e)
     return { success: false, error: e.message }
   }
 }

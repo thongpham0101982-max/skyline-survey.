@@ -21,7 +21,8 @@ import {
   Search,
   Filter
 } from "lucide-react"
-import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots, applySlotToAllClasses } from "./actions"
+import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots, applySlotToAllClasses, runAutoSchedulerWith10RulesAction } from "./actions"
+import { auditTimetable10Rules, getCampusTravelGap } from "./solver"
 import * as XLSX from "xlsx"
 
 const DAYS = [
@@ -72,6 +73,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
     subjects = [],
     teachers = [],
     timetableSlots: serverSlots = [],
+    teachingAssignments = [],
     academicYear
   } = initialData || {}
 
@@ -126,6 +128,14 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
   const [editColorCode, setEditColorCode] = useState("#FEF08A")
   const [editDepartment, setEditDepartment] = useState("ALL")
   const [editAltDepartment, setEditAltDepartment] = useState("ALL")
+
+  // Step 1 SHHT-CD Config State
+  const [shhtMode, setShhtMode] = useState<"PRESERVE" | "DEFAULT" | "CUSTOM">("DEFAULT")
+  const [shhtDay, setShhtDay] = useState("MONDAY")
+  const [shhtSession, setShhtSession] = useState("MORNING")
+  const [shhtPeriod, setShhtPeriod] = useState(1)
+  const [isAutoScheduling, setIsAutoScheduling] = useState(false)
+  const [showAudits, setShowAudits] = useState(false)
 
   const showToast = (msg: string, type: "success" | "error" | "info" | "warning") => {
     setToast({ msg, type })
@@ -279,6 +289,36 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
       setEditAltDepartment(altDept)
     } else {
       setEditAltDepartment("ALL")
+    }
+  }
+
+  // Constraint Audit Memo
+  const constraintAudits = useMemo(() => {
+    return auditTimetable10Rules(slots, classes, teachers, subjects, teachingAssignments)
+  }, [slots, classes, teachers, subjects, teachingAssignments])
+
+  // Run Auto-Scheduler Engine (10 Rules)
+  const handleRunAutoScheduler = async () => {
+    if (!confirm("Tự động xếp Thời khóa biểu cho tất cả các lớp dựa trên Phân công giảng dạy và 10 Quy tắc Ràng buộc? Các tiết hiện có sẽ được giữ nguyên hoặc điền tự động.")) return
+    setIsAutoScheduling(true)
+    try {
+      const res = await runAutoSchedulerWith10RulesAction(currentCampusId, activeLevel, {
+        mode: shhtMode,
+        dayOfWeek: shhtDay,
+        session: shhtSession,
+        periodNumber: shhtPeriod
+      })
+      if (res.success && Array.isArray(res.generatedSlots)) {
+        setSlots(res.generatedSlots)
+        showToast(res.stats?.message || "Đã tự động xếp Thời khóa biểu thành công!", "success")
+        setShowAudits(true)
+      } else {
+        showToast(res.error || "Không thể tự động xếp thời khóa biểu!", "error")
+      }
+    } catch (e: any) {
+      showToast(e.message || "Có lỗi xảy ra khi tự động chia TKB!", "error")
+    } finally {
+      setIsAutoScheduling(false)
     }
   }
 
@@ -1400,8 +1440,24 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                   <select
                     value={editSubjectName}
                     onChange={e => {
-                      setEditSubjectName(e.target.value)
-                      setEditColorCode(SUBJECT_COLORS[e.target.value] || "#FEF08A")
+                      const selSub = e.target.value
+                      setEditSubjectName(selSub)
+                      setEditColorCode(SUBJECT_COLORS[selSub] || "#FEF08A")
+                      if (selSub && editingCell?.classId && Array.isArray(teachingAssignments)) {
+                        const assigned = teachingAssignments.find((ta: any) => 
+                          (ta.classId === editingCell.classId || ta.class?.id === editingCell.classId) &&
+                          (ta.subject?.subjectName === selSub || ta.subjectName === selSub)
+                        )
+                        if (assigned) {
+                          const tName = assigned.teacher?.teacherName || assigned.teacherName
+                          if (tName) {
+                            setEditTeacherName(tName)
+                            const tObj = teachers.find((t: any) => t.teacherName === tName)
+                            const tDept = tObj?.departmentRel?.name || tObj?.departmentName
+                            if (tDept) setEditDepartment(tDept)
+                          }
+                        }
+                      }
                     }}
                     className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 bg-white"
                   >
