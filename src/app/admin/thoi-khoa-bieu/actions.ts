@@ -592,3 +592,28 @@ export async function runAutoSchedulerWith10RulesAction(
     return { success: false, error: e.message }
   }
 }
+
+
+export async function resetCampusTimetableSlots(campusId: string, level: string) {
+  try {
+    const session = await auth()
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" }
+    }
+
+    await prisma.timetableSlot.deleteMany({
+      where: {
+        campusId: campusId,
+        level: level
+      }
+    })
+
+    revalidatePath("/admin/thoi-khoa-bieu")
+    revalidatePath("/teacher/thoi-khoa-bieu")
+
+    return { success: true }
+  } catch (e: any) {
+    console.error("resetCampusTimetableSlots error:", e)
+    return { success: false, error: e.message }
+  }
+}

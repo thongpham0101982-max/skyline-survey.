@@ -19,9 +19,10 @@ import {
   Check, 
   X,
   Search,
+  RotateCcw,
   Filter
 } from "lucide-react"
-import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots, applySlotToAllClasses, runAutoSchedulerWith10RulesAction } from "./actions"
+import { saveTimetableSlot, clearTimetableSlot, batchSaveAllTimetableSlots, applySlotToAllClasses, runAutoSchedulerWith10RulesAction, resetCampusTimetableSlots } from "./actions"
 import { auditTimetable10Rules, getCampusTravelGap } from "./solver"
 import * as XLSX from "xlsx"
 
@@ -135,6 +136,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
   const [shhtSession, setShhtSession] = useState("MORNING")
   const [shhtPeriod, setShhtPeriod] = useState(1)
   const [isAutoScheduling, setIsAutoScheduling] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   const [showAudits, setShowAudits] = useState(false)
 
   const showToast = (msg: string, type: "success" | "error" | "info" | "warning") => {
@@ -296,6 +298,25 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
   const constraintAudits = useMemo(() => {
     return auditTimetable10Rules(slots, classes, teachers, subjects, teachingAssignments)
   }, [slots, classes, teachers, subjects, teachingAssignments])
+
+  // Reset Timetable Slots for Current Campus & Level
+  const handleResetTimetable = async () => {
+    if (!confirm("Bạn có chắc chắn muốn XÓA TOÀN BỘ Thời khóa biểu hiện tại của Cơ sở và Cấp học này để làm lại từ đầu không? Hành động này không thể hoàn tác!")) return
+    setIsResetting(true)
+    try {
+      const res = await resetCampusTimetableSlots(currentCampusId, activeLevel)
+      if (res.success) {
+        setSlots([])
+        showToast("Đã Reset toàn bộ Thời khóa biểu thành công!", "info")
+      } else {
+        showToast(res.error || "Không thể reset Thời khóa biểu!", "error")
+      }
+    } catch (e: any) {
+      showToast(e.message || "Có lỗi xảy ra khi Reset!", "error")
+    } finally {
+      setIsResetting(false)
+    }
+  }
 
   // Run Auto-Scheduler Engine (10 Rules)
   const handleRunAutoScheduler = async () => {
@@ -706,6 +727,16 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
           >
             <Download className="w-4 h-4" />
             Xuất Excel Mẫu Trường
+          </button>
+
+          <button
+            onClick={handleResetTimetable}
+            disabled={isResetting}
+            className="px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            title="Xóa toàn bộ các tiết học hiện tại của Cơ sở & Cấp học này để làm mới"
+          >
+            <RotateCcw className="w-4 h-4" />
+            {isResetting ? "Đang xóa..." : "RESET TKB"}
           </button>
         </div>
       </div>
