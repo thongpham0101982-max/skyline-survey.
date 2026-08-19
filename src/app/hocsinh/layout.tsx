@@ -45,9 +45,8 @@ export default function HocSinhLayout({ children }: { children: React.ReactNode 
     { href: "/hocsinh/portal", label: "Trang chủ", icon: Home },
     { href: "/hocsinh/hs-khaosat/danh-sach", label: "1. Khảo sát Học sinh", icon: ClipboardCheck },
     { href: "/hocsinh/portal/muc-tieu", label: "2. Sổ Mục tiêu năm học", icon: Compass },
-    { href: "/hocsinh/portal/nhat-ky-co-van", label: "3. Nhật ký Cố vấn GVCN", icon: BookOpen },
-    { href: "/hocsinh/portal/reflection", label: "4. Tự đánh giá (Reflection)", icon: Feather },
-    { href: "/hocsinh/portal/ho-tro", label: "5. Em Cần Hỗ Trợ (SOS)", icon: Heart }
+    { href: "/hocsinh/portal/nhat-ky-co-van", label: "3. Nhật ký Cố vấn & Tự đánh giá", icon: BookOpen },
+    { href: "/hocsinh/portal/ho-tro", label: "4. Em Cần Hỗ Trợ (SOS)", icon: Heart }
   ]
 
   return (

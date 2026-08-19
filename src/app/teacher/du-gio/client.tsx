@@ -294,11 +294,8 @@ export function ObservationClient(props: ObservationClientProps) {
   }, [slots, currentTeacher?.id]);
 
 
-  // Filter classes for GVBM request form based on Level, Grade, Campus, and AcademicYear
+  // Filter classes for GVBM request form based on Level, Grade, and Campus (if selected)
   const filteredReqClasses = useMemo(() => {
-    const activeYearId = filterAcademicYearId || selectedYearId || "";
-    const effectiveCampusId = reqCampusId || currentTeacher?.campusId || "";
-
     let cleanDbLevel = "";
     if (reqLevel && reqLevel !== "all") {
       if (reqLevel === "Tiểu học") cleanDbLevel = "tieu hoc";
@@ -311,8 +308,8 @@ export function ObservationClient(props: ObservationClientProps) {
     const numGrade = reqGrade ? reqGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
 
     return classes.filter((c: any) => {
-      if (activeYearId && c.academicYearId && c.academicYearId !== activeYearId) return false;
-      if (effectiveCampusId && c.campusId !== effectiveCampusId) return false;
+      // Filter by campus ONLY if user explicitly selected a campus
+      if (reqCampusId && reqCampusId !== "all" && c.campusId !== reqCampusId) return false;
 
       if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
         const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -330,7 +327,7 @@ export function ObservationClient(props: ObservationClientProps) {
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
       return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
-  }, [classes, reqLevel, reqGrade, reqCampusId, currentTeacher?.campusId, filterAcademicYearId, selectedYearId]);
+  }, [classes, reqLevel, reqGrade, reqCampusId]);
 
 
   // Filter teachers for request form by selected department
@@ -735,8 +732,8 @@ export function ObservationClient(props: ObservationClientProps) {
   }
 
   const filteredClassesForCreation = useMemo(() => {
+    if (!newLevel) return [];
     const effectiveCampusId = newCampusId || currentTeacher?.campusId || "";
-    if (!effectiveCampusId || !newLevel) return [];
 
     let cleanDbLevel = "";
     if (newLevel === "Tiểu học") cleanDbLevel = "tieu hoc";
@@ -749,7 +746,6 @@ export function ObservationClient(props: ObservationClientProps) {
     const activeYearId = filterAcademicYearId || selectedYearId || "";
 
     return classes.filter(c => {
-      if (activeYearId && c.academicYearId && c.academicYearId !== activeYearId) return false;
       if (effectiveCampusId && c.campusId !== effectiveCampusId) return false;
 
       if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
@@ -776,7 +772,6 @@ export function ObservationClient(props: ObservationClientProps) {
     const effectiveCampusId = newCampusId || reqCampusId || currentTeacher?.campusId || "";
     const gradeSet = new Set<string>();
     classes.forEach((cls: any) => {
-      if (activeYearId && cls.academicYearId && cls.academicYearId !== activeYearId) return;
       if (effectiveCampusId && cls.campusId !== effectiveCampusId) return;
       const lvlClean = (cls.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
       if (lvlClean !== "mam non") return;
@@ -1792,17 +1787,30 @@ export function ObservationClient(props: ObservationClientProps) {
                   <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">8. Chọn Lớp học *</label>
                   <select
                     value={reqClassId}
-                    onChange={e => setReqClassId(e.target.value)}
+                    onChange={e => {
+                      const selectedId = e.target.value;
+                      setReqClassId(selectedId);
+                      if (selectedId) {
+                        const selClass = classes.find((c: any) => c.id === selectedId);
+                        if (selClass && selClass.campusId && !reqCampusId) {
+                          setReqCampusId(selClass.campusId);
+                        }
+                      }
+                    }}
                     required
                     disabled={!reqGrade}
                     className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn lớp học --</option>
-                    {filteredReqClasses.map((c: any) => (
-                      <option key={c.id} value={c.id}>
-                        {c.className} ({c.level || c.grade})
-                      </option>
-                    ))}
+                    {filteredReqClasses.map((c: any) => {
+                      const campusObj = campuses.find((cp: any) => cp.id === c.campusId);
+                      const campusLabel = campusObj ? campusObj.campusName : "";
+                      return (
+                        <option key={c.id} value={c.id}>
+                          {c.className} {campusLabel ? `(${campusLabel})` : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>

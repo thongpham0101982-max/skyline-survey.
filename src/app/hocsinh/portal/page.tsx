@@ -124,7 +124,7 @@ export default function StudentPortalHomePage() {
         </div>
 
         {/* 6 Responsive Main Feature Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
           {/* CHỨC NĂNG 1: KHẢO SÁT HỌC SINH */}
           <Link
@@ -192,7 +192,7 @@ export default function StudentPortalHomePage() {
             </div>
           </Link>
 
-          {/* CHỨC NĂNG 3: NHẬT KÝ CỐ VẤN GVCN */}
+          {/* CHỨC NĂNG 3: NHẬT KÝ CỐ VẤN & TỰ ĐÁNH GIÁ */}
           <Link
             href="/hocsinh/portal/nhat-ky-co-van"
             className="group relative overflow-hidden bg-white rounded-3xl p-6 border-2 border-slate-200 hover:border-blue-500 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
@@ -209,56 +209,23 @@ export default function StudentPortalHomePage() {
                   CHỨC NĂNG 3
                 </span>
                 <h3 className="text-lg font-black text-slate-900 mt-2 group-hover:text-blue-700 transition-colors">
-                  3. Nhật Ký Cố Vấn GVCN
+                  3. Nhật Ký Cố Vấn & Tự Đánh Giá
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
-                  Xem lại nội dung các buổi làm việc trực tiếp, tháo gỡ khó khăn, kế hoạch và thời hạn do GVCN lưu nhật ký.
+                  Xem lại nội dung cố vấn từ GVCN, thực hiện Tự Đánh Giá Sau Cố Vấn (đồng bộ GVCN) & viết Nhật ký tự phản chiếu cảm xúc (Reflection).
                 </p>
               </div>
             </div>
 
             <div className="pt-5 relative z-10 flex items-center justify-between border-t border-slate-100 mt-5">
-              <span className="text-xs font-extrabold text-blue-700">Xem sổ nhật ký</span>
+              <span className="text-xs font-extrabold text-blue-700">Mở Nhật Ký & Tự Đánh Giá</span>
               <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
                 <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
               </div>
             </div>
           </Link>
 
-          {/* CHỨC NĂNG 4: TỰ ĐÁNH GIÁ (REFLECTION) */}
-          <Link
-            href="/hocsinh/portal/reflection"
-            className="group relative overflow-hidden bg-white rounded-3xl p-6 border-2 border-slate-200 hover:border-emerald-500 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-          >
-            <div className="absolute right-0 top-0 w-28 h-28 bg-emerald-500/10 rounded-bl-full transition-transform group-hover:scale-110 pointer-events-none" />
-
-            <div className="space-y-3.5 relative z-10">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/30 group-hover:-rotate-6 transition-transform">
-                <Feather className="w-6 h-6" />
-              </div>
-
-              <div>
-                <span className="text-[10px] font-black text-emerald-800 uppercase tracking-widest bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  CHỨC NĂNG 4
-                </span>
-                <h3 className="text-lg font-black text-slate-900 mt-2 group-hover:text-emerald-700 transition-colors">
-                  4. Tự Đánh Giá (Reflection)
-                </h3>
-                <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
-                  Viết nhật ký tự phản chiếu cảm xúc, rèn luyện kỹ năng sống và nhìn lại sự tiến bộ bản thân.
-                </p>
-              </div>
-            </div>
-
-            <div className="pt-5 relative z-10 flex items-center justify-between border-t border-slate-100 mt-5">
-              <span className="text-xs font-extrabold text-emerald-700">Viết tự đánh giá</span>
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all">
-                <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
-              </div>
-            </div>
-          </Link>
-
-          {/* CHỨC NĂNG 5: EM CẦN HỖ TRỢ (SOS) */}
+          {/* CHỨC NĂNG 4: EM CẦN HỖ TRỢ (SOS) */}
           <Link
             href="/hocsinh/portal/ho-tro"
             className="group relative overflow-hidden bg-white rounded-3xl p-6 border-2 border-slate-200 hover:border-rose-500 shadow-md hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
@@ -275,7 +242,7 @@ export default function StudentPortalHomePage() {
                   CHỨC NĂNG 5
                 </span>
                 <h3 className="text-lg font-black text-slate-900 mt-2 group-hover:text-rose-700 transition-colors">
-                  5. Em Cần Hỗ Trợ (SOS)
+                  4. Em Cần Hỗ Trợ (SOS)
                 </h3>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1">
                   Gửi yêu cầu giúp đỡ trực tiếp tới GVCN Lớp {className}, xem trạng thái xử lý và lời nhắn hỗ trợ.
