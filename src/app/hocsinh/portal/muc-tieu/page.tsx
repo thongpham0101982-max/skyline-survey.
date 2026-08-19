@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { GoalMultiSelector } from "@/components/advisory/GoalMultiSelector"
+import { K1GoalForm, K1GoalData } from "@/components/advisory/K1GoalForm"
 
 export default function StudentGoalPortalPage() {
   const [studentId, setStudentId] = useState("")
@@ -26,6 +27,7 @@ export default function StudentGoalPortalPage() {
 
   // Goal Form Data States - Dynamic Multi Custom Goals per Category
   const [selectedPresetGoals, setSelectedPresetGoals] = useState<Record<string, boolean>>({})
+  const [k1GoalsList, setK1GoalsList] = useState<K1GoalData[]>([])
   const [customGoals, setCustomGoals] = useState<Record<string, any>>({
     HOC_TAP: { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" },
     THOI_QUEN: { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" },
@@ -52,14 +54,22 @@ export default function StudentGoalPortalPage() {
           setStudentName(data.studentName)
           setClassName(data.className || "")
           
-          let parsedGrade = "K8"
-          if (data.grade) {
-            const gNum = String(data.grade).replace(/[^0-9]/g, "")
-            if (gNum) parsedGrade = "K" + gNum
-          } else if (data.className) {
-            const match = data.className.toUpperCase().match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
-            if (match && match[1]) parsedGrade = "K" + match[1]
+          function parseGradeLevel(gInput: any, cInput: any): string {
+            const gStr = String(gInput || "").trim()
+            const cStr = String(cInput || "").trim()
+            const combined = (gStr + " " + cStr).toUpperCase()
+            
+            if (cStr.startsWith("1.") || cStr.startsWith("1INT") || cStr.startsWith("1UK") || cStr.startsWith("1S") || combined.includes("KHỐI 1") || combined.includes("LỚP 1") || gStr === "1" || gStr === "K1") {
+              return "K1"
+            }
+            const match = combined.match(/(?:KHỐI|LỚP|K)?\s*(\d{1,2})/)
+            if (match && match[1]) {
+              return "K" + parseInt(match[1], 10)
+            }
+            return "K1"
           }
+
+          let parsedGrade = parseGradeLevel(data.grade, data.className)
 
           setStudentGrade(parsedGrade)
           setGradeLevel(parsedGrade)
@@ -90,6 +100,13 @@ export default function StudentGoalPortalPage() {
         if (data.existingSheet) {
           setStudentCommitment(data.existingSheet.studentCommitment || "")
           setFingerprintStamped(!!data.existingSheet.signedByStudent)
+          const loadedK1: K1GoalData[] = (data.existingSheet.goals || []).map((g: any) => ({
+            category: g.category,
+            targetText: g.targetText || "",
+            actionText: g.actions?.[0]?.actionText || ""
+          }))
+          setK1GoalsList(loadedK1)
+
           if (data.existingSheet.submittedAt) {
             setSubmittedAt(new Date(data.existingSheet.submittedAt).toLocaleDateString("vi-VN"))
           }
@@ -133,6 +150,54 @@ export default function StudentGoalPortalPage() {
       console.error(e)
     } finally {
       setLoading(false)
+    }
+  }
+
+  
+  async function handleSaveK1Goals(data: { goals: K1GoalData[]; studentCommitment: string; fingerprintStamped: boolean }) {
+    if (submittedAt) {
+      alert("Phiếu mục tiêu đã được gửi cho GVCN nên không thể chỉnh sửa.")
+      return
+    }
+    if (!studentId) {
+      alert("Chưa xác định được thông tin học sinh. Vui lòng đăng nhập lại.")
+      return
+    }
+    try {
+      setSaving(true)
+      const goalListPayload = data.goals.map(g => ({
+        category: g.category,
+        targetText: g.targetText,
+        actions: g.actionText ? [{ actionText: g.actionText }] : []
+      }))
+
+      const res = await fetch("/api/advisory/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentId,
+          academicYearId,
+          gradeLevel: "K1",
+          goals: goalListPayload,
+          studentCommitment: data.studentCommitment,
+          signedByStudent: data.fingerprintStamped
+        })
+      })
+
+      const resData = await res.json().catch(() => ({}))
+      if (res.ok && resData.success) {
+        setSubmittedAt(new Date().toLocaleDateString("vi-VN"))
+        setToastMessage("Đã LƯU & GỬI BẢNG MỤC TIÊU KHỐI 1 về Quản lý Cố Vấn Học Tập & GVCN thành công!")
+        setTimeout(() => setToastMessage(""), 5000)
+        fetchGoalsForStudent(studentId, gradeLevel)
+      } else {
+        alert(resData.error || "Lỗi khi lưu phiếu mục tiêu. Vui lòng thử lại.")
+      }
+    } catch (e: any) {
+      console.error(e)
+      alert("Lỗi kết nối khi lưu phiếu: " + (e.message || "Vui lòng thử lại."))
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -206,7 +271,7 @@ export default function StudentGoalPortalPage() {
     }
   }
 
-  const isK1 = gradeLevel === "K1"
+  const isK1 = gradeLevel === "K1" || gradeLevel === "1" || studentGrade === "K1" || (className && (className.startsWith("1.") || className.startsWith("1INT") || className.startsWith("1UK") || className.startsWith("1S") || className.includes("Khối 1")))
   const isSubmitted = !!submittedAt
 
   // 4 Target Categories matching official Word/PDF Form Template
@@ -255,6 +320,22 @@ export default function StudentGoalPortalPage() {
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black bg-white/20 uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
             <span>MỤC TIÊU NĂM HỌC 2026 - 2027 — KHỐI {gradeLevel.replace("K", "")}</span>
+          </div>
+
+          <div className="flex items-center gap-2 select-grade-level-switcher">
+            <span className="text-xs font-bold text-teal-100">Chuyển xem Khối:</span>
+            <select
+              value={gradeLevel}
+              onChange={(e) => setGradeLevel(e.target.value)}
+              className="px-3 py-1 rounded-xl bg-white/20 text-white font-extrabold text-xs focus:outline-none border border-white/30 cursor-pointer"
+            >
+              <option value="K1" className="text-slate-800">🎒 Khối 1 (Mẫu Mới)</option>
+              <option value="K2" className="text-slate-800">Khối 2</option>
+              <option value="K3" className="text-slate-800">Khối 3</option>
+              <option value="K4" className="text-slate-800">Khối 4 - 5</option>
+              <option value="K8" className="text-slate-800">Khối 6 - 8</option>
+              <option value="K9" className="text-slate-800">Khối 9 - 12</option>
+            </select>
           </div>
 
           <div className="flex items-center gap-2">
@@ -326,62 +407,138 @@ export default function StudentGoalPortalPage() {
       )}
 
       {isK1 ? (
-        <div className="bg-sky-50 border-2 border-sky-200 rounded-3xl p-6 text-sky-950 text-center space-y-2">
-          <div className="text-4xl">🎒</div>
-          <h3 className="font-black text-sm uppercase">PHIẾU MỤC TIÊU HỌC SINH KHỐI 1</h3>
-          <p className="text-xs font-medium text-sky-800">
-            Hệ thống Mẫu Mục Tiêu linh động áp dụng chính thức từ <strong>Khối 2 đến Khối 12</strong>. Học sinh Khối 1 thực hiện theo hướng dẫn trực tiếp từ Thầy Cô GVCN tại lớp.
-          </p>
-        </div>
+        <K1GoalForm
+          studentName={studentName}
+          className={className}
+          academicYear="2026 - 2027"
+          initialGoals={k1GoalsList}
+          initialCommitment={studentCommitment}
+          initialFingerprint={fingerprintStamped}
+          isSubmitted={isSubmitted}
+          submittedAt={submittedAt}
+          onSave={handleSaveK1Goals}
+          saving={saving}
+        />
       ) : (
-        /* ------------------- FORM ĐIỀN MỤC TIÊU LINH ĐỘNG (TỰ ĐỘNG KHỚP HÀNH ĐỘNG GỢI Ý) ------------------- */
-        <div className="space-y-6">
-          <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="text-3xl">✨</div>
-              <div>
-                <h3 className="font-black text-sm uppercase text-teal-900">BẢNG LẬP MỤC TIÊU NĂM HỌC — LỰA CHỌN LINH ĐỘNG (KHỐI 2 - KHỐI 12)</h3>
-                <p className="text-xs text-teal-700 font-medium">
-                  Em hãy tự điền các <strong>mục tiêu cụ thể của mình</strong> bên dưới cùng <strong>hành động cụ thể</strong> và <strong>nội dung mong muốn Thầy Cô / Ba Mẹ hỗ trợ</strong>.
-                </p>
+        <>
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-teal-50 to-emerald-50 border-2 border-teal-200 rounded-3xl p-5 text-teal-950 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="text-3xl">✨</div>
+                <div>
+                  <h3 className="font-black text-sm uppercase text-teal-900">BẢNG LẬP MỤC TIÊU NĂM HỌC — LỰA CHỌN LINH ĐỘNG (KHỐI 2 - KHỐI 12)</h3>
+                  <p className="text-xs text-teal-700 font-medium">
+                    Em hãy tự điền các <strong>mục tiêu cụ thể của mình</strong> bên dưới cùng <strong>hành động cụ thể</strong> và <strong>nội dung mong muốn Thầy Cô / Ba Mẹ hỗ trợ</strong>.
+                  </p>
+                </div>
               </div>
+              <span className="px-3 py-1.5 bg-teal-700 text-white rounded-2xl font-black text-xs shrink-0 shadow-xs">
+                Khối {gradeLevel.replace("K", "")}
+              </span>
             </div>
-            <span className="px-3 py-1.5 bg-teal-700 text-white rounded-2xl font-black text-xs shrink-0 shadow-xs">
-              Khối {gradeLevel.replace("K", "")}
-            </span>
+
+            {secondaryCategories.map((catObj) => {
+              const item = customGoals[catObj.key] || { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" }
+              return (
+                <div key={catObj.key} className="space-y-4">
+                  <GoalMultiSelector
+                    categoryKey={catObj.key}
+                    categoryTitle={`${catObj.number}. ${catObj.title}`}
+                    categoryHint={catObj.hint}
+                    presets={presets}
+                    selectedPresetIds={Object.keys(selectedPresetGoals).filter(id => selectedPresetGoals[id])}
+                    onSelectionChange={(selectedIds) => {
+                      const updatedMap = { ...selectedPresetGoals }
+                      presets.filter(p => p.category === catObj.key).forEach(p => {
+                        updatedMap[p.id] = selectedIds.includes(p.id)
+                      })
+                      setSelectedPresetGoals(updatedMap)
+                    }}
+                    customItems={item.items || [{ targetText: "", actionText: "" }]}
+                    onCustomItemsChange={(newItems) => setCustomGoals(prev => ({
+                      ...prev,
+                      [catObj.key]: { ...prev[catObj.key], items: newItems }
+                    }))}
+                    readOnly={isSubmitted}
+                  />
+                </div>
+              )
+            })}
           </div>
 
-          {/* Render 4 Categories with Dynamic Goal & Action Multi-Selection */}
-          {secondaryCategories.map((catObj) => {
-            const item = customGoals[catObj.key] || { items: [{ targetText: "", actionText: "" }], teacherSupport: "", parentSupport: "" }
-            return (
-              <div key={catObj.key} className="space-y-4">
-                <GoalMultiSelector
-                  categoryKey={catObj.key}
-                  categoryTitle={`${catObj.number}. ${catObj.title}`}
-                  categoryHint={catObj.hint}
-                  presets={presets}
-                  selectedPresetIds={Object.keys(selectedPresetGoals).filter(id => selectedPresetGoals[id])}
-                  onSelectionChange={(selectedIds) => {
-                    const updatedMap = { ...selectedPresetGoals }
-                    presets.filter(p => p.category === catObj.key).forEach(p => {
-                      updatedMap[p.id] = selectedIds.includes(p.id)
-                    })
-                    setSelectedPresetGoals(updatedMap)
-                  }}
-                  customItems={item.items || [{ targetText: "", actionText: "" }]}
-                  onCustomItemsChange={(newItems) => setCustomGoals(prev => ({
-                    ...prev,
-                    [catObj.key]: { ...prev[catObj.key], items: newItems }
-                  }))}
-                  readOnly={isSubmitted}
-                />
+          <div className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-md space-y-5">
+            <h3 className="text-base font-black text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-teal-600" />
+              <span>LỜI CAM KẾT VÀ XÁC NHẬN CỦA HỌC SINH ✍️</span>
+            </h3>
 
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-teal-600 inline-block" />
+                <span>Em cam kết sẽ:</span>
+              </label>
+              <textarea
+                rows={3}
+                readOnly={isSubmitted}
+                value={studentCommitment}
+                onChange={(e) => !isSubmitted && setStudentCommitment(e.target.value)}
+                placeholder="Chủ động và nghiêm túc thực hiện những mục tiêu đã đề ra, duy trì kỷ luật, thói quen tự học..."
+                className={`w-full p-4 rounded-2xl border-2 text-xs font-semibold focus:outline-none ${
+                  isSubmitted ? "bg-slate-100/80 text-slate-700 border-slate-200 cursor-not-allowed" : "border-slate-200 focus:border-teal-500"
+                }`}
+              />
+            </div>
 
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border-2 border-slate-200">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={isSubmitted}
+                  onClick={() => !isSubmitted && setFingerprintStamped(!fingerprintStamped)}
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl transition-all shadow-md ${
+                    isSubmitted
+                      ? "bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
+                      : fingerprintStamped
+                      ? "bg-rose-500 text-white shadow-rose-200 scale-105"
+                      : "bg-white text-slate-400 border-2 border-dashed border-slate-300 hover:border-rose-400"
+                  }`}
+                >
+                  👉
+                </button>
+                <div>
+                  <p className="text-xs font-black text-slate-800">
+                    {fingerprintStamped ? "🔴 Đã đóng dấu vân tay xác nhận cam kết!" : "Chưa đóng dấu ấn vân tay"}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {isSubmitted ? "Phiếu đã được đóng dấu cam kết và gửi về GVCN" : "Nhấn vào dấu tay để xác nhận cam kết cá nhân"}
+                  </p>
+                </div>
               </div>
-            )
-          })}
-        </div>
+
+              <button
+                onClick={handleSaveGoals}
+                disabled={saving || isSubmitted}
+                className={`w-full sm:w-auto px-8 py-3.5 rounded-2xl font-black text-xs shadow-lg transition-all flex items-center justify-center gap-2 ${
+                  isSubmitted
+                    ? "bg-slate-400 text-slate-100 cursor-not-allowed shadow-none"
+                    : "bg-[#003B3A] hover:bg-[#002D2C] text-white shadow-teal-950/20 hover:scale-105 active:scale-95"
+                }`}
+              >
+                {isSubmitted ? (
+                  <>
+                    <Lock className="w-4 h-4 text-slate-200" />
+                    <span>ĐÃ GỬI CHO GVCN (KHÔNG THỂ SỬA)</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 text-teal-300" />
+                    <span>{saving ? "Đang gửi..." : "LƯU & GỬI PHIẾU MỤC TIÊU CHO GVCN"}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* ------------------- LỜI CAM KẾT & XÁC NHẬN ĐỒNG HÀNH ------------------- */}
