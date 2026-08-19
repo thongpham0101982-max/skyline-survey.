@@ -190,21 +190,34 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" }
     }).catch(() => [])
 
-        let gradeGroup = "K6_K8"
-    if (gradeLevel === "K1") gradeGroup = "K1"
-    else if (gradeLevel === "K2") gradeGroup = "K2"
-    else if (gradeLevel === "K3") gradeGroup = "K3"
-    else if (["K4", "K5"].includes(gradeLevel)) gradeGroup = "K4_K5"
-    else if (["K6", "K7", "K8"].includes(gradeLevel)) gradeGroup = "K6_K8"
-    else if (["K9", "K10", "K11", "K12"].includes(gradeLevel)) gradeGroup = "K9_K12"
+        function parseGradeGroup(gStr: string): string {
+      const s = String(gStr || "").toUpperCase().replace(/^(KHỐI|KHOI|K)\s*/i, "").trim()
+      const n = parseInt(s, 10)
+      if (s === "1" || s === "K1" || n === 1) return "K1"
+      if (s === "2" || s === "K2" || n === 2) return "K2"
+      if (s === "3" || s === "K3" || n === 3) return "K3"
+      if (s === "4" || s === "5" || s === "K4" || s === "K5" || n === 4 || n === 5) return "K4_K5"
+      if (s === "6" || s === "7" || s === "8" || s === "K6" || s === "K7" || s === "K8" || (n >= 6 && n <= 8)) return "K6_K8"
+      if (s === "9" || s === "10" || s === "11" || s === "12" || s === "K9" || s === "K10" || s === "K11" || s === "K12" || (n >= 9 && n <= 12)) return "K9_K12"
+      return "K6_K8"
+    }
+
+    const gradeGroup = parseGradeGroup(gradeLevel)
     
-    const presets = await prisma.goalPreset.findMany({
+    let presets = await prisma.goalPreset.findMany({
       where: { 
         gradeGroup,
         status: "ACTIVE"
       },
       orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }]
     }).catch(() => [])
+
+    if (presets.length === 0) {
+      presets = await prisma.goalPreset.findMany({
+        where: { status: "ACTIVE" },
+        orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }]
+      }).catch(() => [])
+    }
 
     const existingSheet = goals.length > 0 ? {
       studentCommitment: goals[0].studentCommitment || "",
