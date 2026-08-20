@@ -11,7 +11,7 @@ import {
 
 const STEP3_TYPES = ['ROLE', 'EVAL_LEVEL', 'ACHIEVEMENT'];
 const STEP5_TYPES = ['EVIDENCE_TYPE'];
-const IGNORED_TYPES = ['SYSTEM_CATEGORY_TYPE', 'GROUP', 'TYPE', 'THEME', 'ABSENCE_REASON'];
+const IGNORED_TYPES = ['SYSTEM_CATEGORY_TYPE', 'GROUP', 'TYPE', 'THEME', 'ABSENCE_REASON', 'YEAR'];
 
 function getDefaultAcademicYearClient(years: any[]) {
   if (!Array.isArray(years) || years.length === 0) return null;
@@ -226,7 +226,7 @@ export default function CreateActivityWizard() {
       if (catesRes?.success && Array.isArray(catesRes.data)) {
         setCategories(catesRes.data);
         const sysTypes = catesRes.data
-          .filter((c: any) => c?.type === 'SYSTEM_CATEGORY_TYPE' && c?.status === 'ACTIVE' && !(c?.name || '').toLowerCase().includes('mức độ') && !(c?.name || '').toLowerCase().includes('kết quả'))
+          .filter((c: any) => c?.type === 'SYSTEM_CATEGORY_TYPE' && c?.status === 'ACTIVE' && !(c?.name || '').toLowerCase().includes('mức độ') && !(c?.name || '').toLowerCase().includes('kết quả') && !(c?.name || '').toLowerCase().includes('năm học') && c?.code !== 'YEAR')
           .sort((a: any, b: any) => (a?.sortOrder || 0) - (b?.sortOrder || 0));
         setSystemTypes(sysTypes);
         
@@ -295,10 +295,7 @@ export default function CreateActivityWizard() {
         alert('Vui lòng nhập Tên hoạt động!');
         return false;
       }
-      if (!info.academicYear) {
-        alert('Vui lòng chọn Năm học!');
-        return false;
-      }
+
       if (!info.date) {
         alert('Vui lòng chọn Ngày tổ chức!');
         return false;
@@ -359,7 +356,7 @@ export default function CreateActivityWizard() {
   }
 
   const steps = [
-    { num: 1, title: 'Thông tin chung', sub: 'Tên, nhóm, năm học & ngày' },
+    { num: 1, title: 'Thông tin chung', sub: 'Tên, nhóm, học kỳ & ngày' },
     { num: 2, title: 'Đối tượng tham gia', sub: 'Bậc, khối, lớp hoặc học sinh' },
     { num: 3, title: 'Đánh giá & Kết quả', sub: 'Mức độ & vai trò mặc định' },
     { num: 4, title: 'Minh chứng & Hoàn tất', sub: 'Ảnh, link & xác nhận' },
@@ -485,19 +482,7 @@ export default function CreateActivityWizard() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Năm học <span className="text-rose-500">*</span></label>
-                <select 
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl focus:ring-2 focus:ring-[#48BFE3]/30 focus:border-[#48BFE3] block p-3.5 outline-none transition-all"
-                  value={info.academicYear} 
-                  onChange={e => setInfo({...info, academicYear: e.target.value})}
-                >
-                  {academicYears.length === 0 && <option value="">Đang tải...</option>}
-                  {academicYears.map(year => (
-                    <option key={year.id} value={year.id}>{year.name}</option>
-                  ))}
-                </select>
-              </div>
+
 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">Mã hoạt động (Tự sinh)</label>

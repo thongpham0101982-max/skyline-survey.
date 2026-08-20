@@ -57,7 +57,7 @@ export default function ExperientialActivitiesList() {
       .catch(() => setLoading(false));
   }, []);
 
-  const [showAllYears, setShowAllYears] = useState(false);
+  const [showAllYears, setShowAllYears] = useState(true);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
   useEffect(() => {
@@ -236,16 +236,7 @@ export default function ExperientialActivitiesList() {
             </div>
 
             <div className="flex items-center gap-2 w-full sm:w-auto justify-between">
-              <button
-                onClick={() => setShowAllYears(!showAllYears)}
-                className={"px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-2 " + 
-                  (showAllYears 
-                    ? "bg-[#6930C3] text-white border-[#6930C3] shadow-sm" 
-                    : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100")}
-              >
-                <Calendar className="w-3.5 h-3.5" />
-                <span>{showAllYears ? 'Hiện tất cả năm học' : 'Theo năm chọn'}</span>
-              </button>
+              
 
               <div className="flex bg-slate-100 p-1 rounded-xl items-center border border-slate-200">
                 <button 

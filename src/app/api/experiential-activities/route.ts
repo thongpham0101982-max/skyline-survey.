@@ -55,14 +55,17 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { info = {}, target = {}, defaults = {}, studentResults = {}, isDraft = false } = body;
 
-    if (!info.name || !info.academicYear) {
-      return NextResponse.json({ error: 'Vui lòng điền Tên hoạt động và Năm học' }, { status: 400 });
+    if (!info.name || !info.name.trim()) {
+      return NextResponse.json({ error: 'Vui lòng nhập Tên hoạt động' }, { status: 400 });
     }
 
-    // Resolve valid AcademicYear ID to satisfy SQLite Foreign Key constraint
-    let yearRecord = await prisma.academicYear.findFirst({
-      where: { OR: [{ id: info.academicYear }, { name: info.academicYear }] }
-    });
+    // Resolve valid AcademicYear ID (defaulting to ACTIVE year)
+    let yearRecord = null;
+    if (info.academicYear) {
+      yearRecord = await prisma.academicYear.findFirst({
+        where: { OR: [{ id: info.academicYear }, { name: info.academicYear }] }
+      });
+    }
     if (!yearRecord) {
       yearRecord = await prisma.academicYear.findFirst({ where: { status: 'ACTIVE' } }) || await prisma.academicYear.findFirst();
     }

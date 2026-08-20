@@ -169,9 +169,9 @@ export default function DepartmentsClient() {
                 </select>
               </div>
                             <div>
-                <label className="block text-sm font-semibold mb-1.5 text-slate-700">Microsoft Teams Webhook URL (Kênh Tổ CM)</label>
-                <input value={form.teamsWebhookUrl} onChange={e=>setForm({...form, teamsWebhookUrl: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none text-xs font-mono" placeholder="https://outlook.office.com/webhook/..." />
-                <p className="text-[10px] text-slate-400 mt-1">Dùng để tự động phát thông báo khi có tiết dạy mở mới hoặc nhắc nhở dự giờ đến kênh Microsoft Teams của Tổ này.</p>
+                <label className="block text-sm font-semibold mb-1.5 text-slate-700">Microsoft Teams Webhook URL (Kênh Tổ CM - Không bắt buộc)</label>
+                <input value={form.teamsWebhookUrl} onChange={e=>setForm({...form, teamsWebhookUrl: e.target.value})} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 focus:border-indigo-500 outline-none text-xs font-mono" placeholder="https://outlook.office.com/webhook/... (Không bắt buộc)" />
+                <p className="text-[10px] text-slate-400 mt-1">Dùng để tự động phát thông báo khi có tiết dạy mở mới hoặc nhắc nhở dự giờ đến kênh Microsoft Teams của Tổ này (không bắt buộc nhập).</p>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5 text-slate-700">Mô tả</label>
