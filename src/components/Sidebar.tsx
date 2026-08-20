@@ -42,7 +42,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const pathname = rawPathname || ""
   const searchParams = useSearchParams()
   const typeParam = searchParams?.get("type")
-  const isSuperAdmin = actualRole === "ADMIN" || !permissionModules
+  const isSuperAdmin = actualRole === "ADMIN" || actualRole === "Admin"
   const normalizedRole = (actualRole || "").toUpperCase()
   const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS", "BGH_MN", "BGH MN", "BGH_MAM_NON"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
   const [isOpen, setIsOpen] = useState(false)
@@ -88,23 +88,22 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const title = ""
 
     const checkPermission = (module?: string, requiresAdmin?: boolean, subModules?: any[]) => {
-    if (requiresAdmin && !isSuperAdmin) return false
-    if (!isSuperAdmin && module) { if (module === 'EXPERIENTIAL_ACTIVITIES' || module === 'KTDBCL_HUONG_NGHIEP' || module === 'CO_VAN_HOC_TAP' || module === 'CO_VAN_PRESETS' || module === 'CO_VAN_DASHBOARD' || module === 'TONG_HOP_DU_GIO' || module === 'TEACHER_DU_GIO') return true;
-    if (module === 'KTDBCL_HUONG_NGHIEP') return true;
-      let hasParent = permissionModules?.includes(module) || false
-      if (module === "KTDBCL_EXAMS") {
-        hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
-      }
-      if (module === "TEACHER_TRANSFERS") {
-        hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
-      }
-      if (hasParent) return true
-      if (subModules && subModules.length > 0) {
-        return subModules.some((sub) => permissionModules?.includes(sub.code))
-      }
-      return false
+    if (isSuperAdmin) return true
+    if (requiresAdmin) return false
+    if (!module) return false
+    
+    let hasParent = permissionModules?.includes(module) || false
+    if (module === "KTDBCL_EXAMS") {
+      hasParent = hasParent || permissionModules?.includes("KTDBCL_EXAM_CONFIG") || false
     }
-    return true
+    if (module === "TEACHER_TRANSFERS") {
+      hasParent = hasParent || permissionModules?.includes("TEACHERS") || permissionModules?.includes("STUDENT_TRANSFERS") || false
+    }
+    if (hasParent) return true
+    if (subModules && subModules.length > 0) {
+      return subModules.some((sub) => permissionModules?.includes(sub.code))
+    }
+    return false
   }
 
   // Keep active category expanded on load or pathname change
@@ -156,17 +155,17 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
         </div>
 
         <nav className="flex flex-col space-y-1 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-          {role !== "TEACHER" && role !== "PARENT" && (
+          {isSuperAdmin && role !== "TEACHER" && role !== "PARENT" && (
             <Link 
-              href={role === "ADMIN" ? "/admin" : "/parent"}
+              href="/admin"
               onClick={() => setIsOpen(false)}
               className={`group flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
-                pathname === (role === "ADMIN" ? "/admin" : "/parent") 
+                pathname === "/admin" 
                   ? "bg-white/20 text-white border border-[#135E5B]/30 shadow-[0_0_15px_-3px_rgba(19,94,91,0.2)]" 
                   : "text-white/70 hover:text-white hover:bg-white/10"
               }`}
             >
-              <LayoutDashboard className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === (role === "ADMIN" ? "/admin" : "/parent") ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
+              <LayoutDashboard className={`w-4 h-4 ${isCollapsed ? '' : 'mr-3'} ${pathname === "/admin" ? "text-[#1E8B87]" : "text-white/60 group-hover:text-[#1E8B87]"}`} />
               {!isCollapsed && <span>Dashboard</span>}
             </Link>
           )}

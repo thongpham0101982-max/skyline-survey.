@@ -20,8 +20,15 @@ export default async function Home() {
     redirect("/parent")
   } else if (role === "KT_DBCL") {
     redirect("/admin/surveys")
+  } else if (["BGH_MN", "BGH MN", "BGH_MAM_NON"].includes(role)) {
+    redirect("/admin/xet-duyet-ket-qua")
+  } else if (["TVAN", "TVTS"].includes(role)) {
+    redirect("/admin/ho-so-hoc-sinh")
+  } else if (["GIAO_VU", "GIAO_VU_CS"].includes(role)) {
+    redirect("/admin/thoi-khoa-bieu")
+  } else if (["GDCS", "GĐCS"].includes(role)) {
+    redirect("/admin/xet-duyet-ket-qua")
   } else {
-    // Let's also check if they have a Teacher record defensively
     try {
       const { prisma } = require("@/lib/db");
       const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } });
@@ -31,7 +38,9 @@ export default async function Home() {
     } catch (e) {
       console.error("Defensive teacher redirect check failed:", e);
     }
-    // ADMIN and other staff roles
+    if (role !== "ADMIN" && role !== "Admin") {
+      redirect("/admin/xet-duyet-ket-qua");
+    }
     redirect("/admin")
   }
 }

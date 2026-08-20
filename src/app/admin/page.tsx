@@ -94,6 +94,26 @@ export default function AdminDashboard() {
     setEntryPage(1)
   }, [entryGradeFilter, entrySourceFilter, entryCampusFilter, entrySearchQuery])
   const userName = session?.user?.name || "Thành viên"
+  const roleCode = (session?.user as any)?.role || ""
+  const isSuperAdmin = roleCode === "ADMIN" || roleCode === "Admin"
+
+  useEffect(() => {
+    if (status === "authenticated" && !isSuperAdmin) {
+      if (["BGH_MN", "BGH MN", "BGH_MAM_NON"].includes(roleCode)) {
+        window.location.replace("/admin/xet-duyet-ket-qua")
+      } else if (["TVAN", "TVTS"].includes(roleCode)) {
+        window.location.replace("/admin/ho-so-hoc-sinh")
+      } else if (["GIAO_VU", "GIAO_VU_CS"].includes(roleCode)) {
+        window.location.replace("/admin/thoi-khoa-bieu")
+      } else if (["KT_DBCL", "KHAO_THI"].includes(roleCode)) {
+        window.location.replace("/admin/surveys")
+      } else if (["GDCS", "GĐCS"].includes(roleCode)) {
+        window.location.replace("/admin/xet-duyet-ket-qua")
+      } else {
+        window.location.replace("/admin/xet-duyet-ket-qua")
+      }
+    }
+  }, [status, isSuperAdmin, roleCode])
 
   const fetchMetrics = useCallback(async (isSilent = false) => {
     if (!isSilent) setRefreshing(true)
