@@ -12,7 +12,7 @@ export default async function TeacherAssessmentsPage() {
   }
   
   const role = session.user.role;
-  const isAuthorizedRole = role === "TEACHER" || role === "GV_MN" || role === "ADMIN" || role === "Teacher" || role === "Admin" || ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS", "GĐCS"].includes(role);
+  const isAuthorizedRole = role === "TEACHER" || role === "GV_MN" || role === "ADMIN" || role === "Teacher" || role === "Admin" || ["GĐ_CS", "GIAO_VU", "GDCS", "GIAO_VU_CS", "GĐCS", "BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH"].includes(role);
   
   if (!isAuthorizedRole) {
     try {

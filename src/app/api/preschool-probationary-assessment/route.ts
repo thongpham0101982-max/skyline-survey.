@@ -122,7 +122,18 @@ export async function POST(req: NextRequest) {
 
     const currentUser = session?.user as any
     const userRole = (currentUser?.role || "").toUpperCase()
-    const isGlobalAdmin = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "BGH MN" || userRole === "BGH_MN"
+    let isBghRole = ["ADMIN", "KT_DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
+    if (!isBghRole && userRole) {
+      try {
+        const dbPerms = await prisma.permission.findMany({
+          where: { roleCode: userRole, module: { in: ["XET_DUYET_MAM_NON", "XET_DUYET_KET_QUA"] } }
+        })
+        isBghRole = dbPerms.some((p: any) => p.canRead || p.canUpdate || p.canCreate)
+      } catch (e) {
+        console.error("Error fetching permissions for BGH check in probationary assessment API:", e)
+      }
+    }
+    const isGlobalAdmin = isBghRole
 
     // Fetch user campus assignments to check for campus-bound rules
     const userAssignments = await prisma.userCampusAssignment.findMany({

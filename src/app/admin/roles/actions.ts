@@ -50,6 +50,36 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
         }
       }
 
+      // Automatically sync parent module permissions if any submodule has permission
+      const { APP_CATEGORIES } = require("@/config/modules");
+      APP_CATEGORIES.forEach((cat: any) => {
+        cat.modules.forEach((m: any) => {
+          if (m.subModules && m.subModules.length > 0) {
+            const subCodes = m.subModules.map((sm: any) => sm.code);
+            const activeSubs = Array.from(mergedPermissionsMap.values()).filter((p: any) => subCodes.includes(p.module));
+            const hasRead = activeSubs.some((p: any) => p.canRead);
+            const hasCreate = activeSubs.some((p: any) => p.canCreate);
+            const hasUpdate = activeSubs.some((p: any) => p.canUpdate);
+            const hasDelete = activeSubs.some((p: any) => p.canDelete);
+
+            if (hasRead || hasCreate || hasUpdate || hasDelete) {
+              const parent = mergedPermissionsMap.get(m.code) || {
+                module: m.code,
+                canRead: false,
+                canCreate: false,
+                canUpdate: false,
+                canDelete: false
+              };
+              if (hasRead) parent.canRead = true;
+              if (hasCreate) parent.canCreate = true;
+              if (hasUpdate) parent.canUpdate = true;
+              if (hasDelete) parent.canDelete = true;
+              mergedPermissionsMap.set(m.code, parent);
+            }
+          }
+        });
+      });
+
       await Promise.all(Array.from(mergedPermissionsMap.values()).map(p => prisma.permission.create({
         data: {
           roleCode,
@@ -60,8 +90,26 @@ export async function savePermissions(roleCode: string, permissions: any[]) {
           canDelete: p.canDelete
         }
       })));
+
+      // Also ensure roleCode variations (e.g. "BGH MN" vs "BGH_MN") are synced if roleCode has spaces/underscores
+      const altRoleCode = roleCode.includes(" ") ? roleCode.replace(/\s+/g, "_") : roleCode.includes("_") ? roleCode.replace(/_/g, " ") : null;
+      if (altRoleCode && altRoleCode !== roleCode) {
+        await prisma.permission.deleteMany({ where: { roleCode: altRoleCode } });
+        await Promise.all(Array.from(mergedPermissionsMap.values()).map(p => prisma.permission.create({
+          data: {
+            roleCode: altRoleCode,
+            module: p.module,
+            canRead: p.canRead,
+            canCreate: p.canCreate,
+            canUpdate: p.canUpdate,
+            canDelete: p.canDelete
+          }
+        })));
+      }
     }
     revalidatePath("/admin/roles")
+    revalidatePath("/admin/xet-duyet-ket-qua")
+    revalidatePath("/admin", "layout")
     return { success: true }
   } catch (e:any) {
     return { success: false, error: e.message }

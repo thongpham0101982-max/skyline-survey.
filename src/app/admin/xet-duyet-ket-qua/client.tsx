@@ -41,14 +41,16 @@ export function XetDuyetKetQuaClient({
   classes = []
 }: Props) {
   const userRole = (currentUser?.role || "").toUpperCase()
-  const isAdmin = userRole === "ADMIN" || userRole === "KT_DBCL"
+  const isAdmin = userRole === "ADMIN" || userRole === "KT_DBCL" || userRole === "KTDBCL"
+  const isBghPreschoolRole = ["BGH_MN", "BGH MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole)
+  const isGdcsRole = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
   
   // Kiểm tra quyền truy cập chi tiết
-  const hasK12 = isAdmin || rolePermissions.some(p => p.module === "INPUT_ASSESSMENTS_REPORTS")
+  const hasK12 = isAdmin || rolePermissions.some(p => p.canRead && (p.module === "INPUT_ASSESSMENTS_REPORTS" || p.module === "XET_DUYET_KET_QUA"))
   const hasPreschool = isAdmin || 
-                        rolePermissions.some(p => p.module === "XET_DUYET_MAM_NON") || 
-                        rolePermissions.some(p => p.module === "PRESCHOOL_INPUT_ASSESSMENTS") ||
-                        ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole)
+                        isBghPreschoolRole ||
+                        isGdcsRole ||
+                        rolePermissions.some(p => p.canRead && (p.module === "XET_DUYET_MAM_NON" || p.module === "XET_DUYET_KET_QUA" || p.module === "PRESCHOOL_INPUT_ASSESSMENTS"))
 
   const defaultTab = hasK12 ? "k12" : (hasPreschool ? "preschool" : null)
   const [activeTab, setActiveTab] = useState<"k12" | "preschool" | null>(defaultTab)
@@ -140,6 +142,7 @@ export function XetDuyetKetQuaClient({
             teachers={teachers}
             departments={departments}
             currentUser={currentUser}
+            rolePermissions={rolePermissions}
             classes={classes}
           />
         )}

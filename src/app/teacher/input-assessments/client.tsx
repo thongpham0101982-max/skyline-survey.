@@ -692,11 +692,18 @@ export default function TeacherAssessmentsClient({ user }: { user: any }) {
                         <div>
                             <span className="text-[10px] font-black tracking-widest text-teal-200 uppercase block mb-1">CỔNG THÔNG TIN GV</span>
                             <h1 className="text-xl md:text-2xl font-black tracking-tight text-white">Nhập kết quả Khảo sát đầu vào</h1>
-                            <div className="flex items-center gap-2 mt-1.5">
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                                 <span className="text-xs text-teal-100/90 font-medium">Giáo viên phụ trách:</span>
                                 <span className="text-xs font-black text-white bg-white/10 border border-white/15 px-2.5 py-0.5 rounded-lg backdrop-blur-sm">
                                     {user?.fullName || user?.name || "Giáo viên"}
                                 </span>
+                                <a 
+                                    href="/admin/xet-duyet-ket-qua" 
+                                    className="inline-flex items-center gap-1.5 bg-[#48BFE3] hover:bg-[#3baecf] text-white px-3 py-1 rounded-xl text-xs font-extrabold shadow-md shadow-teal-900/20 transition-all border border-white/20 ml-2 active:scale-95"
+                                >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Xét duyệt kết quả (BGH MN)</span>
+                                </a>
                             </div>
                         </div>
                     </div>

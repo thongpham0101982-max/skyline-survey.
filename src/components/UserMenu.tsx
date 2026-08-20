@@ -133,6 +133,14 @@ export function UserMenu({ session }: UserMenuProps) {
                 </div>
 
                 <div className="space-y-0.5">
+                  <Link
+                    href="/admin/xet-duyet-ket-qua"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-black text-[#1E8B87] bg-teal-50/60 hover:bg-teal-100/80 transition-all text-left mb-1"
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-[#1E8B87] shrink-0" />
+                    <span>Xét duyệt kết quả</span>
+                  </Link>
                   <button
                     onClick={() => {
                       setIsOpen(false);

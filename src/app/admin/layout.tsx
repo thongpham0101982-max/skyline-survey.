@@ -25,8 +25,33 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   try {
     const pAny = prisma as any
     if (pAny && pAny.permission) {
-      const permissions = await pAny.permission.findMany({ where: { roleCode } }).catch(() => [])
+      const normRole = (roleCode || "").trim()
+      const roleVariants = Array.from(new Set([
+        normRole,
+        normRole.toUpperCase(),
+        normRole.toLowerCase(),
+        normRole.replace(/\s+/g, "_"),
+        normRole.replace(/_/g, " "),
+        normRole.toUpperCase().replace(/\s+/g, "_"),
+        normRole.toUpperCase().replace(/_/g, " ")
+      ]))
+
+      const permissions = await pAny.permission.findMany({ 
+        where: { roleCode: { in: roleVariants } } 
+      }).catch(() => [])
       readableModules = permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
+
+      const { APP_CATEGORIES: categories } = require("@/config/modules")
+      categories.forEach((cat: any) => {
+        cat.modules.forEach((m: any) => {
+          if (m.subModules && m.subModules.length > 0) {
+            const hasReadableSub = m.subModules.some((sub: any) => readableModules.includes(sub.code))
+            if (hasReadableSub && !readableModules.includes(m.code)) {
+              readableModules.push(m.code)
+            }
+          }
+        })
+      })
     }
     if (pAny && pAny.workTask) {
       const currentUserId = (session?.user as any)?.id || ""

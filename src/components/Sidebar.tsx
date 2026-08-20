@@ -44,7 +44,7 @@ function SidebarContent({ role, permissionModules, actualRole, taskCount = 0, is
   const typeParam = searchParams?.get("type")
   const isSuperAdmin = actualRole === "ADMIN" || !permissionModules
   const normalizedRole = (actualRole || "").toUpperCase()
-  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
+  const isGDCS = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS", "BGH", "BGH_CS", "BGH_MN", "BGH MN", "BGH_MAM_NON"].some(r => normalizedRole.includes(r)) || normalizedRole.includes("GDCS") || normalizedRole.includes("GĐCS")
   const [isOpen, setIsOpen] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hasPreschool, setHasPreschool] = useState(false)

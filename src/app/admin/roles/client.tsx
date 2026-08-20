@@ -22,10 +22,33 @@ export function RolesClient({ initialRoles }: any) {
 
   const buildPerms = (roleCode: string) => {
     const r = roles.find((r: any) => r.code === roleCode);
-    return ALL_APP_MODULES.map(m => {
+    const permsMap = ALL_APP_MODULES.map(m => {
       const existing = r?.permissions?.find((p: any) => p.module === m.code);
       return existing ? { ...existing } : emptyPerm(m.code);
     });
+
+    APP_CATEGORIES.forEach(cat => {
+      cat.modules.forEach((m: any) => {
+        if (m.subModules && m.subModules.length > 0) {
+          const subCodes = m.subModules.map((sm: any) => sm.code);
+          const activeSubPerms = permsMap.filter(p => subCodes.includes(p.module));
+          const hasRead = activeSubPerms.some(p => p.canRead);
+          const hasCreate = activeSubPerms.some(p => p.canCreate);
+          const hasUpdate = activeSubPerms.some(p => p.canUpdate);
+          const hasDelete = activeSubPerms.some(p => p.canDelete);
+
+          const parentPerm = permsMap.find(p => p.module === m.code);
+          if (parentPerm) {
+            if (hasRead) parentPerm.canRead = true;
+            if (hasCreate) parentPerm.canCreate = true;
+            if (hasUpdate) parentPerm.canUpdate = true;
+            if (hasDelete) parentPerm.canDelete = true;
+          }
+        }
+      });
+    });
+
+    return permsMap;
   };
 
   const [permissions, setPermissions] = useState<any[]>(() => buildPerms(activeRole));
@@ -71,6 +94,28 @@ export function RolesClient({ initialRoles }: any) {
           });
         }
       }
+
+      APP_CATEGORIES.forEach(cat => {
+        cat.modules.forEach(m => {
+          if (m.subModules && m.subModules.length > 0) {
+            const subCodes = m.subModules.map((sm: any) => sm.code);
+            const activeSubPerms = nextPerms.filter(p => subCodes.includes(p.module));
+            const hasRead = activeSubPerms.some(p => p.canRead);
+            const hasCreate = activeSubPerms.some(p => p.canCreate);
+            const hasUpdate = activeSubPerms.some(p => p.canUpdate);
+            const hasDelete = activeSubPerms.some(p => p.canDelete);
+
+            const parentPerm = nextPerms.find(p => p.module === m.code);
+            if (parentPerm) {
+              if (hasRead) parentPerm.canRead = true;
+              if (hasCreate) parentPerm.canCreate = true;
+              if (hasUpdate) parentPerm.canUpdate = true;
+              if (hasDelete) parentPerm.canDelete = true;
+            }
+          }
+        });
+      });
+
       return nextPerms;
     });
   };
@@ -156,10 +201,14 @@ export function RolesClient({ initialRoles }: any) {
       },
       BGH_MN: {
         CAU_HINH_KHAO_SAT: { r: true, c: true, u: true, d: true },
+        PRESCHOOL_INPUT_ASSESSMENTS: { r: true, c: true, u: true, d: true },
         INPUT_ASSESSMENT_REPORTS: { r: true, c: true, u: true, d: true },
         STUDENT_INFO: { r: true, c: true, u: true, d: true },
+        STUDENT_INFO_MAM_NON: { r: true, c: true, u: true, d: true },
         PHAN_CONG_KHAO_SAT: { r: true, c: true, u: true, d: true },
+        PHAN_CONG_MAM_NON: { r: true, c: true, u: true, d: true },
         XET_DUYET_KET_QUA: { r: true, c: true, u: true, d: true },
+        XET_DUYET_MAM_NON: { r: true, c: true, u: true, d: true },
         MANAGE_SURVEYS: { r: true },
         TASKS: { r: true, c: true, u: true },
         WEEKLY_REPORTS: { r: true, c: true, u: true }

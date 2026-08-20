@@ -333,13 +333,14 @@ const isStudentHocThu = (s: any): boolean => {
   return isTrialText(gResult) || isTrialText(bgh) || isTrialText(gdcs) || isTrialText(devAssess) || isTrialText(admResult);
 };
 
-export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, classes = [] }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; classes?: any[]; }) {
+export function XetDuyetMamNonClient({ academicYears, campuses, giaoVuCSUsers, grades: gradesProp, teachers, departments, currentUser, rolePermissions = [], classes = [] }: { academicYears: AcademicYear[]; campuses: Camp[]; giaoVuCSUsers: any[]; grades: string[]; teachers: any[]; departments: any[]; currentUser: any; rolePermissions?: any[]; classes?: any[]; }) {
   const grades = gradesProp && gradesProp.length > 0 ? gradesProp : ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"];
   const criteriaGrades = ["12 đến 18 tháng", "18 đến 24 tháng", "24 đến 36 tháng", "3 đến 4 tuổi", "4 đến 5 tuổi", "5 đến 6 tuổi"];
 
   const userRole = (currentUser?.role || "").toUpperCase();
   const isSystemAdmin = userRole === "ADMIN";
-  const isBGHUser = userRole === "KT_DBCL" || userRole === "BGH MN" || userRole === "BGH_MN";
+  const isBGHUser = ["ADMIN", "KT_DBCL", "KTDBCL", "BGH MN", "BGH_MN", "BGH_MAM_NON", "BGH MẦM NON", "BGH MÂM NON", "BGH", "BGH_CS"].includes(userRole) ||
+    (Array.isArray(rolePermissions) && rolePermissions.some((p: any) => (p.module === "XET_DUYET_MAM_NON" || p.module === "XET_DUYET_KET_QUA") && (p.canRead || p.canUpdate)));
   const isGDCSUser = ["GDCS", "GĐCS", "GD_CS", "GĐ_CS", "GIAO_VU_CS"].includes(userRole);
 
   const filteredCampuses = useMemo(() => {
