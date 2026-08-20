@@ -24,6 +24,42 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const roleCode = (session?.user as any)?.role || "TEACHER"
 
   let isGVCN = false
+  let readableModules: string[] = []
+  try {
+    const pAny = prisma as any
+    if (pAny && pAny.permission) {
+      const normRole = (roleCode || "").trim()
+      const roleVariants = Array.from(new Set([
+        normRole,
+        normRole.toUpperCase(),
+        normRole.toLowerCase(),
+        normRole.replace(/\s+/g, "_"),
+        normRole.replace(/_/g, " "),
+        normRole.toUpperCase().replace(/\s+/g, "_"),
+        normRole.toUpperCase().replace(/_/g, " ")
+      ]))
+
+      const permissions = await pAny.permission.findMany({ 
+        where: { roleCode: { in: roleVariants } } 
+      }).catch(() => [])
+      readableModules = permissions.filter((p: any) => p.canRead).map((p: any) => p.module)
+
+      const { APP_CATEGORIES: categories } = require("@/config/modules")
+      categories.forEach((cat: any) => {
+        cat.modules.forEach((m: any) => {
+          if (m.subModules && m.subModules.length > 0) {
+            const hasReadableSub = m.subModules.some((sub: any) => readableModules.includes(sub.code))
+            if (hasReadableSub && !readableModules.includes(m.code)) {
+              readableModules.push(m.code)
+            }
+          }
+        })
+      })
+    }
+  } catch (err) {
+    console.error("Teacher layout permission DB error:", err)
+  }
+
   if (session?.user?.id) {
     try {
       const teacher = await prisma.teacher.findUnique({ where: { userId: session.user.id } }).catch(() => null)
@@ -45,7 +81,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
 
   return (
     <div className="flex min-h-screen text-xs font-semibold">
-      <Sidebar role="TEACHER" actualRole={roleCode} isGVCN={isGVCN} />
+      <Sidebar role="TEACHER" permissionModules={readableModules} actualRole={roleCode} isGVCN={isGVCN} />
       <main className="flex-1 flex flex-col relative min-w-0 overflow-hidden">
         <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
