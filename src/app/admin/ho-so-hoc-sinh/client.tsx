@@ -612,7 +612,7 @@ export function StudentProfilesAdminClient({
                   <div>
                     {/* TAB: CV INTEGRATED */}
 {/* TAB: CV INTEGRATED - 6 CORE SECTIONS */}
-                    {activeTab === "cv" && (
+                    {(activeTab === "cv" || activeTab === "advisory_360") && (
                       <div className="space-y-6">
                         <div className="bg-white border border-slate-200/90 shadow-xl rounded-3xl p-6 sm:p-8 max-w-4xl mx-auto font-sans relative overflow-hidden space-y-7">
                           {/* TOP DECORATIVE BANNER */}
