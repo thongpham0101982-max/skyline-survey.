@@ -146,14 +146,16 @@ export default function CreateActivityWizard() {
   }, [studentFilterClass, studentFilterLevel, info.academicYear]);
 
 const getCampusCodeOfClass = (c: any) => {
+    if (c?.campus?.campusCode) return c.campus.campusCode.toUpperCase();
     if (c?.campus?.code) return c.campus.code.toUpperCase();
     const match = (c?.className || '').match(/CS\d+/i);
     if (match) return match[0].toUpperCase();
-    if (c?.campusId) return c.campusId;
-    return 'KHAC';
+    return 'CS1';
   };
 
   const getCampusNameOfClass = (c: any) => {
+    if (c?.campus?.campusName) return c.campus.campusName;
+    if (c?.campus?.name) return c.campus.name;
     const code = getCampusCodeOfClass(c);
     const names: Record<string, string> = {
       'CS1': 'Sky-Line Riverside (CS1)',
@@ -163,7 +165,6 @@ const getCampusCodeOfClass = (c: any) => {
       'CS5': 'Sky-Line International (CS5)'
     };
     if (names[code]) return names[code];
-    if (c?.campus?.name) return c.campus.name;
     return 'Cơ sở ' + code;
   };
 
