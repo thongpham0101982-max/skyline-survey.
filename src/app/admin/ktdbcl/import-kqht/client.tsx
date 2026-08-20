@@ -1,4 +1,58 @@
 "use client"
+
+function isNonSubjectSubHeader(subVal: string): boolean {
+  if (!subVal) return true
+  const s = subVal.toLowerCase().trim()
+  
+  if (
+    /^\(?hs\s*\d+\)?$/i.test(s) || 
+    /^\(?hệ\s*số\s*\d+\)?$/i.test(s) || 
+    /^\(?n\.?\s*xét\)?$/i.test(s) || 
+    /^\(?n\.?\s*xet\)?$/i.test(s) || 
+    /^\(?nhận\s*xét\)?$/i.test(s) || 
+    /^\(?nhan\s*xet\)?$/i.test(s) || 
+    /^\(?học\s*kỳ?\s*\d+\)?$/i.test(s) || 
+    /^\(?học\s*kì?\s*\d+\)?$/i.test(s) || 
+    /^\(?hk\s*\d+\)?$/i.test(s) ||
+    /^\(?cả\s*năm\)?$/i.test(s) ||
+    /^\(?cuối\s*năm\)?$/i.test(s) ||
+    /^\(?giữa\s*kỳ?\)?$/i.test(s) ||
+    /^\(?cuối\s*kỳ?\)?$/i.test(s) ||
+    /^\(?tb\s*môn\)?$/i.test(s) || 
+    /^\(?tbm\)?$/i.test(s) ||
+    /^\(?tbmôn\)?$/i.test(s) ||
+    /^\(?trung\s*bình\)?$/i.test(s) ||
+    /^\(?đk\)?$/i.test(s) ||
+    /^\(?ck\)?$/i.test(s) ||
+    /^\(?đđg.*?\)?$/i.test(s) ||
+    s.includes("mức") ||
+    s.includes("điểm") ||
+    s.includes("ktđk") ||
+    s.includes("xếp loại") ||
+    s.includes("đánh giá") ||
+    s.includes("n.xét") ||
+    s.includes("n.xet") ||
+    s.includes("nhận xét") ||
+    s.includes("nhan xet") ||
+    s.includes("hs 1") ||
+    s.includes("hs 2") ||
+    s.includes("hs 3") ||
+    s.includes("hệ số")
+  ) {
+    return true
+  }
+
+  if (s.startsWith("(") && s.endsWith(")")) {
+    const inner = s.slice(1, -1).trim()
+    const knownSubSubjects = ["âm nhạc", "mĩ thuật", "mỹ thuật", "tiếng anh", "lịch sử", "địa lý", "địa lí", "vật lý", "vật lí", "hóa học", "sinh học", "tin học", "công nghệ"]
+    if (!knownSubSubjects.some(k => inner.includes(k))) {
+      return true
+    }
+  }
+
+  return false
+}
+
 export function normalizeSheetToClassCode(sheetName: string, availableClasses: any[] = []): string {
   if (!sheetName) return ""
   const sheetKey = sheetName.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -830,8 +884,12 @@ export function ImportKQHTClient({
             const subLower = subHeaderVal.toLowerCase()
 
             // Handle subheader when parent is a group title (like Nghệ thuật -> Âm nhạc / Mĩ thuật)
-            if (subHeaderVal && !subLower.includes("mức") && !subLower.includes("điểm") && !subLower.includes("ktđk") && !subLower.includes("xếp loại") && !subLower.includes("đánh giá")) {
-              subjectName = subHeaderVal
+            if (subHeaderVal && !isNonSubjectSubHeader(subHeaderVal)) {
+              if (!parentName || parentName.toLowerCase().includes("nghệ thuật") || parentName.toLowerCase().includes("ngoại ngữ")) {
+                subjectName = subHeaderVal
+              } else {
+                subjectName = `${parentName} (${subHeaderVal})`
+              }
             }
 
             const searchNameLower = subjectName.toLowerCase().trim()
@@ -1334,9 +1392,11 @@ export function ImportKQHTClient({
             semester,
             importOptions: {
               updateProfile,
-              importSummaryRatings,
+              importAcademicRating,
+              importConductRating,
               importAbsences: effectiveLevel === "PRIMARY" ? false : importAbsences,
-              importRewardAndPromotion,
+              importReward,
+              importPromotion,
               selectedSubjects: Array.from(detectedExcelSubjectsMap.values()).map(m => m.mappedSubjectCode || m.originalHeader)
             },
             classesData: Object.keys(allParsed).map(sheetName => ({
