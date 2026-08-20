@@ -145,7 +145,6 @@ export default function CreateActivityWizard() {
     }
   }, [studentFilterClass, studentFilterLevel, info.academicYear]);
 
-
   const getCampusCodeOfClass = (c: any) => {
     if (c?.campus?.code) return c.campus.code;
     if (c?.campusId) return c.campusId;
@@ -772,38 +771,6 @@ export default function CreateActivityWizard() {
                             <span className={"w-4 h-4 rounded-full flex items-center justify-center text-[10px] " + (
                               isChecked ? 'bg-[#6930C3] text-white' : 'border border-slate-300'
                             )}>
-                              {isChecked && <Check className="w-3 h-3" />}
-                            </span>
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-
-              </div> : (
-                      availableClasses.map(cls => {
-                        const isChecked = target.classes.includes(cls.id);
-                        return (
-                          <button
-                            key={cls.id}
-                            type="button"
-                            onClick={() => {
-                              const newClasses = isChecked
-                                ? target.classes.filter((c: any) => c !== cls.id)
-                                : [...target.classes, cls.id];
-                              setTarget({ ...target, classes: newClasses });
-                            }}
-                            className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between ${
-                              isChecked
-                                ? 'bg-white border-[#6930C3] text-[#6930C3] shadow-sm ring-1 ring-[#6930C3]'
-                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                            }`}
-                          >
-                            <span>{cls.className}</span>
-                            <span className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] ${
-                              isChecked ? 'bg-[#6930C3] text-white' : 'border border-slate-300'
-                            }`}>
                               {isChecked && <Check className="w-3 h-3" />}
                             </span>
                           </button>
