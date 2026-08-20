@@ -297,8 +297,22 @@ export function ImportKQHTClient({
         
         let detectedLevel: "PRIMARY" | "SECONDARY" = "PRIMARY"
 
+        const isSecondaryFile = 
+          /(?<![\d\.])(6|7|8|9|10|11|12)(\.|\_|\s|s)/i.test(fileText) ||
+          fileText.includes("khối 6") || fileText.includes("khoi 6") ||
+          fileText.includes("khối 7") || fileText.includes("khoi 7") ||
+          fileText.includes("khối 8") || fileText.includes("khoi 8") ||
+          fileText.includes("khối 9") || fileText.includes("khoi 9") ||
+          fileText.includes("khối 10") || fileText.includes("khoi 10") ||
+          fileText.includes("khối 11") || fileText.includes("khoi 11") ||
+          fileText.includes("khối 12") || fileText.includes("khoi 12") ||
+          fileText.includes("(hs 1)") || fileText.includes("(hs 2)") ||
+          fileText.includes("(n.xét)") || fileText.includes("(n.xet)") ||
+          fileText.includes("khtn") || fileText.includes("ls&đl") || fileText.includes("gdcd") ||
+          fileText.includes("kết quả rèn luyện") || fileText.includes("ket qua ren luyen")
+
         const isPrimaryFile = 
-          /\b[1-5](\.|\_|\s|int|uk|s)/i.test(fileText) ||
+          /(?<![\d\.])[1-5](\.|\_|\s|int|uk|s)/i.test(fileText) ||
           fileText.includes("tiểu học") || 
           fileText.includes("tieu hoc") ||
           fileText.includes("tiếng việt") || 
@@ -310,24 +324,10 @@ export function ImportKQHTClient({
           fileText.includes("điểm ktđk") ||
           fileText.includes("khối 1") || fileText.includes("khối 2") || fileText.includes("khối 3") || fileText.includes("khối 4") || fileText.includes("khối 5")
 
-        const isSecondaryFile = 
-          /\b(6|7|8|9|10|11|12)(\.|\_|\s|s)/i.test(fileText) ||
-          fileText.includes("khối 6") || fileText.includes("khoi 6") ||
-          fileText.includes("khối 7") || fileText.includes("khoi 7") ||
-          fileText.includes("khối 8") || fileText.includes("khoi 8") ||
-          fileText.includes("khối 9") || fileText.includes("khoi 9") ||
-          fileText.includes("khối 10") || fileText.includes("khoi 10") ||
-          fileText.includes("khối 11") || fileText.includes("khoi 11") ||
-          fileText.includes("khối 12") || fileText.includes("khoi 12") ||
-          fileText.includes("(hs 1)") || fileText.includes("(hs 2)") ||
-          fileText.includes("(n.xét)") || fileText.includes("(n.xet)") ||
-          fileText.includes("khtn") || fileText.includes("ls&đl") ||
-          fileText.includes("kết quả rèn luyện") || fileText.includes("ket qua ren luyen")
-
-        if (isPrimaryFile) {
-          detectedLevel = "PRIMARY"
-        } else if (isSecondaryFile) {
+        if (isSecondaryFile) {
           detectedLevel = "SECONDARY"
+        } else if (isPrimaryFile) {
+          detectedLevel = "PRIMARY"
         }
         
         setLevel(detectedLevel)
@@ -382,26 +382,26 @@ export function ImportKQHTClient({
         sheetScanText = sheetScanText.normalize("NFC").toLowerCase()
 
         const normScan = (sheetScanText + " " + names.join(" ")).normalize("NFC").toLowerCase()
+        const isSecondaryPattern =
+          /(?<![\d\.])(6|7|8|9|10|11|12)[s_\.]/i.test(normScan) ||
+          normScan.includes("khối 6") || normScan.includes("khối 7") || normScan.includes("khối 8") || normScan.includes("khối 9") || normScan.includes("khối 10") || normScan.includes("khối 11") || normScan.includes("khối 12") ||
+          normScan.includes("khtn") || normScan.includes("ls&đl") || normScan.includes("gdcd") || normScan.includes("ndgđđợp") || normScan.includes("(hs 1)")
+
         const isPrimaryPattern = 
-          /\b[1-5](\.|\_|\s|int|uk|s)/i.test(normScan) ||
+          /(?<![\d\.])[1-5][s_\.]/i.test(normScan) ||
           normScan.includes("1.1_cs") || normScan.includes("1.2_cs") || normScan.includes("1.3_cs") || normScan.includes("1.4_cs") || normScan.includes("1.5_cs") || normScan.includes("1.6_cs") ||
           normScan.includes("2.1_cs") || normScan.includes("2.2_cs") || normScan.includes("3.1_cs") || normScan.includes("4.1_cs") || normScan.includes("5.1_cs") ||
           normScan.includes("khối 1") || normScan.includes("khối 2") || normScan.includes("khối 3") || normScan.includes("khối 4") || normScan.includes("khối 5") ||
           normScan.includes("tiếng việt") || normScan.includes("môn học và hoạt động giáo dục") || normScan.includes("mức đạt được") || normScan.includes("điểm ktđk")
 
-        const isSecondaryPattern =
-          /\b(6|7|8|9|10|11|12)[s_]/i.test(normScan) ||
-          normScan.includes("khối 6") || normScan.includes("khối 7") || normScan.includes("khối 8") || normScan.includes("khối 9") || normScan.includes("khối 10") || normScan.includes("khối 11") || normScan.includes("khối 12") ||
-          normScan.includes("khtn") || normScan.includes("ls&đl") || normScan.includes("gdcd") || normScan.includes("ndgđđợp") || normScan.includes("(hs 1)")
-
-        if (isPrimaryPattern) {
-          effectiveLevel = "PRIMARY"
-          if (level !== "PRIMARY") setLevel("PRIMARY")
-          detectedLevelRef.current = "PRIMARY"
-        } else if (isSecondaryPattern) {
+        if (isSecondaryPattern) {
           effectiveLevel = "SECONDARY"
           if (level !== "SECONDARY") setLevel("SECONDARY")
           detectedLevelRef.current = "SECONDARY"
+        } else if (isPrimaryPattern) {
+          effectiveLevel = "PRIMARY"
+          if (level !== "PRIMARY") setLevel("PRIMARY")
+          detectedLevelRef.current = "PRIMARY"
         }
         setSheetNames(names)
         
