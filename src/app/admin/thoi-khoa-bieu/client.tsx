@@ -138,6 +138,8 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
   const [isAutoScheduling, setIsAutoScheduling] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [selectedAssignmentClassId, setSelectedAssignmentClassId] = useState<string>("")
+  const [quotaLevel, setQuotaLevel] = useState<string>("TIEU_HOC")
+  const [quotaProgram, setQuotaProgram] = useState<string>("CHAT_LUONG_CAO")
   const [subjectQuotas, setSubjectQuotas] = useState<Record<string, number>>({})
   const [showAudits, setShowAudits] = useState(false)
 
@@ -1342,15 +1344,45 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
       {/* TAB 2: TEACHER SCHEDULE LOOKUP VIEW */}
       {(mainViewMode as any) === "QUOTAS" && (
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6 animate-in fade-in zoom-in duration-200">
-          <div className="flex items-center justify-between border-b border-slate-150 pb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-150 pb-4">
             <div>
               <h2 className="text-base font-black text-slate-850 uppercase tracking-wide flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-amber-500" />
-                QUY ĐỊNH SỐ TIẾT THEO MÔN HỌC (QUOTA / TUẦN)
+                QUY ĐỊNH SỐ TIẾT MÔN HỌC THEO BẬC HỌC & HỆ HỌC
               </h2>
               <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                Cấu hình định mức số tiết học quy định mỗi tuần cho từng môn học trong chương trình giảng dạy
+                Cấu hình định mức số tiết học quy định/tuần cho từng môn học phân theo Bậc học (Tiểu học, THCS, THPT) & Hệ học (Chất lượng cao, Song ngữ, Quốc tế)
               </p>
+            </div>
+
+            {/* Selectors for Bậc học & Hệ học */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                <label className="text-[10px] font-black text-slate-500 uppercase px-1">Bậc học:</label>
+                <select
+                  value={quotaLevel}
+                  onChange={e => setQuotaLevel(e.target.value)}
+                  className="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-bold text-slate-800 outline-none focus:border-amber-500"
+                >
+                  <option value="TIEU_HOC">Tiểu học (Khối 1 - 5)</option>
+                  <option value="TRUNG_HOC">Trung học (Khối 6 - 12)</option>
+                  <option value="LIEN_CAP">Liên cấp (Toàn trường)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-amber-50/80 p-1.5 rounded-xl border border-amber-200">
+                <label className="text-[10px] font-black text-amber-900 uppercase px-1">Hệ học:</label>
+                <select
+                  value={quotaProgram}
+                  onChange={e => setQuotaProgram(e.target.value)}
+                  className="bg-white border border-amber-300 rounded-lg px-2.5 py-1 text-xs font-bold text-amber-950 outline-none focus:border-amber-500"
+                >
+                  <option value="TIEU_CHUAN">Hệ Tiêu chuẩn (MOET)</option>
+                  <option value="CHAT_LUONG_CAO">Hệ Chất lượng cao (CLC)</option>
+                  <option value="SONG_NGU">Hệ Song ngữ (International)</option>
+                  <option value="QUOC_TE">Hệ Quốc tế (Cambridge)</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -1379,7 +1411,7 @@ export default function TimetableClient({ initialData }: { initialData: any }) {
                     />
                     <button
                       onClick={async () => {
-                        const res = await saveSubjectPeriodQuotaAction(sub.id, currentQ)
+                        const res = await saveSubjectPeriodQuotaAction(sub.id, quotaLevel, quotaProgram, currentQ)
                         if (res.success) showToast(`Đã lưu định mức môn ${sub.subjectName}: ${currentQ} tiết/tuần`, "success")
                       }}
                       className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"

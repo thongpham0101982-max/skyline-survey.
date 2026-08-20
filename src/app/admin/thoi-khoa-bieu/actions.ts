@@ -619,7 +619,12 @@ export async function resetCampusTimetableSlots(campusId: string, level: string)
 }
 
 
-export async function saveSubjectPeriodQuotaAction(subjectId: string, periodsPerWeek: number) {
+export async function saveSubjectPeriodQuotaAction(
+  subjectId: string,
+  level: string,
+  studyProgram: string,
+  quota: number
+) {
   try {
     const session = await auth()
     if (!session || !session.user) {
@@ -631,24 +636,27 @@ export async function saveSubjectPeriodQuotaAction(subjectId: string, periodsPer
     })
 
     if (activeYear) {
+      const programKey = `${level}_${studyProgram}`
       const existing = await prisma.subjectQuota.findFirst({
         where: {
           subjectId: subjectId,
-          academicYearId: activeYear.id
+          academicYearId: activeYear.id,
+          studyProgram: programKey
         }
       })
 
       if (existing) {
         await prisma.subjectQuota.update({
           where: { id: existing.id },
-          data: { quota: periodsPerWeek }
+          data: { quota: quota }
         })
       } else {
         await prisma.subjectQuota.create({
           data: {
             subjectId: subjectId,
             academicYearId: activeYear.id,
-            quota: periodsPerWeek
+            studyProgram: programKey,
+            quota: quota
           }
         })
       }
