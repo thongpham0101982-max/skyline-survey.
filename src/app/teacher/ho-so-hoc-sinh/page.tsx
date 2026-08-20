@@ -318,54 +318,75 @@ export default function TeacherStudentProfilePage() {
     async function loadProfile() {
       const activeStudent = students.find(s => s.id === selectedStudentId)
       setSelectedStudent(activeStudent)
+      if (activeStudent) {
+        setProfileData(prev => prev || {
+          student: activeStudent,
+          termScores: activeStudent.termScores || [],
+          termSummaries: activeStudent.termSummaries || [],
+          achievements: activeStudent.achievements || [],
+          orientation: activeStudent.orientation || null,
+          projects: activeStudent.projects || [],
+          experientialActivities: activeStudent.experientialActivities || [],
+          commitment: activeStudent.commitment || null,
+          highlightComments: activeStudent.highlightComments || [],
+          entranceSurvey: activeStudent.entranceSurvey || null,
+          transfers: activeStudent.transfers || [],
+          learningSupportTargets: activeStudent.learningSupportTargets || []
+        })
+      }
       try {
         setLoadingProfile(true)
         const res = await fetch(`/api/teacher-student-records?action=getStudentRecord&studentId=${selectedStudentId}&academicYearId=${yearId}&_t=${Date.now()}`)
         if (res.ok) {
           const data = await res.json()
           if (data && !data.error) {
-            setProfileData(data)
+            setProfileData({
+              ...data,
+              experientialActivities: (data.experientialActivities && data.experientialActivities.length > 0)
+                ? data.experientialActivities
+                : (activeStudent?.experientialActivities || [])
+            })
           } else {
             setProfileData({
               student: activeStudent || null,
-              achievements: [],
-              orientation: null,
-              projects: [],
-              experientialActivities: [],
-              commitment: null,
-              highlightComments: [],
-              entranceSurvey: null,
-              transfers: [],
-              learningSupportTargets: []
+              achievements: activeStudent?.achievements || [],
+              orientation: activeStudent?.orientation || null,
+              projects: activeStudent?.projects || [],
+              experientialActivities: activeStudent?.experientialActivities || [],
+              commitment: activeStudent?.commitment || null,
+              highlightComments: activeStudent?.highlightComments || [],
+              entranceSurvey: activeStudent?.entranceSurvey || null,
+              transfers: activeStudent?.transfers || [],
+              learningSupportTargets: activeStudent?.learningSupportTargets || []
             })
           }
         } else {
           setProfileData({
             student: activeStudent || null,
-            achievements: [],
-            orientation: null,
-            projects: [],
-            experientialActivities: [],
-            commitment: null,
-            highlightComments: [],
-            entranceSurvey: null,
-            transfers: [],
-            learningSupportTargets: []
+            achievements: activeStudent?.achievements || [],
+            orientation: activeStudent?.orientation || null,
+            projects: activeStudent?.projects || [],
+            experientialActivities: activeStudent?.experientialActivities || [],
+            commitment: activeStudent?.commitment || null,
+            highlightComments: activeStudent?.highlightComments || [],
+            entranceSurvey: activeStudent?.entranceSurvey || null,
+            transfers: activeStudent?.transfers || [],
+            learningSupportTargets: activeStudent?.learningSupportTargets || []
           })
         }
       } catch (err) {
         console.error("Error loading student profile:", err)
         setProfileData({
           student: activeStudent || null,
-          achievements: [],
-          orientation: null,
-          projects: [],
-          experientialActivities: [],
-          commitment: null,
-          highlightComments: [],
-          entranceSurvey: null,
-          transfers: [],
-          learningSupportTargets: []
+          achievements: activeStudent?.achievements || [],
+          orientation: activeStudent?.orientation || null,
+          projects: activeStudent?.projects || [],
+          experientialActivities: activeStudent?.experientialActivities || [],
+          commitment: activeStudent?.commitment || null,
+          highlightComments: activeStudent?.highlightComments || [],
+          entranceSurvey: activeStudent?.entranceSurvey || null,
+          transfers: activeStudent?.transfers || [],
+          learningSupportTargets: activeStudent?.learningSupportTargets || []
         })
       } finally {
         setLoadingProfile(false)
@@ -1857,8 +1878,8 @@ export default function TeacherStudentProfilePage() {
                                 <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
                                   <th className="py-3.5 px-4 text-center w-14">STT</th>
                                   <th className="py-3.5 px-4">Tên hoạt động</th>
-                                  <th className="py-3.5 px-4">Nhóm lĩnh vực</th>
-                                  <th className="py-3.5 px-4 text-center">Vai trò</th>
+                                  <th className="py-3.5 px-4">Nhóm hoạt động</th>
+                                  <th className="py-3.5 px-4 text-center">Vai trò tham gia</th>
                                   <th className="py-3.5 px-4 text-center">Mức đánh giá</th>
                                 </tr>
                               </thead>

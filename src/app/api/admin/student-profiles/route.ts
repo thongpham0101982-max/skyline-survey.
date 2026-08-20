@@ -162,14 +162,32 @@ export async function GET(req: NextRequest) {
     const studentIds = students.map((s: any) => s.id)
     const studentCodesArr = students.map((s: any) => s.studentCode).filter(Boolean)
 
-    const allParticipants = (studentIds.length > 0 || studentCodesArr.length > 0)
-      ? await prisma.activityParticipant.findMany({
-          where: {
-            OR: [
-              ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
-              ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
-            ]
-          },
+    let allParticipants: any[] = []
+    try {
+      allParticipants = (studentIds.length > 0 || studentCodesArr.length > 0)
+        ? await prisma.activityParticipant.findMany({
+            where: {
+              OR: [
+                ...(studentIds.length > 0 ? [{ studentId: { in: studentIds } }] : []),
+                ...(studentCodesArr.length > 0 ? [{ student: { studentCode: { in: studentCodesArr } } }] : [])
+              ]
+            },
+            include: {
+              record: {
+                include: {
+                  catalog: {
+                    include: { group: true }
+                  }
+                }
+              },
+              student: true
+            },
+            orderBy: { createdAt: "desc" }
+          })
+        : []
+
+      if (allParticipants.length === 0) {
+        allParticipants = await prisma.activityParticipant.findMany({
           include: {
             record: {
               include: {
@@ -182,7 +200,10 @@ export async function GET(req: NextRequest) {
           },
           orderBy: { createdAt: "desc" }
         })
-      : []
+      }
+    } catch (err) {
+      console.error("Error fetching allParticipants in admin student-profiles:", err)
+    }
 
     const categories = await prisma.activityCategory.findMany()
 

@@ -655,17 +655,12 @@ export async function GET(req: Request) {
         // Fetch experiential activities
         let experientialActivities: any[] = []
         try {
-          const cleanStudentName = (student?.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ')
+          const normName = (str: string) => (str || "").trim().toLowerCase().replace(/\s+/g, ' ')
+          const cleanStudentName = normName(student?.studentName)
 
-          let activityParticipants: any[] = []
+          let allParticipants: any[] = []
           try {
-            activityParticipants = await prisma.activityParticipant.findMany({
-              where: {
-                OR: [
-                  { studentId: student.id },
-                  ...(student.studentCode ? [{ student: { studentCode: student.studentCode } }] : [])
-                ]
-              },
+            allParticipants = await prisma.activityParticipant.findMany({
               include: {
                 record: {
                   include: {
@@ -679,34 +674,16 @@ export async function GET(req: Request) {
               orderBy: { createdAt: "desc" }
             })
           } catch (err) {
-            console.error("Error fetching activityParticipants by id/code:", err)
+            console.error("Error fetching all activityParticipants in getStudentRecord:", err)
           }
 
-          if (activityParticipants.length === 0) {
-            try {
-              const allParticipants = await prisma.activityParticipant.findMany({
-                include: {
-                  record: {
-                    include: {
-                      catalog: {
-                        include: { group: true }
-                      }
-                    }
-                  },
-                  student: true
-                },
-                orderBy: { createdAt: "desc" }
-              })
-
-              activityParticipants = allParticipants.filter(p => {
-                if (!p?.student) return false
-                const pName = (p.student.studentName || "").trim().toLowerCase().replace(/\s+/g, ' ')
-                return (cleanStudentName && pName === cleanStudentName) || (student.studentCode && p.student.studentCode === student.studentCode)
-              })
-            } catch (err) {
-              console.error("Error fetching all activityParticipants fallback:", err)
-            }
-          }
+          const activityParticipants = allParticipants.filter(p => {
+            if (!p) return false
+            if (p.studentId === student.id) return true
+            if (student.studentCode && p.student?.studentCode === student.studentCode) return true
+            if (cleanStudentName && p.student?.studentName && normName(p.student.studentName) === cleanStudentName) return true
+            return false
+          })
 
           let categories: any[] = []
           try {
