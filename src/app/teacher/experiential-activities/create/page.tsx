@@ -400,7 +400,6 @@ const getCampusCodeOfClass = (c: any) => {
     { num: 2, title: 'Đối tượng tham gia', sub: 'Bậc, cơ sở, khối & lớp' },
     { num: 3, title: 'Đánh giá & Hoàn tất', sub: 'Mức độ, vai trò & lưu kế hoạch' },
   ];
-  ];
 
   return (
     <div className="min-h-screen bg-slate-50/60 py-6 px-4 sm:px-6 font-sans">
