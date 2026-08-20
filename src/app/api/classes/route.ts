@@ -38,6 +38,7 @@ export async function GET(req: Request) {
               { teachers: { some: { teacherId: teacher.id, roleInClass: "GVCN" } } }
             ]
           },
+          include: { campus: true },
           orderBy: [
             { level: 'asc' },
             { grade: 'asc' },
@@ -53,6 +54,7 @@ export async function GET(req: Request) {
     // Default general query (for Admin or system dropdowns)
     const classes = await prisma.class.findMany({
       where: whereCondition,
+      include: { campus: true },
       orderBy: [
         { level: 'asc' },
         { grade: 'asc' },

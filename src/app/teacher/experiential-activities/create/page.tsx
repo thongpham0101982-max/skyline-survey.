@@ -61,6 +61,7 @@ export default function CreateActivityWizard() {
   const [classStudents, setClassStudents] = useState<any[]>([]);
   const [target, setTarget] = useState({
     levels: [] as string[],
+    campuses: [] as string[],
     grades: [] as string[],
     classes: [] as string[],
     specificStudents: [] as string[]
@@ -144,6 +145,28 @@ export default function CreateActivityWizard() {
     }
   }, [studentFilterClass, studentFilterLevel, info.academicYear]);
 
+
+  const getCampusCodeOfClass = (c: any) => {
+    if (c?.campus?.code) return c.campus.code;
+    if (c?.campusId) return c.campusId;
+    const match = (c?.className || '').match(/CS\d+/i);
+    if (match) return match[0].toUpperCase();
+    return 'KHAC';
+  };
+
+  const getCampusNameOfClass = (c: any) => {
+    if (c?.campus?.name) return c.campus.name;
+    const code = getCampusCodeOfClass(c);
+    const names: Record<string, string> = {
+      'CS1': 'Sky-Line Riverside (CS1)',
+      'CS2': 'Sky-Line Central (CS2)',
+      'CS3': 'Sky-Line Beach-D (CS3)',
+      'CS4': 'Sky-Line Hill (CS4)',
+      'CS5': 'Sky-Line International (CS5)'
+    };
+    return names[code] || ('Cơ sở ' + code);
+  };
+
   const safeClasses = Array.isArray(allClasses) ? allClasses : [];
   const safeCategories = Array.isArray(categories) ? categories : [];
   const safeCatalogs = Array.isArray(catalogs) ? catalogs : [];
@@ -172,15 +195,31 @@ export default function CreateActivityWizard() {
   });
   const availableLevels = Array.from(mappedLevelsMap.values());
 
-  // Filter grades to show only those matching current selected levels!
+  // Filter Campuses based on selected Levels
+  const campusMap = new Map();
+  safeClasses
+    .filter(c => target.levels.length === 0 || target.levels.includes(c?.level))
+    .forEach(c => {
+      const code = getCampusCodeOfClass(c);
+      const name = getCampusNameOfClass(c);
+      if (!campusMap.has(code)) {
+        campusMap.set(code, { code, name });
+      }
+    });
+  const availableCampuses = Array.from(campusMap.values()).sort((a, b) => a.code.localeCompare(b.code));
+
+  // Filter grades to show only those matching current selected levels & campuses!
   const availableGrades = Array.from(new Set(
     safeClasses
       .filter(c => target.levels.length === 0 || target.levels.includes(c?.level))
+      .filter(c => target.campuses.length === 0 || target.campuses.includes(getCampusCodeOfClass(c)))
       .map(c => c?.grade)
       .filter(Boolean)
   )).sort((a: any, b: any) => parseInt(a) - parseInt(b));
 
   const availableClasses = safeClasses
+    .filter(c => target.levels.length === 0 || target.levels.includes(c?.level))
+    .filter(c => target.campuses.length === 0 || target.campuses.includes(getCampusCodeOfClass(c)))
     .filter(c => target.grades.length === 0 || target.grades.includes(c?.grade))
     .sort((a: any, b: any) => (a?.className || '').localeCompare(b?.className || ''));
 
@@ -574,9 +613,14 @@ export default function CreateActivityWizard() {
             {targetMode === 'class' ? (
               <div className="space-y-6">
                 
-                {/* Bậc học Tabs */}
+                {/* 1. Bậc học Selector */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">1. Chọn Bậc học</label>
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>1. Chọn Bậc học</span>
+                    {target.levels.length > 0 && (
+                      <button type="button" onClick={() => setTarget({ ...target, levels: [], campuses: [], grades: [], classes: [] })} className="text-[11px] font-bold text-rose-500 hover:underline">Bỏ chọn tất cả</button>
+                    )}
+                  </label>
                   <div className="flex flex-wrap gap-2">
                     {availableLevels.map(lvl => {
                       const isSelected = lvl.originalLevels.some((l: any) => target.levels.includes(l));
@@ -588,15 +632,15 @@ export default function CreateActivityWizard() {
                             const newLevels = isSelected
                               ? target.levels.filter((l: any) => !lvl.originalLevels.includes(l))
                               : [...target.levels, ...lvl.originalLevels];
-                            setTarget({ ...target, levels: newLevels, grades: [], classes: [] });
+                            setTarget({ ...target, levels: newLevels, campuses: [], grades: [], classes: [] });
                           }}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
+                          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 " + (
                             isSelected 
-                              ? 'bg-[#6930C3]/10 border-[#6930C3] text-[#6930C3] font-black shadow-sm' 
+                              ? 'bg-[#6930C3]/10 border-[#6930C3] text-[#6930C3] font-black shadow-sm ring-1 ring-[#6930C3]' 
                               : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                          }`}
+                          )}
                         >
-                          <Check className={`w-3.5 h-3.5 ${isSelected ? 'opacity-100' : 'opacity-0'}`} />
+                          <Check className={"w-3.5 h-3.5 " + (isSelected ? 'opacity-100' : 'opacity-0')} />
                           <span>{lvl.name}</span>
                         </button>
                       );
@@ -604,50 +648,98 @@ export default function CreateActivityWizard() {
                   </div>
                 </div>
 
-                {/* Filtered Khối Selector */}
+                {/* 2. Cơ sở Selector */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700">2. Chọn Khối học</label>
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>2. Chọn Cơ sở</span>
+                    {target.campuses.length > 0 && (
+                      <button type="button" onClick={() => setTarget({ ...target, campuses: [], grades: [], classes: [] })} className="text-[11px] font-bold text-rose-500 hover:underline">Bỏ chọn tất cả</button>
+                    )}
+                  </label>
                   <div className="flex flex-wrap gap-2">
-                    {availableGrades.map(grade => {
-                      const isSelected = target.grades.includes(grade);
-                      return (
-                        <button
-                          key={grade}
-                          type="button"
-                          onClick={() => {
-                            const newGrades = isSelected
-                              ? target.grades.filter((g: any) => g !== grade)
-                              : [...target.grades, grade];
-                            setTarget({ ...target, grades: newGrades, classes: [] });
-                          }}
-                          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 ${
-                            isSelected 
-                              ? 'bg-[#48BFE3]/15 border-[#48BFE3] text-[#6930C3] font-black shadow-sm' 
-                              : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                          }`}
-                        >
-                          <span>Khối {grade}</span>
-                        </button>
-                      );
-                    })}
+                    {availableCampuses.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">Chọn Bậc học ở trên để hiển thị cơ sở.</p>
+                    ) : (
+                      availableCampuses.map(cs => {
+                        const isSelected = target.campuses.includes(cs.code);
+                        return (
+                          <button
+                            key={cs.code}
+                            type="button"
+                            onClick={() => {
+                              const newCampuses = isSelected
+                                ? target.campuses.filter((c: string) => c !== cs.code)
+                                : [...target.campuses, cs.code];
+                              setTarget({ ...target, campuses: newCampuses, grades: [], classes: [] });
+                            }}
+                            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 " + (
+                              isSelected 
+                                ? 'bg-[#5E60CE]/15 border-[#5E60CE] text-[#5E60CE] font-black shadow-sm ring-1 ring-[#5E60CE]' 
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            )}
+                          >
+                            <Check className={"w-3.5 h-3.5 " + (isSelected ? 'opacity-100' : 'opacity-0')} />
+                            <span>{cs.name}</span>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
-                {/* Filtered Lớp Selector */}
+                {/* 3. Khối học Selector */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                    <span>3. Chọn Khối học</span>
+                    {target.grades.length > 0 && (
+                      <button type="button" onClick={() => setTarget({ ...target, grades: [], classes: [] })} className="text-[11px] font-bold text-rose-500 hover:underline">Bỏ chọn tất cả</button>
+                    )}
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {availableGrades.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic">Chọn Bậc học và Cơ sở ở trên để hiển thị khối học.</p>
+                    ) : (
+                      availableGrades.map(grade => {
+                        const isSelected = target.grades.includes(grade);
+                        return (
+                          <button
+                            key={grade}
+                            type="button"
+                            onClick={() => {
+                              const newGrades = isSelected
+                                ? target.grades.filter((g: any) => g !== grade)
+                                : [...target.grades, grade];
+                              setTarget({ ...target, grades: newGrades, classes: [] });
+                            }}
+                            className={"px-3.5 py-2 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 " + (
+                              isSelected 
+                                ? 'bg-[#48BFE3]/15 border-[#48BFE3] text-[#6930C3] font-black shadow-sm ring-1 ring-[#48BFE3]' 
+                                : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            )}
+                          >
+                            <span>Khối {grade}</span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* 4. Lớp học cụ thể Selector */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-slate-700">3. Chọn Lớp cụ thể ({target.classes.length} đã chọn)</label>
+                    <label className="text-xs font-bold text-slate-700">4. Chọn Lớp cụ thể ({target.classes.length} đã chọn)</label>
                     {availableClasses.length > 0 && (
                       <button
                         type="button"
                         onClick={() => {
                           const allIds = availableClasses.map(c => c.id);
-                          const isAllSelected = allIds.every(id => target.classes.includes(id));
-                          setTarget({ ...target, classes: isAllSelected ? [] : allIds });
+                          const isAllSelected = availableClasses.length > 0 && availableClasses.every(c => target.classes.includes(c.id));
+                          setTarget({ ...target, classes: isAllSelected ? [] : Array.from(new Set([...target.classes, ...allIds])) });
                         }}
                         className="text-xs font-bold text-[#6930C3] hover:underline"
                       >
-                        {availableClasses.every(c => target.classes.includes(c.id)) ? 'Bỏ chọn tất cả' : 'Chọn tất cả lớp'}
+                        {availableClasses.length > 0 && availableClasses.every(c => target.classes.includes(c.id)) ? 'Bỏ chọn tất cả lớp' : 'Chọn tất cả lớp'}
                       </button>
                     )}
                   </div>
@@ -655,9 +747,41 @@ export default function CreateActivityWizard() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 p-4 bg-slate-50 rounded-2xl border border-slate-200">
                     {availableClasses.length === 0 ? (
                       <div className="col-span-full py-4 text-center text-xs text-slate-400 font-medium">
-                        Chọn Bậc học và Khối học ở trên để hiển thị danh sách lớp.
+                        Chọn Bậc học, Cơ sở và Khối học ở trên để hiển thị danh sách lớp.
                       </div>
                     ) : (
+                      availableClasses.map(cls => {
+                        const isChecked = target.classes.includes(cls.id);
+                        return (
+                          <button
+                            key={cls.id}
+                            type="button"
+                            onClick={() => {
+                              const newClasses = isChecked
+                                ? target.classes.filter((c: any) => c !== cls.id)
+                                : [...target.classes, cls.id];
+                              setTarget({ ...target, classes: newClasses });
+                            }}
+                            className={"p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center justify-between " + (
+                              isChecked
+                                ? 'bg-white border-[#6930C3] text-[#6930C3] shadow-sm ring-1 ring-[#6930C3]'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                            )}
+                          >
+                            <span>{cls.className}</span>
+                            <span className={"w-4 h-4 rounded-full flex items-center justify-center text-[10px] " + (
+                              isChecked ? 'bg-[#6930C3] text-white' : 'border border-slate-300'
+                            )}>
+                              {isChecked && <Check className="w-3 h-3" />}
+                            </span>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+              </div> : (
                       availableClasses.map(cls => {
                         const isChecked = target.classes.includes(cls.id);
                         return (
