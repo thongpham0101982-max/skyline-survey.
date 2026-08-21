@@ -96,16 +96,24 @@ export async function GET(req: Request) {
           if (!text.trim()) return [];
           const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i);
           if (match && match[1]) {
-            return match[1].split(/[,;]/).map(s => s.trim()).filter(Boolean);
+            const splitSubs = match[1].split(/[,;]/).map(s => s.trim()).filter(Boolean);
+            if (splitSubs.length > 0) {
+              const mapped = splitSubs.map(s => {
+                if (/Anh|English/i.test(s)) return "Tiếng Anh";
+                if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(s)) return "Tiếng Việt";
+                if (/Toán|Math/i.test(s)) return "Toán";
+                if (/Tâm lý|Psychology/i.test(s)) return "Tâm lý";
+                return s;
+              });
+              return Array.from(new Set(mapped));
+            }
           }
           const subs: string[] = [];
           if (/Toán|Math/i.test(text)) subs.push("Toán");
           if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt");
-          if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) subs.push("Tiếng Anh (viết)");
-          if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) subs.push("Tiếng Anh (vấn đáp)");
-          if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) subs.push("Tiếng Anh");
+          if (/Anh|English/i.test(text)) subs.push("Tiếng Anh");
           if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý");
-          return subs;
+          return Array.from(new Set(subs));
         };
 
         const cleanStr = (s: string) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
@@ -655,23 +663,24 @@ export async function GET(req: Request) {
         const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
         if (match && match[1]) {
           const splitSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
-          if (splitSubs.length > 0) return splitSubs
+          if (splitSubs.length > 0) {
+            const mapped = splitSubs.map(s => {
+              if (/Anh|English/i.test(s)) return "Tiếng Anh"
+              if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(s)) return "Tiếng Việt"
+              if (/Toán|Math/i.test(s)) return "Toán"
+              if (/Tâm lý|Psychology/i.test(s)) return "Tâm lý"
+              return s
+            })
+            return Array.from(new Set(mapped))
+          }
         }
 
         const subs: string[] = []
         if (/Toán|Math/i.test(text)) subs.push("Toán")
         if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
-        if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
-          subs.push("Tiếng Anh (viết)")
-        }
-        if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
-          subs.push("Tiếng Anh (vấn đáp)")
-        }
-        if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
-          subs.push("Tiếng Anh")
-        }
+        if (/Anh|English/i.test(text)) subs.push("Tiếng Anh")
         if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
-        return subs
+        return Array.from(new Set(subs))
       }
 
       const result = [
