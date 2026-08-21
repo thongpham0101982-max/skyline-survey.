@@ -1283,7 +1283,7 @@ export function TeacherSupportClient({
                                 if (data.error) {
                                   toast.error("Thêm vào Sổ theo dõi thất bại: " + data.error)
                                 } else {
-                                  toast.success(`Đã thêm học sinh ${s.studentName} vào Sổ theo dõi đánh giá!`)
+                                  toast.success(`Thêm thành công học sinh ${s.studentName} vào 2. Sổ theo dõi đánh giá`)
                                   setActiveSubTab("assigned")
                                   await fetchTeacherData()
                                   await fetchEntranceCommitments()
