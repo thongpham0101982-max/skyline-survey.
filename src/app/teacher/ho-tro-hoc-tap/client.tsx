@@ -790,42 +790,6 @@ export function TeacherSupportClient({
           <Calendar className="h-4 w-4" />
           <span>1. Cam kết đầu vào</span>
         </button>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveSubTab("history")}
-            className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 relative ${
-              activeSubTab === "history"
-                ? "border-indigo-600 text-indigo-600 font-extrabold"
-                : "border-transparent text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            <Clock className="h-4 w-4" />
-            <span>2. Đề xuất theo dõi</span>
-            {approvedHistoryCount > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500 text-white shadow-xs animate-pulse">
-                <Bell className="h-3 w-3 fill-white animate-bounce" />
-                <span>{approvedHistoryCount} đã duyệt</span>
-              </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => {
-              setProposeClassId("")
-              setClassStudents([])
-              setSelectedStudentIds([])
-              setSelectedSubjects([])
-              setProposePsychReason("Tâm lý")
-              setProposeNotes("")
-              setIsProposeModalOpen(true)
-              fetchAssignedClasses()
-            }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white py-1 px-3 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Đề xuất HS Theo dõi</span>
-          </button>
-        </div>
         <button
           onClick={() => setActiveSubTab("assigned")}
           className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
@@ -835,7 +799,7 @@ export function TeacherSupportClient({
           }`}
         >
           <Users className="h-4 w-4" />
-          <span>3. Sổ theo dõi đánh giá</span>
+          <span>2. Sổ theo dõi đánh giá</span>
         </button>
       </div>
 
