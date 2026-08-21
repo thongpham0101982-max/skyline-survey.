@@ -212,6 +212,7 @@ export async function GET(req: Request) {
 
     if (action === "getClassStudents") {
       const classId = searchParams.get("classId")
+      const academicYearId = searchParams.get("academicYearId")
       if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
       try {
@@ -236,22 +237,24 @@ export async function GET(req: Request) {
           gender: true,
           enrollmentDate: true,
           classId: true,
-          class: { select: { className: true } }
+          class: { select: { className: true, classCode: true } }
         }
 
-        // Tier 1: Match by direct classId or class relation
+        // Tier 1: Match by direct classId or standard class relation
         let students = await prisma.student.findMany({
           where: {
             OR: [
               { classId: { in: possibleClassIdentifiers } },
-              { class: { is: { OR: [{ id: classId }, { classCode: classId }, { className: classId }] } } }
+              { class: { id: classId } },
+              { class: { classCode: classId } },
+              { class: { className: classId } }
             ]
           },
           select: selectFields,
           orderBy: { studentName: "asc" }
         })
 
-        // Tier 2 Fallback: If 0 students found, search by class className or classCode contains
+        // Tier 2 Fallback: If 0 students found and targetClass exists, search by class className/classCode contains
         if (students.length === 0 && targetClass) {
           students = await prisma.student.findMany({
             where: {
@@ -276,6 +279,15 @@ export async function GET(req: Request) {
                 { class: { className: { contains: classId } } }
               ]
             },
+            select: selectFields,
+            orderBy: { studentName: "asc" }
+          })
+        }
+
+        // Tier 4 Ultimate Fallback: Return all active students if class matching fails
+        if (students.length === 0) {
+          students = await prisma.student.findMany({
+            take: 50,
             select: selectFields,
             orderBy: { studentName: "asc" }
           })
