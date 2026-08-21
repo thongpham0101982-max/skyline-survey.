@@ -229,24 +229,57 @@ export async function GET(req: Request) {
           ? Array.from(new Set([targetClass.id, targetClass.classCode, targetClass.className, classId].filter(Boolean)))
           : [classId]
 
-        const students = await prisma.student.findMany({
+        const selectFields = {
+          id: true,
+          studentCode: true,
+          studentName: true,
+          gender: true,
+          enrollmentDate: true,
+          classId: true,
+          class: { select: { className: true } }
+        }
+
+        // Tier 1: Match by direct classId or class relation
+        let students = await prisma.student.findMany({
           where: {
             OR: [
               { classId: { in: possibleClassIdentifiers } },
               { class: { is: { OR: [{ id: classId }, { classCode: classId }, { className: classId }] } } }
             ]
           },
-          select: {
-            id: true,
-            studentCode: true,
-            studentName: true,
-            gender: true,
-            enrollmentDate: true,
-            classId: true,
-            class: { select: { className: true } }
-          },
+          select: selectFields,
           orderBy: { studentName: "asc" }
         })
+
+        // Tier 2 Fallback: If 0 students found, search by class className or classCode contains
+        if (students.length === 0 && targetClass) {
+          students = await prisma.student.findMany({
+            where: {
+              class: {
+                OR: [
+                  { className: { contains: targetClass.className } },
+                  { classCode: { contains: targetClass.classCode } }
+                ]
+              }
+            },
+            select: selectFields,
+            orderBy: { studentName: "asc" }
+          })
+        }
+
+        // Tier 3 Fallback: If still 0 students found, search student.classId contains raw classId
+        if (students.length === 0) {
+          students = await prisma.student.findMany({
+            where: {
+              OR: [
+                { classId: { contains: classId } },
+                { class: { className: { contains: classId } } }
+              ]
+            },
+            select: selectFields,
+            orderBy: { studentName: "asc" }
+          })
+        }
 
         const formatted = students.map(s => ({
           ...s,
