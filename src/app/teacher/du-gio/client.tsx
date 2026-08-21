@@ -2499,7 +2499,9 @@ export function ObservationClient(props: ObservationClientProps) {
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-xs font-bold tracking-wider">
+                    <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">Giáo viên</th>
+                    <th className="p-4">Tổ chuyên môn</th>
                     <th className="p-4">Môn học & Chủ đề</th>
                     <th className="p-4">Thời gian / Phòng</th>
                     <th className="p-4 text-center">Số chỗ</th>
@@ -2509,7 +2511,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
-                  {tabFilteredSlots.map(slot => {
+                  {tabFilteredSlots.map((slot, index) => {
                     const isHost = slot.teacherId === currentTeacher?.id;
                     const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
                     const isRegistered = !!myReg;
@@ -2523,9 +2525,17 @@ export function ObservationClient(props: ObservationClientProps) {
 
                     return (
                       <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="p-4 text-center font-extrabold text-slate-400">
+                          {index + 1}
+                        </td>
                         <td className="p-4 font-bold text-slate-800">
                           <p className="font-extrabold">{slot.teacher.teacherName}</p>
                           <p className="text-xs font-bold text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
+                        </td>
+                        <td className="p-4 font-bold text-slate-700">
+                          <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold inline-block">
+                            {slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "Chưa xếp tổ"}
+                          </span>
                         </td>
                         <td className="p-4">
                           {slot.level === "Mầm non" ? (() => {
