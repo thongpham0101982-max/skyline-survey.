@@ -454,25 +454,6 @@ export async function GET(req: Request) {
 
       const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } })
 
-      // Find all teaching assignments for this teacher
-      let assignments = await prisma.teachingAssignment.findMany({
-        where: {
-          teacherId,
-          ...(academicYearId ? { academicYearId } : {})
-        },
-        include: {
-          class: true,
-          subject: true
-        }
-      })
-
-      if (assignments.length === 0 && academicYearId) {
-        assignments = await prisma.teachingAssignment.findMany({
-          where: { teacherId },
-          include: { class: true, subject: true }
-        })
-      }
-
       // Find all homeroom classes for this teacher
       let homeroomClasses = await prisma.class.findMany({
         where: {
@@ -495,10 +476,22 @@ export async function GET(req: Request) {
         })
       }
 
+      // Find all teaching assignments for this teacher
+      let assignments = await prisma.teachingAssignment.findMany({
+        where: {
+          teacherId,
+          ...(academicYearId ? { academicYearId } : {})
+        },
+        include: {
+          class: true,
+          subject: true
+        }
+      })
+
       // Collect all class IDs
       const classIds = Array.from(new Set([
-        ...assignments.map(a => a.classId),
-        ...homeroomClasses.map(c => c.id)
+        ...homeroomClasses.map(c => c.id),
+        ...assignments.map(a => a.classId)
       ])).filter(Boolean)
 
       if (classIds.length === 0) {
@@ -564,6 +557,14 @@ export async function GET(req: Request) {
 
       const allAssessments = [...inputAssessments, ...preschoolAssessments]
 
+      const cleanString = (str: string) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9]/g, "")
+      }
+
       const parseCommittedSubjects = (assessment: any) => {
         if (!assessment) return []
         const text = `${assessment.directorNote || ""} ${assessment.admissionResult || ""}`
@@ -589,24 +590,20 @@ export async function GET(req: Request) {
           if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
         }
 
-        // Fallback: Check if scores / results are present
-        if (subs.length === 0 && (assessment.admissionResult?.includes("cam kết") || assessment.admissionResult?.includes("Cam kết"))) {
+        // Fallback check score fields
+        if (subs.length === 0) {
           if (assessment.mathScore != null) subs.push("Toán")
           if (assessment.literatureScore != null) subs.push("Tiếng Việt")
           if (assessment.writtenEnglishScore != null || assessment.oralEnglishScore != null) subs.push("Tiếng Anh")
           if (assessment.psychologyScore != null) subs.push("Tâm lý")
-          if (subs.length === 0) subs.push("Tiếng Việt", "Toán", "Tiếng Anh")
+        }
+
+        // Fallback default
+        if (subs.length === 0) {
+          subs.push("Tiếng Việt", "Toán", "Tiếng Anh")
         }
 
         return subs
-      }
-
-      const cleanString = (str: string) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
       }
 
       // Filter and construct candidates
@@ -619,15 +616,20 @@ export async function GET(req: Request) {
             if (sCode && (sCode === aCode || sCode === eCode)) {
               return true
             }
-            return cleanString(a.fullName) === cleanString(s.studentName)
+            const cleanA = cleanString(a.fullName || "");
+            const cleanS = cleanString(s.studentName || "");
+            if (cleanA && cleanS && (cleanA === cleanS || cleanA.includes(cleanS) || cleanS.includes(cleanA))) {
+              return true;
+            }
+            return false;
           })
-          if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment)
-          if (committedSubjects.length === 0) return null
-
-          // Determine if the teacher is GVCN of this student's class
+          // For GVCN: include student if assessment exists OR if student belongs to homeroom
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
+          if (!assessment && !isHomeroom) return null
+
+          const committedSubjects = parseCommittedSubjects(assessment || {})
+
           const teacherSubjectsInClass = assignments
             .filter(a => a.classId === s.classId)
             .map(a => a.subject?.name || a.subject?.subjectName || "")
@@ -645,7 +647,7 @@ export async function GET(req: Request) {
             })
           })
 
-          // For GVCN: include ALL committed subjects
+          // For GVCN: include ALL committed subjects for their homeroom class
           // For GVBM: include ONLY subjects assigned to teach in this class
           if (!isHomeroom && matchedSubjects.length === 0) return null
 
@@ -692,15 +694,15 @@ export async function GET(req: Request) {
             matchedSubjects,
             assignedTeachers,
             isHomeroom,
-            admissionResult: assessment.admissionResult,
-            directorNote: assessment.directorNote,
-            enrollmentDate: assessment.enrollmentDate,
-            mathScore: assessment.mathScore,
-            literatureScore: assessment.literatureScore,
-            writtenEnglishScore: assessment.writtenEnglishScore,
-            oralEnglishScore: assessment.oralEnglishScore,
-            psychologyScore: assessment.psychologyScore,
-            scores: assessment.scores
+            admissionResult: assessment?.admissionResult || "Đạt cam kết",
+            directorNote: assessment?.directorNote || "",
+            enrollmentDate: assessment?.enrollmentDate || null,
+            mathScore: assessment?.mathScore || null,
+            literatureScore: assessment?.literatureScore || null,
+            writtenEnglishScore: assessment?.writtenEnglishScore || null,
+            oralEnglishScore: assessment?.oralEnglishScore || null,
+            psychologyScore: assessment?.psychologyScore || null,
+            scores: assessment?.scores || []
           }
         })
         .filter(Boolean)

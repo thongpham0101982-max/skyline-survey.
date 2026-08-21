@@ -900,7 +900,7 @@ export function TeacherSupportClient({
           }`}
         >
           <Calendar className="h-4 w-4" />
-          Cam kết Khảo sát đầu vào
+          HS KSĐV Cam kết (GVCN)
         </button>
         <button
           onClick={() => setActiveSubTab("history")}
