@@ -212,7 +212,6 @@ export async function GET(req: Request) {
 
     if (action === "getClassStudents") {
       const classId = searchParams.get("classId")
-      const academicYearId = searchParams.get("academicYearId")
       if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
       try {
@@ -237,46 +236,30 @@ export async function GET(req: Request) {
           gender: true,
           enrollmentDate: true,
           classId: true,
-          class: { select: { className: true, classCode: true } }
+          class: { select: { id: true, className: true, classCode: true } }
         }
 
-        // Tier 1: Match by direct classId or standard class relation
-        let students = await prisma.student.findMany({
+        // Query students in class
+        let dbStudents = await prisma.student.findMany({
           where: {
             OR: [
               { classId: { in: possibleClassIdentifiers } },
-              { class: { id: classId } },
-              { class: { classCode: classId } },
-              { class: { className: classId } }
+              { class: { id: { in: possibleClassIdentifiers } } },
+              { class: { classCode: { in: possibleClassIdentifiers } } },
+              { class: { className: { in: possibleClassIdentifiers } } }
             ]
           },
           select: selectFields,
           orderBy: { studentName: "asc" }
         })
 
-        // Tier 2 Fallback: If 0 students found and targetClass exists, search by class className/classCode contains
-        if (students.length === 0 && targetClass) {
-          students = await prisma.student.findMany({
-            where: {
-              class: {
-                OR: [
-                  { className: { contains: targetClass.className } },
-                  { classCode: { contains: targetClass.classCode } }
-                ]
-              }
-            },
-            select: selectFields,
-            orderBy: { studentName: "asc" }
-          })
-        }
-
-        // Tier 3 Fallback: If still 0 students found, search student.classId contains raw classId
-        if (students.length === 0) {
-          students = await prisma.student.findMany({
+        // Fallback search by className substring if 0 students found
+        if (dbStudents.length === 0 && targetClass) {
+          dbStudents = await prisma.student.findMany({
             where: {
               OR: [
-                { classId: { contains: classId } },
-                { class: { className: { contains: classId } } }
+                { class: { className: { contains: targetClass.className } } },
+                { class: { classCode: { contains: targetClass.classCode } } }
               ]
             },
             select: selectFields,
@@ -284,20 +267,73 @@ export async function GET(req: Request) {
           })
         }
 
-        // Tier 4 Ultimate Fallback: Return all active students if class matching fails
-        if (students.length === 0) {
-          students = await prisma.student.findMany({
-            take: 50,
-            select: selectFields,
-            orderBy: { studentName: "asc" }
+        // Fetch input assessment records for students in this class
+        const [inputAssessments, preschoolAssessments] = await Promise.all([
+          prisma.inputAssessmentStudent.findMany({
+            where: {
+              OR: [
+                { enrollmentClassId: { in: possibleClassIdentifiers } },
+                { enrollmentClass: { is: { OR: [{ id: classId }, { classCode: classId }, { className: classId }] } } }
+              ]
+            },
+            select: {
+              id: true,
+              studentCode: true,
+              enrollmentCode: true,
+              fullName: true,
+              directorNote: true,
+              admissionResult: true,
+              enrollmentDate: true
+            }
+          }),
+          (prisma as any).preschoolInputAssessmentStudent ? (prisma as any).preschoolInputAssessmentStudent.findMany({
+            where: {
+              OR: [
+                { enrollmentClassId: { in: possibleClassIdentifiers } },
+                { enrollmentClass: { is: { OR: [{ id: classId }, { classCode: classId }, { className: classId }] } } }
+              ]
+            },
+            select: {
+              id: true,
+              studentCode: true,
+              enrollmentCode: true,
+              fullName: true,
+              directorNote: true,
+              admissionResult: true,
+              enrollmentDate: true
+            }
+          }) : Promise.resolve([])
+        ])
+
+        const allSurveyRecords = [...inputAssessments, ...preschoolAssessments]
+
+        // Combine DB students with input survey students if not present in DB students
+        const studentMap = new Map<string, any>()
+        for (const s of dbStudents) {
+          studentMap.set(s.id, {
+            ...s,
+            className: s.class?.className || targetClass?.className || ""
           })
         }
 
-        const formatted = students.map(s => ({
-          ...s,
-          className: s.class?.className || targetClass?.className || ""
-        }))
+        for (const s of allSurveyRecords) {
+          const sCode = s.studentCode || s.enrollmentCode || ""
+          const exists = Array.from(studentMap.values()).some(st => st.studentCode === sCode || st.studentName === s.fullName)
+          if (!exists && (s.fullName || sCode)) {
+            const tempId = s.id || `survey_${sCode || s.fullName}`
+            studentMap.set(tempId, {
+              id: tempId,
+              studentCode: sCode || "N/A",
+              studentName: s.fullName || "Học sinh",
+              gender: null,
+              enrollmentDate: s.enrollmentDate || null,
+              classId: classId,
+              className: targetClass?.className || ""
+            })
+          }
+        }
 
+        const formatted = Array.from(studentMap.values())
         return NextResponse.json(formatted)
       } catch (err: any) {
         console.error("getClassStudents error:", err)
