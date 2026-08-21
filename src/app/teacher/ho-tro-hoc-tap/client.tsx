@@ -1212,37 +1212,12 @@ export function TeacherSupportClient({
                         </div>
                       </td>
                       
-                      <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
-                        {existingTarget ? (
-                          isApproved && !isTerminated && !isPending ? (
-                            canEvaluateCommitment ? (
-                              <button
-                                onClick={() => {
-                                  setEvalTargetId(existingTarget.id)
-                                  setEvalTargetName(s.studentName)
-                                  setEvalTargetType(existingTarget.supportType)
-                                  setEvalComment("")
-                                  setEvalStudent(s)
-                                  setEvalTargetObj(existingTarget)
-                                  const options = configs.filter(c => c.supportType === existingTarget.supportType)
-                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                                  setIsEvaluationModalOpen(true)
-                                }}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-lg text-xs transition-all shadow-xs"
-                              >
-                                Tiến hành đánh giá
-                              </button>
-                            ) : (
-                              <span className="text-xs text-slate-400 font-medium">Đang hỗ trợ</span>
-                            )
-                          ) : (
-                            <span className="text-xs text-slate-400 font-medium">
-                              {existingTarget.status === "ĐÃ DUYỆT" || existingTarget.status === "ACTIVE" ? "Đang hỗ trợ" : "Đã tạo đề xuất"}
-                            </span>
-                          )
-                        ) : (
-                          <button
-                            onClick={() => {
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <button
+                          onClick={() => {
+                            if (existingTarget) {
+                              setActiveSubTab("assigned")
+                            } else {
                               setProposeClassId(s.classId)
                               setIsProposeModalOpen(true)
                               setSelectedStudentIds([s.id])
@@ -1296,12 +1271,13 @@ export function TeacherSupportClient({
                               }).join(", ");
                               setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào. Điểm khảo sát: ${scoreDetails}`)
                               fetchClassStudents(s.classId)
-                            }}
-                            className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
-                          >
-                            Thêm vào Form
-                          </button>
-                        )}
+                            }
+                          }}
+                          className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1 cursor-pointer"
+                          title="Chuyển sang Sổ theo dõi đánh giá"
+                        >
+                          <Plus className="h-3.5 w-3.5" /> Sổ theo dõi
+                        </button>
                       </td>
                     </tr>
                   )
