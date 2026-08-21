@@ -823,7 +823,8 @@ export function TeacherSupportClient({
       {/* Action panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border">
         <div className="flex items-center gap-3">
-          <button
+          {activeSubTab === "history" && (
+            <button
             onClick={() => {
               setProposeClassId("")
               setClassStudents([])
@@ -839,6 +840,7 @@ export function TeacherSupportClient({
             <Plus className="h-4 w-4" />
             Đề xuất HS Theo dõi
           </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
