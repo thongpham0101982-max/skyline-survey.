@@ -251,6 +251,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
+  const [activeStatusTab, setActiveStatusTab] = useState<"new" | "expired" | "all">("new");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
   const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
 
@@ -1371,12 +1372,19 @@ export function ObservationClient(props: ObservationClientProps) {
   };
 
   const tabFilteredSlots = useMemo(() => {
-    const now = new Date()
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     return slots.filter(slot => {
-      const isHost = slot.teacherId === currentTeacher?.id
-      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id)
+      const isHost = slot.teacherId === currentTeacher?.id;
+      const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
       if (activeTab === "dang-ky") {
         if (isHost || isObserver) return false;
+
+        const slotDate = new Date(slot.date);
+        const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
+        if (activeStatusTab === "new" && isExpired) return false;
+        if (activeStatusTab === "expired" && !isExpired) return false;
+
         const isMyDept = checkIsMyDept(slot);
         if (activeDeptTab !== "all") {
           if (activeDeptTab === "my-dept" && !isMyDept) return false;
@@ -1393,11 +1401,11 @@ export function ObservationClient(props: ObservationClientProps) {
         }
         return true;
       }
-      if (activeTab === "my-schedule") return isHost
-      if (activeTab === "history") return isObserver
-      return true
-    })
-  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, isMamNonTeacher, checkIsMyDept]);
+      if (activeTab === "my-schedule") return isHost;
+      if (activeTab === "history") return isObserver;
+      return true;
+    });
+  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, activeStatusTab, isMamNonTeacher, checkIsMyDept]);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
@@ -2311,8 +2319,53 @@ export function ObservationClient(props: ObservationClientProps) {
               )}
             </div>
 
-            {/* Department tabs selector */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Status & Department tabs selector */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Group 1: Status Tabs (Tiết mới ĐK vs Tiết Hết hạn) */}
+              <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200 shadow-inner-2xs">
+                {(() => {
+                  const availableSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+                  const todayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                  const newCount = availableSlots.filter(s => new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
+                  const expiredCount = availableSlots.filter(s => new Date(s.date) < todayStart || s.status === "EXPIRED").length;
+
+                  return (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setActiveStatusTab("new")}
+                        className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                          activeStatusTab === "new"
+                            ? "bg-emerald-600 text-white shadow-sm"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                        }`}
+                      >
+                        <span>✨ Tiết mới ĐK</span>
+                        <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "new" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"}`}>
+                          {newCount}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveStatusTab("expired")}
+                        className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                          activeStatusTab === "expired"
+                            ? "bg-rose-600 text-white shadow-sm"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                        }`}
+                      >
+                        <span>⏳ Tiết Hết hạn</span>
+                        <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "expired" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-800"}`}>
+                          {expiredCount}
+                        </span>
+                      </button>
+                    </>
+                  );
+                })()}
+              </div>
+
+              {/* Group 2: Department filter tabs */}
               {(() => {
                 const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
                 const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
@@ -2320,29 +2373,29 @@ export function ObservationClient(props: ObservationClientProps) {
                 const allCount = openSlots.length;
 
                 return (
-                  <>
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <button onClick={() => setActiveDeptTab("my-dept")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>🏫 Tiết dạy thuộc TCM</span>
-                      <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
+                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      <span>🏫 Tiết thuộc TCM</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
                         {myDeptCount}
                       </span>
                     </button>
                     <button onClick={() => setActiveDeptTab("other-dept")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>🌐 Tiết dạy TCM khác</span>
-                      <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      <span>🌐 Tiết TCM khác</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
                         {otherDeptCount}
                       </span>
                     </button>
                     <button onClick={() => setActiveDeptTab("all")}
-                      className={`px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>⭐ Tất cả tiết dạy</span>
-                      <span className={`px-1.5 py-0.2 text-xs font-bold rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
+                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
+                      <span>⭐ Tất cả</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
                         {allCount}
                       </span>
                     </button>
-                  </>
+                  </div>
                 );
               })()}
             </div>
@@ -2450,6 +2503,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <th className="p-4">Môn học & Chủ đề</th>
                     <th className="p-4">Thời gian / Phòng</th>
                     <th className="p-4 text-center">Số chỗ</th>
+                    <th className="p-4">GV Đăng ký</th>
                     <th className="p-4">Trạng thái</th>
                     <th className="p-4 text-right">Đăng ký</th>
                   </tr>
@@ -2510,6 +2564,27 @@ export function ObservationClient(props: ObservationClientProps) {
                           <span className={`px-2 py-0.5 rounded-md ${observerCount >= slot.maxSeats ? "bg-slate-100 text-slate-500" : "bg-sky-50 text-sky-700"}`}>
                             {observerCount} / {slot.maxSeats}
                           </span>
+                        </td>
+                        <td className="p-4">
+                          {slot.registrations && slot.registrations.length > 0 ? (
+                            <div className="flex flex-col gap-1 max-w-[220px]">
+                              {slot.registrations.map((reg: any) => (
+                                <div key={reg.id} className="flex items-center gap-1.5 text-xs">
+                                  <span className={`w-2 h-2 rounded-full shrink-0 ${reg.isApproved ? "bg-emerald-500" : "bg-amber-400"}`} title={reg.isApproved ? "Đã phê duyệt" : "Chờ xác nhận"} />
+                                  <span className="font-extrabold text-slate-800 truncate" title={reg.teacher?.teacherName || reg.teacherName}>
+                                    {reg.teacher?.teacherName || reg.teacherName || "GV"}
+                                  </span>
+                                  {reg.teacher?.teacherCode && (
+                                    <span className="text-[11px] text-slate-500 font-medium shrink-0">
+                                      ({reg.teacher.teacherCode})
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic">Chưa có</span>
+                          )}
                         </td>
                         <td className="p-4">
                           {isExpired ? (
