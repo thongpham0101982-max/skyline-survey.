@@ -372,7 +372,7 @@ export async function GET(req: Request) {
         };
       });
 
-      // Post-filter targets for callerTeacher to ensure GVBM only sees targets for subjects they teach
+      // Post-filter & Deduplicate targets for callerTeacher
       const teacherAssignments = callerTeacher ? await prisma.teachingAssignment.findMany({
         where: { teacherId: callerTeacher.id },
         include: { subject: true }
@@ -389,51 +389,59 @@ export async function GET(req: Request) {
       }) : [];
       const homeroomClassSet = new Set(teacherHomeroomClasses.map(c => c.id));
 
-      const filteredTargets = targetsWithCommitment.filter((t: any) => {
+      const normalizeReasonStr = (reasonStr: string) => {
+        let r = (reasonStr || "").trim();
+        r = r.replace(/Tâm lý học đường/g, "Tâm lý");
+        r = r.replace(/Tiếng Anh \((?:viết|vấn đáp)\)/g, "Tiếng Anh");
+        r = r.replace(/Ngữ văn|Văn/g, "Tiếng Việt");
+        return r;
+      };
+
+      const validTargets = targetsWithCommitment.filter((t: any) => {
         if (!callerTeacher) return true;
         
-        // 1. Assigned to teacher or created by teacher
-        const isAssigned = t.assignments?.some((a: any) => a.teacherId === callerTeacher.id);
-        const isCreator = t.createdById === callerTeacher.id;
-        if (isAssigned || isCreator) return true;
-
-        // 2. Homeroom teacher of student's class
         const isHomeroom = homeroomClassSet.has(t.student?.classId);
-        if (isHomeroom) return true;
-
-        // 3. Subject teacher: check if target reason/subject matches teacher's assigned subjects in this class
         const mySubjectsInClass = teacherAssignments
           .filter((a: any) => a.classId === t.student?.classId)
           .map((a: any) => (a.subject?.subjectName || a.subject?.name || "").toLowerCase());
 
-        if (mySubjectsInClass.length === 0) return false;
+        const normReason = normalizeReasonStr(t.reason).toLowerCase();
 
-        const reasonLower = (t.reason || "").toLowerCase();
-        return mySubjectsInClass.some((ts: string) => {
-          if (ts.includes("toán")) return reasonLower.includes("toán");
-          if (ts.includes("văn") || ts.includes("tiếng việt") || ts.includes("ngữ văn")) {
-            return reasonLower.includes("văn") || reasonLower.includes("tiếng việt") || reasonLower.includes("ngữ văn");
-          }
-          if (ts.includes("anh")) return reasonLower.includes("anh");
-          if (ts.includes("tâm lý")) return reasonLower.includes("tâm lý");
-          return reasonLower.includes(ts) || ts.includes(reasonLower);
-        });
-      }).map((t: any) => {
-        // Normalize reason text: "Tâm lý học đường" -> "Tâm lý", "Tiếng Anh (viết/vấn đáp)" -> "Tiếng Anh"
-        let normReason = t.reason || "";
-        if (normReason.includes("Tâm lý học đường")) {
-          normReason = normReason.replace(/Tâm lý học đường/g, "Tâm lý");
+        // If not Homeroom teacher of this class, strictly filter by assigned subjects in this class
+        if (!isHomeroom) {
+          if (mySubjectsInClass.length === 0) return false;
+
+          const matchesSubject = mySubjectsInClass.some((ts: string) => {
+            if (ts.includes("toán")) return normReason.includes("toán");
+            if (ts.includes("văn") || ts.includes("tiếng việt") || ts.includes("ngữ văn")) {
+              return normReason.includes("văn") || normReason.includes("tiếng việt") || normReason.includes("ngữ văn");
+            }
+            if (ts.includes("anh")) return normReason.includes("anh");
+            if (ts.includes("tâm lý")) return normReason.includes("tâm lý");
+            return normReason.includes(ts) || ts.includes(normReason);
+          });
+
+          if (!matchesSubject) return false;
         }
-        if (normReason.includes("Tiếng Anh (viết)") || normReason.includes("Tiếng Anh (vấn đáp)")) {
-          normReason = normReason.replace(/Tiếng Anh ((?:viết|vấn đáp))/g, "Tiếng Anh");
-        }
-        return {
-          ...t,
-          reason: normReason
-        };
+
+        return true;
       });
 
-      return NextResponse.json(filteredTargets)
+      // Deduplicate targets by (studentId + supportType + normalizedReason)
+      const targetMap = new Map<string, any>();
+      for (const t of validTargets) {
+        const normReason = normalizeReasonStr(t.reason);
+        const key = `${t.studentId}_${t.supportType}_${normReason}`;
+        if (!targetMap.has(key)) {
+          targetMap.set(key, {
+            ...t,
+            reason: normReason
+          });
+        }
+      }
+
+      const filteredTargets = Array.from(targetMap.values());
+      return NextResponse.json(filteredTargets);
     }
 
     // 3. Action: getAssignments
