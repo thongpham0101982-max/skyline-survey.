@@ -1120,7 +1120,7 @@ export function SupportClient({
                         <th className="px-4 py-3.5 text-left">Lớp</th>
                         <th className="px-4 py-3.5 text-left">Cơ sở</th>
                         <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
-                        <th className="px-4 py-3.5 text-left">Tình trạng</th>
+                        <th className="px-4 py-3.5 text-left">GV phụ trách</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
                     </thead>
@@ -1162,24 +1162,40 @@ export function SupportClient({
                               )}
                             </td>
                             <td className="px-4 py-3.5">
-                              {isProposed ? (
-                                <div className="space-y-1">
-                                  <div className="font-extrabold text-emerald-600 text-[12px] flex items-center gap-1.5">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                    Đã đề xuất
+                              {(() => {
+                                const teacherList = row.assignedTeachers && row.assignedTeachers.length > 0
+                                  ? row.assignedTeachers
+                                  : (row.committedSubjects || []).map((sub: string) => {
+                                      const matchedT = studentTargets.find((t: any) => t.reason?.toLowerCase().includes(sub.toLowerCase()))
+                                      return {
+                                        subject: sub,
+                                        teacherName: matchedT?.assignedTeacherName || "Chưa phân công"
+                                      }
+                                    })
+
+                                if (!teacherList || teacherList.length === 0) {
+                                  return <span className="text-slate-400 text-[10px] italic">Chưa phân công</span>
+                                }
+
+                                return (
+                                  <div className="space-y-1">
+                                    {teacherList.map((at: any, atIdx: number) => (
+                                      <div key={atIdx} className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
+                                        {teacherList.length > 1 && (
+                                          <span className="text-slate-400 font-bold text-[10px]">{at.subject}:</span>
+                                        )}
+                                        {at.teacherName && at.teacherName !== "Chưa phân công" ? (
+                                          <span className="font-extrabold text-indigo-700 bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-100/80 text-[11px]">
+                                            {at.teacherName}
+                                          </span>
+                                        ) : (
+                                          <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
-                                  {studentTargets.map((st, stIdx) => (
-                                    <div key={stIdx} className="text-[10px] text-slate-500 font-medium pl-3">
-                                      • {st.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý"} ({st.status})
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div className="font-extrabold text-rose-500 text-[12px] flex items-center gap-1.5">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                                  Chưa đề xuất
-                                </div>
-                              )}
+                                )
+                              })()}
                             </td>
                             <td className="px-4 py-3.5">
                               <div className="text-[10px] text-slate-500 font-bold mb-1.5 flex flex-wrap gap-x-2 gap-y-1">

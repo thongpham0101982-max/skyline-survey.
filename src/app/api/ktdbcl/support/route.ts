@@ -518,6 +518,128 @@ export async function GET(req: Request) {
         }
       })
 
+      // Fetch teaching assignments (Phân công giảng dạy)
+      const teachingAssignments = await prisma.teachingAssignment.findMany({
+        where: { academicYearId },
+        include: {
+          teacher: { select: { id: true, teacherName: true } },
+          subject: { select: { id: true, subjectName: true, name: true } },
+          class: { select: { id: true, className: true, classCode: true } }
+        }
+      })
+
+      // Fetch homeroom teachers for classes
+      const classHomeroomList = await prisma.class.findMany({
+        where: { academicYearId },
+        select: { id: true, className: true, classCode: true, homeroomTeacherId: true }
+      })
+      const homeroomTeacherIds = classHomeroomList.map(c => c.homeroomTeacherId).filter(Boolean)
+      const homeroomTeachers = await prisma.teacher.findMany({
+        where: { id: { in: homeroomTeacherIds } },
+        select: { id: true, teacherName: true }
+      })
+
+      // Fetch existing learning support targets for system students
+      const systemStudentIds = systemStudents.map(s => s.id)
+      const existingSupportTargets = systemStudentIds.length > 0 ? await prisma.learningSupportTarget.findMany({
+        where: {
+          studentId: { in: systemStudentIds },
+          academicYearId
+        },
+        include: {
+          assignments: {
+            include: {
+              teacher: { select: { id: true, teacherName: true } }
+            }
+          },
+          createdBy: { select: { id: true, teacherName: true } }
+        }
+      }) : []
+
+      const resolveAssignedTeachers = (
+        studentId,
+        studentClassId,
+        className,
+        committedSubjects
+      ) => {
+        if (!committedSubjects || committedSubjects.length === 0) {
+          return []
+        }
+
+        return committedSubjects.map(sub => {
+          const normSub = sub.toLowerCase().trim()
+
+          // 1. Check TeachingAssignment (Phân công giảng dạy)
+          const matchedTa = teachingAssignments.find(ta => {
+            const classMatches =
+              (studentClassId && ta.classId === studentClassId) ||
+              ta.class?.id === studentClassId ||
+              (className && className !== "Chưa xếp lớp" && (
+                ta.class?.className === className ||
+                ta.class?.classCode === className
+              ))
+
+            if (!classMatches) return false
+
+            const subName = (ta.subject?.subjectName || ta.subject?.name || "").toLowerCase()
+            if (normSub.includes("toán")) return subName.includes("toán") || subName.includes("math")
+            if (normSub.includes("văn") || normSub.includes("tiếng việt") || normSub.includes("ngữ văn")) {
+              return subName.includes("văn") || subName.includes("tiếng việt") || subName.includes("ngữ văn")
+            }
+            if (normSub.includes("anh") || normSub.includes("english")) {
+              return subName.includes("anh") || subName.includes("english")
+            }
+            if (normSub.includes("tâm lý") || normSub.includes("psychology")) {
+              return subName.includes("tâm lý") || subName.includes("psychology")
+            }
+
+            return subName.includes(normSub) || normSub.includes(subName)
+          })
+
+          if (matchedTa?.teacher?.teacherName) {
+            return {
+              subject: sub,
+              teacherName: matchedTa.teacher.teacherName
+            }
+          }
+
+          // 2. Check existing LearningSupportTarget / LearningSupportAssignment if target created
+          if (studentId) {
+            const matchedTarget = existingSupportTargets.find(t => 
+              t.studentId === studentId &&
+              (t.reason?.toLowerCase().includes(normSub.slice(0, 4)) || normSub.includes(t.reason?.toLowerCase() || "___"))
+            )
+            const targetTeacher = matchedTarget?.assignments?.[0]?.teacher?.teacherName || matchedTarget?.createdBy?.teacherName
+            if (targetTeacher) {
+              return {
+                subject: sub,
+                teacherName: targetTeacher
+              }
+            }
+          }
+
+          // 3. Fallback to Homeroom Teacher if class exists
+          const cls = classHomeroomList.find(c =>
+            (studentClassId && c.id === studentClassId) ||
+            (className && className !== "Chưa xếp lớp" && (c.className === className || c.classCode === className))
+          )
+          if (cls?.homeroomTeacherId) {
+            const ht = homeroomTeachers.find(t => t.id === cls.homeroomTeacherId)
+            if (ht?.teacherName) {
+              return {
+                subject: sub,
+                teacherName: `${ht.teacherName} (GVCN)`
+              }
+            }
+          }
+
+          return {
+            subject: sub,
+            teacherName: "Chưa phân công"
+          }
+        })
+      }
+
       const cleanString = (str: string | null | undefined) => {
         if (!str) return ""
         return str.toLowerCase()
@@ -588,6 +710,12 @@ export async function GET(req: Request) {
             className: resolvedClassName,
             campusName: resolvedCampus,
             committedSubjects,
+            assignedTeachers: resolveAssignedTeachers(
+              matchingStudent?.id || null,
+              matchingStudent?.classId || null,
+              resolvedClassName,
+              committedSubjects
+            ),
             mathScore: is.mathScore,
             literatureScore: is.literatureScore,
             writtenEnglishScore: is.writtenEnglishScore,
@@ -628,6 +756,12 @@ export async function GET(req: Request) {
             className: resolvedClassName,
             campusName: resolvedCampus,
             committedSubjects,
+            assignedTeachers: resolveAssignedTeachers(
+              matchingStudent?.id || null,
+              matchingStudent?.classId || null,
+              resolvedClassName,
+              committedSubjects
+            ),
             mathScore: null,
             literatureScore: null,
             writtenEnglishScore: null,
