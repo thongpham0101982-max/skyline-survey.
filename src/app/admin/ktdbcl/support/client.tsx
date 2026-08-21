@@ -799,12 +799,61 @@ export function SupportClient({
     })
   }, [commitmentCandidates, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
 
-  const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
+  // Flatten candidates into row entries per committed subject (Mỗi học sinh, mỗi môn = 1 dòng)
+  const commitmentSubjectRows = useMemo(() => {
+    const rows: any[] = []
+    filteredCommitments.forEach((cand: any) => {
+      const subs = cand.committedSubjects && cand.committedSubjects.length > 0
+        ? cand.committedSubjects
+        : ["Chưa xác định môn"]
+
+      subs.forEach((sub: string) => {
+        let teacherName = "Chưa phân công"
+
+        const normSub = sub.toLowerCase().trim()
+        if (cand.assignedTeachers && cand.assignedTeachers.length > 0) {
+          const found = cand.assignedTeachers.find((at: any) => {
+            const s = (at.subject || "").toLowerCase()
+            if (normSub.includes("toán")) return s.includes("toán") || s.includes("math")
+            if (normSub.includes("văn") || normSub.includes("việt")) return s.includes("văn") || s.includes("việt") || s.includes("ngữ văn")
+            if (normSub.includes("anh")) return s.includes("anh") || s.includes("english")
+            if (normSub.includes("tâm lý")) return s.includes("tâm lý") || s.includes("psychology")
+            return s.includes(normSub)
+          })
+          if (found && found.teacherName) {
+            teacherName = found.teacherName
+          }
+        } else {
+          const studentTargets = targets.filter(t => t.studentId === cand.systemStudentId)
+          const matchedT = studentTargets.find((t: any) => {
+            const r = (t.reason || "").toLowerCase()
+            if (normSub.includes("toán")) return r.includes("toán") || r.includes("math")
+            if (normSub.includes("văn") || normSub.includes("việt")) return r.includes("văn") || r.includes("việt") || r.includes("ngữ văn")
+            if (normSub.includes("anh")) return r.includes("anh") || r.includes("english")
+            if (normSub.includes("tâm lý")) return r.includes("tâm lý") || r.includes("psychology")
+            return r.includes(normSub)
+          })
+          if (matchedT?.assignedTeacherName) {
+            teacherName = matchedT.assignedTeacherName
+          }
+        }
+
+        rows.push({
+          ...cand,
+          rowSubject: sub,
+          assignedTeacherName: teacherName
+        })
+      })
+    })
+    return rows
+  }, [filteredCommitments, targets])
+
+  const totalCommitmentPages = Math.ceil(commitmentSubjectRows.length / commitmentPageSize) || 1
 
   const paginatedCommitments = useMemo(() => {
     const startIndex = (commitmentPage - 1) * commitmentPageSize
-    return filteredCommitments.slice(startIndex, startIndex + commitmentPageSize)
-  }, [filteredCommitments, commitmentPage])
+    return commitmentSubjectRows.slice(startIndex, startIndex + commitmentPageSize)
+  }, [commitmentSubjectRows, commitmentPage])
 
   const getSubjectBadge = (subName: string) => {
     const nameLower = subName.toLowerCase()
@@ -1112,122 +1161,51 @@ export function SupportClient({
                     <thead className="bg-slate-50/90 font-bold text-slate-600 uppercase tracking-wider text-[10px] border-b border-slate-200">
                       <tr>
                         <th className="px-3 py-3.5 text-center w-10">STT</th>
-                        <th className="px-4 py-3.5 text-left">Thông tin Học sinh</th>
-                        <th className="px-3 py-3.5 text-left">Môn Cam kết</th>
-                        <th className="px-3 py-3.5 text-left text-amber-800 bg-amber-50/60 font-black">📐 GV Toán</th>
-                        <th className="px-3 py-3.5 text-left text-emerald-800 bg-emerald-50/60 font-black">📖 GV Tiếng Việt / Văn</th>
-                        <th className="px-3 py-3.5 text-left text-blue-800 bg-blue-50/60 font-black">🌐 GV Tiếng Anh</th>
-                        <th className="px-3 py-3.5 text-left text-purple-800 bg-purple-50/60 font-black">🧠 GV Tâm lý</th>
+                        <th className="px-4 py-3.5 text-left">Họ tên</th>
+                        <th className="px-3 py-3.5 text-left">Mã HS</th>
+                        <th className="px-3 py-3.5 text-left">Lớp</th>
+                        <th className="px-3 py-3.5 text-left">Cơ sở</th>
+                        <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
+                        <th className="px-4 py-3.5 text-left">GVBM Phụ trách</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
                       {paginatedCommitments.map((row, idx) => {
-                        const isProposed = targets.some(t => t.studentId === row.systemStudentId)
-                        const studentTargets = targets.filter(t => t.studentId === row.systemStudentId)
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
 
                         return (
-                          <tr key={row.id} className="hover:bg-indigo-50/20 transition-colors">
+                          <tr key={`${row.id}_${row.rowSubject}_${idx}`} className="hover:bg-slate-50/70 transition-colors">
                             <td className="px-3 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
-                            <td className="px-4 py-3.5 min-w-[200px]">
-                              <div className="font-black text-slate-900 text-[13px] tracking-tight">{row.fullName}</div>
-                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                                <span className="font-mono font-bold text-slate-500 text-[10px] bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/80">
-                                  {row.studentCode}
-                                </span>
-                                <span className="font-extrabold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 text-[10px]">
-                                  Lớp: {row.className}
-                                </span>
-                                <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
-                                  {row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}
-                                </span>
-                              </div>
-                            </td>
                             <td className="px-4 py-3.5">
-                              {row.committedSubjects && row.committedSubjects.length > 0 ? (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {row.committedSubjects.map((sub, sIdx) => (
-                                    <div key={sIdx}>
-                                      {getSubjectBadge(sub)}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
+                              <div className="font-extrabold text-slate-900 text-[12px]">{row.fullName}</div>
+                              {row.gender && (
+                                <div className="text-[10px] text-slate-400 font-medium mt-0.5">{row.gender}</div>
                               )}
                             </td>
-                            {(() => {
-                              const getSubjectTeacher = (rowItem: any, targetSub: string) => {
-                                const normTarget = targetSub.toLowerCase()
-                                const isCommitted = (rowItem.committedSubjects || []).some((sub: string) => {
-                                  const s = sub.toLowerCase()
-                                  if (normTarget.includes("toán")) return s.includes("toán") || s.includes("math")
-                                  if (normTarget.includes("văn") || normTarget.includes("việt")) return s.includes("văn") || s.includes("việt") || s.includes("ngữ văn")
-                                  if (normTarget.includes("anh")) return s.includes("anh") || s.includes("english")
-                                  if (normTarget.includes("tâm lý")) return s.includes("tâm lý") || s.includes("psychology")
-                                  return s.includes(normTarget)
-                                })
-
-                                if (!isCommitted) return null
-
-                                if (rowItem.assignedTeachers && rowItem.assignedTeachers.length > 0) {
-                                  const found = rowItem.assignedTeachers.find((at: any) => {
-                                    const s = (at.subject || "").toLowerCase()
-                                    if (normTarget.includes("toán")) return s.includes("toán") || s.includes("math")
-                                    if (normTarget.includes("văn") || normTarget.includes("việt")) return s.includes("văn") || s.includes("việt") || s.includes("ngữ văn")
-                                    if (normTarget.includes("anh")) return s.includes("anh") || s.includes("english")
-                                    if (normTarget.includes("tâm lý")) return s.includes("tâm lý") || s.includes("psychology")
-                                    return s.includes(normTarget)
-                                  })
-                                  if (found && found.teacherName) return found.teacherName
-                                }
-
-                                const matchedT = studentTargets.find((t: any) => {
-                                  const r = (t.reason || "").toLowerCase()
-                                  if (normTarget.includes("toán")) return r.includes("toán") || r.includes("math")
-                                  if (normTarget.includes("văn") || normTarget.includes("việt")) return r.includes("văn") || r.includes("việt") || r.includes("ngữ văn")
-                                  if (normTarget.includes("anh")) return r.includes("anh") || r.includes("english")
-                                  if (normTarget.includes("tâm lý")) return r.includes("tâm lý") || r.includes("psychology")
-                                  return r.includes(normTarget)
-                                })
-                                if (matchedT?.assignedTeacherName) return matchedT.assignedTeacherName
-
-                                return "Chưa phân công"
-                              }
-
-                              const renderCell = (rowItem: any, targetSub: string, theme: string) => {
-                                const tName = getSubjectTeacher(rowItem, targetSub)
-                                if (tName === null) {
-                                  return <span className="text-slate-300 font-mono text-[12px] font-bold select-none">-</span>
-                                }
-                                if (tName === "Chưa phân công") {
-                                  return <span className="text-slate-400 italic text-[10px] font-medium">Chưa phân công</span>
-                                }
-
-                                const themeStyles = {
-                                  amber: "text-amber-900 bg-amber-50/90 border-amber-200/90 shadow-2xs",
-                                  emerald: "text-emerald-900 bg-emerald-50/90 border-emerald-200/90 shadow-2xs",
-                                  blue: "text-blue-900 bg-blue-50/90 border-blue-200/90 shadow-2xs",
-                                  purple: "text-purple-900 bg-purple-50/90 border-purple-200/90 shadow-2xs"
-                                }[theme] || "text-indigo-900 bg-indigo-50/90 border-indigo-200/90"
-
-                                return (
-                                  <span className={`font-black px-2 py-0.5 rounded-md border text-[11px] inline-block whitespace-nowrap ${themeStyles}`}>
-                                    {tName}
-                                  </span>
-                                )
-                              }
-
-                              return (
-                                <>
-                                  <td className="px-3 py-3.5 bg-amber-50/10">{renderCell(row, "Toán", "amber")}</td>
-                                  <td className="px-3 py-3.5 bg-emerald-50/10">{renderCell(row, "Tiếng Việt", "emerald")}</td>
-                                  <td className="px-3 py-3.5 bg-blue-50/10">{renderCell(row, "Tiếng Anh", "blue")}</td>
-                                  <td className="px-3 py-3.5 bg-purple-50/10">{renderCell(row, "Tâm lý", "purple")}</td>
-                                </>
-                              )
-                            })()}
+                            <td className="px-3 py-3.5">
+                              <span className="font-mono font-bold text-slate-600 text-[11px]">{row.studentCode}</span>
+                            </td>
+                            <td className="px-3 py-3.5">
+                              <span className="font-extrabold text-slate-700 text-[12px]">{row.className}</span>
+                            </td>
+                            <td className="px-3 py-3.5">
+                              <span className="text-[11px] text-indigo-600 font-bold">
+                                {row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              {getSubjectBadge(row.rowSubject)}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              {row.assignedTeacherName && row.assignedTeacherName !== "Chưa phân công" ? (
+                                <span className="font-extrabold text-indigo-700 bg-indigo-50/90 px-2.5 py-1 rounded-md border border-indigo-100/90 text-[11px] inline-block shadow-2xs">
+                                  {row.assignedTeacherName}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
+                              )}
+                            </td>
                             <td className="px-4 py-3.5">
                               <div className="text-[10px] text-slate-500 font-bold mb-1.5 flex flex-wrap gap-x-2 gap-y-1">
                                 {getScoreTag("Toán", row.mathScore)}
@@ -1250,7 +1228,7 @@ export function SupportClient({
                 {/* Pagination Controls */}
                 <div className="bg-slate-50/75 border-t border-slate-100 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-500">
                   <div>
-                    Hiển thị từ <span className="font-extrabold text-slate-700">{Math.min((commitmentPage - 1) * commitmentPageSize + 1, filteredCommitments.length)}</span> đến <span className="font-extrabold text-slate-700">{Math.min(commitmentPage * commitmentPageSize, filteredCommitments.length)}</span> trong tổng số <span className="font-extrabold text-slate-700">{filteredCommitments.length}</span> học sinh
+                    Hiển thị từ <span className="font-extrabold text-slate-700">{Math.min((commitmentPage - 1) * commitmentPageSize + 1, commitmentSubjectRows.length)}</span> đến <span className="font-extrabold text-slate-700">{Math.min(commitmentPage * commitmentPageSize, commitmentSubjectRows.length)}</span> trong tổng số <span className="font-extrabold text-slate-700">{commitmentSubjectRows.length}</span> dòng cam kết
                   </div>
                   <div className="flex items-center gap-1">
                     <button
