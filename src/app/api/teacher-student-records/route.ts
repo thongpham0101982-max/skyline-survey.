@@ -191,7 +191,13 @@ export async function GET(req: Request) {
       const allClassIds = Array.from(new Set([...assignedClassIds, ...homeroomClassIds]))
 
       const classes = await prisma.class.findMany({
-        where: { id: { in: allClassIds } },
+        where: {
+          OR: [
+            { id: { in: allClassIds } },
+            { classCode: { in: allClassIds } },
+            { className: { in: allClassIds } }
+          ]
+        },
         orderBy: { className: "asc" }
       })
 
@@ -267,13 +273,17 @@ export async function GET(req: Request) {
           })
         }
 
-        // Fetch input assessment records for students in this class
-        const [inputAssessments, preschoolAssessments] = await Promise.all([
-          prisma.inputAssessmentStudent.findMany({
+        // Fetch input assessment records safely without nested 'is' relation syntax
+        let inputAssessments: any[] = []
+        let preschoolAssessments: any[] = []
+        try {
+          inputAssessments = await prisma.inputAssessmentStudent.findMany({
             where: {
               OR: [
                 { enrollmentClassId: { in: possibleClassIdentifiers } },
-                { enrollmentClass: { is: { OR: [{ id: classId }, { classCode: classId }, { className: classId }] } } }
+                { enrollmentClass: { id: { in: possibleClassIdentifiers } } },
+                { enrollmentClass: { classCode: { in: possibleClassIdentifiers } } },
+                { enrollmentClass: { className: { in: possibleClassIdentifiers } } }
               ]
             },
             select: {
@@ -285,25 +295,32 @@ export async function GET(req: Request) {
               admissionResult: true,
               enrollmentDate: true
             }
-          }),
-          (prisma as any).preschoolInputAssessmentStudent ? (prisma as any).preschoolInputAssessmentStudent.findMany({
-            where: {
-              OR: [
-                { enrollmentClassId: { in: possibleClassIdentifiers } },
-                { enrollmentClass: { is: { OR: [{ id: classId }, { classCode: classId }, { className: classId }] } } }
-              ]
-            },
-            select: {
-              id: true,
-              studentCode: true,
-              enrollmentCode: true,
-              fullName: true,
-              directorNote: true,
-              admissionResult: true,
-              enrollmentDate: true
-            }
-          }) : Promise.resolve([])
-        ])
+          })
+        } catch (e1) {}
+
+        try {
+          if ((prisma as any).preschoolInputAssessmentStudent) {
+            preschoolAssessments = await (prisma as any).preschoolInputAssessmentStudent.findMany({
+              where: {
+                OR: [
+                  { enrollmentClassId: { in: possibleClassIdentifiers } },
+                  { enrollmentClass: { id: { in: possibleClassIdentifiers } } },
+                  { enrollmentClass: { classCode: { in: possibleClassIdentifiers } } },
+                  { enrollmentClass: { className: { in: possibleClassIdentifiers } } }
+                ]
+              },
+              select: {
+                id: true,
+                studentCode: true,
+                enrollmentCode: true,
+                fullName: true,
+                directorNote: true,
+                admissionResult: true,
+                enrollmentDate: true
+              }
+            })
+          }
+        } catch (e2) {}
 
         const allSurveyRecords = [...inputAssessments, ...preschoolAssessments]
 
