@@ -452,15 +452,26 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Missing teacherId" }, { status: 400 })
       }
 
-      const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } })
+      const teacher = await prisma.teacher.findUnique({
+        where: { id: teacherId },
+        include: { user: true }
+      })
+
+      const teacherIdentifiers = Array.from(new Set([
+        teacherId,
+        teacher?.teacherCode,
+        teacher?.userId,
+        teacher?.user?.id,
+        teacher?.teacherName
+      ])).filter(Boolean) as string[]
 
       // Find all homeroom classes for this teacher
       let homeroomClasses = await prisma.class.findMany({
         where: {
-          OR: [
-            { homeroomTeacherId: teacherId },
-            { homeroomTeacherId: { contains: teacherId } }
-          ],
+          OR: teacherIdentifiers.flatMap(id => [
+            { homeroomTeacherId: id },
+            { homeroomTeacherId: { contains: id } }
+          ]),
           ...(academicYearId ? { academicYearId } : {})
         }
       })
@@ -468,10 +479,10 @@ export async function GET(req: Request) {
       if (homeroomClasses.length === 0) {
         homeroomClasses = await prisma.class.findMany({
           where: {
-            OR: [
-              { homeroomTeacherId: teacherId },
-              { homeroomTeacherId: { contains: teacherId } }
-            ]
+            OR: teacherIdentifiers.flatMap(id => [
+              { homeroomTeacherId: id },
+              { homeroomTeacherId: { contains: id } }
+            ])
           }
         })
       }
@@ -479,7 +490,7 @@ export async function GET(req: Request) {
       // Find all teaching assignments for this teacher
       let assignments = await prisma.teachingAssignment.findMany({
         where: {
-          teacherId,
+          OR: teacherIdentifiers.map(id => ({ teacherId: id })),
           ...(academicYearId ? { academicYearId } : {})
         },
         include: {
@@ -487,6 +498,15 @@ export async function GET(req: Request) {
           subject: true
         }
       })
+
+      if (assignments.length === 0 && academicYearId) {
+        assignments = await prisma.teachingAssignment.findMany({
+          where: {
+            OR: teacherIdentifiers.map(id => ({ teacherId: id }))
+          },
+          include: { class: true, subject: true }
+        })
+      }
 
       // Collect all class IDs
       const classIds = Array.from(new Set([
@@ -520,7 +540,7 @@ export async function GET(req: Request) {
           classId: { in: classIds }
         },
         include: {
-          teacher: { select: { id: true, teacherName: true } },
+          teacher: { select: { id: true, teacherName: true, teacherCode: true } },
           subject: { select: { id: true, subjectName: true, name: true } }
         }
       })
@@ -624,7 +644,6 @@ export async function GET(req: Request) {
             return false;
           })
 
-          // For GVCN: include student if assessment exists OR if student belongs to homeroom
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
           if (!assessment && !isHomeroom) return null
 
@@ -643,7 +662,7 @@ export async function GET(req: Request) {
                 return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
               if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
-              return cleanCS.includes(cleanTS) || cleanCS.includes(cleanCS)
+              return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
             })
           })
 
@@ -680,7 +699,7 @@ export async function GET(req: Request) {
             return {
               subject: cs,
               teacherName,
-              isCurrentTeacher: matchAssign?.teacherId === teacherId || (isHomeroom && cleanCS.includes("tâm lý"))
+              isCurrentTeacher: teacherIdentifiers.includes(matchAssign?.teacherId || "") || (isHomeroom && cleanCS.includes("tâm lý"))
             }
           })
 
