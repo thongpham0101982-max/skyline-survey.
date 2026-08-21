@@ -572,12 +572,23 @@ export async function GET(req: Request) {
           .replace(/[^a-z0-9]/g, "")
       }
 
+      const normalizeSubjectName = (sub: string) => {
+        const clean = (sub || "").toLowerCase().trim()
+        if (clean.includes("tâm lý")) return "Tâm lý"
+        if (clean.includes("anh") || clean.includes("english")) return "Tiếng Anh"
+        if (clean.includes("văn") || clean.includes("tiếng việt") || clean.includes("ngữ văn") || clean.includes("literature")) return "Tiếng Việt"
+        if (clean.includes("toán") || clean.includes("math")) return "Toán"
+        return sub.trim()
+      }
+
       const parseCommittedSubjects = (assessment: any) => {
         if (!assessment) return []
-        const text = `${assessment.directorNote || ""} ${assessment.admissionResult || ""}`
-        
-        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
+        const text = typeof assessment === "string" 
+          ? assessment 
+          : `${assessment.directorNote || ""} ${assessment.admissionResult || ""}`
+
         let subs: string[] = []
+        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
         if (match && match[1]) {
           subs = match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
         }
@@ -585,32 +596,23 @@ export async function GET(req: Request) {
         if (subs.length === 0) {
           if (/Toán|Math/i.test(text)) subs.push("Toán")
           if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
-          if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
-            subs.push("Tiếng Anh (viết)")
-          }
-          if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
-            subs.push("Tiếng Anh (vấn đáp)")
-          }
-          if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
-            subs.push("Tiếng Anh")
-          }
+          if (/Anh|English/i.test(text)) subs.push("Tiếng Anh")
           if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
         }
 
-        // Fallback check score fields
-        if (subs.length === 0) {
+        if (subs.length === 0 && typeof assessment === "object") {
           if (assessment.mathScore != null) subs.push("Toán")
           if (assessment.literatureScore != null) subs.push("Tiếng Việt")
           if (assessment.writtenEnglishScore != null || assessment.oralEnglishScore != null) subs.push("Tiếng Anh")
           if (assessment.psychologyScore != null) subs.push("Tâm lý")
         }
 
-        // Default fallback for Homeroom candidates
         if (subs.length === 0) {
           subs.push("Tiếng Việt", "Toán", "Tiếng Anh")
         }
 
-        return subs
+        const normalized = subs.map(normalizeSubjectName).filter(Boolean)
+        return Array.from(new Set(normalized))
       }
 
       // Filter and construct candidates
