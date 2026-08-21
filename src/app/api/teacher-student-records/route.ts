@@ -236,12 +236,16 @@ export async function GET(req: Request) {
         }
       })
 
-      // Fetch input assessment records for all candidates with commitment notes or matching results
+      // Fetch input assessment records for all candidates with commitment notes or matching results (K-12 and Preschool)
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           OR: [
-            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
-            { directorNote: { contains: "Môn cam kết" } }
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
+            { directorNote: { contains: "Cam kết" } }
           ]
         },
         select: {
@@ -260,13 +264,30 @@ export async function GET(req: Request) {
         }
       })
 
-      const parseCommittedSubjects = (note: string) => {
-        if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
+        const text = `${note || ""} ${resultStr || ""}`
+        if (!text.trim()) return []
+        
+        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
         if (match && match[1]) {
-          return match[1].split(",").map((s: string) => s.trim())
+          const splitSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
+          if (splitSubs.length > 0) return splitSubs
         }
-        return []
+
+        const subs: string[] = []
+        if (/Toán|Math/i.test(text)) subs.push("Toán")
+        if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
+        if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
+          subs.push("Tiếng Anh (viết)")
+        }
+        if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
+          subs.push("Tiếng Anh (vấn đáp)")
+        }
+        if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+          subs.push("Tiếng Anh")
+        }
+        if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
+        return subs
       }
 
       const cleanString = (str: string) => {
@@ -380,7 +401,7 @@ export async function GET(req: Request) {
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
+          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
           if (committedSubjects.length === 0) return null
 
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
