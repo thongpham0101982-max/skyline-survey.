@@ -234,137 +234,77 @@ export async function GET(req: Request) {
       if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
       try {
-        const targetClass = await prisma.class.findFirst({
+        // 1. Fetch class details matching Quản lý lớp học (Admin Class Detail)
+        const classInfo = await prisma.class.findFirst({
           where: {
             OR: [
               { id: classId },
               { classCode: classId },
               { className: classId }
             ]
+          },
+          include: {
+            students: {
+              where: { status: "ACTIVE" },
+              orderBy: { studentName: "asc" }
+            }
           }
         })
 
-        const possibleClassIdentifiers = targetClass 
-          ? Array.from(new Set([targetClass.id, targetClass.classCode, targetClass.className, classId].filter(Boolean)))
-          : [classId]
+        let studentsList: any[] = classInfo?.students || []
 
-        const selectFields = {
-          id: true,
-          studentCode: true,
-          studentName: true,
-          gender: true,
-          enrollmentDate: true,
-          classId: true,
-          class: { select: { id: true, className: true, classCode: true } }
-        }
-
-        // Query students in class
-        let dbStudents = await prisma.student.findMany({
-          where: {
-            OR: [
-              { classId: { in: possibleClassIdentifiers } },
-              { class: { id: { in: possibleClassIdentifiers } } },
-              { class: { classCode: { in: possibleClassIdentifiers } } },
-              { class: { className: { in: possibleClassIdentifiers } } }
-            ]
-          },
-          select: selectFields,
-          orderBy: { studentName: "asc" }
-        })
-
-        // Fallback search by className substring if 0 students found
-        if (dbStudents.length === 0 && targetClass) {
-          dbStudents = await prisma.student.findMany({
+        // 2. If no students found directly in class relation, search Student table by classId / classCode / className
+        if (studentsList.length === 0) {
+          studentsList = await prisma.student.findMany({
             where: {
+              status: "ACTIVE",
               OR: [
-                { class: { className: { contains: targetClass.className } } },
-                { class: { classCode: { contains: targetClass.classCode } } }
+                { classId: classId },
+                { class: { classCode: classId } },
+                { class: { className: classId } }
               ]
             },
-            select: selectFields,
             orderBy: { studentName: "asc" }
           })
         }
 
-        // Fetch input assessment records safely without nested 'is' relation syntax
-        let inputAssessments: any[] = []
-        let preschoolAssessments: any[] = []
-        try {
-          inputAssessments = await prisma.inputAssessmentStudent.findMany({
+        // 3. Fallback search by className substring (e.g., "1.2INT_CS2", "1.3_CS2", "2.4_CS2")
+        if (studentsList.length === 0 && classInfo?.className) {
+          studentsList = await prisma.student.findMany({
             where: {
+              status: "ACTIVE",
               OR: [
-                { enrollmentClassId: { in: possibleClassIdentifiers } },
-                { enrollmentClass: { id: { in: possibleClassIdentifiers } } },
-                { enrollmentClass: { classCode: { in: possibleClassIdentifiers } } },
-                { enrollmentClass: { className: { in: possibleClassIdentifiers } } }
+                { class: { className: { contains: classInfo.className } } },
+                { class: { classCode: { contains: classInfo.classCode } } }
               ]
             },
-            select: {
-              id: true,
-              studentCode: true,
-              enrollmentCode: true,
-              fullName: true,
-              directorNote: true,
-              admissionResult: true,
-              enrollmentDate: true
-            }
-          })
-        } catch (e1) {}
-
-        try {
-          if ((prisma as any).preschoolInputAssessmentStudent) {
-            preschoolAssessments = await (prisma as any).preschoolInputAssessmentStudent.findMany({
-              where: {
-                OR: [
-                  { enrollmentClassId: { in: possibleClassIdentifiers } },
-                  { enrollmentClass: { id: { in: possibleClassIdentifiers } } },
-                  { enrollmentClass: { classCode: { in: possibleClassIdentifiers } } },
-                  { enrollmentClass: { className: { in: possibleClassIdentifiers } } }
-                ]
-              },
-              select: {
-                id: true,
-                studentCode: true,
-                enrollmentCode: true,
-                fullName: true,
-                directorNote: true,
-                admissionResult: true,
-                enrollmentDate: true
-              }
-            })
-          }
-        } catch (e2) {}
-
-        const allSurveyRecords = [...inputAssessments, ...preschoolAssessments]
-
-        // Combine DB students with input survey students if not present in DB students
-        const studentMap = new Map<string, any>()
-        for (const s of dbStudents) {
-          studentMap.set(s.id, {
-            ...s,
-            className: s.class?.className || targetClass?.className || ""
+            orderBy: { studentName: "asc" }
           })
         }
 
-        for (const s of allSurveyRecords) {
-          const sCode = s.studentCode || s.enrollmentCode || ""
-          const exists = Array.from(studentMap.values()).some(st => st.studentCode === sCode || st.studentName === s.fullName)
-          if (!exists && (s.fullName || sCode)) {
-            const tempId = s.id || `survey_${sCode || s.fullName}`
-            studentMap.set(tempId, {
-              id: tempId,
-              studentCode: sCode || "N/A",
-              studentName: s.fullName || "Học sinh",
-              gender: null,
-              enrollmentDate: s.enrollmentDate || null,
-              classId: classId,
-              className: targetClass?.className || ""
-            })
-          }
+        // 4. Fallback search by raw classId string matching
+        if (studentsList.length === 0) {
+          studentsList = await prisma.student.findMany({
+            where: {
+              status: "ACTIVE",
+              classId: { contains: classId }
+            },
+            orderBy: { studentName: "asc" }
+          })
         }
 
-        const formatted = Array.from(studentMap.values())
-        return NextResponse.json(formatted)
+        // Format response matching Quản lý lớp học
+        const result = studentsList.map(s => ({
+          id: s.id,
+          studentCode: s.studentCode || "N/A",
+          studentName: s.studentName || "Học sinh",
+          gender: s.gender || null,
+          enrollmentDate: s.enrollmentDate || null,
+          classId: s.classId || classId,
+          className: classInfo?.className || s.className || ""
+        }))
+
+        return NextResponse.json(result)
       } catch (err: any) {
         console.error("getClassStudents error:", err)
         return NextResponse.json({ error: err.message }, { status: 500 })
