@@ -415,8 +415,22 @@ export async function GET(req: Request) {
         if (!callerTeacher) return true;
         
         const isHomeroom = homeroomClassSet.has(t.student?.classId);
+
+        // Resilient multi-identifier class matching for teacher assignments
         const mySubjectsInClass = teacherAssignments
-          .filter((a: any) => a.classId === t.student?.classId)
+          .filter((a: any) => {
+            if (!t.student) return false;
+            const stClassId = t.student.classId;
+            const stClassName = t.student.class?.className;
+            const stClassCode = t.student.class?.classCode;
+
+            return (
+              a.classId === stClassId ||
+              a.class?.id === stClassId ||
+              (stClassCode && (a.classId === stClassCode || a.class?.classCode === stClassCode)) ||
+              (stClassName && (a.classId === stClassName || a.class?.className === stClassName))
+            );
+          })
           .map((a: any) => (a.subject?.subjectName || a.subject?.name || "").toLowerCase());
 
         const normReason = normalizeReasonStr(t.reason).toLowerCase();
@@ -454,8 +468,48 @@ export async function GET(req: Request) {
         }
       }
 
-      const filteredTargets = Array.from(targetMap.values());
-      return NextResponse.json(filteredTargets);
+      // Fetch all teaching assignments in academic year to populate GVBM phụ trách
+      const allClassAssignments = await prisma.teachingAssignment.findMany({
+        where: { academicYearId },
+        include: {
+          teacher: { select: { id: true, teacherName: true } },
+          subject: { select: { id: true, subjectName: true, name: true } },
+          class: { select: { id: true, className: true, classCode: true } }
+        }
+      });
+
+      const targetsWithAssignedTeacher = Array.from(targetMap.values()).map((t: any) => {
+        let gvbmName = t.assignments?.[0]?.teacher?.teacherName || t.createdBy?.teacherName || "";
+        if (!gvbmName && t.student) {
+          const stClassId = t.student.classId;
+          const normReason = (t.reason || "").toLowerCase();
+          const matchedAssignment = allClassAssignments.find((a: any) => {
+            const classMatches = (
+              a.classId === stClassId ||
+              a.class?.id === stClassId ||
+              a.class?.classCode === stClassId ||
+              a.class?.className === stClassId ||
+              a.class?.className === t.student?.class?.className
+            );
+            if (!classMatches) return false;
+            const subName = (a.subject?.subjectName || a.subject?.name || "").toLowerCase();
+            if (normReason.includes("toán")) return subName.includes("toán");
+            if (normReason.includes("văn") || normReason.includes("tiếng việt")) return subName.includes("văn") || subName.includes("tiếng việt");
+            if (normReason.includes("anh")) return subName.includes("anh");
+            if (normReason.includes("tâm lý")) return subName.includes("tâm lý");
+            return subName.includes(normReason);
+          });
+          if (matchedAssignment) {
+            gvbmName = matchedAssignment.teacher?.teacherName || "";
+          }
+        }
+        return {
+          ...t,
+          assignedTeacherName: gvbmName
+        };
+      });
+
+      return NextResponse.json(targetsWithAssignedTeacher);
     }
 
     // 3. Action: getAssignments
