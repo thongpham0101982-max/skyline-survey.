@@ -934,8 +934,9 @@ export function TeacherSupportClient({
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn hỗ trợ</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái bồi dưỡng</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Đối tượng</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
                   <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mức hiện tại</th>
                   <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
                 </tr>
@@ -964,6 +965,11 @@ export function TeacherSupportClient({
                     const latestEval = sortedEvals[0];
                     const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ";
 
+                    const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+                    const enrollmentDateFormatted = t.student?.enrollmentDate
+                      ? new Date(t.student.enrollmentDate).toLocaleDateString("vi-VN")
+                      : (t.createdAt ? new Date(t.createdAt).toLocaleDateString("vi-VN") : "N/A");
+
                     return (
                       <tr key={t.id} className="hover:bg-slate-50">
                         <td className="px-4 py-4 whitespace-nowrap">
@@ -980,25 +986,30 @@ export function TeacherSupportClient({
                           )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-500 font-medium">{index + 1}</td>
-                        <td className="px-4 py-4 whitespace-nowrap text-slate-500">{t.student?.studentCode}</td>
+                        <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-semibold">{t.student?.studentCode || t.student?.code || "N/A"}</td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName}</button>
+                          <button onClick={() => handleOpenProfile(t.studentId)} className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline text-left transition-all cursor-pointer">{t.student?.studentName || t.student?.fullName}</button>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-bold">
-                          {t.student?.class?.className}
+                          {t.student?.class?.className || t.student?.className}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-slate-600 font-semibold text-xs">
+                          {enrollmentDateFormatted}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
-                            t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
-                          }`}>
-                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map((s: any) => s.trim()).filter(Boolean))).join(", ") : "Tâm lý học đường"}
-                          </span>
+                          {isCommitmentTarget ? (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-amber-100 text-amber-900 border border-amber-300" title="Cam kết đầu vào">
+                              CKĐV
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-indigo-100 text-indigo-900 border border-indigo-300" title="Bổ sung theo dõi">
+                              BSTD
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                            isTerminated ? "bg-emerald-100 text-emerald-800" : isPending ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800"
-                          }`}>
-                             {isTerminated ? "Đã kết thúc" : isPending ? "Hoàn thành" : (t.status === "ĐÃ DUYỆT" || t.status === "ACTIVE" ? "Đang hỗ trợ" : "Cần can thiệp")}
+                          <span className="px-2 py-0.5 rounded text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700">
+                            {Array.from(new Set((t.reason || "").split(",").map((s: any) => s.trim()).filter(Boolean))).join(", ") || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-800 font-bold">
