@@ -592,8 +592,43 @@ export function TeacherSupportClient({
     }
   }
 
-      // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
-  const filteredTargets = targets.filter(t => {
+      // Combine database targets with entrance commitment students assigned to teacher by PCGD
+  const combinedTargets = useMemo(() => {
+    const list = [...targets]
+    if (entranceCommitmentStudents && entranceCommitmentStudents.length > 0) {
+      entranceCommitmentStudents.forEach((c: any) => {
+        const exists = list.some(t => 
+          (t.studentId && (t.studentId === c.id || t.studentId === c.systemStudentId)) ||
+          (t.student?.studentCode && c.studentCode && t.student.studentCode === c.studentCode)
+        )
+        if (!exists) {
+          const isPsych = (c.committedSubjects || []).includes("Tâm lý") || (c.reason || "").includes("Tâm lý")
+          list.push({
+            id: `commitment_${c.id || c.studentCode}`,
+            studentId: c.id || c.systemStudentId,
+            student: {
+              id: c.id || c.systemStudentId,
+              studentCode: c.studentCode,
+              studentName: c.fullName || c.studentName,
+              gender: c.gender,
+              classId: c.classId,
+              class: { className: c.className }
+            },
+            reason: c.committedSubjects?.join(", ") || c.reason || (isPsych ? "Tâm lý" : "Theo dõi bồi dưỡng"),
+            supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
+            status: "CHỜ ĐÁNH GIÁ",
+            assignedTeacherName: teacher?.teacherName,
+            assignments: [{ teacherId: teacher?.id, teacher: { teacherName: teacher?.teacherName } }],
+            evaluations: []
+          })
+        }
+      })
+    }
+    return list
+  }, [targets, entranceCommitmentStudents, teacher?.id, teacher?.teacherName])
+
+  // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
+  const filteredTargets = combinedTargets.filter(t => {
     // Check if homeroom student
     const isHomeroomStudent = homeroomClasses.some(c => 
       c.id === t.student?.classId || c.students?.some((s: any) => s.id === t.studentId)
