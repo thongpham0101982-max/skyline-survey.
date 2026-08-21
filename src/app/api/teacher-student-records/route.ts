@@ -214,101 +214,31 @@ export async function GET(req: Request) {
       const classId = searchParams.get("classId")
       if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
-      const students = await prisma.student.findMany({
-        where: {
-          classId
-        },
-        orderBy: { studentName: "asc" }
-      })
-
-      // Fetch all teaching assignments in these classes to find assigned GVBM for committed subjects
-      const allClassAssignments = await prisma.teachingAssignment.findMany({
-        where: {
-          classId: classId,
-          academicYearId
-        },
-        include: {
-          teacher: { select: { id: true, teacherName: true } },
-          subject: { select: { id: true, subjectName: true, name: true } }
-        }
-      })
-
-      // Fetch input assessment records for all candidates with commitment notes or matching results (K-12 and Preschool)
-      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
-        where: {
-          OR: [
-            { admissionResult: { contains: "cam kết" } },
-            { admissionResult: { contains: "Cam kết" } },
-            { directorNote: { contains: "Môn cam kết" } },
-            { directorNote: { contains: "Mon cam ket" } },
-            { directorNote: { contains: "cam kết" } },
-            { directorNote: { contains: "Cam kết" } }
-          ]
-        },
-        select: {
-          studentCode: true,
-          enrollmentCode: true,
-          fullName: true,
-          directorNote: true,
-          admissionResult: true,
-          enrollmentDate: true,
-          mathScore: true,
-          literatureScore: true,
-          writtenEnglishScore: true,
-          oralEnglishScore: true,
-          psychologyScore: true,
-          scores: { include: { subject: true } }
-        }
-      })
-
-      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
-        const text = `${note || ""} ${resultStr || ""}`
-        if (!text.trim()) return []
-        
-        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
-        if (match && match[1]) {
-          const splitSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
-          if (splitSubs.length > 0) return splitSubs
-        }
-
-        const subs: string[] = []
-        if (/Toán|Math/i.test(text)) subs.push("Toán")
-        if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
-        if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
-          subs.push("Tiếng Anh (viết)")
-        }
-        if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
-          subs.push("Tiếng Anh (vấn đáp)")
-        }
-        if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
-          subs.push("Tiếng Anh")
-        }
-        if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
-        return subs
-      }
-
-      const cleanString = (str: string) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
-      }
-
-      const result = students.map(s => {
-        const assessment = allAssessments.find((a: any) => {
-          if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
-            return true
-          }
-          return cleanString(a.fullName) === cleanString(s.studentName)
+      try {
+        const students = await prisma.student.findMany({
+          where: { classId },
+          select: {
+            id: true,
+            studentCode: true,
+            studentName: true,
+            gender: true,
+            enrollmentDate: true,
+            classId: true,
+            class: { select: { className: true } }
+          },
+          orderBy: { studentName: "asc" }
         })
-        return {
-          ...s,
-          entranceCommitmentSubjects: assessment ? parseCommittedSubjects(assessment.directorNote || "") : []
-        }
-      })
 
-      return NextResponse.json(result)
+        const formatted = students.map(s => ({
+          ...s,
+          className: s.class?.className || ""
+        }))
+
+        return NextResponse.json(formatted)
+      } catch (err: any) {
+        console.error("getClassStudents error:", err)
+        return NextResponse.json({ error: err.message }, { status: 500 })
+      }
     }
 
     // NEW: Get students in a class with learning commitments matching the teacher's assigned subjects
