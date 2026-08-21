@@ -157,39 +157,60 @@ export async function GET(req: Request) {
                 });
               }
 
-              // Auto-assign to TeachingAssignment GVBM for this student's class and subject
-              const matchedAssignments = allAssignments.filter(a => {
-                const classMatches = (
-                  a.classId === student.classId ||
-                  a.class?.id === student.classId ||
-                  a.class?.classCode === student.classId ||
-                  a.class?.className === student.classId ||
-                  a.class?.className === student.class?.className
-                );
-                if (!classMatches) return false;
-                const subName = (a.subject?.subjectName || "").toLowerCase();
-                if (normSub === "Toán") return subName.includes("toán");
-                if (normSub === "Tiếng Việt") return subName.includes("văn") || subName.includes("tiếng việt");
-                if (normSub === "Tiếng Anh") return subName.includes("anh");
-                if (normSub === "Tâm lý") return subName.includes("tâm lý");
-                return subName.includes(normSub.toLowerCase());
-              });
-
-              for (const assign of matchedAssignments) {
-                const existingAssign = await prisma.learningSupportAssignment.findFirst({
+              // Auto-assign to TeachingAssignment GVBM or Psych teacher for this student's class and subject
+              if (normSub === "Tâm lý") {
+                const psychTeachers = await prisma.teacher.findMany({
                   where: {
-                    targetId: target.id,
-                    teacherId: assign.teacherId
+                    OR: [
+                      { teacherName: { contains: "Phương Thanh" } },
+                      { teacherName: { contains: "Tâm lý" } },
+                      { id: "0201000175" }
+                    ]
                   }
                 });
-                if (!existingAssign) {
-                  await prisma.learningSupportAssignment.create({
-                    data: {
+                for (const pTeacher of psychTeachers) {
+                  const existingAssign = await prisma.learningSupportAssignment.findFirst({
+                    where: { targetId: target.id, teacherId: pTeacher.id }
+                  });
+                  if (!existingAssign) {
+                    await prisma.learningSupportAssignment.create({
+                      data: { targetId: target.id, teacherId: pTeacher.id, assignedAt: new Date() }
+                    });
+                  }
+                }
+              } else {
+                const matchedAssignments = allAssignments.filter(a => {
+                  const classMatches = (
+                    a.classId === student.classId ||
+                    a.class?.id === student.classId ||
+                    a.class?.classCode === student.classId ||
+                    a.class?.className === student.classId ||
+                    a.class?.className === student.class?.className
+                  );
+                  if (!classMatches) return false;
+                  const subName = (a.subject?.subjectName || "").toLowerCase();
+                  if (normSub === "Toán") return subName.includes("toán");
+                  if (normSub === "Tiếng Việt") return subName.includes("văn") || subName.includes("tiếng việt");
+                  if (normSub === "Tiếng Anh") return subName.includes("anh");
+                  return subName.includes(normSub.toLowerCase());
+                });
+
+                for (const assign of matchedAssignments) {
+                  const existingAssign = await prisma.learningSupportAssignment.findFirst({
+                    where: {
                       targetId: target.id,
-                      teacherId: assign.teacherId,
-                      assignedAt: new Date()
+                      teacherId: assign.teacherId
                     }
                   });
+                  if (!existingAssign) {
+                    await prisma.learningSupportAssignment.create({
+                      data: {
+                        targetId: target.id,
+                        teacherId: assign.teacherId,
+                        assignedAt: new Date()
+                      }
+                    });
+                  }
                 }
               }
             }
@@ -241,10 +262,20 @@ export async function GET(req: Request) {
 
       const whereClause: any = { academicYearId };
       if (callerTeacher) {
+        const isPsychTeacher = 
+          (callerTeacher.teacherName || "").toLowerCase().includes("thanh") ||
+          (callerTeacher.teacherName || "").toLowerCase().includes("tâm lý") ||
+          callerTeacher.id === "0201000175";
+
         const orConditions: any[] = [
           { createdById: callerTeacher.id },
           { assignments: { some: { teacherId: callerTeacher.id } } }
         ];
+
+        if (isPsychTeacher) {
+          orConditions.push({ supportType: "PSYCHOLOGICAL" });
+          orConditions.push({ reason: { contains: "Tâm lý" } });
+        }
 
         if (allClassIds.length > 0 || allClassCodes.length > 0 || allClassNames.length > 0) {
           orConditions.push({
@@ -339,7 +370,15 @@ export async function GET(req: Request) {
 
         const normReason = normalizeReasonStr(t.reason).toLowerCase();
 
+        const isPsychTeacher = 
+          (callerTeacher.teacherName || "").toLowerCase().includes("thanh") ||
+          (callerTeacher.teacherName || "").toLowerCase().includes("tâm lý") ||
+          callerTeacher.id === "0201000175";
+
         if (!isHomeroom) {
+          if (isPsychTeacher && (t.supportType === "PSYCHOLOGICAL" || normReason.includes("tâm lý"))) {
+            return true;
+          }
           if (mySubjectsInClass.length === 0) return false;
           const matchesSubject = mySubjectsInClass.some((ts: string) => {
             if (ts.includes("toán")) return normReason.includes("toán");
