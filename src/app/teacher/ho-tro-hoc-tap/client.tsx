@@ -471,6 +471,7 @@ export function TeacherSupportClient({
       }
 
       setIsProposeModalOpen(false)
+      setActiveSubTab("assigned")
       
       // Delay fetching to allow for DB replication
       await new Promise(r => setTimeout(r, 1500))
@@ -534,6 +535,7 @@ export function TeacherSupportClient({
       toast.success("Ghi nhận đánh giá thành công!");
       setIsEvaluationModalOpen(false);
       setSelectedEvalTargetIds([]);
+      setActiveSubTab("assigned");
       fetchTeacherData();
     } catch (e) {
       toast.error("Lưu nhận xét thất bại");
