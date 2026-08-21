@@ -383,7 +383,8 @@ export async function GET(req: Request) {
         };
       });
 
-      return NextResponse.json(result);
+      const filteredResult = result.filter(item => item.className && item.className !== "Chưa xếp lớp")
+      return NextResponse.json(filteredResult);
     }
 
     // 3. Action: getAssignments
