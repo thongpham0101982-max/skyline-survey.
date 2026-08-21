@@ -1107,7 +1107,7 @@ export function TeacherSupportClient({
                           <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
                             t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
                           }`}>
-                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ") : "Tâm lý học đường"}
+                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ") : "Tâm lý"}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
