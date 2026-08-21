@@ -607,8 +607,8 @@ export function TeacherSupportClient({
         return (teacherNameLower && atName.includes(teacherNameLower)) || atName.includes((teacher?.id || "_____").toLowerCase())
       })
 
-      const isHomeroomClass = homeroomClasses.some((c: any) => c.className === cand.className || c.classCode === cand.className)
-      const isAssignedClass = assignedClasses.some((c: any) => c.className === cand.className || c.classCode === cand.className)
+      const isHomeroomClass = (homeroomClasses || []).some((c: any) => c && (c.className === cand.className || c.classCode === cand.className))
+      const isAssignedClass = (assignedClasses || []).some((c: any) => c && (c.className === cand.className || c.classCode === cand.className))
 
       if (matchedSubjectAssignment || isHomeroomClass || isAssignedClass) {
         const sub = matchedSubjectAssignment?.subject || cand.committedSubjects?.[0] || "Theo dõi bồi dưỡng"
