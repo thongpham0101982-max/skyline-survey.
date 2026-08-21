@@ -33,11 +33,28 @@ export async function GET(req: Request) {
   const action = searchParams.get("action")
 
   try {
-    const teacher = await prisma.teacher.findUnique({
-      where: { userId: session.user.id }
-    })
-    if (!teacher) {
-      return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 })
+    const teacherIdParam = searchParams.get("teacherId")
+    let teacher = teacherIdParam ? await prisma.teacher.findFirst({
+      where: {
+        OR: [
+          { id: teacherIdParam },
+          { teacherCode: teacherIdParam },
+          { userId: teacherIdParam }
+        ]
+      }
+    }) : null
+
+    if (!teacher && session?.user?.id) {
+      teacher = await prisma.teacher.findFirst({
+        where: {
+          OR: [
+            { userId: session.user.id },
+            { id: session.user.id },
+            { teacherCode: session.user.id },
+            { email: session.user.email || "" }
+          ]
+        }
+      })
     }
 
     if (action === "getHomeroomStudents") {
@@ -54,11 +71,7 @@ export async function GET(req: Request) {
         },
         include: {
           students: {
-            where: {
-              NOT: {
-                studentCode: { startsWith: "2" }
-              }
-            },
+
             orderBy: { studentName: "asc" }
           }
         }
