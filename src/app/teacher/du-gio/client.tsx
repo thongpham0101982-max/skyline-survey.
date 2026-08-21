@@ -2577,16 +2577,26 @@ export function ObservationClient(props: ObservationClientProps) {
                         </td>
                         <td className="p-4">
                           {slot.registrations && slot.registrations.length > 0 ? (
-                            <div className="flex flex-col gap-1 max-w-[220px]">
+                            <div className="flex flex-col gap-1.5 max-w-[260px]">
                               {slot.registrations.map((reg: any) => (
-                                <div key={reg.id} className="flex items-center gap-1.5 text-xs">
-                                  <span className={`w-2 h-2 rounded-full shrink-0 ${reg.isApproved ? "bg-emerald-500" : "bg-amber-400"}`} title={reg.isApproved ? "Đã phê duyệt" : "Chờ xác nhận"} />
-                                  <span className="font-extrabold text-slate-800 truncate" title={reg.teacher?.teacherName || reg.teacherName}>
-                                    {reg.teacher?.teacherName || reg.teacherName || "GV"}
-                                  </span>
-                                  {reg.teacher?.teacherCode && (
-                                    <span className="text-[11px] text-slate-500 font-medium shrink-0">
-                                      ({reg.teacher.teacherCode})
+                                <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs p-1.5 rounded-lg bg-slate-50 border border-slate-200/70">
+                                  <div className="flex items-center gap-1 min-w-0">
+                                    <span className="font-extrabold text-slate-800 truncate" title={reg.teacher?.teacherName || reg.teacherName}>
+                                      {reg.teacher?.teacherName || reg.teacherName || "GV"}
+                                    </span>
+                                    {reg.teacher?.teacherCode && (
+                                      <span className="text-[10px] text-slate-400 font-medium shrink-0">
+                                        ({reg.teacher.teacherCode})
+                                      </span>
+                                    )}
+                                  </div>
+                                  {reg.isApproved ? (
+                                    <span className="px-1.5 py-0.2 rounded font-black text-[10px] uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                      Đã xác nhận
+                                    </span>
+                                  ) : (
+                                    <span className="px-1.5 py-0.2 rounded font-black text-[10px] uppercase bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                      Chờ xác nhận
                                     </span>
                                   )}
                                 </div>
