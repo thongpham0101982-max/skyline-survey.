@@ -1,13 +1,3 @@
-
-// Helper to safely convert any value to string before calling toLowerCase/trim
-function safeStr(val: any): string {
-  if (val === null || val === undefined) return "";
-  if (typeof val === "string") return val;
-  if (typeof val === "object") {
-    return val.subjectName || val.subject || val.name || val.teacherName || String(val);
-  }
-  return String(val);
-}
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -68,7 +58,6 @@ export function TeacherSupportClient({
   )
   const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history">("assigned")
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
-  const [adminCommitmentCandidates, setAdminCommitmentCandidates] = useState<any[]>([])
   const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
 
   // Data states loaded dynamically
@@ -338,7 +327,7 @@ export function TeacherSupportClient({
     if (selectedStudentIds.length > 0 && commitmentCandidates.length > 0) {
       const selectedCommitments = commitmentCandidates.filter(c => selectedStudentIds.includes(c.id));
       const hasPsychCommitment = selectedCommitments.some(c => 
-        (c.matchedSubjects || []).some((s) => safeStr(s).toLowerCase().includes("tâm lý"))
+        (c.matchedSubjects || []).some((s) => s.toLowerCase().includes("tâm lý"))
       );
       if (hasPsychCommitment) {
         setProposePsychological(true);
@@ -475,10 +464,10 @@ export function TeacherSupportClient({
       }
 
       if (successCount > 0) {
-        toast.success(`Bổ sung thành công ${successCount} lượt học sinh theo dõi!`)
+        toast.success(`Đề xuất thành công ${successCount} lượt bồi dưỡng!`)
       }
       if (failCount > 0) {
-        toast.error(`Bổ sung thất bại ${failCount} lượt học sinh theo dõi.`)
+        toast.error(`Đề xuất thất bại ${failCount} lượt bồi dưỡng.`)
       }
 
       setIsProposeModalOpen(false)
@@ -603,129 +592,35 @@ export function TeacherSupportClient({
     }
   }
 
-        // Combine database targets with Admin Sổ HS Cam kết candidates assigned to teacher by PCGD
-  const combinedTargets = useMemo(() => {
-    const list = [...targets]
-    const rawTeacherName = typeof teacher?.teacherName === "string" ? teacher.teacherName : String(teacher?.teacherName || "")
-    const teacherNameLower = rawTeacherName.toLowerCase().trim()
+  // Filter students related to this teacher
+  const filteredTargets = targets.filter(t => {
+    // Only show active targets that are approved (have assigned teachers)
+    if (!t.assignments || t.assignments.length === 0) return false
 
-    // 1. Process Admin Sổ HS Cam kết candidates
-    (adminCommitmentCandidates || []).forEach((cand: any) => {
-      const assignedTeachers = Array.isArray(cand.assignedTeachers) ? cand.assignedTeachers : []
-      const matchedSubjectAssignment = assignedTeachers.find((at: any) => {
-        if (!at) return false
-        const atNameRaw = typeof at.teacherName === "string" ? at.teacherName : (at.teacherName?.teacherName || String(at.teacherName || ""))
-        if (!atNameRaw) return false
-        const atName = atNameRaw.toLowerCase()
-        const teacherIdStr = String(teacher?.id || "_____").toLowerCase()
-        return (teacherNameLower && atName.includes(teacherNameLower)) || atName.includes(teacherIdStr)
-      })
-
-      const isHomeroomClass = (homeroomClasses || []).some((c: any) => c && (c.className === cand.className || c.classCode === cand.className))
-      const isAssignedClass = (assignedClasses || []).some((c: any) => c && (c.className === cand.className || c.classCode === cand.className))
-
-      if (matchedSubjectAssignment || isHomeroomClass || isAssignedClass) {
-        const sub = matchedSubjectAssignment?.subject || (Array.isArray(cand.committedSubjects) ? cand.committedSubjects[0] : null) || "Theo dõi bồi dưỡng"
-        const subStr = typeof sub === "string" ? sub : String(sub || "")
-        const noteStr = typeof cand.directorNote === "string" ? cand.directorNote : String(cand.directorNote || "")
-        const isPsych = subStr.toLowerCase().includes("tâm lý") || noteStr.toLowerCase().includes("tâm lý")
-
-        const exists = list.some(t => 
-          (t.studentId && (t.studentId === cand.systemStudentId || t.studentId === cand.id)) ||
-          (t.student?.studentCode && cand.studentCode && t.student.studentCode === cand.studentCode)
-        )
-
-        if (!exists) {
-          list.push({
-            id: `admin_commitment_${cand.id}_${subStr}`,
-            studentId: cand.systemStudentId || cand.id,
-            student: {
-              id: cand.systemStudentId || cand.id,
-              studentCode: cand.studentCode,
-              studentName: cand.fullName,
-              gender: cand.gender,
-              classId: cand.className,
-              class: { className: cand.className }
-            },
-            reason: subStr,
-            supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
-            status: "CHỜ ĐÁNH GIÁ",
-            assignedTeacherName: matchedSubjectAssignment?.teacherName || teacher?.teacherName,
-            assignments: [{ teacherId: teacher?.id, teacher: { teacherName: teacher?.teacherName } }],
-            evaluations: []
-          })
-        }
-      }
-    })
-
-    // 2. Process entranceCommitmentStudents fallback
-    (entranceCommitmentStudents || []).forEach((c: any) => {
-      const exists = list.some(t => 
-        (t.studentId && (t.studentId === c.id || t.studentId === c.systemStudentId)) ||
-        (t.student?.studentCode && c.studentCode && t.student.studentCode === c.studentCode)
-      )
-      if (!exists) {
-        const isPsych = (Array.isArray(c.committedSubjects) && c.committedSubjects.includes("Tâm lý")) || String(c.reason || "").includes("Tâm lý")
-        const reasonStr = Array.isArray(c.committedSubjects) ? c.committedSubjects.join(", ") : String(c.reason || (isPsych ? "Tâm lý" : "Theo dõi bồi dưỡng"))
-        list.push({
-          id: `commitment_${c.id || c.studentCode}`,
-          studentId: c.id || c.systemStudentId,
-          student: {
-            id: c.id || c.systemStudentId,
-            studentCode: c.studentCode,
-            studentName: c.fullName || c.studentName,
-            gender: c.gender,
-            classId: c.classId,
-            class: { className: c.className }
-          },
-          reason: reasonStr,
-          supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
-          status: "CHỜ ĐÁNH GIÁ",
-          assignedTeacherName: teacher?.teacherName,
-          assignments: [{ teacherId: teacher?.id, teacher: { teacherName: teacher?.teacherName } }],
-          evaluations: []
-        })
-      }
-    })
-
-    return list
-  }, [targets, adminCommitmentCandidates, entranceCommitmentStudents, teacher?.id, teacher?.teacherName, homeroomClasses, assignedClasses])
-
-  // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
-  const filteredTargets = combinedTargets.filter(t => {
-    // Check if homeroom student
-    const isHomeroomStudent = (homeroomClasses || []).some((c: any) => 
-      c && (c.id === t.student?.classId || (Array.isArray(c.students) && c.students.some((s: any) => s.id === t.studentId)))
-    )
-
-    // Check if assigned teacher according to PCGD / TeachingAssignment
-    const tAssignedName = typeof t.assignedTeacherName === "string" ? t.assignedTeacherName : (t.assignedTeacherName?.teacherName || String(t.assignedTeacherName || ""))
-    const tTeacherName = typeof teacher?.teacherName === "string" ? teacher.teacherName : String(teacher?.teacherName || "")
-
-    const isAssigned = 
-      (tAssignedName && tTeacherName && tAssignedName.toLowerCase().includes(tTeacherName.toLowerCase())) ||
-      (Array.isArray(t.assignments) && t.assignments.some((a: any) => a.teacherId === teacher?.id)) ||
-      (assignedClasses || []).some((c: any) => c && (c.id === t.student?.classId || c.className === t.student?.class?.className))
+    // Check if homeroom or assigned
+    const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
+    const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher.id)
 
     // Apply role filter
     if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
     if (roleFilter === "ASSIGNED" && !isAssigned) return false
+    if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned) return false
 
     // Apply Month filter
     if (monthFilter !== "ALL") {
-      const hasEvalInMonth = Array.isArray(t.evaluations) && t.evaluations.some((e: any) => e.periodName === monthFilter)
+      const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter)
       if (!hasEvalInMonth) return false
     }
 
     // Apply Level filter
-    const sortedEvals = Array.isArray(t.evaluations) ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
+    const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
     const latestEval = sortedEvals[0]
     const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ"
     if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false
 
     // Apply search query
-    const name = typeof t.student?.studentName === "string" ? t.student.studentName : String(t.student?.studentName || "")
-    const code = typeof t.student?.studentCode === "string" ? t.student.studentCode : String(t.student?.studentCode || "")
+    const name = t.student?.studentName || ""
+    const code = t.student?.studentCode || ""
     const matchesSearch = searchQuery === "" || 
       name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       code.toLowerCase().includes(searchQuery.toLowerCase())
@@ -733,19 +628,10 @@ export function TeacherSupportClient({
     return matchesSearch
   })
 
-    // Helper to identify manual supplementary proposals submitted by teacher (+ Bổ sung HS Theo dõi)
-  const isManualProposal = (t: any) => {
-    if (t.createdById !== teacher?.id) return false
-    if (t.sourceType === "ADMISSION") return false
-    const notesLower = (t.notes || "").toLowerCase()
-    if (notesLower.includes("cam kết") || notesLower.includes("tự động đồng bộ")) return false
-    return true
-  }
-
-  // Count approved proposals submitted manually by this teacher (+ Bổ sung HS Theo dõi)
+  // Count approved proposals submitted by this teacher
   const approvedHistoryCount = useMemo(() => {
     return targets.filter((t: any) => 
-      isManualProposal(t) && (
+      t.createdById === teacher?.id && (
         (t.assignments && t.assignments.length > 0) || 
         t.status === "ĐÃ DUYỆT" || 
         t.terminationStatus === "TERMINATED" || 
@@ -754,9 +640,10 @@ export function TeacherSupportClient({
     ).length
   }, [targets, teacher?.id])
 
-  // Proposal history filter - ONLY show manual supplementary proposals by teacher (+ Bổ sung HS Theo dõi)
+  // Proposal history filter - server already filters by teacher visibility
+  // Only apply local search filter here
   const historyTargets = targets.filter(t => {
-    if (!isManualProposal(t)) return false
+    if (t.createdById !== teacher?.id) return false
 
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
@@ -1002,7 +889,7 @@ export function TeacherSupportClient({
           }`}
         >
           <Users className="h-4 w-4" />
-          Học sinh theo PCGD
+          Học sinh được phân công phụ đạo / chủ nhiệm
         </button>
         <button
           onClick={() => setActiveSubTab("commitments")}
@@ -1013,7 +900,7 @@ export function TeacherSupportClient({
           }`}
         >
           <Calendar className="h-4 w-4" />
-          HS KSĐV Cam kết (GVCN)
+          Cam kết Khảo sát đầu vào
         </button>
         <button
           onClick={() => setActiveSubTab("history")}
@@ -1051,7 +938,7 @@ export function TeacherSupportClient({
             className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
           >
             <Plus className="h-4 w-4" />
-            Bổ sung HS Theo dõi
+            Đề xuất HS Theo dõi
           </button>
         </div>
 
@@ -1220,7 +1107,7 @@ export function TeacherSupportClient({
                           <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
                             t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
                           }`}>
-                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ") : "Tâm lý"}
+                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ") : "Tâm lý học đường"}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
@@ -1231,7 +1118,7 @@ export function TeacherSupportClient({
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-800 font-bold">
-                          {isTerminated ? t.outcome : (currentLevel ? currentLevel.replace("Tâm lý học đường", "Tâm lý") : "")}
+                          {isTerminated ? t.outcome : currentLevel}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
                           {canEvaluate && !isTerminated && !isPending && (
@@ -1280,20 +1167,20 @@ export function TeacherSupportClient({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GVBM phụ trách</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thêm vào Form</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-sm">
               {loadingEntranceCommitments ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-400">
+                  <td colSpan={5} className="text-center py-10 text-slate-400">
                     <RefreshCw className="h-6 w-6 animate-spin inline-block mr-2 text-indigo-600" /> Đang tải danh sách học sinh cam kết đầu vào...
                   </td>
                 </tr>
               ) : entranceCommitmentStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-400 font-medium">
+                  <td colSpan={5} className="text-center py-10 text-slate-400 font-medium">
                     Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
                   </td>
                 </tr>
@@ -1308,7 +1195,7 @@ export function TeacherSupportClient({
                 if (filtered.length === 0) {
                   return (
                     <tr>
-                      <td colSpan={9} className="text-center py-10 text-slate-400">
+                      <td colSpan={5} className="text-center py-10 text-slate-400">
                         Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
                       </td>
                     </tr>
@@ -1316,7 +1203,7 @@ export function TeacherSupportClient({
                 }
 
                 return filtered.map((s: any, index: number) => {
-                  const hasPsychology = (Array.isArray(s.committedSubjects) ? s.committedSubjects : []).some((sub: any) => safeStr(sub).toLowerCase().includes("tâm lý"))
+                  const hasPsychology = s.committedSubjects.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
                   const existingTarget = targets.find(t => 
                     t.studentId === s.id && 
                     (hasPsychology ? t.supportType === "PSYCHOLOGICAL" : t.supportType === "ACADEMIC")
@@ -1371,7 +1258,7 @@ export function TeacherSupportClient({
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          {(Array.isArray(s.committedSubjects) ? s.committedSubjects : []).map((sub: any, index: number) => {
+                          {s.committedSubjects.map((sub: string, index: number) => {
                             const isMatched = s.matchedSubjects?.includes(sub)
                             return (
                               <span 
@@ -1392,7 +1279,7 @@ export function TeacherSupportClient({
                         <div className="flex flex-col gap-1">
                           {s.committedSubjects.map((sub: string, index: number) => {
                             let scoreDisplay = "Chưa có";
-                            const subLower = safeStr(sub).toLowerCase();
+                            const subLower = sub.toLowerCase();
                             if (subLower.includes("toán")) {
                               if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
                               else {
@@ -1440,68 +1327,101 @@ export function TeacherSupportClient({
                           })}
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1.5">
-                          {s.assignedTeachers && s.assignedTeachers.length > 0 ? (
-                            s.assignedTeachers.map((at: any, idx: number) => (
-                              <span key={idx} className="text-xs font-bold text-slate-700 block whitespace-nowrap">
-                                <span className="text-slate-400 font-normal">{at.subject}:</span>{" "}
-                                <span className={at.isCurrentTeacher ? "text-indigo-600 font-black" : "text-slate-800"}>
-                                  {at.teacherName} {at.isCurrentTeacher && "(Bạn)"}
-                                </span>
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-xs text-slate-400 font-medium italic">Chưa phân công</span>
-                          )}
-                        </div>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${statusClass}`}>
+                          {statusText}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
-                        <button
-                          onClick={async () => {
-                            let targetObj = existingTarget;
-                            if (!targetObj) {
-                              try {
-                                const isPsych = (Array.isArray(s.committedSubjects) ? s.committedSubjects : []).some((sub: any) => safeStr(sub).toLowerCase().includes("tâm lý"));
-                                const res = await fetch("/api/ktdbcl/support", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    action: "saveTarget",
-                                    academicYearId: selectedYearId,
-                                    studentId: s.id,
-                                    supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
-                                    sourceType: isPsych ? "TAM_LY" : "GVBM",
-                                    reason: s.committedSubjects.join(", "),
-                                    notes: "Khởi tạo đánh giá từ Cam kết Khảo sát đầu vào",
-                                    status: "ĐÃ DUYỆT"
-                                  })
-                                });
-                                targetObj = await res.json();
-                                await fetchTeacherData();
-                              } catch(e) {}
-                            }
-                            if (targetObj) {
-                              setSelectedEvalTargetIds([targetObj.id]);
-                              setEvalTargetId(targetObj.id);
-                              setEvalTargetName(s.studentName);
-                              setEvalTargetType(targetObj.supportType || ((Array.isArray(s.committedSubjects) ? s.committedSubjects : []).some((sub: any) => safeStr(sub).toLowerCase().includes("tâm lý")) ? "PSYCHOLOGICAL" : "ACADEMIC"));
-                              setEvalComment("");
-                              setEvalStudent(s);
-                              setEvalTargetObj(targetObj);
-                              setEvalPeriodType("MONTH");
-                              const curMonth = "Tháng " + (new Date().getMonth() + 1);
-                              setEvalPeriodName(curMonth);
-                              const options = configs.filter((c: any) => c.supportType === (targetObj.supportType || "ACADEMIC"));
-                              setEvalTrackingLevel(options[0]?.outcomeLabel || "");
-                              setIsEvaluationModalOpen(true);
-                            }
-                          }}
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-all shadow-xs flex items-center gap-1 mx-auto cursor-pointer"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                          Tiến hành đánh giá
-                        </button>
+                        {existingTarget ? (
+                          isApproved && !isTerminated && !isPending ? (
+                            canEvaluateCommitment ? (
+                              <button
+                                onClick={() => {
+                                  setEvalTargetId(existingTarget.id)
+                                  setEvalTargetName(s.studentName)
+                                  setEvalTargetType(existingTarget.supportType)
+                                  setEvalComment("")
+                                  setEvalStudent(s)
+                                  setEvalTargetObj(existingTarget)
+                                  const options = configs.filter(c => c.supportType === existingTarget.supportType)
+                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                                  setIsEvaluationModalOpen(true)
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-lg text-xs transition-all shadow-xs"
+                              >
+                                Tiến hành đánh giá
+                              </button>
+                            ) : (
+                              <span className="text-xs text-slate-400 font-medium">Đang hỗ trợ</span>
+                            )
+                          ) : (
+                            <span className="text-xs text-slate-400 font-medium">
+                              {existingTarget.status === "ĐÃ DUYỆT" || existingTarget.status === "ACTIVE" ? "Đang hỗ trợ" : "Đã tạo đề xuất"}
+                            </span>
+                          )
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setProposeClassId(s.classId)
+                              setIsProposeModalOpen(true)
+                              setSelectedStudentIds([s.id])
+                              const activeSubs = s.matchedSubjects?.length > 0 
+                                ? s.matchedSubjects 
+                                : [s.committedSubjects[0]]
+                              setSelectedSubjects(activeSubs)
+                              const scoreDetails = s.committedSubjects.map((sub: string) => {
+                                let scoreDisplay = "Chưa có";
+                                const subLower = sub.toLowerCase();
+                                if (subLower.includes("toán")) {
+                                  if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
+                                  else {
+                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("toán"));
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+                                  if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
+                                  else {
+                                    const sc = s.scores?.find((x:any) => {
+                                      const n = x.subject?.name?.toLowerCase() || "";
+                                      return n.includes("văn") || n.includes("tiếng việt");
+                                    });
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else if (subLower.includes("anh")) {
+                                  const write = s.writtenEnglishScore;
+                                  const oral = s.oralEnglishScore;
+                                  if (write != null || oral != null) {
+                                    scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
+                                  } else {
+                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("anh"));
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else if (subLower.includes("tâm lý")) {
+                                  if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
+                                  else {
+                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                } else {
+                                  if (s.scores && s.scores.length > 0) {
+                                    const sc = s.scores.find((x:any) => {
+                                      const n = x.subject?.name?.toLowerCase() || "";
+                                      return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
+                                    });
+                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                                  }
+                                }
+                                return `${sub}: ${getCompactScore(scoreDisplay)}`;
+                              }).join(", ");
+                              setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào. Điểm khảo sát: ${scoreDetails}`)
+                              fetchClassStudents(s.classId)
+                            }}
+                            className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
+                          >
+                            Thêm vào Form
+                          </button>
+                        )}
                       </td>
                     </tr>
                   )
@@ -1662,7 +1582,7 @@ export function TeacherSupportClient({
             <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-600 text-white shadow-xs">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Bổ sung HS Theo dõi
+                Đề xuất HS Theo dõi
               </h2>
               <button 
                 onClick={() => setIsProposeModalOpen(false)}
@@ -1942,7 +1862,7 @@ export function TeacherSupportClient({
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
                     <FileText className="h-4 w-4 text-indigo-600" />
-                    Bước 2: Cấu hình Bổ sung
+                    Bước 2: Cấu hình Đề xuất
                   </h3>
 
                   {/* Loại bồi dưỡng */}
@@ -1993,7 +1913,7 @@ export function TeacherSupportClient({
                                 onChange={e => {
                                   const val = e.target.checked;
                                   setProposePsychological(val);
-                                  if (val) { setProposeAcademic(false); setProposePsychReason("Tâm lý"); }
+                                  if (val) setProposeAcademic(false);
                                 }}
                                 className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                               />

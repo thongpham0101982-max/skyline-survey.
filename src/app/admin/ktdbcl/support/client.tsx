@@ -773,13 +773,9 @@ export function SupportClient({
     { month: "Tháng 05/2026", good: 14, average: 4, weak: 2, total: 20 },
     { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
   ]
-  // Paginated commitments logic (chỉ bao gồm các học sinh đã được sắp lớp)
+  // Paginated commitments logic
   const filteredCommitments = useMemo(() => {
     return commitmentCandidates.filter(c => {
-      // Filter out unassigned class students ("Chưa xếp lớp")
-      const hasClass = c.className && c.className !== "Chưa xếp lớp"
-      if (!hasClass) return false
-
       const searchLower = commitmentSearch.toLowerCase().trim()
       const matchesSearch = !searchLower || 
         c.studentCode.toLowerCase().includes(searchLower) ||
@@ -787,6 +783,7 @@ export function SupportClient({
 
       const matchesCampus = commitmentCampusFilter === "ALL" || 
         c.className.includes(commitmentCampusFilter) || 
+        (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
         (c.directorNote || "").includes(commitmentCampusFilter) ||
         (c.admissionResult || "").includes(commitmentCampusFilter)
 
@@ -799,61 +796,12 @@ export function SupportClient({
     })
   }, [commitmentCandidates, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
 
-  // Flatten candidates into row entries per committed subject (Mỗi học sinh, mỗi môn = 1 dòng)
-  const commitmentSubjectRows = useMemo(() => {
-    const rows: any[] = []
-    filteredCommitments.forEach((cand: any) => {
-      const subs = cand.committedSubjects && cand.committedSubjects.length > 0
-        ? cand.committedSubjects
-        : ["Chưa xác định môn"]
-
-      subs.forEach((sub: string) => {
-        let teacherName = "Chưa phân công"
-
-        const normSub = sub.toLowerCase().trim()
-        if (cand.assignedTeachers && cand.assignedTeachers.length > 0) {
-          const found = cand.assignedTeachers.find((at: any) => {
-            const s = (at.subject || "").toLowerCase()
-            if (normSub.includes("toán")) return s.includes("toán") || s.includes("math")
-            if (normSub.includes("văn") || normSub.includes("việt")) return s.includes("văn") || s.includes("việt") || s.includes("ngữ văn")
-            if (normSub.includes("anh")) return s.includes("anh") || s.includes("english")
-            if (normSub.includes("tâm lý")) return s.includes("tâm lý") || s.includes("psychology")
-            return s.includes(normSub)
-          })
-          if (found && found.teacherName) {
-            teacherName = found.teacherName
-          }
-        } else {
-          const studentTargets = targets.filter(t => t.studentId === cand.systemStudentId)
-          const matchedT = studentTargets.find((t: any) => {
-            const r = (t.reason || "").toLowerCase()
-            if (normSub.includes("toán")) return r.includes("toán") || r.includes("math")
-            if (normSub.includes("văn") || normSub.includes("việt")) return r.includes("văn") || r.includes("việt") || r.includes("ngữ văn")
-            if (normSub.includes("anh")) return r.includes("anh") || r.includes("english")
-            if (normSub.includes("tâm lý")) return r.includes("tâm lý") || r.includes("psychology")
-            return r.includes(normSub)
-          })
-          if (matchedT?.assignedTeacherName) {
-            teacherName = matchedT.assignedTeacherName
-          }
-        }
-
-        rows.push({
-          ...cand,
-          rowSubject: sub,
-          assignedTeacherName: teacherName
-        })
-      })
-    })
-    return rows
-  }, [filteredCommitments, targets])
-
-  const totalCommitmentPages = Math.ceil(commitmentSubjectRows.length / commitmentPageSize) || 1
+  const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
 
   const paginatedCommitments = useMemo(() => {
     const startIndex = (commitmentPage - 1) * commitmentPageSize
-    return commitmentSubjectRows.slice(startIndex, startIndex + commitmentPageSize)
-  }, [commitmentSubjectRows, commitmentPage])
+    return filteredCommitments.slice(startIndex, startIndex + commitmentPageSize)
+  }, [filteredCommitments, commitmentPage])
 
   const getSubjectBadge = (subName: string) => {
     const nameLower = subName.toLowerCase()
@@ -872,9 +820,15 @@ export function SupportClient({
       )
     }
     if (nameLower.includes("anh") || nameLower.includes("english")) {
+      let label = subName
+      if (nameLower.includes("viết") || nameLower.includes("written")) {
+        label = "Tiếng Anh (viết)"
+      } else if (nameLower.includes("vấn đáp") || nameLower.includes("oral") || nameLower.includes("nói")) {
+        label = "Tiếng Anh (vấn đáp)"
+      }
       return (
         <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 font-bold text-[11px] inline-block">
-          Tiếng Anh
+          {label}
         </span>
       )
     }
@@ -1158,52 +1112,73 @@ export function SupportClient({
               <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-xxs flex flex-col justify-between min-h-[300px]">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-100 text-xs">
-                    <thead className="bg-slate-50/90 font-bold text-slate-600 uppercase tracking-wider text-[10px] border-b border-slate-200">
+                    <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
                       <tr>
-                        <th className="px-3 py-3.5 text-center w-10">STT</th>
+                        <th className="px-4 py-3.5 text-center w-12">STT</th>
                         <th className="px-4 py-3.5 text-left">Họ tên</th>
-                        <th className="px-3 py-3.5 text-left">Mã HS</th>
-                        <th className="px-3 py-3.5 text-left">Lớp</th>
-                        <th className="px-3 py-3.5 text-left">Cơ sở</th>
+                        <th className="px-4 py-3.5 text-left">Mã HS</th>
+                        <th className="px-4 py-3.5 text-left">Lớp</th>
+                        <th className="px-4 py-3.5 text-left">Cơ sở</th>
                         <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
-                        <th className="px-4 py-3.5 text-left">GVBM Phụ trách</th>
+                        <th className="px-4 py-3.5 text-left">Tình trạng</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
                       {paginatedCommitments.map((row, idx) => {
+                        const isProposed = targets.some(t => t.studentId === row.systemStudentId)
+                        const studentTargets = targets.filter(t => t.studentId === row.systemStudentId)
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
 
                         return (
-                          <tr key={`${row.id}_${row.rowSubject}_${idx}`} className="hover:bg-slate-50/70 transition-colors">
-                            <td className="px-3 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
+                          <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-4 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
                             <td className="px-4 py-3.5">
-                              <div className="font-extrabold text-slate-900 text-[12px]">{row.fullName}</div>
+                              <div className="font-extrabold text-slate-800 text-[12px]">{row.fullName}</div>
                               {row.gender && (
                                 <div className="text-[10px] text-slate-400 font-medium mt-0.5">{row.gender}</div>
                               )}
                             </td>
-                            <td className="px-3 py-3.5">
+                            <td className="px-4 py-3.5">
                               <span className="font-mono font-bold text-slate-600 text-[11px]">{row.studentCode}</span>
                             </td>
-                            <td className="px-3 py-3.5">
-                              <span className="font-extrabold text-slate-700 text-[12px]">{row.className}</span>
-                            </td>
-                            <td className="px-3 py-3.5">
-                              <span className="text-[11px] text-indigo-600 font-bold">
-                                {row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}
-                              </span>
+                            <td className="px-4 py-3.5">
+                              <span className="font-extrabold text-slate-700 text-[12px]">{row.className || "Chưa xếp lớp"}</span>
                             </td>
                             <td className="px-4 py-3.5">
-                              {getSubjectBadge(row.rowSubject)}
+                              <span className="text-[11px] text-indigo-600 font-bold">{row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}</span>
                             </td>
                             <td className="px-4 py-3.5">
-                              {row.assignedTeacherName && row.assignedTeacherName !== "Chưa phân công" ? (
-                                <span className="font-extrabold text-indigo-700 bg-indigo-50/90 px-2.5 py-1 rounded-md border border-indigo-100/90 text-[11px] inline-block shadow-2xs">
-                                  {row.assignedTeacherName}
-                                </span>
+                              {row.committedSubjects && row.committedSubjects.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  {row.committedSubjects.map((sub, sIdx) => (
+                                    <div key={sIdx}>
+                                      {getSubjectBadge(sub)}
+                                    </div>
+                                  ))}
+                                </div>
                               ) : (
-                                <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
+                                <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              {isProposed ? (
+                                <div className="space-y-1">
+                                  <div className="font-extrabold text-emerald-600 text-[12px] flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    Đã đề xuất
+                                  </div>
+                                  {studentTargets.map((st, stIdx) => (
+                                    <div key={stIdx} className="text-[10px] text-slate-500 font-medium pl-3">
+                                      • {st.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý"} ({st.status})
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="font-extrabold text-rose-500 text-[12px] flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                  Chưa đề xuất
+                                </div>
                               )}
                             </td>
                             <td className="px-4 py-3.5">
@@ -1228,7 +1203,7 @@ export function SupportClient({
                 {/* Pagination Controls */}
                 <div className="bg-slate-50/75 border-t border-slate-100 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-500">
                   <div>
-                    Hiển thị từ <span className="font-extrabold text-slate-700">{Math.min((commitmentPage - 1) * commitmentPageSize + 1, commitmentSubjectRows.length)}</span> đến <span className="font-extrabold text-slate-700">{Math.min(commitmentPage * commitmentPageSize, commitmentSubjectRows.length)}</span> trong tổng số <span className="font-extrabold text-slate-700">{commitmentSubjectRows.length}</span> dòng cam kết
+                    Hiển thị từ <span className="font-extrabold text-slate-700">{Math.min((commitmentPage - 1) * commitmentPageSize + 1, filteredCommitments.length)}</span> đến <span className="font-extrabold text-slate-700">{Math.min(commitmentPage * commitmentPageSize, filteredCommitments.length)}</span> trong tổng số <span className="font-extrabold text-slate-700">{filteredCommitments.length}</span> học sinh
                   </div>
                   <div className="flex items-center gap-1">
                     <button
