@@ -628,8 +628,10 @@ export async function GET(req: Request) {
             })
           })
 
-          // Build assigned teacher details per committed subject
-          const assignedTeachers = committedSubjects.map((cs: string) => {
+          const activeCommittedSubjects = isHomeroom ? committedSubjects : matchedSubjects
+
+          // Build assigned teacher details per active committed subject
+          const assignedTeachers = activeCommittedSubjects.map((cs: string) => {
             const cleanCS = cs.toLowerCase()
             const matchAssign = allClassAssignments.find(a => {
               if (a.classId !== s.classId) return false
@@ -668,7 +670,7 @@ export async function GET(req: Request) {
             studentCode: s.studentCode,
             classId: s.classId,
             className: s.class?.className || "",
-            committedSubjects,
+            committedSubjects: activeCommittedSubjects,
             matchedSubjects,
             assignedTeachers,
             isHomeroom,
