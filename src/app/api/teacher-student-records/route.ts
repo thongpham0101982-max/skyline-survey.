@@ -448,17 +448,17 @@ export async function GET(req: Request) {
     if (action === "getEntranceCommitments") {
       const academicYearId = searchParams.get("academicYearId")
       const teacherId = searchParams.get("teacherId")
-      if (!teacherId || !academicYearId) {
-        return NextResponse.json({ error: "Missing teacherId or academicYearId" }, { status: 400 })
+      if (!teacherId) {
+        return NextResponse.json({ error: "Missing teacherId" }, { status: 400 })
       }
 
-      // Find all teaching assignments for this teacher in this academic year
-      const assignments = await prisma.teachingAssignment.findMany({
+      const teacher = await prisma.teacher.findUnique({ where: { id: teacherId } })
+
+      // Find all teaching assignments for this teacher
+      let assignments = await prisma.teachingAssignment.findMany({
         where: {
           teacherId,
-          class: {
-            academicYearId
-          }
+          ...(academicYearId ? { academicYearId } : {})
         },
         include: {
           class: true,
@@ -466,22 +466,40 @@ export async function GET(req: Request) {
         }
       })
 
-      // Find all homeroom classes for this teacher in this academic year
-      const homeroomClasses = await prisma.class.findMany({
+      if (assignments.length === 0 && academicYearId) {
+        assignments = await prisma.teachingAssignment.findMany({
+          where: { teacherId },
+          include: { class: true, subject: true }
+        })
+      }
+
+      // Find all homeroom classes for this teacher
+      let homeroomClasses = await prisma.class.findMany({
         where: {
-          academicYearId,
           OR: [
             { homeroomTeacherId: teacherId },
             { homeroomTeacherId: { contains: teacherId } }
-          ]
+          ],
+          ...(academicYearId ? { academicYearId } : {})
         }
       })
+
+      if (homeroomClasses.length === 0) {
+        homeroomClasses = await prisma.class.findMany({
+          where: {
+            OR: [
+              { homeroomTeacherId: teacherId },
+              { homeroomTeacherId: { contains: teacherId } }
+            ]
+          }
+        })
+      }
 
       // Collect all class IDs
       const classIds = Array.from(new Set([
         ...assignments.map(a => a.classId),
         ...homeroomClasses.map(c => c.id)
-      ]))
+      ])).filter(Boolean)
 
       if (classIds.length === 0) {
         return NextResponse.json([])
@@ -506,8 +524,7 @@ export async function GET(req: Request) {
       // Fetch all teaching assignments in these classes to find assigned GVBM for committed subjects
       const allClassAssignments = await prisma.teachingAssignment.findMany({
         where: {
-          classId: { in: classIds },
-          academicYearId
+          classId: { in: classIds }
         },
         include: {
           teacher: { select: { id: true, teacherName: true } },
@@ -609,7 +626,7 @@ export async function GET(req: Request) {
           const committedSubjects = parseCommittedSubjects(assessment)
           if (committedSubjects.length === 0) return null
 
-          // Determine if the teacher teaches any of the committed subjects in this student's class
+          // Determine if the teacher is GVCN of this student's class
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
           const teacherSubjectsInClass = assignments
             .filter(a => a.classId === s.classId)
@@ -624,9 +641,13 @@ export async function GET(req: Request) {
                 return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
               if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
-              return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
+              return cleanCS.includes(cleanTS) || cleanCS.includes(cleanCS)
             })
           })
+
+          // For GVCN: include ALL committed subjects
+          // For GVBM: include ONLY subjects assigned to teach in this class
+          if (!isHomeroom && matchedSubjects.length === 0) return null
 
           const activeCommittedSubjects = isHomeroom ? committedSubjects : matchedSubjects
 
@@ -649,7 +670,7 @@ export async function GET(req: Request) {
             if (matchAssign?.teacher?.teacherName) {
               teacherName = matchAssign.teacher.teacherName
             } else if (isHomeroom) {
-              teacherName = teacher.teacherName ? `${teacher.teacherName} (GVCN)` : "GVCN"
+              teacherName = teacher?.teacherName ? `${teacher.teacherName} (GVCN)` : "GVCN"
             } else {
               teacherName = "Chưa phân công"
             }
@@ -657,12 +678,9 @@ export async function GET(req: Request) {
             return {
               subject: cs,
               teacherName,
-              isCurrentTeacher: matchAssign?.teacherId === teacher.id || (isHomeroom && cleanCS.includes("tâm lý"))
+              isCurrentTeacher: matchAssign?.teacherId === teacherId || (isHomeroom && cleanCS.includes("tâm lý"))
             }
           })
-
-          // Include if it is Homeroom class OR if there is at least one matched subject
-          if (!isHomeroom && matchedSubjects.length === 0) return null
 
           return {
             id: s.id,
