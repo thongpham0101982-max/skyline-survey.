@@ -1,3 +1,13 @@
+
+// Helper to safely convert any value to string before calling toLowerCase/trim
+function safeStr(val: any): string {
+  if (val === null || val === undefined) return "";
+  if (typeof val === "string") return val;
+  if (typeof val === "object") {
+    return val.subjectName || val.subject || val.name || val.teacherName || String(val);
+  }
+  return String(val);
+}
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
@@ -328,7 +338,7 @@ export function TeacherSupportClient({
     if (selectedStudentIds.length > 0 && commitmentCandidates.length > 0) {
       const selectedCommitments = commitmentCandidates.filter(c => selectedStudentIds.includes(c.id));
       const hasPsychCommitment = selectedCommitments.some(c => 
-        (c.matchedSubjects || []).some((s) => s.toLowerCase().includes("tâm lý"))
+        (c.matchedSubjects || []).some((s) => safeStr(s).toLowerCase().includes("tâm lý"))
       );
       if (hasPsychCommitment) {
         setProposePsychological(true);
@@ -1306,7 +1316,7 @@ export function TeacherSupportClient({
                 }
 
                 return filtered.map((s: any, index: number) => {
-                  const hasPsychology = s.committedSubjects.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
+                  const hasPsychology = (Array.isArray(s.committedSubjects) ? s.committedSubjects : []).some((sub: any) => safeStr(sub).toLowerCase().includes("tâm lý"))
                   const existingTarget = targets.find(t => 
                     t.studentId === s.id && 
                     (hasPsychology ? t.supportType === "PSYCHOLOGICAL" : t.supportType === "ACADEMIC")
@@ -1361,7 +1371,7 @@ export function TeacherSupportClient({
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex flex-col gap-1">
-                          {s.committedSubjects.map((sub: string, index: number) => {
+                          {(Array.isArray(s.committedSubjects) ? s.committedSubjects : []).map((sub: any, index: number) => {
                             const isMatched = s.matchedSubjects?.includes(sub)
                             return (
                               <span 
@@ -1382,7 +1392,7 @@ export function TeacherSupportClient({
                         <div className="flex flex-col gap-1">
                           {s.committedSubjects.map((sub: string, index: number) => {
                             let scoreDisplay = "Chưa có";
-                            const subLower = sub.toLowerCase();
+                            const subLower = safeStr(sub).toLowerCase();
                             if (subLower.includes("toán")) {
                               if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
                               else {
@@ -1452,7 +1462,7 @@ export function TeacherSupportClient({
                             let targetObj = existingTarget;
                             if (!targetObj) {
                               try {
-                                const isPsych = s.committedSubjects?.some((sub: string) => sub.toLowerCase().includes("tâm lý"));
+                                const isPsych = (Array.isArray(s.committedSubjects) ? s.committedSubjects : []).some((sub: any) => safeStr(sub).toLowerCase().includes("tâm lý"));
                                 const res = await fetch("/api/ktdbcl/support", {
                                   method: "POST",
                                   headers: { "Content-Type": "application/json" },
@@ -1475,7 +1485,7 @@ export function TeacherSupportClient({
                               setSelectedEvalTargetIds([targetObj.id]);
                               setEvalTargetId(targetObj.id);
                               setEvalTargetName(s.studentName);
-                              setEvalTargetType(targetObj.supportType || (s.committedSubjects?.some((sub: string) => sub.toLowerCase().includes("tâm lý")) ? "PSYCHOLOGICAL" : "ACADEMIC"));
+                              setEvalTargetType(targetObj.supportType || ((Array.isArray(s.committedSubjects) ? s.committedSubjects : []).some((sub: any) => safeStr(sub).toLowerCase().includes("tâm lý")) ? "PSYCHOLOGICAL" : "ACADEMIC"));
                               setEvalComment("");
                               setEvalStudent(s);
                               setEvalTargetObj(targetObj);
