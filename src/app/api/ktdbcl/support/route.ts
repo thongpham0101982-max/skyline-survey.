@@ -57,7 +57,7 @@ export async function GET(req: Request) {
             where: { academicYearId },
             include: {
               teacher: { select: { id: true, teacherName: true } },
-              subject: { select: { id: true, subjectName: true, name: true } },
+              subject: { select: { id: true, subjectName: true } },
               class: { select: { id: true, className: true, classCode: true } }
             }
           }),
@@ -159,7 +159,7 @@ export async function GET(req: Request) {
                   a.class?.className === student.class?.className
                 );
                 if (!classMatches) return false;
-                const subName = (a.subject?.subjectName || a.subject?.name || "").toLowerCase();
+                const subName = (a.subject?.subjectName || "").toLowerCase();
                 if (normSub === "Toán") return subName.includes("toán");
                 if (normSub === "Tiếng Việt") return subName.includes("văn") || subName.includes("tiếng việt");
                 if (normSub === "Tiếng Anh") return subName.includes("anh");
@@ -300,7 +300,7 @@ export async function GET(req: Request) {
               (stClassName && (a.classId === stClassName || a.class?.className === stClassName))
             );
           })
-          .map((a: any) => (a.subject?.subjectName || a.subject?.name || "").toLowerCase());
+          .map((a: any) => (a.subject?.subjectName || "").toLowerCase());
 
         const normReason = normalizeReasonStr(t.reason).toLowerCase();
 
@@ -339,7 +339,7 @@ export async function GET(req: Request) {
         where: { academicYearId },
         include: {
           teacher: { select: { id: true, teacherName: true } },
-          subject: { select: { id: true, subjectName: true, name: true } },
+          subject: { select: { id: true, subjectName: true } },
           class: { select: { id: true, className: true, classCode: true } }
         }
       });
@@ -358,7 +358,7 @@ export async function GET(req: Request) {
               a.class?.className === t.student?.class?.className
             );
             if (!classMatches) return false;
-            const subName = (a.subject?.subjectName || a.subject?.name || "").toLowerCase();
+            const subName = (a.subject?.subjectName || "").toLowerCase();
             if (normReason.includes("toán")) return subName.includes("toán");
             if (normReason.includes("văn") || normReason.includes("tiếng việt")) return subName.includes("văn") || subName.includes("tiếng việt");
             if (normReason.includes("anh")) return subName.includes("anh");
@@ -523,7 +523,7 @@ export async function GET(req: Request) {
         where: { academicYearId },
         include: {
           teacher: { select: { id: true, teacherName: true } },
-          subject: { select: { id: true, subjectName: true, name: true } },
+          subject: { select: { id: true, subjectName: true } },
           class: { select: { id: true, className: true, classCode: true } }
         }
       })
@@ -581,7 +581,7 @@ export async function GET(req: Request) {
 
             if (!classMatches) return false
 
-            const subName = (ta.subject?.subjectName || ta.subject?.name || "").toLowerCase()
+            const subName = (ta.subject?.subjectName || "").toLowerCase()
             if (normSub.includes("toán")) return subName.includes("toán") || subName.includes("math")
             if (normSub.includes("văn") || normSub.includes("tiếng việt") || normSub.includes("ngữ văn")) {
               return subName.includes("văn") || subName.includes("tiếng việt") || subName.includes("ngữ văn")
