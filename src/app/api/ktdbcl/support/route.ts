@@ -544,6 +544,22 @@ export async function POST(req: Request) {
               createdById: existing.createdById || (teacher ? teacher.id : null)
             }
           })
+          if (teacher) {
+            await prisma.learningSupportAssignment.upsert({
+              where: {
+                targetId_teacherId: {
+                  targetId: updated.id,
+                  teacherId: teacher.id
+                }
+              },
+              create: {
+                targetId: updated.id,
+                teacherId: teacher.id,
+                assignedRole: supportType === "ACADEMIC" ? "GVBM" : "TAM_LY"
+              },
+              update: {}
+            })
+          }
           return NextResponse.json(updated)
         }
 
@@ -561,6 +577,22 @@ export async function POST(req: Request) {
             createdById: teacher ? teacher.id : null
           }
         })
+        if (teacher) {
+          await prisma.learningSupportAssignment.upsert({
+            where: {
+              targetId_teacherId: {
+                targetId: created.id,
+                teacherId: teacher.id
+              }
+            },
+            create: {
+              targetId: created.id,
+              teacherId: teacher.id,
+              assignedRole: supportType === "ACADEMIC" ? "GVBM" : "TAM_LY"
+            },
+            update: {}
+          })
+        }
         return NextResponse.json(created)
       }
     }

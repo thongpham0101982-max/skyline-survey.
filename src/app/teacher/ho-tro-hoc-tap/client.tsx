@@ -596,17 +596,16 @@ export function TeacherSupportClient({
 
   // Filter students related to this teacher
   const filteredTargets = targets.filter(t => {
-    // Only show active targets that are approved (have assigned teachers)
-    if (!t.assignments || t.assignments.length === 0) return false
-
-    // Check if homeroom or assigned
+    // Check if created by teacher, homeroom, assigned, or class teacher
+    const isCreatedByMe = t.createdById === teacher?.id
     const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
-    const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher.id)
+    const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher?.id)
+    const isClassTeacher = assignedClasses.some((c: any) => c.id === t.student?.classId)
 
     // Apply role filter
     if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
-    if (roleFilter === "ASSIGNED" && !isAssigned) return false
-    if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned) return false
+    if (roleFilter === "ASSIGNED" && !isAssigned && !isCreatedByMe) return false
+    if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned && !isCreatedByMe && !isClassTeacher) return false
 
     // Apply Month filter
     if (monthFilter !== "ALL") {
@@ -950,15 +949,14 @@ export function TeacherSupportClient({
                   </tr>
                 ) : (
                   filteredTargets.map((t: any, index: number) => {
+                    const isCreatedByMe = t.createdById === teacher?.id
                     const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher?.id)
                     const isTerminated = t.terminationStatus === "TERMINATED"
                     const isPending = t.terminationStatus === "PENDING_TERMINATION"
                     
                     const matchedClass = assignedClasses.find((c: any) => c.id === t.student?.classId)
                     const isHomeroomTeacherOfThisClass = matchedClass ? matchedClass.isHomeroom : false
-                    const canEvaluate = t.supportType === "PSYCHOLOGICAL"
-                      ? (isAssigned && !isHomeroomTeacherOfThisClass)
-                      : isAssigned
+                    const canEvaluate = isCreatedByMe || isAssigned || (matchedClass != null && t.supportType === "ACADEMIC")
                     
                     const evals = t.evaluations || [];
                     const sortedEvals = [...evals].sort((a:any, b:any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
