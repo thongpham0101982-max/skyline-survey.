@@ -224,6 +224,18 @@ export async function GET(req: Request) {
         orderBy: { studentName: "asc" }
       })
 
+      // Fetch all teaching assignments in these classes to find assigned GVBM for committed subjects
+      const allClassAssignments = await prisma.teachingAssignment.findMany({
+        where: {
+          classId: { in: classIds },
+          academicYearId
+        },
+        include: {
+          teacher: { select: { id: true, teacherName: true } },
+          subject: { select: { id: true, subjectName: true, name: true } }
+        }
+      })
+
       // Fetch input assessment records for all candidates with commitment notes or matching results
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
@@ -551,6 +563,37 @@ export async function GET(req: Request) {
           // Include if it is Homeroom class OR if there is at least one matched subject
           if (!isHomeroom && matchedSubjects.length === 0) return null
 
+          // Build assigned teacher details per committed subject
+          const assignedTeachers = committedSubjects.map((cs: string) => {
+            const cleanCS = cs.toLowerCase()
+            const matchAssign = allClassAssignments.find(a => {
+              if (a.classId !== s.classId) return false
+              const tsName = (a.subject?.subjectName || a.subject?.name || "").toLowerCase()
+              if (cleanCS.includes("toán")) return tsName.includes("toán")
+              if (cleanCS.includes("văn") || cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn")) {
+                return tsName.includes("văn") || tsName.includes("tiếng việt")
+              }
+              if (cleanCS.includes("anh")) return tsName.includes("anh")
+              if (cleanCS.includes("tâm lý")) return tsName.includes("tâm lý")
+              return tsName.includes(cleanCS) || cleanCS.includes(tsName)
+            })
+
+            let teacherName = ""
+            if (matchAssign?.teacher?.teacherName) {
+              teacherName = matchAssign.teacher.teacherName
+            } else if (isHomeroom) {
+              teacherName = `${teacher.teacherName} (GVCN)`
+            } else {
+              teacherName = "Chưa phân công"
+            }
+
+            return {
+              subject: cs,
+              teacherName,
+              isCurrentTeacher: matchAssign?.teacherId === teacher.id || (isHomeroom && cleanCS.includes("tâm lý"))
+            }
+          })
+
           return {
             id: s.id,
             studentName: s.studentName,
@@ -559,6 +602,7 @@ export async function GET(req: Request) {
             className: s.class?.className || "",
             committedSubjects,
             matchedSubjects,
+            assignedTeachers,
             isHomeroom,
             admissionResult: assessment.admissionResult,
             directorNote: assessment.directorNote,

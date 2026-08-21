@@ -464,10 +464,10 @@ export function TeacherSupportClient({
       }
 
       if (successCount > 0) {
-        toast.success(`Đề xuất thành công ${successCount} lượt bồi dưỡng!`)
+        toast.success(`Bổ sung thành công ${successCount} lượt học sinh theo dõi!`)
       }
       if (failCount > 0) {
-        toast.error(`Đề xuất thất bại ${failCount} lượt bồi dưỡng.`)
+        toast.error(`Bổ sung thất bại ${failCount} lượt học sinh theo dõi.`)
       }
 
       setIsProposeModalOpen(false)
@@ -938,7 +938,7 @@ export function TeacherSupportClient({
             className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
           >
             <Plus className="h-4 w-4" />
-            Đề xuất HS Theo dõi
+            Bổ sung HS Theo dõi
           </button>
         </div>
 
@@ -1167,7 +1167,7 @@ export function TeacherSupportClient({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GVBM phụ trách</th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thêm vào Form</th>
               </tr>
             </thead>
@@ -1327,101 +1327,68 @@ export function TeacherSupportClient({
                           })}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${statusClass}`}>
-                          {statusText}
-                        </span>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1.5">
+                          {s.assignedTeachers && s.assignedTeachers.length > 0 ? (
+                            s.assignedTeachers.map((at: any, idx: number) => (
+                              <span key={idx} className="text-xs font-bold text-slate-700 block whitespace-nowrap">
+                                <span className="text-slate-400 font-normal">{at.subject}:</span>{" "}
+                                <span className={at.isCurrentTeacher ? "text-indigo-600 font-black" : "text-slate-800"}>
+                                  {at.teacherName} {at.isCurrentTeacher && "(Bạn)"}
+                                </span>
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-xs text-slate-400 font-medium italic">Chưa phân công</span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
-                        {existingTarget ? (
-                          isApproved && !isTerminated && !isPending ? (
-                            canEvaluateCommitment ? (
-                              <button
-                                onClick={() => {
-                                  setEvalTargetId(existingTarget.id)
-                                  setEvalTargetName(s.studentName)
-                                  setEvalTargetType(existingTarget.supportType)
-                                  setEvalComment("")
-                                  setEvalStudent(s)
-                                  setEvalTargetObj(existingTarget)
-                                  const options = configs.filter(c => c.supportType === existingTarget.supportType)
-                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                                  setIsEvaluationModalOpen(true)
-                                }}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-1 px-3 rounded-lg text-xs transition-all shadow-xs"
-                              >
-                                Tiến hành đánh giá
-                              </button>
-                            ) : (
-                              <span className="text-xs text-slate-400 font-medium">Đang hỗ trợ</span>
-                            )
-                          ) : (
-                            <span className="text-xs text-slate-400 font-medium">
-                              {existingTarget.status === "ĐÃ DUYỆT" || existingTarget.status === "ACTIVE" ? "Đang hỗ trợ" : "Đã tạo đề xuất"}
-                            </span>
-                          )
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setProposeClassId(s.classId)
-                              setIsProposeModalOpen(true)
-                              setSelectedStudentIds([s.id])
-                              const activeSubs = s.matchedSubjects?.length > 0 
-                                ? s.matchedSubjects 
-                                : [s.committedSubjects[0]]
-                              setSelectedSubjects(activeSubs)
-                              const scoreDetails = s.committedSubjects.map((sub: string) => {
-                                let scoreDisplay = "Chưa có";
-                                const subLower = sub.toLowerCase();
-                                if (subLower.includes("toán")) {
-                                  if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
-                                  else {
-                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("toán"));
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
-                                } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
-                                  if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
-                                  else {
-                                    const sc = s.scores?.find((x:any) => {
-                                      const n = x.subject?.name?.toLowerCase() || "";
-                                      return n.includes("văn") || n.includes("tiếng việt");
-                                    });
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
-                                } else if (subLower.includes("anh")) {
-                                  const write = s.writtenEnglishScore;
-                                  const oral = s.oralEnglishScore;
-                                  if (write != null || oral != null) {
-                                    scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
-                                  } else {
-                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("anh"));
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
-                                } else if (subLower.includes("tâm lý")) {
-                                  if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
-                                  else {
-                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
-                                } else {
-                                  if (s.scores && s.scores.length > 0) {
-                                    const sc = s.scores.find((x:any) => {
-                                      const n = x.subject?.name?.toLowerCase() || "";
-                                      return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
-                                    });
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
-                                }
-                                return `${sub}: ${getCompactScore(scoreDisplay)}`;
-                              }).join(", ");
-                              setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào. Điểm khảo sát: ${scoreDetails}`)
-                              fetchClassStudents(s.classId)
-                            }}
-                            className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs"
-                          >
-                            Thêm vào Form
-                          </button>
-                        )}
+                        <button
+                          onClick={async () => {
+                            let targetObj = existingTarget;
+                            if (!targetObj) {
+                              try {
+                                const isPsych = s.committedSubjects?.some((sub: string) => sub.toLowerCase().includes("tâm lý"));
+                                const res = await fetch("/api/ktdbcl/support", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    action: "saveTarget",
+                                    academicYearId: selectedYearId,
+                                    studentId: s.id,
+                                    supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
+                                    sourceType: isPsych ? "TAM_LY" : "GVBM",
+                                    reason: s.committedSubjects.join(", "),
+                                    notes: "Khởi tạo đánh giá từ Cam kết Khảo sát đầu vào",
+                                    status: "ĐÃ DUYỆT"
+                                  })
+                                });
+                                targetObj = await res.json();
+                                await fetchTeacherData();
+                              } catch(e) {}
+                            }
+                            if (targetObj) {
+                              setSelectedEvalTargetIds([targetObj.id]);
+                              setEvalTargetId(targetObj.id);
+                              setEvalTargetName(s.studentName);
+                              setEvalTargetType(targetObj.supportType || (s.committedSubjects?.some((sub: string) => sub.toLowerCase().includes("tâm lý")) ? "PSYCHOLOGICAL" : "ACADEMIC"));
+                              setEvalComment("");
+                              setEvalStudent(s);
+                              setEvalTargetObj(targetObj);
+                              setEvalPeriodType("MONTH");
+                              const curMonth = "Tháng " + (new Date().getMonth() + 1);
+                              setEvalPeriodName(curMonth);
+                              const options = configs.filter((c: any) => c.supportType === (targetObj.supportType || "ACADEMIC"));
+                              setEvalTrackingLevel(options[0]?.outcomeLabel || "");
+                              setIsEvaluationModalOpen(true);
+                            }
+                          }}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 px-3 rounded-lg text-xs transition-all shadow-xs flex items-center gap-1 mx-auto cursor-pointer"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Tiến hành đánh giá
+                        </button>
                       </td>
                     </tr>
                   )
@@ -1582,7 +1549,7 @@ export function TeacherSupportClient({
             <div className="px-6 py-4 border-b flex justify-between items-center bg-indigo-600 text-white shadow-xs">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Đề xuất HS Theo dõi
+                Bổ sung HS Theo dõi
               </h2>
               <button 
                 onClick={() => setIsProposeModalOpen(false)}
@@ -1862,7 +1829,7 @@ export function TeacherSupportClient({
                 <div className="space-y-4">
                   <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 border-b pb-2">
                     <FileText className="h-4 w-4 text-indigo-600" />
-                    Bước 2: Cấu hình Đề xuất
+                    Bước 2: Cấu hình Bổ sung
                   </h3>
 
                   {/* Loại bồi dưỡng */}

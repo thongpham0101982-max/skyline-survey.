@@ -1015,7 +1015,6 @@ export default function TeacherStudentProfilePage() {
 
                           </div>
 
-                          </div>
                         </div>
                       </div>
                     )}
