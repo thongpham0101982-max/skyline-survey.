@@ -889,7 +889,7 @@ export function TeacherSupportClient({
           }`}
         >
           <Users className="h-4 w-4" />
-          Học sinh được phân công phụ đạo / chủ nhiệm
+          Học sinh theo PCGD
         </button>
         <button
           onClick={() => setActiveSubTab("commitments")}
