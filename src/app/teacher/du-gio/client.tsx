@@ -251,7 +251,7 @@ export function ObservationClient(props: ObservationClientProps) {
   // Filter states
   const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
   const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
-  const [activeStatusTab, setActiveStatusTab] = useState<"new" | "expired" | "all">("new");
+  const [activeStatusTab, setActiveStatusTab] = useState<"new" | "expired" | "gbm_request" | "all">("new");
   const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
   const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
 
@@ -1378,12 +1378,16 @@ export function ObservationClient(props: ObservationClientProps) {
       const isHost = slot.teacherId === currentTeacher?.id;
       const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
       if (activeTab === "dang-ky") {
-        if (isHost || isObserver) return false;
+        if (activeStatusTab === "gbm_request") {
+          if (slot.requestOrigin !== "OBSERVER_REQUEST") return false;
+        } else {
+          if (isHost || isObserver) return false;
 
-        const slotDate = new Date(slot.date);
-        const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
-        if (activeStatusTab === "new" && isExpired) return false;
-        if (activeStatusTab === "expired" && !isExpired) return false;
+          const slotDate = new Date(slot.date);
+          const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
+          if (activeStatusTab === "new" && isExpired) return false;
+          if (activeStatusTab === "expired" && !isExpired) return false;
+        }
 
         const isMyDept = checkIsMyDept(slot);
         if (activeDeptTab !== "all") {
@@ -2360,6 +2364,21 @@ export function ObservationClient(props: ObservationClientProps) {
                           {expiredCount}
                         </span>
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setActiveStatusTab("gbm_request")}
+                        className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                          activeStatusTab === "gbm_request"
+                            ? "bg-indigo-600 text-white shadow-sm"
+                            : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                        }`}
+                      >
+                        <span>📩 GVBM xin dự giờ</span>
+                        <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "gbm_request" ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-800"}`}>
+                          {slots.filter(s => s.requestOrigin === "OBSERVER_REQUEST").length}
+                        </span>
+                      </button>
                     </>
                   );
                 })()}
@@ -2498,17 +2517,32 @@ export function ObservationClient(props: ObservationClientProps) {
             <div className="overflow-x-auto rounded-2xl border border-slate-150">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-xs font-bold tracking-wider">
-                    <th className="p-4 text-center w-12">TT</th>
-                    <th className="p-4">Giáo viên</th>
-                    <th className="p-4">Tổ chuyên môn</th>
-                    <th className="p-4">Môn học & Chủ đề</th>
-                    <th className="p-4">Thời gian / Phòng</th>
-                    <th className="p-4 text-center">Số chỗ</th>
-                    <th className="p-4">GV Đăng ký</th>
-                    <th className="p-4">Trạng thái</th>
-                    <th className="p-4 text-right">Đăng ký</th>
-                  </tr>
+                  {activeStatusTab === "gbm_request" ? (
+                    <tr className="bg-indigo-50/80 border-b border-indigo-150 text-indigo-900 font-extrabold uppercase text-xs tracking-wider">
+                      <th className="p-4 text-center w-12">TT</th>
+                      <th className="p-4">GV Xin dự giờ</th>
+                      <th className="p-4">GV Dạy</th>
+                      <th className="p-4">Môn học</th>
+                      <th className="p-4">Tên bài dạy / Chủ đề</th>
+                      <th className="p-4">Lớp</th>
+                      <th className="p-4">Tiết</th>
+                      <th className="p-4">Ngày dạy</th>
+                      <th className="p-4 text-center">Trạng thái</th>
+                      <th className="p-4 text-right">Thao tác</th>
+                    </tr>
+                  ) : (
+                    <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-xs font-bold tracking-wider">
+                      <th className="p-4 text-center w-12">TT</th>
+                      <th className="p-4">Giáo viên</th>
+                      <th className="p-4">Tổ chuyên môn</th>
+                      <th className="p-4">Môn học & Chủ đề</th>
+                      <th className="p-4">Thời gian / Phòng</th>
+                      <th className="p-4 text-center">Số chỗ</th>
+                      <th className="p-4">GV Đăng ký</th>
+                      <th className="p-4">Trạng thái</th>
+                      <th className="p-4 text-right">Đăng ký</th>
+                    </tr>
+                  )}
                 </thead>
                 <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
                   {tabFilteredSlots.map((slot, index) => {
@@ -2522,6 +2556,84 @@ export function ObservationClient(props: ObservationClientProps) {
                     const today = new Date();
                     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
                     const isExpired = slotDate < todayStart;
+
+                    if (activeStatusTab === "gbm_request") {
+                      const observerReg = slot.registrations?.[0];
+                      const observerName = observerReg?.teacher?.teacherName || observerReg?.teacherName || "GVBM";
+                      const observerCode = observerReg?.teacher?.teacherCode || "";
+
+                      return (
+                        <tr key={slot.id} className="hover:bg-indigo-50/40 transition-colors">
+                          <td className="p-4 text-center font-extrabold text-slate-400">
+                            {index + 1}
+                          </td>
+                          <td className="p-4 font-bold text-slate-800">
+                            <p className="font-extrabold text-indigo-900">{observerName}</p>
+                            {observerCode && <p className="text-[11px] text-slate-400 font-normal">Mã: {observerCode}</p>}
+                          </td>
+                          <td className="p-4 font-bold text-slate-800">
+                            <p className="font-extrabold">{slot.teacher?.teacherName}</p>
+                            <p className="text-[11px] text-slate-400 font-normal">Mã: {slot.teacher?.teacherCode}</p>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">
+                              {slot.subjectName}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
+                          </td>
+                          <td className="p-4 font-bold text-slate-700">
+                            {slot.className || "Chưa xếp"}
+                          </td>
+                          <td className="p-4 font-bold text-[#48BFE3]">
+                            {slot.startTime}
+                          </td>
+                          <td className="p-4 font-bold text-slate-800">
+                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          </td>
+                          <td className="p-4 text-center">
+                            {slot.status === "PENDING_TEACHER_APPROVAL" ? (
+                              <span className="px-2.5 py-1 text-xs font-extrabold uppercase rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                                Chờ xác nhận
+                              </span>
+                            ) : slot.status === "REJECTED" ? (
+                              <span className="px-2.5 py-1 text-xs font-extrabold uppercase rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
+                                Đã từ chối
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-1 text-xs font-extrabold uppercase rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-250">
+                                Đã xác nhận
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-4 text-right">
+                            {isHost && slot.status === "PENDING_TEACHER_APPROVAL" ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleRespondRequest(slot.id, true)}
+                                  className="px-2.5 py-1 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-xs cursor-pointer"
+                                >
+                                  Xác nhận
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRespondRequest(slot.id, false, "Giáo viên bận")}
+                                  className="px-2.5 py-1 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-all border border-rose-200 cursor-pointer"
+                                >
+                                  Từ chối
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">
+                                {isHost ? "Đã xử lý" : "Yêu cầu đã gửi"}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    }
 
                     return (
                       <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
