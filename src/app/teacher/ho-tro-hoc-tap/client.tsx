@@ -592,19 +592,26 @@ export function TeacherSupportClient({
     }
   }
 
-  // Filter students related to this teacher
+    // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
   const filteredTargets = targets.filter(t => {
-    // Only show active targets that are approved (have assigned teachers)
-    if (!t.assignments || t.assignments.length === 0) return false
+    // Check if homeroom student
+    const isHomeroomStudent = homeroomClasses.some(c => 
+      c.id === t.student?.classId || c.students?.some((s: any) => s.id === t.studentId)
+    )
 
-    // Check if homeroom or assigned
-    const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
-    const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher.id)
+    // Check if assigned teacher according to PCGD / TeachingAssignment
+    const isAssigned = 
+      (t.assignedTeacherName && teacher?.teacherName && t.assignedTeacherName.toLowerCase().includes(teacher.teacherName.toLowerCase())) ||
+      t.assignments?.some((a: any) => a.teacherId === teacher?.id) ||
+      assignedClasses.some((c: any) => c.id === t.student?.classId)
 
     // Apply role filter
     if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
     if (roleFilter === "ASSIGNED" && !isAssigned) return false
-    if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned) return false
+    if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned && targets.length > 0) {
+      const belongsToTeacher = t.createdById === teacher?.id || !!t.assignedTeacherName
+      if (!belongsToTeacher) return false
+    }
 
     // Apply Month filter
     if (monthFilter !== "ALL") {
