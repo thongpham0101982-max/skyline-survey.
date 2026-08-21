@@ -1118,7 +1118,7 @@ export function TeacherSupportClient({
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-slate-800 font-bold">
-                          {isTerminated ? t.outcome : currentLevel}
+                          {isTerminated ? t.outcome : (currentLevel ? currentLevel.replace("Tâm lý học đường", "Tâm lý") : "")}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
                           {canEvaluate && !isTerminated && !isPending && (
