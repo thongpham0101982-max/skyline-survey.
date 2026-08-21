@@ -1174,13 +1174,13 @@ export function TeacherSupportClient({
             <tbody className="divide-y divide-slate-200 text-sm">
               {loadingEntranceCommitments ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-slate-400">
+                  <td colSpan={9} className="text-center py-10 text-slate-400">
                     <RefreshCw className="h-6 w-6 animate-spin inline-block mr-2 text-indigo-600" /> Đang tải danh sách học sinh cam kết đầu vào...
                   </td>
                 </tr>
               ) : entranceCommitmentStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-slate-400 font-medium">
+                  <td colSpan={9} className="text-center py-10 text-slate-400 font-medium">
                     Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
                   </td>
                 </tr>
@@ -1195,7 +1195,7 @@ export function TeacherSupportClient({
                 if (filtered.length === 0) {
                   return (
                     <tr>
-                      <td colSpan={5} className="text-center py-10 text-slate-400">
+                      <td colSpan={9} className="text-center py-10 text-slate-400">
                         Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
                       </td>
                     </tr>

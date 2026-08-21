@@ -447,7 +447,16 @@ export async function GET(req: Request) {
 
     if (action === "getEntranceCommitments") {
       const academicYearId = searchParams.get("academicYearId")
-      const teacherId = searchParams.get("teacherId")
+      let teacherId = searchParams.get("teacherId")
+
+      if (!teacherId) {
+        const session = await auth()
+        if (session?.user?.id) {
+          const t = await prisma.teacher.findFirst({ where: { userId: session.user.id } })
+          teacherId = t?.id
+        }
+      }
+
       if (!teacherId) {
         return NextResponse.json({ error: "Missing teacherId" }, { status: 400 })
       }
@@ -465,48 +474,26 @@ export async function GET(req: Request) {
         teacher?.teacherName
       ])).filter(Boolean) as string[]
 
-      // Find all homeroom classes for this teacher
+      // Find all homeroom classes for this teacher (all years & active year fallback)
       let homeroomClasses = await prisma.class.findMany({
         where: {
           OR: teacherIdentifiers.flatMap(id => [
             { homeroomTeacherId: id },
             { homeroomTeacherId: { contains: id } }
-          ]),
-          ...(academicYearId ? { academicYearId } : {})
+          ])
         }
       })
-
-      if (homeroomClasses.length === 0) {
-        homeroomClasses = await prisma.class.findMany({
-          where: {
-            OR: teacherIdentifiers.flatMap(id => [
-              { homeroomTeacherId: id },
-              { homeroomTeacherId: { contains: id } }
-            ])
-          }
-        })
-      }
 
       // Find all teaching assignments for this teacher
       let assignments = await prisma.teachingAssignment.findMany({
         where: {
-          OR: teacherIdentifiers.map(id => ({ teacherId: id })),
-          ...(academicYearId ? { academicYearId } : {})
+          OR: teacherIdentifiers.map(id => ({ teacherId: id }))
         },
         include: {
           class: true,
           subject: true
         }
       })
-
-      if (assignments.length === 0 && academicYearId) {
-        assignments = await prisma.teachingAssignment.findMany({
-          where: {
-            OR: teacherIdentifiers.map(id => ({ teacherId: id }))
-          },
-          include: { class: true, subject: true }
-        })
-      }
 
       // Collect all class IDs
       const classIds = Array.from(new Set([
@@ -618,7 +605,7 @@ export async function GET(req: Request) {
           if (assessment.psychologyScore != null) subs.push("Tâm lý")
         }
 
-        // Fallback default
+        // Default fallback for Homeroom candidates
         if (subs.length === 0) {
           subs.push("Tiếng Việt", "Toán", "Tiếng Anh")
         }
@@ -662,7 +649,7 @@ export async function GET(req: Request) {
                 return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
               if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
-              return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
+              return cleanCS.includes(cleanTS) || cleanCS.includes(cleanCS)
             })
           })
 
