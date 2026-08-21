@@ -199,18 +199,23 @@ export async function GET(req: Request) {
         console.error("Global auto-sync error:", errSync);
       }
 
-      // Query all targets for academic year
-      let teacherClassIds: string[] = [];
+      // Query all targets for academic year according to teacher PCGD (TeachingAssignment & Homeroom)
       let teacherHomeroomClassIds: string[] = [];
+      let allClassIds: string[] = [];
+      let allClassCodes: string[] = [];
+      let allClassNames: string[] = [];
+
       if (callerTeacher) {
         const [assignments, homeroomClasses] = await Promise.all([
           prisma.teachingAssignment.findMany({
-            where: { teacherId: callerTeacher.id, academicYearId },
-            select: { classId: true }
+            where: {
+              teacherId: callerTeacher.id,
+              ...(academicYearId ? { OR: [{ academicYearId }, { academicYearId: null }] } : {})
+            },
+            include: { class: true }
           }),
           prisma.class.findMany({
             where: {
-              academicYearId,
               OR: [
                 { homeroomTeacherId: callerTeacher.id },
                 { homeroomTeacherId: { contains: callerTeacher.id } }
@@ -219,8 +224,19 @@ export async function GET(req: Request) {
             select: { id: true, className: true, classCode: true }
           })
         ]);
-        teacherClassIds = assignments.map((a: any) => a.classId);
-        teacherHomeroomClassIds = homeroomClasses.map((c: any) => c.id);
+
+        const assignedClassIds = assignments.map((a: any) => a.classId).filter(Boolean);
+        const assignedClassCodes = assignments.map((a: any) => a.class?.classCode).filter(Boolean);
+        const assignedClassNames = assignments.map((a: any) => a.class?.className).filter(Boolean);
+
+        const homeroomIds = homeroomClasses.map((c: any) => c.id).filter(Boolean);
+        const homeroomCodes = homeroomClasses.map((c: any) => c.classCode).filter(Boolean);
+        const homeroomNames = homeroomClasses.map((c: any) => c.className).filter(Boolean);
+
+        teacherHomeroomClassIds = homeroomIds;
+        allClassIds = Array.from(new Set([...assignedClassIds, ...homeroomIds]));
+        allClassCodes = Array.from(new Set([...assignedClassCodes, ...homeroomCodes]));
+        allClassNames = Array.from(new Set([...assignedClassNames, ...homeroomNames]));
       }
 
       const whereClause: any = { academicYearId };
@@ -229,9 +245,20 @@ export async function GET(req: Request) {
           { createdById: callerTeacher.id },
           { assignments: { some: { teacherId: callerTeacher.id } } }
         ];
-        if (teacherClassIds.length > 0 || teacherHomeroomClassIds.length > 0) {
-          orConditions.push({ student: { classId: { in: [...teacherClassIds, ...teacherHomeroomClassIds] } } });
+
+        if (allClassIds.length > 0 || allClassCodes.length > 0 || allClassNames.length > 0) {
+          orConditions.push({
+            student: {
+              OR: [
+                { classId: { in: allClassIds } },
+                { class: { id: { in: allClassIds } } },
+                { class: { classCode: { in: allClassCodes } } },
+                { class: { className: { in: allClassNames } } }
+              ]
+            }
+          });
         }
+
         whereClause.OR = orConditions;
       }
 

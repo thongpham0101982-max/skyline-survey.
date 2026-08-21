@@ -592,7 +592,7 @@ export function TeacherSupportClient({
     }
   }
 
-    // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
+      // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
   const filteredTargets = targets.filter(t => {
     // Check if homeroom student
     const isHomeroomStudent = homeroomClasses.some(c => 
@@ -608,10 +608,6 @@ export function TeacherSupportClient({
     // Apply role filter
     if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
     if (roleFilter === "ASSIGNED" && !isAssigned) return false
-    if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned && targets.length > 0) {
-      const belongsToTeacher = t.createdById === teacher?.id || !!t.assignedTeacherName
-      if (!belongsToTeacher) return false
-    }
 
     // Apply Month filter
     if (monthFilter !== "ALL") {
