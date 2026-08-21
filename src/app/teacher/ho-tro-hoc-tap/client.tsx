@@ -58,6 +58,7 @@ export function TeacherSupportClient({
   )
   const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history">("assigned")
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
+  const [adminCommitmentCandidates, setAdminCommitmentCandidates] = useState<any[]>([])
   const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
 
   // Data states loaded dynamically
@@ -592,40 +593,86 @@ export function TeacherSupportClient({
     }
   }
 
-      // Combine database targets with entrance commitment students assigned to teacher by PCGD
+      // Combine database targets with Admin Sổ HS Cam kết candidates assigned to teacher by PCGD
   const combinedTargets = useMemo(() => {
     const list = [...targets]
-    if (entranceCommitmentStudents && entranceCommitmentStudents.length > 0) {
-      entranceCommitmentStudents.forEach((c: any) => {
+    const teacherNameLower = (teacher?.teacherName || "").toLowerCase().trim()
+
+    // 1. Process Admin Sổ HS Cam kết candidates
+    (adminCommitmentCandidates || []).forEach((cand: any) => {
+      const assignedTeachers = cand.assignedTeachers || []
+      const matchedSubjectAssignment = assignedTeachers.find((at: any) => {
+        if (!at.teacherName) return false
+        const atName = at.teacherName.toLowerCase()
+        return (teacherNameLower && atName.includes(teacherNameLower)) || atName.includes((teacher?.id || "_____").toLowerCase())
+      })
+
+      const isHomeroomClass = homeroomClasses.some((c: any) => c.className === cand.className || c.classCode === cand.className)
+      const isAssignedClass = assignedClasses.some((c: any) => c.className === cand.className || c.classCode === cand.className)
+
+      if (matchedSubjectAssignment || isHomeroomClass || isAssignedClass) {
+        const sub = matchedSubjectAssignment?.subject || cand.committedSubjects?.[0] || "Theo dõi bồi dưỡng"
+        const isPsych = sub.toLowerCase().includes("tâm lý") || (cand.directorNote || "").toLowerCase().includes("tâm lý")
+
         const exists = list.some(t => 
-          (t.studentId && (t.studentId === c.id || t.studentId === c.systemStudentId)) ||
-          (t.student?.studentCode && c.studentCode && t.student.studentCode === c.studentCode)
+          (t.studentId && (t.studentId === cand.systemStudentId || t.studentId === cand.id)) ||
+          (t.student?.studentCode && cand.studentCode && t.student.studentCode === cand.studentCode)
         )
+
         if (!exists) {
-          const isPsych = (c.committedSubjects || []).includes("Tâm lý") || (c.reason || "").includes("Tâm lý")
           list.push({
-            id: `commitment_${c.id || c.studentCode}`,
-            studentId: c.id || c.systemStudentId,
+            id: `admin_commitment_${cand.id}_${sub}`,
+            studentId: cand.systemStudentId || cand.id,
             student: {
-              id: c.id || c.systemStudentId,
-              studentCode: c.studentCode,
-              studentName: c.fullName || c.studentName,
-              gender: c.gender,
-              classId: c.classId,
-              class: { className: c.className }
+              id: cand.systemStudentId || cand.id,
+              studentCode: cand.studentCode,
+              studentName: cand.fullName,
+              gender: cand.gender,
+              classId: cand.className,
+              class: { className: cand.className }
             },
-            reason: c.committedSubjects?.join(", ") || c.reason || (isPsych ? "Tâm lý" : "Theo dõi bồi dưỡng"),
+            reason: sub,
             supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
             status: "CHỜ ĐÁNH GIÁ",
-            assignedTeacherName: teacher?.teacherName,
+            assignedTeacherName: matchedSubjectAssignment?.teacherName || teacher?.teacherName,
             assignments: [{ teacherId: teacher?.id, teacher: { teacherName: teacher?.teacherName } }],
             evaluations: []
           })
         }
-      })
-    }
+      }
+    })
+
+    // 2. Process entranceCommitmentStudents fallback
+    (entranceCommitmentStudents || []).forEach((c: any) => {
+      const exists = list.some(t => 
+        (t.studentId && (t.studentId === c.id || t.studentId === c.systemStudentId)) ||
+        (t.student?.studentCode && c.studentCode && t.student.studentCode === c.studentCode)
+      )
+      if (!exists) {
+        const isPsych = (c.committedSubjects || []).includes("Tâm lý") || (c.reason || "").includes("Tâm lý")
+        list.push({
+          id: `commitment_${c.id || c.studentCode}`,
+          studentId: c.id || c.systemStudentId,
+          student: {
+            id: c.id || c.systemStudentId,
+            studentCode: c.studentCode,
+            studentName: c.fullName || c.studentName,
+            gender: c.gender,
+            classId: c.classId,
+            class: { className: c.className }
+          },
+          reason: c.committedSubjects?.join(", ") || c.reason || (isPsych ? "Tâm lý" : "Theo dõi bồi dưỡng"),
+          supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
+          status: "CHỜ ĐÁNH GIÁ",
+          assignedTeacherName: teacher?.teacherName,
+          assignments: [{ teacherId: teacher?.id, teacher: { teacherName: teacher?.teacherName } }],
+          evaluations: []
+        })
+      }
+    })
+
     return list
-  }, [targets, entranceCommitmentStudents, teacher?.id, teacher?.teacherName])
+  }, [targets, adminCommitmentCandidates, entranceCommitmentStudents, teacher?.id, teacher?.teacherName, homeroomClasses, assignedClasses])
 
   // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
   const filteredTargets = combinedTargets.filter(t => {
