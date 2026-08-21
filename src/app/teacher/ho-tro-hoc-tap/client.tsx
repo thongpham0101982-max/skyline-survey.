@@ -628,10 +628,19 @@ export function TeacherSupportClient({
     return matchesSearch
   })
 
-  // Count approved proposals submitted by this teacher
+    // Helper to identify manual supplementary proposals submitted by teacher (+ Bổ sung HS Theo dõi)
+  const isManualProposal = (t: any) => {
+    if (t.createdById !== teacher?.id) return false
+    if (t.sourceType === "ADMISSION") return false
+    const notesLower = (t.notes || "").toLowerCase()
+    if (notesLower.includes("cam kết") || notesLower.includes("tự động đồng bộ")) return false
+    return true
+  }
+
+  // Count approved proposals submitted manually by this teacher (+ Bổ sung HS Theo dõi)
   const approvedHistoryCount = useMemo(() => {
     return targets.filter((t: any) => 
-      t.createdById === teacher?.id && (
+      isManualProposal(t) && (
         (t.assignments && t.assignments.length > 0) || 
         t.status === "ĐÃ DUYỆT" || 
         t.terminationStatus === "TERMINATED" || 
@@ -640,10 +649,9 @@ export function TeacherSupportClient({
     ).length
   }, [targets, teacher?.id])
 
-  // Proposal history filter - server already filters by teacher visibility
-  // Only apply local search filter here
+  // Proposal history filter - ONLY show manual supplementary proposals by teacher (+ Bổ sung HS Theo dõi)
   const historyTargets = targets.filter(t => {
-    if (t.createdById !== teacher?.id) return false
+    if (!isManualProposal(t)) return false
 
     const name = t.student?.studentName || ""
     const code = t.student?.studentCode || ""
