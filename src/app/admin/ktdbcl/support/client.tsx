@@ -773,9 +773,13 @@ export function SupportClient({
     { month: "Tháng 05/2026", good: 14, average: 4, weak: 2, total: 20 },
     { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
   ]
-  // Paginated commitments logic
+  // Paginated commitments logic (chỉ bao gồm các học sinh đã được sắp lớp)
   const filteredCommitments = useMemo(() => {
     return commitmentCandidates.filter(c => {
+      // Filter out unassigned class students ("Chưa xếp lớp")
+      const hasClass = c.className && c.className !== "Chưa xếp lớp"
+      if (!hasClass) return false
+
       const searchLower = commitmentSearch.toLowerCase().trim()
       const matchesSearch = !searchLower || 
         c.studentCode.toLowerCase().includes(searchLower) ||
@@ -783,7 +787,6 @@ export function SupportClient({
 
       const matchesCampus = commitmentCampusFilter === "ALL" || 
         c.className.includes(commitmentCampusFilter) || 
-        (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
         (c.directorNote || "").includes(commitmentCampusFilter) ||
         (c.admissionResult || "").includes(commitmentCampusFilter)
 
@@ -1108,13 +1111,16 @@ export function SupportClient({
                   <table className="min-w-full divide-y divide-slate-100 text-xs">
                     <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
                       <tr>
-                        <th className="px-4 py-3.5 text-center w-12">STT</th>
+                        <th className="px-3 py-3.5 text-center w-10">STT</th>
                         <th className="px-4 py-3.5 text-left">Họ tên</th>
-                        <th className="px-4 py-3.5 text-left">Mã HS</th>
-                        <th className="px-4 py-3.5 text-left">Lớp</th>
-                        <th className="px-4 py-3.5 text-left">Cơ sở</th>
+                        <th className="px-3 py-3.5 text-left">Mã HS</th>
+                        <th className="px-3 py-3.5 text-left">Lớp</th>
+                        <th className="px-3 py-3.5 text-left">Cơ sở</th>
                         <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
-                        <th className="px-4 py-3.5 text-left">GV phụ trách</th>
+                        <th className="px-3 py-3.5 text-left">GV Toán</th>
+                        <th className="px-3 py-3.5 text-left">GV Tiếng Việt / Văn</th>
+                        <th className="px-3 py-3.5 text-left">GV Tiếng Anh</th>
+                        <th className="px-3 py-3.5 text-left">GV Tâm lý</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
                     </thead>
@@ -1155,42 +1161,69 @@ export function SupportClient({
                                 <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
                               )}
                             </td>
-                            <td className="px-4 py-3.5">
-                              {(() => {
-                                const teacherList = row.assignedTeachers && row.assignedTeachers.length > 0
-                                  ? row.assignedTeachers
-                                  : (row.committedSubjects || []).map((sub: string) => {
-                                      const matchedT = studentTargets.find((t: any) => t.reason?.toLowerCase().includes(sub.toLowerCase()))
-                                      return {
-                                        subject: sub,
-                                        teacherName: matchedT?.assignedTeacherName || "Chưa phân công"
-                                      }
-                                    })
+                            {(() => {
+                              const getSubjectTeacher = (rowItem: any, targetSub: string) => {
+                                const normTarget = targetSub.toLowerCase()
+                                const isCommitted = (rowItem.committedSubjects || []).some((sub: string) => {
+                                  const s = sub.toLowerCase()
+                                  if (normTarget.includes("toán")) return s.includes("toán") || s.includes("math")
+                                  if (normTarget.includes("văn") || normTarget.includes("việt")) return s.includes("văn") || s.includes("việt") || s.includes("ngữ văn")
+                                  if (normTarget.includes("anh")) return s.includes("anh") || s.includes("english")
+                                  if (normTarget.includes("tâm lý")) return s.includes("tâm lý") || s.includes("psychology")
+                                  return s.includes(normTarget)
+                                })
 
-                                if (!teacherList || teacherList.length === 0) {
-                                  return <span className="text-slate-400 text-[10px] italic">Chưa phân công</span>
+                                if (!isCommitted) return null
+
+                                if (rowItem.assignedTeachers && rowItem.assignedTeachers.length > 0) {
+                                  const found = rowItem.assignedTeachers.find((at: any) => {
+                                    const s = (at.subject || "").toLowerCase()
+                                    if (normTarget.includes("toán")) return s.includes("toán") || s.includes("math")
+                                    if (normTarget.includes("văn") || normTarget.includes("việt")) return s.includes("văn") || s.includes("việt") || s.includes("ngữ văn")
+                                    if (normTarget.includes("anh")) return s.includes("anh") || s.includes("english")
+                                    if (normTarget.includes("tâm lý")) return s.includes("tâm lý") || s.includes("psychology")
+                                    return s.includes(normTarget)
+                                  })
+                                  if (found && found.teacherName) return found.teacherName
                                 }
 
+                                const matchedT = studentTargets.find((t: any) => {
+                                  const r = (t.reason || "").toLowerCase()
+                                  if (normTarget.includes("toán")) return r.includes("toán") || r.includes("math")
+                                  if (normTarget.includes("văn") || normTarget.includes("việt")) return r.includes("văn") || r.includes("việt") || r.includes("ngữ văn")
+                                  if (normTarget.includes("anh")) return r.includes("anh") || r.includes("english")
+                                  if (normTarget.includes("tâm lý")) return r.includes("tâm lý") || r.includes("psychology")
+                                  return r.includes(normTarget)
+                                })
+                                if (matchedT?.assignedTeacherName) return matchedT.assignedTeacherName
+
+                                return "Chưa phân công"
+                              }
+
+                              const renderCell = (rowItem: any, targetSub: string) => {
+                                const tName = getSubjectTeacher(rowItem, targetSub)
+                                if (tName === null) {
+                                  return <span className="text-slate-300 font-mono text-[11px]">-</span>
+                                }
+                                if (tName === "Chưa phân công") {
+                                  return <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
+                                }
                                 return (
-                                  <div className="space-y-1">
-                                    {teacherList.map((at: any, atIdx: number) => (
-                                      <div key={atIdx} className="text-[11px] font-semibold text-slate-700 flex items-center gap-1.5">
-                                        {teacherList.length > 1 && (
-                                          <span className="text-slate-400 font-bold text-[10px]">{at.subject}:</span>
-                                        )}
-                                        {at.teacherName && at.teacherName !== "Chưa phân công" ? (
-                                          <span className="font-extrabold text-indigo-700 bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-100/80 text-[11px]">
-                                            {at.teacherName}
-                                          </span>
-                                        ) : (
-                                          <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
+                                  <span className="font-extrabold text-indigo-700 bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-100/80 text-[11px] inline-block whitespace-nowrap">
+                                    {tName}
+                                  </span>
                                 )
-                              })()}
-                            </td>
+                              }
+
+                              return (
+                                <>
+                                  <td className="px-3 py-3.5">{renderCell(row, "Toán")}</td>
+                                  <td className="px-3 py-3.5">{renderCell(row, "Tiếng Việt")}</td>
+                                  <td className="px-3 py-3.5">{renderCell(row, "Tiếng Anh")}</td>
+                                  <td className="px-3 py-3.5">{renderCell(row, "Tâm lý")}</td>
+                                </>
+                              )
+                            })()}
                             <td className="px-4 py-3.5">
                               <div className="text-[10px] text-slate-500 font-bold mb-1.5 flex flex-wrap gap-x-2 gap-y-1">
                                 {getScoreTag("Toán", row.mathScore)}
