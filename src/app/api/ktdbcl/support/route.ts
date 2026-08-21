@@ -74,6 +74,18 @@ export async function GET(req: Request) {
         whereClause.OR = orConditions
       }
 
+      // Database cleanup for legacy reason strings
+      try {
+        await prisma.learningSupportTarget.updateMany({
+          where: { reason: { contains: "Tâm lý học đường" } },
+          data: { reason: "Tâm lý" }
+        });
+        await prisma.learningSupportTarget.updateMany({
+          where: { OR: [{ reason: { contains: "Tiếng Anh (viết)" } }, { reason: { contains: "Tiếng Anh (vấn đáp)" } }] },
+          data: { reason: "Tiếng Anh" }
+        });
+      } catch (e) {}
+
       const targets = await prisma.learningSupportTarget.findMany({
         where: whereClause,
         include: {
