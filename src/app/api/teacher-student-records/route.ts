@@ -215,8 +215,27 @@ export async function GET(req: Request) {
       if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
 
       try {
+        const targetClass = await prisma.class.findFirst({
+          where: {
+            OR: [
+              { id: classId },
+              { classCode: classId },
+              { className: classId }
+            ]
+          }
+        })
+
+        const possibleClassIdentifiers = targetClass 
+          ? Array.from(new Set([targetClass.id, targetClass.classCode, targetClass.className, classId].filter(Boolean)))
+          : [classId]
+
         const students = await prisma.student.findMany({
-          where: { classId },
+          where: {
+            OR: [
+              { classId: { in: possibleClassIdentifiers } },
+              { class: { is: { OR: [{ id: classId }, { classCode: classId }, { className: classId }] } } }
+            ]
+          },
           select: {
             id: true,
             studentCode: true,
@@ -231,7 +250,7 @@ export async function GET(req: Request) {
 
         const formatted = students.map(s => ({
           ...s,
-          className: s.class?.className || ""
+          className: s.class?.className || targetClass?.className || ""
         }))
 
         return NextResponse.json(formatted)
