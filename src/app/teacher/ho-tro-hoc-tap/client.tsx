@@ -594,40 +594,56 @@ export function TeacherSupportClient({
     }
   }
 
-  // Filter students related to this teacher
-  const filteredTargets = targets.filter(t => {
-    // Check if created by teacher, homeroom, assigned, or class teacher
-    const isCreatedByMe = t.createdById === teacher?.id
-    const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
-    const isAssigned = t.assignments?.some((a: any) => a.teacherId === teacher?.id)
-    const isClassTeacher = assignedClasses.some((c: any) => c.id === t.student?.classId)
+  // Filter students related to this teacher - ONLY 2 SOURCES: CKĐV & BSTD
+  const filteredTargets = useMemo(() => {
+    const seenKeys = new Set<string>()
+    return targets.filter(t => {
+      const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"))
+      const isCreatedByMe = t.createdById === teacher?.id
+      const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher?.id)
+      const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
+      const isClassTeacher = assignedClasses.some((c: any) => c.id === t.student?.classId)
 
-    // Apply role filter
-    if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
-    if (roleFilter === "ASSIGNED" && !isAssigned && !isCreatedByMe) return false
-    if (roleFilter === "ALL" && !isHomeroomStudent && !isAssigned && !isCreatedByMe && !isClassTeacher) return false
+      // Rule: MUST be either:
+      // 1. Cam kết đầu vào (CKĐV) for a student in this teacher's class
+      // 2. Đề xuất HS theo dõi (BSTD) created by or assigned to this teacher
+      const isCKDV = isCommitmentTarget && (isHomeroomStudent || isClassTeacher)
+      const isBSTD = !isCommitmentTarget && (isCreatedByMe || isAssignedToMe)
 
-    // Apply Month filter
-    if (monthFilter !== "ALL") {
-      const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter)
-      if (!hasEvalInMonth) return false
-    }
+      if (!isCKDV && !isBSTD) return false
 
-    // Apply Level filter
-    const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
-    const latestEval = sortedEvals[0]
-    const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ"
-    if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false
+      // Deduplicate targets by studentId + supportType + sourceCategory
+      const targetCategory = isCommitmentTarget ? "CKDV" : "BSTD"
+      const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}`
+      if (seenKeys.has(dedupeKey)) return false
+      seenKeys.add(dedupeKey)
 
-    // Apply search query
-    const name = t.student?.studentName || ""
-    const code = t.student?.studentCode || ""
-    const matchesSearch = searchQuery === "" || 
-      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      code.toLowerCase().includes(searchQuery.toLowerCase())
+      // Apply role filter
+      if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
+      if (roleFilter === "ASSIGNED" && !isAssignedToMe && !isCreatedByMe) return false
 
-    return matchesSearch
-  })
+      // Apply Month filter
+      if (monthFilter !== "ALL") {
+        const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter)
+        if (!hasEvalInMonth) return false
+      }
+
+      // Apply Level filter
+      const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
+      const latestEval = sortedEvals[0]
+      const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ"
+      if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false
+
+      // Apply search query
+      const name = t.student?.studentName || t.student?.fullName || ""
+      const code = t.student?.studentCode || t.student?.code || ""
+      const matchesSearch = searchQuery === "" || 
+        name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        code.toLowerCase().includes(searchQuery.toLowerCase())
+
+      return matchesSearch
+    })
+  }, [targets, teacher?.id, homeroomClasses, assignedClasses, roleFilter, monthFilter, levelFilter, searchQuery])
 
   // Count approved proposals submitted by this teacher
   const approvedHistoryCount = useMemo(() => {
