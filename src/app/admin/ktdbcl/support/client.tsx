@@ -1109,18 +1109,15 @@ export function SupportClient({
               <div className="bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-xxs flex flex-col justify-between min-h-[300px]">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-slate-100 text-xs">
-                    <thead className="bg-slate-50/75 font-bold text-slate-500 uppercase tracking-wider text-[10px]">
+                    <thead className="bg-slate-50/90 font-bold text-slate-600 uppercase tracking-wider text-[10px] border-b border-slate-200">
                       <tr>
                         <th className="px-3 py-3.5 text-center w-10">STT</th>
-                        <th className="px-4 py-3.5 text-left">Họ tên</th>
-                        <th className="px-3 py-3.5 text-left">Mã HS</th>
-                        <th className="px-3 py-3.5 text-left">Lớp</th>
-                        <th className="px-3 py-3.5 text-left">Cơ sở</th>
-                        <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
-                        <th className="px-3 py-3.5 text-left">GV Toán</th>
-                        <th className="px-3 py-3.5 text-left">GV Tiếng Việt / Văn</th>
-                        <th className="px-3 py-3.5 text-left">GV Tiếng Anh</th>
-                        <th className="px-3 py-3.5 text-left">GV Tâm lý</th>
+                        <th className="px-4 py-3.5 text-left">Thông tin Học sinh</th>
+                        <th className="px-3 py-3.5 text-left">Môn Cam kết</th>
+                        <th className="px-3 py-3.5 text-left text-amber-800 bg-amber-50/60 font-black">📐 GV Toán</th>
+                        <th className="px-3 py-3.5 text-left text-emerald-800 bg-emerald-50/60 font-black">📖 GV Tiếng Việt / Văn</th>
+                        <th className="px-3 py-3.5 text-left text-blue-800 bg-blue-50/60 font-black">🌐 GV Tiếng Anh</th>
+                        <th className="px-3 py-3.5 text-left text-purple-800 bg-purple-50/60 font-black">🧠 GV Tâm lý</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
                     </thead>
@@ -1131,22 +1128,21 @@ export function SupportClient({
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
 
                         return (
-                          <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-4 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
-                            <td className="px-4 py-3.5">
-                              <div className="font-extrabold text-slate-800 text-[12px]">{row.fullName}</div>
-                              {row.gender && (
-                                <div className="text-[10px] text-slate-400 font-medium mt-0.5">{row.gender}</div>
-                              )}
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className="font-mono font-bold text-slate-600 text-[11px]">{row.studentCode}</span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className="font-extrabold text-slate-700 text-[12px]">{row.className || "Chưa xếp lớp"}</span>
-                            </td>
-                            <td className="px-4 py-3.5">
-                              <span className="text-[11px] text-indigo-600 font-bold">{row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}</span>
+                          <tr key={row.id} className="hover:bg-indigo-50/20 transition-colors">
+                            <td className="px-3 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
+                            <td className="px-4 py-3.5 min-w-[200px]">
+                              <div className="font-black text-slate-900 text-[13px] tracking-tight">{row.fullName}</div>
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <span className="font-mono font-bold text-slate-500 text-[10px] bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/80">
+                                  {row.studentCode}
+                                </span>
+                                <span className="font-extrabold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 text-[10px]">
+                                  Lớp: {row.className}
+                                </span>
+                                <span className="text-[10px] text-purple-700 font-bold bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100">
+                                  {row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}
+                                </span>
+                              </div>
                             </td>
                             <td className="px-4 py-3.5">
                               {row.committedSubjects && row.committedSubjects.length > 0 ? (
@@ -1200,16 +1196,24 @@ export function SupportClient({
                                 return "Chưa phân công"
                               }
 
-                              const renderCell = (rowItem: any, targetSub: string) => {
+                              const renderCell = (rowItem: any, targetSub: string, theme: string) => {
                                 const tName = getSubjectTeacher(rowItem, targetSub)
                                 if (tName === null) {
-                                  return <span className="text-slate-300 font-mono text-[11px]">-</span>
+                                  return <span className="text-slate-300 font-mono text-[12px] font-bold select-none">-</span>
                                 }
                                 if (tName === "Chưa phân công") {
-                                  return <span className="text-slate-400 italic text-[10px]">Chưa phân công</span>
+                                  return <span className="text-slate-400 italic text-[10px] font-medium">Chưa phân công</span>
                                 }
+
+                                const themeStyles = {
+                                  amber: "text-amber-900 bg-amber-50/90 border-amber-200/90 shadow-2xs",
+                                  emerald: "text-emerald-900 bg-emerald-50/90 border-emerald-200/90 shadow-2xs",
+                                  blue: "text-blue-900 bg-blue-50/90 border-blue-200/90 shadow-2xs",
+                                  purple: "text-purple-900 bg-purple-50/90 border-purple-200/90 shadow-2xs"
+                                }[theme] || "text-indigo-900 bg-indigo-50/90 border-indigo-200/90"
+
                                 return (
-                                  <span className="font-extrabold text-indigo-700 bg-indigo-50/80 px-2 py-0.5 rounded-md border border-indigo-100/80 text-[11px] inline-block whitespace-nowrap">
+                                  <span className={`font-black px-2 py-0.5 rounded-md border text-[11px] inline-block whitespace-nowrap ${themeStyles}`}>
                                     {tName}
                                   </span>
                                 )
@@ -1217,10 +1221,10 @@ export function SupportClient({
 
                               return (
                                 <>
-                                  <td className="px-3 py-3.5">{renderCell(row, "Toán")}</td>
-                                  <td className="px-3 py-3.5">{renderCell(row, "Tiếng Việt")}</td>
-                                  <td className="px-3 py-3.5">{renderCell(row, "Tiếng Anh")}</td>
-                                  <td className="px-3 py-3.5">{renderCell(row, "Tâm lý")}</td>
+                                  <td className="px-3 py-3.5 bg-amber-50/10">{renderCell(row, "Toán", "amber")}</td>
+                                  <td className="px-3 py-3.5 bg-emerald-50/10">{renderCell(row, "Tiếng Việt", "emerald")}</td>
+                                  <td className="px-3 py-3.5 bg-blue-50/10">{renderCell(row, "Tiếng Anh", "blue")}</td>
+                                  <td className="px-3 py-3.5 bg-purple-50/10">{renderCell(row, "Tâm lý", "purple")}</td>
                                 </>
                               )
                             })()}
