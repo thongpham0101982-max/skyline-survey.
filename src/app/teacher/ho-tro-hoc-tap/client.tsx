@@ -1239,63 +1239,60 @@ export function TeacherSupportClient({
                       
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <button
-                          onClick={() => {
+                          onClick={async () => {
                             if (existingTarget) {
                               setActiveSubTab("assigned")
                             } else {
-                              setProposeClassId(s.classId)
-                              setIsProposeModalOpen(true)
-                              setSelectedStudentIds([s.id])
-                              const activeSubs = s.matchedSubjects?.length > 0 
-                                ? s.matchedSubjects 
-                                : [s.committedSubjects[0]]
-                              setSelectedSubjects(activeSubs)
-                              const scoreDetails = s.committedSubjects.map((sub: string) => {
-                                let scoreDisplay = "Chưa có";
-                                const subLower = sub.toLowerCase();
-                                if (subLower.includes("toán")) {
-                                  if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
-                                  else {
-                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("toán"));
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              setLoading(true)
+                              try {
+                                const activeSubs = s.matchedSubjects?.length > 0 
+                                  ? s.matchedSubjects 
+                                  : (s.committedSubjects || ["Văn hóa"])
+                                const isPsych = activeSubs.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
+                                const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC"
+                                const sourceType = isPsych ? "TAM_LY" : "ADMISSION"
+
+                                const scoreDetails = (s.committedSubjects || []).map((sub: string) => {
+                                  let scoreDisplay = "Chưa có";
+                                  const subLower = sub.toLowerCase();
+                                  if (subLower.includes("toán")) {
+                                    if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
+                                  } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+                                    if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
+                                  } else if (subLower.includes("tâm lý")) {
+                                    if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
                                   }
-                                } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
-                                  if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
-                                  else {
-                                    const sc = s.scores?.find((x:any) => {
-                                      const n = x.subject?.name?.toLowerCase() || "";
-                                      return n.includes("văn") || n.includes("tiếng việt");
-                                    });
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
-                                } else if (subLower.includes("anh")) {
-                                  const write = s.writtenEnglishScore;
-                                  const oral = s.oralEnglishScore;
-                                  if (write != null || oral != null) {
-                                    scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
-                                  } else {
-                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("anh"));
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
-                                } else if (subLower.includes("tâm lý")) {
-                                  if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
-                                  else {
-                                    const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
+                                  return `${sub}: ${scoreDisplay}`;
+                                }).join(", ");
+
+                                const res = await fetch("/api/ktdbcl/support", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    action: "saveTarget",
+                                    academicYearId: selectedYearId,
+                                    studentId: s.id,
+                                    supportType,
+                                    sourceType,
+                                    reason: activeSubs.join(", "),
+                                    notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${(s.committedSubjects || []).join(", ")} tại kỳ khảo sát đầu vào. ${scoreDetails ? "Điểm KS: " + scoreDetails : ""}`,
+                                    status: "TIẾP TỤC THEO TUẦN"
+                                  })
+                                })
+                                const data = await res.json()
+                                if (data.error) {
+                                  toast.error("Thêm vào Sổ theo dõi thất bại: " + data.error)
                                 } else {
-                                  if (s.scores && s.scores.length > 0) {
-                                    const sc = s.scores.find((x:any) => {
-                                      const n = x.subject?.name?.toLowerCase() || "";
-                                      return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
-                                    });
-                                    if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                                  }
+                                  toast.success(`Đã thêm học sinh ${s.studentName} vào Sổ theo dõi đánh giá!`)
+                                  setActiveSubTab("assigned")
+                                  await fetchTeacherData()
+                                  await fetchEntranceCommitments()
                                 }
-                                return `${sub}: ${getCompactScore(scoreDisplay)}`;
-                              }).join(", ");
-                              setProposeNotes(`[Đề xuất từ Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${s.committedSubjects.join(", ")} tại kỳ khảo sát đầu vào. Điểm khảo sát: ${scoreDetails}`)
-                              fetchClassStudents(s.classId)
+                              } catch (e: any) {
+                                toast.error("Thêm vào Sổ theo dõi thất bại")
+                              } finally {
+                                setLoading(false)
+                              }
                             }
                           }}
                           className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1 cursor-pointer"
