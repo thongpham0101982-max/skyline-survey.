@@ -151,20 +151,33 @@ export async function GET(req: Request) {
       // AUTO-SYNC ENTRANCE COMMITMENTS FOR TEACHER
       if (callerTeacher && teacherClassIds.length > 0) {
         try {
-          const inputAssessments = await prisma.inputAssessmentStudent.findMany({
-            where: {
-              OR: [
-                { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
-                { directorNote: { contains: "Môn cam kết" } }
-              ]
-            },
-            select: {
-              studentCode: true,
-              enrollmentCode: true,
-              fullName: true,
-              directorNote: true
-            }
-          });
+          const [inputAssessments, preschoolAssessments] = await Promise.all([
+            prisma.inputAssessmentStudent.findMany({
+              select: {
+                studentCode: true,
+                enrollmentCode: true,
+                fullName: true,
+                directorNote: true,
+                admissionResult: true,
+                mathScore: true,
+                literatureScore: true,
+                writtenEnglishScore: true,
+                oralEnglishScore: true,
+                psychologyScore: true
+              }
+            }),
+            (prisma as any).preschoolInputAssessmentStudent ? (prisma as any).preschoolInputAssessmentStudent.findMany({
+              select: {
+                studentCode: true,
+                enrollmentCode: true,
+                fullName: true,
+                directorNote: true,
+                admissionResult: true
+              }
+            }) : Promise.resolve([])
+          ]);
+
+          const allAssessments = [...inputAssessments, ...preschoolAssessments];
 
           const classStudents = await prisma.student.findMany({
             where: { classId: { in: teacherClassIds } },
@@ -172,13 +185,12 @@ export async function GET(req: Request) {
           });
 
           const teacherAssignments = await prisma.teachingAssignment.findMany({
-            where: { teacherId: callerTeacher.id, academicYearId },
+            where: { teacherId: callerTeacher.id },
             include: { subject: true }
           });
 
           const teacherHomeroomClasses = await prisma.class.findMany({
             where: {
-              academicYearId,
               OR: [
                 { homeroomTeacherId: callerTeacher.id },
                 { homeroomTeacherId: { contains: callerTeacher.id } }
@@ -188,21 +200,50 @@ export async function GET(req: Request) {
           });
           const homeroomClassIds = new Set(teacherHomeroomClasses.map(c => c.id));
 
-          const cleanStr = (s) => s ? s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "") : "";
-          const parseSubs = (note) => {
-            if (!note) return [];
-            const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i);
-            return match && match[1] ? match[1].split(",").map(x => x.trim()) : [];
+          const cleanStr = (s: any) => s ? String(s).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "") : "";
+          
+          const parseSubs = (assessment: any) => {
+            if (!assessment) return [];
+            const text = `${assessment.directorNote || ""} ${assessment.admissionResult || ""}`;
+            const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i);
+            let subs: string[] = [];
+            if (match && match[1]) {
+              subs = match[1].split(/[,;]/).map((x: any) => x.trim()).filter(Boolean);
+            }
+            if (subs.length === 0) {
+              if (/Toán|Math/i.test(text)) subs.push("Toán");
+              if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt");
+              if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) subs.push("Tiếng Anh (viết)");
+              if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) subs.push("Tiếng Anh (vấn đáp)");
+              if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) subs.push("Tiếng Anh");
+              if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý");
+            }
+            if (subs.length === 0) {
+              if (assessment.mathScore != null) subs.push("Toán");
+              if (assessment.literatureScore != null) subs.push("Tiếng Việt");
+              if (assessment.writtenEnglishScore != null || assessment.oralEnglishScore != null) subs.push("Tiếng Anh");
+              if (assessment.psychologyScore != null) subs.push("Tâm lý");
+            }
+            if (subs.length === 0) {
+              subs.push("Tiếng Việt", "Toán", "Tiếng Anh");
+            }
+            return subs;
           };
 
           for (const s of classStudents) {
-            const assessment = inputAssessments.find(a => 
-              a.studentCode === s.studentCode || 
-              a.enrollmentCode === s.studentCode || 
-              cleanStr(a.fullName) === cleanStr(s.studentName)
-            );
+            const assessment = allAssessments.find(a => {
+              const sCode = cleanStr(s.studentCode);
+              const aCode = cleanStr(a.studentCode);
+              const eCode = cleanStr(a.enrollmentCode);
+              if (sCode && (sCode === aCode || sCode === eCode)) return true;
+              const cleanA = cleanStr(a.fullName);
+              const cleanS = cleanStr(s.studentName);
+              if (cleanA && cleanS && (cleanA === cleanS || cleanA.includes(cleanS) || cleanS.includes(cleanA))) return true;
+              return false;
+            });
             if (!assessment) continue;
-            const committedSubs = parseSubs(assessment.directorNote || "");
+
+            const committedSubs = parseSubs(assessment);
             if (committedSubs.length === 0) continue;
 
             const isHomeroom = homeroomClassIds.has(s.classId);
@@ -210,7 +251,7 @@ export async function GET(req: Request) {
               .filter(a => a.classId === s.classId)
               .map(a => (a.subject?.subjectName || a.subject?.name || "").toLowerCase());
 
-            // Check matched academic subjects
+            // Check matched academic subjects for GVBM
             const matchedAcad = committedSubs.filter(cs => {
               const cleanCS = cs.toLowerCase();
               return mySubjectsInClass.some(ts => {
@@ -221,15 +262,13 @@ export async function GET(req: Request) {
               });
             });
 
-            // Academic support target creation
+            // Academic support target auto-creation for GVBM
             if (matchedAcad.length > 0) {
-              let target = await prisma.learningSupportTarget.findUnique({
+              let target = await prisma.learningSupportTarget.findFirst({
                 where: {
-                  studentId_supportType_academicYearId: {
-                    studentId: s.id,
-                    supportType: "ACADEMIC",
-                    academicYearId
-                  }
+                  studentId: s.id,
+                  supportType: "ACADEMIC",
+                  academicYearId
                 }
               });
               if (!target) {
@@ -240,7 +279,7 @@ export async function GET(req: Request) {
                     sourceType: "ADMISSION",
                     status: "ĐÃ DUYỆT",
                     reason: matchedAcad.join(", "),
-                    notes: "Tự động phân công từ Cam kết khảo sát đầu vào",
+                    notes: "Tự động phân công từ Cam kết khảo sát đầu vào theo phân công môn",
                     academicYearId,
                     startDate: new Date(),
                     terminationStatus: "ACTIVE",
@@ -248,42 +287,43 @@ export async function GET(req: Request) {
                   }
                 });
               }
-              const assign = await prisma.learningSupportAssignment.findFirst({
-                where: { targetId: target.id, teacherId: callerTeacher.id, academicYearId }
+              // Ensure assignment for GVBM
+              const existingAssign = await prisma.learningSupportAssignment.findFirst({
+                where: {
+                  targetId: target.id,
+                  teacherId: callerTeacher.id
+                }
               });
-              if (!assign) {
+              if (!existingAssign) {
                 await prisma.learningSupportAssignment.create({
                   data: {
                     targetId: target.id,
                     teacherId: callerTeacher.id,
-                    academicYearId,
-                    notes: "Tự động phân công GVBM theo môn cam kết đầu vào"
+                    assignedAt: new Date()
                   }
                 });
               }
             }
 
-            // Psychological support target creation for homeroom or psych teachers
-            const hasPsychCommitment = committedSubs.some(cs => cs.toLowerCase().includes("tâm lý"));
-            if (hasPsychCommitment && (isHomeroom || mySubjectsInClass.some(ts => ts.includes("tâm lý")))) {
-              let target = await prisma.learningSupportTarget.findUnique({
+            // Psychological support target auto-creation for GVCN
+            const hasPsych = committedSubs.some(cs => cs.toLowerCase().includes("tâm lý"));
+            if (isHomeroom && hasPsych) {
+              let psychTarget = await prisma.learningSupportTarget.findFirst({
                 where: {
-                  studentId_supportType_academicYearId: {
-                    studentId: s.id,
-                    supportType: "PSYCHOLOGICAL",
-                    academicYearId
-                  }
+                  studentId: s.id,
+                  supportType: "PSYCHOLOGICAL",
+                  academicYearId
                 }
               });
-              if (!target) {
-                target = await prisma.learningSupportTarget.create({
+              if (!psychTarget) {
+                psychTarget = await prisma.learningSupportTarget.create({
                   data: {
                     studentId: s.id,
                     supportType: "PSYCHOLOGICAL",
-                    sourceType: "ADMISSION",
+                    sourceType: "TAM_LY",
                     status: "ĐÃ DUYỆT",
-                    reason: "Tâm lý học đường",
-                    notes: "Tự động phân công từ Cam kết khảo sát đầu vào",
+                    reason: "Cam kết tâm lý khảo sát đầu vào",
+                    notes: "Tự động phân công theo dõi Tâm lý cho GVCN",
                     academicYearId,
                     startDate: new Date(),
                     terminationStatus: "ACTIVE",
@@ -291,23 +331,25 @@ export async function GET(req: Request) {
                   }
                 });
               }
-              const assign = await prisma.learningSupportAssignment.findFirst({
-                where: { targetId: target.id, teacherId: callerTeacher.id, academicYearId }
+              const existingAssign = await prisma.learningSupportAssignment.findFirst({
+                where: {
+                  targetId: psychTarget.id,
+                  teacherId: callerTeacher.id
+                }
               });
-              if (!assign) {
+              if (!existingAssign) {
                 await prisma.learningSupportAssignment.create({
                   data: {
-                    targetId: target.id,
+                    targetId: psychTarget.id,
                     teacherId: callerTeacher.id,
-                    academicYearId,
-                    notes: "Tự động phân công theo cam kết đầu vào tâm lý"
+                    assignedAt: new Date()
                   }
                 });
               }
             }
           }
-        } catch (e) {
-          console.error("Auto-sync entrance commitments error:", e);
+        } catch (err) {
+          console.error("Auto-sync entrance commitments error:", err);
         }
       }
 
