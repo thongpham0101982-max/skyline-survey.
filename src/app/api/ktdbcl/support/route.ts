@@ -390,10 +390,12 @@ export async function GET(req: Request) {
       const homeroomClassSet = new Set(teacherHomeroomClasses.map(c => c.id));
 
       const normalizeReasonStr = (reasonStr: string) => {
-        let r = (reasonStr || "").trim();
-        r = r.replace(/Tâm lý học đường/g, "Tâm lý");
-        r = r.replace(/Tiếng Anh \((?:viết|vấn đáp)\)/g, "Tiếng Anh");
-        r = r.replace(/Ngữ văn|Văn/g, "Tiếng Việt");
+        if (!reasonStr) return "";
+        let r = reasonStr.trim();
+        if (r.toLowerCase().includes("tâm lý")) return "Tâm lý";
+        if (r.toLowerCase().includes("anh") || r.toLowerCase().includes("english")) return "Tiếng Anh";
+        if (r.toLowerCase().includes("văn") || r.toLowerCase().includes("tiếng việt") || r.toLowerCase().includes("ngữ văn")) return "Tiếng Việt";
+        if (r.toLowerCase().includes("toán") || r.toLowerCase().includes("math")) return "Toán";
         return r;
       };
 
@@ -427,11 +429,11 @@ export async function GET(req: Request) {
         return true;
       });
 
-      // Deduplicate targets by (studentId + supportType + normalizedReason)
+      // Deduplicate targets by (studentId + normalizedReason) so each student appears at most once per subject
       const targetMap = new Map<string, any>();
       for (const t of validTargets) {
         const normReason = normalizeReasonStr(t.reason);
-        const key = `${t.studentId}_${t.supportType}_${normReason}`;
+        const key = `${t.studentId}_${normReason.toLowerCase()}`;
         if (!targetMap.has(key)) {
           targetMap.set(key, {
             ...t,
