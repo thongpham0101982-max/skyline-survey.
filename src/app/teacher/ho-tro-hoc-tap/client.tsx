@@ -593,26 +593,32 @@ export function TeacherSupportClient({
     }
   }
 
-      // Combine database targets with Admin Sổ HS Cam kết candidates assigned to teacher by PCGD
+        // Combine database targets with Admin Sổ HS Cam kết candidates assigned to teacher by PCGD
   const combinedTargets = useMemo(() => {
     const list = [...targets]
-    const teacherNameLower = (teacher?.teacherName || "").toLowerCase().trim()
+    const rawTeacherName = typeof teacher?.teacherName === "string" ? teacher.teacherName : String(teacher?.teacherName || "")
+    const teacherNameLower = rawTeacherName.toLowerCase().trim()
 
     // 1. Process Admin Sổ HS Cam kết candidates
     (adminCommitmentCandidates || []).forEach((cand: any) => {
-      const assignedTeachers = cand.assignedTeachers || []
+      const assignedTeachers = Array.isArray(cand.assignedTeachers) ? cand.assignedTeachers : []
       const matchedSubjectAssignment = assignedTeachers.find((at: any) => {
-        if (!at.teacherName) return false
-        const atName = at.teacherName.toLowerCase()
-        return (teacherNameLower && atName.includes(teacherNameLower)) || atName.includes((teacher?.id || "_____").toLowerCase())
+        if (!at) return false
+        const atNameRaw = typeof at.teacherName === "string" ? at.teacherName : (at.teacherName?.teacherName || String(at.teacherName || ""))
+        if (!atNameRaw) return false
+        const atName = atNameRaw.toLowerCase()
+        const teacherIdStr = String(teacher?.id || "_____").toLowerCase()
+        return (teacherNameLower && atName.includes(teacherNameLower)) || atName.includes(teacherIdStr)
       })
 
       const isHomeroomClass = (homeroomClasses || []).some((c: any) => c && (c.className === cand.className || c.classCode === cand.className))
       const isAssignedClass = (assignedClasses || []).some((c: any) => c && (c.className === cand.className || c.classCode === cand.className))
 
       if (matchedSubjectAssignment || isHomeroomClass || isAssignedClass) {
-        const sub = matchedSubjectAssignment?.subject || cand.committedSubjects?.[0] || "Theo dõi bồi dưỡng"
-        const isPsych = sub.toLowerCase().includes("tâm lý") || (cand.directorNote || "").toLowerCase().includes("tâm lý")
+        const sub = matchedSubjectAssignment?.subject || (Array.isArray(cand.committedSubjects) ? cand.committedSubjects[0] : null) || "Theo dõi bồi dưỡng"
+        const subStr = typeof sub === "string" ? sub : String(sub || "")
+        const noteStr = typeof cand.directorNote === "string" ? cand.directorNote : String(cand.directorNote || "")
+        const isPsych = subStr.toLowerCase().includes("tâm lý") || noteStr.toLowerCase().includes("tâm lý")
 
         const exists = list.some(t => 
           (t.studentId && (t.studentId === cand.systemStudentId || t.studentId === cand.id)) ||
@@ -621,7 +627,7 @@ export function TeacherSupportClient({
 
         if (!exists) {
           list.push({
-            id: `admin_commitment_${cand.id}_${sub}`,
+            id: `admin_commitment_${cand.id}_${subStr}`,
             studentId: cand.systemStudentId || cand.id,
             student: {
               id: cand.systemStudentId || cand.id,
@@ -631,7 +637,7 @@ export function TeacherSupportClient({
               classId: cand.className,
               class: { className: cand.className }
             },
-            reason: sub,
+            reason: subStr,
             supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
             status: "CHỜ ĐÁNH GIÁ",
             assignedTeacherName: matchedSubjectAssignment?.teacherName || teacher?.teacherName,
@@ -649,7 +655,8 @@ export function TeacherSupportClient({
         (t.student?.studentCode && c.studentCode && t.student.studentCode === c.studentCode)
       )
       if (!exists) {
-        const isPsych = (c.committedSubjects || []).includes("Tâm lý") || (c.reason || "").includes("Tâm lý")
+        const isPsych = (Array.isArray(c.committedSubjects) && c.committedSubjects.includes("Tâm lý")) || String(c.reason || "").includes("Tâm lý")
+        const reasonStr = Array.isArray(c.committedSubjects) ? c.committedSubjects.join(", ") : String(c.reason || (isPsych ? "Tâm lý" : "Theo dõi bồi dưỡng"))
         list.push({
           id: `commitment_${c.id || c.studentCode}`,
           studentId: c.id || c.systemStudentId,
@@ -661,7 +668,7 @@ export function TeacherSupportClient({
             classId: c.classId,
             class: { className: c.className }
           },
-          reason: c.committedSubjects?.join(", ") || c.reason || (isPsych ? "Tâm lý" : "Theo dõi bồi dưỡng"),
+          reason: reasonStr,
           supportType: isPsych ? "PSYCHOLOGICAL" : "ACADEMIC",
           status: "CHỜ ĐÁNH GIÁ",
           assignedTeacherName: teacher?.teacherName,
@@ -677,15 +684,18 @@ export function TeacherSupportClient({
   // Filter students related to this teacher according to PCGD (TeachingAssignment & Homeroom)
   const filteredTargets = combinedTargets.filter(t => {
     // Check if homeroom student
-    const isHomeroomStudent = homeroomClasses.some(c => 
-      c.id === t.student?.classId || c.students?.some((s: any) => s.id === t.studentId)
+    const isHomeroomStudent = (homeroomClasses || []).some((c: any) => 
+      c && (c.id === t.student?.classId || (Array.isArray(c.students) && c.students.some((s: any) => s.id === t.studentId)))
     )
 
     // Check if assigned teacher according to PCGD / TeachingAssignment
+    const tAssignedName = typeof t.assignedTeacherName === "string" ? t.assignedTeacherName : (t.assignedTeacherName?.teacherName || String(t.assignedTeacherName || ""))
+    const tTeacherName = typeof teacher?.teacherName === "string" ? teacher.teacherName : String(teacher?.teacherName || "")
+
     const isAssigned = 
-      (t.assignedTeacherName && teacher?.teacherName && t.assignedTeacherName.toLowerCase().includes(teacher.teacherName.toLowerCase())) ||
-      t.assignments?.some((a: any) => a.teacherId === teacher?.id) ||
-      assignedClasses.some((c: any) => c.id === t.student?.classId)
+      (tAssignedName && tTeacherName && tAssignedName.toLowerCase().includes(tTeacherName.toLowerCase())) ||
+      (Array.isArray(t.assignments) && t.assignments.some((a: any) => a.teacherId === teacher?.id)) ||
+      (assignedClasses || []).some((c: any) => c && (c.id === t.student?.classId || c.className === t.student?.class?.className))
 
     // Apply role filter
     if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
@@ -693,19 +703,19 @@ export function TeacherSupportClient({
 
     // Apply Month filter
     if (monthFilter !== "ALL") {
-      const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter)
+      const hasEvalInMonth = Array.isArray(t.evaluations) && t.evaluations.some((e: any) => e.periodName === monthFilter)
       if (!hasEvalInMonth) return false
     }
 
     // Apply Level filter
-    const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
+    const sortedEvals = Array.isArray(t.evaluations) ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
     const latestEval = sortedEvals[0]
     const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ"
     if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false
 
     // Apply search query
-    const name = t.student?.studentName || ""
-    const code = t.student?.studentCode || ""
+    const name = typeof t.student?.studentName === "string" ? t.student.studentName : String(t.student?.studentName || "")
+    const code = typeof t.student?.studentCode === "string" ? t.student.studentCode : String(t.student?.studentCode || "")
     const matchesSearch = searchQuery === "" || 
       name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       code.toLowerCase().includes(searchQuery.toLowerCase())
