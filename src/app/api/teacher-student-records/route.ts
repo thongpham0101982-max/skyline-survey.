@@ -216,10 +216,7 @@ export async function GET(req: Request) {
 
       const students = await prisma.student.findMany({
         where: {
-          classId,
-          NOT: {
-            studentCode: { startsWith: "2" }
-          }
+          classId
         },
         orderBy: { studentName: "asc" }
       })
