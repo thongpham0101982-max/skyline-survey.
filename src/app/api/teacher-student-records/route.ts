@@ -299,7 +299,7 @@ export async function GET(req: Request) {
       }
 
       const result = students.map(s => {
-        const assessment = inputAssessments.find((a) => {
+        const assessment = allAssessments.find((a: any) => {
           if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
             return true
           }
@@ -503,39 +503,63 @@ export async function GET(req: Request) {
         }
       })
 
-      // Fetch input assessment records for all candidates with commitment notes or matching results
-      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
-        where: {
-          OR: [
-            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
-            { directorNote: { contains: "Môn cam kết" } }
-          ]
-        },
-        select: {
-          studentCode: true,
-          enrollmentCode: true,
-          fullName: true,
-          directorNote: true,
-          admissionResult: true,
-          enrollmentDate: true,
-          mathScore: true,
-          literatureScore: true,
-          writtenEnglishScore: true,
-          oralEnglishScore: true,
-          psychologyScore: true,
-          scores: { include: { subject: true } }
-        }
-      })
+      // Fetch input assessment records for K-12 and Preschool
+      const [inputAssessments, preschoolAssessments] = await Promise.all([
+        prisma.inputAssessmentStudent.findMany({
+          select: {
+            studentCode: true,
+            enrollmentCode: true,
+            fullName: true,
+            directorNote: true,
+            admissionResult: true,
+            enrollmentDate: true,
+            mathScore: true,
+            literatureScore: true,
+            writtenEnglishScore: true,
+            oralEnglishScore: true,
+            psychologyScore: true,
+            scores: { include: { subject: true } }
+          }
+        }),
+        (prisma as any).preschoolInputAssessmentStudent ? (prisma as any).preschoolInputAssessmentStudent.findMany({
+          select: {
+            studentCode: true,
+            enrollmentCode: true,
+            fullName: true,
+            directorNote: true,
+            admissionResult: true,
+            enrollmentDate: true
+          }
+        }) : Promise.resolve([])
+      ])
 
-      const parseCommittedSubjects = (note: string) => {
-        if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+      const allAssessments = [...inputAssessments, ...preschoolAssessments]
+
+      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
+        const text = `${note || ""} ${resultStr || ""}`
+        if (!text.trim()) return []
+        
+        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
         if (match && match[1]) {
-          return match[1].split(",").map((s: string) => s.trim())
+          const splitSubs = match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
+          if (splitSubs.length > 0) return splitSubs
         }
-        return []
-      }
 
+        const subs: string[] = []
+        if (/Toán|Math/i.test(text)) subs.push("Toán")
+        if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
+        if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
+          subs.push("Tiếng Anh (viết)")
+        }
+        if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
+          subs.push("Tiếng Anh (vấn đáp)")
+        }
+        if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+          subs.push("Tiếng Anh")
+        }
+        if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
+        return subs
+      }
       const cleanString = (str: string) => {
         if (!str) return ""
         return str.toLowerCase()
@@ -555,7 +579,7 @@ export async function GET(req: Request) {
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
+          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
           if (committedSubjects.length === 0) return null
 
           // Determine if the teacher teaches any of the committed subjects in this student's class
