@@ -806,7 +806,22 @@ export function TeacherSupportClient({
       {/* Action panel */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border">
         <div className="flex items-center gap-3">
-          
+          <button
+            onClick={() => {
+              setProposeClassId("")
+              setClassStudents([])
+              setSelectedStudentIds([])
+              setSelectedSubjects([])
+              setProposePsychReason("Tâm lý")
+              setProposeNotes("")
+              setIsProposeModalOpen(true)
+              fetchAssignedClasses()
+            }}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            Đề xuất HS Theo dõi
+          </button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
