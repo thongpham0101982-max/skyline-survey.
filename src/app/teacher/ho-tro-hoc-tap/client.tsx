@@ -1880,7 +1880,7 @@ export function TeacherSupportClient({
                                 onChange={e => {
                                   const val = e.target.checked;
                                   setProposePsychological(val);
-                                  if (val) setProposeAcademic(false);
+                                  if (val) { setProposeAcademic(false); setProposePsychReason("Tâm lý"); }
                                 }}
                                 className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
                               />

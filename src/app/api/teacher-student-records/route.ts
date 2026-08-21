@@ -227,7 +227,7 @@ export async function GET(req: Request) {
       // Fetch all teaching assignments in these classes to find assigned GVBM for committed subjects
       const allClassAssignments = await prisma.teachingAssignment.findMany({
         where: {
-          classId: { in: classIds },
+          classId: classId,
           academicYearId
         },
         include: {
