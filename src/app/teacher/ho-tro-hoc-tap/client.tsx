@@ -1066,20 +1066,20 @@ export function TeacherSupportClient({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thêm vào Form</th>
+                
+                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Add Sổ Theo dõi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-sm">
               {loadingEntranceCommitments ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-slate-400">
+                  <td colSpan={8} className="text-center py-10 text-slate-400">
                     <RefreshCw className="h-6 w-6 animate-spin inline-block mr-2 text-indigo-600" /> Đang tải danh sách học sinh cam kết đầu vào...
                   </td>
                 </tr>
               ) : entranceCommitmentStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-slate-400 font-medium">
+                  <td colSpan={8} className="text-center py-10 text-slate-400 font-medium">
                     Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
                   </td>
                 </tr>
@@ -1094,7 +1094,7 @@ export function TeacherSupportClient({
                 if (filtered.length === 0) {
                   return (
                     <tr>
-                      <td colSpan={5} className="text-center py-10 text-slate-400">
+                      <td colSpan={8} className="text-center py-10 text-slate-400">
                         Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
                       </td>
                     </tr>
@@ -1168,7 +1168,7 @@ export function TeacherSupportClient({
                                     : "bg-slate-100 text-slate-600 border-slate-200"
                                 }`}
                               >
-                                {sub} {isMatched && "✓"}
+                                {sub}
                               </span>
                             )
                           })}
@@ -1226,11 +1226,7 @@ export function TeacherSupportClient({
                           })}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${statusClass}`}>
-                          {statusText}
-                        </span>
-                      </td>
+                      
                       <td className="px-6 py-4 whitespace-nowrap text-center space-x-2">
                         {existingTarget ? (
                           isApproved && !isTerminated && !isPending ? (
