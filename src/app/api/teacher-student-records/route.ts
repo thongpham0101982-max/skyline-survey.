@@ -503,6 +503,18 @@ export async function GET(req: Request) {
         }
       })
 
+      // Fetch all teaching assignments in these classes to find assigned GVBM for committed subjects
+      const allClassAssignments = await prisma.teachingAssignment.findMany({
+        where: {
+          classId: { in: classIds },
+          academicYearId
+        },
+        include: {
+          teacher: { select: { id: true, teacherName: true } },
+          subject: { select: { id: true, subjectName: true, name: true } }
+        }
+      })
+
       // Fetch input assessment records for K-12 and Preschool
       const [inputAssessments, preschoolAssessments] = await Promise.all([
         prisma.inputAssessmentStudent.findMany({
@@ -535,31 +547,43 @@ export async function GET(req: Request) {
 
       const allAssessments = [...inputAssessments, ...preschoolAssessments]
 
-      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
-        const text = `${note || ""} ${resultStr || ""}`
-        if (!text.trim()) return []
+      const parseCommittedSubjects = (assessment: any) => {
+        if (!assessment) return []
+        const text = `${assessment.directorNote || ""} ${assessment.admissionResult || ""}`
         
         const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
+        let subs: string[] = []
         if (match && match[1]) {
-          const splitSubs = match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
-          if (splitSubs.length > 0) return splitSubs
+          subs = match[1].split(/[,;]/).map((s: string) => s.trim()).filter(Boolean)
         }
 
-        const subs: string[] = []
-        if (/Toán|Math/i.test(text)) subs.push("Toán")
-        if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
-        if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
-          subs.push("Tiếng Anh (viết)")
+        if (subs.length === 0) {
+          if (/Toán|Math/i.test(text)) subs.push("Toán")
+          if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
+          if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
+            subs.push("Tiếng Anh (viết)")
+          }
+          if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
+            subs.push("Tiếng Anh (vấn đáp)")
+          }
+          if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+            subs.push("Tiếng Anh")
+          }
+          if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
         }
-        if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
-          subs.push("Tiếng Anh (vấn đáp)")
+
+        // Fallback: Check if scores / results are present
+        if (subs.length === 0 && (assessment.admissionResult?.includes("cam kết") || assessment.admissionResult?.includes("Cam kết"))) {
+          if (assessment.mathScore != null) subs.push("Toán")
+          if (assessment.literatureScore != null) subs.push("Tiếng Việt")
+          if (assessment.writtenEnglishScore != null || assessment.oralEnglishScore != null) subs.push("Tiếng Anh")
+          if (assessment.psychologyScore != null) subs.push("Tâm lý")
+          if (subs.length === 0) subs.push("Tiếng Việt", "Toán", "Tiếng Anh")
         }
-        if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
-          subs.push("Tiếng Anh")
-        }
-        if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
+
         return subs
       }
+
       const cleanString = (str: string) => {
         if (!str) return ""
         return str.toLowerCase()
@@ -571,15 +595,18 @@ export async function GET(req: Request) {
       // Filter and construct candidates
       const candidates = students
         .map((s) => {
-          const assessment = inputAssessments.find((a) => {
-            if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
+          const assessment = allAssessments.find((a: any) => {
+            const sCode = (s.studentCode || "").trim().toLowerCase();
+            const aCode = (a.studentCode || "").trim().toLowerCase();
+            const eCode = (a.enrollmentCode || "").trim().toLowerCase();
+            if (sCode && (sCode === aCode || sCode === eCode)) {
               return true
             }
             return cleanString(a.fullName) === cleanString(s.studentName)
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
+          const committedSubjects = parseCommittedSubjects(assessment)
           if (committedSubjects.length === 0) return null
 
           // Determine if the teacher teaches any of the committed subjects in this student's class
@@ -592,21 +619,14 @@ export async function GET(req: Request) {
             const cleanCS = cs.toLowerCase()
             return teacherSubjectsInClass.some(ts => {
               const cleanTS = ts.toLowerCase()
-              if (cleanTS.includes("toán")) {
-                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
-              }
+              if (cleanTS.includes("toán")) return cleanCS.includes("môn toán") || cleanCS.includes("toán")
               if (cleanTS.includes("tiếng việt") || cleanTS.includes("ngữ văn") || cleanTS.includes("văn")) {
                 return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
               }
-              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) {
-                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
-              }
+              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
               return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
             })
           })
-
-          // Include if it is Homeroom class OR if there is at least one matched subject
-          if (!isHomeroom && matchedSubjects.length === 0) return null
 
           // Build assigned teacher details per committed subject
           const assignedTeachers = committedSubjects.map((cs: string) => {
@@ -627,7 +647,7 @@ export async function GET(req: Request) {
             if (matchAssign?.teacher?.teacherName) {
               teacherName = matchAssign.teacher.teacherName
             } else if (isHomeroom) {
-              teacherName = `${teacher.teacherName} (GVCN)`
+              teacherName = teacher.teacherName ? `${teacher.teacherName} (GVCN)` : "GVCN"
             } else {
               teacherName = "Chưa phân công"
             }
@@ -638,6 +658,9 @@ export async function GET(req: Request) {
               isCurrentTeacher: matchAssign?.teacherId === teacher.id || (isHomeroom && cleanCS.includes("tâm lý"))
             }
           })
+
+          // Include if it is Homeroom class OR if there is at least one matched subject
+          if (!isHomeroom && matchedSubjects.length === 0) return null
 
           return {
             id: s.id,
