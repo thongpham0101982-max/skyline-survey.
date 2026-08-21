@@ -25,6 +25,32 @@ function safeDateToISO(dateVal: any): string {
   }
 }
 
+function parseCommittedSubjects(note?: string | null, resultStr?: string | null): string[] {
+  const text = `${note || ""} ${resultStr || ""}`
+  if (!text.trim()) return []
+  
+  const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
+  if (match && match[1]) {
+    const splitSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
+    if (splitSubs.length > 0) return splitSubs
+  }
+
+  const subs: string[] = []
+  if (/Toán|Math/i.test(text)) subs.push("Toán")
+  if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
+  if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
+    subs.push("Tiếng Anh (viết)")
+  }
+  if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
+    subs.push("Tiếng Anh (vấn đáp)")
+  }
+  if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+    subs.push("Tiếng Anh")
+  }
+  if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
+  return subs
+}
+
 export async function GET(req: Request) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -248,15 +274,6 @@ export async function GET(req: Request) {
         }
       })
 
-      const parseCommittedSubjects = (note: string) => {
-        if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
-        if (match && match[1]) {
-          return match[1].split(",").map((s: string) => s.trim())
-        }
-        return []
-      }
-
       const cleanString = (str: string) => {
         if (!str) return ""
         return str.toLowerCase()
@@ -274,7 +291,7 @@ export async function GET(req: Request) {
         })
         return {
           ...s,
-          entranceCommitmentSubjects: assessment ? parseCommittedSubjects(assessment.directorNote || "") : []
+          entranceCommitmentSubjects: assessment ? parseCommittedSubjects(assessment.directorNote, assessment.admissionResult) : []
         }
       })
 
@@ -340,15 +357,6 @@ export async function GET(req: Request) {
         }
       })
 
-      const parseCommittedSubjects = (note: string) => {
-        if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
-        if (match && match[1]) {
-          return match[1].split(",").map((s: string) => s.trim())
-        }
-        return []
-      }
-
       const cleanString = (str: string) => {
         if (!str) return ""
         return str.toLowerCase()
@@ -368,7 +376,7 @@ export async function GET(req: Request) {
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
+          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
           if (committedSubjects.length === 0) return null
 
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
@@ -494,15 +502,6 @@ export async function GET(req: Request) {
         }
       })
 
-      const parseCommittedSubjects = (note: string) => {
-        if (!note) return []
-        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
-        if (match && match[1]) {
-          return match[1].split(",").map((s: string) => s.trim())
-        }
-        return []
-      }
-
       const cleanString = (str: string) => {
         if (!str) return ""
         return str.toLowerCase()
@@ -522,7 +521,7 @@ export async function GET(req: Request) {
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote || "")
+          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
           if (committedSubjects.length === 0) return null
 
           // Determine if the teacher teaches any of the committed subjects in this student's class

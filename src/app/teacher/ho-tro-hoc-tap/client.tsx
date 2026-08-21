@@ -28,7 +28,7 @@ const getCompactScore = (val: any) => {
         const sum = parsed.reduce((a: number, b: number) => a + Number(b || 0), 0);
         return `${sum} (Tổng)`;
       }
-    } catch (e) {
+    } catch (e: any) {
       // Not a JSON array string
     }
     if (val.startsWith("[") && val.endsWith("]")) {
@@ -94,8 +94,8 @@ export function TeacherSupportClient({
 
   // Student Profile / Result Book Modal State
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
-  const [selectedProfileStudentId, setSelectedProfileStudentId] = useState(null)
-  const [profileData, setProfileData] = useState(null)
+  const [selectedProfileStudentId, setSelectedProfileStudentId] = useState<string | null>(null)
+  const [profileData, setProfileData] = useState<any>(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
   const [activeProfileTab, setActiveProfileTab] = useState("overview")
   const [proposeMonth, setProposeMonth] = useState("Tháng 9")
@@ -114,7 +114,7 @@ export function TeacherSupportClient({
       "Tháng 4": { month: 3, yearOffset: 1 },
       "Tháng 5": { month: 4, yearOffset: 1 },
     }
-    const info = monthMap[monthName] || { month: new Date().getMonth(), yearOffset: 0 }
+    const info = (monthMap as Record<string, any>)[monthName] || { month: new Date().getMonth(), yearOffset: 0 }
     return new Date(startYear + info.yearOffset, info.month, 1).toISOString()
   }
 
@@ -133,7 +133,7 @@ export function TeacherSupportClient({
         setProfileData(data)
       }
     } catch (e) {
-      toast.error("Lỗi kết nối khi tải hồ sơ: " + e.message)
+      toast.error("Lỗi kết nối khi tải hồ sơ: " + (e as any).message)
     } finally {
       setLoadingProfile(false)
     }
@@ -327,7 +327,7 @@ export function TeacherSupportClient({
     if (selectedStudentIds.length > 0 && commitmentCandidates.length > 0) {
       const selectedCommitments = commitmentCandidates.filter(c => selectedStudentIds.includes(c.id));
       const hasPsychCommitment = selectedCommitments.some(c => 
-        (c.matchedSubjects || []).some((s) => s.toLowerCase().includes("tâm lý"))
+        (c.matchedSubjects || []).some((s: any) => s.toLowerCase().includes("tâm lý"))
       );
       if (hasPsychCommitment) {
         setProposePsychological(true);
@@ -653,7 +653,7 @@ export function TeacherSupportClient({
   })
 
   const groupedHistoryTargets = (() => {
-    const groups = {};
+    const groups: Record<string, any> = {};
     historyTargets.forEach((t) => {
       const studentId = t.studentId;
       if (!groups[studentId]) {
@@ -704,107 +704,6 @@ export function TeacherSupportClient({
               </option>
             ))}
           </select>
-        </div>
-      </div>
-
-      {/* Introduction Card */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 shadow-xl text-white space-y-6">
-        {/* Glow Effects */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl -ml-20 -mb-20 pointer-events-none" />
-
-        <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 pb-6 border-b border-white/10">
-          <div className="flex items-start gap-4">
-            <div className="bg-gradient-to-tr from-indigo-500 to-purple-600 p-3 rounded-2xl shadow-lg shadow-indigo-500/20 text-white mt-1">
-              <Info className="h-6 w-6" />
-            </div>
-            <div>
-              <span className="text-[10px] font-black tracking-widest text-indigo-400 uppercase">Cẩm nang hướng dẫn</span>
-              <h2 className="text-xl md:text-2xl font-black text-white mt-0.5 tracking-tight">
-                Phụ đạo & Bồi dưỡng Học sinh
-              </h2>
-              <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
-                Hệ thống đề xuất, tổ chức học tập chuyên biệt và theo dõi sát sao tiến độ phát triển tâm lý, văn học của học sinh tại các cơ sở.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Cột 1: Hỗ trợ Tâm lý */}
-          <div className="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-indigo-500/30 rounded-2xl p-5 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-indigo-500/20 p-2 rounded-xl text-indigo-400">
-                <Heart className="h-5 w-5" />
-              </div>
-              <h3 className="text-sm font-extrabold text-indigo-300 uppercase tracking-wider">
-                Đề xuất Hỗ trợ Tâm lý
-              </h3>
-            </div>
-            <ul className="text-xs text-slate-350 space-y-3 pl-1 leading-relaxed">
-              <li className="flex items-start gap-2.5">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                <span><strong>Đơn vị đề xuất:</strong> GVCN và Giáo viên Tâm lý chủ động đề xuất học sinh cần hỗ trợ hoặc tiếp tục theo dõi tâm lý sát sao.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
-                <span><strong>Quy trình hỗ trợ:</strong> Giáo viên Tâm lý thực hiện hỗ trợ chuyên sâu, cập nhật diễn biến và đánh giá kết quả định kỳ <strong>hằng tuần</strong>.</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Cột 2: Hỗ trợ Học tập */}
-          <div className="group relative overflow-hidden bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-emerald-500/30 rounded-2xl p-5 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none" />
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-emerald-500/20 p-2 rounded-xl text-emerald-400">
-                <GraduationCap className="h-5 w-5" />
-              </div>
-              <h3 className="text-sm font-extrabold text-emerald-300 uppercase tracking-wider">
-                Đề xuất Hỗ trợ Học tập
-              </h3>
-            </div>
-            <ul className="text-xs text-slate-350 space-y-3 pl-1 leading-relaxed">
-              <li className="flex items-start gap-2.5">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                <span><strong>Đơn vị đề xuất:</strong> Giáo viên Bộ môn (GVBM) đề xuất học sinh cần phụ đạo, bồi dưỡng học tập theo từng môn học được phân công.</span>
-              </li>
-              <li className="flex items-start gap-2.5">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                <span><strong>Quy trình hỗ trợ:</strong> GVBM trực tiếp xây dựng nội dung hỗ trợ, theo dõi mức độ tiến bộ và đánh giá kết quả định kỳ <strong>hằng tháng</strong>.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Quy trình quản lý chung */}
-        <div className="relative bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-3">
-          <div className="flex items-center gap-2">
-            <Award className="h-4.5 w-4.5 text-amber-400" />
-            <h4 className="text-xs font-black text-amber-300 uppercase tracking-widest">
-              Quy trình quản lý chung
-            </h4>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs pt-1">
-            {[
-              { label: "Đề xuất", bg: "bg-slate-800 text-slate-200 border-slate-700" },
-              { label: "Xác nhận nhu cầu", bg: "bg-indigo-950/80 text-indigo-300 border-indigo-900/50" },
-              { label: "Phân công hỗ trợ", bg: "bg-emerald-950/80 text-emerald-300 border-emerald-900/50" },
-              { label: "Theo dõi định kỳ", bg: "bg-amber-950/80 text-amber-300 border-amber-900/50" },
-              { label: "Đánh giá tiến bộ", bg: "bg-blue-950/80 text-blue-300 border-blue-900/50" },
-              { label: "Tiếp tục / Kết thúc hỗ trợ", bg: "bg-white text-slate-900 border-white font-black shadow-lg shadow-white/5" }
-            ].map((step, idx, arr) => (
-              <div key={idx} className="flex items-center gap-2 my-1">
-                <span className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${step.bg} shadow-xs`}>
-                  {step.label}
-                </span>
-                {idx < arr.length - 1 && (
-                  <span className="text-slate-650 font-black text-sm">➔</span>
-                )}
-              </div>
-            ))}
-          </div>
         </div>
       </div>
 
@@ -1107,7 +1006,7 @@ export function TeacherSupportClient({
                           <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
                             t.supportType === "ACADEMIC" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-purple-50 text-purple-700 border-purple-200"
                           }`}>
-                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ") : "Tâm lý học đường"}
+                            {t.supportType === "ACADEMIC" ? Array.from(new Set((t.reason || "").split(",").map((s: any) => s.trim()).filter(Boolean))).join(", ") : "Tâm lý học đường"}
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
@@ -1494,7 +1393,7 @@ export function TeacherSupportClient({
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col gap-2.5">
                           {group.targets.map((t: any) => {
-                            const cleanedReason = Array.from(new Set((t.reason || "").split(",").map(s => s.trim()).filter(Boolean))).join(", ");
+                            const cleanedReason = Array.from(new Set((t.reason || "").split(",").map((s: any) => s.trim()).filter(Boolean))).join(", ");
                             return (
                               <div key={t.id} className="h-6 flex items-center text-slate-700 font-semibold text-xs">
                                 {cleanedReason || "N/A"}
@@ -1879,7 +1778,7 @@ export function TeacherSupportClient({
                           !(sub?.subjectName || sub?.name || "").toLowerCase().includes("tâm lý")
                         ) || false
                         const canProposePsych = proposeClassId && (isHomeroom || teachesPsychology)
-                        const canProposeAcademic = proposeClassId && !isHomeroom && teachesAcademic
+                        const canProposeAcademic = proposeClassId && (teachesAcademic || !isHomeroom)
 
                         return (
                           <>
@@ -1930,42 +1829,53 @@ export function TeacherSupportClient({
                     <div className="space-y-1.5">
                       <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Môn học cần bồi dưỡng:</label>
                       <div className="border border-slate-100 rounded-xl max-h-36 overflow-y-auto p-2 space-y-1 bg-slate-50/50">
-                        {subjects.filter((sub: any) => !(sub.subjectName || sub.name || "").toLowerCase().includes("tâm lý")).map((sub: any) => {
-                          const name = sub.subjectName || sub.name
-                          const isChecked = selectedSubjects.includes(name)
+                        {((): any => {
                           const selClassObj = assignedClasses.find(c => c.id === proposeClassId)
-                          const isTeacherSubject = selClassObj?.subjects?.some((s: any) => (s.subjectName || s.name) === name)
-
-                          return (
-                            <label 
-                              key={sub.id} 
-                              className={`flex items-center gap-2 text-xs font-semibold p-1.5 rounded-lg transition-all cursor-pointer ${
-                                isChecked 
-                                  ? "bg-indigo-50 text-indigo-900 font-bold" 
-                                  : "text-slate-700 hover:bg-white"
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => {
-                                  if (isChecked) {
-                                    setSelectedSubjects(selectedSubjects.filter(s => s !== name))
-                                  } else {
-                                    setSelectedSubjects([...selectedSubjects, name])
-                                  }
-                                }}
-                                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
-                              />
-                              <span className="flex-1 min-w-0 flex items-center justify-between">
-                                <span>{name}</span>
-                                {isTeacherSubject && (
-                                  <span className="text-[9px] bg-indigo-100 text-indigo-700 font-black px-1.5 py-0.5 rounded-md shrink-0">Môn giảng dạy</span>
-                                )}
-                              </span>
-                            </label>
+                          const assignedSubs = (selClassObj?.subjects || []).filter(
+                            (sub: any) => !(sub.subjectName || sub.name || "").toLowerCase().includes("tâm lý")
                           )
-                        })}
+
+                          if (assignedSubs.length === 0) {
+                            return (
+                              <div className="p-3 text-xs text-amber-700 bg-amber-50 rounded-lg border border-amber-200 font-medium">
+                                Giáo viên chưa được phân công giảng dạy môn văn hóa nào tại lớp này.
+                              </div>
+                            )
+                          }
+
+                          return assignedSubs.map((sub: any) => {
+                            const name = sub.subjectName || sub.name
+                            const isChecked = selectedSubjects.includes(name)
+
+                            return (
+                              <label 
+                                key={sub.id || name} 
+                                className={`flex items-center gap-2 text-xs font-semibold p-1.5 rounded-lg transition-all cursor-pointer ${
+                                  isChecked 
+                                    ? "bg-indigo-50 text-indigo-900 font-bold" 
+                                    : "text-slate-700 hover:bg-white"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setSelectedSubjects(selectedSubjects.filter(s => s !== name))
+                                    } else {
+                                      setSelectedSubjects([...selectedSubjects, name])
+                                    }
+                                  }}
+                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                                />
+                                <span className="flex-1 min-w-0 flex items-center justify-between">
+                                  <span>{name}</span>
+                                  <span className="text-[9px] bg-indigo-100 text-indigo-700 font-black px-1.5 py-0.5 rounded-md shrink-0">Môn giảng dạy</span>
+                                </span>
+                              </label>
+                            )
+                          })
+                        })()}
                       </div>
                     </div>
                   )}
@@ -2443,7 +2353,7 @@ export function TeacherSupportClient({
                               <div className="space-y-2 mt-4">
                                 <span className="text-xs text-slate-500 font-bold block">Chi tiết khảo sát môn chuyên biệt:</span>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  {entrance.scores.map((s, i) => (
+                                  {entrance.scores.map((s: any, i: number) => (
                                     <div key={i} className="border border-slate-100 rounded-xl p-3 bg-slate-50/50 flex justify-between items-center text-xs">
                                       <span className="font-bold text-slate-700">{s.subjectName}</span>
                                       <span className="font-black text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md">
@@ -2463,17 +2373,17 @@ export function TeacherSupportClient({
                               </div>
                               <div className="flex flex-wrap gap-2">
                                 {(() => {
-                                  const parseCommittedSubjects = (note) => {
+                                  const parseCommittedSubjects = (note: any, resultStr?: any) => {
                                     if (!note) return []
                                     const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
                                     if (match && match[1]) {
-                                      return match[1].split(",").map((s) => s.trim())
+                                      return match[1].split(",").map((s: any) => s.trim())
                                     }
                                     return []
                                   }
                                   const committed = parseCommittedSubjects(entrance.directorNote || "");
                                   if (committed.length === 0) return <span className="text-xs text-slate-500 font-semibold italic">Không có môn cam kết nào được ghi nhận</span>;
-                                  return committed.map((c, idx) => (
+                                  return committed.map((c: any, idx: number) => (
                                     <span key={idx} className="bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold px-3 py-1 rounded-lg">
                                       {c}
                                     </span>
@@ -2532,7 +2442,7 @@ export function TeacherSupportClient({
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-200 bg-white">
-                                      {entrance.scores.map((s, idx) => (
+                                      {entrance.scores.map((s: any, idx: number) => (
                                         <tr key={idx} className="hover:bg-slate-50/50">
                                           <td className="px-4 py-2 font-bold text-slate-700 whitespace-nowrap">{s.areaName}</td>
                                           <td className="px-4 py-2 text-slate-600 font-medium">{s.criterionName}</td>
@@ -2570,14 +2480,14 @@ export function TeacherSupportClient({
                             Chưa có chương trình bồi dưỡng phụ đạo nào được phê duyệt cho học sinh này trong năm học hiện tại.
                           </div>
                         ) : (
-                          supportTargets.map((target, tIdx) => {
+                          supportTargets.map((target: any, tIdx: number) => {
                             const evals = target.evaluations || [];
                             const sorted = [...evals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                             const proposerName = target.createdBy?.teacherName || "KTDBCL/BGH";
                             const supportTypeLabel = target.supportType === "ACADEMIC" ? "Bồi dưỡng Văn hóa" : "Hỗ trợ Tâm lý";
                             const statusColor = target.terminationStatus === "TERMINATED" ? "bg-emerald-100 text-emerald-800" : target.terminationStatus === "PENDING_TERMINATION" ? "bg-amber-100 text-amber-800" : "bg-indigo-100 text-indigo-800";
                             const statusText = target.terminationStatus === "TERMINATED" ? "Hoàn thành bồi dưỡng" : target.terminationStatus === "PENDING_TERMINATION" ? "Chờ duyệt kết thúc" : "Đang bồi dưỡng";
-                            const cleanedReason = Array.from(new Set((target.reason || "").split(",").map(x => x.trim()).filter(Boolean))).join(", ");
+                            const cleanedReason = Array.from(new Set((target.reason || "").split(",").map((x: any) => x.trim()).filter(Boolean))).join(", ");
 
                             return (
                               <div key={target.id} className={`bg-white rounded-2xl border p-5 shadow-xs space-y-4 ${tIdx > 0 ? "print-page-break" : ""}`}>
@@ -2671,7 +2581,7 @@ export function TeacherSupportClient({
                             <p className="text-xs text-slate-400 italic py-2 text-center font-semibold">Chưa có bản ghi thành tích nào được lập trong năm học</p>
                           ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                              {achievements.map((a) => (
+                              {achievements.map((a: any) => (
                                 <div key={a.id} className="border border-slate-100 p-3.5 rounded-xl bg-slate-50/50 flex flex-col gap-1 text-xs">
                                   <strong className="text-slate-800 text-sm font-black">{a.achievement?.title || "Khen tặng học tập"}</strong>
                                   <span className="text-[10px] text-slate-400 font-bold">{a.achievement?.date ? new Date(a.achievement.date).toLocaleDateString("vi-VN") : "Học kỳ"}</span>
@@ -2692,7 +2602,7 @@ export function TeacherSupportClient({
                             <p className="text-xs text-slate-400 italic py-2 text-center font-semibold">Chưa có nhận xét nổi bật đặc biệt nào được ghi nhận</p>
                           ) : (
                             <div className="space-y-3">
-                              {highlights.map((h) => (
+                              {highlights.map((h: any) => (
                                 <div key={h.id} className="border border-slate-100 p-3.5 rounded-xl bg-slate-50/50 flex flex-col gap-1.5 text-xs">
                                   <div className="flex justify-between items-center flex-wrap gap-2">
                                     <span className="font-bold text-slate-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
