@@ -545,20 +545,21 @@ export async function POST(req: Request) {
             }
           })
           if (teacher) {
-            await prisma.learningSupportAssignment.upsert({
+            const existingAssign = await prisma.learningSupportAssignment.findFirst({
               where: {
-                targetId_teacherId: {
-                  targetId: updated.id,
-                  teacherId: teacher.id
-                }
-              },
-              create: {
                 targetId: updated.id,
-                teacherId: teacher.id,
-                assignedRole: supportType === "ACADEMIC" ? "GVBM" : "TAM_LY"
-              },
-              update: {}
+                teacherId: teacher.id
+              }
             })
+            if (!existingAssign) {
+              await prisma.learningSupportAssignment.create({
+                data: {
+                  targetId: updated.id,
+                  teacherId: teacher.id,
+                  academicYearId: academicYearId || updated.academicYearId
+                }
+              })
+            }
           }
           return NextResponse.json(updated)
         }
@@ -578,20 +579,21 @@ export async function POST(req: Request) {
           }
         })
         if (teacher) {
-          await prisma.learningSupportAssignment.upsert({
+          const existingAssign = await prisma.learningSupportAssignment.findFirst({
             where: {
-              targetId_teacherId: {
-                targetId: created.id,
-                teacherId: teacher.id
-              }
-            },
-            create: {
               targetId: created.id,
-              teacherId: teacher.id,
-              assignedRole: supportType === "ACADEMIC" ? "GVBM" : "TAM_LY"
-            },
-            update: {}
+              teacherId: teacher.id
+            }
           })
+          if (!existingAssign) {
+            await prisma.learningSupportAssignment.create({
+              data: {
+                targetId: created.id,
+                teacherId: teacher.id,
+                academicYearId: academicYearId || created.academicYearId
+              }
+            })
+          }
         }
         return NextResponse.json(created)
       }
