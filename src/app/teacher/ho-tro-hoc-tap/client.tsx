@@ -721,7 +721,7 @@ export function TeacherSupportClient({
       const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"))
       const isCreatedByMe = t.createdById === teacher?.id
       const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher?.id)
-      const isHomeroomStudent = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId))
+      const isHomeroomStudent = homeroomClasses.some(c => c.students?.some((s: any) => s.id === t.studentId))
       const isClassTeacher = assignedClasses.some((c: any) => c.id === t.student?.classId)
 
       // Rule: MUST be either:
@@ -768,7 +768,7 @@ export function TeacherSupportClient({
   // Filter students related to this teacher - ONLY 2 SOURCES: CKĐV & BSTD
   const summaryEvaluations = useMemo(() => {
     const list: any[] = [];
-    filteredTargets.forEach((t: any) => {
+    (filteredTargets || []).forEach((t: any) => {
       const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
       const evals = t.evaluations || [];
       evals.forEach((ev: any) => {
@@ -875,7 +875,7 @@ export function TeacherSupportClient({
       {/* Statistical Dashboard Cards */}
       {activeSubTab === "assigned" && (() => {
         const teacherTargets = targets.filter(t => {
-          const isHR = homeroomClasses.some(c => c.students.some((s: any) => s.id === t.studentId));
+          const isHR = homeroomClasses.some(c => c.students?.some((s: any) => s.id === t.studentId));
           const isAS = t.assignments?.some((a: any) => a.teacherId === teacher?.id);
           return isHR || isAS;
         });
@@ -1345,7 +1345,7 @@ export function TeacherSupportClient({
                 }
 
                 return filtered.map((s: any, index: number) => {
-                  const hasPsychology = s.committedSubjects.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
+                  const hasPsychology = (s.committedSubjects || []).some((sub: string) => sub.toLowerCase().includes("tâm lý"))
                   const existingTarget = targets.find(t => 
                     t.studentId === s.id && 
                     (hasPsychology ? t.supportType === "PSYCHOLOGICAL" : t.supportType === "ACADEMIC")
