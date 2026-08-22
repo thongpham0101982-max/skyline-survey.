@@ -514,51 +514,90 @@ export async function GET(req: any) {
 
         let remedialStudentsCount = 0;
         if (teacher) {
-            const supportTargets = await prisma.learningSupportTarget.findMany({
-                where: {
-                    ...(academicYearId ? { academicYearId } : {}),
-                    OR: [
-                        { createdById: teacher.id },
-                        { assignments: { some: { teacherId: teacher.id } } },
-                        { sourceType: "ADMISSION" }
-                    ]
-                },
+            let targetYearId = academicYearId;
+            if (!targetYearId) {
+                const activeYear = await prisma.academicYear.findFirst({
+                    where: { isCurrent: true }
+                }) || await prisma.academicYear.findFirst({
+                    orderBy: { startDate: 'desc' }
+                });
+                if (activeYear) targetYearId = activeYear.id;
+            }
+
+            const [teachingAssignments, homeroomClasses] = await Promise.all([
+                prisma.teachingAssignment.findMany({
+                    where: {
+                        teacherId: teacher.id,
+                        ...(targetYearId ? { academicYearId: targetYearId } : {})
+                    },
+                    select: { classId: true }
+                }),
+                prisma.class.findMany({
+                    where: {
+                        ...(targetYearId ? { academicYearId: targetYearId } : {}),
+                        OR: [
+                            { homeroomTeacherId: teacher.id },
+                            { homeroomTeacherId: { contains: teacher.id } }
+                        ]
+                    },
+                    include: {
+                        students: { select: { id: true } }
+                    }
+                })
+            ]);
+
+            const teacherClassIds = Array.from(new Set([
+                ...teachingAssignments.map((a: any) => a.classId),
+                ...homeroomClasses.map((c: any) => c.id)
+            ]));
+
+            const homeroomStudentIds = new Set(
+                homeroomClasses.flatMap(c => (c.students || []).map((s: any) => s.id))
+            );
+
+            const whereClause: any = {
+                ...(targetYearId ? { academicYearId: targetYearId } : {})
+            };
+
+            const orConditions: any[] = [
+                { createdById: teacher.id },
+                { assignments: { some: { teacherId: teacher.id } } }
+            ];
+            if (teacherClassIds.length > 0) {
+                orConditions.push({ student: { classId: { in: teacherClassIds } } });
+            }
+            whereClause.OR = orConditions;
+
+            const targets = await prisma.learningSupportTarget.findMany({
+                where: whereClause,
                 include: {
-                    student: { select: { id: true, classId: true } },
-                    assignments: true
+                    assignments: true,
+                    student: { select: { id: true, classId: true } }
                 }
             });
 
-            const assignedClassIds = (await prisma.classSubjectTeacherAssignment.findMany({
-                where: { teacherId: teacher.id },
-                select: { classId: true }
-            })).map(a => a.classId);
-
-            const homeroomClassIds = (await prisma.class.findMany({
-                where: {
-                    OR: [
-                        { homeroomTeacherId: teacher.id },
-                        { homeroomTeacherId: { contains: teacher.id } }
-                    ]
-                },
-                select: { id: true }
-            })).map(c => c.id);
-
-            const allTeacherClassIds = new Set([...assignedClassIds, ...homeroomClassIds]);
-
-            const teacherTargets = supportTargets.filter(t => {
-                const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+            const seenKeys = new Set<string>();
+            const filteredTargets = targets.filter(t => {
+                const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
                 const isCreatedByMe = t.createdById === teacher.id;
                 const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher.id);
-                const inMyClass = t.student?.classId ? allTeacherClassIds.has(t.student.classId) : false;
+                const isHomeroomStudent = homeroomStudentIds.has(t.studentId);
+                const isClassTeacher = teacherClassIds.includes(t.student?.classId);
 
-                const isCKDV = isCommitment && inMyClass;
-                const isBSTD = !isCommitment && (isCreatedByMe || isAssignedToMe);
+                const isCKDV = isCommitmentTarget && (isHomeroomStudent || isClassTeacher);
+                const isBSTD = !isCommitmentTarget && (isCreatedByMe || isAssignedToMe);
 
-                return isCKDV || isBSTD;
+                if (!isCKDV && !isBSTD) return false;
+
+                const targetCategory = isCommitmentTarget ? "CKDV" : "BSTD";
+                const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}`;
+                if (seenKeys.has(dedupeKey)) return false;
+                seenKeys.add(dedupeKey);
+
+                return true;
             });
 
-            const uniqueStudentIds = new Set(teacherTargets.map(t => t.studentId));
+            const uniqueStudentIds = new Set(filteredTargets.map(t => t.studentId));
             remedialStudentsCount = uniqueStudentIds.size;
         }
         

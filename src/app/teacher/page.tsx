@@ -31,7 +31,7 @@ export default function TeacherDashboard() {
     async function fetchMetrics() {
       try {
         setLoading(true)
-        const yearId = typeof window !== "undefined" ? localStorage.getItem("selectedAcademicYear") || "" : ""
+        const yearId = typeof window !== "undefined" ? (localStorage.getItem("academicYearId") || localStorage.getItem("selectedAcademicYear") || "") : ""
         const r = await fetch("/api/teacher-assessments?action=getDashboardMetrics&academicYearId=" + yearId)
         if (r.ok) {
           setMetrics(await r.json())
