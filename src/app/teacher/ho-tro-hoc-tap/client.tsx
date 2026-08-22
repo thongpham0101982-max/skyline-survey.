@@ -59,6 +59,7 @@ export function TeacherSupportClient({
   const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history">("commitments")
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
   const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
+  const [selectedCommitmentStudentIds, setSelectedCommitmentStudentIds] = useState<string[]>([])
 
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
@@ -480,6 +481,63 @@ export function TeacherSupportClient({
       await fetchEntranceCommitments()
     } catch (e) {
       toast.error("Gửi đề xuất bồi dưỡng học sinh thất bại")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Bulk Add Commitments To Tracking
+  const handleBulkAddCommitmentsToTracking = async () => {
+    if (selectedCommitmentStudentIds.length === 0) return
+    setLoading(true)
+    let addedCount = 0
+    try {
+      const selectedStudents = entranceCommitmentStudents.filter(s => selectedCommitmentStudentIds.includes(s.id))
+      for (const s of selectedStudents) {
+        const activeSubs = s.matchedSubjects?.length > 0 
+          ? s.matchedSubjects 
+          : (s.committedSubjects || ["Văn hóa"])
+        const isPsych = activeSubs.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
+        const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC"
+        const sourceType = isPsych ? "TAM_LY" : "ADMISSION"
+
+        const scoreDetails = (s.committedSubjects || []).map((sub: string) => {
+          let scoreDisplay = "Chưa có";
+          const subLower = sub.toLowerCase();
+          if (subLower.includes("toán")) {
+            if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
+          } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+            if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
+          } else if (subLower.includes("tâm lý")) {
+            if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
+          }
+          return `${sub}: ${scoreDisplay}`;
+        }).join(", ");
+
+        await fetch("/api/ktdbcl/support", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "saveTarget",
+            academicYearId: selectedYearId,
+            studentId: s.id,
+            supportType,
+            sourceType,
+            reason: activeSubs.join(", "),
+            notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${(s.committedSubjects || []).join(", ")} tại kỳ khảo sát đầu vào. ${scoreDetails ? "Điểm KS: " + scoreDetails : ""}`,
+            status: "TIẾP TỤC THEO TUẦN"
+          })
+        })
+        addedCount++
+      }
+
+      toast.success(`Thêm thành công ${addedCount} học sinh vào 2. Sổ theo dõi đánh giá`)
+      setSelectedCommitmentStudentIds([])
+      setActiveSubTab("assigned")
+      await fetchTeacherData()
+      await fetchEntranceCommitments()
+    } catch (e: any) {
+      toast.error("Thêm vào Sổ theo dõi thất bại")
     } finally {
       setLoading(false)
     }
@@ -1147,10 +1205,32 @@ export function TeacherSupportClient({
           </div>
         </div>
       ) : activeSubTab === "commitments" ? (
-        <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <button
+              disabled={selectedCommitmentStudentIds.length === 0}
+              onClick={handleBulkAddCommitmentsToTracking}
+              className="bg-[#48BFE3] disabled:bg-slate-300 hover:bg-[#009085] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all cursor-pointer inline-flex items-center gap-1.5"
+            >
+              <Plus className="h-4 w-4" />
+              Thêm vào Sổ theo dõi {selectedCommitmentStudentIds.length > 0 ? `(${selectedCommitmentStudentIds.length})` : ""}
+            </button>
+          </div>
+          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
+                <th className="px-4 py-3 w-10 text-center">
+                  <input 
+                    type="checkbox" 
+                    checked={entranceCommitmentStudents.length > 0 && entranceCommitmentStudents.every(s => selectedCommitmentStudentIds.includes(s.id))} 
+                    onChange={e => {
+                      if (e.target.checked) setSelectedCommitmentStudentIds(entranceCommitmentStudents.map(s => s.id));
+                      else setSelectedCommitmentStudentIds([]);
+                    }}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                </th>
                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
@@ -1165,13 +1245,13 @@ export function TeacherSupportClient({
             <tbody className="divide-y divide-slate-200 text-sm">
               {loadingEntranceCommitments ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-400">
+                  <td colSpan={9} className="text-center py-10 text-slate-400">
                     <RefreshCw className="h-6 w-6 animate-spin inline-block mr-2 text-indigo-600" /> Đang tải danh sách học sinh cam kết đầu vào...
                   </td>
                 </tr>
               ) : entranceCommitmentStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-slate-400 font-medium">
+                  <td colSpan={9} className="text-center py-10 text-slate-400 font-medium">
                     Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
                   </td>
                 </tr>
@@ -1186,7 +1266,7 @@ export function TeacherSupportClient({
                 if (filtered.length === 0) {
                   return (
                     <tr>
-                      <td colSpan={8} className="text-center py-10 text-slate-400">
+                      <td colSpan={9} className="text-center py-10 text-slate-400">
                         Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
                       </td>
                     </tr>
@@ -1231,6 +1311,17 @@ export function TeacherSupportClient({
 
                   return (
                     <tr key={s.id} className="hover:bg-slate-50/50">
+                      <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedCommitmentStudentIds.includes(s.id)} 
+                          onChange={e => {
+                            if (e.target.checked) setSelectedCommitmentStudentIds([...selectedCommitmentStudentIds, s.id]);
+                            else setSelectedCommitmentStudentIds(selectedCommitmentStudentIds.filter(id => id !== s.id));
+                          }}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-500">
                         {index + 1}
                       </td>
@@ -1390,6 +1481,7 @@ export function TeacherSupportClient({
             </tbody>
           </table>
         </div>
+      </div>
       ) : (
         <>
           {approvedHistoryCount > 0 && (
