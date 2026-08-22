@@ -131,40 +131,227 @@ export async function GET(req: Request) {
         }
       });
 
-      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
-        const text = `${note || ""} ${resultStr || ""}`.trim();
-        if (!text) return [];
-        let rawSubs: string[] = [];
-        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i);
+      const parseCommittedSubjects = (note: any) => {
+        if (!note) return []
+        const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
         if (match && match[1]) {
-          rawSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+          return match[1].split(",").map((s: any) => s.trim())
+        }
+        return []
+      }
+
+      const cleanString = (str: any) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
+      const targetsWithCommitment = targets.map((t) => {
+        const assessment = inputAssessments.find((a) => {
+          if (a.studentCode === t.student?.studentCode || a.enrollmentCode === t.student?.studentCode) {
+            return true;
+          }
+          return cleanString(a.fullName) === cleanString(t.student?.studentName);
+        });
+
+        const committedSubjects = assessment ? parseCommittedSubjects(assessment.directorNote || "") : [];
+
+        return {
+          ...t,
+          commitmentSubjects: committedSubjects,
+          commitmentNote: committedSubjects.length > 0 
+            ? committedSubjects.join(", ") 
+            : ""
+        };
+      });
+
+      return NextResponse.json(targetsWithCommitment)
+    }
+
+    // 3. Action: getAssignments
+    if (action === "getAssignments") {
+      const assignments = await prisma.learningSupportAssignment.findMany({
+        where: { academicYearId },
+        include: {
+          teacher: { select: { id: true, teacherName: true } },
+          target: {
+            include: {
+              student: { select: { id: true, studentName: true, studentCode: true } }
+            }
+          },
+          subject: { select: { id: true, subjectName: true } }
+        }
+      })
+      return NextResponse.json(assignments)
+    }
+
+    // 4. Action: getClassSyncCandidates
+    if (action === "getClassSyncCandidates") {
+      const classId = searchParams.get("classId")
+      if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
+
+      // Fetch all students in the class
+      const students = await prisma.student.findMany({
+        where: { classId },
+        select: {
+          id: true,
+          studentName: true,
+          studentCode: true,
+          gender: true
+        }
+      })
+
+      // Fetch input assessments for these students
+      const studentCodes = students.map(s => s.studentCode)
+      const inputAssessments = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          studentCode: { in: studentCodes }
+        }
+      })
+
+      // Map candidates
+      const candidates = students.map(s => {
+        const assessment = inputAssessments.find(a => a.studentCode === s.studentCode)
+        return {
+          id: s.id,
+          studentName: s.studentName,
+          studentCode: s.studentCode,
+          gender: s.gender,
+          mathScore: (assessment as any)?.mathScore || null,
+          literatureScore: (assessment as any)?.literatureScore || null,
+          englishScore: (assessment as any)?.englishScore || null,
+          mathTarget: (assessment as any)?.mathTarget || false,
+          literatureTarget: (assessment as any)?.literatureTarget || false,
+          englishTarget: (assessment as any)?.englishTarget || false,
+          psychologyTarget: (assessment as any)?.psychologyTarget || false,
+          notes: (assessment as any)?.note || ""
+        }
+      }).filter(c => c.mathTarget || c.literatureTarget || c.englishTarget || c.psychologyTarget)
+
+      return NextResponse.json(candidates)
+    }
+
+   // 4.5. Action: getCommitmentCandidates
+    if (action === "getCommitmentCandidates") {
+      const periods = await prisma.inputAssessmentPeriod.findMany({
+        where: { academicYearId },
+        select: { id: true }
+      })
+      const periodIds = periods.map(p => p.id)
+
+      const inputStudents = await prisma.inputAssessmentStudent.findMany({
+        where: {
+          periodId: { in: periodIds },
+          OR: [
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
+            { directorNote: { contains: "Cam kết" } }
+          ]
+        },
+        include: {
+          enrollmentClass: {
+            include: {
+              campus: true
+            }
+          }
+        }
+      })
+
+      const preschoolStudents = await prisma.preschoolInputAssessmentStudent.findMany({
+        where: {
+          periodId: { in: periodIds },
+          OR: [
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
+            { directorNote: { contains: "Cam kết" } }
+          ]
+        },
+        include: {
+          enrollmentClass: {
+            include: {
+              campus: true
+            }
+          }
+        }
+      })
+
+      const allStudentCodes = [
+        ...inputStudents.map(s => s.studentCode),
+        ...preschoolStudents.map(s => s.studentCode)
+      ].filter(Boolean)
+
+      const allFullNames = [
+        ...inputStudents.map(s => s.fullName),
+        ...preschoolStudents.map(s => s.fullName)
+      ].filter(Boolean)
+
+      const systemStudents = await prisma.student.findMany({
+        where: {
+          OR: [
+            { studentCode: { in: allStudentCodes } },
+            { studentName: { in: allFullNames } }
+          ],
+          academicYearId
+        },
+        include: {
+          class: {
+            include: {
+              campus: true
+            }
+          }
+        }
+      })
+
+      const cleanString = (str: string | null | undefined) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/\s+/g, "")
+      }
+
+      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
+        const text = `${note || ""} ${resultStr || ""}`.trim()
+        if (!text) return []
+        let rawSubs: string[] = []
+        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i)
+        if (match && match[1]) {
+          rawSubs = match[1].split(/[,;]/).map((s: any) => s.trim()).filter(Boolean)
         }
         if (rawSubs.length === 0) {
-          if (/Toán|Math/i.test(text)) rawSubs.push("Toán");
-          if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(text)) rawSubs.push("Tiếng Việt");
-          if (/Ngữ văn|Literature|Văn/i.test(text) && !/Tiếng Việt/i.test(text)) rawSubs.push("Ngữ Văn");
-          if (/Anh|English|ESL/i.test(text)) rawSubs.push("Tiếng Anh");
-          if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý");
+          if (/Toán|Math/i.test(text)) rawSubs.push("Toán")
+          if (/TN-XH|Tự nhiên|Tiếng Việt/i.test(text)) rawSubs.push("Tiếng Việt")
+          if (/Ngữ văn|Literature|Văn/i.test(text) && !/Tiếng Việt/i.test(text)) rawSubs.push("Ngữ Văn")
+          if (/Anh|English|ESL/i.test(text)) rawSubs.push("Tiếng Anh")
+          if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý")
         }
-        const finalSubs: string[] = [];
-        rawSubs.forEach((s) => {
-          const clean = s.trim();
-          const lower = clean.toLowerCase();
+        const finalSubs: string[] = []
+        rawSubs.forEach((s: string) => {
+          const clean = s.trim()
+          const lower = clean.toLowerCase()
           if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
-            if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh");
+            if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh")
           } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
-            if (!finalSubs.includes("Toán")) finalSubs.push("Toán");
+            if (!finalSubs.includes("Toán")) finalSubs.push("Toán")
           } else if (lower.includes("tiếng việt") || lower.includes("tieng viet")) {
-            if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt");
+            if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
           } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
-            if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn");
+            if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
           } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
-            if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý");
+            if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
           } else {
-            if (!finalSubs.includes(clean)) finalSubs.push(clean);
+            if (!finalSubs.includes(clean)) finalSubs.push(clean)
           }
-        });
-        return finalSubs;
+        })
+        return finalSubs
       }
 
       const result = [
