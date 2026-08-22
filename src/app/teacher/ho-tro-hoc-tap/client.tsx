@@ -713,33 +713,7 @@ export function TeacherSupportClient({
     }
   }
 
-  // Filter students related to this teacher - ONLY 2 SOURCES: CKĐV & BSTD
-  const summaryEvaluations = useMemo(() => {
-    const list: any[] = [];
-    filteredTargets.forEach((t: any) => {
-      const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
-      const evals = t.evaluations || [];
-      evals.forEach((ev: any) => {
-        list.push({
-          evalId: ev.id,
-          targetId: t.id,
-          studentId: t.studentId,
-          studentCode: t.student?.studentCode || t.student?.code || "N/A",
-          studentName: t.student?.studentName || t.student?.fullName || "N/A",
-          className: t.student?.class?.className || t.student?.className || "N/A",
-          category: isCommitment ? "CKĐV" : "BSTD",
-          periodName: ev.periodName || (ev.periodType === "MONTH" ? "Tháng" : "Tuần"),
-          periodType: ev.periodType,
-          trackingLevel: ev.trackingLevel || "N/A",
-          comment: ev.comment || "Không có nhận xét",
-          updatedStatus: ev.updatedStatus || "Tiếp tục theo dõi",
-          createdAt: ev.createdAt,
-          evaluatorName: ev.evaluator?.name || teacher?.name || "Giáo viên"
-        });
-      });
-    });
-    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [filteredTargets, teacher]);
+
 
   const filteredTargets = useMemo(() => {
     const seenKeys = new Set<string>()
@@ -790,6 +764,34 @@ export function TeacherSupportClient({
       return matchesSearch
     })
   }, [targets, teacher?.id, homeroomClasses, assignedClasses, roleFilter, monthFilter, levelFilter, searchQuery])
+
+  // Filter students related to this teacher - ONLY 2 SOURCES: CKĐV & BSTD
+  const summaryEvaluations = useMemo(() => {
+    const list: any[] = [];
+    filteredTargets.forEach((t: any) => {
+      const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+      const evals = t.evaluations || [];
+      evals.forEach((ev: any) => {
+        list.push({
+          evalId: ev.id,
+          targetId: t.id,
+          studentId: t.studentId,
+          studentCode: t.student?.studentCode || t.student?.code || "N/A",
+          studentName: t.student?.studentName || t.student?.fullName || "N/A",
+          className: t.student?.class?.className || t.student?.className || "N/A",
+          category: isCommitment ? "CKĐV" : "BSTD",
+          periodName: ev.periodName || (ev.periodType === "MONTH" ? "Tháng" : "Tuần"),
+          periodType: ev.periodType,
+          trackingLevel: ev.trackingLevel || "N/A",
+          comment: ev.comment || "Không có nhận xét",
+          updatedStatus: ev.updatedStatus || "Tiếp tục theo dõi",
+          createdAt: ev.createdAt,
+          evaluatorName: ev.evaluator?.name || teacher?.name || "Giáo viên"
+        });
+      });
+    });
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [filteredTargets, teacher]);
 
   // Count approved proposals submitted by this teacher
   const approvedHistoryCount = useMemo(() => {
