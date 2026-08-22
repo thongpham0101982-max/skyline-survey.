@@ -960,55 +960,7 @@ export function TeacherSupportClient({
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {activeSubTab === "assigned" && (
-            <>
-              <select
-                value={roleFilter}
-                onChange={e => setRoleFilter(e.target.value as any)}
-                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs font-semibold bg-white cursor-pointer hover:border-slate-450"
-              >
-                <option value="ALL">Toàn bộ học sinh phụ trách</option>
-                <option value="HOMEROOM">Học sinh lớp Chủ nhiệm</option>
-                <option value="ASSIGNED">Học sinh kèm phụ đạo</option>
-              </select>
 
-              <select
-                value={monthFilter}
-                onChange={e => setMonthFilter(e.target.value)}
-                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs font-semibold bg-white cursor-pointer hover:border-slate-450"
-              >
-                <option value="ALL">Tất cả các Tháng</option>
-                {["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"].map(m => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-
-              <select
-                value={levelFilter}
-                onChange={e => setLevelFilter(e.target.value)}
-                className="rounded-lg border-slate-300 border py-1.5 px-3 focus:outline-none text-xs font-semibold bg-white cursor-pointer hover:border-slate-450"
-              >
-                <option value="ALL">Tất cả Mức độ</option>
-                <option value="Đang hỗ trợ">Đang hỗ trợ (Mặc định)</option>
-                {Array.from(new Set(configs.map(c => c.outcomeLabel))).filter(Boolean).map(l => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
-            </>
-          )}
-
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Tìm kiếm học sinh..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="rounded-lg border-slate-300 border py-1.5 pl-8 pr-3 text-xs w-48 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-          </div>
-        </div>
       </div>
 
       {/* Main Student Target List Taught/Assigned */}
