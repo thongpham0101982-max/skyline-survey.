@@ -550,6 +550,9 @@ export async function GET(req: Request) {
 
           const matchedSubjects = committedSubjects.filter((cs: string) => {
             const cleanCS = cs.toLowerCase()
+            if (cleanCS.includes("tâm lý")) {
+              return isHomeroom
+            }
             return teacherSubjectsInClass.some(ts => {
               const cleanTS = ts.toLowerCase()
               if (cleanTS.includes("toán")) {
@@ -565,8 +568,8 @@ export async function GET(req: Request) {
             })
           })
 
-          // Include if it is Homeroom class OR if there is at least one matched subject
-          if (!isHomeroom && matchedSubjects.length === 0) return null
+          // Strictly require matchedSubjects.length > 0 based on Phân công giảng dạy (or GVCN Tâm lý)
+          if (matchedSubjects.length === 0) return null
 
           const classObj = classDetails.find(c => c.id === s.classId)
           const homeroomTeacherName = classObj?.homeroomTeacher?.name || classObj?.homeroomTeacher?.fullName || ""
