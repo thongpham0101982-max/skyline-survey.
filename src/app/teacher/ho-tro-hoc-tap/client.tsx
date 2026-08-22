@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
-  FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, RotateCcw, RotateCcw, 
+  FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, RotateCcw, 
   MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2
 } from "lucide-react"
 import toast from "react-hot-toast"
