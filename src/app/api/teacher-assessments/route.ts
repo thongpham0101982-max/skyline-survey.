@@ -511,13 +511,64 @@ export async function GET(req: any) {
             const year = await prisma.academicYear.findUnique({ where: { id: academicYearId } });
             if (year) academicYearName = year.name;
         }
+
+        let remedialStudentsCount = 0;
+        if (teacher) {
+            const supportTargets = await prisma.learningSupportTarget.findMany({
+                where: {
+                    ...(academicYearId ? { academicYearId } : {}),
+                    OR: [
+                        { createdById: teacher.id },
+                        { assignments: { some: { teacherId: teacher.id } } },
+                        { sourceType: "ADMISSION" }
+                    ]
+                },
+                include: {
+                    student: { select: { id: true, classId: true } },
+                    assignments: true
+                }
+            });
+
+            const assignedClassIds = (await prisma.classSubjectTeacherAssignment.findMany({
+                where: { teacherId: teacher.id },
+                select: { classId: true }
+            })).map(a => a.classId);
+
+            const homeroomClassIds = (await prisma.class.findMany({
+                where: {
+                    OR: [
+                        { homeroomTeacherId: teacher.id },
+                        { homeroomTeacherId: { contains: teacher.id } }
+                    ]
+                },
+                select: { id: true }
+            })).map(c => c.id);
+
+            const allTeacherClassIds = new Set([...assignedClassIds, ...homeroomClassIds]);
+
+            const teacherTargets = supportTargets.filter(t => {
+                const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+                const isCreatedByMe = t.createdById === teacher.id;
+                const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher.id);
+                const inMyClass = t.student?.classId ? allTeacherClassIds.has(t.student.classId) : false;
+
+                const isCKDV = isCommitment && inMyClass;
+                const isBSTD = !isCommitment && (isCreatedByMe || isAssignedToMe);
+
+                return isCKDV || isBSTD;
+            });
+
+            const uniqueStudentIds = new Set(teacherTargets.map(t => t.studentId));
+            remedialStudentsCount = uniqueStudentIds.size;
+        }
         
         return NextResponse.json({
             totalClasses: homeroomClassesCount,
             totalStudents: homeroomStudentsCount,
             totalAssignments,
             scoredStudents: 0,
-            academicYearName
+            academicYearName,
+            remedialStudentsCount
         });
     }
     

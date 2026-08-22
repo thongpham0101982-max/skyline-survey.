@@ -329,12 +329,16 @@ export default function TeacherDashboard() {
                 HỌC SINH CẦN BỒI DƯỠNG & CHÚ Ý
               </h3>
               <span className="px-3 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-300 shadow-xs">
-                {finalMetrics.remedialStudentsCount || 0} Trường hợp
+                {finalMetrics.remedialStudentsCount || 0} Học sinh
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-emerald-800 font-semibold flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Tình hình rèn luyện ổn định. Chưa ghi nhận học sinh trong diện cảnh báo bồi dưỡng đặc biệt.</span>
+            <p className="text-xs sm:text-sm text-slate-700 font-semibold flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-teal-600 shrink-0" />
+              <span>
+                {finalMetrics.remedialStudentsCount > 0 
+                  ? `Giáo viên đang phụ trách ${finalMetrics.remedialStudentsCount} học sinh trong danh sách bồi dưỡng & theo dõi.` 
+                  : "Tình hình rèn luyện ổn định. Chưa ghi nhận học sinh trong diện cảnh báo bồi dưỡng đặc biệt."}
+              </span>
             </p>
           </div>
         </div>
