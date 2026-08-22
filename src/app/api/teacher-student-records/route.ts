@@ -462,6 +462,24 @@ export async function GET(req: Request) {
         return NextResponse.json([])
       }
 
+      // Fetch ALL teaching assignments for these classIds
+      const allClassTeachingAssignments = await prisma.teachingAssignment.findMany({
+        where: {
+          classId: { in: classIds },
+          class: { academicYearId }
+        },
+        include: {
+          teacher: true,
+          subject: true
+        }
+      })
+
+      // Fetch class details to get homeroom teachers
+      const classDetails = await prisma.class.findMany({
+        where: { id: { in: classIds } },
+        include: { homeroomTeacher: true }
+      })
+
       // Fetch all students in these classes
       const students = await prisma.student.findMany({
         where: {
@@ -550,12 +568,26 @@ export async function GET(req: Request) {
           // Include if it is Homeroom class OR if there is at least one matched subject
           if (!isHomeroom && matchedSubjects.length === 0) return null
 
+          const classObj = classDetails.find(c => c.id === s.classId)
+          const homeroomTeacherName = classObj?.homeroomTeacher?.name || classObj?.homeroomTeacher?.fullName || ""
+          
+          const studentClassAssignments = allClassTeachingAssignments
+            .filter(ta => ta.classId === s.classId)
+            .map(ta => ({
+              teacherId: ta.teacherId,
+              teacherName: ta.teacher?.name || ta.teacher?.fullName || "",
+              subjectId: ta.subjectId,
+              subjectName: ta.subject?.name || ta.subject?.subjectName || ""
+            }))
+
           return {
             id: s.id,
             studentName: s.studentName,
             studentCode: s.studentCode,
             classId: s.classId,
             className: s.class?.className || "",
+            homeroomTeacherName,
+            assignedTeachers: studentClassAssignments,
             committedSubjects,
             matchedSubjects,
             isHomeroom,

@@ -1431,14 +1431,59 @@ export function TeacherSupportClient({
                       {/* GV Phụ trách */}
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-semibold">
                         {(() => {
-                          const assignedTeachers = existingTarget?.assignments?.map((a: any) => a.teacher?.name || a.teacher?.fullName).filter(Boolean) || [];
+                          // 1. If existing target has assignments or creator, display them
+                          const targetAssignedTeachers = existingTarget?.assignments?.map((a: any) => a.teacher?.name || a.teacher?.fullName).filter(Boolean) || [];
                           const creatorName = existingTarget?.creator?.name || existingTarget?.createdBy?.name;
-                          if (creatorName && !assignedTeachers.includes(creatorName)) {
-                            assignedTeachers.unshift(creatorName);
+                          if (creatorName && !targetAssignedTeachers.includes(creatorName)) {
+                            targetAssignedTeachers.unshift(creatorName);
                           }
-                          if (assignedTeachers.length > 0) {
-                            return <span className="font-bold text-slate-800">{assignedTeachers.join(", ")}</span>;
+                          if (targetAssignedTeachers.length > 0) {
+                            return <span className="font-bold text-slate-800">{targetAssignedTeachers.join(", ")}</span>;
                           }
+
+                          // 2. Otherwise look up teaching assignments (Phân công giảng dạy) for committed subjects
+                          const committed = s.committedSubjects || [];
+                          const assignedList: string[] = [];
+
+                          committed.forEach((sub: string) => {
+                            const subLower = sub.toLowerCase();
+                            if (subLower.includes("tâm lý")) {
+                              if (s.homeroomTeacherName) {
+                                assignedList.push(s.homeroomTeacherName);
+                              }
+                            } else {
+                              const matches = (s.assignedTeachers || []).filter((ta: any) => {
+                                const taSubLower = (ta.subjectName || "").toLowerCase();
+                                if (subLower.includes("toán")) return taSubLower.includes("toán");
+                                if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+                                  return taSubLower.includes("văn") || taSubLower.includes("tiếng việt");
+                                }
+                                if (subLower.includes("anh")) return taSubLower.includes("anh");
+                                return taSubLower.includes(subLower) || subLower.includes(taSubLower);
+                              });
+                              matches.forEach((m: any) => {
+                                if (m.teacherName && !assignedList.includes(m.teacherName)) {
+                                  assignedList.push(m.teacherName);
+                                }
+                              });
+                            }
+                          });
+
+                          if (assignedList.length > 0) {
+                            return <span className="font-bold text-slate-800">{assignedList.join(", ")}</span>;
+                          }
+
+                          // Fallback to any assigned teachers for this class or homeroom teacher
+                          const allClassTeachers = (s.assignedTeachers || []).map((ta: any) => ta.teacherName).filter(Boolean);
+                          if (s.homeroomTeacherName && !allClassTeachers.includes(s.homeroomTeacherName)) {
+                            allClassTeachers.unshift(s.homeroomTeacherName);
+                          }
+                          const uniqueTeachers = Array.from(new Set(allClassTeachers));
+
+                          if (uniqueTeachers.length > 0) {
+                            return <span className="font-bold text-slate-800">{uniqueTeachers.join(", ")}</span>;
+                          }
+
                           return <span className="text-slate-400 italic font-normal">Chưa phân công</span>;
                         })()}
                       </td>
