@@ -2085,39 +2085,80 @@ export function TeacherSupportClient({
               </div>
 
               <div className="p-6 space-y-6 overflow-y-auto">
-                {/* Phần 1: Thông tin học sinh tĩnh */}
+                {/* Phần 1: Thông tin học sinh tiêu chuẩn (STT, Mã HS, Họ và tên, Lớp, Đối tượng) */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
                   {selectedEvalTargetIds.length > 1 ? (
-                    <div className="font-bold text-slate-800">
-                      Đang đánh giá hàng loạt {selectedEvalTargetIds.length} học sinh
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-indigo-900 uppercase">Danh sách đánh giá hàng loạt ({selectedEvalTargetIds.length} học sinh)</span>
+                        <span className="text-[11px] font-semibold text-slate-500">Áp dụng chung nội dung đánh giá bên dưới</span>
+                      </div>
+                      <div className="max-h-36 overflow-y-auto border border-slate-200 rounded-lg bg-white">
+                        <table className="w-full text-xs text-left">
+                          <thead className="bg-slate-100 text-slate-600 font-bold sticky top-0">
+                            <tr>
+                              <th className="p-2 text-center w-10">STT</th>
+                              <th className="p-2">Mã HS</th>
+                              <th className="p-2">Họ và tên</th>
+                              <th className="p-2">Lớp</th>
+                              <th className="p-2 text-center">Đối tượng</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {selectedEvalTargetIds.map((tid, idx) => {
+                              const tObj = filteredTargets.find((t: any) => t.id === tid);
+                              const isCommitment = tObj?.sourceType === "ADMISSION" || (tObj?.notes && tObj?.notes.includes("Cam kết Khảo sát đầu vào"));
+                              return (
+                                <tr key={tid} className="hover:bg-slate-50">
+                                  <td className="p-2 text-center font-bold text-slate-500">{idx + 1}</td>
+                                  <td className="p-2 font-semibold text-slate-600">{tObj?.student?.studentCode || tObj?.student?.code || "N/A"}</td>
+                                  <td className="p-2 font-black text-slate-800">{tObj?.student?.studentName || tObj?.student?.fullName}</td>
+                                  <td className="p-2 font-bold text-slate-600">{tObj?.student?.class?.className || tObj?.student?.className}</td>
+                                  <td className="p-2 text-center">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isCommitment ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-indigo-100 text-indigo-900 border border-indigo-300"}`}>
+                                      {isCommitment ? "CKĐV" : "BSTD"}
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   ) : (
-                    <>
-                      <div className="grid grid-cols-3 gap-4 mb-3 pb-3 border-b border-slate-200">
-                        <div>
-                          <span className="text-xs text-slate-500 font-bold block">Mã HS</span>
-                          <span className="text-sm font-semibold text-slate-800">{evalStudent?.studentCode || evalStudent?.code || "N/A"}</span>
-                        </div>
-                        <div className="col-span-2">
-                          <span className="text-xs text-slate-500 font-bold block">Họ và tên</span>
-                          <span className="text-sm font-black text-slate-800">{evalStudent?.studentName || evalStudent?.fullName || evalTargetName}</span>
-                        </div>
+                    <div className="grid grid-cols-12 gap-3 items-center">
+                      <div className="col-span-2 bg-indigo-50 border border-indigo-200 rounded-lg p-2 text-center">
+                        <span className="text-[10px] font-bold text-indigo-600 uppercase block">STT</span>
+                        <span className="text-base font-black text-indigo-900">
+                          #{(() => {
+                            const idx = filteredTargets.findIndex((t: any) => t.id === selectedEvalTargetIds[0] || t.id === evalTargetId);
+                            return idx >= 0 ? idx + 1 : 1;
+                          })()}
+                        </span>
                       </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <span className="text-xs text-slate-500 font-bold block">Lớp</span>
-                          <span className="text-sm font-semibold text-slate-800">{evalStudent?.className || evalStudent?.class?.className || "N/A"}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-slate-500 font-bold block mb-1">Đối tượng</span>
-                          <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${targetColor}`}>{targetLabel}</span>
-                        </div>
-                        <div>
-                          <span className="text-xs text-slate-500 font-bold block">{startDateLabel}</span>
-                          <span className="text-sm font-semibold text-slate-800">{startDateValue}</span>
-                        </div>
+                      <div className="col-span-3 bg-white border border-slate-200 rounded-lg p-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Mã HS</span>
+                        <span className="text-xs font-bold text-slate-800">{evalStudent?.studentCode || evalStudent?.code || "N/A"}</span>
                       </div>
-                    </>
+                      <div className="col-span-7 bg-white border border-slate-200 rounded-lg p-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Họ và tên</span>
+                        <span className="text-sm font-black text-slate-900">{evalStudent?.studentName || evalStudent?.fullName || evalTargetName}</span>
+                      </div>
+
+                      <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block">Lớp</span>
+                        <span className="text-xs font-bold text-slate-800">{evalStudent?.className || evalStudent?.class?.className || "N/A"}</span>
+                      </div>
+                      <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Đối tượng</span>
+                        <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-full ${targetColor}`}>{targetLabel}</span>
+                      </div>
+                      <div className="col-span-4 bg-white border border-slate-200 rounded-lg p-2">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase block">{startDateLabel}</span>
+                        <span className="text-xs font-bold text-slate-800">{startDateValue}</span>
+                      </div>
+                    </div>
                   )}
                 </div>
 
