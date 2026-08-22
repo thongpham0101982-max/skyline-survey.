@@ -311,95 +311,102 @@ export async function GET(req: Request) {
         }
       })
 
+            // 1. Fetch all teachers for homeroom lookup
+      const allTeachers = await prisma.teacher.findMany({
+        include: { user: true }
+      })
+
+      // 2. Fetch teaching assignments
       const teachingAssignments = await prisma.teachingAssignment.findMany({
-        where: { academicYearId },
         include: {
           class: true,
           subject: true,
           teacher: {
-            include: {
-              user: true
-            }
+            include: { user: true }
           }
         }
       })
 
-      const cleanString = (str: string | null | undefined) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
-      }
-
-      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined) => {
-        const text = `${note || ""} ${resultStr || ""}`.trim()
-        if (!text) return []
-        let rawSubs: string[] = []
-        const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i)
-        if (match && match[1]) {
-          rawSubs = match[1].split(/[,;]/).map((s: any) => s.trim()).filter(Boolean)
-        }
-        if (rawSubs.length === 0) {
-          if (/Toán|Math/i.test(text)) rawSubs.push("Toán học")
-          if (/TN-XH|Tự nhiên|Tiếng Việt/i.test(text)) rawSubs.push("Tiếng Việt")
-          if (/Ngữ văn|Literature|Văn/i.test(text) && !/Tiếng Việt/i.test(text)) rawSubs.push("Ngữ Văn")
-          if (/Anh|English|ESL/i.test(text)) rawSubs.push("Tiếng Anh")
-          if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý")
-        }
-        const finalSubs: string[] = []
-        rawSubs.forEach((s: string) => {
-          const clean = s.trim()
-          const lower = clean.toLowerCase()
-          if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
-            if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh")
-          } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
-            if (!finalSubs.includes("Toán")) finalSubs.push("Toán học")
-          } else if (lower.includes("tiếng việt") || lower.includes("tieng viet")) {
-            if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
-          } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
-            if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
-          } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
-            if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
-          } else {
-            if (!finalSubs.includes(clean)) finalSubs.push(clean)
+      // 3. Fetch teacher class assignments
+      const teacherClassAssignments = await prisma.teacherClassAssignment.findMany({
+        include: {
+          class: true,
+          teacher: {
+            include: { user: true }
           }
-        })
-        return finalSubs
-      }
-
-      
-      const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomName?: string | null) => {
-        if (subName === "Tâm lý") {
-          return homeroomName || "Chưa phân công"
         }
+      })
+
+      // Helper to resolve assigned teacher per class and subject
+      const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomTeacherId?: string | null) => {
         const subLower = subName.toLowerCase()
+
+        // Find homeroom teacher name if applicable
+        const hrTeacherObj = homeroomTeacherId ? allTeachers.find(t => t.id === homeroomTeacherId) : null
+        const hrTeacherName = hrTeacherObj?.user?.fullName || hrTeacherObj?.teacherName || null
+
+        // For Tâm lý (Psychology): use GVCN / Homeroom teacher
+        if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
+          if (hrTeacherName) return hrTeacherName
+          const gvcnClassAssign = teacherClassAssignments.find(tca => 
+            (classId && tca.classId === classId) || 
+            (tca.class?.className && tca.class.className.trim().toLowerCase() === className.trim().toLowerCase())
+          )
+          if (gvcnClassAssign?.teacher) {
+            return gvcnClassAssign.teacher.user?.fullName || gvcnClassAssign.teacher.teacherName || "Chưa phân công"
+          }
+          return "Chưa phân công"
+        }
+
+        // Search in TeachingAssignments
         const matchingTa = teachingAssignments.find(ta => {
           const classMatches = (classId && ta.classId === classId) || 
-            (ta.class?.className && ta.class.className === className) ||
-            (ta.class?.classCode && ta.class.classCode === className)
+            (ta.class?.className && ta.class.className.trim().toLowerCase() === className.trim().toLowerCase()) ||
+            (ta.class?.classCode && ta.class.classCode.trim().toLowerCase() === className.trim().toLowerCase())
 
           if (!classMatches) return false
 
-          const code = (ta.subject?.code || "").toUpperCase()
-          const name = (ta.subject?.name || "").toLowerCase()
+          const code = (ta.subject?.code || ta.subject?.subjectCode || "").toUpperCase()
+          const name = (ta.subject?.name || ta.subject?.subjectName || "").toLowerCase()
 
           if (subLower.includes("toán")) {
-            return code === "TOA" || name.includes("toán")
+            return code === "TOA" || name.includes("toán") || name.includes("math")
           }
           if (subLower.includes("anh")) {
-            return code === "TA" || code === "TAV" || code.startsWith("TAV") || name.includes("anh")
+            return code === "TA" || code === "TAV" || code.startsWith("TAV") || name.includes("anh") || name.includes("english")
           }
           if (subLower.includes("việt")) {
             return code === "TVI" || name.includes("việt")
           }
           if (subLower.includes("văn")) {
-            return code === "NVA" || name.includes("văn")
+            return code === "NVA" || name.includes("văn") || name.includes("literature")
           }
           return false
         })
 
-        return matchingTa?.teacher?.user?.fullName || matchingTa?.teacher?.teacherName || "Chưa phân công"
+        if (matchingTa?.teacher) {
+          return matchingTa.teacher.user?.fullName || matchingTa.teacher.teacherName || "Chưa phân công"
+        }
+
+        // Search in TeacherClassAssignments
+        const matchingTca = teacherClassAssignments.find(tca => {
+          const classMatches = (classId && tca.classId === classId) || 
+            (tca.class?.className && tca.class.className.trim().toLowerCase() === className.trim().toLowerCase())
+          if (!classMatches) return false
+
+          const role = (tca.roleInClass || "").toLowerCase()
+          if (subLower.includes("toán") && role.includes("toán")) return true
+          if (subLower.includes("anh") && (role.includes("anh") || role.includes("english"))) return true
+          if (subLower.includes("việt") && role.includes("việt")) return true
+          if (subLower.includes("văn") && role.includes("văn")) return true
+          return false
+        })
+
+        if (matchingTca?.teacher) {
+          return matchingTca.teacher.user?.fullName || matchingTca.teacher.teacherName || "Chưa phân công"
+        }
+
+        return "Chưa phân công"
       }
 
       const result = [
@@ -433,7 +440,7 @@ export async function GET(req: Request) {
               matchingStudent?.classId || matchingStudent?.class?.id,
               resolvedClassName,
               sub,
-              matchingStudent?.class?.homeroomTeacher?.user?.fullName
+              matchingStudent?.class?.homeroomTeacherId
             )
           })
 
