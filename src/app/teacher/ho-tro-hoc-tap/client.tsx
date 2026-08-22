@@ -953,7 +953,7 @@ export function TeacherSupportClient({
           }`}
         >
           <Calendar className="h-4 w-4" />
-          <span>1. Cam kết đầu vào</span>
+          <span>1. HS Cam kết Học tập/Tâm lý</span>
         </button>
         <button
           onClick={() => setActiveSubTab("assigned")}
