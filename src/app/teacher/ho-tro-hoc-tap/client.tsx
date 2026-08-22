@@ -2265,6 +2265,16 @@ export function TeacherSupportClient({
                   </div>
 
                   <div className="space-y-1">
+                    <label className="text-sm font-bold text-slate-700">Nhật ký nhận xét chi tiết (Học lực/Tâm lý):</label>
+                    <textarea
+                      placeholder="Ghi cụ thể các nội dung đã kèm cặp, biểu hiện của học sinh và kế hoạch sắp tới..."
+                      value={evalComment}
+                      onChange={e => setEvalComment(e.target.value)}
+                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-28 resize-none bg-slate-50"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
                     <label className="text-sm font-bold text-slate-700">Đề xuất hành động:</label>
                     <select
                       value={evalUpdatedStatus}
@@ -2276,16 +2286,6 @@ export function TeacherSupportClient({
                       <option value="Xây dựng kế hoạch hỗ trợ chuyên sâu">Yêu cầu can thiệp / hỗ trợ chuyên sâu</option>
                       <option value="Tiếp tục theo dõi">Tiếp tục hỗ trợ theo kế hoạch</option>
                     </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-sm font-bold text-slate-700">Nhật ký nhận xét chi tiết (Học lực/Tâm lý):</label>
-                    <textarea
-                      placeholder="Ghi cụ thể các nội dung đã kèm cặp, biểu hiện của học sinh và kế hoạch sắp tới..."
-                      value={evalComment}
-                      onChange={e => setEvalComment(e.target.value)}
-                      className="w-full rounded-lg border-slate-300 border py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-28 resize-none bg-slate-50"
-                    />
                   </div>
                 </div>
               </div>
