@@ -651,10 +651,10 @@ export function TeacherSupportClient({
         await Promise.all(termPromises);
       }
 
-      toast.success("Ghi nhận đánh giá thành công!");
+      toast.success("Lưu đánh giá thành công! Dữ liệu đã được chuyển vào 3. Tổng hợp kết quả");
       setIsEvaluationModalOpen(false);
       setSelectedEvalTargetIds([]);
-      setActiveSubTab("assigned");
+      setActiveSubTab("summary");
       fetchTeacherData();
     } catch (e) {
       toast.error("Lưu nhận xét thất bại");
@@ -714,6 +714,33 @@ export function TeacherSupportClient({
   }
 
   // Filter students related to this teacher - ONLY 2 SOURCES: CKĐV & BSTD
+  const summaryEvaluations = useMemo(() => {
+    const list: any[] = [];
+    filteredTargets.forEach((t: any) => {
+      const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+      const evals = t.evaluations || [];
+      evals.forEach((ev: any) => {
+        list.push({
+          evalId: ev.id,
+          targetId: t.id,
+          studentId: t.studentId,
+          studentCode: t.student?.studentCode || t.student?.code || "N/A",
+          studentName: t.student?.studentName || t.student?.fullName || "N/A",
+          className: t.student?.class?.className || t.student?.className || "N/A",
+          category: isCommitment ? "CKĐV" : "BSTD",
+          periodName: ev.periodName || (ev.periodType === "MONTH" ? "Tháng" : "Tuần"),
+          periodType: ev.periodType,
+          trackingLevel: ev.trackingLevel || "N/A",
+          comment: ev.comment || "Không có nhận xét",
+          updatedStatus: ev.updatedStatus || "Tiếp tục theo dõi",
+          createdAt: ev.createdAt,
+          evaluatorName: ev.evaluator?.name || teacher?.name || "Giáo viên"
+        });
+      });
+    });
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [filteredTargets, teacher]);
+
   const filteredTargets = useMemo(() => {
     const seenKeys = new Set<string>()
     return targets.filter(t => {
@@ -937,6 +964,17 @@ export function TeacherSupportClient({
           <Users className="h-4 w-4" />
           <span>2. Sổ theo dõi đánh giá</span>
         </button>
+        <button
+          onClick={() => setActiveSubTab("summary")}
+          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+            activeSubTab === "summary"
+              ? "border-indigo-600 text-indigo-600 font-extrabold"
+              : "border-transparent text-slate-500 hover:text-slate-800"
+          }`}
+        >
+          <FileText className="h-4 w-4" />
+          <span>3. Tổng hợp kết quả</span>
+        </button>
       </div>
 
       {/* Action panel */}
@@ -1151,6 +1189,85 @@ export function TeacherSupportClient({
                       </tr>
                     )
                   })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : activeSubTab === "summary" ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between bg-emerald-50/60 border border-emerald-200/80 p-4 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-sm">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-sm">3. Tổng hợp kết quả đánh giá định kỳ</h3>
+                <p className="text-xs text-slate-500 font-medium">Tự động lưu trữ và tổng hợp tất cả các bản ghi đánh giá sau khi hoàn tất</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <span className="text-[11px] font-bold text-slate-500 block uppercase">Tổng số lượt đánh giá</span>
+              <span className="text-2xl font-black text-emerald-700">{summaryEvaluations.length}</span>
+            </div>
+          </div>
+
+          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">STT</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Đối tượng</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kỳ đánh giá</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Kết quả (Mức độ)</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Nhật ký nhận xét chi tiết</th>
+                  <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Đề xuất hành động</th>
+                  <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày đánh giá</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-sm">
+                {summaryEvaluations.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} className="text-center py-12 text-slate-400 font-medium">
+                      Chưa có kết quả đánh giá nào được ghi nhận. Vui lòng thực hiện đánh giá tại <span className="font-bold text-indigo-600 cursor-pointer hover:underline" onClick={() => setActiveSubTab("assigned")}>2. Sổ theo dõi đánh giá</span>.
+                    </td>
+                  </tr>
+                ) : (
+                  summaryEvaluations.map((item, index) => (
+                    <tr key={`${item.evalId}-${index}`} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="px-4 py-3 text-center text-slate-500 font-bold text-xs">{index + 1}</td>
+                      <td className="px-4 py-3 text-slate-600 font-semibold text-xs whitespace-nowrap">{item.studentCode}</td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <button onClick={() => handleOpenProfile(item.studentId)} className="font-bold text-[#48BFE3] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">
+                          {item.studentName}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 font-bold text-xs whitespace-nowrap">{item.className}</td>
+                      <td className="px-4 py-3 text-center whitespace-nowrap">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${item.category === "CKĐV" ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-indigo-100 text-indigo-900 border border-indigo-300"}`}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-800 font-bold text-xs whitespace-nowrap">{item.periodName}</td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          {item.trackingLevel}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3 text-slate-700 text-xs max-w-xs break-words">{item.comment}</td>
+                      <td className="px-6 py-3 whitespace-nowrap">
+                        <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-lg">
+                          {item.updatedStatus}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center text-slate-500 text-xs whitespace-nowrap font-medium">
+                        {item.createdAt ? new Date(item.createdAt).toLocaleDateString("vi-VN") : "N/A"}
+                      </td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>
