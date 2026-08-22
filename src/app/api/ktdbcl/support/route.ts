@@ -439,7 +439,8 @@ export async function GET(req: Request) {
         })
       ]
 
-      return NextResponse.json(result)
+      const validResult = result.filter((item: any) => item.className && item.className !== "Chưa xếp lớp" && !item.className.includes("Chưa xếp lớp"))
+      return NextResponse.json(validResult)
     }
 
     // 5. Action: getCommitment

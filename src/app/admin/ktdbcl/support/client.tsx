@@ -774,27 +774,56 @@ export function SupportClient({
     { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
   ]
   // Paginated commitments logic
+    // Split commitment candidates per subject & exclude unassigned class ("Chưa xếp lớp")
+  const splitCommitmentRows = useMemo(() => {
+    const validCandidates = commitmentCandidates.filter(
+      c => c.className && c.className !== "Chưa xếp lớp" && !c.className.includes("Chưa xếp lớp")
+    )
+
+    const rows: any[] = []
+    validCandidates.forEach(c => {
+      const subs = c.committedSubjects && c.committedSubjects.length > 0
+        ? c.committedSubjects
+        : ["Chưa xác định môn"]
+
+      subs.forEach((sub: string, sIdx: number) => {
+        rows.push({
+          ...c,
+          rowId: `${c.id}_${sIdx}_${sub}`,
+          displaySubject: sub,
+          committedSubjects: [sub]
+        })
+      })
+    })
+
+    return rows
+  }, [commitmentCandidates])
+
   const filteredCommitments = useMemo(() => {
-    return commitmentCandidates.filter(c => {
+    return splitCommitmentRows.filter(c => {
       const searchLower = commitmentSearch.toLowerCase().trim()
       const matchesSearch = !searchLower || 
         c.studentCode.toLowerCase().includes(searchLower) ||
-        c.fullName.toLowerCase().includes(searchLower)
+        c.fullName.toLowerCase().includes(searchLower) ||
+        c.displaySubject.toLowerCase().includes(searchLower)
 
       const matchesCampus = commitmentCampusFilter === "ALL" || 
         c.className.includes(commitmentCampusFilter) || 
-        (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
-        (c.directorNote || "").includes(commitmentCampusFilter) ||
-        (c.admissionResult || "").includes(commitmentCampusFilter)
+        (c.campusName && c.campusName.includes(commitmentCampusFilter))
 
-      const isProposed = targets.some(t => t.studentId === c.systemStudentId)
+      const isProposed = targets.some(t => {
+        if (t.studentId !== c.systemStudentId) return false
+        if (c.displaySubject === "Tâm lý") return t.supportType === "PSYCHOLOGY"
+        return t.supportType === "ACADEMIC" || (t.reason && t.reason.includes(c.displaySubject))
+      })
+
       const matchesStatus = commitmentStatusFilter === "ALL" || 
         (commitmentStatusFilter === "PROPOSED" && isProposed) ||
         (commitmentStatusFilter === "NOT_PROPOSED" && !isProposed)
 
       return matchesSearch && matchesCampus && matchesStatus
     })
-  }, [commitmentCandidates, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
+  }, [splitCommitmentRows, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
 
   const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
 
@@ -1125,7 +1154,7 @@ export function SupportClient({
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
 
                         return (
-                          <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                          <tr key={row.rowId || row.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-4 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
                             <td className="px-4 py-3.5">
                               <div className="font-extrabold text-slate-800 text-[12px]">{row.fullName}</div>
