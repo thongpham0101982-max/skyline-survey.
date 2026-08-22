@@ -2297,21 +2297,7 @@ export function TeacherSupportClient({
                 >
                   Hủy bỏ
                 </button>
-                {selectedEvalTargetIds.length <= 1 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTermTargetId(evalTargetId || (selectedEvalTargetIds[0] || ""));
-                      setTermOutcome(evalTrackingLevel);
-                      setTermNotes(evalComment);
-                      setIsEvaluationModalOpen(false);
-                      setIsRequestTermModalOpen(true);
-                    }}
-                    className="border border-slate-300 hover:bg-slate-100 text-slate-750 py-2.5 px-5 rounded-lg text-sm font-bold transition-all"
-                  >
-                    Đề xuất kết thúc
-                  </button>
-                )}
+
                 <button
                   onClick={handleSaveEvaluation}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-6 rounded-lg text-sm font-bold shadow-sm transition-all"
