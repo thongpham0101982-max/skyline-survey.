@@ -311,6 +311,19 @@ export async function GET(req: Request) {
         }
       })
 
+      const teachingAssignments = await prisma.teachingAssignment.findMany({
+        where: { academicYearId },
+        include: {
+          class: true,
+          subject: true,
+          teacher: {
+            include: {
+              user: true
+            }
+          }
+        }
+      })
+
       const cleanString = (str: string | null | undefined) => {
         if (!str) return ""
         return str.toLowerCase()
@@ -398,16 +411,6 @@ export async function GET(req: Request) {
           
           const committedSubjects = parseCommittedSubjects(is.directorNote, is.admissionResult)
 
-          const assignedTeacherMap: Record<string, string> = {}
-          committedSubjects.forEach(sub => {
-            assignedTeacherMap[sub] = resolveAssignedTeacher(
-              matchingStudent?.classId || matchingStudent?.class?.id,
-              resolvedClassName,
-              sub,
-              matchingStudent?.class?.homeroomTeacher?.user?.fullName
-            )
-          })
-
           const resolvedClassName = 
             matchingStudent?.class?.className ||
             matchingStudent?.class?.classCode ||
@@ -423,6 +426,16 @@ export async function GET(req: Request) {
             is.registeredCampus ||
             is.admissionCampus ||
             ""
+
+          const assignedTeacherMap: Record<string, string> = {}
+          committedSubjects.forEach(sub => {
+            assignedTeacherMap[sub] = resolveAssignedTeacher(
+              matchingStudent?.classId || matchingStudent?.class?.id,
+              resolvedClassName,
+              sub,
+              matchingStudent?.class?.homeroomTeacher?.user?.fullName
+            )
+          })
 
           return {
             id: is.id,
