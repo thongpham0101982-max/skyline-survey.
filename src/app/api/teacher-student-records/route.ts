@@ -26,29 +26,43 @@ function safeDateToISO(dateVal: any): string {
 }
 
 function parseCommittedSubjects(note?: string | null, resultStr?: string | null): string[] {
-  const text = `${note || ""} ${resultStr || ""}`
-  if (!text.trim()) return []
-  
-  const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
+  const text = `${note || ""} ${resultStr || ""}`.trim();
+  if (!text) return [];
+  let rawSubs: string[] = [];
+  const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i);
   if (match && match[1]) {
-    const splitSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
-    if (splitSubs.length > 0) return splitSubs
+    rawSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean);
   }
-
-  const subs: string[] = []
-  if (/Toán|Math/i.test(text)) subs.push("Toán")
-  if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
-  if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
-    subs.push("Tiếng Anh (viết)")
+  if (rawSubs.length === 0) {
+    if (/Toán|Math/i.test(text)) rawSubs.push("Toán");
+    if (/Tiếng Việt|Văn|Ngữ văn|Literature/i.test(text)) rawSubs.push("Tiếng Việt");
+    if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) rawSubs.push("Tiếng Anh (viết)");
+    if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) rawSubs.push("Tiếng Anh (vấn đáp)");
+    if (rawSubs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) rawSubs.push("Tiếng Anh");
+    if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý");
   }
-  if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
-    subs.push("Tiếng Anh (vấn đáp)")
-  }
-  if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
-    subs.push("Tiếng Anh")
-  }
-  if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
-  return subs
+  const finalSubs: string[] = [];
+  rawSubs.forEach((s) => {
+    const clean = s.trim();
+    const lower = clean.toLowerCase();
+    if (lower === "tiếng anh" || lower === "tieng anh" || lower === "english" || lower === "esl") {
+      if (!finalSubs.includes("Tiếng Anh (vấn đáp)")) finalSubs.push("Tiếng Anh (vấn đáp)");
+      if (!finalSubs.includes("Tiếng Anh (viết)")) finalSubs.push("Tiếng Anh (viết)");
+    } else if (lower.includes("vấn đáp") || lower.includes("oral") || lower.includes("nói")) {
+      if (!finalSubs.includes("Tiếng Anh (vấn đáp)")) finalSubs.push("Tiếng Anh (vấn đáp)");
+    } else if (lower.includes("viết") || lower.includes("written")) {
+      if (!finalSubs.includes("Tiếng Anh (viết)")) finalSubs.push("Tiếng Anh (viết)");
+    } else if (lower === "toán" || lower === "toan" || lower === "math" || lower === "toán học") {
+      if (!finalSubs.includes("Toán")) finalSubs.push("Toán");
+    } else if (lower === "tiếng việt" || lower === "tieng viet" || lower === "ngữ văn" || lower === "văn") {
+      if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt");
+    } else if (lower === "tâm lý" || lower === "tam ly" || lower === "psychology") {
+      if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý");
+    } else {
+      if (!finalSubs.includes(clean)) finalSubs.push(clean);
+    }
+  });
+  return finalSubs;
 }
 
 export async function GET(req: Request) {

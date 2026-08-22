@@ -69,3 +69,57 @@ export function getSubjectMappingInfo(code: string): SubjectMappingConfig | unde
       item.mainCode.toLowerCase() === clean.toLowerCase()
   );
 }
+
+/**
+ * Trích xuất và chuẩn hóa danh sách Môn Cam kết / Môn kiểm tra lại từ Ghi chú của Giám đốc/BGH.
+ * Tự động phân tách 'Tiếng Anh' chung thành ['Tiếng Anh (vấn đáp)', 'Tiếng Anh (viết)'].
+ */
+export function parseCommittedSubjects(note?: string | null, resultStr?: string | null): string[] {
+  const text = `${note || ""} ${resultStr || ""}`.trim();
+  if (!text) return [];
+
+  let rawSubs: string[] = [];
+  const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):s*\[?([^\]\r\n]+)\]?/i);
+  if (match && match[1]) {
+    rawSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean);
+  }
+
+  if (rawSubs.length === 0) {
+    if (/Toán|Math/i.test(text)) rawSubs.push("Toán");
+    if (/Tiếng Việt|Văn|Ngữ văn|Literature/i.test(text)) rawSubs.push("Tiếng Việt");
+    if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
+      rawSubs.push("Tiếng Anh (viết)");
+    }
+    if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
+      rawSubs.push("Tiếng Anh (vấn đáp)");
+    }
+    if (rawSubs.every((s) => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+      rawSubs.push("Tiếng Anh");
+    }
+    if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý");
+  }
+
+  const finalSubs: string[] = [];
+  rawSubs.forEach((s) => {
+    const clean = s.trim();
+    const lower = clean.toLowerCase();
+    if (lower === "tiếng anh" || lower === "tieng anh" || lower === "english" || lower === "esl") {
+      if (!finalSubs.includes("Tiếng Anh (vấn đáp)")) finalSubs.push("Tiếng Anh (vấn đáp)");
+      if (!finalSubs.includes("Tiếng Anh (viết)")) finalSubs.push("Tiếng Anh (viết)");
+    } else if (lower.includes("vấn đáp") || lower.includes("oral") || lower.includes("nói")) {
+      if (!finalSubs.includes("Tiếng Anh (vấn đáp)")) finalSubs.push("Tiếng Anh (vấn đáp)");
+    } else if (lower.includes("viết") || lower.includes("written")) {
+      if (!finalSubs.includes("Tiếng Anh (viết)")) finalSubs.push("Tiếng Anh (viết)");
+    } else if (lower === "toán" || lower === "toan" || lower === "math" || lower === "toán học") {
+      if (!finalSubs.includes("Toán")) finalSubs.push("Toán");
+    } else if (lower === "tiếng việt" || lower === "tieng viet" || lower === "ngữ văn" || lower === "văn") {
+      if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt");
+    } else if (lower === "tâm lý" || lower === "tam ly" || lower === "psychology") {
+      if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý");
+    } else {
+      if (!finalSubs.includes(clean)) finalSubs.push(clean);
+    }
+  });
+
+  return finalSubs;
+}
