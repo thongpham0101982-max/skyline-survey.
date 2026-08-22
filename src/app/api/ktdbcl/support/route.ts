@@ -487,11 +487,13 @@ export async function POST(req: Request) {
           where: { id },
           data: { supportType, code, outcomeLabel, description }
         })
-        return NextResponse.json(updated)
+        await autoAssignTeachersForTarget(updated.id, studentId, supportType, reason, academicYearId)
+          return NextResponse.json(updated)
       } else {
         const created = await prisma.learningSupportOutcomeConfig.create({
           data: { supportType, code, outcomeLabel, description, academicYearId }
         })
+        await autoAssignTeachersForTarget(created.id, studentId, supportType, reason, academicYearId)
         return NextResponse.json(created)
       }
     }
@@ -914,5 +916,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
+  }
+}
+
+async function autoAssignTeachersForTarget(targetId: string, studentId: string, supportType: string, reason?: string, yearId?: string) {
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: { class: true }
+    })
+    if (!student || !student.classId) return
+
+    const teachersToAssign = new Set<string>()
+
+    if (supportType === "ACADEMIC" || (reason && !reason.includes("Tâm lý"))) {
+      const teachingAssigns = await prisma.teachingAssignment.findMany({
+        where: { classId: student.classId }
+      })
+      teachingAssigns.forEach(ta => {
+        if (ta.teacherId) teachersToAssign.add(ta.teacherId)
+      })
+    }
+
+    if (student.class.homeroomTeacherId) {
+      teachersToAssign.add(student.class.homeroomTeacherId)
+    }
+
+    for (const tid of Array.from(teachersToAssign)) {
+      const existing = await prisma.learningSupportAssignment.findFirst({
+        where: { targetId, teacherId: tid }
+      })
+      if (!existing) {
+        await prisma.learningSupportAssignment.create({
+          data: {
+            targetId,
+            teacherId: tid,
+            academicYearId: yearId || student.class.academicYearId || ""
+          }
+        })
+      }
+    }
+  } catch (e) {
+    console.error("autoAssignTeachersForTarget error:", e)
   }
 }

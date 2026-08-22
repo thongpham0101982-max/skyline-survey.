@@ -1431,7 +1431,6 @@ export function TeacherSupportClient({
                       {/* GV Phụ trách */}
                       <td className="px-6 py-4 whitespace-nowrap text-xs font-semibold">
                         {(() => {
-                          // 1. If existing target has assignments or creator, display them
                           const targetAssignedTeachers = existingTarget?.assignments?.map((a: any) => a.teacher?.name || a.teacher?.fullName).filter(Boolean) || [];
                           const creatorName = existingTarget?.creator?.name || existingTarget?.createdBy?.name;
                           if (creatorName && !targetAssignedTeachers.includes(creatorName)) {
@@ -1441,7 +1440,6 @@ export function TeacherSupportClient({
                             return <span className="font-bold text-slate-800">{targetAssignedTeachers.join(", ")}</span>;
                           }
 
-                          // 2. Otherwise look up teaching assignments (Phân công giảng dạy) for committed subjects
                           const committed = s.committedSubjects || [];
                           const assignedList: string[] = [];
 
@@ -1449,7 +1447,8 @@ export function TeacherSupportClient({
                             const subLower = sub.toLowerCase();
                             if (subLower.includes("tâm lý")) {
                               if (s.homeroomTeacherName) {
-                                assignedList.push(s.homeroomTeacherName);
+                                const label = `${s.homeroomTeacherName} (GVCN)`;
+                                if (!assignedList.includes(label)) assignedList.push(label);
                               }
                             } else {
                               const matches = (s.assignedTeachers || []).filter((ta: any) => {
@@ -1462,8 +1461,9 @@ export function TeacherSupportClient({
                                 return taSubLower.includes(subLower) || subLower.includes(taSubLower);
                               });
                               matches.forEach((m: any) => {
-                                if (m.teacherName && !assignedList.includes(m.teacherName)) {
-                                  assignedList.push(m.teacherName);
+                                const label = `${m.teacherName} (${m.subjectName || "GVBM"})`;
+                                if (m.teacherName && !assignedList.includes(label)) {
+                                  assignedList.push(label);
                                 }
                               });
                             }
@@ -1473,10 +1473,9 @@ export function TeacherSupportClient({
                             return <span className="font-bold text-slate-800">{assignedList.join(", ")}</span>;
                           }
 
-                          // Fallback to any assigned teachers for this class or homeroom teacher
-                          const allClassTeachers = (s.assignedTeachers || []).map((ta: any) => ta.teacherName).filter(Boolean);
-                          if (s.homeroomTeacherName && !allClassTeachers.includes(s.homeroomTeacherName)) {
-                            allClassTeachers.unshift(s.homeroomTeacherName);
+                          const allClassTeachers = (s.assignedTeachers || []).map((ta: any) => `${ta.teacherName} (${ta.subjectName || "GVBM"})`).filter(Boolean);
+                          if (s.homeroomTeacherName && !allClassTeachers.some((t: string) => t.startsWith(s.homeroomTeacherName))) {
+                            allClassTeachers.unshift(`${s.homeroomTeacherName} (GVCN)`);
                           }
                           const uniqueTeachers = Array.from(new Set(allClassTeachers));
 
