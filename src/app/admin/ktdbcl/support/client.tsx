@@ -808,7 +808,7 @@ export function SupportClient({
     if (nameLower.includes("toán") || nameLower.includes("math")) {
       return (
         <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 font-bold text-[11px] inline-block">
-          Toán
+          Toán học
         </span>
       )
     }

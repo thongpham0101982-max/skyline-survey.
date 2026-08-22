@@ -90,7 +90,7 @@ export function parseCommittedSubjects(note?: string | null, resultStr?: string 
   }
 
   if (rawSubs.length === 0) {
-    if (/Toán|Math/i.test(text)) rawSubs.push("Toán");
+    if (/Toán|Math/i.test(text)) rawSubs.push("Toán học");
     if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(text)) rawSubs.push("Tiếng Việt");
     if (/Ngữ văn|Literature|Văn/i.test(text) && !/Tiếng Việt/i.test(text)) rawSubs.push("Ngữ Văn");
     if (/Anh|English|ESL/i.test(text)) rawSubs.push("Tiếng Anh");
@@ -104,7 +104,7 @@ export function parseCommittedSubjects(note?: string | null, resultStr?: string 
     if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
       if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh");
     } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
-      if (!finalSubs.includes("Toán")) finalSubs.push("Toán");
+      if (!finalSubs.includes("Toán")) finalSubs.push("Toán học");
     } else if (lower.includes("tiếng việt") || lower.includes("tieng viet")) {
       if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt");
     } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
