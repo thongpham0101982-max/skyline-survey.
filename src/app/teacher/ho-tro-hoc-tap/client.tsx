@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
-  FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, 
+  FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, RotateCcw, RotateCcw, 
   MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2
 } from "lucide-react"
 import toast from "react-hot-toast"
@@ -485,6 +485,67 @@ export function TeacherSupportClient({
     }
   }
 
+  // Single Return Target
+  const handleReturnTarget = async (id: string, studentName: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn hoàn trả học sinh ${studentName || "này"} khỏi Sổ theo dõi đánh giá?`)) return
+    setLoading(true)
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deleteTarget",
+          academicYearId: selectedYearId,
+          ids: [id]
+        })
+      })
+      const data = await res.json()
+      if (data.error) {
+        toast.error("Hoàn trả thất bại: " + data.error)
+      } else {
+        toast.success(`Đã hoàn trả thành công học sinh ${studentName || ""}!`)
+        setSelectedEvalTargetIds(prev => prev.filter(x => x !== id))
+        await fetchTeacherData()
+        await fetchEntranceCommitments()
+      }
+    } catch (e: any) {
+      toast.error("Hoàn trả thất bại")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Bulk Return Targets
+  const handleBulkReturnTargets = async () => {
+    if (selectedEvalTargetIds.length === 0) return
+    if (!confirm(`Bạn có chắc chắn muốn hoàn trả ${selectedEvalTargetIds.length} học sinh đã chọn khỏi Sổ theo dõi đánh giá?`)) return
+    setLoading(true)
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "deleteTarget",
+          academicYearId: selectedYearId,
+          ids: selectedEvalTargetIds
+        })
+      })
+      const data = await res.json()
+      if (data.error) {
+        toast.error("Hoàn trả thất bại: " + data.error)
+      } else {
+        toast.success(`Đã hoàn trả thành công ${selectedEvalTargetIds.length} học sinh!`)
+        setSelectedEvalTargetIds([])
+        await fetchTeacherData()
+        await fetchEntranceCommitments()
+      }
+    } catch (e: any) {
+      toast.error("Hoàn trả thất bại")
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Submit weekly/monthly evaluation
   const handleSaveEvaluation = async () => {
     if (!evalTrackingLevel || !evalComment) {
@@ -900,28 +961,39 @@ export function TeacherSupportClient({
       ) : activeSubTab === "assigned" ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <button
-              disabled={selectedEvalTargetIds.length === 0}
-              onClick={() => {
-                if (selectedEvalTargetIds.length === 0) return;
-                setEvalTargetId("")
-                setEvalTargetName("Nhiều học sinh")
-                const firstSelected = targets.find((t:any) => t.id === selectedEvalTargetIds[0])
-                setEvalTargetType(firstSelected?.supportType || "ACADEMIC")
-                setEvalPeriodType("MONTH")
-                const curMonth = "Tháng " + (new Date().getMonth() + 1)
-                setEvalPeriodName(curMonth)
-                setEvalComment("")
-                setEvalStudent(null)
-                setEvalTargetObj(null)
-                const options = configs.filter((c:any) => c.supportType === (firstSelected?.supportType || "ACADEMIC"))
-                setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                setIsEvaluationModalOpen(true)
-              }}
-              className="bg-indigo-600 disabled:bg-slate-300 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all"
-            >
-              Đánh giá nhiều Học sinh
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                disabled={selectedEvalTargetIds.length === 0}
+                onClick={() => {
+                  if (selectedEvalTargetIds.length === 0) return;
+                  setEvalTargetId("")
+                  setEvalTargetName("Nhiều học sinh")
+                  const firstSelected = targets.find((t:any) => t.id === selectedEvalTargetIds[0])
+                  setEvalTargetType(firstSelected?.supportType || "ACADEMIC")
+                  setEvalPeriodType("MONTH")
+                  const curMonth = "Tháng " + (new Date().getMonth() + 1)
+                  setEvalPeriodName(curMonth)
+                  setEvalComment("")
+                  setEvalStudent(null)
+                  setEvalTargetObj(null)
+                  const options = configs.filter((c:any) => c.supportType === (firstSelected?.supportType || "ACADEMIC"))
+                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                  setIsEvaluationModalOpen(true)
+                }}
+                className="bg-indigo-600 disabled:bg-slate-300 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all cursor-pointer"
+              >
+                Đánh giá nhiều Học sinh
+              </button>
+              <button
+                disabled={selectedEvalTargetIds.length === 0}
+                onClick={handleBulkReturnTargets}
+                className="bg-amber-500 disabled:bg-slate-300 hover:bg-amber-600 text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
+                title="Hoàn trả các học sinh đã chọn"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Hoàn trả {selectedEvalTargetIds.length > 0 ? `(${selectedEvalTargetIds.length})` : ""}
+              </button>
+            </div>
           </div>
           <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
@@ -1031,26 +1103,36 @@ export function TeacherSupportClient({
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center space-x-2">
                           {canEvaluate && !isTerminated && !isPending && (
-                            <button
-                              onClick={() => {
-                                setSelectedEvalTargetIds([t.id])
-                                setEvalTargetId(t.id)
-                                setEvalTargetName(t.student?.studentName)
-                                setEvalTargetType(t.supportType)
-                                setEvalComment("")
-                                setEvalStudent(t.student)
-                                setEvalTargetObj(t)
-                                setEvalPeriodType("MONTH")
-                                const curMonth = "Tháng " + (new Date().getMonth() + 1)
-                                setEvalPeriodName(curMonth)
-                                const options = configs.filter((c:any) => c.supportType === t.supportType)
-                                setEvalTrackingLevel(options[0]?.outcomeLabel || "")
-                                setIsEvaluationModalOpen(true)
-                              }}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm"
-                            >
-                              Nhận xét & Đánh giá
-                            </button>
+                            <>
+                              <button
+                                onClick={() => {
+                                  setSelectedEvalTargetIds([t.id])
+                                  setEvalTargetId(t.id)
+                                  setEvalTargetName(t.student?.studentName)
+                                  setEvalTargetType(t.supportType)
+                                  setEvalComment("")
+                                  setEvalStudent(t.student)
+                                  setEvalTargetObj(t)
+                                  setEvalPeriodType("MONTH")
+                                  const curMonth = "Tháng " + (new Date().getMonth() + 1)
+                                  setEvalPeriodName(curMonth)
+                                  const options = configs.filter((c:any) => c.supportType === t.supportType)
+                                  setEvalTrackingLevel(options[0]?.outcomeLabel || "")
+                                  setIsEvaluationModalOpen(true)
+                                }}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm cursor-pointer"
+                              >
+                                Nhận xét & Đánh giá
+                              </button>
+                              <button
+                                onClick={() => handleReturnTarget(t.id, t.student?.studentName || t.student?.fullName || "")}
+                                className="bg-amber-500 hover:bg-amber-600 text-white font-medium py-1.5 px-3 rounded-lg text-xs transition-all shadow-sm cursor-pointer inline-flex items-center gap-1"
+                                title="Hoàn trả học sinh khỏi Sổ theo dõi"
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Hoàn trả
+                              </button>
+                            </>
                           )}
                           {(isTerminated || isPending) && (
                             <span className="text-[11px] text-slate-400 font-medium">Không thể thao tác</span>

@@ -597,12 +597,16 @@ export async function POST(req: Request) {
       }
     }
 
-    // 4. Action: deleteTarget
+    // 4. Action: deleteTarget (supports single id or array of ids for returning students)
     if (action === "deleteTarget") {
-      const { id } = body
-      if (!id) return NextResponse.json({ error: "Missing target ID" }, { status: 400 })
-      await prisma.learningSupportTarget.delete({ where: { id } })
-      return NextResponse.json({ success: true })
+      const { id, ids } = body
+      const targetIds = Array.isArray(ids) ? ids : (id ? [id] : [])
+      if (targetIds.length === 0) return NextResponse.json({ error: "Missing target IDs" }, { status: 400 })
+
+      await prisma.learningSupportTarget.deleteMany({
+        where: { id: { in: targetIds } }
+      })
+      return NextResponse.json({ success: true, count: targetIds.length })
     }
 
     // 5. Action: syncAdmission (Bulk sync from input assessment)
