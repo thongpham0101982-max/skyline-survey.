@@ -311,7 +311,15 @@ export async function GET(req: Request) {
         }
       })
 
-            // 1. Fetch all teachers for homeroom lookup
+            const cleanString = (str: string | null | undefined) => {
+        if (!str) return ""
+        return str.toLowerCase()
+          .normalize("NFD")
+          .replace(/[̀-ͯ]/g, "")
+          .replace(/\s+/g, "")
+      }
+
+      // 1. Fetch all teachers for homeroom lookup
       const allTeachers = await prisma.teacher.findMany({
         include: { user: true }
       })
