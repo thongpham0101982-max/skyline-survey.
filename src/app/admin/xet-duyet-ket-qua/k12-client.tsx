@@ -3766,6 +3766,7 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   // ───────── SUBJECTS & MAPPING STATE ─────────
   const [subjectsList, setSubjectsList] = useState<any[]>(initialSubjects||[]);
   const [isSubjectOpen, setIsSubjectOpen] = useState(false);
+  const [syncingSubjects, setSyncingSubjects] = useState(false);
   const [isColumnConfigOpen, setIsColumnConfigOpen] = useState(false);
   const [columnConfigForm, setColumnConfigForm] = useState({ subjectId: "", name: "", scoreNames: [], commentNames: [], showScoreInReport: [], showCommentInReport: [], scoreColumns: 1, commentColumns: 1 });
   const [editingSubjectId, setEditingSubjectId] = useState<string|null>(null);
@@ -3885,6 +3886,29 @@ export function XetDuyetK12Client({ academicYears = [], campuses = [], examBoard
   
   const handleSubjectSubmit=async(e:React.FormEvent)=>{e.preventDefault();if (editingSubjectId ? cannotUpdate : cannotCreate) return;const p=editingSubjectId?{type:"subject",id:editingSubjectId,data:{name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status, exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}}:{type:"subject",data:{code:subjectForm.code,name:subjectForm.name,subjectType:subjectForm.subjectType||null, scoreColumns: subjectForm.scoreColumns, commentColumns: subjectForm.commentColumns, status: subjectForm.status||"ACTIVE", exemptCriteria: JSON.stringify(subjectForm.exemptCriteria)}};const r=await fetch("/api/input-assessment-categories",{method:editingSubjectId?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});if(r.ok){setIsSubjectOpen(false);fetchSubjects()}else notify((await r.json()).error, "err")};
   
+  
+  const handleSyncSubjectsFromMain = async () => {
+    if (cannotUpdate) return;
+    setSyncingSubjects(true);
+    try {
+      const r = await fetch("/api/input-assessment-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "subject", data: { action: "sync_from_main_subjects" } })
+      });
+      if (r.ok) {
+        notify("Đồng bộ danh mục môn học thành công!", "ok");
+        fetchSubjects();
+      } else {
+        notify("Đồng bộ thất bại", "err");
+      }
+    } catch (e) {
+      notify("Có lỗi khi đồng bộ môn học", "err");
+    } finally {
+      setSyncingSubjects(false);
+    }
+  };
+
   const deleteSubject=async(id:string)=>{if (cannotDelete) return;if(!window.confirm("Xóa?"))return;await fetch("/api/input-assessment-categories?type=subject&id="+id,{method:"DELETE"});fetchSubjects()};
   
   const addMapping=async(sid:string)=>{if (cannotCreate) return;const r=await fetch("/api/grade-subject-mappings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({grades:selGrades,eduSystems:selEdus,subjectId:sid})});if(r.ok)fetchMappings();else notify((await r.json()).error, "err")};
@@ -5165,14 +5189,23 @@ return {
               Chế độ xem (Đọc dữ liệu). Các chức năng Thêm mới, Chỉnh sửa và Xóa bị khóa đối với tài khoản này.
             </div>
           )}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-sm font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><BookOpen className="w-4 h-4"/> Danh sách Môn Khảo sát</h2>
-            <button
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleSyncSubjectsFromMain}
+                disabled={cannotCreate || syncingSubjects}
+                className={"flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[13px] font-bold rounded-xl transition-all border border-slate-200/80 shadow-sm " + (cannotCreate ? "pointer-events-none opacity-40" : "")}
+              >
+                <RefreshCw className={`w-4 h-4 text-slate-500 ${syncingSubjects ? "animate-spin" : ""}`}/> {syncingSubjects ? "Đang đồng bộ..." : "Cập nhật từ Quản lý môn học"}
+              </button>
+              <button
               onClick={() => { setEditingSubjectId(null); setSubjectForm({ code:"", name:"", subjectType:"", scoreColumns:1, commentColumns:1, status:"ACTIVE", exemptCriteria:[] as string[] }); setIsSubjectOpen(true) }}
               className={"flex items-center gap-2 px-5 py-2.5 bg-[#48BFE3] text-white text-[13px] font-bold rounded-xl hover:bg-[#009085] transition-all shadow-md shadow-[#48BFE3]/20 " + (cannotCreate ? "pointer-events-none opacity-40" : "")} disabled={cannotCreate}
             >
               <Plus className="w-4 h-4"/> Thêm Môn mới
-            </button>
+              </button>
+            </div>
           </div>
 
           {subjectsList.length === 0 ? (
