@@ -791,7 +791,8 @@ export function SupportClient({
           ...c,
           rowId: `${c.id}_${sIdx}_${sub}`,
           displaySubject: sub,
-          committedSubjects: [sub]
+          committedSubjects: [sub],
+          assignedTeacherName: (c.assignedTeacherMap && c.assignedTeacherMap[sub]) || c.assignedTeacherName || c.teacherName || "Chưa phân công"
         })
       })
     })
@@ -1143,6 +1144,7 @@ export function SupportClient({
                         <th className="px-4 py-3.5 text-left">Lớp</th>
                         <th className="px-4 py-3.5 text-left">Cơ sở</th>
                         <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
+                        <th className="px-4 py-3.5 text-left">GV Phụ trách</th>
                         <th className="px-4 py-3.5 text-left">Tình trạng</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
@@ -1184,8 +1186,20 @@ export function SupportClient({
                                 <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
                               )}
                             </td>
-                            <td className="px-4 py-3.5">
-                              {isProposed ? (
+                             <td className="px-4 py-3.5">
+                               {row.assignedTeacherName && row.assignedTeacherName !== "Chưa phân công" ? (
+                                 <div className="font-extrabold text-indigo-700 text-[12px] flex items-center gap-1.5">
+                                   <User className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                                   <span>{row.assignedTeacherName}</span>
+                                 </div>
+                               ) : (
+                                 <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-400 font-semibold text-[11px] inline-block border border-slate-200/50">
+                                   Chưa phân công
+                                 </span>
+                               )}
+                             </td>
+                             <td className="px-4 py-3.5">
+                               {isProposed ? (
                                 <div className="space-y-1">
                                   <div className="font-extrabold text-emerald-600 text-[12px] flex items-center gap-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />

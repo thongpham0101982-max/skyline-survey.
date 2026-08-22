@@ -161,6 +161,7 @@ export async function GET(req: Request) {
         return {
           ...t,
           commitmentSubjects: committedSubjects,
+            assignedTeacherMap,
           commitmentNote: committedSubjects.length > 0 
             ? committedSubjects.join(", ") 
             : ""
@@ -354,6 +355,40 @@ export async function GET(req: Request) {
         return finalSubs
       }
 
+      
+      const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomName?: string | null) => {
+        if (subName === "Tâm lý") {
+          return homeroomName || "Chưa phân công"
+        }
+        const subLower = subName.toLowerCase()
+        const matchingTa = teachingAssignments.find(ta => {
+          const classMatches = (classId && ta.classId === classId) || 
+            (ta.class?.className && ta.class.className === className) ||
+            (ta.class?.classCode && ta.class.classCode === className)
+
+          if (!classMatches) return false
+
+          const code = (ta.subject?.code || "").toUpperCase()
+          const name = (ta.subject?.name || "").toLowerCase()
+
+          if (subLower.includes("toán")) {
+            return code === "TOA" || name.includes("toán")
+          }
+          if (subLower.includes("anh")) {
+            return code === "TA" || code === "TAV" || code.startsWith("TAV") || name.includes("anh")
+          }
+          if (subLower.includes("việt")) {
+            return code === "TVI" || name.includes("việt")
+          }
+          if (subLower.includes("văn")) {
+            return code === "NVA" || name.includes("văn")
+          }
+          return false
+        })
+
+        return matchingTa?.teacher?.user?.fullName || matchingTa?.teacher?.teacherName || "Chưa phân công"
+      }
+
       const result = [
         ...inputStudents.map(is => {
           const matchingStudent = systemStudents.find(ss => 
@@ -362,6 +397,16 @@ export async function GET(req: Request) {
           )
           
           const committedSubjects = parseCommittedSubjects(is.directorNote, is.admissionResult)
+
+          const assignedTeacherMap: Record<string, string> = {}
+          committedSubjects.forEach(sub => {
+            assignedTeacherMap[sub] = resolveAssignedTeacher(
+              matchingStudent?.classId || matchingStudent?.class?.id,
+              resolvedClassName,
+              sub,
+              matchingStudent?.class?.homeroomTeacher?.user?.fullName
+            )
+          })
 
           const resolvedClassName = 
             matchingStudent?.class?.className ||
@@ -387,9 +432,12 @@ export async function GET(req: Request) {
             admissionResult: is.admissionResult,
             directorNote: is.directorNote,
             systemStudentId: matchingStudent?.id || null,
+            classId: matchingStudent?.classId || matchingStudent?.class?.id || null,
+            homeroomTeacherName: matchingStudent?.class?.homeroomTeacher?.user?.fullName || null,
             className: resolvedClassName,
             campusName: resolvedCampus,
             committedSubjects,
+            assignedTeacherMap,
             mathScore: is.mathScore,
             literatureScore: is.literatureScore,
             writtenEnglishScore: is.writtenEnglishScore,
@@ -430,6 +478,7 @@ export async function GET(req: Request) {
             className: resolvedClassName,
             campusName: resolvedCampus,
             committedSubjects,
+            assignedTeacherMap: {},
             mathScore: null,
             literatureScore: null,
             writtenEnglishScore: null,
