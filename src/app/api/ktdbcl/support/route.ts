@@ -350,7 +350,7 @@ export async function GET(req: Request) {
       })
 
       // Helper to resolve assigned teacher per class and subject
-      const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomTeacherId?: string | null) => {
+      const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomTeacherId?: string | null, directorNote?: string | null) => {
         const subLower = subName.toLowerCase().trim()
         const normTargetClass = normalizeClassName(className)
         const cleanTargetClass = cleanString(className)
@@ -359,8 +359,24 @@ export async function GET(req: Request) {
         const hrTeacherObj = homeroomTeacherId ? allTeachers.find(t => t.id === homeroomTeacherId) : null
         const hrTeacherName = hrTeacherObj?.user?.fullName || hrTeacherObj?.teacherName || null
 
-        // For Tâm lý (Psychology): Search TeachingAssignments first, then GVCN, then TeacherClassAssignments
+                // For Tâm lý (Psychology): Search TeachingAssignments first, then GVCN, then TeacherClassAssignments
         if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
+          if (directorNote) {
+            const noteClean = cleanString(directorNote)
+            for (const t of allTeachers) {
+              const tName = t.user?.fullName || t.teacherName || ""
+              const cleanT = cleanString(tName)
+              if (!cleanT || cleanT.length < 3) continue
+
+              const nameParts = tName.trim().split(/\s+/)
+              const lastName = nameParts[nameParts.length - 1]
+              const cleanLast = cleanString(lastName)
+
+              if (noteClean.includes(cleanT) || (cleanLast.length >= 2 && (noteClean.includes(`t.${cleanLast}`) || noteClean.includes(`thay${cleanLast}`) || noteClean.includes(`co${cleanLast}`)))) {
+                return tName
+              }
+            }
+          }
           const psychTa = teachingAssignments.find(ta => {
             const taClassId = ta.classId
             const taClassName = ta.class?.className || ""
