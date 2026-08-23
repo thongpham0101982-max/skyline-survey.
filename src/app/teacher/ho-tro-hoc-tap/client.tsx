@@ -538,33 +538,17 @@ export function TeacherSupportClient({
     }
   }
 
-  // Bulk Add Commitments To Tracking
+  // Bulk Add Commitments To Tracking (Per Subject)
   const handleBulkAddCommitmentsToTracking = async () => {
-    if (selectedCommitmentStudentIds.length === 0) return
-    setLoading(true)
-    let addedCount = 0
+    if (selectedCommitmentRowIds.length === 0) return;
+    setLoading(true);
+    let addedCount = 0;
     try {
-      const selectedStudents = entranceCommitmentStudents.filter(s => selectedCommitmentStudentIds.includes(s.id))
-      for (const s of selectedStudents) {
-        const activeSubs = s.matchedSubjects?.length > 0 
-          ? s.matchedSubjects 
-          : (s.committedSubjects || ["Văn hóa"])
-        const isPsych = activeSubs.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
-        const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC"
-        const sourceType = isPsych ? "TAM_LY" : "ADMISSION"
-
-        const scoreDetails = (s.committedSubjects || []).map((sub: string) => {
-          let scoreDisplay = "Chưa có";
-          const subLower = sub.toLowerCase();
-          if (subLower.includes("toán")) {
-            if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
-          } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
-            if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
-          } else if (subLower.includes("tâm lý")) {
-            if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
-          }
-          return `${sub}: ${scoreDisplay}`;
-        }).join(", ");
+      const selectedRows = flattenedCommitmentRows.filter(r => selectedCommitmentRowIds.includes(r.rowId));
+      for (const row of selectedRows) {
+        const isPsych = row.subject.toLowerCase().includes("tâm lý");
+        const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC";
+        const sourceType = isPsych ? "TAM_LY" : "ADMISSION";
 
         await fetch("/api/ktdbcl/support", {
           method: "POST",
@@ -572,28 +556,70 @@ export function TeacherSupportClient({
           body: JSON.stringify({
             action: "saveTarget",
             academicYearId: selectedYearId,
-            studentId: s.id,
+            studentId: row.studentId,
             supportType,
             sourceType,
-            reason: activeSubs.join(", "),
-            notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${(s.committedSubjects || []).join(", ")} tại kỳ khảo sát đầu vào. ${scoreDetails ? "Điểm KS: " + scoreDetails : ""}`,
+            reason: row.subject,
+            notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${row.subject} tại kỳ khảo sát đầu vào. Điểm KS: ${row.score}`,
             status: "TIẾP TỤC THEO TUẦN"
           })
-        })
-        addedCount++
+        });
+        addedCount++;
       }
 
-      toast.success(`Thêm thành công ${addedCount} học sinh vào 2. Sổ theo dõi đánh giá`)
-      setSelectedCommitmentStudentIds([])
-      setActiveSubTab("assigned")
-      await fetchTeacherData()
-      await fetchEntranceCommitments()
+      toast.success(`Thêm thành công ${addedCount} lượt bồi dưỡng theo môn vào 2. Sổ theo dõi đánh giá`);
+      setSelectedCommitmentRowIds([]);
+      setActiveSubTab("assigned");
+      await fetchTeacherData();
+      await fetchEntranceCommitments();
     } catch (e: any) {
-      toast.error("Thêm vào Sổ theo dõi thất bại")
+      toast.error("Thêm vào Sổ theo dõi thất bại");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  // Add Single Student-Subject Commitment to Tracking
+  const handleAddSingleCommitmentToTracking = async (row: any) => {
+    if (row.existingTarget) {
+      setActiveSubTab("assigned");
+      return;
+    }
+    setLoading(true);
+    try {
+      const isPsych = row.subject.toLowerCase().includes("tâm lý");
+      const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC";
+      const sourceType = isPsych ? "TAM_LY" : "ADMISSION";
+
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "saveTarget",
+          academicYearId: selectedYearId,
+          studentId: row.studentId,
+          supportType,
+          sourceType,
+          reason: row.subject,
+          notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${row.subject} tại kỳ khảo sát đầu vào. Điểm KS: ${row.score}`,
+          status: "TIẾP TỤC THEO TUẦN"
+        })
+      });
+      const data = await res.json();
+      if (data.error) {
+        toast.error("Thêm vào Sổ theo dõi thất bại: " + data.error);
+      } else {
+        toast.success(`Thêm thành công học sinh ${row.studentName} (môn ${row.subject}) vào 2. Sổ theo dõi đánh giá`);
+        setActiveSubTab("assigned");
+        await fetchTeacherData();
+        await fetchEntranceCommitments();
+      }
+    } catch (e: any) {
+      toast.error("Thêm vào Sổ theo dõi thất bại");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Single Return Target
   const handleReturnTarget = async (id: string, studentName: string) => {
@@ -1328,283 +1354,264 @@ export function TeacherSupportClient({
           </div>
         </div>
       ) : activeSubTab === "commitments" ? (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center justify-between">
             <button
-              disabled={selectedCommitmentStudentIds.length === 0}
+              disabled={selectedCommitmentRowIds.length === 0}
               onClick={handleBulkAddCommitmentsToTracking}
-              className="bg-[#48BFE3] disabled:bg-slate-300 hover:bg-[#009085] text-white font-bold py-2 px-4 rounded-lg shadow-sm transition-all cursor-pointer inline-flex items-center gap-1.5"
+              className="bg-[#48BFE3] disabled:bg-slate-300 hover:bg-[#009085] text-white font-bold py-2 px-4 rounded-xl shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs"
             >
               <Plus className="h-4 w-4" />
-              Thêm vào Sổ theo dõi {selectedCommitmentStudentIds.length > 0 ? `(${selectedCommitmentStudentIds.length})` : ""}
+              Thêm vào Sổ theo dõi {selectedCommitmentRowIds.length > 0 ? `(${selectedCommitmentRowIds.length})` : ""}
             </button>
           </div>
-          <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-4 py-3 w-10 text-center">
-                  <input 
-                    type="checkbox" 
-                    checked={entranceCommitmentStudents.length > 0 && entranceCommitmentStudents.every(s => selectedCommitmentStudentIds.includes(s.id))} 
-                    onChange={e => {
-                      if (e.target.checked) setSelectedCommitmentStudentIds(entranceCommitmentStudents.map(s => s.id));
-                      else setSelectedCommitmentStudentIds([]);
-                    }}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                </th>
-                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
-                
-                <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Add Sổ Theo dõi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 text-sm">
-              {loadingEntranceCommitments ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-400">
-                    <RefreshCw className="h-6 w-6 animate-spin inline-block mr-2 text-indigo-600" /> Đang tải danh sách học sinh cam kết đầu vào...
-                  </td>
-                </tr>
-              ) : entranceCommitmentStudents.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="text-center py-10 text-slate-400 font-medium">
-                    Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
-                  </td>
-                </tr>
-              ) : (() => {
-                const query = searchQuery.trim().toLowerCase();
-                const filtered = entranceCommitmentStudents.filter(s => 
-                  (s.studentName || "").toLowerCase().includes(query) || 
-                  (s.studentCode || "").toLowerCase().includes(query) ||
-                  (s.className || "").toLowerCase().includes(query)
-                );
 
-                if (filtered.length === 0) {
+          {loadingEntranceCommitments ? (
+            <div className="bg-white border rounded-2xl p-12 text-center text-slate-400">
+              <RefreshCw className="h-7 w-7 animate-spin inline-block mb-2 text-indigo-600" />
+              <p className="text-sm font-medium">Đang tải danh sách học sinh cam kết đầu vào...</p>
+            </div>
+          ) : flattenedCommitmentRows.length === 0 ? (
+            <div className="bg-white border rounded-2xl p-12 text-center text-slate-400 font-medium">
+              Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
+            </div>
+          ) : viewMode === "GROUPED" ? (
+            /* GROUPED BY SUBJECT VIEW */
+            <div className="space-y-6">
+              {groupedCommitmentsBySubject.length === 0 ? (
+                <div className="bg-white border rounded-2xl p-10 text-center text-slate-400 font-medium">
+                  Không tìm thấy học sinh nào khớp với bộ lọc môn học hiện tại.
+                </div>
+              ) : (
+                groupedCommitmentsBySubject.map((group) => {
+                  const isAllGroupSelected = group.rows.length > 0 && group.rows.every((r: any) => selectedCommitmentRowIds.includes(r.rowId));
                   return (
+                    <div key={group.subject} className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+                      {/* Subject Group Header */}
+                      <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50 to-white border-b border-indigo-100/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
+                            <BookOpen className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-extrabold text-indigo-950 text-sm">{group.subject}</h3>
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
+                                {group.rows.length} lượt cam kết
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 font-medium">
+                              Danh sách học sinh cam kết cần phụ đạo, bồi dưỡng môn {group.subject}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const ids = group.rows.map((r: any) => r.rowId);
+                            if (isAllGroupSelected) {
+                              setSelectedCommitmentRowIds(prev => prev.filter(id => !ids.includes(id)));
+                            } else {
+                              setSelectedCommitmentRowIds(prev => Array.from(new Set([...prev, ...ids])));
+                            }
+                          }}
+                          className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white border border-indigo-200 hover:border-indigo-300 px-3 py-1.5 rounded-xl shadow-xs hover:bg-indigo-50 transition-all cursor-pointer inline-flex items-center gap-1 self-start sm:self-auto"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                          {isAllGroupSelected ? "Bỏ chọn nhóm này" : `Chọn tất cả ${group.rows.length} HS`}
+                        </button>
+                      </div>
+
+                      {/* Subject Students Table */}
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-slate-200">
+                          <thead className="bg-slate-50/70">
+                            <tr>
+                              <th className="px-4 py-3 w-10 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isAllGroupSelected}
+                                  onChange={e => {
+                                    const ids = group.rows.map((r: any) => r.rowId);
+                                    if (e.target.checked) setSelectedCommitmentRowIds(prev => Array.from(new Set([...prev, ...ids])));
+                                    else setSelectedCommitmentRowIds(prev => prev.filter(id => !ids.includes(id)));
+                                  }}
+                                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                              </th>
+                              <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Môn cam kết</th>
+                              <th className="px-5 py-3 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider">Điểm KS</th>
+                              <th className="px-5 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thao tác</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-200 text-sm">
+                            {group.rows.map((row: any, index: number) => {
+                              return (
+                                <tr key={row.rowId} className="hover:bg-slate-50/60 transition-colors">
+                                  <td className="px-4 py-3.5 whitespace-nowrap text-center">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedCommitmentRowIds.includes(row.rowId)}
+                                      onChange={e => {
+                                        if (e.target.checked) setSelectedCommitmentRowIds([...selectedCommitmentRowIds, row.rowId]);
+                                        else setSelectedCommitmentRowIds(selectedCommitmentRowIds.filter(id => id !== row.rowId));
+                                      }}
+                                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    />
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap text-center text-sm font-medium text-slate-500">
+                                    {index + 1}
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap text-sm font-semibold text-slate-600">
+                                    {row.studentCode}
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap">
+                                    <button onClick={() => handleOpenProfile(row.studentId)} className="font-bold text-[#48BFE3] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">
+                                      {row.studentName}
+                                    </button>
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap text-slate-600 font-bold text-xs">
+                                    {row.className}
+                                    {row.isHomeroom && <span className="text-[10px] text-indigo-600 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap text-slate-600 text-xs font-medium">
+                                    {row.enrollmentDate ? new Date(row.enrollmentDate).toLocaleDateString("vi-VN") : "Chưa có"}
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap">
+                                    <span className="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-indigo-600 text-white shadow-xs">
+                                      {row.subject}
+                                    </span>
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap">
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-50 text-indigo-800 border border-indigo-200">
+                                      {row.score}
+                                    </span>
+                                  </td>
+                                  <td className="px-5 py-3.5 whitespace-nowrap text-center">
+                                    <button
+                                      onClick={() => handleAddSingleCommitmentToTracking(row)}
+                                      className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1 cursor-pointer"
+                                      title="Chuyển sang Sổ theo dõi đánh giá"
+                                    >
+                                      <Plus className="h-3.5 w-3.5" /> {row.existingTarget ? "Sổ theo dõi" : "Thêm Sổ theo dõi"}
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            /* LIST VIEW TABLE (SEPARATED BY SUBJECT PER ROW) */
+            <div className="bg-white border rounded-2xl overflow-hidden shadow-xs">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 w-10 text-center">
+                      <input 
+                        type="checkbox" 
+                        checked={filteredFlattenedCommitments.length > 0 && filteredFlattenedCommitments.every((r: any) => selectedCommitmentRowIds.includes(r.rowId))} 
+                        onChange={e => {
+                          if (e.target.checked) setSelectedCommitmentRowIds(filteredFlattenedCommitments.map((r: any) => r.rowId));
+                          else setSelectedCommitmentRowIds([]);
+                        }}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">TT</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Mã HS</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Họ và tên</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-sm">
+                  {filteredFlattenedCommitments.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="text-center py-10 text-slate-400">
-                        Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
+                        Không tìm thấy học sinh nào khớp với bộ lọc hiện tại.
                       </td>
                     </tr>
-                  );
-                }
+                  ) : (
+                    filteredFlattenedCommitments.map((row: any, index: number) => {
+                      const isSelectedSub = subjectFilter !== "ALL" && (row.subject.toLowerCase().includes(subjectFilter.toLowerCase()) || subjectFilter.toLowerCase().includes(row.subject.toLowerCase()));
 
-                return filtered.map((s: any, index: number) => {
-                  const hasPsychology = (s.committedSubjects || []).some((sub: string) => sub.toLowerCase().includes("tâm lý"))
-                  const existingTarget = targets.find(t => 
-                    t.studentId === s.id && 
-                    (hasPsychology ? t.supportType === "PSYCHOLOGICAL" : t.supportType === "ACADEMIC")
-                  )
-                  const isApproved = existingTarget?.assignments && existingTarget.assignments.length > 0
-                  const isTerminated = existingTarget?.terminationStatus === "TERMINATED"
-                  const isPending = existingTarget?.terminationStatus === "PENDING_TERMINATION"
-
-                  const isAssigned = existingTarget?.assignments?.some((a: any) => a.teacherId === teacher?.id)
-                  const matchedClass = assignedClasses.find((c: any) => c.id === s.classId)
-                  const isHomeroomTeacherOfThisClass = matchedClass ? matchedClass.isHomeroom : false
-                  const canEvaluateCommitment = existingTarget?.supportType === "PSYCHOLOGICAL"
-                    ? (isAssigned && !isHomeroomTeacherOfThisClass)
-                    : isAssigned
-
-                  let statusText = "Chưa đề xuất hỗ trợ"
-                  let statusClass = "bg-slate-100 text-slate-600 border border-slate-200"
-
-                  if (existingTarget) {
-                    if (isTerminated) {
-                      statusText = "Đã kết thúc"
-                      statusClass = "bg-emerald-100 text-emerald-800"
-                    } else if (isPending) {
-                      statusText = "Hoàn thành"
-                      statusClass = "bg-amber-100 text-amber-800"
-                    } else if (isApproved || existingTarget.status === "ĐÃ DUYỆT" || existingTarget.status === "ACTIVE") {
-                      statusText = "Đang hỗ trợ"
-                      statusClass = "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                    } else {
-                      statusText = "Đang đề xuất"
-                      statusClass = "bg-blue-50 text-blue-700 border border-blue-200"
-                    }
-                  }
-
-                  return (
-                    <tr key={s.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-4 whitespace-nowrap text-center">
-                        <input 
-                          type="checkbox" 
-                          checked={selectedCommitmentStudentIds.includes(s.id)} 
-                          onChange={e => {
-                            if (e.target.checked) setSelectedCommitmentStudentIds([...selectedCommitmentStudentIds, s.id]);
-                            else setSelectedCommitmentStudentIds(selectedCommitmentStudentIds.filter(id => id !== s.id));
-                          }}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-500">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-500">
-                        {s.studentCode}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button onClick={() => handleOpenProfile(s.id)} className="font-bold text-[#48BFE3] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">{s.studentName}</button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-bold text-xs">
-                        {s.className}
-                        {s.isHomeroom && <span className="text-[10px] text-indigo-600 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs font-medium">
-                        {s.enrollmentDate ? new Date(s.enrollmentDate).toLocaleDateString("vi-VN") : "Chưa có"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          {s.committedSubjects.map((sub: string, index: number) => {
-                            const isMatched = s.matchedSubjects?.includes(sub)
-                            return (
-                              <span 
-                                key={index} 
-                                className={`w-max px-2 py-0.5 rounded text-[11px] font-bold border ${
-                                  isMatched 
-                                    ? "bg-indigo-50 text-indigo-700 border-indigo-200" 
-                                    : "bg-slate-100 text-slate-600 border-slate-200"
-                                }`}
-                              >
-                                {sub}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          {s.committedSubjects.map((sub: string, index: number) => {
-                            let scoreDisplay = "Chưa có";
-                            const subLower = sub.toLowerCase();
-                            if (subLower.includes("toán")) {
-                              if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
-                              else {
-                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("toán"));
-                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                              }
-                            } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
-                              if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
-                              else {
-                                const sc = s.scores?.find((x:any) => {
-                                  const n = x.subject?.name?.toLowerCase() || "";
-                                  return n.includes("văn") || n.includes("tiếng việt");
-                                });
-                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                              }
-                            } else if (subLower.includes("anh")) {
-                              const write = s.writtenEnglishScore;
-                              const oral = s.oralEnglishScore;
-                              if (write != null || oral != null) {
-                                scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
-                              } else {
-                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("anh"));
-                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                              }
-                            } else if (subLower.includes("tâm lý")) {
-                              if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
-                              else {
-                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
-                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                              }
-                            } else {
-                              if (s.scores && s.scores.length > 0) {
-                                const sc = s.scores.find((x:any) => {
-                                  const n = x.subject?.name?.toLowerCase() || "";
-                                  return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
-                                });
-                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
-                              }
-                            }
-                            return (
-                              <span key={index} className="text-[11px] font-bold text-slate-600 block whitespace-nowrap">
-                                <span className="text-slate-400 font-normal">{sub}:</span> <span className="text-indigo-600 font-black">{getCompactScore(scoreDisplay)}</span>
-                              </span>
-                            )
-                          })}
-                        </div>
-                      </td>
-                      
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button
-                          onClick={async () => {
-                            if (existingTarget) {
-                              setActiveSubTab("assigned")
-                            } else {
-                              setLoading(true)
-                              try {
-                                const activeSubs = s.matchedSubjects?.length > 0 
-                                  ? s.matchedSubjects 
-                                  : (s.committedSubjects || ["Văn hóa"])
-                                const isPsych = activeSubs.some((sub: string) => sub.toLowerCase().includes("tâm lý"))
-                                const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC"
-                                const sourceType = isPsych ? "TAM_LY" : "ADMISSION"
-
-                                const scoreDetails = (s.committedSubjects || []).map((sub: string) => {
-                                  let scoreDisplay = "Chưa có";
-                                  const subLower = sub.toLowerCase();
-                                  if (subLower.includes("toán")) {
-                                    if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
-                                  } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
-                                    if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
-                                  } else if (subLower.includes("tâm lý")) {
-                                    if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
-                                  }
-                                  return `${sub}: ${scoreDisplay}`;
-                                }).join(", ");
-
-                                const res = await fetch("/api/ktdbcl/support", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({
-                                    action: "saveTarget",
-                                    academicYearId: selectedYearId,
-                                    studentId: s.id,
-                                    supportType,
-                                    sourceType,
-                                    reason: activeSubs.join(", "),
-                                    notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${(s.committedSubjects || []).join(", ")} tại kỳ khảo sát đầu vào. ${scoreDetails ? "Điểm KS: " + scoreDetails : ""}`,
-                                    status: "TIẾP TỤC THEO TUẦN"
-                                  })
-                                })
-                                const data = await res.json()
-                                if (data.error) {
-                                  toast.error("Thêm vào Sổ theo dõi thất bại: " + data.error)
-                                } else {
-                                  toast.success(`Thêm thành công học sinh ${s.studentName} vào 2. Sổ theo dõi đánh giá`)
-                                  setActiveSubTab("assigned")
-                                  await fetchTeacherData()
-                                  await fetchEntranceCommitments()
-                                }
-                              } catch (e: any) {
-                                toast.error("Thêm vào Sổ theo dõi thất bại")
-                              } finally {
-                                setLoading(false)
-                              }
-                            }
-                          }}
-                          className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1 cursor-pointer"
-                          title="Chuyển sang Sổ theo dõi đánh giá"
-                        >
-                          <Plus className="h-3.5 w-3.5" /> Sổ theo dõi
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                });
-              })()}
-            </tbody>
-          </table>
+                      return (
+                        <tr key={row.rowId} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-4 py-4 whitespace-nowrap text-center">
+                            <input 
+                              type="checkbox" 
+                              checked={selectedCommitmentRowIds.includes(row.rowId)} 
+                              onChange={e => {
+                                if (e.target.checked) setSelectedCommitmentRowIds([...selectedCommitmentRowIds, row.rowId]);
+                                else setSelectedCommitmentRowIds(selectedCommitmentRowIds.filter(id => id !== row.rowId));
+                              }} 
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-500">
+                            {index + 1}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-600">
+                            {row.studentCode}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button onClick={() => handleOpenProfile(row.studentId)} className="font-bold text-[#48BFE3] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">{row.studentName}</button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-bold text-xs">
+                            {row.className}
+                            {row.isHomeroom && <span className="text-[10px] text-indigo-600 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs font-medium">
+                            {row.enrollmentDate ? new Date(row.enrollmentDate).toLocaleDateString("vi-VN") : "Chưa có"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span 
+                              className={`w-max px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
+                                isSelectedSub || row.isMatchedTeacher
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
+                                  : "bg-slate-100 text-slate-700 border-slate-200"
+                              }`}
+                            >
+                              {row.subject}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+                              {row.score}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <button
+                              onClick={() => handleAddSingleCommitmentToTracking(row)}
+                              className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1 cursor-pointer"
+                              title="Chuyển sang Sổ theo dõi đánh giá"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> {row.existingTarget ? "Sổ theo dõi" : "Thêm Sổ theo dõi"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-      </div>
       ) : (
         <>
           {approvedHistoryCount > 0 && (
