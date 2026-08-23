@@ -44,6 +44,58 @@ const getCompactScore = (val: any) => {
   return String(val);
 }
 
+
+const getScoreForSubject = (s: any, subjectName: string) => {
+  let scoreDisplay = "Chưa có";
+  const subLower = (subjectName || "").toLowerCase();
+  if (subLower.includes("toán")) {
+    if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
+    else {
+      const sc = s.scores?.find((x: any) => x.subject?.name?.toLowerCase().includes("toán"));
+      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+    }
+  } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+    if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
+    else {
+      const sc = s.scores?.find((x: any) => {
+        const n = x.subject?.name?.toLowerCase() || "";
+        return n.includes("văn") || n.includes("tiếng việt");
+      });
+      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+    }
+  } else if (subLower.includes("anh")) {
+    if (subLower.includes("viết")) {
+      scoreDisplay = s.writtenEnglishScore != null ? `${s.writtenEnglishScore}` : "Chưa có";
+    } else if (subLower.includes("vấn đáp") || subLower.includes("nói") || subLower.includes("oral")) {
+      scoreDisplay = s.oralEnglishScore != null ? `${s.oralEnglishScore}` : "Chưa có";
+    } else {
+      const write = s.writtenEnglishScore;
+      const oral = s.oralEnglishScore;
+      if (write != null || oral != null) {
+        scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
+      } else {
+        const sc = s.scores?.find((x: any) => x.subject?.name?.toLowerCase().includes("anh"));
+        if (sc?.scores) scoreDisplay = `${sc.scores}`;
+      }
+    }
+  } else if (subLower.includes("tâm lý")) {
+    if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
+    else {
+      const sc = s.scores?.find((x: any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
+      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+    }
+  } else {
+    if (s.scores && s.scores.length > 0) {
+      const sc = s.scores.find((x: any) => {
+        const n = x.subject?.name?.toLowerCase() || "";
+        return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
+      });
+      if (sc?.scores) scoreDisplay = `${sc.scores}`;
+    }
+  }
+  return getCompactScore(scoreDisplay);
+};
+
 export function TeacherSupportClient({
   teacher,
   academicYears,
@@ -59,7 +111,7 @@ export function TeacherSupportClient({
   const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history">("commitments")
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
   const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
-  const [selectedCommitmentStudentIds, setSelectedCommitmentStudentIds] = useState<string[]>([])
+  const [selectedCommitmentRowIds, setSelectedCommitmentRowIds] = useState<string[]>([])
 
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
