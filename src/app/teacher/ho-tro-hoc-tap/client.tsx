@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
   FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, RotateCcw, 
-  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2
+  MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2, Layers, List, LayoutGrid, Filter
 } from "lucide-react"
 import toast from "react-hot-toast"
 
@@ -108,7 +108,7 @@ export function TeacherSupportClient({
   const [selectedYearId, setSelectedYearId] = useState(
     academicYears[0]?.id || ""
   )
-  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history">("commitments")
+  const [activeSubTab, setActiveSubTab] = useState<"assigned" | "commitments" | "history" | "summary">("commitments")
   const [entranceCommitmentStudents, setEntranceCommitmentStudents] = useState<any[]>([])
   const [loadingEntranceCommitments, setLoadingEntranceCommitments] = useState(false)
   const [selectedCommitmentRowIds, setSelectedCommitmentRowIds] = useState<string[]>([])
@@ -144,6 +144,9 @@ export function TeacherSupportClient({
   // Month and Level Filters
   const [monthFilter, setMonthFilter] = useState("ALL")
   const [levelFilter, setLevelFilter] = useState("ALL")
+  const [subjectFilter, setSubjectFilter] = useState("ALL")
+  const [classFilter, setClassFilter] = useState("ALL")
+  const [viewMode, setViewMode] = useState<"LIST" | "GROUPED">("LIST")
 
   // Student Profile / Result Book Modal State
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
@@ -538,15 +541,20 @@ export function TeacherSupportClient({
     }
   }
 
-  // Bulk Add Commitments To Tracking (Per Subject)
+  // Bulk Add Commitments To Tracking (Per Subject - Self Contained)
   const handleBulkAddCommitmentsToTracking = async () => {
     if (selectedCommitmentRowIds.length === 0) return;
     setLoading(true);
     let addedCount = 0;
     try {
-      const selectedRows = flattenedCommitmentRows.filter(r => selectedCommitmentRowIds.includes(r.rowId));
-      for (const row of selectedRows) {
-        const isPsych = row.subject.toLowerCase().includes("tâm lý");
+      for (const rowId of selectedCommitmentRowIds) {
+        const parts = rowId.split("___");
+        const studentId = parts[0];
+        const sub = parts.slice(1).join("___") || "Văn hóa";
+        const s = entranceCommitmentStudents.find((st: any) => st.id === studentId);
+        if (!s) continue;
+        const score = getScoreForSubject(s, sub);
+        const isPsych = sub.toLowerCase().includes("tâm lý");
         const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC";
         const sourceType = isPsych ? "TAM_LY" : "ADMISSION";
 
@@ -556,11 +564,11 @@ export function TeacherSupportClient({
           body: JSON.stringify({
             action: "saveTarget",
             academicYearId: selectedYearId,
-            studentId: row.studentId,
+            studentId: s.id,
             supportType,
             sourceType,
-            reason: row.subject,
-            notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${row.subject} tại kỳ khảo sát đầu vào. Điểm KS: ${row.score}`,
+            reason: sub,
+            notes: `[Cam kết Khảo sát đầu vào]: Học sinh có cam kết môn ${sub} tại kỳ khảo sát đầu vào. Điểm KS: ${score}`,
             status: "TIẾP TỤC THEO TUẦN"
           })
         });
@@ -587,7 +595,7 @@ export function TeacherSupportClient({
     }
     setLoading(true);
     try {
-      const isPsych = row.subject.toLowerCase().includes("tâm lý");
+      const isPsych = (row.subject || "").toLowerCase().includes("tâm lý");
       const supportType = isPsych ? "PSYCHOLOGICAL" : "ACADEMIC";
       const sourceType = isPsych ? "TAM_LY" : "ADMISSION";
 
@@ -793,55 +801,231 @@ export function TeacherSupportClient({
 
 
 
-  const filteredTargets = useMemo(() => {
-    const seenKeys = new Set<string>()
-    return targets.filter(t => {
-      const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"))
-      const isCreatedByMe = t.createdById === teacher?.id
-      const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher?.id)
-      const isHomeroomStudent = homeroomClasses.some(c => c.students?.some((s: any) => s.id === t.studentId))
-      const isClassTeacher = assignedClasses.some((c: any) => c.id === t.student?.classId)
+  // 1. Flatten / Split each student by their committed subjects so 1 row = 1 Student x 1 Subject
+  const flattenedCommitmentRows = useMemo(() => {
+    const rows: any[] = [];
+    (entranceCommitmentStudents || []).forEach((s: any) => {
+      const subs = s.committedSubjects && s.committedSubjects.length > 0
+        ? s.committedSubjects
+        : ["Văn hóa"];
 
-      // Rule: MUST be either:
-      // 1. Cam kết đầu vào (CKĐV) for a student in this teacher's class
-      // 2. Đề xuất HS theo dõi (BSTD) created by or assigned to this teacher
-      const isCKDV = isCommitmentTarget && (isHomeroomStudent || isClassTeacher)
-      const isBSTD = !isCommitmentTarget && (isCreatedByMe || isAssignedToMe)
+      subs.forEach((sub: string) => {
+        const rowId = `${s.id}___${sub}`;
+        const isMatchedTeacher = s.matchedSubjects?.includes(sub);
+        const score = getScoreForSubject(s, sub);
+        const hasPsych = (sub || "").toLowerCase().includes("tâm lý");
+        const existingTarget = (targets || []).find((t: any) => 
+          t.studentId === s.id && (
+            (t.reason && t.reason.toLowerCase().includes(sub.toLowerCase())) ||
+            (hasPsych && t.supportType === "PSYCHOLOGICAL")
+          )
+        );
 
-      if (!isCKDV && !isBSTD) return false
+        rows.push({
+          rowId,
+          studentId: s.id,
+          studentName: s.studentName,
+          studentCode: s.studentCode,
+          className: s.className,
+          classId: s.classId,
+          isHomeroom: s.isHomeroom,
+          enrollmentDate: s.enrollmentDate,
+          subject: sub,
+          score,
+          isMatchedTeacher,
+          existingTarget,
+          rawStudent: s
+        });
+      });
+    });
+    return rows;
+  }, [entranceCommitmentStudents, targets]);
 
-      // Deduplicate targets by studentId + supportType + sourceCategory
-      const targetCategory = isCommitmentTarget ? "CKDV" : "BSTD"
-      const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}`
-      if (seenKeys.has(dedupeKey)) return false
-      seenKeys.add(dedupeKey)
+  // 2. Extract Available Subjects with Counts for Tab 1
+  const availableCommitmentSubjects = useMemo(() => {
+    const map = new Map<string, number>();
+    flattenedCommitmentRows.forEach((r: any) => {
+      const sub = r.subject || "Văn hóa";
+      map.set(sub, (map.get(sub) || 0) + 1);
+    });
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
+  }, [flattenedCommitmentRows]);
 
-      // Apply role filter
-      if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false
-      if (roleFilter === "ASSIGNED" && !isAssignedToMe && !isCreatedByMe) return false
+  // 3. Extract Available Classes
+  const availableClasses = useMemo(() => {
+    const map = new Map<string, string>();
+    assignedClasses.forEach((c: any) => {
+      map.set(c.id, c.className || c.name);
+    });
+    entranceCommitmentStudents.forEach((s: any) => {
+      if (s.classId && s.className) {
+        map.set(s.classId, s.className);
+      }
+    });
+    targets.forEach((t: any) => {
+      const cid = t.student?.classId || t.student?.class?.id;
+      const cname = t.student?.class?.className || t.student?.className;
+      if (cid && cname) {
+        map.set(cid, cname);
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [assignedClasses, entranceCommitmentStudents, targets]);
 
-      // Apply Month filter
-      if (monthFilter !== "ALL") {
-        const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter)
-        if (!hasEvalInMonth) return false
+  // 4. Filtered Flattened Commitment Rows for Tab 1
+  const filteredFlattenedCommitments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return flattenedCommitmentRows.filter((row: any) => {
+      if (query) {
+        const matchName = (row.studentName || "").toLowerCase().includes(query);
+        const matchCode = (row.studentCode || "").toLowerCase().includes(query);
+        const matchClass = (row.className || "").toLowerCase().includes(query);
+        const matchSub = (row.subject || "").toLowerCase().includes(query);
+        if (!matchName && !matchCode && !matchClass && !matchSub) return false;
       }
 
-      // Apply Level filter
-      const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : []
-      const latestEval = sortedEvals[0]
-      const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ"
-      if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false
+      if (classFilter !== "ALL" && row.classId !== classFilter && row.className !== classFilter) {
+        return false;
+      }
 
-      // Apply search query
-      const name = t.student?.studentName || t.student?.fullName || ""
-      const code = t.student?.studentCode || t.student?.code || ""
+      if (subjectFilter !== "ALL") {
+        const cleanFilter = subjectFilter.toLowerCase();
+        const cleanSub = (row.subject || "").toLowerCase();
+        if (!cleanSub.includes(cleanFilter) && !cleanFilter.includes(cleanSub)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [flattenedCommitmentRows, searchQuery, classFilter, subjectFilter]);
+
+  // 5. Grouped Commitment Rows by Subject for Tab 1
+  const groupedCommitmentsBySubject = useMemo(() => {
+    const groups: { subject: string; rows: any[] }[] = [];
+    const subjectList = availableCommitmentSubjects.map(s => s.name);
+
+    const targetSubjects = subjectFilter === "ALL" ? subjectList : subjectList.filter(s => {
+      const cleanSub = s.toLowerCase();
+      const cleanFilter = subjectFilter.toLowerCase();
+      return cleanSub.includes(cleanFilter) || cleanFilter.includes(cleanSub);
+    });
+
+    targetSubjects.forEach(subjectName => {
+      const cleanSub = subjectName.toLowerCase();
+      const matched = filteredFlattenedCommitments.filter((row: any) => {
+        const cs = (row.subject || "").toLowerCase();
+        return cs.includes(cleanSub) || cleanSub.includes(cs);
+      });
+      if (matched.length > 0) {
+        groups.push({ subject: subjectName, rows: matched });
+      }
+    });
+
+    return groups;
+  }, [availableCommitmentSubjects, filteredFlattenedCommitments, subjectFilter]);
+
+  // 6. Filtered Targets for Tab 2
+  const filteredTargets = useMemo(() => {
+    const seenKeys = new Set<string>();
+    return targets.filter(t => {
+      const isCommitmentTarget = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"));
+      const isCreatedByMe = t.createdById === teacher?.id;
+      const isAssignedToMe = t.assignments?.some((a: any) => a.teacherId === teacher?.id);
+      const isHomeroomStudent = homeroomClasses.some(c => c.students?.some((s: any) => s.id === t.studentId));
+      const isClassTeacher = assignedClasses.some((c: any) => c.id === t.student?.classId);
+
+      const isCKDV = isCommitmentTarget && (isHomeroomStudent || isClassTeacher);
+      const isBSTD = !isCommitmentTarget && (isCreatedByMe || isAssignedToMe);
+
+      if (!isCKDV && !isBSTD) return false;
+
+      const targetCategory = isCommitmentTarget ? "CKDV" : "BSTD";
+      const dedupeKey = `${t.studentId}_${t.supportType}_${targetCategory}`;
+      if (seenKeys.has(dedupeKey)) return false;
+      seenKeys.add(dedupeKey);
+
+      if (roleFilter === "HOMEROOM" && !isHomeroomStudent) return false;
+      if (roleFilter === "ASSIGNED" && !isAssignedToMe && !isCreatedByMe) return false;
+
+      if (classFilter !== "ALL") {
+        const studentClassId = t.student?.classId || t.student?.class?.id;
+        const studentClassName = t.student?.class?.className || t.student?.className;
+        if (studentClassId !== classFilter && studentClassName !== classFilter) return false;
+      }
+
+      if (subjectFilter !== "ALL") {
+        const reason = (t.reason || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")).toLowerCase();
+        const cleanFilter = subjectFilter.toLowerCase();
+        if (!reason.includes(cleanFilter) && !cleanFilter.includes(reason)) return false;
+      }
+
+      if (monthFilter !== "ALL") {
+        const hasEvalInMonth = t.evaluations?.some((e: any) => e.periodName === monthFilter);
+        if (!hasEvalInMonth) return false;
+      }
+
+      const sortedEvals = t.evaluations ? [...t.evaluations].sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) : [];
+      const latestEval = sortedEvals[0];
+      const currentLevel = latestEval ? latestEval.trackingLevel : "Đang hỗ trợ";
+      if (levelFilter !== "ALL" && currentLevel !== levelFilter) return false;
+
+      const name = t.student?.studentName || t.student?.fullName || "";
+      const code = t.student?.studentCode || t.student?.code || "";
       const matchesSearch = searchQuery === "" || 
         name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        code.toLowerCase().includes(searchQuery.toLowerCase())
+        code.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesSearch
-    })
-  }, [targets, teacher?.id, homeroomClasses, assignedClasses, roleFilter, monthFilter, levelFilter, searchQuery])
+      return matchesSearch;
+    });
+  }, [targets, teacher?.id, homeroomClasses, assignedClasses, roleFilter, classFilter, subjectFilter, monthFilter, levelFilter, searchQuery]);
+
+  // 7. Extract Available Subjects for Tab 2
+  const availableAssignedSubjects = useMemo(() => {
+    const map = new Map<string, number>();
+    targets.forEach((t: any) => {
+      const rawSubjects = (t.reason || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")).split(",");
+      rawSubjects.forEach((sub: string) => {
+        const clean = sub.trim();
+        if (clean) {
+          map.set(clean, (map.get(clean) || 0) + 1);
+        }
+      });
+    });
+    return Array.from(map.entries()).map(([name, count]) => ({ name, count }));
+  }, [targets]);
+
+  // 8. Dynamic Subjects for Current Active Tab
+  const currentTabAvailableSubjects = useMemo(() => {
+    if (activeSubTab === "commitments") return availableCommitmentSubjects;
+    if (activeSubTab === "assigned") return availableAssignedSubjects;
+    return availableCommitmentSubjects;
+  }, [activeSubTab, availableCommitmentSubjects, availableAssignedSubjects]);
+
+  // 9. Grouped Targets by Subject for Tab 2
+  const groupedTargetsBySubject = useMemo(() => {
+    const groups: { subject: string; targets: any[] }[] = [];
+    const subjectList = availableAssignedSubjects.map(s => s.name);
+
+    const targetSubjects = subjectFilter === "ALL" ? subjectList : subjectList.filter(s => {
+      const cleanSub = s.toLowerCase();
+      const cleanFilter = subjectFilter.toLowerCase();
+      return cleanSub.includes(cleanFilter) || cleanFilter.includes(cleanSub);
+    });
+
+    targetSubjects.forEach(subjectName => {
+      const cleanSub = subjectName.toLowerCase();
+      const matched = filteredTargets.filter(t => {
+        const reason = (t.reason || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")).toLowerCase();
+        return reason.includes(cleanSub) || cleanSub.includes(reason);
+      });
+      if (matched.length > 0) {
+        groups.push({ subject: subjectName, targets: matched });
+      }
+    });
+
+    return groups;
+  }, [availableAssignedSubjects, filteredTargets, subjectFilter]);
 
   // Filter students related to this teacher - ONLY 2 SOURCES: CKĐV & BSTD
   const summaryEvaluations = useMemo(() => {
@@ -1057,28 +1241,182 @@ export function TeacherSupportClient({
         </button>
       </div>
 
-      {/* Action panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-4 rounded-xl border">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setProposeClassId("")
-              setClassStudents([])
-              setSelectedStudentIds([])
-              setSelectedSubjects([])
-              setProposePsychReason("Tâm lý")
-              setProposeNotes("")
-              setIsProposeModalOpen(true)
-              fetchAssignedClasses()
-            }}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-          >
-            <Plus className="h-4 w-4" />
-            Đề xuất HS Theo dõi
-          </button>
+      {/* Action panel & Multi-Dimension Filter Toolbar */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* Action buttons on the left */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => {
+                setProposeClassId("")
+                setClassStudents([])
+                setSelectedStudentIds([])
+                setSelectedSubjects([])
+                setProposePsychReason("Tâm lý")
+                setProposeNotes("")
+                setIsProposeModalOpen(true)
+                fetchAssignedClasses()
+              }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              Đề xuất HS Theo dõi
+            </button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Search Input */}
+            <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+              <input
+                type="text"
+                placeholder="Tìm tên, mã HS, môn..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+              />
+              <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+
+            {/* Subject Filter Dropdown */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+              <BookOpen className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <select
+                value={subjectFilter}
+                onChange={(e) => setSubjectFilter(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer pr-1"
+              >
+                <option value="ALL">Tất cả môn học</option>
+                {currentTabAvailableSubjects.map((sub: any) => (
+                  <option key={sub.name} value={sub.name}>
+                    {sub.name} ({sub.count})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Class Filter Dropdown */}
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
+              <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+              <select
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+                className="bg-transparent text-xs font-bold text-slate-700 outline-none cursor-pointer pr-1"
+              >
+                <option value="ALL">Tất cả lớp học</option>
+                {availableClasses.map((cls: any) => (
+                  <option key={cls.id} value={cls.id}>
+                    {cls.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Month & Level Filters for Assigned Tab */}
+            {activeSubTab === "assigned" && (
+              <>
+                <select
+                  value={monthFilter}
+                  onChange={(e) => setMonthFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                >
+                  <option value="ALL">Tất cả các tháng</option>
+                  {["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={levelFilter}
+                  onChange={(e) => setLevelFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                >
+                  <option value="ALL">Tất cả mức độ</option>
+                  <option value="Đang hỗ trợ">Đang hỗ trợ</option>
+                  <option value="Tiến bộ">Tiến bộ</option>
+                  <option value="Chưa tiến bộ">Chưa tiến bộ</option>
+                </select>
+              </>
+            )}
+
+            {/* View Mode Switcher (List vs Grouped) */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setViewMode("LIST")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === "LIST"
+                    ? "bg-white text-indigo-600 shadow-xs"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+                title="Xem dạng danh sách tổng hợp"
+              >
+                <List className="h-3.5 w-3.5" />
+                <span>Danh sách</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("GROUPED")}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === "GROUPED"
+                    ? "bg-white text-indigo-600 shadow-xs"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+                title="Gom nhóm theo từng Môn học"
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                <span>Gom theo môn</span>
+              </button>
+            </div>
+          </div>
         </div>
 
-
+        {/* Quick Subject Filter Chips */}
+        {currentTabAvailableSubjects.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+              Môn học:
+            </span>
+            <button
+              onClick={() => setSubjectFilter("ALL")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                subjectFilter === "ALL"
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+              }`}
+            >
+              Tất cả môn ({activeSubTab === "commitments" ? flattenedCommitmentRows.length : (activeSubTab === "assigned" ? filteredTargets.length : summaryEvaluations.length)})
+            </button>
+            {currentTabAvailableSubjects.map((sub: any) => (
+              <button
+                key={sub.name}
+                onClick={() => setSubjectFilter(sub.name === subjectFilter ? "ALL" : sub.name)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  subjectFilter === sub.name
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                }`}
+              >
+                <span>{sub.name}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                  subjectFilter === sub.name
+                    ? "bg-indigo-700 text-white"
+                    : "bg-slate-200 text-slate-700"
+                }`}>
+                  {sub.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Main Student Target List Taught/Assigned */}
