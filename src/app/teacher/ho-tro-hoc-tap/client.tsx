@@ -117,6 +117,24 @@ const getScoreForSubject = (s: any, subjectName: string) => {
   return getCompactScore(scoreDisplay);
 };
 
+
+const getSubjectBadgeStyle = (subjectName: string) => {
+  const sub = (subjectName || "").toLowerCase();
+  if (sub.includes("toán")) {
+    return "bg-sky-50 text-sky-700 border-sky-200 hover:bg-sky-100/80";
+  }
+  if (sub.includes("văn") || sub.includes("tiếng việt")) {
+    return "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/80";
+  }
+  if (sub.includes("anh") || sub.includes("tav") || sub.includes("english")) {
+    return "bg-teal-50 text-teal-800 border-teal-200 hover:bg-teal-100/80";
+  }
+  if (sub.includes("tâm lý")) {
+    return "bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100/80";
+  }
+  return "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200/70";
+};
+
 export function TeacherSupportClient({
   teacher,
   academicYears,
@@ -1266,8 +1284,8 @@ export function TeacherSupportClient({
       </div>
 
       {/* Action panel & Multi-Dimension Filter Toolbar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3.5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div className="bg-white p-5 rounded-3xl border border-slate-200/90 shadow-sm space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
           {/* Action buttons on the left */}
           <div className="flex flex-wrap items-center gap-2.5">
             <button
@@ -1281,9 +1299,9 @@ export function TeacherSupportClient({
                 setIsProposeModalOpen(true)
                 fetchAssignedClasses()
               }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3.5 rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+              className="bg-gradient-to-r from-[#003B3A] to-[#009085] hover:from-[#002a29] hover:to-[#007a70] text-white py-2 px-4 rounded-xl font-black text-xs flex items-center gap-2 shadow-md shadow-[#003B3A]/20 transition-all transform active:scale-95 cursor-pointer"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 text-[#48BFE3]" />
               Đề xuất HS Theo dõi
             </button>
           </div>
@@ -1291,28 +1309,28 @@ export function TeacherSupportClient({
           {/* Search and Filters */}
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Search Input */}
-            <div className="relative min-w-[200px] flex-1 sm:flex-initial">
+            <div className="relative min-w-[210px] flex-1 sm:flex-initial">
               <input
                 type="text"
                 placeholder="Tìm tên, mã HS, môn..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-7 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                className="w-full pl-8.5 pr-7 py-2 bg-slate-50 border border-slate-200/80 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#48BFE3]/30 focus:border-[#009085] transition-all"
               />
-              <Search className="h-3.5 w-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="h-3.5 w-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
 
             {/* Subject Filter Dropdown */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-              <BookOpen className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-2xs">
+              <BookOpen className="h-3.5 w-3.5 text-[#009085] shrink-0" />
               <select
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
@@ -1328,8 +1346,8 @@ export function TeacherSupportClient({
             </div>
 
             {/* Class Filter Dropdown */}
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5">
-              <Layers className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 shadow-2xs">
+              <Layers className="h-3.5 w-3.5 text-[#009085] shrink-0" />
               <select
                 value={classFilter}
                 onChange={(e) => setClassFilter(e.target.value)}
@@ -1350,7 +1368,7 @@ export function TeacherSupportClient({
                 <select
                   value={monthFilter}
                   onChange={(e) => setMonthFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                  className="bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer shadow-2xs"
                 >
                   <option value="ALL">Tất cả các tháng</option>
                   {["Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5"].map(m => (
@@ -1361,7 +1379,7 @@ export function TeacherSupportClient({
                 <select
                   value={levelFilter}
                   onChange={(e) => setLevelFilter(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer"
+                  className="bg-slate-50 border border-slate-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 outline-none cursor-pointer shadow-2xs"
                 >
                   <option value="ALL">Tất cả mức độ</option>
                   <option value="Đang hỗ trợ">Đang hỗ trợ</option>
@@ -1372,14 +1390,14 @@ export function TeacherSupportClient({
             )}
 
             {/* View Mode Switcher (List vs Grouped) */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200">
+            <div className="flex items-center bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
               <button
                 type="button"
                 onClick={() => setViewMode("LIST")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === "LIST"
-                    ? "bg-white text-indigo-600 shadow-xs"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-white text-[#003B3A] shadow-xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-800"
                 }`}
                 title="Xem dạng danh sách tổng hợp"
               >
@@ -1389,10 +1407,10 @@ export function TeacherSupportClient({
               <button
                 type="button"
                 onClick={() => setViewMode("GROUPED")}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === "GROUPED"
-                    ? "bg-white text-indigo-600 shadow-xs"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-white text-[#003B3A] shadow-xs font-extrabold"
+                    : "text-slate-500 hover:text-slate-800"
                 }`}
                 title="Gom nhóm theo từng Môn học"
               >
@@ -1405,40 +1423,43 @@ export function TeacherSupportClient({
 
         {/* Quick Subject Filter Chips */}
         {currentTabAvailableSubjects.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+          <div className="flex flex-wrap items-center gap-2 pt-3 border-t border-slate-100">
+            <span className="text-[11px] font-black text-slate-400 uppercase tracking-wider mr-1">
               Môn học:
             </span>
             <button
               onClick={() => setSubjectFilter("ALL")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 subjectFilter === "ALL"
-                  ? "bg-indigo-600 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
+                  ? "bg-gradient-to-r from-[#003B3A] to-[#009085] text-white shadow-sm shadow-[#003B3A]/20 scale-[1.02]"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200/80 border border-slate-200/60"
               }`}
             >
               Tất cả môn ({activeSubTab === "commitments" ? flattenedCommitmentRows.length : (activeSubTab === "assigned" ? filteredTargets.length : summaryEvaluations.length)})
             </button>
-            {currentTabAvailableSubjects.map((sub: any) => (
-              <button
-                key={sub.name}
-                onClick={() => setSubjectFilter(sub.name === subjectFilter ? "ALL" : sub.name)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  subjectFilter === sub.name
-                    ? "bg-indigo-600 text-white shadow-xs"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200/70"
-                }`}
-              >
-                <span>{sub.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
-                  subjectFilter === sub.name
-                    ? "bg-indigo-700 text-white"
-                    : "bg-slate-200 text-slate-700"
-                }`}>
-                  {sub.count}
-                </span>
-              </button>
-            ))}
+            {currentTabAvailableSubjects.map((sub: any) => {
+              const isSelected = subjectFilter === sub.name;
+              return (
+                <button
+                  key={sub.name}
+                  onClick={() => setSubjectFilter(isSelected ? "ALL" : sub.name)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 border ${
+                    isSelected
+                      ? "bg-gradient-to-r from-[#003B3A] to-[#009085] text-white border-transparent shadow-sm shadow-[#003B3A]/20 scale-[1.02]"
+                      : "bg-white text-slate-700 border-slate-200/80 hover:bg-slate-50 hover:border-slate-300"
+                  }`}
+                >
+                  <span>{sub.name}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${
+                    isSelected
+                      ? "bg-white/20 text-white"
+                      : "bg-slate-100 text-slate-600"
+                  }`}>
+                    {sub.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -1721,10 +1742,10 @@ export function TeacherSupportClient({
             <button
               disabled={selectedCommitmentRowIds.length === 0}
               onClick={handleBulkAddCommitmentsToTracking}
-              className="bg-[#48BFE3] disabled:bg-slate-300 hover:bg-[#009085] text-white font-bold py-2 px-4 rounded-xl shadow-xs transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs"
+              className="bg-gradient-to-r from-[#003B3A] to-[#009085] disabled:from-slate-200 disabled:to-slate-300 disabled:text-slate-400 hover:from-[#002a29] hover:to-[#007a70] text-white font-black py-2.5 px-4.5 rounded-2xl shadow-md shadow-[#003B3A]/20 transition-all cursor-pointer inline-flex items-center gap-2 text-xs transform active:scale-95"
             >
-              <Plus className="h-4 w-4" />
-              Thêm vào Sổ theo dõi {selectedCommitmentRowIds.length > 0 ? `(${selectedCommitmentRowIds.length})` : ""}
+              <Plus className="h-4 w-4 text-[#48BFE3]" />
+              Thêm vào Sổ theo dõi {selectedCommitmentRowIds.length > 0 ? `(${selectedCommitmentRowIds.length} mục đã chọn)` : ""}
             </button>
           </div>
 
@@ -1750,20 +1771,20 @@ export function TeacherSupportClient({
                   return (
                     <div key={group.subject} className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
                       {/* Subject Group Header */}
-                      <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50 to-white border-b border-indigo-100/80 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-indigo-600 text-white rounded-xl shadow-xs">
-                            <BookOpen className="h-4 w-4" />
+                      <div className="bg-gradient-to-r from-teal-50/90 via-slate-50 to-white border-b border-teal-100/90 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3.5">
+                          <div className="p-2.5 bg-gradient-to-br from-[#003B3A] to-[#009085] text-white rounded-2xl shadow-sm">
+                            <BookOpen className="h-5 w-5 text-[#48BFE3]" />
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-extrabold text-indigo-950 text-sm">{group.subject}</h3>
-                              <span className="px-2 py-0.5 rounded-full text-[11px] font-black bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                {group.rows.length} lượt cam kết
+                            <div className="flex items-center gap-2.5">
+                              <h3 className="font-black text-[#003B3A] text-sm tracking-tight">{group.subject}</h3>
+                              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-teal-100/80 text-[#003B3A] border border-teal-200/90 shadow-2xs">
+                                {group.rows.length} học sinh
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-500 font-medium">
-                              Danh sách học sinh cam kết cần phụ đạo, bồi dưỡng môn {group.subject}
+                            <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                              Danh sách học sinh có cam kết cần phụ đạo, bồi dưỡng môn {group.subject}
                             </p>
                           </div>
                         </div>
@@ -1776,9 +1797,9 @@ export function TeacherSupportClient({
                               setSelectedCommitmentRowIds(prev => Array.from(new Set([...prev, ...ids])));
                             }
                           }}
-                          className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white border border-indigo-200 hover:border-indigo-300 px-3 py-1.5 rounded-xl shadow-xs hover:bg-indigo-50 transition-all cursor-pointer inline-flex items-center gap-1 self-start sm:self-auto"
+                          className="text-xs font-bold text-[#003B3A] hover:text-[#009085] bg-white border border-teal-200/90 hover:border-teal-300 px-3.5 py-1.5 rounded-xl shadow-xs hover:bg-teal-50/50 transition-all cursor-pointer inline-flex items-center gap-1.5 self-start sm:self-auto"
                         >
-                          <Check className="h-3.5 w-3.5" />
+                          <Check className="h-3.5 w-3.5 text-[#009085]" />
                           {isAllGroupSelected ? "Bỏ chọn nhóm này" : `Chọn tất cả ${group.rows.length} HS`}
                         </button>
                       </div>
@@ -1912,8 +1933,8 @@ export function TeacherSupportClient({
                       const isSelectedSub = subjectFilter !== "ALL" && (row.subject.toLowerCase().includes(subjectFilter.toLowerCase()) || subjectFilter.toLowerCase().includes(row.subject.toLowerCase()));
 
                       return (
-                        <tr key={row.rowId} className="hover:bg-slate-50/50 transition-colors">
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
+                        <tr key={row.rowId} className="hover:bg-teal-50/20 transition-colors">
+                          <td className="px-4 py-3.5 whitespace-nowrap text-center">
                             <input 
                               type="checkbox" 
                               checked={selectedCommitmentRowIds.includes(row.rowId)} 
@@ -1921,49 +1942,67 @@ export function TeacherSupportClient({
                                 if (e.target.checked) setSelectedCommitmentRowIds([...selectedCommitmentRowIds, row.rowId]);
                                 else setSelectedCommitmentRowIds(selectedCommitmentRowIds.filter(id => id !== row.rowId));
                               }} 
-                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                              className="rounded-md border-slate-300 text-[#009085] focus:ring-[#48BFE3] cursor-pointer"
                             />
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-slate-500">
+                          <td className="px-4 py-3.5 whitespace-nowrap text-center text-xs font-semibold text-slate-400">
                             {index + 1}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-600">
+                          <td className="px-4 py-3.5 whitespace-nowrap text-xs font-bold text-slate-600">
                             {row.studentCode}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <button onClick={() => handleOpenProfile(row.studentId)} className="font-bold text-[#48BFE3] hover:text-[#008f85] hover:underline text-left transition-all cursor-pointer">{row.studentName}</button>
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#003B3A] to-[#009085] text-white font-black text-[11px] flex items-center justify-center shadow-xs shrink-0">
+                                {(row.studentName || "H").charAt(0).toUpperCase()}
+                              </div>
+                              <button onClick={() => handleOpenProfile(row.studentId)} className="font-extrabold text-slate-800 hover:text-[#009085] hover:underline text-left transition-all cursor-pointer text-xs">
+                                {row.studentName}
+                              </button>
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-slate-600 font-bold text-xs">
-                            {row.className}
-                            {row.isHomeroom && <span className="text-[10px] text-indigo-600 font-black block mt-0.5">(Lớp chủ nhiệm)</span>}
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            <span className="font-extrabold text-slate-700 text-xs">{row.className}</span>
+                            {row.isHomeroom && (
+                              <span className="text-[10px] text-teal-700 font-bold block mt-0.5 bg-teal-50 border border-teal-200/80 px-1.5 py-0.2 rounded-md w-max">
+                                Lớp chủ nhiệm
+                              </span>
+                            )}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-slate-600 text-xs font-medium">
+                          <td className="px-4 py-3.5 whitespace-nowrap text-slate-500 text-xs font-medium">
                             {row.enrollmentDate ? new Date(row.enrollmentDate).toLocaleDateString("vi-VN") : "Chưa có"}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-4 py-3.5 whitespace-nowrap">
                             <span 
-                              className={`w-max px-2.5 py-1 rounded-lg text-xs font-bold border transition-all ${
-                                isSelectedSub || row.isMatchedTeacher
-                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-xs"
-                                  : "bg-slate-100 text-slate-700 border-slate-200"
-                              }`}
+                              className={`w-max px-3 py-1 rounded-xl text-xs font-extrabold border transition-all inline-flex items-center gap-1.5 shadow-2xs ${getSubjectBadgeStyle(row.subject)}`}
                             >
+                              <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
                               {row.subject}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="text-xs font-black text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200">
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            <span className="text-xs font-black text-slate-800 bg-slate-100/90 border border-slate-200 px-2.5 py-1 rounded-xl shadow-2xs">
                               {row.score}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <button
-                              onClick={() => handleAddSingleCommitmentToTracking(row)}
-                              className="bg-[#48BFE3] hover:bg-[#009085] text-white font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1 cursor-pointer"
-                              title="Chuyển sang Sổ theo dõi đánh giá"
-                            >
-                              <Plus className="h-3.5 w-3.5" /> {row.existingTarget ? "Sổ theo dõi" : "Thêm Sổ theo dõi"}
-                            </button>
+                          <td className="px-4 py-3.5 whitespace-nowrap text-center">
+                            {row.existingTarget ? (
+                              <button
+                                onClick={() => handleAddSingleCommitmentToTracking(row)}
+                                className="bg-emerald-50 text-emerald-700 border border-emerald-300/80 hover:bg-emerald-100 font-bold py-1.5 px-3 rounded-xl text-xs transition-all shadow-2xs inline-flex items-center gap-1 cursor-pointer"
+                                title="Đã có trong Sổ theo dõi. Bấm để chuyển đến trang theo dõi."
+                              >
+                                <Check className="h-3.5 w-3.5 text-emerald-600" /> Sổ theo dõi
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleAddSingleCommitmentToTracking(row)}
+                                className="bg-gradient-to-r from-[#003B3A] to-[#009085] hover:from-[#002a29] hover:to-[#007a70] text-white font-bold py-1.5 px-3.5 rounded-xl text-xs transition-all shadow-xs inline-flex items-center gap-1.5 transform active:scale-95 cursor-pointer"
+                                title="Thêm học sinh này vào Sổ theo dõi đánh giá"
+                              >
+                                <Plus className="h-3.5 w-3.5 text-[#48BFE3]" /> Thêm Sổ theo dõi
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
