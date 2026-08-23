@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { 
   FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
-  MapPin, User, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
+  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { OverviewDashboard } from "./overview"
@@ -774,57 +774,27 @@ export function SupportClient({
     { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
   ]
   // Paginated commitments logic
-    // Split commitment candidates per subject & exclude unassigned class ("Chưa xếp lớp")
-  const splitCommitmentRows = useMemo(() => {
-    const validCandidates = commitmentCandidates.filter(
-      c => c.className && c.className !== "Chưa xếp lớp" && !c.className.includes("Chưa xếp lớp")
-    )
-
-    const rows: any[] = []
-    validCandidates.forEach(c => {
-      const subs = c.committedSubjects && c.committedSubjects.length > 0
-        ? c.committedSubjects
-        : ["Chưa xác định môn"]
-
-      subs.forEach((sub: string, sIdx: number) => {
-        rows.push({
-          ...c,
-          rowId: `${c.id}_${sIdx}_${sub}`,
-          displaySubject: sub,
-          committedSubjects: [sub],
-          assignedTeacherName: (c.assignedTeacherMap && c.assignedTeacherMap[sub]) || c.assignedTeacherName || c.teacherName || "Chưa phân công"
-        })
-      })
-    })
-
-    return rows
-  }, [commitmentCandidates])
-
   const filteredCommitments = useMemo(() => {
-    return splitCommitmentRows.filter(c => {
+    return commitmentCandidates.filter(c => {
       const searchLower = commitmentSearch.toLowerCase().trim()
       const matchesSearch = !searchLower || 
         c.studentCode.toLowerCase().includes(searchLower) ||
-        c.fullName.toLowerCase().includes(searchLower) ||
-        c.displaySubject.toLowerCase().includes(searchLower)
+        c.fullName.toLowerCase().includes(searchLower)
 
       const matchesCampus = commitmentCampusFilter === "ALL" || 
         c.className.includes(commitmentCampusFilter) || 
-        (c.campusName && c.campusName.includes(commitmentCampusFilter))
+        (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
+        (c.directorNote || "").includes(commitmentCampusFilter) ||
+        (c.admissionResult || "").includes(commitmentCampusFilter)
 
-      const isProposed = targets.some(t => {
-        if (t.studentId !== c.systemStudentId) return false
-        if (c.displaySubject === "Tâm lý") return t.supportType === "PSYCHOLOGY"
-        return t.supportType === "ACADEMIC" || (t.reason && t.reason.includes(c.displaySubject))
-      })
-
+      const isProposed = targets.some(t => t.studentId === c.systemStudentId)
       const matchesStatus = commitmentStatusFilter === "ALL" || 
         (commitmentStatusFilter === "PROPOSED" && isProposed) ||
         (commitmentStatusFilter === "NOT_PROPOSED" && !isProposed)
 
       return matchesSearch && matchesCampus && matchesStatus
     })
-  }, [splitCommitmentRows, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
+  }, [commitmentCandidates, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
 
   const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
 
@@ -838,18 +808,11 @@ export function SupportClient({
     if (nameLower.includes("toán") || nameLower.includes("math")) {
       return (
         <span className="px-2.5 py-1 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 font-bold text-[11px] inline-block">
-          Toán học
+          Toán
         </span>
       )
     }
-        if (nameLower.includes("ngữ văn") || nameLower.includes("văn") || nameLower.includes("literature")) {
-      return (
-        <span className="px-2.5 py-1 rounded-md bg-teal-50 text-teal-700 border border-teal-200/60 font-bold text-[11px] inline-block">
-          Ngữ Văn
-        </span>
-      )
-    }
-    if (nameLower.includes("tiếng việt") || nameLower.includes("việt")) {
+    if (nameLower.includes("văn") || nameLower.includes("việt") || nameLower.includes("literature") || nameLower.includes("ngữ văn")) {
       return (
         <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200/60 font-bold text-[11px] inline-block">
           Tiếng Việt
@@ -857,9 +820,15 @@ export function SupportClient({
       )
     }
     if (nameLower.includes("anh") || nameLower.includes("english")) {
+      let label = subName
+      if (nameLower.includes("viết") || nameLower.includes("written")) {
+        label = "Tiếng Anh (viết)"
+      } else if (nameLower.includes("vấn đáp") || nameLower.includes("oral") || nameLower.includes("nói")) {
+        label = "Tiếng Anh (vấn đáp)"
+      }
       return (
         <span className="px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-200/60 font-bold text-[11px] inline-block">
-          Tiếng Anh
+          {label}
         </span>
       )
     }
@@ -1151,7 +1120,6 @@ export function SupportClient({
                         <th className="px-4 py-3.5 text-left">Lớp</th>
                         <th className="px-4 py-3.5 text-left">Cơ sở</th>
                         <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
-                        <th className="px-4 py-3.5 text-left">GV Phụ trách</th>
                         <th className="px-4 py-3.5 text-left">Tình trạng</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
                       </tr>
@@ -1163,7 +1131,7 @@ export function SupportClient({
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
 
                         return (
-                          <tr key={row.rowId || row.id} className="hover:bg-slate-50/50 transition-colors">
+                          <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-4 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
                             <td className="px-4 py-3.5">
                               <div className="font-extrabold text-slate-800 text-[12px]">{row.fullName}</div>
@@ -1193,20 +1161,8 @@ export function SupportClient({
                                 <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
                               )}
                             </td>
-                             <td className="px-4 py-3.5">
-                               {row.assignedTeacherName && row.assignedTeacherName !== "Chưa phân công" ? (
-                                 <div className="font-extrabold text-indigo-700 text-[12px] flex items-center gap-1.5">
-                                   <User className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
-                                   <span>{row.assignedTeacherName}</span>
-                                 </div>
-                               ) : (
-                                 <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-400 font-semibold text-[11px] inline-block border border-slate-200/50">
-                                   Chưa phân công
-                                 </span>
-                               )}
-                             </td>
-                             <td className="px-4 py-3.5">
-                               {isProposed ? (
+                            <td className="px-4 py-3.5">
+                              {isProposed ? (
                                 <div className="space-y-1">
                                   <div className="font-extrabold text-emerald-600 text-[12px] flex items-center gap-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />

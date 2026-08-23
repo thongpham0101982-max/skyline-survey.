@@ -264,11 +264,10 @@ export function TeacherSupportClient({
   }, [academicYears])
 
   const fetchEntranceCommitments = async () => {
-    if (!selectedYearId) return
-    const tId = teacher?.id || ""
+    if (!selectedYearId || !teacher?.id) return
     setLoadingEntranceCommitments(true)
     try {
-      const res = await fetch(`/api/teacher-student-records?action=getEntranceCommitments&teacherId=${tId}&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      const res = await fetch(`/api/teacher-student-records?action=getEntranceCommitments&teacherId=${teacher.id}&academicYearId=${selectedYearId}&_=${Date.now()}`)
       const data = await res.json()
       if (!data.error) {
         setEntranceCommitmentStudents(data)
@@ -1082,7 +1081,7 @@ export function TeacherSupportClient({
               <tbody className="divide-y divide-slate-200 text-sm">
                 {filteredTargets.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-10 text-slate-400">
+                    <td colSpan={9} className="text-center py-10 text-slate-400">
                       Không tìm thấy học sinh nào thuộc danh sách bồi dưỡng của bạn
                     </td>
                   </tr>
@@ -1309,21 +1308,21 @@ export function TeacherSupportClient({
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Lớp</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Ngày nhập học</th>
                 <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Môn Cam kết</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">GV Phụ trách</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Điểm KS</th>
+                
                 <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Add Sổ Theo dõi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 text-sm">
               {loadingEntranceCommitments ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-10 text-slate-400">
+                  <td colSpan={9} className="text-center py-10 text-slate-400">
                     <RefreshCw className="h-6 w-6 animate-spin inline-block mr-2 text-indigo-600" /> Đang tải danh sách học sinh cam kết đầu vào...
                   </td>
                 </tr>
               ) : entranceCommitmentStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-10 text-slate-400 font-medium">
+                  <td colSpan={9} className="text-center py-10 text-slate-400 font-medium">
                     Không tìm thấy học sinh nào có môn học cam kết từ khảo sát đầu vào trong các lớp phụ trách.
                   </td>
                 </tr>
@@ -1338,7 +1337,7 @@ export function TeacherSupportClient({
                 if (filtered.length === 0) {
                   return (
                     <tr>
-                      <td colSpan={10} className="text-center py-10 text-slate-400">
+                      <td colSpan={9} className="text-center py-10 text-slate-400">
                         Không tìm thấy học sinh nào khớp với từ khóa tìm kiếm.
                       </td>
                     </tr>
@@ -1429,72 +1428,57 @@ export function TeacherSupportClient({
                           })}
                         </div>
                       </td>
-                      {/* GV Phụ trách */}
-                      <td className="px-6 py-4 whitespace-nowrap text-xs font-semibold">
-                        {(() => {
-                          const targetAssignedTeachers = existingTarget?.assignments?.map((a: any) => a.teacher?.name || a.teacher?.fullName).filter(Boolean) || [];
-                          const creatorName = existingTarget?.creator?.name || existingTarget?.createdBy?.name;
-                          if (creatorName && !targetAssignedTeachers.includes(creatorName)) {
-                            targetAssignedTeachers.unshift(creatorName);
-                          }
-                          if (targetAssignedTeachers.length > 0) {
-                            return <span className="font-bold text-slate-800">{targetAssignedTeachers.join(", ")}</span>;
-                          }
-
-                          const committed = s.committedSubjects || [];
-                          const assignedList: string[] = [];
-
-                          committed.forEach((sub: string) => {
-                            const teacherName = s.assignedTeacherMap && s.assignedTeacherMap[sub];
-                            if (teacherName && teacherName !== "Chưa phân công") {
-                              const label = `${teacherName} (${sub})`;
-                              if (!assignedList.includes(label)) assignedList.push(label);
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1">
+                          {s.committedSubjects.map((sub: string, index: number) => {
+                            let scoreDisplay = "Chưa có";
+                            const subLower = sub.toLowerCase();
+                            if (subLower.includes("toán")) {
+                              if (s.mathScore != null) scoreDisplay = `${s.mathScore}`;
+                              else {
+                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("toán"));
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+                              if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
+                              else {
+                                const sc = s.scores?.find((x:any) => {
+                                  const n = x.subject?.name?.toLowerCase() || "";
+                                  return n.includes("văn") || n.includes("tiếng việt");
+                                });
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else if (subLower.includes("anh")) {
+                              const write = s.writtenEnglishScore;
+                              const oral = s.oralEnglishScore;
+                              if (write != null || oral != null) {
+                                scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
+                              } else {
+                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("anh"));
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else if (subLower.includes("tâm lý")) {
+                              if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
+                              else {
+                                const sc = s.scores?.find((x:any) => x.subject?.name?.toLowerCase().includes("tâm lý"));
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
+                            } else {
+                              if (s.scores && s.scores.length > 0) {
+                                const sc = s.scores.find((x:any) => {
+                                  const n = x.subject?.name?.toLowerCase() || "";
+                                  return subLower.includes(n) || n.includes(subLower.replace("môn ", ""));
+                                });
+                                if (sc?.scores) scoreDisplay = `${sc.scores}`;
+                              }
                             }
-                          });
-
-                          if (assignedList.length > 0) {
-                            return <span className="font-bold text-slate-800">{assignedList.join(", ")}</span>;
-                          }
-
-                          const allClassTeachers = (s.assignedTeachers || []).map((ta: any) => `${ta.teacherName} (${ta.subjectName || "GVBM"})`).filter(Boolean);
-                          if (s.homeroomTeacherName && !allClassTeachers.some((t: string) => t.startsWith(s.homeroomTeacherName))) {
-                            allClassTeachers.unshift(`${s.homeroomTeacherName} (GVCN)`);
-                          }
-                          const uniqueTeachers = Array.from(new Set(allClassTeachers));
-
-                          if (uniqueTeachers.length > 0) {
-                            return <span className="font-bold text-slate-800">{uniqueTeachers.join(", ")}</span>;
-                          }
-
-                          return <span className="text-slate-400 italic font-normal">Chưa phân công</span>;
-                        })()}
-                      </td>
-
-                      {/* Trạng thái: Đã đề xuất / Đang hỗ trợ / Chưa đề xuất */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {existingTarget ? (
-                          isTerminated ? (
-                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                              Đã kết thúc
-                            </span>
-                          ) : isPending ? (
-                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">
-                              Hoàn thành
-                            </span>
-                          ) : isApproved || existingTarget.status === "ĐÃ DUYỆT" || existingTarget.status === "ACTIVE" ? (
-                            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              Đang hỗ trợ
-                            </span>
-                          ) : (
-                            <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 border border-blue-300 shadow-2xs">
-                              Đã đề xuất
-                            </span>
-                          )
-                        ) : (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                            Chưa đề xuất
-                          </span>
-                        )}
+                            return (
+                              <span key={index} className="text-[11px] font-bold text-slate-600 block whitespace-nowrap">
+                                <span className="text-slate-400 font-normal">{sub}:</span> <span className="text-indigo-600 font-black">{getCompactScore(scoreDisplay)}</span>
+                              </span>
+                            )
+                          })}
+                        </div>
                       </td>
                       
                       <td className="px-6 py-4 whitespace-nowrap text-center">

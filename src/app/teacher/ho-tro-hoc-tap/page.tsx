@@ -9,27 +9,15 @@ export default async function TeacherSupportPage() {
   const session = await auth()
   if (!session) redirect("/login")
 
-  let teacher = await prisma.teacher.findFirst({
-    where: {
-      OR: [
-        { userId: session.user.id },
-        { user: { fullName: session.user.name || "" } },
-        { teacherName: session.user.name || "" }
-      ]
-    }
+  const teacher = await prisma.teacher.findUnique({
+    where: { userId: session.user.id }
   })
-
   if (!teacher) {
-    teacher = {
-      id: session.user.id,
-      userId: session.user.id,
-      teacherName: session.user.name || "Giáo viên",
-      teacherCode: (session.user as any)?.code || "",
-      departmentId: null,
-      status: "ACTIVE",
-      createdAt: new Date(),
-      updatedAt: new Date()
-    } as any
+    return (
+      <div className="p-8 text-center text-rose-500 font-bold">
+        Hồ sơ Giáo viên không tồn tại trên hệ thống.
+      </div>
+    )
   }
 
   // Fetch academic years, campuses, classes, subjects
