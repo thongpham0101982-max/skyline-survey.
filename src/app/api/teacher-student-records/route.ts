@@ -431,40 +431,32 @@ export async function GET(req: Request) {
       })
       const periodIds = periods.map(p => p.id)
 
-      // 3. Fetch candidates from inputAssessmentStudent & preschoolInputAssessmentStudent
+      const candidateWhereClause: any = {
+        OR: [
+          { admissionResult: { contains: "cam kết" } },
+          { admissionResult: { contains: "Cam kết" } },
+          { directorNote: { contains: "Môn cam kết" } },
+          { directorNote: { contains: "Mon cam ket" } },
+          { directorNote: { contains: "cam kết" } },
+          { directorNote: { contains: "Cam kết" } },
+          { directorNote: { contains: "Tâm lý" } },
+          { directorNote: { contains: "tâm lí" } }
+        ]
+      }
+
+      if (periodIds.length > 0) {
+        candidateWhereClause.periodId = { in: periodIds }
+      }
+
       const inputStudents = await prisma.inputAssessmentStudent.findMany({
-        where: {
-          ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
-          OR: [
-            { admissionResult: { contains: "cam kết" } },
-            { admissionResult: { contains: "Cam kết" } },
-            { directorNote: { contains: "Môn cam kết" } },
-            { directorNote: { contains: "Mon cam ket" } },
-            { directorNote: { contains: "cam kết" } },
-            { directorNote: { contains: "Cam kết" } },
-            { directorNote: { contains: "Tâm lý" } },
-            { directorNote: { contains: "tâm lí" } }
-          ]
-        },
+        where: candidateWhereClause,
         include: {
           enrollmentClass: { include: { campus: true } }
         }
       })
 
       const preschoolStudents = await prisma.preschoolInputAssessmentStudent.findMany({
-        where: {
-          ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
-          OR: [
-            { admissionResult: { contains: "cam kết" } },
-            { admissionResult: { contains: "Cam kết" } },
-            { directorNote: { contains: "Môn cam kết" } },
-            { directorNote: { contains: "Mon cam ket" } },
-            { directorNote: { contains: "cam kết" } },
-            { directorNote: { contains: "Cam kết" } },
-            { directorNote: { contains: "Tâm lý" } },
-            { directorNote: { contains: "tâm lí" } }
-          ]
-        },
+        where: candidateWhereClause,
         include: {
           enrollmentClass: { include: { campus: true } }
         }
@@ -512,7 +504,6 @@ export async function GET(req: Request) {
         }
       })
 
-      // Helper to resolve assigned teacher per class, subject & note (Identical to Admin logic)
       const resolveAssignedTeacher = (
         classId: string | null | undefined,
         className: string,
@@ -527,8 +518,8 @@ export async function GET(req: Request) {
         const hrTeacherObj = homeroomTeacherId ? allTeachers.find(t => t.id === homeroomTeacherId) : null
         const hrTeacherName = hrTeacherObj?.user?.fullName || hrTeacherObj?.teacherName || null
 
-        // For Tâm lý (Psychology)
-        if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
+        // 1. For Tâm lý (Psychology)
+        if (subLower.includes("tâm lý") || subLower.includes("psychology") || subLower.includes("tâm lí")) {
           if (directorNote) {
             const noteClean = cleanString(directorNote)
             for (const t of allTeachers) {
@@ -540,7 +531,7 @@ export async function GET(req: Request) {
               const lastName = nameParts[nameParts.length - 1]
               const cleanLast = cleanString(lastName)
 
-              if (noteClean.includes(cleanT) || (cleanLast.length >= 2 && (noteClean.includes(`t.${cleanLast}`) || noteClean.includes(`thay${cleanLast}`) || noteClean.includes(`co${cleanLast}`)))) {
+              if (noteClean.includes(cleanT) || (cleanLast.length >= 2 && (noteClean.includes(`t.${cleanLast}`) || noteClean.includes(`thay${cleanLast}`) || noteClean.includes(`co${cleanLast}`) || noteClean.includes(`t${cleanLast}`)))) {
                 return tName
               }
             }
@@ -592,7 +583,7 @@ export async function GET(req: Request) {
           return "Chưa phân công"
         }
 
-        // Search in TeachingAssignments (Phân công giảng dạy)
+        // 2. Search in TeachingAssignments (Phân công giảng dạy)
         const matchingTa = teachingAssignments.find(ta => {
           const taClassId = ta.classId
           const taClassName = ta.class?.className || ""
@@ -637,6 +628,7 @@ export async function GET(req: Request) {
           return matchingTa.teacher.user?.fullName || matchingTa.teacher.teacherName || "Chưa phân công"
         }
 
+        // 3. Search in TeacherClassAssignments (Phân công lớp/bộ môn)
         const matchingTca = teacherClassAssignments.find(tca => {
           const tcaClassId = tca.classId
           const normTcaName = normalizeClassName(tca.class?.className || "")
@@ -657,6 +649,8 @@ export async function GET(req: Request) {
         if (matchingTca?.teacher) {
           return matchingTca.teacher.user?.fullName || matchingTca.teacher.teacherName || "Chưa phân công"
         }
+
+        if (hrTeacherName) return hrTeacherName
 
         return "Chưa phân công"
       }
