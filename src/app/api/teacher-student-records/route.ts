@@ -416,16 +416,32 @@ export async function GET(req: Request) {
         include: { user: true }
       })
 
-      const actualTeacherId = teacherObj?.id || teacherId || ""
+      const rawTeacherNames = [
+        teacherObj?.user?.fullName,
+        teacherObj?.teacherName,
+        session.user?.name
+      ].filter(Boolean) as string[]
 
-      // 2. Fetch input assessment records directly (primary source of commitments)
+      const teacherCleanNames = rawTeacherNames.map(n => cleanString(n)).filter(Boolean)
+
+      // 2. Fetch input assessment periods
+      const periods = await prisma.inputAssessmentPeriod.findMany({
+        where: academicYearId ? { academicYearId } : {},
+        select: { id: true }
+      })
+      const periodIds = periods.map(p => p.id)
+
+      // 3. Fetch candidates from inputAssessmentStudent & preschoolInputAssessmentStudent
       const inputStudents = await prisma.inputAssessmentStudent.findMany({
         where: {
+          ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
           OR: [
-            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
             { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
             { directorNote: { contains: "Cam kết" } },
-            { directorNote: { contains: "môn" } },
             { directorNote: { contains: "Tâm lý" } },
             { directorNote: { contains: "tâm lí" } }
           ]
@@ -437,11 +453,14 @@ export async function GET(req: Request) {
 
       const preschoolStudents = await prisma.preschoolInputAssessmentStudent.findMany({
         where: {
+          ...(periodIds.length > 0 ? { periodId: { in: periodIds } } : {}),
           OR: [
-            { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
+            { admissionResult: { contains: "cam kết" } },
+            { admissionResult: { contains: "Cam kết" } },
             { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Mon cam ket" } },
+            { directorNote: { contains: "cam kết" } },
             { directorNote: { contains: "Cam kết" } },
-            { directorNote: { contains: "môn" } },
             { directorNote: { contains: "Tâm lý" } },
             { directorNote: { contains: "tâm lí" } }
           ]
@@ -493,7 +512,7 @@ export async function GET(req: Request) {
         }
       })
 
-      // Helper to resolve assigned teacher per class, subject & note
+      // Helper to resolve assigned teacher per class, subject & note (Identical to Admin logic)
       const resolveAssignedTeacher = (
         classId: string | null | undefined,
         className: string,
@@ -573,7 +592,7 @@ export async function GET(req: Request) {
           return "Chưa phân công"
         }
 
-        // Search in TeachingAssignments
+        // Search in TeachingAssignments (Phân công giảng dạy)
         const matchingTa = teachingAssignments.find(ta => {
           const taClassId = ta.classId
           const taClassName = ta.class?.className || ""
@@ -642,12 +661,6 @@ export async function GET(req: Request) {
         return "Chưa phân công"
       }
 
-      const teacherNames = [
-        cleanString(teacherObj?.user?.fullName),
-        cleanString(teacherObj?.teacherName),
-        cleanString(session.user.name || "")
-      ].filter(Boolean)
-
       const allInputCandidates = [
         ...inputStudents,
         ...preschoolStudents
@@ -672,6 +685,10 @@ export async function GET(req: Request) {
             ((is as any).className && (is as any).className !== "Chưa xếp lớp" ? (is as any).className : null) ||
             "Chưa xếp lớp"
 
+          if (!resolvedClassName || resolvedClassName === "Chưa xếp lớp" || resolvedClassName.includes("Chưa xếp lớp")) {
+            return null
+          }
+
           const assignedTeacherMap: Record<string, string> = {}
           committedSubjects.forEach(sub => {
             assignedTeacherMap[sub] = resolveAssignedTeacher(
@@ -689,16 +706,11 @@ export async function GET(req: Request) {
             const assignedTeacher = assignedTeacherMap[cs]
             const cleanAssigned = cleanString(assignedTeacher)
 
-            const isAssigned = teacherNames.some(t => 
+            if (!cleanAssigned || cleanAssigned === "chuaphancong") return false
+
+            const isAssigned = teacherCleanNames.some(t => 
               t.length >= 2 && (cleanAssigned.includes(t) || t.includes(cleanAssigned))
             )
-
-            const subLower = cs.toLowerCase().trim()
-            if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
-              const noteClean = cleanString(is.directorNote)
-              const teacherMentioned = teacherNames.some(t => t.length >= 2 && noteClean.includes(t))
-              return isAssigned || teacherMentioned
-            }
 
             return isAssigned
           })
@@ -713,7 +725,7 @@ export async function GET(req: Request) {
             className: resolvedClassName,
             homeroomTeacherName: matchingStudent?.class?.homeroomTeacher?.user?.fullName || null,
             assignedTeacherMap,
-            committedSubjects,
+            committedSubjects: matchedSubjects,
             matchedSubjects,
             admissionResult: is.admissionResult,
             directorNote: is.directorNote,
