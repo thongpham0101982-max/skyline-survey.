@@ -412,7 +412,8 @@ export async function GET(req: Request) {
             ...(teacherId ? [{ id: teacherId }] : []),
             { userId: session.user.id }
           ]
-        }
+        },
+        include: { user: true }
       })
 
       const actualTeacherId = teacherObj?.id || teacherId || ""
@@ -464,7 +465,7 @@ export async function GET(req: Request) {
         ...homeroomClasses.map(c => c.id)
       ])).filter(Boolean)
 
-      // If management role OR if no classIds found for teacher, fetch all classes in academicYearId
+      // Fallback: If no classIds found for teacher OR if management role, fetch all classes in academicYearId
       if (isManagement || classIds.length === 0) {
         const allYearClasses = await prisma.class.findMany({
           where: academicYearId ? { academicYearId } : {},
@@ -672,6 +673,12 @@ export async function GET(req: Request) {
         }
       })
 
+      const teacherNames = [
+        cleanString(teacherObj?.user?.fullName),
+        cleanString(teacherObj?.teacherName),
+        cleanString(session.user.name || "")
+      ].filter(Boolean)
+
       // Filter and construct candidates
       const candidates = students
         .map((s) => {
@@ -687,15 +694,6 @@ export async function GET(req: Request) {
           if (committedSubjects.length === 0) return null
 
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
-          const teacherSubjectsInClass = assignments
-            .filter(a => a.classId === s.classId)
-            .map(a => a.subject?.name || a.subject?.subjectName || "")
-
-          const teacherNames = [
-            cleanString(teacherObj?.user?.fullName),
-            cleanString(teacherObj?.teacherName),
-            cleanString(session.user.name || "")
-          ].filter(Boolean)
 
           const assignedTeacherMap: Record<string, string> = {}
           committedSubjects.forEach(sub => {
@@ -712,15 +710,22 @@ export async function GET(req: Request) {
 
             const assignedTeacher = assignedTeacherMap[cs]
             const cleanAssigned = cleanString(assignedTeacher)
-            const isAssigned = teacherNames.includes(cleanAssigned)
+
+            if (!cleanAssigned || cleanAssigned === "chuaphancong") {
+              // If unassigned or fallback mode, allow if teacher has assignments in class or is homeroom
+              return isHomeroom || assignments.length === 0
+            }
+
+            const isAssigned = teacherNames.some(t => 
+              t.length >= 2 && (cleanAssigned.includes(t) || t.includes(cleanAssigned))
+            )
 
             const subLower = cs.toLowerCase().trim()
             if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
               return isAssigned || isHomeroom
             }
 
-            if (isAssigned) return true
-            return false
+            return isAssigned || (assignments.length === 0 && isHomeroom)
           })
 
           if (matchedSubjects.length === 0) return null
@@ -736,8 +741,6 @@ export async function GET(req: Request) {
               subjectId: ta.subjectId,
               subjectName: ta.subject?.name || ta.subject?.subjectName || ""
             }))
-
-
 
           return {
             id: s.id,
