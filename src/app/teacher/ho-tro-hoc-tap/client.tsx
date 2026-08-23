@@ -264,10 +264,11 @@ export function TeacherSupportClient({
   }, [academicYears])
 
   const fetchEntranceCommitments = async () => {
-    if (!selectedYearId || !teacher?.id) return
+    if (!selectedYearId) return
+    const tId = teacher?.id || ""
     setLoadingEntranceCommitments(true)
     try {
-      const res = await fetch(`/api/teacher-student-records?action=getEntranceCommitments&teacherId=${teacher.id}&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      const res = await fetch(`/api/teacher-student-records?action=getEntranceCommitments&teacherId=${tId}&academicYearId=${selectedYearId}&_=${Date.now()}`)
       const data = await res.json()
       if (!data.error) {
         setEntranceCommitmentStudents(data)
