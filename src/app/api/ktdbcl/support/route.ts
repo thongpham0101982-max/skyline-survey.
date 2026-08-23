@@ -389,9 +389,13 @@ export async function GET(req: Request) {
           if (subLower.includes("anh") || subLower.includes("english") || subLower.includes("esl")) {
             return code === "TA" || code.startsWith("TA") || code.startsWith("ENG") || code.startsWith("ESL") || name.includes("anh") || name.includes("english") || name.includes("esl")
           }
-          // 3. Vietnamese & Literature (Tiếng Việt & Ngữ Văn - Flexible matching across primary/middle/high)
-          if (subLower.includes("việt") || subLower.includes("văn") || subLower.includes("literature")) {
-            return code === "TVI" || code === "NVA" || code.startsWith("TVI") || code.startsWith("NVA") || name.includes("việt") || name.includes("văn") || name.includes("literature")
+          // 3. Tiếng Việt (Dành riêng cho môn Tiếng Việt - Mã TVI)
+          if (subLower.includes("tiếng việt") || (subLower.includes("việt") && !subLower.includes("văn"))) {
+            return code === "TVI" || code.startsWith("TVI") || name.includes("tiếng việt") || (name.includes("việt") && !name.includes("văn"))
+          }
+          // 4. Ngữ Văn (Dành riêng cho môn Ngữ Văn - Mã NVA)
+          if (subLower.includes("ngữ văn") || subLower.includes("văn") || subLower.includes("literature")) {
+            return code === "NVA" || code.startsWith("NVA") || name.includes("ngữ văn") || name.includes("văn") || name.includes("literature")
           }
           return false
         })
@@ -413,7 +417,8 @@ export async function GET(req: Request) {
           const role = (tca.roleInClass || "").toLowerCase()
           if ((subLower.includes("toán") || subLower.includes("math")) && (role.includes("toán") || role.includes("math"))) return true
           if ((subLower.includes("anh") || subLower.includes("english")) && (role.includes("anh") || role.includes("english"))) return true
-          if ((subLower.includes("việt") || subLower.includes("văn")) && (role.includes("việt") || role.includes("văn"))) return true
+          if (subLower.includes("việt") && role.includes("việt")) return true
+          if (subLower.includes("văn") && role.includes("văn")) return true
           return false
         })
 
