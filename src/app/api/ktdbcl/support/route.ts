@@ -5,6 +5,16 @@ import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
 
+
+function normalizeClassName(cName: string | null | undefined): string {
+  if (!cName) return ""
+  return cName.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(lop|class|co so|cs)\b/gi, "")
+    .replace(/[^a-z0-9]/gi, "")
+}
+
 function cleanString(str: string | null | undefined): string {
   if (!str) return ""
   return str.toLowerCase()
@@ -342,6 +352,7 @@ export async function GET(req: Request) {
       // Helper to resolve assigned teacher per class and subject
       const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomTeacherId?: string | null) => {
         const subLower = subName.toLowerCase().trim()
+        const normTargetClass = normalizeClassName(className)
         const cleanTargetClass = cleanString(className)
 
         // Find homeroom teacher name if applicable
@@ -354,7 +365,7 @@ export async function GET(req: Request) {
           const gvcnClassAssign = teacherClassAssignments.find(tca => {
             if (classId && tca.classId === classId) return true
             const cName = tca.class?.className || tca.class?.classCode || ""
-            return cleanString(cName) === cleanTargetClass
+            return normalizeClassName(cName) === normTargetClass || cleanString(cName) === cleanTargetClass
           })
           if (gvcnClassAssign?.teacher) {
             return gvcnClassAssign.teacher.user?.fullName || gvcnClassAssign.teacher.teacherName || "Chưa phân công"
@@ -365,15 +376,22 @@ export async function GET(req: Request) {
         // Search in TeachingAssignments (Phân công giảng dạy)
         const matchingTa = teachingAssignments.find(ta => {
           const taClassId = ta.classId
-          const taClassName = cleanString(ta.class?.className || "")
-          const taClassCode = cleanString(ta.class?.classCode || "")
+          const taClassName = ta.class?.className || ""
+          const taClassCode = ta.class?.classCode || ""
+
+          const normTaName = normalizeClassName(taClassName)
+          const normTaCode = normalizeClassName(taClassCode)
+          const cleanTaName = cleanString(taClassName)
+          const cleanTaCode = cleanString(taClassCode)
 
           const classMatches = (classId && taClassId === classId) || 
-            (cleanTargetClass && (
-              taClassName === cleanTargetClass || 
-              taClassCode === cleanTargetClass || 
-              (taClassName.length > 2 && cleanTargetClass.includes(taClassName)) ||
-              (cleanTargetClass.length > 2 && taClassName.includes(cleanTargetClass))
+            (normTargetClass && (
+              normTaName === normTargetClass || 
+              normTaCode === normTargetClass || 
+              (normTaName.length >= 2 && normTargetClass.includes(normTaName)) ||
+              (normTargetClass.length >= 2 && normTaName.includes(normTargetClass)) ||
+              cleanTaName === cleanTargetClass ||
+              cleanTaCode === cleanTargetClass
             ))
 
           if (!classMatches) return false
@@ -407,11 +425,11 @@ export async function GET(req: Request) {
         // Search in TeacherClassAssignments (Phân công lớp/bộ môn)
         const matchingTca = teacherClassAssignments.find(tca => {
           const tcaClassId = tca.classId
-          const tcaClassName = cleanString(tca.class?.className || "")
-          const tcaClassCode = cleanString(tca.class?.classCode || "")
+          const normTcaName = normalizeClassName(tca.class?.className || "")
+          const normTcaCode = normalizeClassName(tca.class?.classCode || "")
 
           const classMatches = (classId && tcaClassId === classId) || 
-            (cleanTargetClass && (tcaClassName === cleanTargetClass || tcaClassCode === cleanTargetClass))
+            (normTargetClass && (normTcaName === normTargetClass || normTcaCode === normTargetClass))
           if (!classMatches) return false
 
           const role = (tca.roleInClass || "").toLowerCase()
@@ -507,6 +525,16 @@ const result = [
             ps.admissionCampus ||
             ""
 
+          const assignedTeacherMap: Record<string, string> = {}
+          committedSubjects.forEach(sub => {
+            assignedTeacherMap[sub] = resolveAssignedTeacher(
+              matchingStudent?.classId || matchingStudent?.class?.id,
+              resolvedClassName,
+              sub,
+              matchingStudent?.class?.homeroomTeacherId
+            )
+          })
+
           return {
             id: ps.id,
             studentCode: ps.studentCode,
@@ -518,7 +546,7 @@ const result = [
             className: resolvedClassName,
             campusName: resolvedCampus,
             committedSubjects,
-            assignedTeacherMap: {},
+            assignedTeacherMap,
             mathScore: null,
             literatureScore: null,
             writtenEnglishScore: null,
