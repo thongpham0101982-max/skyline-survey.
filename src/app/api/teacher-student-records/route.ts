@@ -691,47 +691,36 @@ export async function GET(req: Request) {
             .filter(a => a.classId === s.classId)
             .map(a => a.subject?.name || a.subject?.subjectName || "")
 
+          const teacherNames = [
+            cleanString(teacherObj?.user?.fullName),
+            cleanString(teacherObj?.teacherName),
+            cleanString(session.user.name || "")
+          ].filter(Boolean)
+
+          const assignedTeacherMap: Record<string, string> = {}
+          committedSubjects.forEach(sub => {
+            assignedTeacherMap[sub] = resolveAssignedTeacher(
+              s.classId,
+              s.class?.className || "",
+              sub,
+              s.class?.homeroomTeacherId
+            )
+          })
+
           const matchedSubjects = committedSubjects.filter((cs: string) => {
+            if (isManagement) return true
+
+            const assignedTeacher = assignedTeacherMap[cs]
+            const cleanAssigned = cleanString(assignedTeacher)
+            const isAssigned = teacherNames.includes(cleanAssigned)
+
             const subLower = cs.toLowerCase().trim()
-            if (isManagement || isHomeroom || assignments.length === 0) return true
-
             if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
-              const teachesPsych = teacherSubjectsInClass.some(ts => {
-                const cleanTS = ts.toLowerCase()
-                return cleanTS.includes("tâm lý") || cleanTS.includes("psychology")
-              })
-              return isHomeroom || teachesPsych
+              return isAssigned || isHomeroom
             }
 
-            if (subLower.includes("toán") || subLower.includes("math")) {
-              return teacherSubjectsInClass.some(ts => ts.toLowerCase().includes("toán") || ts.toLowerCase().includes("math"))
-            }
-
-            if (subLower.includes("tiếng việt") || (subLower.includes("việt") && !subLower.includes("văn"))) {
-              return teacherSubjectsInClass.some(ts => {
-                const cleanTS = ts.toLowerCase()
-                return cleanTS.includes("tiếng việt") || (cleanTS.includes("việt") && !cleanTS.includes("văn"))
-              })
-            }
-
-            if (subLower.includes("ngữ văn") || subLower.includes("văn") || subLower.includes("literature")) {
-              return teacherSubjectsInClass.some(ts => {
-                const cleanTS = ts.toLowerCase()
-                return cleanTS.includes("ngữ văn") || cleanTS.includes("văn") || cleanTS.includes("literature")
-              })
-            }
-
-            if (subLower.includes("anh") || subLower.includes("english") || subLower.includes("esl")) {
-              return teacherSubjectsInClass.some(ts => {
-                const cleanTS = ts.toLowerCase()
-                return cleanTS.includes("anh") || cleanTS.includes("english") || cleanTS.includes("esl")
-              })
-            }
-
-            return teacherSubjectsInClass.some(ts => {
-              const cleanTS = ts.toLowerCase()
-              return subLower.includes(cleanTS) || cleanTS.includes(subLower)
-            })
+            if (isAssigned) return true
+            return false
           })
 
           if (matchedSubjects.length === 0) return null
@@ -748,15 +737,7 @@ export async function GET(req: Request) {
               subjectName: ta.subject?.name || ta.subject?.subjectName || ""
             }))
 
-          const assignedTeacherMap: Record<string, string> = {}
-          committedSubjects.forEach(sub => {
-            assignedTeacherMap[sub] = resolveAssignedTeacher(
-              s.classId,
-              s.class?.className || "",
-              sub,
-              s.class?.homeroomTeacherId
-            )
-          })
+
 
           return {
             id: s.id,
