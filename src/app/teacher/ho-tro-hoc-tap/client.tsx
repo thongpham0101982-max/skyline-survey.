@@ -1444,28 +1444,10 @@ export function TeacherSupportClient({
                           const assignedList: string[] = [];
 
                           committed.forEach((sub: string) => {
-                            const subLower = sub.toLowerCase();
-                            if (subLower.includes("tâm lý")) {
-                              if (s.homeroomTeacherName) {
-                                const label = `${s.homeroomTeacherName} (GVCN)`;
-                                if (!assignedList.includes(label)) assignedList.push(label);
-                              }
-                            } else {
-                              const matches = (s.assignedTeachers || []).filter((ta: any) => {
-                                const taSubLower = (ta.subjectName || "").toLowerCase();
-                                if (subLower.includes("toán")) return taSubLower.includes("toán");
-                                if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
-                                  return taSubLower.includes("văn") || taSubLower.includes("tiếng việt");
-                                }
-                                if (subLower.includes("anh")) return taSubLower.includes("anh");
-                                return taSubLower.includes(subLower) || subLower.includes(taSubLower);
-                              });
-                              matches.forEach((m: any) => {
-                                const label = `${m.teacherName} (${m.subjectName || "GVBM"})`;
-                                if (m.teacherName && !assignedList.includes(label)) {
-                                  assignedList.push(label);
-                                }
-                              });
+                            const teacherName = s.assignedTeacherMap && s.assignedTeacherMap[sub];
+                            if (teacherName && teacherName !== "Chưa phân công") {
+                              const label = `${teacherName} (${sub})`;
+                              if (!assignedList.includes(label)) assignedList.push(label);
                             }
                           });
 

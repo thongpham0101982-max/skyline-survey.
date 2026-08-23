@@ -1,8 +1,27 @@
+import { parseCommittedSubjects } from "@/lib/subject-mapping"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
+
+function normalizeClassName(cName: string | null | undefined): string {
+  if (!cName) return ""
+  return cName.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(lop|class|co so|cs)\b/gi, "")
+    .replace(/[^a-z0-9]/gi, "")
+}
+
+function cleanString(str: string | null | undefined): string {
+  if (!str) return ""
+  return str.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "")
+}
+
 
 function safeJsonParse(val: any, fallback: any = {}) {
   if (!val) return fallback
@@ -25,41 +44,6 @@ function safeDateToISO(dateVal: any): string {
   }
 }
 
-function parseCommittedSubjects(note?: string | null, resultStr?: string | null): string[] {
-  const text = `${note || ""} ${resultStr || ""}`.trim();
-  if (!text) return [];
-  let rawSubs: string[] = [];
-  const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i);
-  if (match && match[1]) {
-    rawSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean);
-  }
-  if (rawSubs.length === 0) {
-    if (/Toán|Math/i.test(text)) rawSubs.push("Toán học");
-    if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(text)) rawSubs.push("Tiếng Việt");
-    if (/Ngữ văn|Literature|Văn/i.test(text) && !/Tiếng Việt/i.test(text)) rawSubs.push("Ngữ Văn");
-    if (/Anh|English|ESL/i.test(text)) rawSubs.push("Tiếng Anh");
-    if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý");
-  }
-  const finalSubs: string[] = [];
-  rawSubs.forEach((s) => {
-    const clean = s.trim();
-    const lower = clean.toLowerCase();
-    if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
-      if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh");
-    } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
-      if (!finalSubs.includes("Toán")) finalSubs.push("Toán học");
-    } else if (lower.includes("tiếng việt") || lower.includes("tieng viet")) {
-      if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt");
-    } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
-      if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn");
-    } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
-      if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý");
-    } else {
-      if (!finalSubs.includes(clean)) finalSubs.push(clean);
-    }
-  });
-  return finalSubs;
-}
 
 export async function GET(req: Request) {
   const session = await auth()
@@ -284,14 +268,6 @@ export async function GET(req: Request) {
         }
       })
 
-      const cleanString = (str: string) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
-      }
-
       const result = students.map(s => {
         const assessment = inputAssessments.find((a) => {
           if (a.studentCode === s.studentCode || a.enrollmentCode === s.studentCode) {
@@ -367,14 +343,6 @@ export async function GET(req: Request) {
         }
       })
 
-      const cleanString = (str: string) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
-      }
-
       // Filter students whose input assessment commitment matches the subjects Param
       const candidates = students
         .map((s) => {
@@ -437,13 +405,16 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Missing teacherId or academicYearId" }, { status: 400 })
       }
 
-      // Find all teaching assignments for this teacher in this academic year
+      // 1. Fetch all teachers for homeroom lookup
+      const allTeachers = await prisma.teacher.findMany({
+        include: { user: true }
+      })
+
+      // 2. Find all teaching assignments for this teacher in this academic year
       const assignments = await prisma.teachingAssignment.findMany({
         where: {
           teacherId,
-          class: {
-            academicYearId
-          }
+          class: { academicYearId }
         },
         include: {
           class: true,
@@ -451,7 +422,7 @@ export async function GET(req: Request) {
         }
       })
 
-      // Find all homeroom classes for this teacher in this academic year
+      // 3. Find all homeroom classes for this teacher in this academic year
       const homeroomClasses = await prisma.class.findMany({
         where: {
           academicYearId,
@@ -472,23 +443,164 @@ export async function GET(req: Request) {
         return NextResponse.json([])
       }
 
-      // Fetch ALL teaching assignments for these classIds
+      // 4. Fetch ALL teaching assignments for these classIds
       const allClassTeachingAssignments = await prisma.teachingAssignment.findMany({
         where: {
           classId: { in: classIds },
           class: { academicYearId }
         },
         include: {
-          teacher: true,
-          subject: true
+          class: true,
+          subject: true,
+          teacher: { include: { user: true } }
         }
       })
 
-      // Fetch class details to get homeroom teachers
+      // 5. Fetch teacher class assignments
+      const teacherClassAssignments = await prisma.teacherClassAssignment.findMany({
+        include: {
+          class: true,
+          teacher: { include: { user: true } }
+        }
+      })
+
+      // 6. Fetch class details to get homeroom teachers
       const classDetails = await prisma.class.findMany({
         where: { id: { in: classIds } },
         include: { homeroomTeacher: true }
       })
+
+      // Helper to resolve assigned teacher per class and subject
+      const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomTeacherId?: string | null) => {
+        const subLower = subName.toLowerCase().trim()
+        const normTargetClass = normalizeClassName(className)
+        const cleanTargetClass = cleanString(className)
+
+        // Find homeroom teacher name if applicable
+        const hrTeacherObj = homeroomTeacherId ? allTeachers.find(t => t.id === homeroomTeacherId) : null
+        const hrTeacherName = hrTeacherObj?.user?.fullName || hrTeacherObj?.teacherName || null
+
+        // For Tâm lý (Psychology)
+        if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
+          const psychTa = allClassTeachingAssignments.find(ta => {
+            const taClassId = ta.classId
+            const taClassName = ta.class?.className || ""
+            const taClassCode = ta.class?.classCode || ""
+
+            const normTaName = normalizeClassName(taClassName)
+            const normTaCode = normalizeClassName(taClassCode)
+            const cleanTaName = cleanString(taClassName)
+            const cleanTaCode = cleanString(taClassCode)
+
+            const classMatches = (classId && taClassId === classId) || 
+              (normTargetClass && (
+                normTaName === normTargetClass || 
+                normTaCode === normTargetClass || 
+                (normTaName.length >= 2 && normTargetClass.includes(normTaName)) ||
+                (normTargetClass.length >= 2 && normTaName.includes(normTargetClass)) ||
+                cleanTaName === cleanTargetClass ||
+                cleanTaCode === cleanTargetClass
+              ))
+
+            if (!classMatches) return false
+
+            const code = (ta.subject?.code || ta.subject?.subjectCode || "").toUpperCase()
+            const name = (ta.subject?.name || ta.subject?.subjectName || "").toLowerCase()
+            return code === "TLY" || code.startsWith("TLY") || name.includes("tâm lý") || name.includes("psychology")
+          })
+
+          if (psychTa?.teacher) {
+            return psychTa.teacher.user?.fullName || psychTa.teacher.teacherName || "Chưa phân công"
+          }
+
+          if (hrTeacherName) return hrTeacherName
+
+          const gvcnClassAssign = teacherClassAssignments.find(tca => {
+            if (classId && tca.classId === classId) return true
+            const cName = tca.class?.className || tca.class?.classCode || ""
+            const role = (tca.roleInClass || "").toLowerCase()
+            const classMatches = normalizeClassName(cName) === normTargetClass || cleanString(cName) === cleanTargetClass
+            return classMatches && (role.includes("tâm lý") || role.includes("gvcn") || role.includes("chủ nhiệm"))
+          })
+          if (gvcnClassAssign?.teacher) {
+            return gvcnClassAssign.teacher.user?.fullName || gvcnClassAssign.teacher.teacherName || "Chưa phân công"
+          }
+          return "Chưa phân công"
+        }
+
+        // Search in TeachingAssignments
+        const matchingTa = allClassTeachingAssignments.find(ta => {
+          const taClassId = ta.classId
+          const taClassName = ta.class?.className || ""
+          const taClassCode = ta.class?.classCode || ""
+
+          const normTaName = normalizeClassName(taClassName)
+          const normTaCode = normalizeClassName(taClassCode)
+          const cleanTaName = cleanString(taClassName)
+          const cleanTaCode = cleanString(taClassCode)
+
+          const classMatches = (classId && taClassId === classId) || 
+            (normTargetClass && (
+              normTaName === normTargetClass || 
+              normTaCode === normTargetClass || 
+              (normTaName.length >= 2 && normTargetClass.includes(normTaName)) ||
+              (normTargetClass.length >= 2 && normTaName.includes(normTargetClass)) ||
+              cleanTaName === cleanTargetClass ||
+              cleanTaCode === cleanTargetClass
+            ))
+
+          if (!classMatches) return false
+
+          const code = (ta.subject?.code || ta.subject?.subjectCode || "").toUpperCase()
+          const name = (ta.subject?.name || ta.subject?.subjectName || "").toLowerCase()
+
+          // 1. Math
+          if (subLower.includes("toán") || subLower.includes("math")) {
+            return code === "TOA" || code.startsWith("TOA") || name.includes("toán") || name.includes("math")
+          }
+          // 2. English
+          if (subLower.includes("anh") || subLower.includes("english") || subLower.includes("esl")) {
+            return code === "TA" || code.startsWith("TA") || code.startsWith("ENG") || code.startsWith("ESL") || name.includes("anh") || name.includes("english") || name.includes("esl")
+          }
+          // 3. Tiếng Việt (Mã TVI)
+          if (subLower.includes("tiếng việt") || (subLower.includes("việt") && !subLower.includes("văn"))) {
+            return code === "TVI" || code.startsWith("TVI") || name.includes("tiếng việt") || (name.includes("việt") && !name.includes("văn"))
+          }
+          // 4. Ngữ Văn (Mã NVA)
+          if (subLower.includes("ngữ văn") || subLower.includes("văn") || subLower.includes("literature")) {
+            return code === "NVA" || code.startsWith("NVA") || name.includes("ngữ văn") || name.includes("văn") || name.includes("literature")
+          }
+          return false
+        })
+
+        if (matchingTa?.teacher) {
+          return matchingTa.teacher.user?.fullName || matchingTa.teacher.teacherName || "Chưa phân công"
+        }
+
+        // Search in TeacherClassAssignments
+        const matchingTca = teacherClassAssignments.find(tca => {
+          const tcaClassId = tca.classId
+          const normTcaName = normalizeClassName(tca.class?.className || "")
+          const normTcaCode = normalizeClassName(tca.class?.classCode || "")
+
+          const classMatches = (classId && tcaClassId === classId) || 
+            (normTargetClass && (normTcaName === normTargetClass || normTcaCode === normTargetClass))
+          if (!classMatches) return false
+
+          const role = (tca.roleInClass || "").toLowerCase()
+          if ((subLower.includes("toán") || subLower.includes("math")) && (role.includes("toán") || role.includes("math"))) return true
+          if ((subLower.includes("anh") || subLower.includes("english")) && (role.includes("anh") || role.includes("english"))) return true
+          if (subLower.includes("việt") && role.includes("việt")) return true
+          if (subLower.includes("văn") && role.includes("văn")) return true
+          return false
+        })
+
+        if (matchingTca?.teacher) {
+          return matchingTca.teacher.user?.fullName || matchingTca.teacher.teacherName || "Chưa phân công"
+        }
+
+        return "Chưa phân công"
+      }
 
       // Fetch all students in these classes
       const students = await prisma.student.findMany({
@@ -506,12 +618,14 @@ export async function GET(req: Request) {
         }
       })
 
-      // Fetch input assessment records for all candidates with commitment notes or matching results
+      // Fetch input assessment records
       const inputAssessments = await prisma.inputAssessmentStudent.findMany({
         where: {
           OR: [
             { admissionResult: { in: ["Đạt cam kết", "Đạt - Cam kết"] } },
-            { directorNote: { contains: "Môn cam kết" } }
+            { directorNote: { contains: "Môn cam kết" } },
+            { directorNote: { contains: "Cam kết" } },
+            { directorNote: { contains: "môn" } }
           ]
         },
         select: {
@@ -530,14 +644,6 @@ export async function GET(req: Request) {
         }
       })
 
-      const cleanString = (str: string) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
-      }
-
       // Filter and construct candidates
       const candidates = students
         .map((s) => {
@@ -552,33 +658,54 @@ export async function GET(req: Request) {
           const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
           if (committedSubjects.length === 0) return null
 
-          // Determine if the teacher teaches any of the committed subjects in this student's class
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
           const teacherSubjectsInClass = assignments
             .filter(a => a.classId === s.classId)
             .map(a => a.subject?.name || a.subject?.subjectName || "")
 
           const matchedSubjects = committedSubjects.filter((cs: string) => {
-            const cleanCS = cs.toLowerCase()
-            if (cleanCS.includes("tâm lý")) {
-              return isHomeroom
+            const subLower = cs.toLowerCase().trim()
+            if (isHomeroom) return true
+
+            if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
+              const teachesPsych = teacherSubjectsInClass.some(ts => {
+                const cleanTS = ts.toLowerCase()
+                return cleanTS.includes("tâm lý") || cleanTS.includes("psychology")
+              })
+              return isHomeroom || teachesPsych
             }
+
+            if (subLower.includes("toán") || subLower.includes("math")) {
+              return teacherSubjectsInClass.some(ts => ts.toLowerCase().includes("toán") || ts.toLowerCase().includes("math"))
+            }
+
+            if (subLower.includes("tiếng việt") || (subLower.includes("việt") && !subLower.includes("văn"))) {
+              return teacherSubjectsInClass.some(ts => {
+                const cleanTS = ts.toLowerCase()
+                return cleanTS.includes("tiếng việt") || (cleanTS.includes("việt") && !cleanTS.includes("văn"))
+              })
+            }
+
+            if (subLower.includes("ngữ văn") || subLower.includes("văn") || subLower.includes("literature")) {
+              return teacherSubjectsInClass.some(ts => {
+                const cleanTS = ts.toLowerCase()
+                return cleanTS.includes("ngữ văn") || cleanTS.includes("văn") || cleanTS.includes("literature")
+              })
+            }
+
+            if (subLower.includes("anh") || subLower.includes("english") || subLower.includes("esl")) {
+              return teacherSubjectsInClass.some(ts => {
+                const cleanTS = ts.toLowerCase()
+                return cleanTS.includes("anh") || cleanTS.includes("english") || cleanTS.includes("esl")
+              })
+            }
+
             return teacherSubjectsInClass.some(ts => {
               const cleanTS = ts.toLowerCase()
-              if (cleanTS.includes("toán")) {
-                return cleanCS.includes("môn toán") || cleanCS.includes("toán")
-              }
-              if (cleanTS.includes("tiếng việt") || cleanTS.includes("ngữ văn") || cleanTS.includes("văn")) {
-                return cleanCS.includes("tiếng việt") || cleanCS.includes("ngữ văn") || cleanCS.includes("văn")
-              }
-              if (cleanTS.includes("tiếng anh") || cleanTS.includes("anh")) {
-                return cleanCS.includes("tiếng anh") || cleanCS.includes("anh")
-              }
-              return cleanCS.includes(cleanTS) || cleanTS.includes(cleanCS)
+              return subLower.includes(cleanTS) || cleanTS.includes(subLower)
             })
           })
 
-          // Strictly require matchedSubjects.length > 0 based on Phân công giảng dạy (or GVCN Tâm lý)
           if (matchedSubjects.length === 0) return null
 
           const classObj = classDetails.find(c => c.id === s.classId)
@@ -588,10 +715,20 @@ export async function GET(req: Request) {
             .filter(ta => ta.classId === s.classId)
             .map(ta => ({
               teacherId: ta.teacherId,
-              teacherName: ta.teacher?.name || ta.teacher?.fullName || "",
+              teacherName: ta.teacher?.user?.fullName || ta.teacher?.teacherName || "",
               subjectId: ta.subjectId,
               subjectName: ta.subject?.name || ta.subject?.subjectName || ""
             }))
+
+          const assignedTeacherMap: Record<string, string> = {}
+          committedSubjects.forEach(sub => {
+            assignedTeacherMap[sub] = resolveAssignedTeacher(
+              s.classId,
+              s.class?.className || "",
+              sub,
+              s.class?.homeroomTeacherId
+            )
+          })
 
           return {
             id: s.id,
@@ -601,6 +738,7 @@ export async function GET(req: Request) {
             className: s.class?.className || "",
             homeroomTeacherName,
             assignedTeachers: studentClassAssignments,
+            assignedTeacherMap,
             committedSubjects,
             matchedSubjects,
             isHomeroom,
