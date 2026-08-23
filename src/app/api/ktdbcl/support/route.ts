@@ -341,7 +341,8 @@ export async function GET(req: Request) {
 
       // Helper to resolve assigned teacher per class and subject
       const resolveAssignedTeacher = (classId: string | null | undefined, className: string, subName: string, homeroomTeacherId?: string | null) => {
-        const subLower = subName.toLowerCase()
+        const subLower = subName.toLowerCase().trim()
+        const cleanTargetClass = cleanString(className)
 
         // Find homeroom teacher name if applicable
         const hrTeacherObj = homeroomTeacherId ? allTeachers.find(t => t.id === homeroomTeacherId) : null
@@ -350,38 +351,47 @@ export async function GET(req: Request) {
         // For Tâm lý (Psychology): use GVCN / Homeroom teacher
         if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
           if (hrTeacherName) return hrTeacherName
-          const gvcnClassAssign = teacherClassAssignments.find(tca => 
-            (classId && tca.classId === classId) || 
-            (tca.class?.className && tca.class.className.trim().toLowerCase() === className.trim().toLowerCase())
-          )
+          const gvcnClassAssign = teacherClassAssignments.find(tca => {
+            if (classId && tca.classId === classId) return true
+            const cName = tca.class?.className || tca.class?.classCode || ""
+            return cleanString(cName) === cleanTargetClass
+          })
           if (gvcnClassAssign?.teacher) {
             return gvcnClassAssign.teacher.user?.fullName || gvcnClassAssign.teacher.teacherName || "Chưa phân công"
           }
           return "Chưa phân công"
         }
 
-        // Search in TeachingAssignments
+        // Search in TeachingAssignments (Phân công giảng dạy)
         const matchingTa = teachingAssignments.find(ta => {
-          const classMatches = (classId && ta.classId === classId) || 
-            (ta.class?.className && ta.class.className.trim().toLowerCase() === className.trim().toLowerCase()) ||
-            (ta.class?.classCode && ta.class.classCode.trim().toLowerCase() === className.trim().toLowerCase())
+          const taClassId = ta.classId
+          const taClassName = cleanString(ta.class?.className || "")
+          const taClassCode = cleanString(ta.class?.classCode || "")
+
+          const classMatches = (classId && taClassId === classId) || 
+            (cleanTargetClass && (
+              taClassName === cleanTargetClass || 
+              taClassCode === cleanTargetClass || 
+              (taClassName.length > 2 && cleanTargetClass.includes(taClassName)) ||
+              (cleanTargetClass.length > 2 && taClassName.includes(cleanTargetClass))
+            ))
 
           if (!classMatches) return false
 
           const code = (ta.subject?.code || ta.subject?.subjectCode || "").toUpperCase()
           const name = (ta.subject?.name || ta.subject?.subjectName || "").toLowerCase()
 
-          if (subLower.includes("toán")) {
-            return code === "TOA" || name.includes("toán") || name.includes("math")
+          // 1. Math
+          if (subLower.includes("toán") || subLower.includes("math")) {
+            return code === "TOA" || code.startsWith("TOA") || name.includes("toán") || name.includes("math")
           }
-          if (subLower.includes("anh")) {
-            return code === "TA" || code === "TAV" || code.startsWith("TAV") || name.includes("anh") || name.includes("english")
+          // 2. English
+          if (subLower.includes("anh") || subLower.includes("english") || subLower.includes("esl")) {
+            return code === "TA" || code.startsWith("TA") || code.startsWith("ENG") || code.startsWith("ESL") || name.includes("anh") || name.includes("english") || name.includes("esl")
           }
-          if (subLower.includes("việt")) {
-            return code === "TVI" || name.includes("việt")
-          }
-          if (subLower.includes("văn")) {
-            return code === "NVA" || name.includes("văn") || name.includes("literature")
+          // 3. Vietnamese & Literature (Tiếng Việt & Ngữ Văn - Flexible matching across primary/middle/high)
+          if (subLower.includes("việt") || subLower.includes("văn") || subLower.includes("literature")) {
+            return code === "TVI" || code === "NVA" || code.startsWith("TVI") || code.startsWith("NVA") || name.includes("việt") || name.includes("văn") || name.includes("literature")
           }
           return false
         })
@@ -390,17 +400,20 @@ export async function GET(req: Request) {
           return matchingTa.teacher.user?.fullName || matchingTa.teacher.teacherName || "Chưa phân công"
         }
 
-        // Search in TeacherClassAssignments
+        // Search in TeacherClassAssignments (Phân công lớp/bộ môn)
         const matchingTca = teacherClassAssignments.find(tca => {
-          const classMatches = (classId && tca.classId === classId) || 
-            (tca.class?.className && tca.class.className.trim().toLowerCase() === className.trim().toLowerCase())
+          const tcaClassId = tca.classId
+          const tcaClassName = cleanString(tca.class?.className || "")
+          const tcaClassCode = cleanString(tca.class?.classCode || "")
+
+          const classMatches = (classId && tcaClassId === classId) || 
+            (cleanTargetClass && (tcaClassName === cleanTargetClass || tcaClassCode === cleanTargetClass))
           if (!classMatches) return false
 
           const role = (tca.roleInClass || "").toLowerCase()
-          if (subLower.includes("toán") && role.includes("toán")) return true
-          if (subLower.includes("anh") && (role.includes("anh") || role.includes("english"))) return true
-          if (subLower.includes("việt") && role.includes("việt")) return true
-          if (subLower.includes("văn") && role.includes("văn")) return true
+          if ((subLower.includes("toán") || subLower.includes("math")) && (role.includes("toán") || role.includes("math"))) return true
+          if ((subLower.includes("anh") || subLower.includes("english")) && (role.includes("anh") || role.includes("english"))) return true
+          if ((subLower.includes("việt") || subLower.includes("văn")) && (role.includes("việt") || role.includes("văn"))) return true
           return false
         })
 
@@ -411,7 +424,7 @@ export async function GET(req: Request) {
         return "Chưa phân công"
       }
 
-      const result = [
+const result = [
         ...inputStudents.map(is => {
           const matchingStudent = systemStudents.find(ss => 
             (ss.studentCode && is.studentCode && ss.studentCode.trim().toLowerCase() === is.studentCode.trim().toLowerCase()) ||
