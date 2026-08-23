@@ -1,8 +1,18 @@
+import { parseCommittedSubjects } from "@/lib/subject-mapping"
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
 
 export const dynamic = "force-dynamic"
+
+function cleanString(str: string | null | undefined): string {
+  if (!str) return ""
+  return str.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "")
+}
+
 
 export async function GET(req: Request) {
   const session = await auth()
@@ -138,14 +148,6 @@ export async function GET(req: Request) {
           return match[1].split(",").map((s: any) => s.trim())
         }
         return []
-      }
-
-      const cleanString = (str: any) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .replace(/\s+/g, "")
       }
 
       const targetsWithCommitment = targets.map((t) => {
@@ -310,14 +312,6 @@ export async function GET(req: Request) {
           }
         }
       })
-
-            const cleanString = (str: string | null | undefined) => {
-        if (!str) return ""
-        return str.toLowerCase()
-          .normalize("NFD")
-          .replace(/[̀-ͯ]/g, "")
-          .replace(/\s+/g, "")
-      }
 
       // 1. Fetch all teachers for homeroom lookup
       const allTeachers = await prisma.teacher.findMany({
