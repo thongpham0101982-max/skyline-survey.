@@ -359,13 +359,47 @@ export async function GET(req: Request) {
         const hrTeacherObj = homeroomTeacherId ? allTeachers.find(t => t.id === homeroomTeacherId) : null
         const hrTeacherName = hrTeacherObj?.user?.fullName || hrTeacherObj?.teacherName || null
 
-        // For Tâm lý (Psychology): use GVCN / Homeroom teacher
+        // For Tâm lý (Psychology): Search TeachingAssignments first, then GVCN, then TeacherClassAssignments
         if (subLower.includes("tâm lý") || subLower.includes("psychology")) {
+          const psychTa = teachingAssignments.find(ta => {
+            const taClassId = ta.classId
+            const taClassName = ta.class?.className || ""
+            const taClassCode = ta.class?.classCode || ""
+
+            const normTaName = normalizeClassName(taClassName)
+            const normTaCode = normalizeClassName(taClassCode)
+            const cleanTaName = cleanString(taClassName)
+            const cleanTaCode = cleanString(taClassCode)
+
+            const classMatches = (classId && taClassId === classId) || 
+              (normTargetClass && (
+                normTaName === normTargetClass || 
+                normTaCode === normTargetClass || 
+                (normTaName.length >= 2 && normTargetClass.includes(normTaName)) ||
+                (normTargetClass.length >= 2 && normTaName.includes(normTargetClass)) ||
+                cleanTaName === cleanTargetClass ||
+                cleanTaCode === cleanTargetClass
+              ))
+
+            if (!classMatches) return false
+
+            const code = (ta.subject?.code || ta.subject?.subjectCode || "").toUpperCase()
+            const name = (ta.subject?.name || ta.subject?.subjectName || "").toLowerCase()
+            return code === "TLY" || code.startsWith("TLY") || name.includes("tâm lý") || name.includes("psychology")
+          })
+
+          if (psychTa?.teacher) {
+            return psychTa.teacher.user?.fullName || psychTa.teacher.teacherName || "Chưa phân công"
+          }
+
           if (hrTeacherName) return hrTeacherName
+
           const gvcnClassAssign = teacherClassAssignments.find(tca => {
             if (classId && tca.classId === classId) return true
             const cName = tca.class?.className || tca.class?.classCode || ""
-            return normalizeClassName(cName) === normTargetClass || cleanString(cName) === cleanTargetClass
+            const role = (tca.roleInClass || "").toLowerCase()
+            const classMatches = normalizeClassName(cName) === normTargetClass || cleanString(cName) === cleanTargetClass
+            return classMatches && (role.includes("tâm lý") || role.includes("gvcn") || role.includes("chủ nhiệm"))
           })
           if (gvcnClassAssign?.teacher) {
             return gvcnClassAssign.teacher.user?.fullName || gvcnClassAssign.teacher.teacherName || "Chưa phân công"
