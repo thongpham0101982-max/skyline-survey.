@@ -45,6 +45,24 @@ const getCompactScore = (val: any) => {
 }
 
 
+const normalizeSubjectNameClient = (sub: string): string => {
+  const clean = (sub || "").trim().replace(/^môn\s+/i, "");
+  const lower = clean.toLowerCase();
+  if (lower.includes("anh") || lower.includes("english") || lower.includes("tav")) {
+    return "Tiếng Anh";
+  }
+  if (lower.includes("toán") || lower.includes("math")) {
+    return "Môn Toán";
+  }
+  if (lower.includes("văn") || lower.includes("tiếng việt") || lower.includes("ngữ văn") || lower.includes("literature")) {
+    return "Ngữ Văn";
+  }
+  if (lower.includes("tâm lý") || lower.includes("psychology")) {
+    return "Tâm lý";
+  }
+  return clean;
+};
+
 const getScoreForSubject = (s: any, subjectName: string) => {
   let scoreDisplay = "Chưa có";
   const subLower = (subjectName || "").toLowerCase();
@@ -54,7 +72,7 @@ const getScoreForSubject = (s: any, subjectName: string) => {
       const sc = s.scores?.find((x: any) => x.subject?.name?.toLowerCase().includes("toán"));
       if (sc?.scores) scoreDisplay = `${sc.scores}`;
     }
-  } else if (subLower.includes("văn") || subLower.includes("tiếng việt")) {
+  } else if (subLower.includes("văn") || subLower.includes("tiếng việt") || subLower.includes("ngữ văn")) {
     if (s.literatureScore != null) scoreDisplay = `${s.literatureScore}`;
     else {
       const sc = s.scores?.find((x: any) => {
@@ -63,20 +81,23 @@ const getScoreForSubject = (s: any, subjectName: string) => {
       });
       if (sc?.scores) scoreDisplay = `${sc.scores}`;
     }
-  } else if (subLower.includes("anh")) {
-    if (subLower.includes("viết")) {
-      scoreDisplay = s.writtenEnglishScore != null ? `${s.writtenEnglishScore}` : "Chưa có";
-    } else if (subLower.includes("vấn đáp") || subLower.includes("nói") || subLower.includes("oral")) {
-      scoreDisplay = s.oralEnglishScore != null ? `${s.oralEnglishScore}` : "Chưa có";
-    } else {
-      const write = s.writtenEnglishScore;
-      const oral = s.oralEnglishScore;
-      if (write != null || oral != null) {
-        scoreDisplay = `${write ?? "-"} viết, ${oral ?? "-"} nói`;
+  } else if (subLower.includes("anh") || subLower.includes("tav") || subLower.includes("english")) {
+    const write = s.writtenEnglishScore;
+    const oral = s.oralEnglishScore;
+    if (write != null || oral != null) {
+      if (write != null && oral != null) {
+        scoreDisplay = `${write} viết, ${oral} nói`;
+      } else if (write != null) {
+        scoreDisplay = `${write} viết`;
       } else {
-        const sc = s.scores?.find((x: any) => x.subject?.name?.toLowerCase().includes("anh"));
-        if (sc?.scores) scoreDisplay = `${sc.scores}`;
+        scoreDisplay = `${oral} nói`;
       }
+    } else {
+      const sc = s.scores?.find((x: any) => {
+        const n = (x.subject?.name || x.subject?.code || "").toLowerCase();
+        return n.includes("anh") || n.includes("tav") || n.includes("english");
+      });
+      if (sc?.scores) scoreDisplay = `${sc.scores}`;
     }
   } else if (subLower.includes("tâm lý")) {
     if (s.psychologyScore != null) scoreDisplay = `${s.psychologyScore}`;
@@ -801,22 +822,25 @@ export function TeacherSupportClient({
 
 
 
-  // 1. Flatten / Split each student by their committed subjects so 1 row = 1 Student x 1 Subject
+  // 1. Flatten / Split each student by their committed subjects (Unified Tiếng Anh - TAV)
   const flattenedCommitmentRows = useMemo(() => {
     const rows: any[] = [];
     (entranceCommitmentStudents || []).forEach((s: any) => {
-      const subs = s.committedSubjects && s.committedSubjects.length > 0
+      const rawSubs = s.committedSubjects && s.committedSubjects.length > 0
         ? s.committedSubjects
         : ["Văn hóa"];
 
-      subs.forEach((sub: string) => {
+      // Normalize and deduplicate: Tiếng Anh (viết) & Tiếng Anh (vấn đáp) -> Tiếng Anh
+      const normalizedSubs = Array.from(new Set(rawSubs.map((sub: string) => normalizeSubjectNameClient(sub))));
+
+      normalizedSubs.forEach((sub: string) => {
         const rowId = `${s.id}___${sub}`;
-        const isMatchedTeacher = s.matchedSubjects?.includes(sub);
+        const isMatchedTeacher = (s.matchedSubjects || []).some((ms: string) => normalizeSubjectNameClient(ms) === sub);
         const score = getScoreForSubject(s, sub);
         const hasPsych = (sub || "").toLowerCase().includes("tâm lý");
         const existingTarget = (targets || []).find((t: any) => 
           t.studentId === s.id && (
-            (t.reason && t.reason.toLowerCase().includes(sub.toLowerCase())) ||
+            (t.reason && (t.reason.toLowerCase().includes(sub.toLowerCase()) || normalizeSubjectNameClient(t.reason) === sub)) ||
             (hasPsych && t.supportType === "PSYCHOLOGICAL")
           )
         );
