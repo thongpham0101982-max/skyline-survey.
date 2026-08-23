@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-21T03:42:02.838Z
+// Forced Vercel Deployment: 2026-08-23T22:25:00.000Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -7,7 +7,8 @@ import {
   Calendar, Clock, MapPin, User, Users, BookOpen, Plus, Search, X, Check,
   AlertCircle, Trash2, Info, Layers, FileText, ChevronDown, ChevronUp,
   ClipboardList, CheckCircle, Clock3, Building2, Shield, Filter, RotateCcw, SlidersHorizontal, Award,
-  Eye, TrendingUp, Sparkles, CheckSquare, Mail
+  Eye, TrendingUp, Sparkles, CheckSquare, Mail, History, Send, ChevronRight, UserCheck, FileCheck,
+  CheckCircle2, AlertTriangle, ExternalLink, Bookmark, HelpCircle, ArrowRight, UserPlus, CheckCheck
 } from "lucide-react"
 import { 
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
@@ -32,6 +33,7 @@ interface TeacherInfo {
   requiredTaught?: number | null;
   taughtUnit?: string | null;
   position?: string | null;
+  departmentAssignments?: any[];
 }
 interface SubjectInfo { id: string; subjectCode: string; subjectName: string }
 interface DeptInfo { id: string; code: string; name: string }
@@ -94,6 +96,7 @@ const K12_SECTIONS = [
     ]
   }
 ];
+
 const MAMNON_SECTIONS = [
   {
     name: "1. Chuẩn bị cho hoạt động (2 điểm)",
@@ -143,23 +146,110 @@ const calculateMamNonRanking = (scores: number[]) => {
   return "Không đạt";
 };
 
-
 const RATING_COLORS: Record<string, string> = {
-  "Tốt": "bg-emerald-100 text-emerald-700 border-emerald-300",
-  "Khá": "bg-sky-100 text-sky-700 border-sky-300",
-  "Trung bình": "bg-amber-100 text-amber-700 border-amber-300",
-  "Yếu": "bg-rose-100 text-rose-700 border-rose-300"
+  "Tốt": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "Giỏi": "bg-emerald-50 text-emerald-700 border-emerald-200",
+  "Khá": "bg-sky-50 text-sky-700 border-sky-200",
+  "Trung bình": "bg-amber-50 text-amber-700 border-amber-200",
+  "Đạt": "bg-teal-50 text-teal-700 border-teal-200",
+  "Không đạt": "bg-rose-50 text-rose-700 border-rose-200",
+  "Không xếp loại": "bg-rose-50 text-rose-700 border-rose-200",
+  "Yếu": "bg-rose-50 text-rose-700 border-rose-200"
 }
+
+// Generate consistent avatar color based on name
+const getAvatarGradient = (name: string) => {
+  const gradients = [
+    "from-teal-500 to-emerald-600",
+    "from-sky-500 to-blue-600",
+    "from-indigo-500 to-violet-600",
+    "from-amber-500 to-orange-600",
+    "from-rose-500 to-pink-600",
+    "from-cyan-500 to-teal-600",
+  ];
+  let hash = 0;
+  for (let i = 0; i < (name || "").length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return gradients[Math.abs(hash) % gradients.length];
+};
 
 export function ObservationClient(props: ObservationClientProps) {
   const {
     initialSlots, currentTeacher, subjects, departments, teachers, campuses, classes, initialFilters, academicYears, selectedYearId
   } = props;
+
   const isMamNonTeacher = 
     currentTeacher?.user?.role === "GV_MN" || 
     currentTeacher?.user?.role === "BGH_MN" ||
     (currentTeacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const activeTabParam = searchParams.get("tab") || "dang-ky"
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const [slots, setSlots] = useState(initialSlots)
+  const [activeTab, setActiveTab] = useState(activeTabParam)
+  const [isPending, startTransition] = useTransition()
+  const [isSearching, setIsSearching] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST">("TEACHER_OPEN")
+  
+  // Request Observation Form States
+  const [reqCampusId, setReqCampusId] = useState("")
+  const [reqDeptId, setReqDeptId] = useState("")
+  const [reqTeacherId, setReqTeacherId] = useState("")
+  const [reqSubjectId, setReqSubjectId] = useState("")
+  const [reqLevel, setReqLevel] = useState("")
+  const [reqGrade, setReqGrade] = useState("")
+  const [reqClassId, setReqClassId] = useState("")
+  const [reqDate, setReqDate] = useState("")
+  const [reqPeriod, setReqPeriod] = useState("Tiết 1")
+  const [reqTopic, setReqTopic] = useState("")
+  const [reqNotes, setReqNotes] = useState("")
+  const [declineReason, setDeclineReason] = useState("")
+  const [decliningSlotId, setDecliningSlotId] = useState<string | null>(null)
+  const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
+  const [historySlot, setHistorySlot] = useState<any | null>(null);
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
+
+  // Filter states
+  const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
+  const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
+  const [activeStatusTab, setActiveStatusTab] = useState<"new" | "expired" | "gbm_request" | "all">("new");
+  const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
+  const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
+
+  // Filter teachers belonging ONLY to current logged-in teacher's department
+  const myDeptTeachers = useMemo(() => {
+    if (!currentTeacher?.departmentId) return teachers;
+    return teachers.filter((t: any) => t.departmentId === currentTeacher.departmentId);
+  }, [teachers, currentTeacher?.departmentId]);
+
+  useEffect(() => {
+    if (myDeptTeachers.length > 0 && selectedEmailTeacherIds.length === 0) {
+      setSelectedEmailTeacherIds(myDeptTeachers.map((t: any) => t.id));
+    }
+  }, [myDeptTeachers]);
+
+  const [filterLevel, setFilterLevel] = useState(initialFilters.level)
+  const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
+  const [filterPeriod, setFilterPeriod] = useState("all")
+  const [filterDate, setFilterDate] = useState(initialFilters.date)
+  const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId)
+  const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId)
+  const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
+
+  const handleAcademicYearChange = (yearId: string) => {
+    setFilterAcademicYearId(yearId)
+    const params = new URLSearchParams(window.location.search)
+    params.set("academicYearId", yearId)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
   const checkIsMyDept = useCallback((slot: any) => {
     if (!currentTeacher || !slot?.teacher) return false;
     const normDept = (s: string) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -216,86 +306,6 @@ export function ObservationClient(props: ObservationClientProps) {
     return false;
   }, [currentTeacher, isMamNonTeacher]);
 
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const activeTabParam = searchParams.get("tab") || "dang-ky"
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const [slots, setSlots] = useState(initialSlots)
-  const [activeTab, setActiveTab] = useState(activeTabParam)
-  const [isPending, startTransition] = useTransition()
-  const [isSearching, setIsSearching] = useState(false)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [creationMode, setCreationMode] = useState<"TEACHER_OPEN" | "OBSERVER_REQUEST">("TEACHER_OPEN")
-  
-  // Request Observation Form States
-  const [reqCampusId, setReqCampusId] = useState("")
-  const [reqDeptId, setReqDeptId] = useState("")
-  const [reqTeacherId, setReqTeacherId] = useState("")
-  const [reqSubjectId, setReqSubjectId] = useState("")
-  const [reqLevel, setReqLevel] = useState("")
-  const [reqGrade, setReqGrade] = useState("")
-  const [reqClassId, setReqClassId] = useState("")
-  const [reqDate, setReqDate] = useState("")
-  const [reqPeriod, setReqPeriod] = useState("Tiết 1")
-  const [reqTopic, setReqTopic] = useState("")
-  const [reqNotes, setReqNotes] = useState("")
-  const [declineReason, setDeclineReason] = useState("")
-  const [decliningSlotId, setDecliningSlotId] = useState<string | null>(null)
-  const [registerDetailSlot, setRegisterDetailSlot] = useState<any | null>(null)
-  const [historySlot, setHistorySlot] = useState<any | null>(null);
-  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
-  const [myScheduleMonth, setMyScheduleMonth] = useState<string>("ALL");
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null)
-
-  // Filter states
-  const [filterSchoolBlock, setFilterSchoolBlock] = useState("all");
-  const [activeDeptTab, setActiveDeptTab] = useState("my-dept");
-  const [activeStatusTab, setActiveStatusTab] = useState<"new" | "expired" | "gbm_request" | "all">("new");
-  const [sendEmailNotif, setSendEmailNotif] = useState<boolean>(false);
-  const [selectedEmailTeacherIds, setSelectedEmailTeacherIds] = useState<string[]>([]);
-
-  // Filter teachers belonging ONLY to current logged-in teacher's department
-  const myDeptTeachers = useMemo(() => {
-    if (!currentTeacher?.departmentId) return teachers;
-    return teachers.filter((t: any) => t.departmentId === currentTeacher.departmentId);
-  }, [teachers, currentTeacher?.departmentId]);
-
-  useEffect(() => {
-    if (myDeptTeachers.length > 0 && selectedEmailTeacherIds.length === 0) {
-      setSelectedEmailTeacherIds(myDeptTeachers.map((t: any) => t.id));
-    }
-  }, [myDeptTeachers]);
-
-
-  const [filterLevel, setFilterLevel] = useState(initialFilters.level)
-  const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
-  const [filterPeriod, setFilterPeriod] = useState("all")
-  const [filterDate, setFilterDate] = useState(initialFilters.date)
-  const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId)
-  const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId)
-  const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
-
-  const handleAcademicYearChange = (yearId: string) => {
-    setFilterAcademicYearId(yearId)
-    const params = new URLSearchParams(window.location.search)
-    params.set("academicYearId", yearId)
-    router.push(`${pathname}?${params.toString()}`)
-  }
-  const [showFilterPanel, setShowFilterPanel] = useState(true)
-
-  // All observation request slots targeted to current teacher (GV dạy được xin dự)
-  const allRequestsForMySlot = useMemo(() => {
-    return slots.filter((s: any) => s.teacherId === currentTeacher?.id && s.requestOrigin === "OBSERVER_REQUEST");
-  }, [slots, currentTeacher?.id]);
-
-  // All observation request slots created by current teacher (GVBM xin dự)
-  const myCreatedObserverRequests = useMemo(() => {
-    return slots.filter((s: any) => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id) && s.requestOrigin === "OBSERVER_REQUEST");
-  }, [slots, currentTeacher?.id]);
-
-
-  // Filter classes for GVBM request form based on Level, Grade, and Campus (if selected)
   const filteredReqClasses = useMemo(() => {
     let cleanDbLevel = "";
     if (reqLevel && reqLevel !== "all") {
@@ -309,7 +319,6 @@ export function ObservationClient(props: ObservationClientProps) {
     const numGrade = reqGrade ? reqGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
 
     return classes.filter((c: any) => {
-      // Filter by campus ONLY if user explicitly selected a campus
       if (reqCampusId && reqCampusId !== "all" && c.campusId !== reqCampusId) return false;
 
       if (cleanDbLevel && cleanDbLevel !== "pho thong k-12") {
@@ -330,27 +339,10 @@ export function ObservationClient(props: ObservationClientProps) {
     });
   }, [classes, reqLevel, reqGrade, reqCampusId]);
 
-
-  // Filter teachers for request form by selected department
   const filteredTeachersForRequest = useMemo(() => {
     if (!reqDeptId) return teachers;
     return teachers.filter((t: any) => t.departmentId === reqDeptId);
   }, [teachers, reqDeptId]);
-
-  // Pending slots waiting for my approval (I am host teacher)
-  const pendingRequestsForMe = useMemo(() => {
-    return slots.filter((s: any) => s.teacherId === currentTeacher?.id && s.status === "PENDING_TEACHER_APPROVAL");
-  }, [slots, currentTeacher?.id]);
-
-  // Helper to format date with Day of Week
-  const formatDateWithDayOfWeek = (dateStr: string) => {
-    if (!dateStr) return "";
-    const d = new Date(dateStr);
-    const days = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-    const dayName = days[d.getDay()];
-    const dateFormatted = d.toLocaleDateString("vi-VN");
-    return `${dayName}, ${dateFormatted}`;
-  };
 
   const autoSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -379,174 +371,15 @@ export function ObservationClient(props: ObservationClientProps) {
   const [newLessonPlanName, setNewLessonPlanName] = useState("")
   const [newLessonPlanData, setNewLessonPlanData] = useState("")
 
-  // Tong Hop Tab states
-  const [selectedDeptId, setSelectedDeptId] = useState(currentTeacher?.departmentId || (departments[0]?.id || ""))
-  const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
-  const [tongHopSearchTeacherQuery, setTongHopSearchTeacherQuery] = useState("")
-  const [tongHopSearchSlotQuery, setTongHopSearchSlotQuery] = useState("")
-  const [tongHopFilterLevel, setTongHopFilterLevel] = useState("all")
-  const [tongHopFilterGrade, setTongHopFilterGrade] = useState("all")
   const [monthlyLimitCount, setMonthlyLimitCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [editSlotId, setEditSlotId] = useState<string | null>(null)
 
-  // Target Config states (moved down to avoid referencing selectedTeacherId before initialization)
-  const [activeDetailTab, setActiveDetailTab] = useState("lich-su")
-  const [observerType, setObserverType] = useState("")
-  const [observeeType, setObserveeType] = useState("")
-  const [requiredObserved, setRequiredObserved] = useState(0)
-  const [observedUnit, setObservedUnit] = useState("tháng")
-  const [requiredTaught, setRequiredTaught] = useState(0)
-  const [taughtUnit, setTaughtUnit] = useState("tháng")
-  const [savingTargets, setSavingTargets] = useState(false)
-
-  // Self Target Confirmation states
-  const [selfObserverType, setSelfObserverType] = useState(currentTeacher?.observerType || "")
-  const [selfObserveeType, setSelfObserveeType] = useState(currentTeacher?.observeeType || "")
+  // Targets
   const [selfRequiredObserved, setSelfRequiredObserved] = useState(currentTeacher?.requiredObserved || 0)
   const [selfObservedUnit, setSelfObservedUnit] = useState(currentTeacher?.observedUnit || "tháng")
   const [selfRequiredTaught, setSelfRequiredTaught] = useState(currentTeacher?.requiredTaught || 0)
   const [selfTaughtUnit, setSelfTaughtUnit] = useState(currentTeacher?.taughtUnit || "tháng")
-  const [isEditingSelfTargets, setIsEditingSelfTargets] = useState(!currentTeacher?.observerType)
-  const defaultGvOption = currentTeacher?.observerType === "Giáo viên mới" ? "new" : "old"
-  const [gvOption, setGvOption] = useState(defaultGvOption)
-  const [savingSelfTargets, setSavingSelfTargets] = useState(false)
-
-  const specialPositions = ["Ban ĐHCM", "TTCM", "QLCM", "GĐCS", "Giám đốc Điều hành cơ sở"];
-  const isSpecialPosition = currentTeacher?.position && specialPositions.includes(currentTeacher.position);
-
-  const computedTargets = useMemo(() => {
-    const position = currentTeacher?.position || "";
-    if (position === "Ban ĐHCM") {
-      return {
-        obsType: "Ban ĐHCM",
-        obsCount: 10,
-        obsUnit: "tháng",
-        tgtType: "Ban ĐHCM",
-        tgtCount: 0,
-        tgtUnit: "tháng",
-        labelObs: "10 tiết / Tháng",
-        labelTgt: "Không quy định"
-      };
-    } else if (position === "TTCM") {
-      return {
-        obsType: "TTCM",
-        obsCount: 8,
-        obsUnit: "tháng",
-        tgtType: "TTCM",
-        tgtCount: 1,
-        tgtUnit: "năm",
-        labelObs: "8 tiết / Tháng",
-        labelTgt: "1 tiết / Năm học"
-      };
-    } else if (position === "QLCM") {
-      return {
-        obsType: "QLCM",
-        obsCount: 8,
-        obsUnit: "tháng",
-        tgtType: "QLCM",
-        tgtCount: 0,
-        tgtUnit: "tháng",
-        labelObs: "8 tiết / Tháng",
-        labelTgt: "Không quy định"
-      };
-    } else if (position === "GĐCS" || position === "Giám đốc Điều hành cơ sở") {
-      return {
-        obsType: "Giám đốc Điều hành cơ sở",
-        obsCount: 4,
-        obsUnit: "tháng",
-        tgtType: "Giám đốc Điều hành cơ sở",
-        tgtCount: 0,
-        tgtUnit: "tháng",
-        labelObs: "4 tiết / Tháng",
-        labelTgt: "Không quy định"
-      };
-    } else {
-      // Normal GV
-      if (gvOption === "new") {
-        return {
-          obsType: "Giáo viên mới",
-          obsCount: 10,
-          obsUnit: "tháng",
-          tgtType: "Giáo viên mới",
-          tgtCount: 1,
-          tgtUnit: "tháng",
-          labelObs: "10 tiết / Tháng",
-          labelTgt: "1 tiết / Tháng"
-        };
-      } else {
-        return {
-          obsType: "Giáo viên cũ",
-          obsCount: 4,
-          obsUnit: "tháng",
-          tgtType: "Giáo viên cũ",
-          tgtCount: 1,
-          tgtUnit: "học kỳ",
-          labelObs: "4 tiết / Tháng",
-          labelTgt: "1 tiết / Học kỳ"
-        };
-      }
-    }
-  }, [currentTeacher?.position, gvOption]);
-
-  const isPrivileged = currentTeacher?.position === "TTCM" || currentTeacher?.position === "QLCM";
-
-  useEffect(() => {
-    if (selectedTeacherId) {
-      const teacher = teachers.find(t => t.id === selectedTeacherId);
-      if (teacher) {
-        setObserverType(teacher.observerType || "");
-        setObserveeType(teacher.observeeType || "");
-        setRequiredObserved(teacher.requiredObserved || 0);
-        setObservedUnit(teacher.observedUnit || "tháng");
-        setRequiredTaught(teacher.requiredTaught || 0);
-        setTaughtUnit(teacher.taughtUnit || "tháng");
-      }
-    }
-  }, [selectedTeacherId, teachers]);
-
-  const handleObserverTypeChange = (type: any) => {
-    setObserverType(type);
-    if (type === "Ban ĐHCM") {
-      setRequiredObserved(10);
-      setObservedUnit("tháng");
-    } else if (type === "TTCM") {
-      setRequiredObserved(8);
-      setObservedUnit("tháng");
-    } else if (type === "Nhóm trưởng CM CS") {
-      setRequiredObserved(8);
-      setObservedUnit("tháng");
-    } else if (type === "Giám đốc Điều hành cơ sở") {
-      setRequiredObserved(4);
-      setObservedUnit("tháng");
-    } else if (type === "Giáo viên mới") {
-      setRequiredObserved(10);
-      setObservedUnit("tháng");
-    } else if (type === "Giáo viên cũ") {
-      setRequiredObserved(4);
-      setObservedUnit("tháng");
-    }
-  };
-
-  const handleObserveeTypeChange = (type: any) => {
-    setObserveeType(type);
-    if (type === "TTCM") {
-      setRequiredTaught(1);
-      setTaughtUnit("năm");
-    } else if (type === "Nhóm trưởng CM CS") {
-      setRequiredTaught(1);
-      setTaughtUnit("năm");
-    } else if (type === "Giáo viên mới") {
-      setRequiredTaught(1);
-      setTaughtUnit("tháng");
-    } else if (type === "Giáo viên cũ") {
-      setRequiredTaught(1);
-      setTaughtUnit("học kỳ");
-    }
-  };
-
-  // Expanded slot registrants (for host view)
-  const [expandedSlotId, setExpandedSlotId] = useState<string | null>(null)
 
   // Evaluation modal state
   const [evalModal, setEvalModal] = useState<{ registration: any; slot: any } | null>(null)
@@ -560,7 +393,6 @@ export function ObservationClient(props: ObservationClientProps) {
 
   useEffect(() => { setActiveTab(activeTabParam) }, [activeTabParam])
 
-  // Auto-open evaluation modal if evalSlotId query param exists
   useEffect(() => {
     const evalSlotIdParam = searchParams.get("evalSlotId");
     if (evalSlotIdParam && slots.length > 0) {
@@ -575,7 +407,6 @@ export function ObservationClient(props: ObservationClientProps) {
       }
     }
   }, [searchParams, slots, currentTeacher]);
-
 
   useEffect(() => {
     setSlots(initialSlots)
@@ -593,73 +424,9 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [isMamNonTeacher])
 
-  
   const openHistoryModal = (slot: any) => {
     setHistorySlot(slot);
     setShowHistoryModal(true);
-  };
-
-  const getSlotHistoryLogs = (slot: any) => {
-    const logs: Array<{ title: string; time: string; icon: string; detail: string; color: string }> = [];
-    
-    // 1. Creation event
-    logs.push({
-      title: "Khởi tạo tiết dạy dự giờ",
-      time: slot.createdAt ? new Date(slot.createdAt).toLocaleString("vi-VN") : "Ban đầu",
-      icon: "PlusCircle",
-      color: "teal",
-      detail: `Thầy/Cô ${slot.teacher?.teacherName || slot.teacherName || "Giáo viên"} đã mở tiết dạy (${slot.subjectName} - ${slot.topic}).`
-    });
-
-    // 2. Email / Teams Dispatch Event
-    if (slot.sendEmailNotif !== false) {
-      logs.push({
-        title: "Phát thông báo Email & Teams",
-        time: slot.createdAt ? new Date(slot.createdAt).toLocaleString("vi-VN") : "Ban đầu",
-        icon: "Mail",
-        color: "blue",
-        detail: `Hệ thống đã phát Email từ bankhaothi@skylineschool.edu.vn & tin nhắn Teams tới các GV thuộc Tổ chuyên môn.`
-      });
-    }
-
-    // 3. Registrations & Approvals
-    if (slot.registrations && slot.registrations.length > 0) {
-      slot.registrations.forEach((reg: any) => {
-        const regTime = reg.createdAt ? new Date(reg.createdAt).toLocaleString("vi-VN") : "N/A";
-        logs.push({
-          title: `Đăng ký dự giờ từ ${reg.teacher?.teacherName || reg.teacherName || "GV"}`,
-          time: regTime,
-          icon: "UserCheck",
-          color: reg.isApproved ? "emerald" : "amber",
-          detail: `Giáo viên ${reg.teacher?.teacherName || reg.teacherName} (${reg.teacher?.teacherCode || ""}) đã đăng ký tham dự. Trạng thái: ${reg.isApproved ? "Đã phê duyệt" : "Chờ xác nhận"}.`
-        });
-
-        if (reg.evaluation) {
-          const evalTime = reg.evaluation.submittedAt ? new Date(reg.evaluation.submittedAt).toLocaleString("vi-VN") : regTime;
-          logs.push({
-            title: `Đã nộp phiếu đánh giá kết quả tiết dạy`,
-            time: evalTime,
-            icon: "FileCheck",
-            color: "purple",
-            detail: `Thầy/Cô ${reg.teacher?.teacherName || ""} đã hoàn tất phiếu đánh giá kết quả tiết dạy. Xếp loại: ${reg.evaluation.overallRating || "Đạt"}.`
-          });
-        }
-      });
-    }
-
-    // 4. Expired Event
-    const isPast = new Date(slot.date) < new Date();
-    if (isPast || slot.expiredNotifSentAt) {
-      logs.push({
-        title: "Hết hạn đăng ký dự giờ & Tổng kết",
-        time: slot.expiredNotifSentAt ? new Date(slot.expiredNotifSentAt).toLocaleString("vi-VN") : "Đã đến hạn",
-        icon: "Clock",
-        color: "rose",
-        detail: `Tiết dạy đã hết hạn đăng ký (Tổng cộng ${slot.registrations?.length || 0}/4 GV đăng ký). Đã phát Email tổng kết nhắc lịch tới GV dạy & GV dự giờ.`
-      });
-    }
-
-    return logs;
   };
 
   const resetCreateForm = () => {
@@ -705,14 +472,9 @@ export function ObservationClient(props: ObservationClientProps) {
     setShowCreateModal(true);
   };
 
-  const openCreateModal = () => {
-    resetCreateForm();
-    setShowCreateModal(true);
-  };
-
   const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ message, type })
-    setTimeout(() => setToast(null), 4500)
+    setTimeout(() => setToast(null), 4000)
   }
 
   const periodOptions = ["Tiết 1","Tiết 2","Tiết 3","Tiết 4","Tiết 5","Tiết 6","Tiết 7","Tiết 8"]
@@ -744,7 +506,6 @@ export function ObservationClient(props: ObservationClientProps) {
     else cleanDbLevel = newLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
     const numGrade = newGrade ? newGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim() : "";
-    const activeYearId = filterAcademicYearId || selectedYearId || "";
 
     return classes.filter(c => {
       if (effectiveCampusId && c.campusId !== effectiveCampusId) return false;
@@ -765,11 +526,9 @@ export function ObservationClient(props: ObservationClientProps) {
       const cGradeNum = (c.grade || "").replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
       return cGradeNum === numGrade || (c.grade || "").trim() === numGrade || cGradeNum.startsWith(numGrade + ".");
     });
-  }, [classes, newCampusId, currentTeacher?.campusId, newLevel, newGrade, filterAcademicYearId, selectedYearId]);
+  }, [classes, newCampusId, currentTeacher?.campusId, newLevel, newGrade]);
 
-  // Derive unique Khoi hoc values for Mam non from actual class data
   const mamNonGrades = useMemo(() => {
-    const activeYearId = filterAcademicYearId || selectedYearId || "";
     const effectiveCampusId = newCampusId || reqCampusId || currentTeacher?.campusId || "";
     const gradeSet = new Set<string>();
     classes.forEach((cls: any) => {
@@ -787,7 +546,7 @@ export function ObservationClient(props: ObservationClientProps) {
       if (idxB !== -1) return 1;
       return a.localeCompare(b, "vi");
     });
-  }, [classes, newCampusId, reqCampusId, currentTeacher?.campusId, filterAcademicYearId, selectedYearId]);
+  }, [classes, newCampusId, reqCampusId, currentTeacher?.campusId]);
 
   const getNextPeriod = (p: string) => { const m = p.match(/\d+/); if (m) { const n = parseInt(m[0]); if (n < 8) return `Tiết ${n+1}` } return p }
   const handleStartTimeChange = (val: string) => { setNewStartTime(val); setNewEndTime(newIsDoublePeriod ? getNextPeriod(val) : val) }
@@ -803,23 +562,11 @@ export function ObservationClient(props: ObservationClientProps) {
     reader.readAsDataURL(file)
   }
 
-  const handleViewPdf = (name: string, dataUrl: string) => {
-    if (!dataUrl) return
-    try {
-      const win = window.open()
-      if (win) {
-        win.document.write(`<html><head><title>${name}</title><style>body{margin:0;padding:0;background:#525659;}iframe{border:0;width:100%;height:100%;}</style></head><body><iframe src="${dataUrl}" allowfullscreen></iframe></body></html>`)
-      } else { showToast("Vui lòng cho phép mở popup trên trình duyệt!", "error") }
-    } catch { showToast("Lỗi hiển thị giáo án PDF!", "error") }
-  }
-
   const handleSearch = useCallback(async () => {
     const params = new URLSearchParams(window.location.search)
     if (filterSchoolBlock && filterSchoolBlock !== "all") params.set("schoolBlock", filterSchoolBlock); else params.delete("schoolBlock")
     if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
-    
     if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
-    
     if (filterDate) params.set("date", filterDate); else params.delete("date")
     if (filterCampusId && filterCampusId !== "all") params.set("campusId", filterCampusId); else params.delete("campusId")
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
@@ -836,7 +583,6 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, router, pathname])
 
-  // Auto-apply filters on change (debounced)
   useEffect(() => {
     if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current)
     autoSearchTimerRef.current = setTimeout(() => {
@@ -845,7 +591,6 @@ export function ObservationClient(props: ObservationClientProps) {
     return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current) }
   }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, handleSearch])
 
-  // Active filter helpers
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (filterCampusId && filterCampusId !== "all") count++
@@ -918,25 +663,13 @@ export function ObservationClient(props: ObservationClientProps) {
       showToast("Không thể xóa tiết dạy đã có giáo viên đăng ký!", "error");
       return;
     }
-    if (!confirm("Thầy/Cô có chắc chắn muốn xóa tiết dạy dự giờ này? Tất cả đăng ký liên quan sẽ bị hủy.")) return
+    if (!confirm("Thầy/Cô có chắc chắn muốn xóa tiết dạy dự giờ này?")) return
     startTransition(async () => {
       const res = await deleteObservationSlot(slotId)
-      if (res.success) { showToast("Đã xóa tiết dạy dự giờ thành công!", "info"); refreshSlots() }
+      if (res.success) { showToast("Đã xóa tiết dạy thành công!", "info"); refreshSlots() }
       else showToast(res.error || "Không thể xóa!", "error")
     })
   }
-
-  
-  const handleSendTeamsReminder = async (slotId: string) => {
-    startTransition(async () => {
-      const res = await triggerSlotReminder(slotId);
-      if (res.success) {
-        showToast("Đã gửi tin nhắn nhắc nhở qua Teams đến Tổ chuyên môn!", "success");
-      } else {
-        showToast(res.error || "Không thể gửi tin nhắn nhắc nhở", "error");
-      }
-    });
-  };
 
   const handleApprove = async (registrationId: string) => {
     startTransition(async () => {
@@ -960,7 +693,6 @@ export function ObservationClient(props: ObservationClientProps) {
             actualGeneralComment = parsed.text || "";
           }
         } catch (e) {
-          // fallback
           parsedScores = [
             registration.evaluation.criterion1 || 0,
             registration.evaluation.criterion2 || 0,
@@ -1017,21 +749,15 @@ export function ObservationClient(props: ObservationClientProps) {
       })
     }
 
-    // 1. Giỏi
     if (sum >= 17 && yq1 === 1.5 && yq3 === 2.0 && yq6 === 2.0 && yq7 === 3.0 && checkOthersAtLeast50Percent([0, 2, 5, 6])) {
       return "Giỏi"
     }
-
-    // 2. Khá
     if (sum >= 14 && yq3 >= 2.0 && yq6 >= 2.0 && yq7 >= 2.0 && checkOthersAtLeast50Percent([2, 5, 6])) {
       return "Khá"
     }
-
-    // 3. Trung bình
     if (sum >= 12 && yq3 >= 1.0 && yq6 >= 1.0 && yq7 >= 1.0 && scores.every(s => s > 0)) {
       return "Trung bình"
     }
-
     return "Không xếp loại"
   }
 
@@ -1073,7 +799,6 @@ export function ObservationClient(props: ObservationClientProps) {
         scores: evalCriteria,
         text: evalGeneral
       });
-      // DB compatibility values for first 5 criteria
       payload.criterion1 = Math.round(evalCriteria[0]);
       payload.criterion2 = Math.round(evalCriteria[1]);
       payload.criterion3 = Math.round(evalCriteria[2]);
@@ -1214,12 +939,7 @@ export function ObservationClient(props: ObservationClientProps) {
     if (res.success) {
       showToast(editSlotId ? "Cập nhật tiết dạy thành công!" : "Tạo tiết dạy dự giờ mới thành công!", "success")
       setShowCreateModal(false)
-      setNewSubjectId(""); setNewSubjectName(""); setNewLevel(isMamNonTeacher ? "Mầm non" : ""); setNewGrade(""); setNewClassId("")
-      setNewClassNameText(""); setNewTopic(""); setNewDate(""); setNewStartTime("Tiết 1"); setNewEndTime("Tiết 1")
-      setNewIsDoublePeriod(false); setNewDescription(""); setNewVisibility("ALL"); setNewTargetDeptId("")
-      setNewLessonPlanName(""); setNewLessonPlanData("")
-      setNewChuDe(""); setNewHoatDong(""); setNewDeTai("")
-      if (fileInputRef.current) fileInputRef.current.value = ""
+      resetCreateForm()
       refreshSlots()
     } else {
       showToast(res.error || "Lỗi tạo tiết dạy!", "error")
@@ -1250,7 +970,6 @@ export function ObservationClient(props: ObservationClientProps) {
       
       const countWeight = slot.isDoublePeriod ? 2 : 1;
       if (isHost) {
-        // Chỉ tính tiết dạy khi tất cả GV đã được duyệt đều đã điền phiếu đánh giá
         const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
         const allEvaluated = approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation);
         if (allEvaluated) {
@@ -1258,7 +977,6 @@ export function ObservationClient(props: ObservationClientProps) {
         }
       }
       if (isObserverApproved) {
-        // Chỉ tính tiết dự khi GV dự đã điền phiếu đánh giá
         const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved);
         if (myReg && myReg.evaluation) {
           stats[key].observedCount += countWeight;
@@ -1287,340 +1005,257 @@ export function ObservationClient(props: ObservationClientProps) {
     return list.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
   }, [slots, currentTeacher?.id]);
 
-  const evaluationsGroupedBySlot = useMemo(() => {
-    const groups: any[] = [];
-    slots.forEach(slot => {
-      if (slot.teacherId === currentTeacher?.id) {
-        const evals: any[] = [];
-        slot.registrations.forEach((reg: any) => {
-          if (reg.evaluation) {
-            evals.push({
-              registration: reg,
-              evaluation: reg.evaluation
-            });
-          }
-        });
-        if (evals.length > 0) {
-          groups.push({
-            slot,
-            evaluations: evals
-          });
-        }
-      }
-    });
-    return groups.sort((a, b) => new Date(b.slot.date).getTime() - new Date(a.slot.date).getTime());
-  }, [slots, currentTeacher?.id]);
-
-  // Get all teachers in the selected department
-  const deptTeachers = useMemo(() => {
-    return teachers.filter((t: any) => t.departmentId === selectedDeptId);
-  }, [teachers, selectedDeptId]);
-
-  // Filter department teachers by search query
-  const filteredDeptTeachers = useMemo(() => {
-    return deptTeachers.filter((t: any) => 
-      t.teacherName.toLowerCase().includes(tongHopSearchTeacherQuery.toLowerCase()) ||
-      t.teacherCode.toLowerCase().includes(tongHopSearchTeacherQuery.toLowerCase())
-    );
-  }, [deptTeachers, tongHopSearchTeacherQuery]);
-
-  // Compute taught and observed slot counts for each teacher in the selected department
-  const teacherStats = useMemo(() => {
-    const statsMap: Record<string, { taughtCount: number; observedCount: number }> = {};
-    
-    // Initialize stats for each teacher in the department
-    deptTeachers.forEach((t: any) => {
-      statsMap[t.id] = { taughtCount: 0, observedCount: 0 };
-    });
-
-    // Loop through all slots to calculate counts
-    slots.forEach((slot: any) => {
-      // 1. Taught count (Host)
-      if (statsMap[slot.teacherId]) {
-        const hasEvaluations = slot.registrations.some((r: any) => r.evaluation !== null);
-        if (hasEvaluations) {
-          statsMap[slot.teacherId].taughtCount += (slot.isDoublePeriod ? 2 : 1);
-        }
-      }
-
-      // 2. Observed count (Observer)
-      slot.registrations.forEach((reg: any) => {
-        if (reg.isApproved && reg.evaluation && statsMap[reg.teacherId]) {
-          statsMap[reg.teacherId].observedCount += (slot.isDoublePeriod ? 2 : 1);
-        }
-      });
-    });
-
-    return statsMap;
-  }, [deptTeachers, slots]);
-
-  const getSlotAverageScore = (slot: any) => {
-    const isK12 = !["Mầm non"].includes(slot.level);
-    const passedEvals = slot.registrations.filter((r: any) => {
-      if (!r.evaluation) return false;
-      const passed = isK12
-        ? (r.evaluation.totalScore !== null && r.evaluation.totalScore !== undefined ? r.evaluation.totalScore >= 14 : (r.evaluation.overallRating === "Giỏi" || r.evaluation.overallRating === "Khá"))
-        : (r.evaluation.overallRating === "Tốt" || r.evaluation.overallRating === "Khá" || r.evaluation.overallRating === "Đạt");
-      return passed;
-    });
-    
-    if (passedEvals.length === 0) return null;
-    if (!isK12) return "Mầm non";
-    
-    const sum = passedEvals.reduce((acc: number, curr: any) => acc + (curr.evaluation.totalScore || 0), 0);
-    return sum / passedEvals.length;
-  };
-
   const tabFilteredSlots = useMemo(() => {
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     return slots.filter(slot => {
       const isHost = slot.teacherId === currentTeacher?.id;
       const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
-      if (activeTab === "dang-ky") {
-        if (activeStatusTab === "gbm_request") {
-          if (slot.requestOrigin !== "OBSERVER_REQUEST") return false;
-        } else {
-          if (isHost || isObserver) return false;
+      
+      if (activeStatusTab === "gbm_request") {
+        if (slot.requestOrigin !== "OBSERVER_REQUEST") return false;
+      } else {
+        if (isHost || isObserver) return false;
 
-          const slotDate = new Date(slot.date);
-          const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
-          if (activeStatusTab === "new" && isExpired) return false;
-          if (activeStatusTab === "expired" && !isExpired) return false;
-        }
+        const slotDate = new Date(slot.date);
+        const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
+        if (activeStatusTab === "new" && isExpired) return false;
+        if (activeStatusTab === "expired" && !isExpired) return false;
+      }
 
-        const isMyDept = checkIsMyDept(slot);
-        if (activeDeptTab !== "all") {
-          if (activeDeptTab === "my-dept" && !isMyDept) return false;
-          if (activeDeptTab === "other-dept") {
-            if (isMyDept) return false;
-            const slotIsMamNon = slot.level === "Mầm non" || 
-                                 (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-            if (isMamNonTeacher) {
-              if (!slotIsMamNon) return false;
-            } else {
-              if (slotIsMamNon) return false;
-            }
+      const isMyDept = checkIsMyDept(slot);
+      if (activeDeptTab !== "all") {
+        if (activeDeptTab === "my-dept" && !isMyDept) return false;
+        if (activeDeptTab === "other-dept") {
+          if (isMyDept) return false;
+          const slotIsMamNon = slot.level === "Mầm non" || 
+                               (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+          if (isMamNonTeacher) {
+            if (!slotIsMamNon) return false;
+          } else {
+            if (slotIsMamNon) return false;
           }
         }
-        return true;
       }
-      if (activeTab === "my-schedule") return isHost;
-      if (activeTab === "history") return isObserver;
       return true;
     });
-  }, [slots, activeTab, currentTeacher?.id, currentTeacher?.departmentId, currentTeacher?.departmentRel, activeDeptTab, activeStatusTab, isMamNonTeacher, checkIsMyDept]);
+  }, [slots, currentTeacher?.id, activeDeptTab, activeStatusTab, isMamNonTeacher, checkIsMyDept]);
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab)
-    const params = new URLSearchParams(window.location.search)
-    if (tab === "dang-ky") {
-      params.delete("tab")
-    } else {
-      params.set("tab", tab)
-      // Clear search filters when switching to other tabs
-      params.delete("schoolBlock")
-      params.delete("level")
-      params.delete("grade")
-      params.delete("date")
-      params.delete("campusId")
-      params.delete("deptId")
-      
-      setFilterCampusId("all")
-      setFilterLevel("all")
-      setFilterGrade("all")
-      setFilterDate("")
-      setFilterPeriod("all")
-      setFilterSchoolBlock("all")
-      setFilterDeptId("all")
-    }
-    router.push(`${pathname}?${params.toString()}`)
-  }
-
-  const selectedMonthStr = newDate ? `${(new Date(newDate).getMonth() + 1).toString().padStart(2, "0")}/${new Date(newDate).getFullYear()}` : "tháng hiện tại"
-
-  // Calculate progress values inside JSX or right before return:
-  
-  // Compute available months for Section 4 (Lịch dạy & dự giờ của tôi)
-  const availableScheduleMonths = useMemo(() => {
-    const myTaught = slots.filter(s => s.teacherId === currentTeacher?.id);
-    const myRegistered = slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
-    const allMySlots = [...myTaught, ...myRegistered];
-    
-    const monthMap = new Map<string, string>();
-    allMySlots.forEach(s => {
-      if (!s.date) return;
-      const d = new Date(s.date);
-      if (isNaN(d.getTime())) return;
-      const year = d.getFullYear();
-      const month = d.getMonth() + 1;
-      const key = `${year}-${String(month).padStart(2, '0')}`;
-      const label = `Tháng ${month}/${year}`;
-      monthMap.set(key, label);
-    });
-    
-    const sorted = Array.from(monthMap.entries()).sort((a, b) => b[0].localeCompare(a[0]));
-    return sorted.map(([value, label]) => ({ value, label }));
+  const myTaughtSlots = useMemo(() => {
+    return slots.filter(slot => slot.teacherId === currentTeacher?.id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [slots, currentTeacher?.id]);
 
-  const myStats = currentTeacher?.id ? teacherStats[currentTeacher.id] : undefined;
-  const myObserved = myStats?.observedCount || 0;
-  const myTaught = myStats?.taughtCount || 0;
-  
+  const myObservedSlots = useMemo(() => {
+    return slots.filter(slot => slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [slots, currentTeacher?.id]);
+
+  const myObservedCount = useMemo(() => {
+    let count = 0;
+    slots.forEach(slot => {
+      const reg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id && r.isApproved && r.evaluation);
+      if (reg) count += (slot.isDoublePeriod ? 2 : 1);
+    });
+    return count;
+  }, [slots, currentTeacher?.id]);
+
+  const myTaughtCount = useMemo(() => {
+    let count = 0;
+    slots.forEach(slot => {
+      if (slot.teacherId === currentTeacher?.id) {
+        const approvedRegs = slot.registrations.filter((r: any) => r.isApproved);
+        if (approvedRegs.length > 0 && approvedRegs.every((r: any) => !!r.evaluation)) {
+          count += (slot.isDoublePeriod ? 2 : 1);
+        }
+      }
+    });
+    return count;
+  }, [slots, currentTeacher?.id]);
+
   const obsTarget = selfRequiredObserved || 0;
   const taughtTarget = selfRequiredTaught || 0;
 
-  const obsProgress = obsTarget > 0 ? Math.min(100, Math.round((myObserved / obsTarget) * 100)) : 0;
-  const taughtProgress = taughtTarget > 0 ? Math.min(100, Math.round((myTaught / taughtTarget) * 100)) : 0;
+  const obsProgress = obsTarget > 0 ? Math.min(100, Math.round((myObservedCount / obsTarget) * 100)) : 0;
+  const taughtProgress = taughtTarget > 0 ? Math.min(100, Math.round((myTaughtCount / (taughtTarget || 1)) * 100)) : 0;
 
   return (
-    <div className="flex flex-col gap-6 relative pb-12 text-slate-800 bg-slate-50/50 min-h-screen p-1 font-sans">
+    <div className="flex flex-col gap-6 relative pb-16 text-slate-800 bg-[#F8FAFC] min-h-screen p-2 sm:p-4 md:p-6 font-sans">
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600" : toast.type === "error" ? "bg-rose-600" : "bg-sky-600"}`}>
-          {toast.type === "success" && <Check className="w-5 h-5 shrink-0" />}
+        <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-xl border border-white/20 text-white animate-in slide-in-from-top duration-300 ${toast.type === "success" ? "bg-emerald-600 shadow-emerald-600/30" : toast.type === "error" ? "bg-rose-600 shadow-rose-600/30" : "bg-[#008B82] shadow-teal-700/30"}`}>
+          {toast.type === "success" && <CheckCircle2 className="w-5 h-5 shrink-0" />}
           {toast.type === "error" && <AlertCircle className="w-5 h-5 shrink-0" />}
           {toast.type === "info" && <Info className="w-5 h-5 shrink-0" />}
-          <span className="text-sm font-bold tracking-wide">${toast.message}</span>
+          <span className="text-xs sm:text-sm font-bold tracking-wide">{toast.message}</span>
         </div>
       )}
 
-      {/* Top Header Navbar with Teacher Card */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#002D2B] via-[#005E57] to-[#009085] p-6 md:p-8 rounded-[2rem] shadow-lg text-white">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider text-emerald-100 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-300 animate-pulse" /> SKY-LINE SYSTEM | ĐÁNH GIÁ CHUYÊN MÔN
-            </span>
+      {/* Top Header Hero Bar */}
+      <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-r from-[#002D2B] via-[#004D47] to-[#007068] p-6 sm:p-8 text-white shadow-xl shadow-teal-950/10 border border-teal-800/40">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-b from-[#48BFE3]/20 to-transparent rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-white/10 backdrop-blur-md border border-white/15 text-emerald-200 shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+              <span>SKY-LINE SYSTEM • ĐÁNH GIÁ CHUYÊN MÔN</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white flex items-center gap-3">
+              Dự giờ đánh giá Giáo viên
+            </h1>
+            <p className="text-emerald-100/90 text-xs sm:text-sm max-w-2xl font-medium leading-relaxed">
+              Phân hệ quản trị tiết dạy, đăng ký dự giờ trực tuyến, theo dõi chỉ tiêu chuyên môn và thực hiện phiếu đánh giá chuẩn mực Sky-Line.
+            </p>
           </div>
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight mt-1 flex items-center gap-2">
-            Dự giờ đánh giá Giáo viên
-          </h1>
-          <p className="text-emerald-100/80 text-xs font-medium">Giao diện điều khiển dự giờ, theo dõi chỉ tiêu và đánh giá chuyên môn giáo viên chuẩn Sky-Line</p>
-        </div>
-        
-        {/* Profile Card right */}
-        <div className="flex items-center gap-3.5 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 shadow-inner self-start md:self-auto">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center font-black text-lg shadow-md border-2 border-white/20">
-            {currentTeacher?.teacherName?.charAt(0) || "N"}
-          </div>
-          <div className="text-left space-y-0.5">
-            <span className="block text-sm font-black tracking-wide">{currentTeacher?.teacherName}</span>
-            <span className="block text-xs font-bold text-emerald-100/90 font-bold">Mã số: {currentTeacher?.teacherCode}</span>
-            {currentTeacher?.position && (
-              <span className="inline-block text-xs font-bold bg-emerald-500/30 text-emerald-100 px-2 py-0.2 rounded font-extrabold uppercase mt-1">
-                {currentTeacher?.position}
-              </span>
+
+          {/* Teacher Profile & Year Selector */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+            {academicYears && academicYears.length > 0 && (
+              <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-2xl border border-white/15 shadow-inner">
+                <span className="text-[10px] font-bold uppercase text-emerald-200 block mb-0.5">Năm học:</span>
+                <select
+                  value={filterAcademicYearId}
+                  onChange={e => handleAcademicYearChange(e.target.value)}
+                  className="bg-transparent text-xs font-black text-white outline-none cursor-pointer pr-2"
+                >
+                  {academicYears.map(y => (
+                    <option key={y.id} value={y.id} className="text-slate-800 font-semibold">{y.name} {y.status === "ACTIVE" ? "(Hiện tại)" : ""}</option>
+                  ))}
+                </select>
+              </div>
             )}
+
+            <div className="flex items-center gap-3.5 bg-white/15 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/20 shadow-lg">
+              <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${getAvatarGradient(currentTeacher?.teacherName || "G")} text-white flex items-center justify-center font-black text-xl shadow-md border-2 border-white/40`}>
+                {currentTeacher?.teacherName?.charAt(0) || "G"}
+              </div>
+              <div className="text-left space-y-0.5">
+                <span className="block text-sm font-black tracking-wide text-white">{currentTeacher?.teacherName}</span>
+                {currentTeacher?.position ? (
+                  <span className="inline-block text-[10px] font-black bg-emerald-400/25 text-emerald-100 border border-emerald-300/40 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                    {currentTeacher?.position}
+                  </span>
+                ) : (
+                  <span className="block text-xs font-medium text-emerald-100/80">Giáo viên</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* DASHBOARD OVERVIEW: 3 Grid Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Card 1: Observation target */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col justify-between gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-b from-sky-400/5 to-transparent rounded-full -mr-6 -mt-6" />
+      {/* DASHBOARD OVERVIEW: 3 KPI Metrics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: Observation Target */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md p-6 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-sky-400/15 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
+          
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-2xl bg-sky-50 flex items-center justify-center text-sky-600">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100 shadow-2xs">
                 <Eye className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Chỉ tiêu dự giờ</h4>
-                <p className="text-xs font-bold text-slate-500 mt-0.5">Đơn vị: tiết / {selfObservedUnit}</p>
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu dự giờ</h4>
+                <p className="text-xs font-bold text-slate-600">Đơn vị: tiết / {selfObservedUnit}</p>
               </div>
             </div>
-            <span className="text-xs font-bold font-extrabold text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100">
+            <span className="text-xs font-black text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200/60 shadow-2xs">
               {obsProgress}% Hoàn thành
             </span>
           </div>
 
-          <div className="my-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold text-slate-900">{myObserved}</span>
+          <div className="my-1">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{myObservedCount}</span>
               <span className="text-slate-400 font-bold text-sm">/ {obsTarget} tiết</span>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="space-y-1">
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="space-y-1.5">
+            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5">
               <div 
-                className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-500" 
+                className="h-full bg-gradient-to-r from-sky-400 to-sky-600 rounded-full transition-all duration-700 shadow-xs" 
                 style={{ width: `${obsProgress}%` }}
               />
             </div>
-            <p className="text-xs font-bold font-bold text-slate-400 text-right">
-              {obsTarget - myObserved > 0 ? `Còn thiếu ${obsTarget - myObserved} tiết` : "Đã đạt mục tiêu!"}
-            </p>
+            <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+              <span>Đã nộp phiếu chấm</span>
+              <span className={obsTarget - myObservedCount > 0 ? "text-amber-600 font-extrabold" : "text-emerald-600 font-extrabold"}>
+                {obsTarget - myObservedCount > 0 ? `Còn thiếu ${obsTarget - myObservedCount} tiết` : "🎉 Đã đạt mục tiêu!"}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Card 2: Taught target */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col justify-between gap-4 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-b from-[#48BFE3]/5 to-transparent rounded-full -mr-6 -mt-6" />
+        {/* Card 2: Taught Target */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md p-6 flex flex-col justify-between gap-4 transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#00A99D]/15 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
+          
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-2xl bg-[#E6F7F6] flex items-center justify-center text-[#48BFE3]">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-teal-50 text-[#008B82] flex items-center justify-center border border-teal-100 shadow-2xs">
                 <BookOpen className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Chỉ tiêu tiết dạy</h4>
-                <p className="text-xs font-bold text-slate-500 mt-0.5">Đơn vị: tiết / {selfTaughtUnit}</p>
+                <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Chỉ tiêu tiết dạy</h4>
+                <p className="text-xs font-bold text-slate-600">Đơn vị: tiết / {selfTaughtUnit}</p>
               </div>
             </div>
-            <span className="text-xs font-bold font-extrabold text-[#48BFE3] bg-[#E6F7F6] px-2.5 py-0.5 rounded-full border border-[#48BFE3]/15">
+            <span className="text-xs font-black text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200/60 shadow-2xs">
               {taughtProgress}% Hoàn thành
             </span>
           </div>
 
-          <div className="my-2">
-            <div className="flex items-baseline gap-1">
-              <span className="text-4xl font-extrabold text-slate-900">{myTaught}</span>
+          <div className="my-1">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">{myTaughtCount}</span>
               <span className="text-slate-400 font-bold text-sm">/ {taughtTarget || 1} tiết</span>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="space-y-1">
-            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div className="space-y-1.5">
+            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5">
               <div 
-                className="h-full bg-gradient-to-r from-[#48BFE3] to-[#007068] rounded-full transition-all duration-500" 
+                className="h-full bg-gradient-to-r from-[#48BFE3] to-[#008B82] rounded-full transition-all duration-700 shadow-xs" 
                 style={{ width: `${taughtProgress}%` }}
               />
             </div>
-            <p className="text-xs font-bold font-bold text-slate-400 text-right">
-              {taughtTarget - myTaught > 0 ? `Còn thiếu ${taughtTarget - myTaught} tiết` : "Đã đạt mục tiêu!"}
-            </p>
+            <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+              <span>Được đánh giá đủ</span>
+              <span className={taughtTarget - myTaughtCount > 0 ? "text-amber-600 font-extrabold" : "text-emerald-600 font-extrabold"}>
+                {taughtTarget - myTaughtCount > 0 ? `Còn thiếu ${taughtTarget - myTaughtCount} tiết` : "🎉 Đã đạt mục tiêu!"}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Card 3: Monthly Statistics List */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col justify-between gap-3 relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-b from-violet-400/5 to-transparent rounded-full -mr-6 -mt-6" />
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-            <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
-              <TrendingUp className="w-4 h-4" />
+        {/* Card 3: Monthly Breakdown & History */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs hover:shadow-md p-6 flex flex-col justify-between gap-3 transition-all duration-300 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-400/15 to-transparent rounded-full -mr-8 -mt-8 pointer-events-none group-hover:scale-110 transition-transform duration-500" />
+          
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center border border-violet-100 shadow-2xs">
+              <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Hiệu suất tháng gần nhất</h4>
-              <p className="text-xs font-bold font-extrabold text-slate-400">Thống kê số tiết dạy & dự</p>
+              <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Hiệu suất tháng gần nhất</h4>
+              <p className="text-xs font-bold text-slate-600">Thống kê số tiết hoàn thành</p>
             </div>
           </div>
 
           <div className="flex-1 flex flex-col justify-center gap-2 my-1">
             {monthlyStats.length === 0 ? (
-              <p className="text-xs text-slate-400 italic text-center py-2">Chưa có số liệu thống kê.</p>
+              <p className="text-xs text-slate-400 italic text-center py-2">Chưa có số liệu thống kê hoàn thành.</p>
             ) : (
               monthlyStats.slice(0, 2).map((stat, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/70 border border-slate-100 transition-colors">
+                <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 border border-slate-200/60 transition-colors">
                   <span className="font-extrabold text-xs text-slate-700">{stat.monthStr}</span>
                   <div className="flex gap-2">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-extrabold text-xs font-bold border border-emerald-100/50">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 font-extrabold text-xs border border-teal-200/60">
                       Dạy: {stat.taughtCount}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-violet-50 text-violet-700 font-extrabold text-xs font-bold border border-violet-100/50">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-50 text-violet-800 font-extrabold text-xs border border-violet-200/60">
                       Dự: {stat.observedCount}
                     </span>
                   </div>
@@ -1630,20 +1265,21 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
       </div>
-      {/* ROW 1: 3-Column Layout */}
+
+      {/* ROW 1: Action Panel (Create / Request) & Quick Register Suggestions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Panel 1: Khởi tạo tiết dạy của tôi */}
-        <div className={`lg:col-span-7 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#48BFE3]"}`}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-3">
-            <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200 shadow-inner-2xs w-full sm:w-auto">
+        {/* Panel 1: Creation & Observer Request Form */}
+        <div className={`lg:col-span-7 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#008B82]"}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/70 shadow-inner w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setCreationMode("TEACHER_OPEN")}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                   creationMode === "TEACHER_OPEN"
-                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
+                    ? "bg-[#008B82] text-white shadow-md shadow-teal-800/20"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
                 }`}
               >
                 <Plus className="w-4 h-4" />
@@ -1652,41 +1288,42 @@ export function ObservationClient(props: ObservationClientProps) {
               <button
                 type="button"
                 onClick={() => setCreationMode("OBSERVER_REQUEST")}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                   creationMode === "OBSERVER_REQUEST"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                    : "text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
+                    : "text-indigo-700 bg-indigo-50/70 border border-indigo-100 hover:bg-indigo-100"
                 }`}
               >
                 <Sparkles className="w-4 h-4 text-indigo-500" />
                 2. GVBM XIN DỰ GIỜ
               </button>
             </div>
+
             {creationMode === "TEACHER_OPEN" && (
-              <span className={`text-xs font-bold font-extrabold px-2.5 py-1 rounded-lg self-start sm:self-auto ${isMamNonTeacher ? "bg-amber-50 text-amber-700 border border-amber-200" : "bg-[#E6F7F6] text-[#48BFE3]"}`}>
-                Tháng {new Date().getMonth() + 1}: {monthlyLimitCount}/2
+              <span className={`text-xs font-extrabold px-3 py-1.5 rounded-xl self-start sm:self-auto border ${isMamNonTeacher ? "bg-amber-50 text-amber-800 border-amber-200" : "bg-teal-50 text-[#008B82] border-teal-200/70"}`}>
+                Tháng {new Date().getMonth() + 1}: {monthlyLimitCount}/2 tiết đã tạo
               </span>
             )}
           </div>
 
           {creationMode === "OBSERVER_REQUEST" ? (
             /* ===== FORM 2: GVBM XIN ĐĂNG KÝ DỰ GIỜ ===== */
-            <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-4 rounded-2xl border border-indigo-100">
-              <div className="bg-indigo-500/10 border border-indigo-200/60 rounded-xl p-3 flex items-start gap-2.5">
+            <form onSubmit={handleRequestSubmit} className="flex flex-col gap-4 text-xs font-semibold bg-indigo-50/30 p-5 rounded-2xl border border-indigo-100/80">
+              <div className="bg-indigo-500/10 border border-indigo-200/70 rounded-xl p-3.5 flex items-start gap-3">
                 <Info className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                <p className="text-xs font-semibold text-indigo-900 leading-relaxed font-medium">
-                  <span className="font-extrabold">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên bạn muốn dự, cùng Cơ sở, Cấp học, Khối lớp, Lớp học và Tiết học. Yêu cầu sẽ được gửi tới Giáo viên dạy để xác nhận & đồng ý.
+                <p className="text-xs font-medium text-indigo-950 leading-relaxed">
+                  <span className="font-extrabold text-indigo-900">Đề xuất xin dự giờ:</span> Chọn Tổ chuyên môn & Giáo viên dạy, cùng Cơ sở, Khối lớp và Tiết học mong muốn. Yêu cầu sẽ được gửi tới Giáo viên dạy để xem xét phê duyệt.
                 </p>
               </div>
 
-              {/* Tổ chuyên môn & Giáo viên dạy */}
+              {/* Group 1: Tổ chuyên môn & Giáo viên dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">1. Chọn Tổ chuyên môn</label>
                   <select
                     value={reqDeptId}
                     onChange={e => { setReqDeptId(e.target.value); setReqTeacherId(""); }}
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">Tất cả các Tổ chuyên môn</option>
                     {departments.map((d: any) => (
@@ -1696,32 +1333,32 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">2. Chọn Giáo viên dạy *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">2. Chọn Giáo viên dạy *</label>
                   <select
                     value={reqTeacherId}
                     onChange={e => setReqTeacherId(e.target.value)}
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn Giáo viên dạy --</option>
                     {filteredTeachersForRequest.map((t: any) => (
                       <option key={t.id} value={t.id}>
-                        {t.teacherName} ({t.teacherCode}) {t.departmentRel?.name ? `- ${t.departmentRel.name}` : ""}
+                        {t.teacherName} {t.departmentRel?.name ? `(${t.departmentRel.name})` : ""}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Môn học & Chủ đề/Tên bài dạy */}
+              {/* Group 2: Môn học & Chủ đề/Tên bài dạy */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">3. Chọn Môn học *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">3. Chọn Môn học *</label>
                   <select
                     value={reqSubjectId}
                     onChange={e => setReqSubjectId(e.target.value)}
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn môn học --</option>
                     {subjects.map((s: any) => (
@@ -1731,27 +1368,27 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">4. Tên bài dạy / Chủ đề dự giờ *</label>
                   <input
                     type="text"
                     placeholder="Ví dụ: Cấp số cộng, Sự nảy mầm của hạt..."
                     value={reqTopic}
                     onChange={e => setReqTopic(e.target.value)}
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
                 </div>
               </div>
 
-              {/* Cơ sở & Cấp học */}
+              {/* Group 3: Cơ sở & Cấp học */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">5. Chọn Cơ sở *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">5. Chọn Cơ sở *</label>
                   <select
                     value={reqCampusId}
                     onChange={e => { setReqCampusId(e.target.value); setReqClassId(""); }}
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cơ sở --</option>
                     {campuses.map((c: any) => (
@@ -1761,12 +1398,12 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">6. Chọn Cấp học *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">6. Chọn Cấp học *</label>
                   <select
                     value={reqLevel}
                     onChange={e => { setReqLevel(e.target.value); setReqGrade(""); setReqClassId(""); }}
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
                     <option value="">-- Chọn cấp học --</option>
                     <option value="Mầm non">Mầm non</option>
@@ -1777,16 +1414,16 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
               </div>
 
-              {/* Khối lớp & Lớp học */}
+              {/* Group 4: Khối & Lớp */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">7. Chọn Khối lớp *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">7. Chọn Khối lớp *</label>
                   <select
                     value={reqGrade}
                     onChange={e => { setReqGrade(e.target.value); setReqClassId(""); }}
                     required
                     disabled={!reqLevel}
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn khối học --</option>
                     {getGradesForLevel(reqLevel).map(g => (
@@ -1796,7 +1433,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">8. Chọn Lớp học *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">8. Chọn Lớp học *</label>
                   <select
                     value={reqClassId}
                     onChange={e => {
@@ -1811,7 +1448,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     }}
                     required
                     disabled={!reqGrade}
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 disabled:opacity-50"
                   >
                     <option value="">-- Chọn lớp học --</option>
                     {filteredReqClasses.map((c: any) => {
@@ -1827,134 +1464,101 @@ export function ObservationClient(props: ObservationClientProps) {
                 </div>
               </div>
 
-              {/* Tiết học & Ngày dạy */}
+              {/* Group 5: Tiết & Ngày */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">9. Chọn Tiết học dự *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">9. Tiết học dự *</label>
                   <select
                     value={reqPeriod}
                     onChange={e => setReqPeriod(e.target.value)}
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800 font-extrabold text-indigo-900"
+                    className="w-full text-xs font-bold p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   >
-                    <option value="Tiết 1">Tiết 1 (07:30 - 08:15)</option>
-                    <option value="Tiết 2">Tiết 2 (08:25 - 09:10)</option>
-                    <option value="Tiết 3">Tiết 3 (09:30 - 10:15)</option>
-                    <option value="Tiết 4">Tiết 4 (10:25 - 11:10)</option>
-                    <option value="Tiết 5">Tiết 5 (13:00 - 13:45)</option>
-                    <option value="Tiết 6">Tiết 6 (13:55 - 14:40)</option>
-                    <option value="Tiết 7">Tiết 7 (15:00 - 15:45)</option>
-                    <option value="Tiết 8">Tiết 8 (15:55 - 16:40)</option>
+                    {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">10. Chọn Ngày dạy / Thứ trong tuần *</label>
+                  <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">10. Ngày dạy dự kiến *</label>
                   <input
                     type="date"
                     value={reqDate}
                     onChange={e => setReqDate(e.target.value)}
                     required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                    className="w-full text-xs font-bold p-2.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
                   />
-                  {reqDate && (
-                    <span className="text-xs font-semibold font-extrabold text-indigo-700 bg-indigo-100/70 px-2.5 py-1 rounded-lg border border-indigo-200 inline-block self-start mt-1">
-                      🗓️ {formatDateWithDayOfWeek(reqDate)}
-                    </span>
-                  )}
                 </div>
               </div>
 
-              {/* Ghi chú */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-extrabold text-indigo-800 uppercase tracking-wide">11. Ghi chú gửi Giáo viên dạy</label>
-                <input
-                  type="text"
-                  placeholder="Ví dụ: Xin dự giờ học hỏi kinh nghiệm giảng dạy môn Toán..."
+                <label className="text-[11px] font-black text-indigo-900 uppercase tracking-wide">11. Ghi chú / Lời nhắn tới GV dạy</label>
+                <textarea
+                  placeholder="Ghi chú thêm về nội dung bài dạy cần quan sát, yêu cầu hỗ trợ..."
+                  rows={2}
                   value={reqNotes}
                   onChange={e => setReqNotes(e.target.value)}
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white text-slate-800"
+                  className="w-full text-xs font-medium p-3 rounded-xl border border-indigo-200 focus:ring-2 focus:ring-indigo-500 outline-none bg-white text-slate-800 resize-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full mt-2 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-extrabold rounded-xl transition-all shadow-md shadow-indigo-600/20 text-xs flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Sparkles className="w-4 h-4" />
-                {submitting ? "Đang gửi yêu cầu..." : "+ GỬI YÊU CẦU XIN DỰ GIỜ (GVBM)"}
+                <Send className="w-4 h-4" />
+                {submitting ? "Đang gửi đề xuất..." : "Gửi Đề xuất Xin Dự Giờ"}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleCreateSubmit} className="flex flex-col gap-4 text-xs font-semibold">
-            {isMamNonTeacher ? (
-              /* ===== INLINE MAM NON FORM ===== */
-              <>
-                {/* Chu de */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-amber-700 uppercase tracking-wide">Chủ đề bài dạy *</label>
-                  <input type="text" placeholder="Ví dụ: Thế giới động vật, Gia đình..." value={newChuDe} onChange={e => setNewChuDe(e.target.value)} required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
-                </div>
-                {/* Hoat dong & De tai */}
-                <div className="grid grid-cols-2 gap-3.5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-amber-700 uppercase tracking-wide">Hoạt động *</label>
-                    <input type="text" placeholder="Ví dụ: Âm nhạc, Tạo hình, KPKH..." value={newHoatDong} onChange={e => setNewHoatDong(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-amber-700 uppercase tracking-wide">Đề tài *</label>
-                    <input type="text" placeholder="Ví dụ: Bé yêu các con vật..." value={newDeTai} onChange={e => setNewDeTai(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm text-slate-800" />
-                  </div>
-                </div>
-                {/* Khối lớp & Lớp học */}
-                <div className="grid grid-cols-2 gap-3.5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-amber-700 uppercase tracking-wide">Khối học *</label>
-                    <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-white hover:bg-amber-50/10 transition-all text-slate-850">
-                      <option value="">Chọn khối học</option>
-                       {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-amber-700 uppercase tracking-wide">Tên lớp *</label>
-                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-amber-200/80 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none bg-white hover:bg-amber-50/10 transition-all disabled:opacity-50 text-slate-850">
-                      <option value="">Chọn lớp</option>
-                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                    </select>
-                  </div>
-                </div>
-              </>
-            ) : (
-              /* ===== INLINE K12 FORM ===== */
-              <>
-                {/* Topic Input */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Tên bài dạy / Chủ đề *</label>
-                  <input 
-                    type="text" 
-                    placeholder="Ví dụ: Đơn vị đo độ dài..." 
-                    value={newTopic} 
-                    onChange={e => setNewTopic(e.target.value)} 
-                    required
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
-                  />
-                </div>
-
-                {/* 1. Cơ sở & Môn học */}
-                <div className="grid grid-cols-2 gap-3.5">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Cơ sở *</label>
-                    <select 
-                      value={newCampusId || currentTeacher?.campusId || ""} 
-                      onChange={e => { setNewCampusId(e.target.value); setNewClassId(""); }} 
+            /* ===== FORM 1: GV DẠY TỰ MỞ TIẾT DẠY ===== */
+            <form onSubmit={handleCreateSubmit} className="flex flex-col gap-4 text-xs">
+              {isMamNonTeacher ? (
+                /* ===== MẦM NON FORM ===== */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="sm:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-amber-900 uppercase tracking-wide">Chủ đề bài dạy *</label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: Thế giới động vật, Gia đình..."
+                      value={newChuDe}
+                      onChange={e => setNewChuDe(e.target.value)}
                       required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850"
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-amber-50/20 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-amber-900 uppercase tracking-wide">Hoạt động *</label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: Âm nhạc, Tạo hình, KPKH..."
+                      value={newHoatDong}
+                      onChange={e => setNewHoatDong(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-amber-50/20 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-amber-900 uppercase tracking-wide">Đề tài *</label>
+                    <input
+                      type="text"
+                      placeholder="Ví dụ: Bé yêu các con vật..."
+                      value={newDeTai}
+                      onChange={e => setNewDeTai(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-amber-50/20 focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-amber-900 uppercase tracking-wide">Cơ sở *</label>
+                    <select
+                      value={newCampusId}
+                      onChange={e => { setNewCampusId(e.target.value); setNewClassId(""); }}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
                     >
                       <option value="">Chọn cơ sở</option>
                       {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
@@ -1962,22 +1566,55 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Môn học *</label>
-                    <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-850">
-                      <option value="">Chọn môn</option>
-                      {subjects.map(s => <option key={s.id} value={s.id}>{s.subjectName}</option>)}
+                    <label className="text-[11px] font-black text-amber-900 uppercase tracking-wide">Khối học *</label>
+                    <select
+                      value={newGrade}
+                      onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800"
+                    >
+                      <option value="">Chọn khối học</option>
+                      {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
-                </div>
 
-                {/* 2. Cấp học & Khối lớp */}
-                <div className="grid grid-cols-2 gap-3.5">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Cấp học *</label>
-                    <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId(""); }} required
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
-                      <option value="">Chọn cấp</option>
+                    <label className="text-[11px] font-black text-amber-900 uppercase tracking-wide">Tên lớp *</label>
+                    <select
+                      value={newClassId}
+                      onChange={e => setNewClassId(e.target.value)}
+                      required
+                      disabled={!newCampusId || !newGrade}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-amber-200 bg-white focus:ring-2 focus:ring-amber-500 outline-none text-slate-800 disabled:opacity-50"
+                    >
+                      <option value="">Chọn tên lớp</option>
+                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-700 uppercase tracking-wide">Ngày dạy *</label>
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={e => setNewDate(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-amber-500 outline-none bg-white text-slate-800"
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* ===== K-12 FORM ===== */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Cấp học *</label>
+                    <select
+                      value={newLevel}
+                      onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId(""); }}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"
+                    >
+                      <option value="">Chọn cấp học</option>
                       <option value="Mầm non">Mầm non</option>
                       <option value="Tiểu học">Tiểu học</option>
                       <option value="THCS">THCS</option>
@@ -1986,199 +1623,174 @@ export function ObservationClient(props: ObservationClientProps) {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Khối lớp *</label>
-                    <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }} required disabled={!newLevel}
-                      className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
-                      <option value="">Chọn khối</option>
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Khối lớp *</label>
+                    <select
+                      value={newGrade}
+                      onChange={e => { setNewGrade(e.target.value); setNewClassId(""); }}
+                      required
+                      disabled={!newLevel}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800 disabled:opacity-50"
+                    >
+                      <option value="">Chọn khối lớp</option>
                       {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
                     </select>
                   </div>
-                </div>
 
-                {/* 3. Lớp học */}
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Lớp học *</label>
-                  <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newGrade}
-                    className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all disabled:opacity-50 text-slate-855">
-                    <option value="">Chọn lớp</option>
-                    {filteredClassesForCreation.map(c => (
-                      <option key={c.id} value={c.id}>{c.className}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-            {/* Date & Period */}
-            <div className="grid grid-cols-2 gap-3.5">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Ngày dạy *</label>
-                <input 
-                  type="date" 
-                  value={newDate} 
-                  onChange={e => setNewDate(e.target.value)} 
-                  required
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Tiết dạy *</label>
-                <select value={newStartTime} onChange={e => { setNewStartTime(e.target.value); setNewEndTime(e.target.value); }} required
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
-                  <option value="">Chọn tiết</option>
-                  {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Room & Visibility */}
-            <div className="grid grid-cols-2 gap-3.5">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Phòng học *</label>
-                <input 
-                  type="text" 
-                  placeholder="Ví dụ: Phòng 302..." 
-                  value={newClassNameText} 
-                  onChange={e => setNewClassNameText(e.target.value)} 
-                  required
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none hover:bg-slate-50/50 focus:bg-white transition-all shadow-inner-sm text-slate-800"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-extrabold text-slate-550 uppercase tracking-wide">Chế độ hiển thị</label>
-                <select value={newVisibility} onChange={e => setNewVisibility(e.target.value)}
-                  className="w-full text-sm font-semibold p-3.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none bg-white hover:bg-slate-50/30 transition-all text-slate-855">
-                  <option value="ALL">Công khai toàn trường</option>
-                  <option value="DEPARTMENT">Nội bộ Tổ chuyên môn</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Tùy chọn gửi email thông báo tự động & Chọn Giáo viên trong Tổ chuyên môn */}
-            <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200/80 flex flex-col gap-3 transition-all my-2">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-white text-[#48BFE3] flex items-center justify-center shrink-0 shadow-xs border border-teal-100">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs sm:text-sm font-extrabold text-[#003B3A] flex items-center gap-1.5">
-                      Tùy chọn gửi Email thông báo tự động
-                      <span className="text-[10px] bg-slate-500 text-white px-2 py-0.5 rounded-full uppercase font-black">Mặc định tắt (v2.1 - Lược sử)</span>
-                    </p>
-                    <p className="text-xs text-slate-600 font-medium mt-0.5">
-                      Gửi email tự động từ <span className="font-bold text-[#008b82]">bankhaothi@skylineschool.edu.vn</span> đến Giáo viên được chọn trong Tổ chuyên môn.
-                    </p>
-                  </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                  <input 
-                    type="checkbox" 
-                    checked={sendEmailNotif} 
-                    onChange={e => setSendEmailNotif(e.target.checked)} 
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#48BFE3]"></div>
-                </label>
-              </div>
-
-              {sendEmailNotif && (
-                <div className="pt-3 border-t border-teal-200/60 flex flex-col gap-2.5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold text-[#003B3A] uppercase tracking-wide">
-                        🏫 {currentTeacher?.departmentRel?.name || "Tổ chuyên môn của tôi"}:
-                      </span>
-                      <span className="text-emerald-800 bg-emerald-100/90 border border-emerald-200 px-2 py-0.5 rounded-md text-xs font-black">
-                        Đã chọn {selectedEmailTeacherIds.length}/{myDeptTeachers.length} GV
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedEmailTeacherIds(myDeptTeachers.map((t: any) => t.id))}
-                        className="text-xs font-extrabold text-[#008b82] hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-teal-200 shadow-2xs"
-                      >
-                        Chọn tất cả GV
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedEmailTeacherIds([])}
-                        className="text-xs font-bold text-slate-500 hover:text-slate-700 hover:underline cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs"
-                      >
-                        Bỏ chọn
-                      </button>
-                    </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Môn học *</label>
+                    <select
+                      value={newSubjectId}
+                      onChange={e => setNewSubjectId(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"
+                    >
+                      <option value="">Chọn môn học</option>
+                      {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
+                      <option value="other">Môn học khác / Chuyên đề</option>
+                    </select>
                   </div>
 
-                  <div className="flex flex-wrap gap-2 max-h-44 overflow-y-auto custom-scrollbar p-1">
-                    {myDeptTeachers.length === 0 ? (
-                      <span className="text-xs text-slate-400 italic">Không tìm thấy giáo viên nào trong Tổ chuyên môn này.</span>
-                    ) : (
-                      myDeptTeachers.map((t: any) => {
-                        const isSelected = selectedEmailTeacherIds.includes(t.id);
-                        const isMe = t.id === currentTeacher?.id;
-                        return (
-                          <button
-                            key={t.id}
-                            type="button"
-                            onClick={() => {
-                              if (isSelected) {
-                                setSelectedEmailTeacherIds(selectedEmailTeacherIds.filter(id => id !== t.id));
-                              } else {
-                                setSelectedEmailTeacherIds([...selectedEmailTeacherIds, t.id]);
-                              }
-                            }}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all border flex items-center gap-1.5 cursor-pointer ${
-                              isSelected
-                                ? "bg-[#48BFE3] text-white border-[#48BFE3] shadow-xs"
-                                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
-                            }`}
-                          >
-                            <span>{t.teacherName} ({t.teacherCode})</span>
-                            {isMe && (
-                              <span className={`text-[10px] px-1.5 py-0.2 rounded font-black uppercase ${isSelected ? "bg-white/20 text-white" : "bg-teal-50 text-teal-800"}`}>
-                                Tôi
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })
-                    )}
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Cơ sở *</label>
+                    <select
+                      value={newCampusId}
+                      onChange={e => { setNewCampusId(e.target.value); setNewClassId(""); }}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"
+                    >
+                      <option value="">Chọn cơ sở</option>
+                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Lớp học *</label>
+                    <select
+                      value={newClassId}
+                      onChange={e => setNewClassId(e.target.value)}
+                      required
+                      disabled={!newCampusId || !newLevel || !newGrade}
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800 disabled:opacity-50"
+                    >
+                      <option value="">Chọn lớp học</option>
+                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+                      <option value="other">Lớp khác (Nhập tay...)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Ngày dạy *</label>
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={e => setNewDate(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-2.5 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 flex flex-col gap-1.5">
+                    <label className="text-[11px] font-black text-slate-600 uppercase tracking-wide">Tên bài dạy / Chủ đề *</label>
+                    <input
+                      type="text"
+                      placeholder="Nhập tên bài dạy hoặc chủ đề tiết học..."
+                      value={newTopic}
+                      onChange={e => setNewTopic(e.target.value)}
+                      required
+                      className="w-full text-xs font-bold p-3 rounded-xl border border-slate-200/90 focus:border-[#008B82] focus:ring-2 focus:ring-teal-500/20 outline-none bg-white text-slate-800"
+                    />
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={submitting}
-              className={`w-full mt-3 text-white font-black py-3.5 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-[0.98] text-xs uppercase tracking-wider shrink-0 flex items-center justify-center gap-1.5 hover:-translate-y-0.5 cursor-pointer ${isMamNonTeacher ? "bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-800 hover:to-amber-600 shadow-amber-100/50" : "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] hover:from-[#002b2a] hover:to-[#008b82] shadow-[#003B3A]/10"}`}
-            >
-              <Plus className="w-4 h-4" />
-              {submitting ? "Đang xử lý..." : "Khởi tạo lịch dạy"}
-            </button>
-          </form>
+              {/* Time & Period Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end p-3.5 rounded-2xl bg-slate-50 border border-slate-200/70">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-black text-slate-600 uppercase">Tiết: Từ *</label>
+                  <select
+                    value={newStartTime}
+                    onChange={e => handleStartTimeChange(e.target.value)}
+                    className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 outline-none"
+                  >
+                    {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-black text-slate-600 uppercase">Đến *</label>
+                  <select
+                    value={newEndTime}
+                    disabled={newIsDoublePeriod}
+                    onChange={e => setNewEndTime(e.target.value)}
+                    className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 outline-none disabled:opacity-50"
+                  >
+                    {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2 pb-2 pl-1">
+                  <input
+                    type="checkbox"
+                    id="isDoublePeriod"
+                    checked={newIsDoublePeriod}
+                    disabled={newStartTime === "Tiết 8"}
+                    onChange={e => handleDoublePeriodChange(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#008B82] focus:ring-teal-500 cursor-pointer"
+                  />
+                  <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-700 select-none cursor-pointer">
+                    Dạy 2 tiết liền
+                  </label>
+                </div>
+              </div>
+
+              {/* PDF Upload Dropzone */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] font-black text-slate-600 uppercase">Giáo án đính kèm (PDF) <span className="text-slate-400 font-normal lowercase">(không bắt buộc)</span></label>
+                <div className="flex items-center gap-2">
+                  <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file-inline" />
+                  <label htmlFor="pdf-upload-file-inline" className="flex-1 flex items-center justify-center gap-2 bg-slate-100/80 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
+                    <FileText className="w-4 h-4 text-slate-500" />
+                    {newLessonPlanName ? "Thay đổi File PDF..." : "Tải lên file Giáo án (.PDF)"}
+                  </label>
+                  {newLessonPlanName && (
+                    <button type="button" onClick={() => { setNewLessonPlanName(""); setNewLessonPlanData(""); if (fileInputRef.current) fileInputRef.current.value = "" }}
+                      className="p-2.5 hover:bg-rose-100 text-rose-600 transition-all rounded-xl border border-rose-200" title="Xóa file đã chọn">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+                {newLessonPlanName && (
+                  <span className="text-xs font-bold text-teal-700 truncate block">
+                    Đã chọn: <span className="underline">{newLessonPlanName}</span>
+                  </span>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting || monthlyLimitCount >= 2}
+                className="w-full mt-2 py-3 bg-[#008B82] hover:bg-[#007068] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md shadow-teal-800/20 text-xs flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật lịch dạy" : "Khởi tạo lịch dạy mới")}
+              </button>
+            </form>
           )}
         </div>
 
-        {/* Panel 2: Đăng ký nhanh tiết dạy gợi ý */}
-        <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-4 border-t-4 border-t-[#003B3A] transition-all duration-300 hover:shadow-lg">
-          <div className="flex items-center justify-between border-b border-slate-150 pb-3">
+        {/* Panel 2: Quick Register Suggestions */}
+        <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-4 border-t-4 border-t-[#003B3A]">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
             <div className="flex items-center gap-2">
-              <Award className="w-5 h-5 text-[#003B3A]" />
-              <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">2. Đăng ký nhanh</span>
+              <Award className="w-5 h-5 text-[#008B82]" />
+              <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Đăng ký nhanh</span>
             </div>
-            <span className="text-xs font-bold font-bold bg-[#E6F7F6] text-[#48BFE3] px-2.5 py-0.5 rounded-full border border-teal-100 animate-pulse">⚡ Gợi ý</span>
+            <span className="text-xs font-black bg-teal-50 text-[#008B82] px-2.5 py-0.5 rounded-full border border-teal-200/60 animate-pulse">
+              ⚡ Gợi ý tối ưu
+            </span>
           </div>
 
-          {/* Quick Register Slots */}
-          <div className="flex-1 flex flex-col gap-2.5">
-            <span className="text-xs font-extrabold text-[#003B3A] uppercase tracking-wider">⚡ Tiết học gợi ý đăng ký nhanh</span>
-            
+          <div className="flex-1 flex flex-col gap-3">
             {(() => {
               const suggested = slots
                 .filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
@@ -2195,14 +1807,9 @@ export function ObservationClient(props: ObservationClientProps) {
                         const myDeptName = (currentTeacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
                         const isSameDept = myDeptName !== "" && slotDeptName === myDeptName;
                         const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                        
-                        if (isSameCampus && isSameDept) {
-                          score += 500;
-                        } else if (isSameCampus) {
-                          score += 300;
-                        } else if (isSameDept) {
-                          score += 200;
-                        }
+                        if (isSameCampus && isSameDept) score += 500;
+                        else if (isSameCampus) score += 300;
+                        else if (isSameDept) score += 200;
                       } else {
                         score -= 1000;
                       }
@@ -2211,14 +1818,9 @@ export function ObservationClient(props: ObservationClientProps) {
                         score += 1000;
                         const isSameDept = checkIsMyDept(slot);
                         const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                        
-                        if (isSameCampus && isSameDept) {
-                          score += 500;
-                        } else if (isSameCampus) {
-                          score += 300;
-                        } else if (isSameDept) {
-                          score += 200;
-                        }
+                        if (isSameCampus && isSameDept) score += 500;
+                        else if (isSameCampus) score += 300;
+                        else if (isSameDept) score += 200;
                       } else {
                         score -= 1000;
                       }
@@ -2231,51 +1833,32 @@ export function ObservationClient(props: ObservationClientProps) {
               
               if (suggested.length === 0) {
                 return (
-                  <div className="flex flex-col items-center justify-center flex-1 py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                    <CheckCircle className="w-8 h-8 text-slate-350 mb-1 stroke-1" />
-                    <p className="text-xs font-bold font-bold text-center">Bạn đã đăng ký hết các tiết học khả dụng!</p>
+                  <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    <CheckCircle className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
+                    <p className="text-xs font-bold text-center">Bạn đã đăng ký hết các tiết học khả dụng!</p>
                   </div>
                 );
               }
 
               return (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {suggested.map(slot => {
                     const isPastSlot = new Date(slot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                     const isMamNon = slot.level === "Mầm non";
                     return (
-                      <div key={slot.id} className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs font-semibold transition-all hover:scale-[1.01] hover:shadow-sm ${isMamNon ? "bg-amber-50/20 hover:bg-amber-50/40 border-amber-100" : "bg-slate-50 hover:bg-[#E6F7F6]/30 border-slate-150"}`}>
-                        <div className="min-w-0 flex-1 space-y-1.5">
-                          {isMamNon ? (() => {
-                            const parts = (slot.subjectName || "").split(" | ");
-                            const chuDe = parts[0] || "";
-                            const hoatDong = parts[1] || "";
-                            const deTai = slot.topic || "";
-                            return (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-xs font-extrabold uppercase rounded bg-amber-100 text-amber-800">Mầm non</span>
-                                  <span className="text-xs font-bold text-amber-900 font-extrabold truncate">Chủ đề: {chuDe}</span>
-                                </div>
-                                <p className="text-xs font-black text-amber-950 truncate leading-snug">Đề tài: {deTai}</p>
-                                <p className="text-xs font-bold text-slate-500 font-bold flex items-center gap-1">
-                                  <span className="bg-amber-100/50 text-amber-850 px-1.5 py-0.2 rounded font-black text-xs font-bold">{hoatDong}</span>
-                                  <span>Lớp: {slot.className || "Lớp"}</span>
-                                </p>
-                              </div>
-                            );
-                          })() : (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-1.5 py-0.2 text-xs font-extrabold uppercase rounded bg-teal-50 text-[#48BFE3] border border-teal-100">K-12</span>
-                                <span className="text-xs font-bold text-slate-500 font-bold truncate">{slot.subjectName}</span>
-                              </div>
-                              <p className="text-xs font-black text-slate-800 truncate leading-snug">{slot.topic}</p>
-                              <p className="text-xs font-bold text-slate-400 font-bold">Lớp: {slot.className || "Lớp"}</p>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-450 font-bold pt-0.5 border-t border-slate-100/60">
-                            <span className="text-slate-600 font-extrabold">{slot.teacher.teacherName}</span>
+                      <div key={slot.id} className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs transition-all hover:shadow-sm ${isMamNon ? "bg-amber-50/30 hover:bg-amber-50/50 border-amber-200/70" : "bg-slate-50/70 hover:bg-teal-50/30 border-slate-200/70"}`}>
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded-md ${isMamNon ? "bg-amber-100 text-amber-900" : "bg-teal-100/80 text-teal-800"}`}>
+                              {isMamNon ? "Mầm non" : "K-12"}
+                            </span>
+                            <span className="text-xs font-black text-slate-700 truncate">{slot.subjectName}</span>
+                          </div>
+                          <p className="text-xs font-bold text-slate-900 truncate leading-snug">{slot.topic}</p>
+                          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                            <span className="text-slate-800 font-black">{slot.teacher.teacherName}</span>
+                            <span>•</span>
+                            <span>Lớp: {slot.className || "Chưa xếp"}</span>
                             <span>•</span>
                             <span>{new Date(slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</span>
                           </div>
@@ -2283,10 +1866,10 @@ export function ObservationClient(props: ObservationClientProps) {
                         <button 
                           disabled={isPastSlot}
                           onClick={() => setRegisterDetailSlot(slot)}
-                          className={`px-3 py-2 text-xs font-extrabold uppercase rounded-xl transition-all shadow-sm flex-shrink-0 cursor-pointer hover:-translate-y-0.2 active:scale-98 ${
+                          className={`px-3.5 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-xs shrink-0 cursor-pointer ${
                             isPastSlot
-                              ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none"
-                              : "bg-[#48BFE3] hover:bg-[#008b82] text-white"
+                              ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                              : "bg-[#008B82] hover:bg-[#007068] text-white"
                           }`}
                         >
                           {isPastSlot ? "Hết hạn" : "Đăng ký"}
@@ -2299,1303 +1882,809 @@ export function ObservationClient(props: ObservationClientProps) {
             })()}
           </div>
         </div>
-
       </div>
 
-      
-      
-
-
-      {/* ROW 2: Full Width Layout */}
-      <div className="w-full mt-6">
-        
-        {/* Panel 4: Danh sách tiết dạy đang mở đăng ký */}
-        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-150 pb-4">
-            <div className="flex items-center gap-2">
-              <SlidersHorizontal className="w-5 h-5 text-[#48BFE3]" />
-              <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">3. Danh sách tiết dạy đăng ký dự giờ</span>
-              {isSearching && (
-                <div className="flex items-center gap-1.5 ml-2 animate-pulse text-xs font-semibold">
-                  <div className="w-2 h-2 border border-sky-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs font-bold font-bold text-sky-600">Đang cập nhật...</span>
-                </div>
-              )}
+      {/* ROW 2: Danh sách tiết dạy đăng ký dự giờ (Full-width Data Table) */}
+      <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#003B3A]">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center">
+              <SlidersHorizontal className="w-5 h-5" />
             </div>
-
-            {/* Status & Department tabs selector */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {/* Group 1: Status Tabs (Tiết mới ĐK vs Tiết Hết hạn) */}
-              <div className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200 shadow-inner-2xs">
-                {(() => {
-                  const availableSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
-                  const todayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                  const newCount = availableSlots.filter(s => new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
-                  const expiredCount = availableSlots.filter(s => new Date(s.date) < todayStart || s.status === "EXPIRED").length;
-
-                  return (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setActiveStatusTab("new")}
-                        className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                          activeStatusTab === "new"
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                        }`}
-                      >
-                        <span>✨ Tiết mới ĐK</span>
-                        <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "new" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"}`}>
-                          {newCount}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setActiveStatusTab("expired")}
-                        className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                          activeStatusTab === "expired"
-                            ? "bg-rose-600 text-white shadow-sm"
-                            : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                        }`}
-                      >
-                        <span>⏳ Tiết Hết hạn</span>
-                        <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "expired" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-800"}`}>
-                          {expiredCount}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setActiveStatusTab("gbm_request")}
-                        className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
-                          activeStatusTab === "gbm_request"
-                            ? "bg-indigo-600 text-white shadow-sm"
-                            : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
-                        }`}
-                      >
-                        <span>📩 GVBM xin dự giờ</span>
-                        <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "gbm_request" ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-800"}`}>
-                          {slots.filter(s => s.requestOrigin === "OBSERVER_REQUEST").length}
-                        </span>
-                      </button>
-                    </>
-                  );
-                })()}
+            <div>
+              <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">3. Danh sách tiết dạy đăng ký dự giờ</h3>
+              <p className="text-xs text-slate-400 font-medium">Tìm kiếm, lọc theo tổ chuyên môn và chọn tiết dự giờ phù hợp</p>
+            </div>
+            {isSearching && (
+              <div className="flex items-center gap-1.5 ml-2 text-xs font-bold text-teal-600 animate-pulse">
+                <div className="w-2 h-2 border border-teal-500 border-t-transparent rounded-full animate-spin" />
+                <span>Đang tải...</span>
               </div>
+            )}
+          </div>
 
-              {/* Group 2: Department filter tabs */}
+          {/* Status & Department Tabs */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Status Pills */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shadow-inner">
               {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
-                const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
-                const otherDeptCount = openSlots.filter(s => !checkIsMyDept(s)).length;
-                const allCount = openSlots.length;
+                const availableSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+                const todayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                const newCount = availableSlots.filter(s => new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
+                const expiredCount = availableSlots.filter(s => new Date(s.date) < todayStart || s.status === "EXPIRED").length;
+                const reqCount = slots.filter(s => s.requestOrigin === "OBSERVER_REQUEST").length;
 
                 return (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <button onClick={() => setActiveDeptTab("my-dept")}
-                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "my-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>🏫 Tiết thuộc TCM</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-50 text-teal-700 border border-teal-200"}`}>
-                        {myDeptCount}
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setActiveStatusTab("new")}
+                      className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeStatusTab === "new"
+                          ? "bg-[#008B82] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                      }`}
+                    >
+                      <span>✨ Tiết mới ĐK</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "new" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"}`}>
+                        {newCount}
                       </span>
                     </button>
-                    <button onClick={() => setActiveDeptTab("other-dept")}
-                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "other-dept" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>🌐 Tiết TCM khác</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
-                        {otherDeptCount}
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveStatusTab("expired")}
+                      className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeStatusTab === "expired"
+                          ? "bg-rose-600 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                      }`}
+                    >
+                      <span>⏳ Hết hạn</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "expired" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-800"}`}>
+                        {expiredCount}
                       </span>
                     </button>
-                    <button onClick={() => setActiveDeptTab("all")}
-                      className={`px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all duration-300 shadow-xs border flex items-center gap-1.5 ${activeDeptTab === "all" ? "bg-gradient-to-r from-[#003B3A] to-[#48BFE3] text-white border-transparent shadow-sm" : "bg-white border-slate-200 text-slate-600 hover:bg-slate-50"}`}>
-                      <span>⭐ Tất cả</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600 border border-slate-200"}`}>
-                        {allCount}
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveStatusTab("gbm_request")}
+                      className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                        activeStatusTab === "gbm_request"
+                          ? "bg-indigo-600 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                      }`}
+                    >
+                      <span>📩 Xin dự giờ</span>
+                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "gbm_request" ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-800"}`}>
+                        {reqCount}
                       </span>
                     </button>
-                  </div>
+                  </>
                 );
               })()}
             </div>
-          </div>
 
-          {/* Advanced filters inputs block */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50 border border-slate-200/60 rounded-2xl text-xs font-semibold">
-            {/* Campus */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Cơ sở</span>
-              <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
-                <option value="all">Tất cả cơ sở</option>
-                {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-              </select>
-            </div>
+            {/* Department Filter Switch */}
+            {(() => {
+              const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+              const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
+              const otherDeptCount = openSlots.filter(s => !checkIsMyDept(s)).length;
+              const allCount = openSlots.length;
 
-            {/* Level */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Bậc học</span>
-              <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
-                <option value="all">Tất cả bậc</option>
-                <option value="Mầm non">Mầm non</option>
-                <option value="Tiểu học">Tiểu học</option>
-                <option value="THCS">THCS</option>
-                <option value="THPT">THPT</option>
-                <option value="Phổ thông K-12">Phổ thông K-12</option>
-              </select>
-            </div>
-
-            {/* Grade */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Khối lớp</span>
-              <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-55">
-                <option value="all">Tất cả khối</option>
-                {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
-              </select>
-            </div>
-
-            {/* Date */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Ngày dạy</span>
-              <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
-            </div>
-
-            {/* Period */}
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-bold font-bold text-slate-400 uppercase tracking-wider">Tiết dạy</span>
-              <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-                className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
-                <option value="all">Tất cả tiết</option>
-                {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Active Tags */}
-          {activeFilterCount > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {activeFilterTags.map(tag => (
-                <span key={tag.key} className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-extrabold rounded-lg bg-[#E6F7F6] text-[#48BFE3] border border-[#48BFE3]/10">
-                  <span>{tag.label}:</span> {tag.value}
-                  <button onClick={tag.onRemove} className="ml-1 p-0.5 rounded-full hover:bg-[#48BFE3]/20 transition-colors">
-                    <X className="w-3 h-3" />
+              return (
+                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shadow-inner">
+                  <button onClick={() => setActiveDeptTab("my-dept")}
+                    className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${activeDeptTab === "my-dept" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:bg-white/80"}`}>
+                    <span>🏫 Thuộc TCM</span>
+                    <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-800"}`}>
+                      {myDeptCount}
+                    </span>
                   </button>
-                </span>
-              ))}
-              <button onClick={clearAllFilters} className="text-xs font-extrabold text-rose-500 hover:underline ml-1">Xóa tất cả bộ lọc</button>
+                  <button onClick={() => setActiveDeptTab("other-dept")}
+                    className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${activeDeptTab === "other-dept" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:bg-white/80"}`}>
+                    <span>🌐 TCM khác</span>
+                    <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
+                      {otherDeptCount}
+                    </span>
+                  </button>
+                  <button onClick={() => setActiveDeptTab("all")}
+                    className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${activeDeptTab === "all" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:bg-white/80"}`}>
+                    <span>⭐ Tất cả</span>
+                    <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
+                      {allCount}
+                    </span>
+                  </button>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+
+        {/* Compact Advanced Filter Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Cơ sở</span>
+            <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+              <option value="all">Tất cả cơ sở</option>
+              {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Bậc học</span>
+            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+              <option value="all">Tất cả bậc</option>
+              <option value="Mầm non">Mầm non</option>
+              <option value="Tiểu học">Tiểu học</option>
+              <option value="THCS">THCS</option>
+              <option value="THPT">THPT</option>
+              <option value="Phổ thông K-12">Phổ thông K-12</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Khối lớp</span>
+            <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-50">
+              <option value="all">Tất cả khối</option>
+              {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Ngày dạy</span>
+            <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Tiết dạy</span>
+            <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+              <option value="all">Tất cả tiết</option>
+              {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Active Filter Tags */}
+        {activeFilterCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            {activeFilterTags.map(tag => (
+              <span key={tag.key} className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-xl bg-teal-50 text-[#008B82] border border-teal-200">
+                <span>{tag.label}:</span> <span className="font-black">{tag.value}</span>
+                <button onClick={tag.onRemove} className="p-0.5 hover:bg-teal-200/50 rounded-full transition-colors">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+            <button onClick={clearAllFilters} className="text-xs font-black text-rose-500 hover:underline ml-2">
+              Xóa tất cả bộ lọc
+            </button>
+          </div>
+        )}
+
+        {/* Slots Table */}
+        {tabFilteredSlots.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+            <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
+            <div className="text-center space-y-1">
+              <p className="text-sm font-bold text-slate-800">Không tìm thấy tiết dạy dự giờ nào!</p>
+              <p className="text-xs text-slate-400">Thay đổi bộ lọc hoặc khởi tạo thêm tiết dạy mới của bạn.</p>
             </div>
-          )}
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                {activeStatusTab === "gbm_request" ? (
+                  <tr className="bg-indigo-50/80 border-b border-indigo-100 text-indigo-900 font-black uppercase text-[11px] tracking-wider">
+                    <th className="p-4 text-center w-12">TT</th>
+                    <th className="p-4">GV Xin dự giờ</th>
+                    <th className="p-4">GV Dạy</th>
+                    <th className="p-4">Môn học</th>
+                    <th className="p-4">Tên bài dạy / Chủ đề</th>
+                    <th className="p-4">Lớp</th>
+                    <th className="p-4">Tiết</th>
+                    <th className="p-4">Ngày dạy</th>
+                    <th className="p-4 text-center">Trạng thái</th>
+                    <th className="p-4 text-right">Thao tác</th>
+                  </tr>
+                ) : (
+                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
+                    <th className="p-4 text-center w-12">TT</th>
+                    <th className="p-4">Giáo viên</th>
+                    <th className="p-4">Tổ chuyên môn</th>
+                    <th className="p-4">Môn học & Chủ đề</th>
+                    <th className="p-4">Thời gian / Phòng</th>
+                    <th className="p-4 text-center">Số chỗ</th>
+                    <th className="p-4">GV Đăng ký</th>
+                    <th className="p-4">Trạng thái</th>
+                    <th className="p-4 text-right">Đăng ký</th>
+                  </tr>
+                )}
+              </thead>
+              <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
+                {tabFilteredSlots.map((slot, index) => {
+                  const isHost = slot.teacherId === currentTeacher?.id;
+                  const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+                  const isRegistered = !!myReg;
+                  const observerCount = slot.registrations.length;
+                  const slotDate = new Date(slot.date);
+                  
+                  const today = new Date();
+                  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                  const isExpired = slotDate < todayStart;
 
-          {/* Slots Table */}
-          {tabFilteredSlots.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-450 border border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
-              <Calendar className="w-12 h-12 text-slate-300 stroke-1 mb-2" />
-              {(() => {
-                const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
-                const otherCount = openSlots.filter(s => !checkIsMyDept(s)).length;
-                return (
-                  <div className="text-center space-y-1.5">
-                    <p className="text-xs sm:text-sm font-bold text-slate-800">Không tìm thấy tiết dạy dự giờ nào{activeDeptTab === "my-dept" ? " thuộc Tổ Chuyên Môn của bạn" : ""}!</p>
-                    <p className="text-xs font-bold text-slate-400">Thay đổi bộ lọc hoặc tạo thêm tiết dạy của bạn ở Panel 1.</p>
-                    {activeDeptTab === "my-dept" && otherCount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setActiveDeptTab("other-dept")}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-black text-[#48BFE3] bg-teal-50 hover:bg-[#48BFE3] hover:text-white rounded-xl border border-teal-200 transition-all cursor-pointer shadow-xs"
-                      >
-                        ⚡ Xem ngay {otherCount} tiết dạy mở tại các Tổ Chuyên Môn khác
-                      </button>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-2xl border border-slate-150">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  {activeStatusTab === "gbm_request" ? (
-                    <tr className="bg-indigo-50/80 border-b border-indigo-150 text-indigo-900 font-extrabold uppercase text-xs tracking-wider">
-                      <th className="p-4 text-center w-12">TT</th>
-                      <th className="p-4">GV Xin dự giờ</th>
-                      <th className="p-4">GV Dạy</th>
-                      <th className="p-4">Môn học</th>
-                      <th className="p-4">Tên bài dạy / Chủ đề</th>
-                      <th className="p-4">Lớp</th>
-                      <th className="p-4">Tiết</th>
-                      <th className="p-4">Ngày dạy</th>
-                      <th className="p-4 text-center">Trạng thái</th>
-                      <th className="p-4 text-right">Thao tác</th>
-                    </tr>
-                  ) : (
-                    <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-xs font-bold tracking-wider">
-                      <th className="p-4 text-center w-12">TT</th>
-                      <th className="p-4">Giáo viên</th>
-                      <th className="p-4">Tổ chuyên môn</th>
-                      <th className="p-4">Môn học & Chủ đề</th>
-                      <th className="p-4">Thời gian / Phòng</th>
-                      <th className="p-4 text-center">Số chỗ</th>
-                      <th className="p-4">GV Đăng ký</th>
-                      <th className="p-4">Trạng thái</th>
-                      <th className="p-4 text-right">Đăng ký</th>
-                    </tr>
-                  )}
-                </thead>
-                <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
-                  {tabFilteredSlots.map((slot, index) => {
-                    const isHost = slot.teacherId === currentTeacher?.id;
-                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
-                    const isRegistered = !!myReg;
-                    const observerCount = slot.registrations.length;
-                    const slotDate = new Date(slot.date);
-                    
-                    // Expired (Hết hạn) check compared to today's date
-                    const today = new Date();
-                    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                    const isExpired = slotDate < todayStart;
-
-                    if (activeStatusTab === "gbm_request") {
-                      const observerReg = slot.registrations?.[0];
-                      const observerName = observerReg?.teacher?.teacherName || observerReg?.teacherName || "GVBM";
-                      const observerCode = observerReg?.teacher?.teacherCode || "";
-
-                      return (
-                        <tr key={slot.id} className="hover:bg-indigo-50/40 transition-colors">
-                          <td className="p-4 text-center font-extrabold text-slate-400">
-                            {index + 1}
-                          </td>
-                          <td className="p-4 font-bold text-slate-800">
-                            <p className="font-extrabold text-indigo-900">{observerName}</p>
-                            {observerCode && <p className="text-[11px] text-slate-400 font-normal">Mã: {observerCode}</p>}
-                          </td>
-                          <td className="p-4 font-bold text-slate-800">
-                            <p className="font-extrabold">{slot.teacher?.teacherName}</p>
-                            <p className="text-[11px] text-slate-400 font-normal">Mã: {slot.teacher?.teacherCode}</p>
-                          </td>
-                          <td className="p-4">
-                            <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">
-                              {slot.subjectName}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
-                          </td>
-                          <td className="p-4 font-bold text-slate-700">
-                            {slot.className || "Chưa xếp"}
-                          </td>
-                          <td className="p-4 font-bold text-[#48BFE3]">
-                            {slot.startTime}
-                          </td>
-                          <td className="p-4 font-bold text-slate-800">
-                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                          </td>
-                          <td className="p-4 text-center">
-                            {slot.status === "PENDING_TEACHER_APPROVAL" ? (
-                              <span className="px-2.5 py-1 text-xs font-extrabold uppercase rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
-                                Chờ xác nhận
-                              </span>
-                            ) : slot.status === "REJECTED" ? (
-                              <span className="px-2.5 py-1 text-xs font-extrabold uppercase rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
-                                Đã từ chối
-                              </span>
-                            ) : (
-                              <span className="px-2.5 py-1 text-xs font-extrabold uppercase rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-250">
-                                Đã xác nhận
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-4 text-right">
-                            {isHost && slot.status === "PENDING_TEACHER_APPROVAL" ? (
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleRespondRequest(slot.id, true)}
-                                  className="px-2.5 py-1 text-xs font-extrabold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-xs cursor-pointer"
-                                >
-                                  Xác nhận
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRespondRequest(slot.id, false, "Giáo viên bận")}
-                                  className="px-2.5 py-1 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg transition-all border border-rose-200 cursor-pointer"
-                                >
-                                  Từ chối
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-xs text-slate-400 italic">
-                                {isHost ? "Đã xử lý" : "Yêu cầu đã gửi"}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    }
+                  if (activeStatusTab === "gbm_request") {
+                    const observerReg = slot.registrations?.[0];
+                    const observerName = observerReg?.teacher?.teacherName || observerReg?.teacherName || "GVBM";
 
                     return (
-                      <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-4 text-center font-extrabold text-slate-400">
-                          {index + 1}
+                      <tr key={slot.id} className="hover:bg-indigo-50/30 transition-colors">
+                        <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
+                        <td className="p-4 font-bold text-slate-800">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(observerName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
+                              {observerName.charAt(0)}
+                            </div>
+                            <span className="font-black text-indigo-950">{observerName}</span>
+                          </div>
                         </td>
                         <td className="p-4 font-bold text-slate-800">
-                          <p className="font-extrabold">{slot.teacher.teacherName}</p>
-                          <p className="text-xs font-bold text-slate-400 font-bold mt-0.5">Mã: {slot.teacher.teacherCode}</p>
-                        </td>
-                        <td className="p-4 font-bold text-slate-700">
-                          <span className="px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold inline-block">
-                            {slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "Chưa xếp tổ"}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          {slot.level === "Mầm non" ? (() => {
-                            const parts = (slot.subjectName || "").split(" | ");
-                            const chuDe = parts[0] || "";
-                            const hoatDong = parts[1] || "";
-                            const deTai = slot.topic || "";
-                            return (
-                              <div className="flex flex-col gap-1 text-xs">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.5 text-xs font-extrabold uppercase rounded bg-amber-50 text-amber-700 border border-amber-250">Mầm non</span>
-                                  <span className="text-xs font-bold font-bold text-amber-900 bg-amber-50/40 px-1.5 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
-                                </div>
-                                <p className="font-black text-amber-950 text-sm font-semibold leading-snug">Đề tài: {deTai}</p>
-                                <p className="text-xs font-bold text-slate-500 font-semibold">
-                                  Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
-                                </p>
-                              </div>
-                            );
-                          })() : (
-                            <>
-                              <p className="font-extrabold text-[#003B3A]">{slot.topic}</p>
-                              <p className="text-xs font-bold text-slate-500 mt-0.5">
-                                {slot.subjectName} • {slot.className || "Lớp"} ({slot.campusName || "Cơ sở"})
-                              </p>
-                            </>
-                          )}
-                        </td>
-                        <td className="p-4">
-                          <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                          <p className="text-xs font-bold text-[#48BFE3] font-bold mt-0.5">
-                            {slot.startTime} • Phòng: {slot.room || "X"}
-                          </p>
-                        </td>
-                        <td className="p-4 text-center font-black">
-                          <span className={`px-2 py-0.5 rounded-md ${observerCount >= slot.maxSeats ? "bg-slate-100 text-slate-500" : "bg-sky-50 text-sky-700"}`}>
-                            {observerCount} / {slot.maxSeats}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          {slot.registrations && slot.registrations.length > 0 ? (
-                            <div className="flex flex-col gap-1.5 max-w-[260px]">
-                              {slot.registrations.map((reg: any) => (
-                                <div key={reg.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs p-1.5 rounded-lg bg-slate-50 border border-slate-200/70">
-                                  <div className="flex items-center gap-1 min-w-0">
-                                    <span className="font-extrabold text-slate-800 truncate" title={reg.teacher?.teacherName || reg.teacherName}>
-                                      {reg.teacher?.teacherName || reg.teacherName || "GV"}
-                                    </span>
-                                    {reg.teacher?.teacherCode && (
-                                      <span className="text-[10px] text-slate-400 font-medium shrink-0">
-                                        ({reg.teacher.teacherCode})
-                                      </span>
-                                    )}
-                                  </div>
-                                  {reg.isApproved ? (
-                                    <span className="px-1.5 py-0.2 rounded font-black text-[10px] uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                                      Đã xác nhận
-                                    </span>
-                                  ) : (
-                                    <span className="px-1.5 py-0.2 rounded font-black text-[10px] uppercase bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
-                                      Chờ xác nhận
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher?.teacherName || "G")} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
+                              {(slot.teacher?.teacherName || "G").charAt(0)}
                             </div>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">Chưa có</span>
-                          )}
+                            <span className="font-black text-slate-800">{slot.teacher?.teacherName}</span>
+                          </div>
                         </td>
                         <td className="p-4">
-                          {isExpired ? (
-                            <span className="px-2 py-0.5 text-xs font-extrabold uppercase rounded bg-rose-50 border border-rose-200 text-rose-600">
-                              Hết hạn
+                          <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">
+                            {slot.subjectName}
+                          </span>
+                        </td>
+                        <td className="p-4 font-bold text-[#003B3A]">{slot.topic}</td>
+                        <td className="p-4 font-bold text-slate-700">{slot.className || "Chưa xếp"}</td>
+                        <td className="p-4 font-bold text-teal-700">{slot.startTime}</td>
+                        <td className="p-4 font-bold text-slate-800">
+                          {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                        </td>
+                        <td className="p-4 text-center">
+                          {slot.status === "PENDING_TEACHER_APPROVAL" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase rounded-lg bg-amber-50 text-amber-700 border border-amber-200">
+                              <Clock className="w-3 h-3 text-amber-500" />
+                              Chờ duyệt
+                            </span>
+                          ) : slot.status === "REJECTED" ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase rounded-lg bg-rose-50 text-rose-700 border border-rose-200">
+                              <X className="w-3 h-3 text-rose-500" />
+                              Từ chối
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 text-xs font-extrabold uppercase rounded bg-emerald-50 border border-emerald-250 text-emerald-700">
-                              Mở đăng ký
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-black uppercase rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <Check className="w-3 h-3 text-emerald-500" />
+                              Đã duyệt
                             </span>
                           )}
                         </td>
                         <td className="p-4 text-right">
-                           {isExpired ? (
-                             <button 
-                               disabled
-                               className="px-3 py-1.5 text-xs font-extrabold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                             >
-                               Hết hạn
-                             </button>
-                           ) : isRegistered ? (
-                             <button onClick={() => handleCancelRegistration(myReg.id)}
-                               className="px-3 py-1.5 text-xs font-extrabold bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200">
-                               Hủy dự
-                             </button>
-                           ) : (
-                             <button 
-                               onClick={() => setRegisterDetailSlot(slot)}
-                               className="px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all shadow-sm bg-[#48BFE3] hover:bg-[#008b82] text-white"
-                             >
-                               Đăng ký
-                             </button>
-                           )}
-                         </td>
+                          {isHost && slot.status === "PENDING_TEACHER_APPROVAL" ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleRespondRequest(slot.id, true)}
+                                className="px-3 py-1.5 text-xs font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all shadow-xs cursor-pointer"
+                              >
+                                Đồng ý
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRespondRequest(slot.id, false, "Giáo viên bận")}
+                                className="px-3 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer"
+                              >
+                                Từ chối
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-slate-400 italic font-medium">
+                              {isHost ? "Đã phản hồi" : "Đã gửi yêu cầu"}
+                            </span>
+                          )}
+                        </td>
                       </tr>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                  }
 
+                  return (
+                    <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
+                      
+                      {/* Cột GIÁO VIÊN: Hiện avatar + tên (KHÔNG hiện mã NV) */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher.teacherName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
+                            {slot.teacher.teacherName.charAt(0)}
+                          </div>
+                          <span className="font-extrabold text-slate-900 text-xs tracking-tight">
+                            {slot.teacher.teacherName}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Cột TỔ CHUYÊN MÔN */}
+                      <td className="p-4">
+                        <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 border border-slate-200/80 text-xs font-extrabold inline-block shadow-2xs">
+                          {slot.teacher?.departmentRel?.name || (departments.find((d: any) => d.id === slot.teacher?.departmentId)?.name) || "Chưa xếp tổ"}
+                        </span>
+                      </td>
+
+                      {/* Cột MÔN HỌC & CHỦ ĐỀ */}
+                      <td className="p-4">
+                        {slot.level === "Mầm non" ? (() => {
+                          const parts = (slot.subjectName || "").split(" | ");
+                          const chuDe = parts[0] || "";
+                          const hoatDong = parts[1] || "";
+                          const deTai = slot.topic || "";
+                          return (
+                            <div className="flex flex-col gap-1 text-xs">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-amber-100 text-amber-900 border border-amber-200">Mầm non</span>
+                                <span className="text-xs font-bold text-amber-950 truncate">Chủ đề: {chuDe}</span>
+                              </div>
+                              <p className="font-black text-amber-950 text-xs leading-snug">Đề tài: {deTai}</p>
+                              <p className="text-[11px] text-slate-500 font-medium">
+                                Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
+                              </p>
+                            </div>
+                          );
+                        })() : (
+                          <div className="space-y-1">
+                            <p className="font-black text-[#003B3A] text-xs leading-snug">{slot.topic}</p>
+                            <div className="flex items-center gap-1.5 flex-wrap text-slate-500 font-medium text-[11px]">
+                              <span className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-800 border border-teal-200/60 font-bold">
+                                {slot.subjectName}
+                              </span>
+                              <span>•</span>
+                              <span>Lớp {slot.className || "Chưa xếp"}</span>
+                              {slot.campusName && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-slate-400">({slot.campusName})</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Cột THỜI GIAN / PHÒNG */}
+                      <td className="p-4">
+                        <div className="space-y-0.5">
+                          <p className="font-extrabold text-slate-800 flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                          </p>
+                          <p className="text-xs font-bold text-teal-700">
+                            {slot.startTime} • Phòng: {slot.room || "Phòng học"}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* Cột SỐ CHỖ */}
+                      <td className="p-4 text-center">
+                        <span className={`inline-flex items-center justify-center px-2.5 py-1 rounded-xl text-xs font-black border ${
+                          observerCount >= slot.maxSeats 
+                            ? "bg-slate-100 text-slate-500 border-slate-200" 
+                            : "bg-sky-50 text-sky-700 border-sky-200/70"
+                        }`}>
+                          {observerCount} / {slot.maxSeats}
+                        </span>
+                      </td>
+
+                      {/* Cột GV ĐĂNG KÝ: Hiện avatar + tên (KHÔNG hiện mã NV) */}
+                      <td className="p-4">
+                        {slot.registrations && slot.registrations.length > 0 ? (
+                          <div className="flex flex-col gap-1.5 max-w-[260px]">
+                            {slot.registrations.map((reg: any) => {
+                              const regName = reg.teacher?.teacherName || reg.teacherName || "Giáo viên";
+                              return (
+                                <div key={reg.id} className="flex items-center justify-between gap-2 text-xs p-1.5 rounded-xl bg-slate-50 border border-slate-200/80 shadow-2xs">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${getAvatarGradient(regName)} text-white flex items-center justify-center font-black text-[10px] shrink-0`}>
+                                      {regName.charAt(0)}
+                                    </div>
+                                    <span className="font-bold text-slate-800 truncate" title={regName}>
+                                      {regName}
+                                    </span>
+                                  </div>
+                                  {reg.isApproved ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-black text-[10px] uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                                      <Check className="w-2.5 h-2.5 text-emerald-600" />
+                                      ĐÃ XÁC NHẬN
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-black text-[10px] uppercase bg-amber-50 text-amber-700 border border-amber-200 shrink-0">
+                                      <Clock className="w-2.5 h-2.5 text-amber-600" />
+                                      CHỜ DUYỆT
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 italic">Chưa có</span>
+                        )}
+                      </td>
+
+                      {/* Cột TRẠNG THÁI */}
+                      <td className="p-4">
+                        {isExpired ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-rose-50 border border-rose-200 text-rose-600">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            Hết hạn
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-black uppercase rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Mở ĐK
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Cột THAO TÁC / ĐĂNG KÝ */}
+                      <td className="p-4 text-right">
+                        {isExpired ? (
+                          <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
+                            Hết hạn
+                          </button>
+                        ) : isRegistered ? (
+                          <button onClick={() => handleCancelRegistration(myReg.id)}
+                            className="px-3.5 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer">
+                            Hủy dự
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => setRegisterDetailSlot(slot)}
+                            className="px-4 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-md shadow-teal-800/15 bg-gradient-to-r from-[#008B82] to-[#007068] hover:from-[#007068] hover:to-[#005c56] text-white cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+                          >
+                            Đăng ký
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
-            {/* Panel 3: Lịch dạy & dự giờ của tôi (1 hàng riêng, chia thành 2 hàng con) */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-6 border-t-4 border-t-[#48BFE3] mt-6">
-        <div className="flex items-center gap-2 border-b border-slate-150 pb-3">
-          <Calendar className="w-5 h-5 text-[#48BFE3]" />
-          <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">4. Lịch dạy & dự giờ của tôi</span>
+      {/* ROW 3: Lịch dạy & Dự giờ của tôi */}
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-6 border-t-4 border-t-[#008B82]">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">4. Lịch dạy & Dự giờ của tôi</h3>
+              <p className="text-xs text-slate-400 font-medium">Theo dõi các tiết bạn trực tiếp giảng dạy và các tiết bạn đăng ký dự giờ</p>
+            </div>
+          </div>
         </div>
 
         {/* 4.1 TIẾT DẠY CỦA TÔI */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2 border-l-4 border-l-amber-500 pl-3">
-            <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết dạy của tôi</span>
-            <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-amber-50 text-amber-700 rounded-md border border-amber-200">
-              {slots.filter(s => s.teacherId === currentTeacher?.id).length} tiết
+            <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết dạy của tôi (Tôi dạy)</span>
+            <span className="px-2.5 py-0.5 text-xs font-black bg-amber-50 text-amber-800 rounded-md border border-amber-200">
+              {myTaughtSlots.length} tiết
             </span>
           </div>
 
-          <div className="overflow-y-auto max-h-[350px] space-y-3 custom-scrollbar pr-1">
-            {(() => {
-              const myTaughtSlots = slots.filter(slot => slot.teacherId === currentTeacher?.id)
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-              if (myTaughtSlots.length === 0) {
+          {myTaughtSlots.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+              <p className="text-xs font-bold text-center italic">Bạn chưa khởi tạo tiết dạy nào.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myTaughtSlots.map(slot => {
+                const slotDate = new Date(slot.date);
                 return (
-                  <div className="flex flex-col items-center justify-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                    <p className="text-xs font-bold text-center italic">Bạn chưa khởi tạo tiết dạy nào.</p>
+                  <div key={slot.id} className="p-4 rounded-2xl border flex flex-col justify-between gap-3 transition-all shadow-xs hover:shadow-md bg-amber-50/20 border-amber-200/80 border-l-4 border-l-amber-500">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-amber-100 text-amber-900">
+                          Tôi dạy
+                        </span>
+                        <span className="text-xs font-extrabold text-slate-400">
+                          {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0">
+                        {slot.level === "Mầm non" ? (
+                          <div className="space-y-1 text-xs">
+                            <h4 className="font-black text-amber-950 truncate leading-snug">{slot.topic}</h4>
+                            <p className="text-slate-500 font-medium">Lớp: {slot.className || "Chưa xếp"} • {slot.startTime}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1 text-xs">
+                            <h4 className="font-black text-slate-900 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
+                            <p className="text-slate-500 font-medium">Môn: {slot.subjectName} • Lớp: {slot.className || "Chưa xếp"} • {slot.startTime}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Observers Approval List */}
+                      <div className="pt-2 border-t border-slate-200/70 flex flex-col gap-1.5">
+                        <span className="font-black text-[#003B3A] uppercase tracking-wider text-[10px]">
+                          GV Đăng ký ({slot.registrations.length}/4):
+                        </span>
+                        {slot.registrations.length === 0 ? (
+                          <span className="text-xs text-slate-400 italic">Chưa có GV đăng ký</span>
+                        ) : (
+                          <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto pr-0.5 custom-scrollbar">
+                            {slot.registrations.map((reg: any) => {
+                              const regName = reg.teacher?.teacherName || "Giáo viên";
+                              return (
+                                <div key={reg.id} className="flex items-center justify-between bg-white p-2 rounded-xl border border-slate-200 gap-2 text-xs shadow-2xs">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className={`w-6 h-6 rounded-full bg-gradient-to-br ${getAvatarGradient(regName)} text-white flex items-center justify-center font-black text-[10px] shrink-0`}>
+                                      {regName.charAt(0)}
+                                    </div>
+                                    <p className="font-bold text-slate-800 truncate">{regName}</p>
+                                  </div>
+                                  <div className="shrink-0">
+                                    {reg.isApproved ? (
+                                      <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-black uppercase">Đã duyệt</span>
+                                    ) : (
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleApprove(reg.id)}
+                                        className="px-2.5 py-1 bg-[#008B82] hover:bg-[#007068] text-white rounded-lg text-[10px] font-black uppercase shadow-xs transition-all cursor-pointer"
+                                      >
+                                        Duyệt
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Slot Actions */}
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 text-xs">
+                      <button type="button" onClick={() => openEditModal(slot)}
+                        className="px-3 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors cursor-pointer">
+                        Sửa
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => handleDeleteSlot(slot.id)}
+                        className="px-3 py-1 text-rose-600 bg-white border border-rose-200 hover:bg-rose-50 rounded-lg font-bold transition-all cursor-pointer"
+                      >
+                        Hủy tiết
+                      </button>
+                    </div>
                   </div>
                 );
-              }
-
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {myTaughtSlots.map(slot => {
-                    const isHost = true;
-                    const slotDate = new Date(slot.date);
-                    const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                    
-                    return (
-                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-amber-50/40 border-amber-200/80 border-l-4 border-l-amber-500">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 text-xs font-extrabold uppercase rounded-md bg-amber-100 text-amber-800">
-                            Tôi dạy
-                          </span>
-                          <span className="text-xs font-bold font-extrabold text-slate-400">
-                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                          </span>
-                        </div>
-                        
-                        <div className="min-w-0 flex-1">
-                          {slot.level === "Mầm non" ? (() => {
-                            const parts = (slot.subjectName || "").split(" | ");
-                            const chuDe = parts[0] || "";
-                            const hoatDong = parts[1] || "";
-                            const deTai = slot.topic || "";
-                            return (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-xs font-extrabold uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-xs font-bold text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
-                                </div>
-                                <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
-                                <p className="text-xs font-bold font-bold text-slate-500 truncate">
-                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span>
-                                </p>
-                                <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
-                                  Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                                </p>
-                                <p className="text-xs font-bold font-semibold text-slate-400 truncate">
-                                  Gv dạy: {slot.teacher.teacherName}
-                                </p>
-                              </div>
-                            );
-                          })() : (
-                            <>
-                              <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                              <p className="text-xs font-bold font-semibold text-slate-500 truncate mt-1">
-                                Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                              </p>
-                              <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
-                                Gv dạy: {slot.teacher.teacherName}
-                              </p>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Host's Observers list block */}
-                        <div className="mt-2.5 pt-2.5 border-t border-slate-150 flex flex-col gap-1.5 w-full text-xs font-bold font-semibold text-slate-500">
-                          <span className="font-black text-[#003B3A] uppercase tracking-wider text-xs font-bold">
-                            GV đăng ký dự giờ ({slot.registrations.length}/4):
-                          </span>
-                          {slot.registrations.length === 0 ? (
-                            <span className="text-slate-400 italic">Chưa có GV nào đăng ký</span>
-                          ) : (
-                            <div className="flex flex-col gap-1 w-full max-h-[120px] overflow-y-auto pr-0.5 custom-scrollbar">
-                              {slot.registrations.map((reg: any) => {
-                                const approvedCount = slot.registrations.filter((r: any) => r.isApproved).length;
-                                return (
-                                  <div key={reg.id} className="flex items-center justify-between bg-slate-50 p-1.5 rounded-lg border border-slate-150 gap-2">
-                                    <div className="min-w-0 flex-1">
-                                      <p className="font-bold text-slate-800 truncate leading-snug">{reg.teacher?.teacherName || "Giáo viên"}</p>
-                                      <p className="text-xs font-bold text-slate-400 mt-0.5 font-bold">{reg.teacher?.teacherCode || ""}</p>
-                                    </div>
-                                    <div className="shrink-0">
-                                      {reg.isApproved ? (
-                                        <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-black text-xs font-bold uppercase">Đã duyệt</span>
-                                      ) : approvedCount >= 4 ? (
-                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-400 border border-slate-200 rounded font-black text-xs font-bold uppercase">Đầy (Tối đa 4)</span>
-                                      ) : (
-                                        <button 
-                                          type="button"
-                                          onClick={() => handleApprove(reg.id)}
-                                          className="px-2 py-0.5 bg-[#48BFE3] hover:bg-[#008b82] text-white rounded font-black text-xs font-bold uppercase shadow-sm transition-all"
-                                        >
-                                          Xác nhận
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-xs font-bold w-full">
-                          <button type="button" onClick={() => openEditModal(slot)}
-                            className="px-2.5 py-1 text-slate-600 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-50 transition-colors">
-                            Sửa
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => handleDeleteSlot(slot.id)}
-                            className="px-2.5 py-1 text-rose-600 bg-white border border-rose-250 hover:bg-rose-50 rounded-lg font-bold transition-all cursor-pointer"
-                          >
-                            Hủy tiết
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </div>
+              })}
+            </div>
+          )}
         </div>
 
         <hr className="border-slate-100 my-1" />
 
-        {/* 4.2 TIẾT ĐÃ ĐĂNG KÝ DỰ GIỜ */}
+        {/* 4.2 TIẾT TÔI ĐÃ ĐĂNG KÝ DỰ GIỜ */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center gap-2 border-l-4 border-l-[#48BFE3] pl-3">
-            <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết đã đăng ký dự giờ</span>
-            <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-[#E6F7F6] text-[#48BFE3] rounded-md border border-teal-100">
-              {slots.filter(s => s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)).length} tiết
+          <div className="flex items-center gap-2 border-l-4 border-l-[#008B82] pl-3">
+            <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Tiết tôi dự (Đã đăng ký)</span>
+            <span className="px-2.5 py-0.5 text-xs font-black bg-teal-50 text-teal-800 rounded-md border border-teal-200">
+              {myObservedSlots.length} tiết
             </span>
           </div>
 
-          <div className="overflow-y-auto max-h-[350px] space-y-3 custom-scrollbar pr-1">
-            {(() => {
-              const myObservedSlots = slots.filter(slot => slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-              if (myObservedSlots.length === 0) {
-                return (
-                  <div className="flex flex-col items-center justify-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
-                    <p className="text-xs font-bold text-center italic">Bạn chưa đăng ký dự giờ tiết học nào.</p>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {myObservedSlots.map(slot => {
-                    const isHost = false;
-                    const slotDate = new Date(slot.date);
-                    const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
-                    const isSchedulePastSlot = slotDate < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                    
-                    return (
-                      <div key={slot.id} className="p-4 rounded-2xl border flex flex-col gap-2.5 transition-all shadow-sm hover:shadow-md bg-teal-50/30 border-teal-200/60 border-l-4 border-l-[#48BFE3]">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2 py-0.5 text-xs font-extrabold uppercase rounded-md bg-[#E6F7F6] text-[#48BFE3]">
-                            Tôi dự
-                          </span>
-                          <span className="text-xs font-bold font-extrabold text-slate-400">
-                            {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                          </span>
-                        </div>
-                        
-                        <div className="min-w-0 flex-1">
-                          {slot.level === "Mầm non" ? (() => {
-                            const parts = (slot.subjectName || "").split(" | ");
-                            const chuDe = parts[0] || "";
-                            const hoatDong = parts[1] || "";
-                            const deTai = slot.topic || "";
-                            return (
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-xs font-extrabold uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-xs font-bold text-amber-900 font-bold truncate">Chủ đề: {chuDe}</span>
-                                </div>
-                                <h4 className="text-xs font-black text-[#78350F] leading-snug" title={deTai}>Đề tài: {deTai}</h4>
-                                <p className="text-xs font-bold font-bold text-slate-500 truncate">
-                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span>
-                                </p>
-                                <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
-                                  Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                                </p>
-                                <p className="text-xs font-bold font-semibold text-slate-400 truncate">
-                                  Gv dạy: {slot.teacher.teacherName}
-                                </p>
-                              </div>
-                            );
-                          })() : (
-                            <>
-                              <h4 className="text-xs font-black text-slate-800 truncate leading-tight" title={slot.topic}>{slot.topic}</h4>
-                              <p className="text-xs font-bold font-semibold text-slate-500 truncate mt-1">
-                                Lớp: {slot.className || "Chưa xếp"} • Tiết: {slot.startTime}
-                              </p>
-                              <p className="text-xs font-bold font-semibold text-slate-400 truncate mt-0.5">
-                                Gv dạy: {slot.teacher.teacherName}
-                              </p>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 mt-2 border-t border-slate-100 pt-2 text-xs font-bold w-full">
-                          {!myReg?.isApproved ? (
-                            <div className="flex flex-col gap-1.5 w-full">
-                              <span className="px-2 py-1 text-xs font-extrabold uppercase text-amber-700 bg-amber-50 border border-amber-200 rounded-md text-center leading-snug">
-                                Chờ xác nhận GV tổ chức tiết dạy
-                              </span>
-                              <button type="button" onClick={() => handleCancelRegistration(myReg?.id)}
-                                className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50/50 transition-all text-center">
-                                Hủy đăng ký
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-1.5 w-full">
-                              <span className="px-2 py-1 text-xs font-extrabold uppercase text-emerald-700 bg-emerald-50 border border-emerald-250 rounded-md text-center leading-snug">
-                                Đã xác nhận dự giờ
-                              </span>
-                              <button type="button" onClick={() => openEvalModal(myReg, slot)}
-                                className="px-2.5 py-1 bg-[#48BFE3] hover:bg-[#008b82] text-white rounded-lg font-black shadow-sm transition-all whitespace-nowrap w-full text-center">
-                                {myReg?.evaluation ? "Xem đánh giá" : "Nhập đánh giá"}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-      </div>
-
-      
-      {/* ROW 4: Full Width Layout for Panel 6 */}
-      <div className="w-full mt-6">
-        {/* Panel 6: Kết quả đánh giá gần đây */}
-        <div className="w-full bg-white rounded-3xl border border-slate-100 shadow-md p-6 flex flex-col gap-5 border-t-4 border-t-[#48BFE3]">
-          <div className="flex items-center gap-2 border-b border-slate-150 pb-4">
-            <ClipboardList className="w-5 h-5 text-[#48BFE3]" />
-            <span className="font-extrabold text-sm text-[#003B3A] uppercase tracking-wider">6. Kết quả đánh giá gần đây</span>
-          </div>
-
-          {receivedEvaluations.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-slate-400 border border-dashed border-slate-250 rounded-2xl bg-slate-50/50">
-              <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
-              <p className="text-xs font-bold text-center">Chưa nhận được phiếu đánh giá nào.</p>
+          {myObservedSlots.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+              <p className="text-xs font-bold text-center italic">Bạn chưa đăng ký dự giờ tiết học nào.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-2xl border border-slate-150">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-150 text-slate-500 font-extrabold uppercase text-xs font-bold tracking-wider">
-                    <th className="p-4">Giáo viên dạy</th>
-                    <th className="p-4">Người đánh giá</th>
-                    <th className="p-4">Môn học & Chủ đề</th>
-                    <th className="p-4">Thời gian / Phòng</th>
-                    <th className="p-4 text-center">Kết quả</th>
-                    <th className="p-4 text-right">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
-                  {receivedEvaluations.map(evalItem => {
-                    const hasPassed = evalItem.evaluation?.isPassed ?? true;
-                    const slotDate = new Date(evalItem.slot.date);
-                    return (
-                      <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="p-4 font-bold text-slate-800">
-                          <p className="font-extrabold">{evalItem.slot.teacher?.teacherName || "Giáo viên"}</p>
-                          <p className="text-xs font-bold text-slate-400 font-bold mt-0.5">Mã: {evalItem.slot.teacher?.teacherCode || ""}</p>
-                        </td>
-                        <td className="p-4 font-bold text-slate-800">
-                          <p className="font-extrabold">{evalItem.registration?.teacher?.teacherName || "Giáo viên"}</p>
-                          <p className="text-xs font-bold text-slate-400 font-bold mt-0.5">Mã: {evalItem.registration?.teacher?.teacherCode || ""}</p>
-                        </td>
-                        <td className="p-4">
-                          {evalItem.slot.level === "Mầm non" ? (() => {
-                            const parts = (evalItem.slot.subjectName || "").split(" | ");
-                            const chuDe = parts[0] || "";
-                            const hoatDong = parts[1] || "";
-                            const deTai = evalItem.slot.topic || "";
-                            return (
-                              <div className="flex flex-col gap-0.5 text-xs">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="px-1.5 py-0.2 text-xs font-extrabold uppercase rounded bg-amber-50 text-amber-700 border border-amber-200">Mầm non</span>
-                                  <span className="text-xs font-bold font-bold text-amber-900 bg-amber-50/40 px-1 py-0.2 rounded border border-amber-100/50">Chủ đề: {chuDe}</span>
-                                </div>
-                                <p className="font-bold text-[#003B3A] text-xs">Đề tài: {deTai}</p>
-                                <p className="text-xs font-bold text-slate-500 font-semibold">
-                                  Hoạt động: <span className="text-amber-800">{hoatDong}</span> • Lớp: {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
-                                </p>
-                              </div>
-                            );
-                          })() : (
-                            <>
-                              <p className="font-extrabold text-[#003B3A]">{evalItem.evaluation?.topic || evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
-                              <p className="text-xs font-bold text-slate-500 mt-0.5">
-                                {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"} ({evalItem.slot.campusName || "Cơ sở"})
-                              </p>
-                            </>
-                          )}
-                        </td>
-                        <td className="p-4">
-                          <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
-                          <p className="text-xs font-bold text-[#48BFE3] font-bold mt-0.5">
-                            {evalItem.slot.startTime} • Phòng: {evalItem.slot.room || "X"}
-                          </p>
-                        </td>
-                        <td className="p-4 text-center">
-                          <span className={`px-2.5 py-0.5 text-xs font-extrabold uppercase rounded-md border ${hasPassed ? "bg-emerald-50 text-emerald-700 border-emerald-250" : "bg-rose-50 text-rose-700 border-rose-200"}`}>
-                            {hasPassed ? "Đạt" : "Không đạt"}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myObservedSlots.map(slot => {
+                const slotDate = new Date(slot.date);
+                const myReg = slot.registrations.find((r: any) => r.teacherId === currentTeacher?.id);
+
+                return (
+                  <div key={slot.id} className="p-4 rounded-2xl border flex flex-col justify-between gap-3 transition-all shadow-xs hover:shadow-md bg-teal-50/20 border-teal-200/70 border-l-4 border-l-[#008B82]">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-teal-100 text-teal-900">
+                          Tôi dự
+                        </span>
+                        <span className="text-xs font-extrabold text-slate-400">
+                          {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                        </span>
+                      </div>
+
+                      <div className="min-w-0 space-y-1 text-xs">
+                        <h4 className="font-black text-slate-900 truncate leading-snug" title={slot.topic}>{slot.topic}</h4>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-5 h-5 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher.teacherName)} text-white flex items-center justify-center font-black text-[10px] shrink-0`}>
+                            {slot.teacher.teacherName.charAt(0)}
+                          </div>
+                          <p className="text-slate-500 font-medium truncate">GV Dạy: <span className="font-bold text-slate-800">{slot.teacher.teacherName}</span></p>
+                        </div>
+                        <p className="text-slate-500 font-medium">Lớp: {slot.className || "Chưa xếp"} • {slot.startTime}</p>
+                      </div>
+                    </div>
+
+                    {/* Registration Status & Evaluation Actions */}
+                    <div className="pt-2 border-t border-slate-200/70 flex flex-col gap-2 text-xs">
+                      {!myReg?.isApproved ? (
+                        <div className="flex flex-col gap-1.5 w-full">
+                          <span className="px-2 py-1 text-[11px] font-black uppercase text-amber-800 bg-amber-50 border border-amber-200 rounded-md text-center">
+                            Chờ GV dạy duyệt
                           </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <button 
-                            onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
-                            className="px-3 py-1.5 text-xs font-extrabold rounded-xl transition-all shadow-sm bg-[#48BFE3] hover:bg-[#008b82] text-white"
-                          >
-                            Xem chi tiết
+                          <button type="button" onClick={() => handleCancelRegistration(myReg?.id)}
+                            className="px-2.5 py-1 text-rose-600 bg-white border border-rose-200 rounded-lg font-bold hover:bg-rose-50 transition-all text-center cursor-pointer">
+                            Hủy đăng ký
                           </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1.5 w-full">
+                          <span className="px-2 py-1 text-[11px] font-black uppercase text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-md text-center">
+                            Đã xác nhận dự giờ
+                          </span>
+                          <button type="button" onClick={() => openEvalModal(myReg, slot)}
+                            className="px-3 py-1.5 bg-[#008B82] hover:bg-[#007068] text-white rounded-xl font-black shadow-xs transition-all w-full text-center cursor-pointer">
+                            {myReg?.evaluation ? "Xem phiếu đánh giá" : "✍️ Nhập đánh giá"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
 
-      {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-            <div className={`px-6 py-5 text-white flex items-center justify-between shrink-0 ${isMamNonTeacher ? "bg-amber-950 border-b border-amber-900" : "bg-[#003B3A]"}`}>
-              <div>
-                <h3 className="font-black text-lg">{isMamNonTeacher ? (editSlotId ? "Cập nhật tiết dạy Mầm non" : "Thêm mới tiết dạy Mầm non") : (editSlotId ? "Cập nhật tiết dạy" : "Thêm mới tiết dạy")}</h3>
-                <p className="text-white/60 text-xs mt-0.5">{isMamNonTeacher ? "Biểu mẫu thiết lập tiết dạy Mầm non" : "Tạo tiết dạy để giáo viên khác đăng ký dự giờ"}</p>
-              </div>
-              <button onClick={() => setShowCreateModal(false)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
-            </div>
-            <form onSubmit={handleCreateSubmit} className="flex-1 overflow-y-auto p-6 space-y-5 custom-scrollbar">
-              <div className="flex items-center justify-between gap-3 p-4 text-sky-800 text-xs font-semibold">
-                <div className="flex items-center gap-2"><Info className="w-4 h-4 text-sky-600 shrink-0" /><span className="text-xs font-semibold">Bạn có thể tạo tối đa 2 tiết dạy mỗi tháng.</span></div>
-                <span className="text-xs font-bold bg-sky-200/50 px-2 py-0.5 rounded-md text-sky-900 shrink-0">Đã tạo trong {selectedMonthStr}: <span className="font-black">{monthlyLimitCount}/2</span> tiết</span>
-              </div>
-              {isMamNonTeacher ? (
-                /* ===== MAM NON EDIT FORM ===== */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Chu de */}
-                  <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Chủ đề *</label>
-                    <input type="text" placeholder="Ví dụ: Thế giới động vật, Gia đình..." value={newChuDe} onChange={e => setNewChuDe(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
-                  </div>
-                  {/* Hoat dong */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Hoạt động *</label>
-                    <input type="text" placeholder="Ví dụ: Âm nhạc, Tạo hình, KPKH..." value={newHoatDong} onChange={e => setNewHoatDong(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
-                  </div>
-                  {/* De tai */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Đề tài *</label>
-                    <input type="text" placeholder="Ví dụ: Bé yêu các con vật..." value={newDeTai} onChange={e => setNewDeTai(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-amber-50/10 hover:bg-amber-50/20 focus:bg-white transition-all shadow-inner-sm" />
-                  </div>
-                  {/* Campus */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Cơ sở *</label>
-                    <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white hover:bg-amber-50/10 transition-all">
-                      <option value="">Chọn cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                    </select>
-                  </div>
-                  {/* Grade */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Khối học *</label>
-                    <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white hover:bg-amber-50/10 transition-all">
-                      <option value="">Chọn khối học</option>
-                       {mamNonGrades.map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                  {/* Class */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-amber-800 uppercase tracking-wide">Tên lớp *</label>
-                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newGrade}
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none rounded-xl border border-amber-200/80 bg-white disabled:opacity-50 hover:bg-amber-50/10 transition-all">
-                      <option value="">Chọn tên lớp</option>
-                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                    </select>
-                  </div>
-                  {/* Date */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Ngày dạy *</label>
-                    <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
-                      className="w-full text-xs font-semibold p-2.5 text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none rounded-xl border border-slate-200" />
-                  </div>
-                  {/* PDF Upload */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
-                    <div className="flex items-center gap-2">
-                      <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file-modal" />
-                      <label htmlFor="pdf-upload-file-modal" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
-                        <FileText className="w-4 h-4 text-slate-500" />{newLessonPlanName ? "Thay đổi File PDF" : "Chọn File PDF..."}
-                      </label>
-                      {newLessonPlanName && (
-                        <button type="button" onClick={() => { setNewLessonPlanName(""); setNewLessonPlanData(""); if (fileInputRef.current) fileInputRef.current.value = "" }}
-                          className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
-                      )}
-                    </div>
-                    {newLessonPlanName && <span className="text-xs font-bold font-bold text-amber-600 mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
-                  </div>
-                  {/* Period */}
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold bg-amber-50/20 border border-amber-100 rounded-2xl">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tiết dạy: Từ *</label>
-                      <select value={newStartTime} onChange={e => { setNewStartTime(e.target.value); setNewEndTime(e.target.value); }}
-                        className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none">
-                        {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Đến *</label>
-                      <select value={newEndTime} disabled={true}
-                        className="w-full text-xs font-semibold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none disabled:opacity-50">
-                        {[1,2,3,4,5,6,7,8].map(p => <option key={p} value={`Tiết ${p}`}>Tiết {p}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2 pb-2 h-[42px] pl-2 text-slate-400">
-                      <input type="checkbox" id="isDoublePeriodModal" checked={false} disabled={true}
-                        className="w-4 h-4 rounded text-slate-300 focus:ring-slate-350" />
-                      <label htmlFor="isDoublePeriodModal" className="text-xs font-bold select-none cursor-pointer">Dạy 2 tiết liên tiếp (K12)</label>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* ===== K12 EDIT FORM ===== */
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Level */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Cấp học *</label>
-                    <select value={newLevel} onChange={e => { setNewLevel(e.target.value); setNewGrade(""); setNewClassId("") }} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
-                      <option value="">Chọn cấp học</option>
-                      <option value="Mầm non">Mầm non</option>
-                      <option value="Tiểu học">Tiểu học</option>
-                      <option value="THCS">THCS</option>
-                      <option value="THPT">THPT</option>
-                    </select>
-                  </div>
-                  {/* Grade */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Khối lớp *</label>
-                    <select value={newGrade} onChange={e => { setNewGrade(e.target.value); setNewClassId("") }} required disabled={!newLevel}
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all disabled:opacity-50">
-                      <option value="">Chọn khối lớp</option>
-                      {getGradesForLevel(newLevel).map(g => <option key={g} value={g}>{g}</option>)}
-                    </select>
-                  </div>
-                  {/* Subject */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-bold text-slate-700 uppercase tracking-wide">Môn học *</label>
-                    <select value={newSubjectId} onChange={e => setNewSubjectId(e.target.value)} required
-                      className="w-full text-sm font-semibold p-3.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] focus:border-transparent outline-none rounded-xl border border-slate-200 bg-white hover:bg-slate-50/50 transition-all">
-                      <option value="">Chọn môn học</option>
-                      {subjects.map(sub => <option key={sub.id} value={sub.id}>{sub.subjectName}</option>)}
-                      <option value="other">Môn học khác / Tổ nhóm chuyên đề</option>
-                    </select>
-                  </div>
-                  {newSubjectId === "other" && (
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tên môn học khác *</label>
-                      <input type="text" placeholder="Nhập tên môn học..." value={newSubjectName} onChange={e => setNewSubjectName(e.target.value)} required
-                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
-                    </div>
-                  )}
-                  {/* Campus */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Cơ sở *</label>
-                    <select value={newCampusId} onChange={e => { setNewCampusId(e.target.value); setNewClassId("") }} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold">
-                      <option value="">Chọn cơ sở</option>
-                      {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
-                    </select>
-                  </div>
-                  {/* Class */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Lớp học *</label>
-                    <select value={newClassId} onChange={e => setNewClassId(e.target.value)} required disabled={!newCampusId || !newLevel || !newGrade}
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none disabled:opacity-50 text-xs font-semibold">
-                      <option value="">Chọn lớp học</option>
-                      {filteredClassesForCreation.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
-                      <option value="other">Lớp học khác (Nhập tay...)</option>
-                    </select>
-                  </div>
-                  {newClassId === "other" && (
-                    <div className="flex flex-col gap-1.5 md:col-span-2">
-                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Nhập tên lớp học khác *</label>
-                      <input type="text" placeholder="Nhập tên lớp học (ví dụ: Lớp 2.1, Nhà trẻ A...)" value={newClassNameText} onChange={e => setNewClassNameText(e.target.value)} required
-                        className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
-                    </div>
-                  )}
-                  {/* Topic */}
-                  <div className="md:col-span-2 flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Bài dạy / Chủ đề *</label>
-                    <input type="text" placeholder="Nhập tên bài dạy hoặc chủ đề sinh hoạt..." value={newTopic} onChange={e => setNewTopic(e.target.value)} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
-                  </div>
-                  {/* Date */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Ngày dạy *</label>
-                    <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} required
-                      className="w-full text-sm p-2.5 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none text-xs font-semibold" />
-                  </div>
-                  {/* PDF Upload */}
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800">Upload Giáo án (PDF) <span className="text-slate-400 font-normal">(không bắt buộc)</span></label>
-                    <div className="flex items-center gap-2">
-                      <input type="file" accept=".pdf" ref={fileInputRef} onChange={handleFileChange} className="hidden" id="pdf-upload-file-modal-k12" />
-                      <label htmlFor="pdf-upload-file-modal-k12" className="flex-1 flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold py-2.5 px-4 rounded-xl cursor-pointer transition-all">
-                        <FileText className="w-4 h-4 text-slate-500" />{newLessonPlanName ? "Thay đổi File PDF" : "Chọn File PDF..."}
-                      </label>
-                      {newLessonPlanName && (
-                        <button type="button" onClick={() => { setNewLessonPlanName(""); setNewLessonPlanData(""); if (fileInputRef.current) fileInputRef.current.value = "" }}
-                          className="p-2 hover:bg-rose-100 text-rose-600 transition-all text-xs font-semibold" title="Xóa file đã chọn"><X className="w-3.5 h-3.5" /></button>
-                      )}
-                    </div>
-                    {newLessonPlanName && <span className="text-xs font-bold font-bold text-[#48BFE3] mt-1 truncate max-w-full block">Đã chọn: {newLessonPlanName}</span>}
-                  </div>
-                  {/* Period */}
-                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-3 items-end p-4 text-xs font-semibold">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Tiết dạy: Từ *</label>
-                      <select value={newStartTime} onChange={e => handleStartTimeChange(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none">
-                        {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs sm:text-sm font-extrabold text-slate-800">Đến *</label>
-                      <select value={newEndTime} disabled={newIsDoublePeriod} onChange={e => setNewEndTime(e.target.value)}
-                        className="w-full text-sm rounded-xl border border-slate-200 p-2 bg-white text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none disabled:opacity-50">
-                        {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex items-center gap-2 pb-2 h-[42px] pl-2">
-                      <input type="checkbox" id="isDoublePeriod" checked={newIsDoublePeriod} disabled={newStartTime === "Tiết 8"} onChange={e => handleDoublePeriodChange(e.target.checked)}
-                        className="w-4 h-4 rounded text-[#48BFE3] focus:ring-[#48BFE3]" />
-                      <label htmlFor="isDoublePeriod" className="text-xs font-extrabold text-slate-600 select-none cursor-pointer">Dạy 2 tiết liên tiếp</label>
-                    </div>
-                  </div>
-                </div>
-              )}
-              {/* Description */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Mô tả nội dung tiết dạy (không bắt buộc)</label>
-                  <span className="text-xs font-bold font-bold text-slate-400">{newDescription.length}/500</span>
-                </div>
-                <textarea placeholder="Nhập mô tả ngắn về nội dung, mục tiêu, phương pháp dạy học..." maxLength={500} rows={3} value={newDescription} onChange={e => setNewDescription(e.target.value)}
-                  className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none resize-none text-xs font-semibold" />
-              </div>
-              {/* Visibility */}
-              <div className="flex flex-col gap-2.5 p-4 text-xs font-semibold">
-                <label className="text-xs sm:text-sm font-extrabold text-slate-800">Hiển thị cho giáo viên</label>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="visibility" checked={newVisibility === "ALL"} onChange={() => setNewVisibility("ALL")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
-                    Tất cả giáo viên trong trường
-                  </label>
-                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="visibility" checked={newVisibility === "DEPARTMENT"} onChange={() => setNewVisibility("DEPARTMENT")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
-                    Chỉ các tổ nhóm chuyên môn
-                  </label>
-                </div>
-                {newVisibility === "DEPARTMENT" && (
-                  <div className="flex flex-col gap-1.5 mt-2 animate-in fade-in duration-200">
-                    <label className="text-xs font-bold font-bold uppercase tracking-wider text-slate-400">Chọn tổ nhóm *</label>
-                    <select value={newTargetDeptId} onChange={e => setNewTargetDeptId(e.target.value)} required
-                      className="w-full text-sm rounded-xl border border-slate-200 p-2.5 bg-white text-slate-800 focus:ring-2 focus:ring-[#48BFE3] outline-none">
-                      <option value="">Chọn tổ nhóm chuyên môn</option>
-                      {departments.map(dept => <option key={dept.id} value={dept.id}>{dept.name} ({dept.code})</option>)}
-                    </select>
-                  </div>
-                )}
-              </div>
-              
-              {/* Notification Target Mode */}
-              <div className="flex flex-col gap-2.5 p-4 bg-emerald-50/60 rounded-2xl border border-emerald-100/80 text-xs font-semibold">
-                <label className="text-xs sm:text-sm font-extrabold text-emerald-900 flex items-center gap-1.5">
-                  <span>📢 Cấu hình gửi thông báo Email & Teams</span>
-                </label>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="notifMode" checked={newNotifMode === "ALL"} onChange={() => setNewNotifMode("ALL")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
-                    Gửi tự động cho tất cả thành viên trong Tổ CM
-                  </label>
-                  <label className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 select-none cursor-pointer">
-                    <input type="radio" name="notifMode" checked={newNotifMode === "SELECTED"} onChange={() => setNewNotifMode("SELECTED")} className="w-4 h-4 text-[#48BFE3] focus:ring-[#48BFE3]" />
-                    Chỉ gửi cho các thành viên được chọn
-                  </label>
-                </div>
-                {newNotifMode === "SELECTED" && (
-                  <div className="mt-2 p-3 bg-white rounded-xl border border-slate-200 max-h-48 overflow-y-auto space-y-2 animate-in fade-in duration-200">
-                    <p className="text-xs font-semibold text-slate-500 font-medium mb-1">Tích chọn các giáo viên trong Tổ chuyên môn nhận Email/Teams:</p>
-                    {availableDeptTeachers.length === 0 ? (
-                      <p className="text-xs text-slate-400 italic">Đang tải danh sách giáo viên trong Tổ CM...</p>
-                    ) : (
-                      availableDeptTeachers.map((t: any) => (
-                        <label key={t.id} className="flex items-center gap-2.5 text-xs text-slate-700 font-medium cursor-pointer hover:bg-slate-50 p-1.5 rounded-lg transition-all">
-                          <input type="checkbox" checked={selectedMemberIds.includes(t.id)} onChange={e => {
-                            if (e.target.checked) setSelectedMemberIds([...selectedMemberIds, t.id]);
-                            else setSelectedMemberIds(selectedMemberIds.filter(id => id !== t.id));
-                          }} className="w-4 h-4 text-[#48BFE3] rounded border-slate-300" />
-                          <span>{t.teacherName} ({t.teacherCode}) {t.email ? `- ${t.email}` : ""}</span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Submit */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 shrink-0">
-                <button type="button" onClick={() => { setShowCreateModal(false); resetCreateForm(); }} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Hủy</button>
-                <button type="submit" disabled={submitting || monthlyLimitCount >= 2}
-                  className={`px-6 py-2.5 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm shrink-0 ${isMamNonTeacher ? "bg-amber-600 hover:bg-amber-700" : "bg-[#48BFE3] hover:bg-[#008B85]"}`}>
-                  {submitting ? "Đang lưu..." : (editSlotId ? "Cập nhật" : "Lưu tiết dạy")}
-                </button>
-              </div>
-            </form>
+      {/* ROW 4: Kết quả đánh giá gần đây */}
+      <div className="w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 border-t-[#008B82]">
+        <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+          <div className="w-9 h-9 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center">
+            <ClipboardList className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-black text-sm text-[#003B3A] uppercase tracking-wider">5. Kết quả đánh giá tiết dạy nhận được</h3>
+            <p className="text-xs text-slate-400 font-medium">Danh sách các phiếu đánh giá từ đồng nghiệp và Tổ chuyên môn</p>
           </div>
         </div>
-      )}
 
-      
-      {/* Modal Lược Sử Tiết Dạy */}
-      {showHistoryModal && historySlot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-300">
-            <div className="px-6 py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-[#48BFE3]" />
-                <h3 className="font-extrabold text-base sm:text-lg">📜 Lược Sử Hoạt Động Tiết Dạy</h3>
-              </div>
-              <button onClick={() => setShowHistoryModal(false)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 overflow-y-auto space-y-4 flex-grow">
-              {/* Slot Summary */}
-              <div className="bg-teal-50/60 p-4 rounded-2xl border border-teal-100 space-y-1">
-                <p className="text-xs font-black text-[#003B3A] uppercase tracking-wide">{historySlot.subjectName} ({historySlot.level} - {historySlot.grade})</p>
-                <p className="text-sm font-extrabold text-[#008b82]">{historySlot.topic}</p>
-                <p className="text-xs text-slate-600 font-medium">👨‍🏫 GV Dạy: {historySlot.teacher?.teacherName || historySlot.teacherName} ({historySlot.teacher?.teacherCode || historySlot.teacherCode})</p>
-              </div>
-
-              {/* Timeline Items */}
-              <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200">
-                {getSlotHistoryLogs(historySlot).map((log, idx) => (
-                  <div key={idx} className="relative flex items-start gap-3 pl-2">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-xs shadow-sm z-10 ${
-                      log.color === "teal" ? "bg-[#00A99D]" :
-                      log.color === "blue" ? "bg-blue-500" :
-                      log.color === "emerald" ? "bg-emerald-600" :
-                      log.color === "amber" ? "bg-amber-500" :
-                      log.color === "purple" ? "bg-purple-600" : "bg-rose-500"
-                    }`}>
-                      {idx + 1}
-                    </div>
-                    <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 flex-grow text-xs space-y-1 shadow-2xs">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-extrabold text-slate-800">{log.title}</span>
-                        <span className="text-[10px] font-bold text-slate-400">{log.time}</span>
-                      </div>
-                      <p className="text-slate-600 font-medium leading-relaxed">{log.detail}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
-              <button onClick={() => setShowHistoryModal(false)} className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold text-xs">
-                Đóng
-              </button>
-            </div>
+        {receivedEvaluations.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+            <ClipboardList className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
+            <p className="text-xs font-bold text-center">Chưa nhận được phiếu đánh giá nào.</p>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
+                  <th className="p-4">Người đánh giá</th>
+                  <th className="p-4">Môn học & Chủ đề</th>
+                  <th className="p-4">Thời gian / Phòng</th>
+                  <th className="p-4 text-center">Xếp loại</th>
+                  <th className="p-4 text-right">Chi tiết</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-150 text-xs font-semibold text-slate-700">
+                {receivedEvaluations.map(evalItem => {
+                  const rating = evalItem.evaluation?.overallRating || "Đạt";
+                  const slotDate = new Date(evalItem.slot.date);
+                  const evaluatorName = evalItem.registration?.teacher?.teacherName || "Giáo viên";
 
+                  return (
+                    <tr key={evalItem.evaluation?.id || evalItem.registration?.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4 font-bold text-slate-800">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(evaluatorName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
+                            {evaluatorName.charAt(0)}
+                          </div>
+                          <span className="font-extrabold text-slate-900 text-xs">{evaluatorName}</span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <p className="font-black text-[#003B3A]">{evalItem.slot.topic || "Đánh giá tiết dạy"}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          {evalItem.slot.subjectName} • {evalItem.slot.className || "Lớp"}
+                        </p>
+                      </td>
+                      <td className="p-4">
+                        <p className="font-bold">{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}</p>
+                        <p className="text-xs font-bold text-teal-700 mt-0.5">
+                          {evalItem.slot.startTime} • Phòng: {evalItem.slot.room || "Phòng học"}
+                        </p>
+                      </td>
+                      <td className="p-4 text-center">
+                        <span className={`px-3 py-1 text-xs font-black uppercase rounded-lg border ${RATING_COLORS[rating] || "bg-teal-50 text-teal-700 border-teal-200"}`}>
+                          {rating}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right">
+                        <button 
+                          onClick={() => openEvalModal(evalItem.registration, evalItem.slot)}
+                          className="px-3.5 py-1.5 text-xs font-black rounded-xl transition-all shadow-xs bg-[#008B82] hover:bg-[#007068] text-white cursor-pointer"
+                        >
+                          Xem phiếu
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Register Details Modal */}
       {registerDetailSlot && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
             <div className="px-6 py-5 bg-[#003B3A] text-white flex items-center justify-between shrink-0">
               <div>
-                <h3 className="font-black text-base">Thông tin & Đăng ký Dự giờ</h3>
-                <p className="text-white/60 text-xs font-bold mt-0.5">Vui lòng kiểm tra kỹ thông tin tiết dạy trước khi đăng ký</p>
+                <h3 className="font-black text-base">Xác nhận Đăng ký Dự giờ</h3>
+                <p className="text-white/70 text-xs font-medium mt-0.5">Kiểm tra thông tin tiết dạy trước khi gửi đăng ký</p>
               </div>
               <button 
                 onClick={() => setRegisterDetailSlot(null)} 
-                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5 text-white/80" />
               </button>
             </div>
             
             <div className="p-6 space-y-4 text-xs font-semibold">
-              {registerDetailSlot.level === "Mầm non" ? (() => {
-                const parts = (registerDetailSlot.subjectName || "").split(" | ");
-                const chuDe = parts[0] || "";
-                const hoatDong = parts[1] || "";
-                const deTai = registerDetailSlot.topic || "";
-                return (
-                  <>
-                    <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/50 space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 text-xs font-extrabold uppercase rounded bg-amber-100 text-amber-800 border border-amber-250">Mầm non</span>
-                        <span className="text-xs font-extrabold text-amber-700 uppercase tracking-wider">Chủ đề: {chuDe}</span>
-                      </div>
-                      <h4 className="text-sm font-black text-[#78350F] leading-snug">Đề tài: {deTai}</h4>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3.5">
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-xs font-extrabold text-slate-400 uppercase">Giáo viên giảng dạy</span>
-                        <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
-                        <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
-                      </div>
-                      
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-xs font-extrabold text-slate-400 uppercase">Lớp học & Hoạt động</span>
-                        <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
-                        <span className="text-xs font-bold text-amber-700 font-bold mt-0.5">Hoạt động: {hoatDong}</span>
-                      </div>
-                      
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-xs font-extrabold text-slate-400 uppercase">Thời gian</span>
-                        <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
-                        <span className="text-xs font-bold text-slate-400 mt-0.5">
-                          {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                        </span>
-                      </div>
-                      
-                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                        <span className="text-xs font-extrabold text-slate-400 uppercase">Địa điểm</span>
-                        <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
-                        <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
-                      </div>
-                    </div>
-                  </>
-                );
-              })() : (
-                <>
-                  <div className="bg-[#E6F7F6]/30 p-4 rounded-2xl border border-emerald-100/50">
-                    <span className="text-xs font-extrabold text-[#48BFE3] uppercase tracking-wider">Tên bài dạy / Chủ đề</span>
-                    <h4 className="text-sm font-black text-[#003B3A] mt-1 leading-snug">{registerDetailSlot.topic}</h4>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-3.5">
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-xs font-extrabold text-slate-400 uppercase">Giáo viên giảng dạy</span>
-                      <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.teacher?.teacherName || "Chưa rõ"}</span>
-                      <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.teacher?.teacherCode || ""}</span>
-                    </div>
-                    
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-xs font-extrabold text-slate-400 uppercase">Lớp học / Môn học</span>
-                      <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.className || "Chưa xếp lớp"}</span>
-                      <span className="text-xs font-bold text-[#48BFE3] font-bold mt-0.5">{registerDetailSlot.subjectCode || "Môn học"}</span>
-                    </div>
-                    
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-xs font-extrabold text-slate-400 uppercase">Thời gian</span>
-                      <span className="text-xs font-bold text-slate-800 mt-1">{registerDetailSlot.startTime}</span>
-                      <span className="text-xs font-bold text-slate-400 mt-0.5">
-                        {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                      </span>
-                    </div>
-                    
-                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-150 flex flex-col">
-                      <span className="text-xs font-extrabold text-slate-400 uppercase">Địa điểm</span>
-                      <span className="text-xs font-bold text-slate-800 mt-1">Phòng: {registerDetailSlot.room || "Chưa xếp phòng"}</span>
-                      <span className="text-xs font-bold text-slate-400 mt-0.5">{registerDetailSlot.campus?.campusName || ""}</span>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-150">
-                <span className="text-xs font-extrabold text-slate-400 uppercase">Hình thức đăng ký</span>
-                <span className={`px-2 py-0.5 text-xs font-extrabold uppercase rounded ${
-                  new Date(registerDetailSlot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
-                    ? "bg-amber-50 text-amber-700 border border-amber-200"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-250"
-                }`}>
-                  {new Date(registerDetailSlot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate())
-                    ? "Dự giờ bù"
-                    : "Dự giờ chính thức"}
-                </span>
+              <div className="bg-teal-50/40 p-4 rounded-2xl border border-teal-100 space-y-1">
+                <span className="text-[10px] font-black text-[#008B82] uppercase tracking-wider">Chủ đề bài dạy</span>
+                <h4 className="text-sm font-black text-[#003B3A] leading-snug">{registerDetailSlot.topic}</h4>
+                <p className="text-xs text-slate-500 font-medium">Môn: {registerDetailSlot.subjectName}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Giáo viên dạy</span>
+                  <span className="text-xs font-bold text-slate-800 mt-0.5">{registerDetailSlot.teacher?.teacherName}</span>
+                </div>
+                
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Lớp & Phòng</span>
+                  <span className="text-xs font-bold text-slate-800 mt-0.5">{registerDetailSlot.className || "Lớp"} • Phòng {registerDetailSlot.room || "Phòng học"}</span>
+                </div>
+                
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Thời gian</span>
+                  <span className="text-xs font-bold text-slate-800 mt-0.5">
+                    {registerDetailSlot.startTime} • {new Date(registerDetailSlot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
+                  </span>
+                </div>
+                
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">Cơ sở</span>
+                  <span className="text-xs font-bold text-slate-800 mt-0.5">{registerDetailSlot.campus?.campusName || registerDetailSlot.campusName || "Sky-Line"}</span>
+                </div>
               </div>
             </div>
             
@@ -3603,336 +2692,261 @@ export function ObservationClient(props: ObservationClientProps) {
               <button 
                 type="button" 
                 onClick={() => setRegisterDetailSlot(null)} 
-                className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all text-xs"
+                className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all text-xs cursor-pointer"
               >
                 Hủy bỏ
               </button>
-              {(() => {
-                const slotDate = new Date(registerDetailSlot.date);
-                const today = new Date();
-                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                const isExpired = slotDate < todayStart;
-                return (
-                  <button 
-                    type="button" 
-                    disabled={isExpired}
-                    onClick={() => handleRegister(registerDetailSlot.id)} 
-                    className="px-5 py-2 bg-[#48BFE3] hover:bg-[#008b82] disabled:bg-slate-200 disabled:text-slate-450 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all text-xs shadow-md"
-                  >
-                    {isExpired ? "Đã hết hạn" : "Xác nhận Đăng ký"}
-                  </button>
-                );
-              })()}
+              <button 
+                type="button" 
+                onClick={() => handleRegister(registerDetailSlot.id)} 
+                className="px-5 py-2 bg-[#008B82] hover:bg-[#007068] text-white font-bold rounded-xl transition-all text-xs shadow-md shadow-teal-800/20 cursor-pointer"
+              >
+                Xác nhận Đăng ký
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Evaluation Modal */}
+      {/* Evaluation Modal (Phiếu đánh giá chuyên môn chuẩn) */}
       {evalModal && (() => {
         const isReadOnly = !!evalModal.registration.evaluation;
         return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-300">
-            <div className="px-6 py-5 bg-gradient-to-r from-violet-700 to-violet-900 text-white flex items-center justify-between shrink-0">
-              <div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  <h3 className="font-black text-lg flex items-center gap-2"><ClipboardList className="w-5 h-5" /> Phiếu đánh giá tiết dự giờ</h3>
-                  {evalOverall && (() => {
-                    const isK12 = evalModal.slot.level !== "Mầm non";
-                    const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
-                    const passed = isK12
-                      ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
-                      : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
-                    return passed ? (
-                      <span className="text-white text-xs font-extrabold uppercase tracking-wider shadow-sm text-xs font-semibold">ĐẠT</span>
-                    ) : (
-                      <span className="text-white text-xs font-extrabold uppercase tracking-wider shadow-sm text-xs font-semibold">CHƯA ĐẠT</span>
-                    );
-                  })()}
-                </div>
-                {evalModal.slot.level === "Mầm non" ? (() => {
-                  const parts = (evalModal.slot.subjectName || "").split(" | ");
-                  const chuDe = parts[0] || "";
-                  const hoatDong = parts[1] || "";
-                  const deTai = evalModal.slot.topic || "";
-                  return (
-                    <p className="text-white/70 text-xs mt-0.5">
-                      Đề tài: <span className="font-extrabold text-white">{deTai}</span> • Chủ đề: <span className="font-extrabold text-white">{chuDe}</span> • Hoạt động: <span className="font-extrabold text-white">{hoatDong}</span>
-                    </p>
-                  );
-                })() : (
-                  <p className="text-white/70 text-xs mt-0.5">Bài dạy: {evalModal.slot.topic}</p>
-                )}
-              </div>
-              <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"><X className="w-5 h-5 text-white/80" /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-              {/* Evaluation Form Sections */}
-              {evalModal.slot.level !== "Mầm non" ? (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-4 text-xs font-semibold">
-                    <span className="text-xs font-black text-violet-800 uppercase tracking-wide">Tổng điểm tự động tính:</span>
-                    <span className="text-base font-black text-violet-900 bg-white px-4 py-1.5 rounded-xl shadow-sm border border-violet-100">
-                      {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
-                    </span>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+              <div className="px-6 py-5 bg-gradient-to-r from-[#003B3A] to-[#007068] text-white flex items-center justify-between shrink-0">
+                <div>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="font-black text-base sm:text-lg flex items-center gap-2">
+                      <ClipboardList className="w-5 h-5" /> Phiếu Đánh Giá Tiết Dự Giờ
+                    </h3>
                   </div>
-                  {K12_SECTIONS.map((sec, sIdx) => {
-                    // Calculate starting index of requirements for this section
-                    let reqStartIdx = 0;
-                    for (let i = 0; i < sIdx; i++) {
-                      reqStartIdx += K12_SECTIONS[i].requirements.length;
-                    }
-
-                    return (
-                      <div key={sIdx} className="space-y-4">
-                        <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                          <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-xs font-extrabold">{sIdx + 1}</span>
-                          {sec.name}
-                        </h4>
-                        <div className="space-y-3">
-                          {sec.requirements.map((req, rSubIdx) => {
-                            const globalIdx = reqStartIdx + rSubIdx;
-                            // Generate options from 0 to req.max with step 0.25
-                            const options = [];
-                            for (let v = 0; v <= req.max; v += 0.25) {
-                              options.push(Math.round(v * 100) / 100);
-                            }
-
-                            return (
-                              <div key={req.id} className="p-4 bg-slate-50/60 hover:bg-slate-50 rounded-2xl border border-slate-100 transition-all duration-200 flex flex-col md:flex-row md:items-start justify-between gap-4 text-xs font-semibold">
-                                <div className="space-y-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
-                                    <span className="text-xs font-bold font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
-                                  </div>
-                                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
-                                  
-                                  {/* Warning message for core requirements (1, 3, 6, 7) */}
-                                  {[1, 3, 6, 7].includes(req.id) && (
-                                    <div className={`mt-2 p-2 rounded-xl text-xs font-bold font-bold border transition-all ${
-                                      (() => {
-                                        const score = evalK12Scores[globalIdx] || 0;
-                                        if (req.id === 1) {
-                                          return score === 1.5 
-                                            ? "bg-emerald-50 border-emerald-200/60 text-emerald-700" 
-                                            : "bg-amber-50 border-amber-200/60 text-amber-700";
-                                        }
-                                        if (req.id === 3 || req.id === 6) {
-                                          if (score < 1.0) return "bg-rose-50 border-rose-200/60 text-rose-700";
-                                          if (score < 2.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
-                                          return "bg-emerald-50 border-emerald-200/60 text-emerald-700";
-                                        }
-                                        if (req.id === 7) {
-                                          if (score < 1.0) return "bg-rose-50 border-rose-200/60 text-rose-700";
-                                          if (score < 2.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
-                                          if (score < 3.0) return "bg-amber-50 border-amber-200/60 text-amber-700";
-                                          return "bg-emerald-50 border-emerald-200/60 text-emerald-700";
-                                        }
-                                        return "";
-                                      })()
-                                    }`}>
-                                      <div className="flex items-center gap-1.5">
-                                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                                        <span>
-                                          {(() => {
-                                            const score = evalK12Scores[globalIdx] || 0;
-                                            if (req.id === 1) {
-                                              return score === 1.5
-                                                ? "Yêu cầu chốt chặn: Đã đạt điểm tối đa (1.50đ) để xếp loại Giỏi."
-                                                : "Yêu cầu chốt chặn: Điểm chưa đạt tối đa (1.50đ). Tiết dạy không thể xếp loại Giỏi.";
-                                            }
-                                            if (req.id === 3 || req.id === 6) {
-                                              const label = req.id === 3 ? "Yêu cầu 3" : "Yêu cầu 6";
-                                              if (score < 1.0) return `${label} chốt chặn: Điểm dưới 1.0đ. Tiết dạy sẽ bị Không xếp loại (cần tối thiểu 1.0đ cho loại Trung bình).`;
-                                              if (score < 2.0) return `${label} chốt chặn: Điểm dưới 2.0đ. Tiết dạy chỉ có thể xếp loại Trung bình (cần tối thiểu 2.0đ cho loại Khá/Giỏi).`;
-                                              return `${label} chốt chặn: Đã đạt điểm tối đa (2.00đ) để xếp loại Khá/Giỏi.`;
-                                            }
-                                            if (req.id === 7) {
-                                              if (score < 1.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 1.0đ. Tiết dạy sẽ bị Không xếp loại (cần tối thiểu 1.0đ cho loại Trung bình).";
-                                              if (score < 2.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 2.0đ. Tiết dạy chỉ có thể xếp loại Trung bình (cần tối thiểu 2.0đ cho loại Khá/Giỏi).";
-                                              if (score < 3.0) return "Yêu cầu 7 chốt chặn: Điểm dưới 3.0đ. Tiết dạy tối đa chỉ xếp loại Khá (cần tối đa 3.0đ cho loại Giỏi).";
-                                              return "Yêu cầu 7 chốt chặn: Đã đạt điểm tối đa (3.00đ) để xếp loại Giỏi.";
-                                            }
-                                            return "";
-                                          })()}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
-                                  <span className="text-xs font-extrabold text-slate-500">Điểm:</span>
-                                  <select
-                                    value={evalK12Scores[globalIdx]}
-                                    onChange={(e) => {
-                                      const nextScores = [...evalK12Scores];
-                                      nextScores[globalIdx] = parseFloat(e.target.value);
-                                      setEvalK12Scores(nextScores);
-                                      const nextRank = calculateK12Ranking(nextScores);
-                                      setEvalOverall(nextRank);
-                                    }}
-                                    disabled={isReadOnly} className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none w-28 shadow-sm disabled:opacity-75 disabled:bg-slate-150"
-                                  >
-                                    {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
-                                  </select>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <p className="text-white/80 text-xs mt-0.5 font-medium">
+                    GV Dạy: <span className="font-bold text-white">{evalModal.slot.teacher?.teacherName}</span> • Bài dạy: <span className="font-bold text-white">{evalModal.slot.topic}</span>
+                  </p>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between p-4 text-xs font-semibold">
-                    <span className="text-xs font-black text-amber-800 uppercase tracking-wide">Tổng điểm tự động tính:</span>
-                    <span className="text-base font-black text-amber-900 bg-white px-4 py-1.5 rounded-xl shadow-sm border border-amber-100">
-                      {evalCriteria.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00 điểm
-                    </span>
-                  </div>
-                  {MAMNON_SECTIONS.map((sec, sIdx) => {
-                    let reqStartIdx = 0;
-                    for (let i = 0; i < sIdx; i++) {
-                      reqStartIdx += MAMNON_SECTIONS[i].requirements.length;
-                    }
-
-                    return (
-                      <div key={sIdx} className="space-y-4">
-                        <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
-                          <span className="w-5 h-5 bg-amber-100 text-amber-700 rounded-md flex items-center justify-center text-xs font-extrabold">{sIdx + 1}</span>
-                          {sec.name}
-                        </h4>
-                        <div className="space-y-3">
-                          {sec.requirements.map((req, rSubIdx) => {
-                            const globalIdx = reqStartIdx + rSubIdx;
-                            const options = [];
-                            for (let v = 0; v <= req.max; v += 0.25) {
-                              options.push(Math.round(v * 100) / 100);
-                            }
-
-                            return (
-                              <div key={req.id} className="p-4 flex flex-col md:flex-row md:items-start justify-between gap-4 text-xs font-semibold">
-                                <div className="space-y-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="px-2 py-0.5 text-xs font-bold font-extrabold bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
-                                    <span className="text-xs font-bold font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
-                                  </div>
-                                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">{req.text}</p>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
-                                  <span className="text-xs font-extrabold text-slate-500">Điểm:</span>
-                                  <select
-                                    value={evalCriteria[globalIdx]}
-                                    onChange={(e) => {
-                                      const nextCriteria = [...evalCriteria];
-                                      nextCriteria[globalIdx] = parseFloat(e.target.value);
-                                      setEvalCriteria(nextCriteria);
-                                      const nextRank = calculateMamNonRanking(nextCriteria);
-                                      setEvalOverall(nextRank);
-                                    }}
-                                    disabled={isReadOnly} className="rounded-xl border border-slate-200 p-2 bg-white text-sm font-black text-slate-800 focus:ring-2 focus:ring-amber-500 outline-none w-28 shadow-sm disabled:opacity-75 disabled:bg-slate-150"
-                                  >
-                                    {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
-                                  </select>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Text Fields */}
-              <div className="space-y-4">
-                <h4 className="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-5 h-5 bg-violet-100 text-violet-700 rounded-md flex items-center justify-center text-xs font-extrabold">
-                    {evalModal.slot.level !== "Mầm non" ? "5" : "2"}
-                  </span>
-                  Nhận xét chi tiết
-                </h4>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Ưu điểm nổi bật của tiết dạy</label>
-                  <textarea placeholder="Những điểm mạnh, sáng tạo, hiệu quả của tiết dạy..." rows={3} value={evalStrengths} onChange={e => setEvalStrengths(e.target.value)}
-                    disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Góp ý cải thiện / xây dựng</label>
-                  <textarea placeholder="Những điểm có thể cải thiện, gợi ý phương pháp thay thế..." rows={3} value={evalImprovements} onChange={e => setEvalImprovements(e.target.value)}
-                    disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs sm:text-sm font-extrabold text-slate-800">Nhận xét chung</label>
-                  <textarea placeholder="Tổng thể nhận xét của bạn về tiết dự giờ..." rows={2} value={evalGeneral} onChange={e => setEvalGeneral(e.target.value)}
-                    disabled={isReadOnly} className="w-full text-sm p-3 text-slate-800 focus:ring-2 focus:ring-violet-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100 text-xs font-semibold" />
-                </div>
+                <button onClick={() => setEvalModal(null)} className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer">
+                  <X className="w-5 h-5 text-white/80" />
+                </button>
               </div>
 
-              {/* Overall Rating */}
-              <div className="flex flex-col gap-3 p-4 text-xs font-semibold">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <label className="text-xs sm:text-sm font-extrabold text-slate-800 uppercase tracking-wider">Xếp loại tiết dạy tổng thể *</label>
-                    {evalModal.slot.level !== "Mầm non" && (
-                      <span className="text-xs font-black text-violet-700 text-xs font-semibold">
-                        Tổng điểm: {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)}/20đ
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-xs font-semibold">
+                {/* Score Summary Box */}
+                {evalModal.slot.level !== "Mầm non" ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-teal-50/50 rounded-2xl border border-teal-100">
+                      <span className="text-xs font-black text-teal-900 uppercase tracking-wide">Tổng điểm tự động:</span>
+                      <span className="text-base font-black text-teal-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-teal-200">
+                        {evalK12Scores.reduce((a, b) => a + b, 0).toFixed(2)} / 20.00 điểm
                       </span>
-                    )}
-                    {evalOverall && (() => {
-                      const isK12 = evalModal.slot.level !== "Mầm non";
-                      const score = isK12 ? evalK12Scores.reduce((a, b) => a + b, 0) : null;
-                      const passed = isK12
-                        ? (score !== null ? score >= 14 : (evalOverall === "Giỏi" || evalOverall === "Khá"))
-                        : (evalOverall === "Tốt" || evalOverall === "Khá" || evalOverall === "Đạt");
-                      return passed ? (
-                        <span className="text-emerald-700 text-xs font-extrabold uppercase tracking-wider text-xs font-semibold">ĐẠT</span>
-                      ) : (
-                        <span className="text-rose-700 text-xs font-extrabold uppercase tracking-wider text-xs font-semibold">CHƯA ĐẠT</span>
+                    </div>
+
+                    {K12_SECTIONS.map((sec, sIdx) => {
+                      let reqStartIdx = 0;
+                      for (let i = 0; i < sIdx; i++) {
+                        reqStartIdx += K12_SECTIONS[i].requirements.length;
+                      }
+
+                      return (
+                        <div key={sIdx} className="space-y-3">
+                          <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+                            <span className="w-5 h-5 bg-teal-100 text-teal-800 rounded-md flex items-center justify-center text-xs font-black">{sIdx + 1}</span>
+                            {sec.name}
+                          </h4>
+                          <div className="space-y-2.5">
+                            {sec.requirements.map((req, rSubIdx) => {
+                              const globalIdx = reqStartIdx + rSubIdx;
+                              const options = [];
+                              for (let v = 0; v <= req.max; v += 0.25) {
+                                options.push(Math.round(v * 100) / 100);
+                              }
+
+                              return (
+                                <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
+                                  <div className="space-y-1 min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                      <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                    <span className="text-xs font-bold text-slate-500">Điểm:</span>
+                                    <select
+                                      value={evalK12Scores[globalIdx]}
+                                      onChange={(e) => {
+                                        const nextScores = [...evalK12Scores];
+                                        nextScores[globalIdx] = parseFloat(e.target.value);
+                                        setEvalK12Scores(nextScores);
+                                        const nextRank = calculateK12Ranking(nextScores);
+                                        setEvalOverall(nextRank);
+                                      }}
+                                      disabled={isReadOnly}
+                                      className="rounded-xl border border-slate-200 p-2 bg-white text-xs font-black text-slate-800 outline-none w-24 shadow-2xs disabled:opacity-75"
+                                    >
+                                      {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                    </select>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
-                    })()}
+                    })}
                   </div>
-                  {evalModal.slot.level !== "Mầm non" ? (
-                    <span className="text-xs font-extrabold bg-violet-100 text-violet-700 px-2 py-0.5 rounded-md">
-                      Tự động gợi ý: {calculateK12Ranking(evalK12Scores)}
-                    </span>
-                  ) : (
-                    <span className="text-xs font-extrabold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md">
-                      Tự động gợi ý: {calculateMamNonRanking(evalCriteria)}
-                    </span>
-                  )}
+                ) : (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 bg-amber-50/50 rounded-2xl border border-amber-100">
+                      <span className="text-xs font-black text-amber-900 uppercase tracking-wide">Tổng điểm tự động:</span>
+                      <span className="text-base font-black text-amber-950 bg-white px-4 py-1.5 rounded-xl shadow-xs border border-amber-200">
+                        {evalCriteria.reduce((a, b) => a + b, 0).toFixed(2)} / 10.00 điểm
+                      </span>
+                    </div>
+
+                    {MAMNON_SECTIONS.map((sec, sIdx) => {
+                      let reqStartIdx = 0;
+                      for (let i = 0; i < sIdx; i++) {
+                        reqStartIdx += MAMNON_SECTIONS[i].requirements.length;
+                      }
+
+                      return (
+                        <div key={sIdx} className="space-y-3">
+                          <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2">
+                            <span className="w-5 h-5 bg-amber-100 text-amber-800 rounded-md flex items-center justify-center text-xs font-black">{sIdx + 1}</span>
+                            {sec.name}
+                          </h4>
+                          <div className="space-y-2.5">
+                            {sec.requirements.map((req, rSubIdx) => {
+                              const globalIdx = reqStartIdx + rSubIdx;
+                              const options = [];
+                              for (let v = 0; v <= req.max; v += 0.25) {
+                                options.push(Math.round(v * 100) / 100);
+                              }
+
+                              return (
+                                <div key={req.id} className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-2xl border border-slate-200/70 flex flex-col md:flex-row md:items-start justify-between gap-3">
+                                  <div className="space-y-1 min-w-0 flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <span className="px-2 py-0.5 text-[10px] font-black bg-slate-200 text-slate-700 rounded-md uppercase tracking-wider">{req.label}</span>
+                                      <span className="text-[11px] font-bold text-slate-400">(Tối đa: {req.max}đ)</span>
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-relaxed font-medium">{req.text}</p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2 shrink-0 self-end md:self-start">
+                                    <span className="text-xs font-bold text-slate-500">Điểm:</span>
+                                    <select
+                                      value={evalCriteria[globalIdx]}
+                                      onChange={(e) => {
+                                        const nextCriteria = [...evalCriteria];
+                                        nextCriteria[globalIdx] = parseFloat(e.target.value);
+                                        setEvalCriteria(nextCriteria);
+                                        const nextRank = calculateMamNonRanking(nextCriteria);
+                                        setEvalOverall(nextRank);
+                                      }}
+                                      disabled={isReadOnly}
+                                      className="rounded-xl border border-slate-200 p-2 bg-white text-xs font-black text-slate-800 outline-none w-24 shadow-2xs disabled:opacity-75"
+                                    >
+                                      {options.map(o => <option key={o} value={o}>{o.toFixed(2)}</option>)}
+                                    </select>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Qualitative Feedback */}
+                <div className="space-y-4 pt-2">
+                  <h4 className="font-black text-xs text-slate-800 uppercase tracking-wider">Nhận xét & Góp ý chuyên môn</h4>
+                  
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-600">Ưu điểm nổi bật của tiết dạy</label>
+                    <textarea
+                      placeholder="Những điểm mạnh, sáng tạo trong phương pháp và tổ chức hoạt động..."
+                      rows={2}
+                      value={evalStrengths}
+                      onChange={e => setEvalStrengths(e.target.value)}
+                      disabled={isReadOnly}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[11px] font-bold text-slate-600">Góp ý cải thiện / phát triển</label>
+                    <textarea
+                      placeholder="Các gợi ý phương pháp, phân bổ thời gian hoặc tổ chức hoạt động tốt hơn..."
+                      rows={2}
+                      value={evalImprovements}
+                      onChange={e => setEvalImprovements(e.target.value)}
+                      disabled={isReadOnly}
+                      className="w-full text-xs font-medium p-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-teal-500 outline-none resize-none disabled:opacity-75 disabled:bg-slate-100"
+                    />
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 gap-2">
-                  {(evalModal.slot.level !== "Mầm non"
-                    ? [["Giỏi","bg-emerald-500"],["Khá","bg-sky-500"],["Trung bình","bg-amber-400"],["Không xếp loại","bg-rose-500"]]
-                    : [["Tốt","bg-emerald-500"],["Khá","bg-sky-500"],["Đạt","bg-amber-400"],["Không đạt","bg-rose-500"]]
-                  ).map(([r, color]) => (
-                    <button key={r} type="button" onClick={() => { if (!isReadOnly) setEvalOverall(r); }} disabled={isReadOnly}
-                      className={`py-2.5 rounded-xl border-2 text-xs font-extrabold transition-all ${evalOverall === r ? `${color} border-transparent text-white shadow-md` : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"}`}>
-                      {r}
-                    </button>
-                  ))}
+
+                {/* Overall Rating Selection */}
+                <div className="flex flex-col gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs font-black text-slate-800 uppercase tracking-wide">Xếp loại tiết dạy tổng thể *</label>
+                    <span className="text-xs font-extrabold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-md border border-teal-200">
+                      Gợi ý: {evalModal.slot.level !== "Mầm non" ? calculateK12Ranking(evalK12Scores) : calculateMamNonRanking(evalCriteria)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    {(evalModal.slot.level !== "Mầm non"
+                      ? [["Giỏi","bg-emerald-600"],["Khá","bg-sky-600"],["Trung bình","bg-amber-500"],["Không xếp loại","bg-rose-600"]]
+                      : [["Tốt","bg-emerald-600"],["Khá","bg-sky-600"],["Đạt","bg-teal-600"],["Không đạt","bg-rose-600"]]
+                    ).map(([r, color]) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => { if (!isReadOnly) setEvalOverall(r); }}
+                        disabled={isReadOnly}
+                        className={`py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          evalOverall === r
+                            ? `${color} text-white shadow-md`
+                            : "bg-white border border-slate-200 text-slate-600 hover:border-slate-300"
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                <button type="button" onClick={() => setEvalModal(null)} className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Đóng</button>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-150 flex items-center justify-end gap-3 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setEvalModal(null)}
+                  className="px-5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition-all text-xs cursor-pointer"
+                >
+                  Đóng
+                </button>
                 {!isReadOnly && (
-                  <button type="button" onClick={handleSubmitEval} disabled={evalSubmitting}
-                    className="px-6 py-2.5 bg-violet-600 hover:bg-violet-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-sm">
+                  <button
+                    type="button"
+                    onClick={handleSubmitEval}
+                    disabled={evalSubmitting}
+                    className="px-6 py-2 bg-[#008B82] hover:bg-[#007068] disabled:bg-slate-200 disabled:text-slate-400 text-white font-extrabold rounded-xl transition-all shadow-md text-xs cursor-pointer"
+                  >
                     {evalSubmitting ? "Đang nộp..." : "Nộp phiếu đánh giá"}
                   </button>
                 )}
               </div>
             </div>
           </div>
-        </div>
         );
       })()}
     </div>
-  )
+  );
 }
