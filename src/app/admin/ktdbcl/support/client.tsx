@@ -5,7 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { 
   FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
-  MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
+  MapPin, User, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { OverviewDashboard } from "./overview"
