@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T06:53:33.664Z
+// Forced Vercel Deployment: 2026-08-24T07:16:39.219Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -14,7 +14,7 @@ import {
   createObservationSlot, updateObservationSlot, registerObservation, cancelObservation, getDepartmentTeachers,
   requestObservationSlot, respondToObservationRequest,
   deleteObservationSlot, getCreatedCountInMonth, getObservationSlots, triggerSlotReminder,
-  approveRegistration, submitEvaluation, updateTeacherObservationTargets
+  approveRegistration, submitEvaluation, updateTeacherObservationTargets, sendPendingEvaluationReminder
 } from "./actions"
 
 interface TeacherInfo {
@@ -2676,10 +2676,16 @@ export function ObservationClient(props: ObservationClientProps) {
                             Hết hạn
                           </button>
                         ) : isRegistered ? (
-                          <button onClick={() => handleCancelRegistration(myReg.id)}
-                            className="px-3.5 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer shadow-2xs">
-                            Hủy dự
-                          </button>
+                          myReg?.isApproved ? (
+                            <span className="px-3 py-1.5 text-xs font-black rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 inline-block shadow-2xs">
+                              Đã đăng ký (Đã duyệt)
+                            </span>
+                          ) : (
+                            <button onClick={() => handleCancelRegistration(myReg.id)}
+                              className="px-3.5 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer shadow-2xs">
+                              Hủy dự
+                            </button>
+                          )
                         ) : (
                           <button 
                             onClick={() => setRegisterDetailSlot(slot)}
@@ -2826,12 +2832,32 @@ export function ObservationClient(props: ObservationClientProps) {
                                             {regName}
                                           </span>
                                         </div>
-                                        <div>
+                                        <div className="flex items-center gap-1 shrink-0">
                                           {reg.isApproved ? (
-                                            <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                              <Check className="w-2.5 h-2.5 text-emerald-600" />
-                                              Đã duyệt
-                                            </span>
+                                            <>
+                                              <span className="px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                                <Check className="w-2.5 h-2.5 text-emerald-600" />
+                                                Đã duyệt
+                                              </span>
+                                              {!reg.evaluation && (
+                                                <button
+                                                  type="button"
+                                                  title="Gửi email nhắc nhở nhập đánh giá tới GV"
+                                                  onClick={async () => {
+                                                    const res = await sendPendingEvaluationReminder(reg.id);
+                                                    if (res.success) {
+                                                      alert(`Đã gửi email nhắc nhở nhập đánh giá tới Thầy/Cô ${regName}!`);
+                                                    } else {
+                                                      alert(res.error || "Gửi email thất bại");
+                                                    }
+                                                  }}
+                                                  className="px-2 py-0.5 text-[10px] font-black rounded-md bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+                                                >
+                                                  <Mail className="w-2.5 h-2.5 text-amber-600" />
+                                                  Nhắc mail
+                                                </button>
+                                              )}
+                                            </>
                                           ) : (
                                             <button
                                               type="button"
@@ -3056,7 +3082,16 @@ export function ObservationClient(props: ObservationClientProps) {
 
                           {/* Thao tác */}
                           <td className="p-3.5 text-right">
-                            {!myReg?.evaluation ? (
+                            {myReg?.evaluation ? (
+                              <span className="text-xs text-emerald-700 font-extrabold flex items-center justify-end gap-1">
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                                Hoàn thành
+                              </span>
+                            ) : myReg?.isApproved ? (
+                              <span className="px-2.5 py-1 text-[11px] font-bold rounded-xl bg-slate-100 text-slate-500 border border-slate-200 inline-block shadow-2xs" title="Tiết dạy đã được duyệt, không thể tự ý hủy">
+                                Đã duyệt (Không thể hủy)
+                              </span>
+                            ) : (
                               <button
                                 type="button"
                                 onClick={() => handleCancelRegistration(myReg?.id)}
@@ -3064,11 +3099,6 @@ export function ObservationClient(props: ObservationClientProps) {
                               >
                                 Hủy đăng ký
                               </button>
-                            ) : (
-                              <span className="text-xs text-emerald-700 font-extrabold flex items-center justify-end gap-1">
-                                <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
-                                Hoàn thành
-                              </span>
                             )}
                           </td>
                         </tr>

@@ -1,9 +1,10 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import {
   sendTeamsLackingObserversReminder,
   sendTeamsUpcomingAndEvalReminder
 } from "@/lib/teams";
+import { sendBatchPendingEvaluationReminders } from "@/app/teacher/du-gio/actions";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -85,10 +86,19 @@ export async function GET(request: Request) {
       } catch (e) {}
     }
 
+    // 2. Automated Daily 19:00 Email Reminders for Pending Evaluations
+    let evalReminderResult = null;
+    try {
+      evalReminderResult = await sendBatchPendingEvaluationReminders();
+    } catch (evalErr) {
+      console.error("[Cron Reminder] Error sending batch pending evaluation reminders:", evalErr);
+    }
+
     return NextResponse.json({
       success: true,
       scanned: upcomingSlots.length,
       remindedCount,
+      evalReminders: evalReminderResult,
       timestamp: new Date().toISOString()
     });
   } catch (error: any) {

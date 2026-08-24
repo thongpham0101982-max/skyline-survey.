@@ -1995,3 +1995,224 @@ export async function processExpiredSlotsNotifications() {
     return { success: false, error: e?.message || "Lỗi xử lý tiết hết hạn" };
   }
 }
+
+export async function sendPendingEvaluationReminder(registrationId: string) {
+  try {
+    const session = await auth();
+    if (!session || !session.user) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const reg = await prisma.observationRegistration.findUnique({
+      where: { id: registrationId },
+      include: {
+        teacher: { include: { user: true } },
+        evaluation: true,
+        slot: {
+          include: {
+            teacher: { include: { user: true } }
+          }
+        }
+      }
+    });
+
+    if (!reg) {
+      return { success: false, error: "Không tìm thấy thông tin đăng ký dự giờ" };
+    }
+
+    if (reg.evaluation) {
+      return { success: false, error: "Giáo viên đã hoàn thành nhập đánh giá cho tiết dạy này." };
+    }
+
+    if (!reg.isApproved) {
+      return { success: false, error: "Tiết dự chưa được duyệt, chưa thể gửi nhắc đánh giá." };
+    }
+
+    const observer = reg.teacher;
+    const slot = reg.slot;
+    const hostTeacher = slot.teacher;
+    const observerEmail = observer.email || observer.user?.email;
+
+    if (!observerEmail || !observerEmail.includes("@")) {
+      return { success: false, error: "Giáo viên chưa có email trong hệ thống." };
+    }
+
+    const slotDate = new Date(slot.date);
+    const formattedDateVi = slotDate.toLocaleDateString("vi-VN", {
+      weekday: "long",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric"
+    });
+
+    const hostBaseUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
+    const linkUrl = `${hostBaseUrl}/teacher/du-gio`;
+
+    const emailSubject = `[Skyline - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div style="background-color: #008B82; padding: 18px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+          <h2 style="color: #ffffff; margin: 0; font-size: 18px; text-transform: uppercase;">NHẮC NHỞ HOÀN TẤT NHẬP ĐÁNH GIÁ TIẾT DỰ GIỜ</h2>
+        </div>
+        
+        <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${observer.teacherName}</strong>,</p>
+        
+        <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+          Để hoàn thành tiết dự, Quý Thầy/Cô vui lòng hoàn tất nhập đánh giá tiết dạy <strong>"${slot.topic}"</strong> của Thầy/Cô <strong>${hostTeacher?.teacherName || "Giáo viên đứng lớp"}</strong> (Tiết <strong>${slot.startTime}</strong>, Ngày <strong>${formattedDateVi}</strong> tại <strong>${slot.campusName || "Cơ sở"}</strong>).
+        </p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 38%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode})</td></tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #008B82; font-weight: bold;">${slot.topic}</td></tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
+          <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Thời gian:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">Tiết ${slot.startTime} • ${formattedDateVi}</td></tr>
+          <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Phòng:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Sky-Line"} - Phòng ${slot.room || "học"}</td></tr>
+        </table>
+
+        <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin: 16px 0;">
+          <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: bold; line-height: 1.5;">
+            ⚠️ Lưu ý quan trọng: Hệ thống chỉ ghi nhận tiết dạy / tiết dự khi các Thầy/Cô hoàn thành nhập phiếu đánh giá.
+          </p>
+        </div>
+
+        <div style="text-align: center; margin: 25px 0;">
+          <a href="${linkUrl}" style="background-color: #008B82; color: #ffffff; padding: 13px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px;">
+            ✍️ Nhập Phiếu Đánh Giá Ngay Trên Hệ Thống
+          </a>
+        </div>
+
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+          Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+        </div>
+      </div>
+    `;
+
+    await sendEmail({ to: observerEmail, subject: emailSubject, html: emailHtml });
+
+    // Create in-app notification
+    if (observer.user?.id) {
+      await prisma.notification.create({
+        data: {
+          userId: observer.user.id,
+          title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
+          message: `Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
+          link: "/teacher/du-gio",
+          isRead: false
+        }
+      }).catch(e => console.error("In-app notif error:", e));
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("[sendPendingEvaluationReminder Error]:", error);
+    return { success: false, error: error.message || "Lỗi khi gửi email nhắc nhở" };
+  }
+}
+
+export async function sendBatchPendingEvaluationReminders() {
+  try {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    // Find all approved registrations of slots that have already occurred or are today, and lack evaluation
+    const pendingRegs = await prisma.observationRegistration.findMany({
+      where: {
+        isApproved: true,
+        evaluation: null,
+        slot: {
+          date: {
+            lte: today
+          }
+        }
+      },
+      include: {
+        teacher: { include: { user: true } },
+        slot: {
+          include: {
+            teacher: { include: { user: true } }
+          }
+        }
+      }
+    });
+
+    let sentCount = 0;
+    const hostBaseUrl = process.env.NEXTAUTH_URL || "https://skyline-survey.vercel.app";
+    const linkUrl = `${hostBaseUrl}/teacher/du-gio`;
+
+    for (const reg of pendingRegs) {
+      const observer = reg.teacher;
+      const slot = reg.slot;
+      const hostTeacher = slot.teacher;
+      const observerEmail = observer.email || observer.user?.email;
+
+      if (observerEmail && observerEmail.includes("@")) {
+        const slotDate = new Date(slot.date);
+        const formattedDateVi = slotDate.toLocaleDateString("vi-VN", {
+          weekday: "long",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric"
+        });
+
+        const emailSubject = `[Skyline - Dự Giờ] Nhắc nhở hoàn tất nhập đánh giá tiết dạy: "${slot.topic}"`;
+        const emailHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+            <div style="background-color: #008B82; padding: 18px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+              <h2 style="color: #ffffff; margin: 0; font-size: 18px; text-transform: uppercase;">NHẮC NHỞ HOÀN TẤT NHẬP ĐÁNH GIÁ TIẾT DỰ GIỜ</h2>
+            </div>
+            
+            <p style="color: #334155; font-size: 14px; line-height: 1.6;">Kính gửi Thầy/Cô <strong>${observer.teacherName}</strong>,</p>
+            
+            <p style="color: #334155; font-size: 14px; line-height: 1.6;">
+              Để hoàn thành tiết dự, Quý Thầy/Cô vui lòng hoàn tất nhập đánh giá tiết dạy <strong>"${slot.topic}"</strong> của Thầy/Cô <strong>${hostTeacher?.teacherName || "Giáo viên đứng lớp"}</strong> (Tiết <strong>${slot.startTime}</strong>, Ngày <strong>${formattedDateVi}</strong> tại <strong>${slot.campusName || "Cơ sở"}</strong>).
+            </p>
+
+            <table style="width: 100%; border-collapse: collapse; margin: 20px 0; background-color: #f8fafc; border-radius: 8px; overflow: hidden;">
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569; width: 38%;">Giáo viên dạy:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">${hostTeacher?.teacherName} (${hostTeacher?.teacherCode})</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Bài dạy / Chủ đề:</td><td style="padding: 10px 14px; color: #008B82; font-weight: bold;">${slot.topic}</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Môn & Lớp:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.subjectName} (${slot.grade} - ${slot.className || "Lớp học"})</td></tr>
+              <tr style="border-bottom: 1px solid #e2e8f0;"><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Thời gian:</td><td style="padding: 10px 14px; color: #0f172a; font-weight: bold;">Tiết ${slot.startTime} • ${formattedDateVi}</td></tr>
+              <tr><td style="padding: 10px 14px; font-weight: bold; color: #475569;">Cơ sở & Phòng:</td><td style="padding: 10px 14px; color: #0f172a;">${slot.campusName || "Sky-Line"} - Phòng ${slot.room || "học"}</td></tr>
+            </table>
+
+            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 6px; margin: 16px 0;">
+              <p style="color: #92400e; font-size: 13px; margin: 0; font-weight: bold; line-height: 1.5;">
+                ⚠️ Lưu ý quan trọng: Hệ thống chỉ ghi nhận tiết dạy / tiết dự khi các Thầy/Cô hoàn thành nhập phiếu đánh giá.
+              </p>
+            </div>
+
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="${linkUrl}" style="background-color: #008B82; color: #ffffff; padding: 13px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 14px;">
+                ✍️ Nhập Phiếu Đánh Giá Ngay Trên Hệ Thống
+              </a>
+            </div>
+
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center;">
+              Thông báo tự động từ Hệ thống Quản lý Dự giờ Skyline (Khảo thí & ĐBCL)<br/>Email gửi mặc định từ: bankhaothi@skylineschool.edu.vn
+            </div>
+          </div>
+        `;
+
+        sendEmail({ to: observerEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Batch pending eval email error:", e));
+        sentCount++;
+
+        if (observer.user?.id) {
+          prisma.notification.create({
+            data: {
+              userId: observer.user.id,
+              title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
+              message: `Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
+              link: "/teacher/du-gio",
+              isRead: false
+            }
+          }).catch(e => console.error("Batch notif error:", e));
+        }
+      }
+    }
+
+    return { success: true, scanned: pendingRegs.length, sentCount };
+  } catch (error: any) {
+    console.error("[sendBatchPendingEvaluationReminders Error]:", error);
+    return { success: false, error: error.message };
+  }
+}
