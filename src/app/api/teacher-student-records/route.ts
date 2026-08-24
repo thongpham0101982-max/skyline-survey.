@@ -25,30 +25,62 @@ function safeDateToISO(dateVal: any): string {
   }
 }
 
-function parseCommittedSubjects(note?: string | null, resultStr?: string | null): string[] {
-  const text = `${note || ""} ${resultStr || ""}`
-  if (!text.trim()) return []
+function parseCommittedSubjects(note?: string | null, resultStr?: string | null, className?: string): string[] {
+  const text = `${note || ""} ${resultStr || ""}`.trim()
+  if (!text) return []
   
-  const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết):\s*\[?([^\]\r\n]+)\]?/i)
+  let rawSubs: string[] = []
+  const match = text.match(/(?:Môn cam kết|Mon cam ket|Cam kết|Môn kiểm tra lại):\s*\[?([^\]\r\n]+)\]?/i)
   if (match && match[1]) {
-    const splitSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
-    if (splitSubs.length > 0) return splitSubs
+    rawSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
   }
 
-  const subs: string[] = []
-  if (/Toán|Math/i.test(text)) subs.push("Toán")
-  if (/Văn|Tiếng Việt|Ngữ văn|Literature/i.test(text)) subs.push("Tiếng Việt")
-  if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
-    subs.push("Tiếng Anh (viết)")
+  if (rawSubs.length === 0) {
+    if (/Toán|Math/i.test(text)) rawSubs.push("Môn Toán")
+    if (/Tiếng Việt/i.test(text)) rawSubs.push("Tiếng Việt")
+    else if (/Ngữ văn|Literature/i.test(text)) rawSubs.push("Ngữ Văn")
+    else if (/Văn/i.test(text)) {
+      if (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) rawSubs.push("Tiếng Việt")
+      else rawSubs.push("Ngữ Văn")
+    }
+    if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
+      rawSubs.push("Tiếng Anh (viết)")
+    }
+    if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
+      rawSubs.push("Tiếng Anh (vấn đáp)")
+    }
+    if (rawSubs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+      rawSubs.push("Tiếng Anh")
+    }
+    if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý")
   }
-  if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
-    subs.push("Tiếng Anh (vấn đáp)")
-  }
-  if (subs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
-    subs.push("Tiếng Anh")
-  }
-  if (/Tâm lý|Psychology/i.test(text)) subs.push("Tâm lý")
-  return subs
+
+  const finalSubs: string[] = []
+  rawSubs.forEach((s) => {
+    const clean = s.trim().replace(/^môn\s+/i, "")
+    const lower = clean.toLowerCase()
+    if (lower.includes("tiếng việt") || lower === "tv") {
+      if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
+    } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature")) {
+      if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
+    } else if (lower === "văn" || lower.includes("văn")) {
+      if (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) {
+        if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
+      } else {
+        if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
+      }
+    } else if (lower.includes("toán") || lower.includes("math")) {
+      if (!finalSubs.includes("Môn Toán")) finalSubs.push("Môn Toán")
+    } else if (lower.includes("anh") || lower.includes("english")) {
+      if (!finalSubs.includes(clean)) finalSubs.push(clean)
+    } else if (lower.includes("tâm lý") || lower.includes("psychology")) {
+      if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
+    } else {
+      if (!finalSubs.includes(clean)) finalSubs.push(clean)
+    }
+  })
+
+  return finalSubs
 }
 
 export async function GET(req: Request) {
@@ -291,7 +323,7 @@ export async function GET(req: Request) {
         })
         return {
           ...s,
-          entranceCommitmentSubjects: assessment ? parseCommittedSubjects(assessment.directorNote, assessment.admissionResult) : []
+          entranceCommitmentSubjects: assessment ? parseCommittedSubjects(assessment.directorNote, assessment.admissionResult, s.class?.className || s.className || "") : []
         }
       })
 
@@ -376,7 +408,7 @@ export async function GET(req: Request) {
           })
           if (!assessment) return null
 
-          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult)
+          const committedSubjects = parseCommittedSubjects(assessment.directorNote, assessment.admissionResult, s.class?.className || s.className || "")
           if (committedSubjects.length === 0) return null
 
           const isHomeroom = homeroomClasses.some(c => c.id === s.classId)
