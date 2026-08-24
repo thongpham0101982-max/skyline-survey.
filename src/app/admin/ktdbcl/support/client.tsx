@@ -1034,7 +1034,7 @@ export function SupportClient({
         (commitmentSubjectFilter === "Tiếng Anh" && c.committedSubject?.includes("Anh"))
 
       const rowGrade = c.grade ? (c.grade.startsWith("Khối") ? c.grade : "Khối " + c.grade) : ((c.className || "").match(/^(\d+)/) ? "Khối " + (c.className || "").match(/^(\d+)/)[1] : (c.className?.includes("Mầm") ? "Mầm non" : "Khác"))
-      const matchesGrade = commitmentGradeFilter === "ALL" || rowGrade === commitmentGradeFilter || (rowGrade.includes(commitmentGradeFilter.replace("Khối ", "")))
+      const matchesGrade = commitmentGradeFilter === "ALL" || rowGrade === commitmentGradeFilter
 
       return matchesSearch && matchesCampus && matchesStatus && matchesSubject && matchesGrade
     })
