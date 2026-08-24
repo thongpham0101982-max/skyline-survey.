@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T04:43:11.417Z
+// Forced Vercel Deployment: 2026-08-24T04:48:48.133Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1332,65 +1332,81 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
       {/* MAIN TOP NAVIGATION TABS */}
-      <div className="bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 p-1.5 shadow-sm sticky top-2 z-20">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
+      <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200/90 p-2 shadow-sm sticky top-2 z-20">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {/* Tab 1: Emerald / Teal */}
           <button
             type="button"
             onClick={() => setActiveMainTab("register_request")}
-            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
               activeMainTab === "register_request"
-                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
-                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+                ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-[#008B82] text-white shadow-lg shadow-emerald-700/25 scale-[1.02] border border-emerald-400/40"
+                : "text-emerald-950 bg-emerald-50/60 hover:bg-emerald-100/80 border border-emerald-200/70 hover:scale-[1.01]"
             }`}
           >
-            <PlusCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+            <PlusCircle className={`w-4 h-4 shrink-0 ${activeMainTab === "register_request" ? "text-emerald-200" : "text-emerald-600"}`} />
             <span className="truncate">1. ĐĂNG KÝ & XIN DỰ GIỜ</span>
           </button>
 
+          {/* Tab 2: Cyan / Blue */}
           <button
             type="button"
             onClick={() => setActiveMainTab("overview_slots")}
-            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
               activeMainTab === "overview_slots"
-                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
-                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+                ? "bg-gradient-to-r from-[#008B82] via-teal-700 to-[#003B3A] text-white shadow-lg shadow-teal-900/30 scale-[1.02] border border-teal-400/40"
+                : "text-teal-950 bg-teal-50/60 hover:bg-teal-100/80 border border-teal-200/70 hover:scale-[1.01]"
             }`}
           >
-            <Layers className="w-4 h-4 text-[#48BFE3] shrink-0" />
+            <Layers className={`w-4 h-4 shrink-0 ${activeMainTab === "overview_slots" ? "text-cyan-200" : "text-[#008B82]"}`} />
             <span className="truncate">2. TỔNG HỢP KẾT QUẢ ĐĂNG KÝ</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${activeMainTab === "overview_slots" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-800"}`}>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              activeMainTab === "overview_slots" 
+                ? "bg-white/25 text-white border border-white/30" 
+                : "bg-teal-200/80 text-teal-950 border border-teal-300/80"
+            }`}>
               {slots.length}
             </span>
           </button>
 
+          {/* Tab 3: Amber / Orange */}
           <button
             type="button"
             onClick={() => setActiveMainTab("my_schedule")}
-            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
               activeMainTab === "my_schedule"
-                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
-                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+                ? "bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white shadow-lg shadow-amber-700/30 scale-[1.02] border border-amber-400/40"
+                : "text-amber-950 bg-amber-50/60 hover:bg-amber-100/80 border border-amber-200/70 hover:scale-[1.01]"
             }`}
           >
-            <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
+            <Calendar className={`w-4 h-4 shrink-0 ${activeMainTab === "my_schedule" ? "text-amber-200" : "text-amber-600"}`} />
             <span className="truncate">3. LỊCH DẠY & DỰ GIỜ CỦA TÔI</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${activeMainTab === "my_schedule" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"}`}>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              activeMainTab === "my_schedule" 
+                ? "bg-white/25 text-white border border-white/30" 
+                : "bg-amber-200/80 text-amber-950 border border-amber-300/80"
+            }`}>
               {myTaughtSlots.length + myObservedSlots.length}
             </span>
           </button>
 
+          {/* Tab 4: Violet / Purple */}
           <button
             type="button"
             onClick={() => setActiveMainTab("evaluations")}
-            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2.5 py-3.5 px-3 sm:px-4 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer ${
               activeMainTab === "evaluations"
-                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
-                : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
+                ? "bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-700 text-white shadow-lg shadow-violet-700/30 scale-[1.02] border border-violet-400/40"
+                : "text-violet-950 bg-violet-50/60 hover:bg-violet-100/80 border border-violet-200/70 hover:scale-[1.01]"
             }`}
           >
-            <Award className="w-4 h-4 text-violet-400 shrink-0" />
+            <Award className={`w-4 h-4 shrink-0 ${activeMainTab === "evaluations" ? "text-violet-200" : "text-violet-600"}`} />
             <span className="truncate">4. KẾT QUẢ ĐÁNH GIÁ NHẬN ĐƯỢC</span>
-            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${activeMainTab === "evaluations" ? "bg-white/20 text-white" : "bg-violet-100 text-violet-900"}`}>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${
+              activeMainTab === "evaluations" 
+                ? "bg-white/25 text-white border border-white/30" 
+                : "bg-violet-200/80 text-violet-950 border border-violet-300/80"
+            }`}>
               {receivedEvaluations.length}
             </span>
           </button>
@@ -1405,14 +1421,14 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Panel 1: Creation & Observer Request Form */}
         <div className={`w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#008B82]"}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/70 shadow-inner w-full sm:w-auto">
+            <div className="flex items-center gap-2 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80 shadow-inner w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setCreationMode("TEACHER_OPEN")}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                   creationMode === "TEACHER_OPEN"
-                    ? "bg-[#008B82] text-white shadow-md shadow-teal-800/20"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                    ? "bg-gradient-to-r from-[#008B82] to-[#006059] text-white shadow-md shadow-teal-800/25 border border-teal-400/40"
+                    : "text-teal-900 bg-teal-50/70 hover:bg-teal-100 border border-teal-200/60"
                 }`}
               >
                 <Plus className="w-4 h-4" />
@@ -1423,11 +1439,11 @@ export function ObservationClient(props: ObservationClientProps) {
                 onClick={() => setCreationMode("OBSERVER_REQUEST")}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                   creationMode === "OBSERVER_REQUEST"
-                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
-                    : "text-indigo-700 bg-indigo-50/70 border border-indigo-100 hover:bg-indigo-100"
+                    ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md shadow-indigo-800/25 border border-indigo-400/40"
+                    : "text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 border border-indigo-200/60"
                 }`}
               >
-                <Sparkles className="w-4 h-4 text-indigo-500" />
+                <Sparkles className="w-4 h-4" />
                 2. GVBM XIN DỰ GIỜ
               </button>
             </div>
@@ -2139,8 +2155,8 @@ export function ObservationClient(props: ObservationClientProps) {
 
           {/* Status & Department Tabs */}
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* Status Pills */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shadow-inner">
+            {/* Status Pills with Rich Highlights */}
+            <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-inner">
               {(() => {
                 const todayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                 const availableSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
@@ -2156,47 +2172,56 @@ export function ObservationClient(props: ObservationClientProps) {
 
                 return (
                   <>
+                    {/* Tag Tiết mới ĐK: Emerald Highlight */}
                     <button
                       type="button"
                       onClick={() => setActiveStatusTab("new")}
-                      className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                         activeStatusTab === "new"
-                          ? "bg-[#008B82] text-white shadow-xs"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                          ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30 border border-emerald-400/40 scale-[1.02]"
+                          : "text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200/80"
                       }`}
                     >
                       <span>✨ Tiết mới ĐK</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "new" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800"}`}>
+                      <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                        activeStatusTab === "new" ? "bg-white/25 text-white border border-white/30" : "bg-emerald-200/80 text-emerald-950 border border-emerald-300"
+                      }`}>
                         {newCount}
                       </span>
                     </button>
 
+                    {/* Tag Hết hạn: Rose / Red Highlight */}
                     <button
                       type="button"
                       onClick={() => setActiveStatusTab("expired")}
-                      className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                         activeStatusTab === "expired"
-                          ? "bg-rose-600 text-white shadow-xs"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                          ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md shadow-rose-600/30 border border-rose-400/40 scale-[1.02]"
+                          : "text-rose-900 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/80"
                       }`}
                     >
                       <span>⏳ Hết hạn</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "expired" ? "bg-white/20 text-white" : "bg-rose-100 text-rose-800"}`}>
+                      <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                        activeStatusTab === "expired" ? "bg-white/25 text-white border border-white/30" : "bg-rose-200/80 text-rose-950 border border-rose-300"
+                      }`}>
                         {expiredCount}
                       </span>
                     </button>
 
+                    {/* Tag Xin dự giờ: Indigo Highlight */}
                     <button
                       type="button"
                       onClick={() => setActiveStatusTab("gbm_request")}
-                      className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                      className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
                         activeStatusTab === "gbm_request"
-                          ? "bg-indigo-600 text-white shadow-xs"
-                          : "text-slate-600 hover:text-slate-900 hover:bg-white/80"
+                          ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-600/30 border border-indigo-400/40 scale-[1.02]"
+                          : "text-indigo-900 bg-indigo-50/70 hover:bg-indigo-100 border border-indigo-200/80"
                       }`}
                     >
                       <span>📩 Xin dự giờ</span>
-                      <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeStatusTab === "gbm_request" ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-800"}`}>
+                      <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                        activeStatusTab === "gbm_request" ? "bg-white/25 text-white border border-white/30" : "bg-indigo-200/80 text-indigo-950 border border-indigo-300"
+                      }`}>
                         {reqCount}
                       </span>
                     </button>
@@ -2205,7 +2230,7 @@ export function ObservationClient(props: ObservationClientProps) {
               })()}
             </div>
 
-            {/* Department Filter Switch */}
+            {/* Department Filter Switch with Rich Highlights */}
             {(() => {
               const openSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
               const myDeptCount = openSlots.filter(s => checkIsMyDept(s)).length;
@@ -2213,25 +2238,48 @@ export function ObservationClient(props: ObservationClientProps) {
               const allCount = openSlots.length;
 
               return (
-                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shadow-inner">
+                <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shadow-inner">
+                  {/* Tag Thuộc TCM: Teal Highlight */}
                   <button onClick={() => setActiveDeptTab("my-dept")}
-                    className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${activeDeptTab === "my-dept" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:bg-white/80"}`}>
+                    className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                      activeDeptTab === "my-dept" 
+                        ? "bg-gradient-to-r from-teal-700 to-emerald-800 text-white shadow-md shadow-teal-900/30 border border-teal-400/40 scale-[1.02]" 
+                        : "text-teal-950 bg-teal-50/70 hover:bg-teal-100 border border-teal-200/80"
+                    }`}>
                     <span>🏫 Thuộc TCM</span>
-                    <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "my-dept" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-800"}`}>
+                    <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                      activeDeptTab === "my-dept" ? "bg-white/25 text-white border border-white/30" : "bg-teal-200/80 text-teal-950 border border-teal-300"
+                    }`}>
                       {myDeptCount}
                     </span>
                   </button>
+
+                  {/* Tag TCM khác: Sky / Blue Highlight */}
                   <button onClick={() => setActiveDeptTab("other-dept")}
-                    className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${activeDeptTab === "other-dept" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:bg-white/80"}`}>
+                    className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                      activeDeptTab === "other-dept" 
+                        ? "bg-gradient-to-r from-sky-700 to-blue-800 text-white shadow-md shadow-sky-900/30 border border-sky-400/40 scale-[1.02]" 
+                        : "text-sky-950 bg-sky-50/70 hover:bg-sky-100 border border-sky-200/80"
+                    }`}>
                     <span>🌐 TCM khác</span>
-                    <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "other-dept" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
+                    <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                      activeDeptTab === "other-dept" ? "bg-white/25 text-white border border-white/30" : "bg-sky-200/80 text-sky-950 border border-sky-300"
+                    }`}>
                       {otherDeptCount}
                     </span>
                   </button>
+
+                  {/* Tag Tất cả: Dark Skyline Highlight */}
                   <button onClick={() => setActiveDeptTab("all")}
-                    className={`px-3 py-1.5 text-xs font-black rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${activeDeptTab === "all" ? "bg-[#003B3A] text-white shadow-xs" : "text-slate-600 hover:bg-white/80"}`}>
+                    className={`px-3.5 py-2 text-xs font-black rounded-xl transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                      activeDeptTab === "all" 
+                        ? "bg-gradient-to-r from-[#003B3A] to-slate-900 text-white shadow-md shadow-slate-900/30 border border-slate-500/40 scale-[1.02]" 
+                        : "text-slate-900 bg-slate-100/90 hover:bg-slate-200 border border-slate-300/80"
+                    }`}>
                     <span>⭐ Tất cả</span>
-                    <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black ${activeDeptTab === "all" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
+                    <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
+                      activeDeptTab === "all" ? "bg-white/25 text-white border border-white/30" : "bg-slate-300/80 text-slate-950 border border-slate-400"
+                    }`}>
                       {allCount}
                     </span>
                   </button>
