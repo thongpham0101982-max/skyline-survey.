@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T04:30:22.197Z
+// Forced Vercel Deployment: 2026-08-24T04:36:08.162Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1328,14 +1328,14 @@ export function ObservationClient(props: ObservationClientProps) {
       </div>
 
       {/* MAIN TOP NAVIGATION TABS */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-1.5 shadow-xs sticky top-2 z-20 backdrop-blur-md bg-white/95">
+      <div className="bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 p-1.5 shadow-sm sticky top-2 z-20">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-1.5">
           <button
             type="button"
             onClick={() => setActiveMainTab("register_request")}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
               activeMainTab === "register_request"
-                ? "bg-[#003B3A] text-white shadow-md shadow-teal-950/20"
+                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
                 : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
             }`}
           >
@@ -1346,15 +1346,15 @@ export function ObservationClient(props: ObservationClientProps) {
           <button
             type="button"
             onClick={() => setActiveMainTab("overview_slots")}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
               activeMainTab === "overview_slots"
-                ? "bg-[#003B3A] text-white shadow-md shadow-teal-950/20"
+                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
                 : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
             }`}
           >
             <Layers className="w-4 h-4 text-[#48BFE3] shrink-0" />
             <span className="truncate">2. TỔNG HỢP KẾT QUẢ ĐĂNG KÝ</span>
-            <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black shrink-0 ${activeMainTab === "overview_slots" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-800"}`}>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${activeMainTab === "overview_slots" ? "bg-white/20 text-white" : "bg-teal-100 text-teal-800"}`}>
               {slots.length}
             </span>
           </button>
@@ -1362,15 +1362,15 @@ export function ObservationClient(props: ObservationClientProps) {
           <button
             type="button"
             onClick={() => setActiveMainTab("my_schedule")}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
               activeMainTab === "my_schedule"
-                ? "bg-[#003B3A] text-white shadow-md shadow-teal-950/20"
+                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
                 : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
             }`}
           >
             <Calendar className="w-4 h-4 text-amber-400 shrink-0" />
             <span className="truncate">3. LỊCH DẠY & DỰ GIỜ CỦA TÔI</span>
-            <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black shrink-0 ${activeMainTab === "my_schedule" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"}`}>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${activeMainTab === "my_schedule" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-900"}`}>
               {myTaughtSlots.length + myObservedSlots.length}
             </span>
           </button>
@@ -1378,15 +1378,15 @@ export function ObservationClient(props: ObservationClientProps) {
           <button
             type="button"
             onClick={() => setActiveMainTab("evaluations")}
-            className={`flex items-center justify-center gap-2 py-3 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-3.5 px-3 sm:px-4 rounded-xl text-xs font-black transition-all cursor-pointer ${
               activeMainTab === "evaluations"
-                ? "bg-[#003B3A] text-white shadow-md shadow-teal-950/20"
+                ? "bg-gradient-to-r from-[#003B3A] to-[#00504e] text-white shadow-md shadow-teal-950/25 scale-[1.01]"
                 : "text-slate-600 hover:bg-slate-100/80 hover:text-slate-900"
             }`}
           >
             <Award className="w-4 h-4 text-violet-400 shrink-0" />
             <span className="truncate">4. KẾT QUẢ ĐÁNH GIÁ NHẬN ĐƯỢC</span>
-            <span className={`px-1.5 py-0.2 text-[10px] rounded-md font-black shrink-0 ${activeMainTab === "evaluations" ? "bg-white/20 text-white" : "bg-violet-100 text-violet-900"}`}>
+            <span className={`px-2 py-0.5 text-[10px] rounded-full font-black shrink-0 ${activeMainTab === "evaluations" ? "bg-white/20 text-white" : "bg-violet-100 text-violet-900"}`}>
               {receivedEvaluations.length}
             </span>
           </button>
@@ -1395,8 +1395,10 @@ export function ObservationClient(props: ObservationClientProps) {
 
       {/* TAB 1: 1. ĐĂNG KÝ & XIN DỰ GIỜ */}
       {activeMainTab === "register_request" && (
-        <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
-          {/* Panel 1: Creation & Observer Request Form */}
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-300">
+          {/* Main Form Column */}
+          <div className="lg:col-span-8">
+            {/* Panel 1: Creation & Observer Request Form */}
         <div className={`w-full bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 flex flex-col gap-5 border-t-4 ${isMamNonTeacher ? "border-t-amber-500" : "border-t-[#008B82]"}`}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/70 shadow-inner w-full sm:w-auto">
@@ -1904,6 +1906,65 @@ export function ObservationClient(props: ObservationClientProps) {
             </form>
           )}
         </div>
+          </div>
+
+          {/* Right Guidance & Policy Column */}
+          <div className="lg:col-span-4 flex flex-col gap-5">
+            {/* Card 1: Monthly limit quota */}
+            <div className="bg-gradient-to-br from-[#003B3A] to-[#005c56] text-white rounded-3xl p-6 shadow-md relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-8 -mt-8 pointer-events-none" />
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-black uppercase tracking-wider text-teal-200">Tiến độ mở tiết tháng</span>
+                <span className="px-2.5 py-0.5 rounded-full bg-white/15 text-white font-black text-xs">
+                  Tháng {new Date().getMonth() + 1}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-3xl font-black">{monthlyLimitCount}</span>
+                <span className="text-white/70 text-xs font-bold">/ 2 tiết quy định</span>
+              </div>
+              <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden mb-2">
+                <div 
+                  className="h-full bg-gradient-to-r from-teal-300 to-emerald-400 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (monthlyLimitCount / 2) * 100)}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-white/80 leading-relaxed">
+                {monthlyLimitCount >= 2 
+                  ? "✅ Bạn đã hoàn thành hạn mức mở tiết dự giờ trong tháng này." 
+                  : `Mỗi giáo viên mở tối đa 2 tiết/tháng. Bạn còn ${2 - monthlyLimitCount} lượt mở tiết.`}
+              </p>
+            </div>
+
+            {/* Card 2: Rules & Guidelines */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-xs flex flex-col gap-4">
+              <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                <div className="w-8 h-8 rounded-xl bg-teal-50 text-[#008B82] flex items-center justify-center font-bold">
+                  <Info className="w-4 h-4" />
+                </div>
+                <h4 className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Quy định & Lưu ý dự giờ</h4>
+              </div>
+
+              <div className="space-y-3 text-xs text-slate-600">
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">1</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Tối đa 4 người dự:</strong> Mỗi tiết dạy mở tối đa 4 chỗ đăng ký để đảm bảo chất lượng giờ học.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">2</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Phê duyệt tham dự:</strong> Giáo viên đứng lớp có quyền xem và duyệt danh sách người đăng ký trước giờ dạy.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">3</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Đính kèm giáo án:</strong> Khuyến khích tải lên file Kế hoạch bài dạy (.PDF) để người dự chuẩn bị tốt nhất.</p>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-teal-50 text-[#008B82] flex items-center justify-center font-black text-[10px] shrink-0 mt-0.5">4</span>
+                  <p className="leading-snug"><strong className="text-slate-800">Nộp phiếu đánh giá:</strong> Người dự thực hiện chấm điểm trực tiếp trên hệ thống ngay sau tiết học.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1915,10 +1976,13 @@ export function ObservationClient(props: ObservationClientProps) {
           <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
             <div className="flex items-center gap-2">
               <Award className="w-5 h-5 text-[#008B82]" />
-              <span className="font-black text-sm text-[#003B3A] uppercase tracking-wider">Đăng ký nhanh</span>
+              <div>
+                <span className="font-black text-sm text-[#003B3A] uppercase tracking-wider">Đăng ký nhanh tiết dạy</span>
+                <p className="text-xs text-slate-400 font-medium">Các tiết dạy mới nhất của đồng nghiệp còn chỗ dự</p>
+              </div>
             </div>
-            <span className="text-xs font-black bg-teal-50 text-[#008B82] px-2.5 py-0.5 rounded-full border border-teal-200/60 animate-pulse">
-              ⚡ Gợi ý mới nhất
+            <span className="text-xs font-black bg-teal-50 text-[#008B82] px-3 py-1 rounded-full border border-teal-200/60 animate-pulse">
+              ⚡ Gợi ý tối ưu
             </span>
           </div>
 
@@ -1989,7 +2053,7 @@ export function ObservationClient(props: ObservationClientProps) {
               }
 
               return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {suggested.map(slot => {
                     const slotDate = new Date(slot.date);
                     const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || slot.registrations.length >= slot.maxSeats;
@@ -1999,14 +2063,16 @@ export function ObservationClient(props: ObservationClientProps) {
 
                     return (
                       <div key={slot.id} className={`p-4 rounded-2xl border flex flex-col justify-between gap-3 text-xs transition-all hover:shadow-md ${isMamNon ? "bg-amber-50/30 hover:bg-amber-50/50 border-amber-200/70" : "bg-slate-50/70 hover:bg-teal-50/30 border-slate-200/70"}`}>
-                        <div className="min-w-0 space-y-1.5">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded-md ${isMamNon ? "bg-amber-100 text-amber-900" : "bg-teal-100/80 text-teal-800"}`}>
-                              {isMamNon ? "Mầm non" : "K-12"}
-                            </span>
-                            <span className="text-xs font-black text-slate-700 truncate">{slot.subjectName}</span>
+                        <div className="min-w-0 space-y-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className={`px-2 py-0.5 text-[10px] font-black uppercase rounded-md ${isMamNon ? "bg-amber-100 text-amber-900" : "bg-teal-100/80 text-teal-800"}`}>
+                                {isMamNon ? "Mầm non" : "K-12"}
+                              </span>
+                              <span className="text-xs font-black text-slate-700 truncate">{slot.subjectName}</span>
+                            </div>
                             {campusDisplay && (
-                              <span className="px-1.5 py-0.2 text-[10px] font-extrabold rounded-md bg-slate-200/80 text-slate-700">
+                              <span className="px-2 py-0.5 text-[10px] font-extrabold rounded-md bg-slate-200/80 text-slate-700 shrink-0">
                                 {campusDisplay}
                               </span>
                             )}
@@ -2022,9 +2088,11 @@ export function ObservationClient(props: ObservationClientProps) {
                             <span className="text-teal-700 font-bold">{slot.startTime}</span>
                           </div>
                         </div>
-                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-150">
+                        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-slate-150">
                           {!isPastSlot ? (
-                            <span className="text-[11px] font-bold text-teal-800">Còn {remainingSeats} chỗ</span>
+                            <span className="text-[11px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200/60">
+                              Còn {remainingSeats} chỗ
+                            </span>
                           ) : <span />}
                           <button 
                             disabled={isPastSlot}
@@ -2032,7 +2100,7 @@ export function ObservationClient(props: ObservationClientProps) {
                             className={`px-4 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-xs shrink-0 cursor-pointer ${
                               isPastSlot
                                 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                                : "bg-[#008B82] hover:bg-[#007068] text-white hover:scale-105 active:scale-95"
+                                : "bg-gradient-to-r from-[#008B82] to-[#007068] hover:from-[#007068] hover:to-[#005c56] text-white hover:scale-105 active:scale-95 shadow-md shadow-teal-900/15"
                             }`}
                           >
                             {isPastSlot ? (slot.registrations.length >= slot.maxSeats ? "Đầy chỗ" : "Hết hạn") : "Đăng ký"}
