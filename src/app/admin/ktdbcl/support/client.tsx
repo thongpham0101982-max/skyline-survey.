@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { Mail, Send, Sparkles, CheckSquare, Square, FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
+import { Building2, Mail, Send, Sparkles, CheckSquare, Square, FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
   MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
 } from "lucide-react"
