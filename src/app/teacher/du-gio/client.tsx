@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T06:23:29.560Z
+// Forced Vercel Deployment: 2026-08-24T06:29:56.984Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1083,8 +1083,8 @@ export function ObservationClient(props: ObservationClientProps) {
         // Tab Hết hạn: chứa tất cả các tiết quá hạn (cả tiết tự mở và tiết xin dự giờ)
         if (!isExpired) return false;
       } else if (activeStatusTab === "new") {
+        // Tag Tiết mới ĐK: Hiện TẤT CẢ các tiết đăng ký tự mở tiết còn hạn
         if (slot.requestOrigin === "OBSERVER_REQUEST") return false;
-        if (isHost || isObserver) return false;
         if (isExpired) return false;
       }
 
@@ -2152,8 +2152,8 @@ export function ObservationClient(props: ObservationClientProps) {
                 const todayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
                 const availableSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
                 
-                // Tiết mới ĐK: tiết mở còn hạn (không tính observer request)
-                const newCount = availableSlots.filter(s => s.requestOrigin !== "OBSERVER_REQUEST" && new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
+                // Tiết mới ĐK: TẤT CẢ các tiết tự mở còn hạn
+                const newCount = slots.filter(s => s.requestOrigin !== "OBSERVER_REQUEST" && new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
                 
                 // Hết hạn: toàn bộ tiết quá hạn (bao gồm cả tiết mở và tiết xin dự giờ quá hạn)
                 const expiredCount = slots.filter(s => new Date(s.date) < todayStart || s.status === "EXPIRED").length;
@@ -2280,21 +2280,33 @@ export function ObservationClient(props: ObservationClientProps) {
           </div>
         </div>
 
-        {/* Compact Advanced Filter Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+        {/* Compact Advanced Filter Bar (7 Filters) */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+          {/* 1. Cơ sở */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Cơ sở</span>
-            <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+            <select value={filterCampusId} onChange={e => { setFilterCampusId(e.target.value); setFilterClassId("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả cơ sở</option>
               {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
             </select>
           </div>
 
+          {/* 2. Tổ chuyên môn */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Tổ chuyên môn</span>
+            <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
+              <option value="all">Tất cả TCM</option>
+              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </div>
+
+          {/* 3. Bậc học */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Bậc học</span>
-            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); setFilterClassId("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả bậc</option>
               <option value="Mầm non">Mầm non</option>
               <option value="Tiểu học">Tiểu học</option>
@@ -2304,25 +2316,55 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
+          {/* 4. Khối lớp */}
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Khối lớp</span>
-            <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-50">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Khối</span>
+            <select value={filterGrade} onChange={e => { setFilterGrade(e.target.value); setFilterClassId("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả khối</option>
-              {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+              {filterLevel !== "all" ? (
+                getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)
+              ) : (
+                <>
+                  <optgroup label="Tiểu học">
+                    {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"].map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                  <optgroup label="THCS">
+                    {["Khối 6", "Khối 7", "Khối 8", "Khối 9"].map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                  <optgroup label="THPT">
+                    {["Khối 10", "Khối 11", "Khối 12"].map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                  <optgroup label="Mầm non">
+                    {(mamNonGrades.length > 0 ? mamNonGrades : ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]).map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                </>
+              )}
             </select>
           </div>
 
+          {/* 5. Lớp */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Lớp</span>
+            <select value={filterClassId} onChange={e => setFilterClassId(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
+              <option value="all">Tất cả lớp</option>
+              {filterAvailableClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+            </select>
+          </div>
+
+          {/* 6. Ngày dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Ngày dạy</span>
             <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]" />
           </div>
 
+          {/* 7. Tiết dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tiết dạy</span>
             <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả tiết</option>
               {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -2376,6 +2418,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
                     <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">Giáo viên</th>
+                    <th className="p-4">Cơ sở</th>
                     <th className="p-4">Tổ chuyên môn</th>
                     <th className="p-4">Môn học & Chủ đề</th>
                     <th className="p-4">Thời gian / Phòng</th>
@@ -2482,7 +2525,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <tr key={slot.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="p-4 text-center font-black text-slate-400">{index + 1}</td>
                       
-                      {/* Cột GIÁO VIÊN: Hiện avatar + tên (KHÔNG hiện mã NV) */}
+                      {/* Cột GIÁO VIÊN */}
                       <td className="p-4">
                         <div className="flex items-center gap-2.5">
                           <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher.teacherName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-2xs`}>
@@ -2492,6 +2535,13 @@ export function ObservationClient(props: ObservationClientProps) {
                             {slot.teacher.teacherName}
                           </span>
                         </div>
+                      </td>
+
+                      {/* Cột CƠ SỞ */}
+                      <td className="p-4">
+                        <span className="px-2.5 py-1 rounded-xl bg-teal-50 text-teal-800 border border-teal-200/80 text-xs font-black inline-block shadow-2xs">
+                          {slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line"}
+                        </span>
                       </td>
 
                       {/* Cột TỔ CHUYÊN MÔN */}
@@ -2617,13 +2667,17 @@ export function ObservationClient(props: ObservationClientProps) {
 
                       {/* Cột THAO TÁC / ĐĂNG KÝ */}
                       <td className="p-4 text-right">
-                        {isExpired ? (
+                        {isHost ? (
+                          <span className="px-3.5 py-1.5 text-xs font-black rounded-xl bg-amber-50 text-amber-800 border border-amber-200 inline-block shadow-2xs">
+                            Tôi dạy
+                          </span>
+                        ) : isExpired ? (
                           <button disabled className="px-3.5 py-1.5 text-xs font-bold rounded-xl bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">
                             Hết hạn
                           </button>
                         ) : isRegistered ? (
                           <button onClick={() => handleCancelRegistration(myReg.id)}
-                            className="px-3.5 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer">
+                            className="px-3.5 py-1.5 text-xs font-black bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl transition-all border border-rose-200 cursor-pointer shadow-2xs">
                             Hủy dự
                           </button>
                         ) : (
