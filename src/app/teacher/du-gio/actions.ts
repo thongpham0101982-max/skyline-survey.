@@ -179,7 +179,9 @@ export async function getObservationData(academicYearId?: string) {
     })
 
     const campuses = await prisma.campus.findMany({
-      where: { status: "ACTIVE" },
+      where: {
+        NOT: { status: "INACTIVE" }
+      },
       orderBy: { campusName: "asc" }
     })
 
@@ -213,6 +215,7 @@ export async function getObservationSlots(filters: {
     deptId?: string
     level?: string
     grade?: string
+    classId?: string
     period?: string
     date?: string
     academicYearId?: string
@@ -243,42 +246,95 @@ export async function getObservationSlots(filters: {
       status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN"] }
     }
 
+    const andConditions: any[] = []
+
     if (activeYear) {
-      where.OR = [
-        { academicYearId: activeYear.id },
-        { academicYearId: null }
-      ]
+      andConditions.push({
+        OR: [
+          { academicYearId: activeYear.id },
+          { academicYearId: null }
+        ]
+      })
     }
 
     if (filters.level && filters.level !== "all") {
       if (filters.level === "Phổ thông K-12") {
-        where.level = { in: ["Tiểu học", "THCS", "THPT", "Phổ thông K-12"] };
+        andConditions.push({ level: { in: ["Tiểu học", "THCS", "THPT", "Phổ thông K-12"] } });
       } else {
-        where.level = filters.level;
+        andConditions.push({ level: filters.level });
       }
     }
     if (filters.grade && filters.grade !== "all") {
-      where.grade = filters.grade
+      andConditions.push({ grade: filters.grade })
     }
     if (filters.period && filters.period !== "all") {
-      where.startTime = filters.period
+      andConditions.push({ startTime: filters.period })
     }
     if (filters.date) {
       const filterDate = new Date(filters.date)
       const startOfDay = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate())
       const endOfDay = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate() + 1)
-      where.date = {
-        gte: startOfDay,
-        lt: endOfDay
-      }
+      andConditions.push({
+        date: {
+          gte: startOfDay,
+          lt: endOfDay
+        }
+      })
     }
     if (filters.campusId && filters.campusId !== "all") {
-      where.campusId = filters.campusId
+      const targetCampus = await prisma.campus.findUnique({
+        where: { id: filters.campusId },
+        select: { id: true, campusCode: true, campusName: true }
+      });
+      const campusOrs: any[] = [
+        { campusId: filters.campusId },
+        { teacher: { campusId: filters.campusId } }
+      ];
+      if (targetCampus) {
+        if (targetCampus.campusCode) {
+          campusOrs.push({ campusId: targetCampus.campusCode });
+          campusOrs.push({ teacher: { campusId: targetCampus.campusCode } });
+        }
+        if (targetCampus.campusName) {
+          campusOrs.push({ campusName: targetCampus.campusName });
+        }
+      }
+      andConditions.push({ OR: campusOrs });
     }
     if (filters.deptId && filters.deptId !== "all") {
-      where.teacher = {
-        departmentId: filters.deptId
+      andConditions.push({
+        teacher: {
+          OR: [
+            { departmentId: filters.deptId },
+            { departmentAssignments: { some: { departmentId: filters.deptId } } }
+          ]
+        }
+      })
+    }
+    if (filters.classId && filters.classId !== "all") {
+      const cls = await prisma.class.findUnique({
+        where: { id: filters.classId },
+        select: { id: true, className: true }
+      });
+      if (cls) {
+        andConditions.push({
+          OR: [
+            { classId: cls.id },
+            { className: cls.className }
+          ]
+        });
+      } else {
+        andConditions.push({
+          OR: [
+            { classId: filters.classId },
+            { className: filters.classId }
+          ]
+        });
       }
+    }
+
+    if (andConditions.length > 0) {
+      where.AND = andConditions
     }
 
     const slots = await prisma.observationSlot.findMany({

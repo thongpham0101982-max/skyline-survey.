@@ -24,6 +24,7 @@ export default async function AdminObservationPage(props: {
   const date = searchParams.date || ""
   const campusId = searchParams.campusId || "all"
   const deptId = searchParams.deptId || "all"
+  const classId = searchParams.classId || "all"
 
   const refDataResult = await getObservationData(academicYearId)
   if (!refDataResult.success) {
@@ -38,6 +39,7 @@ export default async function AdminObservationPage(props: {
     academicYearId,
     level,
     grade,
+    classId,
     period,
     date,
     campusId,
@@ -53,7 +55,7 @@ export default async function AdminObservationPage(props: {
       teachers={refDataResult.teachers || []}
       campuses={refDataResult.campuses || []}
       classes={refDataResult.classes || []}
-      initialFilters={{ level, grade, period, date, campusId, deptId, academicYearId }}
+      initialFilters={{ level, grade, classId, period, date, campusId, deptId, academicYearId }}
       academicYears={refDataResult.academicYears || []}
       selectedYearId={refDataResult.selectedYearId || undefined}
     />

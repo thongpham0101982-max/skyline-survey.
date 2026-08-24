@@ -48,7 +48,7 @@ interface ObservationClientProps {
   teachers: any[]
   campuses: CampusInfo[]
   classes: ClassInfo[]
-  initialFilters: { level: string; period: string; grade: string; date: string; campusId: string; deptId: string; academicYearId?: string }
+  initialFilters: { level: string; period: string; grade: string; classId?: string; date: string; campusId: string; deptId: string; academicYearId?: string }
   academicYears?: { id: string; name: string; status: string }[]
   selectedYearId?: string
 }
@@ -235,12 +235,13 @@ export function ObservationClient(props: ObservationClientProps) {
     }
   }, [myDeptTeachers]);
 
-  const [filterLevel, setFilterLevel] = useState(initialFilters.level)
-  const [filterGrade, setFilterGrade] = useState(initialFilters.grade)
-  const [filterPeriod, setFilterPeriod] = useState("all")
-  const [filterDate, setFilterDate] = useState(initialFilters.date)
-  const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId)
-  const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId)
+  const [filterLevel, setFilterLevel] = useState(initialFilters.level || "all")
+  const [filterGrade, setFilterGrade] = useState(initialFilters.grade || "all")
+  const [filterPeriod, setFilterPeriod] = useState(initialFilters.period || "all")
+  const [filterDate, setFilterDate] = useState(initialFilters.date || "")
+  const [filterCampusId, setFilterCampusId] = useState(initialFilters.campusId || "all")
+  const [filterDeptId, setFilterDeptId] = useState(initialFilters.deptId || "all")
+  const [filterClassId, setFilterClassId] = useState(initialFilters.classId || "all")
   const [filterAcademicYearId, setFilterAcademicYearId] = useState(initialFilters.academicYearId || selectedYearId || "")
 
   const handleAcademicYearChange = (yearId: string) => {
@@ -565,23 +566,35 @@ export function ObservationClient(props: ObservationClientProps) {
   const handleSearch = useCallback(async () => {
     const params = new URLSearchParams(window.location.search)
     if (filterSchoolBlock && filterSchoolBlock !== "all") params.set("schoolBlock", filterSchoolBlock); else params.delete("schoolBlock")
-    if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
-    if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
-    if (filterDate) params.set("date", filterDate); else params.delete("date")
     if (filterCampusId && filterCampusId !== "all") params.set("campusId", filterCampusId); else params.delete("campusId")
     if (filterDeptId && filterDeptId !== "all") params.set("deptId", filterDeptId); else params.delete("deptId")
+    if (filterLevel && filterLevel !== "all") params.set("level", filterLevel); else params.delete("level")
+    if (filterGrade && filterGrade !== "all") params.set("grade", filterGrade); else params.delete("grade")
+    if (filterClassId && filterClassId !== "all") params.set("classId", filterClassId); else params.delete("classId")
+    if (filterDate) params.set("date", filterDate); else params.delete("date")
+    if (filterPeriod && filterPeriod !== "all") params.set("period", filterPeriod); else params.delete("period")
     
     setIsSearching(true)
     try {
       router.push(`${pathname}?${params.toString()}`)
-      const res = await getObservationSlots({ schoolBlock: filterSchoolBlock, level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
+      const res = await getObservationSlots({ 
+        schoolBlock: filterSchoolBlock, 
+        campusId: filterCampusId, 
+        deptId: filterDeptId, 
+        level: filterLevel, 
+        grade: filterGrade, 
+        classId: filterClassId, 
+        period: filterPeriod, 
+        date: filterDate,
+        academicYearId: filterAcademicYearId
+      })
       if (res.success && res.slots) { setSlots(res.slots) }
     } catch (e) {
       console.error(e)
     } finally {
       setIsSearching(false)
     }
-  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, router, pathname])
+  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, filterAcademicYearId, router, pathname])
 
   useEffect(() => {
     if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current)
@@ -589,29 +602,65 @@ export function ObservationClient(props: ObservationClientProps) {
       handleSearch()
     }, 400)
     return () => { if (autoSearchTimerRef.current) clearTimeout(autoSearchTimerRef.current) }
-  }, [filterSchoolBlock, filterLevel, filterGrade, filterPeriod, filterDate, filterCampusId, filterDeptId, handleSearch])
+  }, [filterSchoolBlock, filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterPeriod, filterDate, handleSearch])
+
+  const filterAvailableClasses = useMemo(() => {
+    return classes.filter(c => {
+      if (filterCampusId && filterCampusId !== "all" && c.campusId !== filterCampusId) return false;
+      if (filterLevel && filterLevel !== "all") {
+        let cleanLevel = filterLevel.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        if (filterLevel === "Tiểu học") cleanLevel = "tieu hoc";
+        else if (filterLevel === "THCS") cleanLevel = "thcs";
+        else if (filterLevel === "THPT") cleanLevel = "thpt";
+        else if (filterLevel === "Mầm non") cleanLevel = "mam non";
+        if (cleanLevel !== "pho thong k-12") {
+          const cLevelClean = (c.level || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          if (cLevelClean && cLevelClean !== cleanLevel) return false;
+        }
+      }
+      if (filterGrade && filterGrade !== "all") {
+        const cGradeClean = (c.grade || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        const fGradeClean = filterGrade.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        const fGradeNum = filterGrade.replace(/Khối\s+/gi, "").replace(/Khoi\s+/gi, "").trim();
+        if (cGradeClean !== fGradeClean && !cGradeClean.includes(fGradeClean) && !fGradeClean.includes(cGradeClean)) {
+          if (!cGradeClean.endsWith(fGradeNum) && cGradeClean !== fGradeNum) return false;
+        }
+      }
+      return true;
+    });
+  }, [classes, filterCampusId, filterLevel, filterGrade]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0
     if (filterCampusId && filterCampusId !== "all") count++
+    if (filterDeptId && filterDeptId !== "all") count++
     if (filterLevel && filterLevel !== "all") count++
     if (filterGrade && filterGrade !== "all") count++
+    if (filterClassId && filterClassId !== "all") count++
     if (filterDate) count++
     if (filterPeriod && filterPeriod !== "all") count++
     return count
-  }, [filterCampusId, filterLevel, filterGrade, filterDate, filterPeriod])
+  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterPeriod])
 
   const activeFilterTags = useMemo(() => {
     const tags: { key: string; label: string; value: string; onRemove: () => void }[] = []
     if (filterCampusId && filterCampusId !== "all") {
       const campus = campuses.find(c => c.id === filterCampusId)
-      tags.push({ key: "campus", label: "Cơ sở", value: campus?.campusName || filterCampusId, onRemove: () => setFilterCampusId("all") })
+      tags.push({ key: "campus", label: "Cơ sở", value: campus?.campusName || filterCampusId, onRemove: () => { setFilterCampusId("all"); setFilterClassId("all"); } })
+    }
+    if (filterDeptId && filterDeptId !== "all") {
+      const dept = departments.find(d => d.id === filterDeptId)
+      tags.push({ key: "dept", label: "Tổ CM", value: dept?.name || filterDeptId, onRemove: () => setFilterDeptId("all") })
     }
     if (filterLevel && filterLevel !== "all") {
-      tags.push({ key: "level", label: "Bậc học", value: filterLevel, onRemove: () => { setFilterLevel("all"); setFilterGrade("all") } })
+      tags.push({ key: "level", label: "Bậc học", value: filterLevel, onRemove: () => { setFilterLevel("all"); setFilterGrade("all"); setFilterClassId("all"); } })
     }
     if (filterGrade && filterGrade !== "all") {
-      tags.push({ key: "grade", label: "Khối", value: filterGrade, onRemove: () => setFilterGrade("all") })
+      tags.push({ key: "grade", label: "Khối", value: filterGrade, onRemove: () => { setFilterGrade("all"); setFilterClassId("all"); } })
+    }
+    if (filterClassId && filterClassId !== "all") {
+      const cls = classes.find(c => c.id === filterClassId || c.className === filterClassId)
+      tags.push({ key: "class", label: "Lớp", value: cls?.className || filterClassId, onRemove: () => setFilterClassId("all") })
     }
     if (filterDate) {
       const d = new Date(filterDate)
@@ -622,20 +671,31 @@ export function ObservationClient(props: ObservationClientProps) {
       tags.push({ key: "period", label: "Tiết", value: filterPeriod, onRemove: () => setFilterPeriod("all") })
     }
     return tags
-  }, [filterCampusId, filterLevel, filterGrade, filterDate, filterPeriod, campuses])
+  }, [filterCampusId, filterDeptId, filterLevel, filterGrade, filterClassId, filterDate, filterPeriod, campuses, departments, classes])
 
   const clearAllFilters = () => {
     setFilterCampusId("all")
+    setFilterDeptId("all")
     setFilterLevel("all")
     setFilterGrade("all")
+    setFilterClassId("all")
     setFilterDate("")
     setFilterPeriod("all")
     setFilterSchoolBlock("all")
-    setFilterDeptId("all")
   }
 
   const refreshSlots = async () => {
-    const res = await getObservationSlots({ schoolBlock: filterSchoolBlock, level: filterLevel, grade: filterGrade, period: filterPeriod, date: filterDate, campusId: filterCampusId, deptId: filterDeptId })
+    const res = await getObservationSlots({ 
+      schoolBlock: filterSchoolBlock, 
+      campusId: filterCampusId, 
+      deptId: filterDeptId, 
+      level: filterLevel, 
+      grade: filterGrade, 
+      classId: filterClassId, 
+      period: filterPeriod, 
+      date: filterDate,
+      academicYearId: filterAcademicYearId
+    })
     if (res.success && res.slots) setSlots(res.slots)
   }
 
@@ -2002,20 +2062,32 @@ export function ObservationClient(props: ObservationClientProps) {
         </div>
 
         {/* Compact Advanced Filter Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl text-xs font-semibold">
+          {/* Cơ sở */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Cơ sở</span>
-            <select value={filterCampusId} onChange={e => setFilterCampusId(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+            <select value={filterCampusId} onChange={e => { setFilterCampusId(e.target.value); setFilterClassId("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả cơ sở</option>
               {campuses.map(c => <option key={c.id} value={c.id}>{c.campusName}</option>)}
             </select>
           </div>
 
+          {/* Tổ chuyên môn */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Tổ chuyên môn</span>
+            <select value={filterDeptId} onChange={e => setFilterDeptId(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
+              <option value="all">Tất cả TCM</option>
+              {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+            </select>
+          </div>
+
+          {/* Bậc học */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Bậc học</span>
-            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); }}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+            <select value={filterLevel} onChange={e => { setFilterLevel(e.target.value); setFilterGrade("all"); setFilterClassId("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả bậc</option>
               <option value="Mầm non">Mầm non</option>
               <option value="Tiểu học">Tiểu học</option>
@@ -2025,25 +2097,55 @@ export function ObservationClient(props: ObservationClientProps) {
             </select>
           </div>
 
+          {/* Khối lớp */}
           <div className="flex flex-col gap-1">
-            <span className="text-[11px] font-black text-slate-400 uppercase">Khối lớp</span>
-            <select value={filterGrade} onChange={e => setFilterGrade(e.target.value)} disabled={filterLevel === "all"}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none disabled:opacity-50">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Khối</span>
+            <select value={filterGrade} onChange={e => { setFilterGrade(e.target.value); setFilterClassId("all"); }}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả khối</option>
-              {getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)}
+              {filterLevel !== "all" ? (
+                getGradesForLevel(filterLevel).map(g => <option key={g} value={g}>{g}</option>)
+              ) : (
+                <>
+                  <optgroup label="Tiểu học">
+                    {["Khối 1", "Khối 2", "Khối 3", "Khối 4", "Khối 5"].map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                  <optgroup label="THCS">
+                    {["Khối 6", "Khối 7", "Khối 8", "Khối 9"].map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                  <optgroup label="THPT">
+                    {["Khối 10", "Khối 11", "Khối 12"].map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                  <optgroup label="Mầm non">
+                    {(mamNonGrades.length > 0 ? mamNonGrades : ["Nhà trẻ 24-36 tháng", "Mẫu giáo bé", "Mẫu giáo nhỡ", "Mẫu giáo lớn"]).map(g => <option key={g} value={g}>{g}</option>)}
+                  </optgroup>
+                </>
+              )}
             </select>
           </div>
 
+          {/* Lớp */}
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-black text-slate-400 uppercase">Lớp</span>
+            <select value={filterClassId} onChange={e => setFilterClassId(e.target.value)}
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
+              <option value="all">Tất cả lớp</option>
+              {filterAvailableClasses.map(c => <option key={c.id} value={c.id}>{c.className}</option>)}
+            </select>
+          </div>
+
+          {/* Ngày dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Ngày dạy</span>
             <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none" />
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-1.5 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]" />
           </div>
 
+          {/* Tiết dạy */}
           <div className="flex flex-col gap-1">
             <span className="text-[11px] font-black text-slate-400 uppercase">Tiết dạy</span>
             <select value={filterPeriod} onChange={e => setFilterPeriod(e.target.value)}
-              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none">
+              className="w-full text-xs font-bold rounded-xl border border-slate-200 p-2 bg-white text-slate-800 outline-none focus:border-[#008B82] focus:ring-1 focus:ring-[#008B82]">
               <option value="all">Tất cả tiết</option>
               {periodOptions.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
@@ -2085,6 +2187,7 @@ export function ObservationClient(props: ObservationClientProps) {
                     <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">GV Xin dự giờ</th>
                     <th className="p-4">GV Dạy</th>
+                    <th className="p-4">Cơ sở</th>
                     <th className="p-4">Môn học</th>
                     <th className="p-4">Tên bài dạy / Chủ đề</th>
                     <th className="p-4">Lớp</th>
@@ -2097,6 +2200,7 @@ export function ObservationClient(props: ObservationClientProps) {
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-black uppercase text-[11px] tracking-wider">
                     <th className="p-4 text-center w-12">TT</th>
                     <th className="p-4">Giáo viên</th>
+                    <th className="p-4">Cơ sở</th>
                     <th className="p-4">Tổ chuyên môn</th>
                     <th className="p-4">Môn học & Chủ đề</th>
                     <th className="p-4">Thời gian / Phòng</th>
@@ -2141,6 +2245,11 @@ export function ObservationClient(props: ObservationClientProps) {
                             </div>
                             <span className="font-black text-slate-800">{slot.teacher?.teacherName}</span>
                           </div>
+                        </td>
+                        <td className="p-4">
+                          <span className="px-2.5 py-1 bg-teal-50 text-teal-800 border border-teal-200/80 font-bold rounded-lg text-xs inline-block shadow-2xs">
+                            {slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line"}
+                          </span>
                         </td>
                         <td className="p-4">
                           <span className="px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-lg text-xs">
@@ -2215,6 +2324,13 @@ export function ObservationClient(props: ObservationClientProps) {
                         </div>
                       </td>
 
+                      {/* Cột CƠ SỞ */}
+                      <td className="p-4">
+                        <span className="px-2.5 py-1 rounded-xl bg-teal-50 text-teal-800 border border-teal-200/80 text-xs font-black inline-block shadow-2xs">
+                          {slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "Sky-Line"}
+                        </span>
+                      </td>
+
                       {/* Cột TỔ CHUYÊN MÔN */}
                       <td className="p-4">
                         <span className="px-3 py-1 rounded-xl bg-slate-100 text-slate-700 border border-slate-200/80 text-xs font-extrabold inline-block shadow-2xs">
@@ -2237,7 +2353,10 @@ export function ObservationClient(props: ObservationClientProps) {
                               </div>
                               <p className="font-black text-amber-950 text-xs leading-snug">Đề tài: {deTai}</p>
                               <p className="text-[11px] text-slate-500 font-medium">
-                                Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} ({slot.campusName || "Cơ sở"})
+                                Hoạt động: <span className="text-amber-800 font-bold">{hoatDong}</span> • Lớp: {slot.className || "Chưa xếp"} {(() => {
+    const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
+    return campusDisplay ? `(${campusDisplay})` : "";
+  })()}
                               </p>
                             </div>
                           );
@@ -2250,12 +2369,15 @@ export function ObservationClient(props: ObservationClientProps) {
                               </span>
                               <span>•</span>
                               <span>Lớp {slot.className || "Chưa xếp"}</span>
-                              {slot.campusName && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-slate-400">({slot.campusName})</span>
-                                </>
-                              )}
+                              {(() => {
+                                const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
+                                return campusDisplay ? (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-slate-400 font-semibold">({campusDisplay})</span>
+                                  </>
+                                ) : null;
+                              })()}
                             </div>
                           </div>
                         )}
