@@ -132,13 +132,38 @@ export async function GET(req: Request) {
         }
       });
 
-      const parseCommittedSubjects = (note: any) => {
+            const parseCommittedSubjects = (note: any) => {
         if (!note) return []
         const match = note.match(/Môn cam kết:\s*\[([^\]]+)\]/i)
+        let rawSubs: string[] = []
         if (match && match[1]) {
-          return match[1].split(",").map((s: any) => s.trim())
+          rawSubs = match[1].split(/[,;]/).map((s: any) => s.trim()).filter(Boolean)
+        } else {
+          if (/Anh|English/i.test(note)) rawSubs.push("Tiếng Anh")
+          if (/Toán|Math/i.test(note)) rawSubs.push("Toán")
+          if (/Tiếng Việt/i.test(note)) rawSubs.push("Tiếng Việt")
+          if (/Ngữ văn|Văn/i.test(note)) rawSubs.push("Ngữ Văn")
+          if (/Tâm lý|Psychology/i.test(note)) rawSubs.push("Tâm lý")
         }
-        return []
+        const finalSubs: string[] = []
+        rawSubs.forEach((s) => {
+          const clean = s.trim().replace(/^môn\s+/i, "")
+          const lower = clean.toLowerCase()
+          if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
+            if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh")
+          } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
+            if (!finalSubs.includes("Toán")) finalSubs.push("Toán")
+          } else if (lower.includes("tiếng việt") || lower.includes("tieng viet")) {
+            if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
+          } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
+            if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
+          } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
+            if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
+          } else {
+            if (!finalSubs.includes(clean)) finalSubs.push(clean)
+          }
+        })
+        return finalSubs
       }
 
       const cleanString = (str: any) => {
@@ -319,7 +344,7 @@ export async function GET(req: Request) {
           .replace(/\s+/g, "")
       }
 
-      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined, className?: string) => {
+            const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined, className?: string) => {
         const text = `${note || ""} ${resultStr || ""}`.trim()
         if (!text) return []
         
@@ -330,20 +355,14 @@ export async function GET(req: Request) {
         }
 
         if (rawSubs.length === 0) {
-          if (/Toán|Math/i.test(text)) rawSubs.push("Môn Toán")
-          if (/Tiếng Việt/i.test(text)) rawSubs.push("Tiếng Việt")
+          if (/Toán|Math/i.test(text)) rawSubs.push("Toán")
+          if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(text)) rawSubs.push("Tiếng Việt")
           else if (/Ngữ văn|Literature/i.test(text)) rawSubs.push("Ngữ Văn")
           else if (/Văn/i.test(text)) {
             if (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) rawSubs.push("Tiếng Việt")
             else rawSubs.push("Ngữ Văn")
           }
-          if (/Tiếng Anh\s*\(viết\)|Anh\s*\(viết\)|English\s*\(written\)/i.test(text)) {
-            rawSubs.push("Tiếng Anh (viết)")
-          }
-          if (/Tiếng Anh\s*\(vấn đáp\)|Anh\s*\(vấn đáp\)|English\s*\(oral\)/i.test(text)) {
-            rawSubs.push("Tiếng Anh (vấn đáp)")
-          }
-          if (rawSubs.every(s => !s.includes("Tiếng Anh")) && /Anh|English/i.test(text)) {
+          if (/Anh|English|ESL/i.test(text)) {
             rawSubs.push("Tiếng Anh")
           }
           if (/Tâm lý|Psychology/i.test(text)) rawSubs.push("Tâm lý")
@@ -353,7 +372,11 @@ export async function GET(req: Request) {
         rawSubs.forEach((s) => {
           const clean = s.trim().replace(/^môn\s+/i, "")
           const lower = clean.toLowerCase()
-          if (lower.includes("tiếng việt") || lower === "tv") {
+          if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
+            if (!finalSubs.includes("Tiếng Anh")) finalSubs.push("Tiếng Anh")
+          } else if (lower.includes("toán") || lower.includes("toan") || lower.includes("math")) {
+            if (!finalSubs.includes("Toán")) finalSubs.push("Toán")
+          } else if (lower.includes("tiếng việt") || lower.includes("tieng viet") || lower === "tv") {
             if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
           } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature")) {
             if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
@@ -363,11 +386,7 @@ export async function GET(req: Request) {
             } else {
               if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
             }
-          } else if (lower.includes("toán") || lower.includes("math")) {
-            if (!finalSubs.includes("Môn Toán")) finalSubs.push("Môn Toán")
-          } else if (lower.includes("anh") || lower.includes("english")) {
-            if (!finalSubs.includes(clean)) finalSubs.push(clean)
-          } else if (lower.includes("tâm lý") || lower.includes("psychology")) {
+          } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
             if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
           } else {
             if (!finalSubs.includes(clean)) finalSubs.push(clean)
@@ -485,6 +504,53 @@ export async function GET(req: Request) {
 
       return NextResponse.json({ commitment, hasPrevious: !!previousCommitment, previousCommitment })
     }
+
+    // 4.6. Action: getCommitmentTTCMList
+    if (action === "getCommitmentTTCMList") {
+      const teachers = await prisma.teacher.findMany({
+        where: {
+          status: "ACTIVE",
+          OR: [
+            { position: { in: ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM", "BGH", "GDCS"] } },
+            { departmentAssignments: { some: { position: { in: ["TTCM", "Tổ trưởng", "TO_TRUONG", "Tổ trưởng CM"] } } } }
+          ]
+        },
+        include: {
+          campus: { select: { id: true, campusName: true, campusCode: true } },
+          departmentRel: { select: { id: true, name: true, code: true, blockCM: true } },
+          mainSubjectRel: { select: { id: true, subjectName: true, subjectCode: true } },
+          departmentAssignments: {
+            include: {
+              department: { select: { id: true, name: true, code: true, blockCM: true } }
+            }
+          }
+        },
+        orderBy: { teacherName: "asc" }
+      })
+
+      let ttcmList = teachers
+      if (ttcmList.length === 0) {
+        ttcmList = await prisma.teacher.findMany({
+          where: { status: "ACTIVE" },
+          include: {
+            campus: { select: { id: true, campusName: true, campusCode: true } },
+            departmentRel: { select: { id: true, name: true, code: true, blockCM: true } },
+            mainSubjectRel: { select: { id: true, subjectName: true, subjectCode: true } },
+            departmentAssignments: {
+              include: {
+                department: { select: { id: true, name: true, code: true, blockCM: true } }
+              }
+            }
+          },
+          orderBy: { teacherName: "asc" },
+          take: 60
+        })
+      }
+
+      return NextResponse.json(ttcmList)
+    }
+
+
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (err: any) {
@@ -1190,6 +1256,170 @@ export async function POST(req: Request) {
 
       return NextResponse.json(created)
     }
+
+    // 13. Action: sendCommitmentEmailToTTCM
+    if (action === "sendCommitmentEmailToTTCM") {
+      const {
+        subjectName,
+        recipients,
+        customMessage,
+        students,
+        additionalCc
+      } = body
+
+      if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+        return NextResponse.json({ error: "Vui lòng chọn ít nhất một người nhận (TTCM)" }, { status: 400 })
+      }
+
+      if (!students || !Array.isArray(students) || students.length === 0) {
+        return NextResponse.json({ error: "Không có danh sách học sinh cam kết để gửi" }, { status: 400 })
+      }
+
+      const year = await prisma.academicYear.findUnique({
+        where: { id: academicYearId },
+        select: { name: true }
+      })
+      const yearName = year?.name || "2024-2025"
+
+      let sentSuccessCount = 0
+      const results: any[] = []
+
+      for (const rec of recipients) {
+        if (!rec.email || !rec.email.includes("@")) {
+          results.push({ teacher: rec.teacherName, email: rec.email, status: "FAILED", error: "Email không hợp lệ" })
+          continue
+        }
+
+        const relevantStudents = (rec.subjectName && rec.subjectName !== "ALL" && rec.subjectName !== "Tất cả")
+          ? students.filter((s: any) => !s.subject || s.subject === rec.subjectName || (rec.subjectName === "Tiếng Anh" && s.subject?.includes("Anh")))
+          : students
+
+        if (relevantStudents.length === 0) {
+          results.push({ teacher: rec.teacherName, email: rec.email, status: "SKIPPED", count: 0, reason: "Không có học sinh phù hợp môn" })
+          continue
+        }
+
+        const studentRowsHtml = relevantStudents.map((s: any, idx: number) => `
+          <tr style="border-bottom: 1px solid #f1f5f9; ${idx % 2 === 1 ? 'background-color: #fafbfc;' : ''}">
+            <td style="padding: 10px 12px; text-align: center; color: #64748b; font-weight: bold; font-size: 11px;">${idx + 1}</td>
+            <td style="padding: 10px 12px; font-weight: bold; color: #1e293b; font-size: 12px;">${s.fullName}</td>
+            <td style="padding: 10px 12px; font-family: monospace; color: #475569; font-size: 11px;">${s.studentCode || "-"}</td>
+            <td style="padding: 10px 12px; color: #003B3A; font-weight: bold; font-size: 12px;">${s.className || "Chưa xếp lớp"}</td>
+            <td style="padding: 10px 12px; color: #009085; font-weight: bold; font-size: 11px;">${s.campusName || "Sky-Line"}</td>
+            <td style="padding: 10px 12px;">
+              <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; background-color: #e0f2fe; color: #0369a1; font-weight: bold; font-size: 11px;">
+                ${s.subject || subjectName || "Môn cam kết"}
+              </span>
+            </td>
+            <td style="padding: 10px 12px; font-size: 11px; color: #334155;">
+              ${s.scores ? `<div style="font-weight: 600; margin-bottom: 2px;">${s.scores}</div>` : ''}
+              <div style="color: #64748b; font-style: italic; font-size: 10px; max-width: 260px;">${s.note || "Không có ghi chú"}</div>
+            </td>
+            <td style="padding: 10px 12px; text-align: center;">
+              <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; ${s.isProposed ? 'background-color: #dcfce7; color: #15803d;' : 'background-color: #ffe4e6; color: #be123c;'}">
+                ${s.isProposed ? 'Đã đề xuất' : 'Chưa đề xuất'}
+              </span>
+            </td>
+          </tr>
+        `).join("")
+
+        const subTitle = rec.subjectName && rec.subjectName !== "ALL" ? `MÔN ${rec.subjectName.toUpperCase()}` : (subjectName && subjectName !== "ALL" ? `MÔN ${subjectName.toUpperCase()}` : "CÁC MÔN HỌC")
+
+        const emailHtml = `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 720px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #003B3A 0%, #009085 100%); padding: 26px 32px; color: #ffffff;">
+              <div style="font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #48BFE3; margin-bottom: 6px;">
+                Hệ thống Giáo dục Sky-Line • Ban Khảo thí & ĐBCL
+              </div>
+              <h2 style="margin: 0; font-size: 19px; font-weight: 800; line-height: 1.35;">
+                DANH SÁCH HỌC SINH DIỆN CAM KẾT & THEO DÕI ĐẦU VÀO - ${subTitle}
+              </h2>
+              <div style="font-size: 13px; color: #e6fffa; margin-top: 5px;">
+                Năm học: <strong>${yearName}</strong> • Kế hoạch Khảo sát & Phụ đạo Học sinh
+              </div>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 28px 32px; color: #334155; line-height: 1.6;">
+              <p style="font-size: 15px; margin-top: 0;">
+                Kính gửi Thầy/Cô <strong>${rec.teacherName}</strong> (Tổ trưởng Chuyên môn),
+              </p>
+              <p style="font-size: 14px; color: #475569;">
+                Ban Khảo thí & ĐBCL xin gửi danh sách học sinh thuộc diện <strong>Cam kết & Theo dõi khảo sát đầu vào</strong> đối với môn phụ trách. Kính đề nghị Tổ chuyên môn phối hợp cùng Giáo viên bộ môn theo dõi, rà soát và lập kế hoạch phụ đạo/bồi dưỡng phù hợp.
+              </p>
+
+              ${customMessage ? `
+                <div style="background-color: #f0fdfa; border-left: 4px solid #009085; padding: 14px 18px; border-radius: 8px; margin: 18px 0; font-size: 13px; color: #003B3A;">
+                  <strong>Ghi chú & Lời nhắn từ Ban Khảo thí / BGH:</strong><br/>
+                  ${customMessage.replace(/\n/g, '<br/>')}
+                </div>
+              ` : ''}
+
+              <!-- Table -->
+              <div style="margin: 22px 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                <div style="background-color: #f8fafc; padding: 12px 16px; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #003B3A; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between;">
+                  <span>Danh sách học sinh (${relevantStudents.length} học sinh)</span>
+                </div>
+                <div style="overflow-x: auto;">
+                  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
+                    <thead>
+                      <tr style="background-color: #f1f5f9; font-size: 11px; text-transform: uppercase; color: #64748b;">
+                        <th style="padding: 9px 12px; width: 30px; text-align: center;">TT</th>
+                        <th style="padding: 9px 12px;">Họ và tên</th>
+                        <th style="padding: 9px 12px;">Mã HS</th>
+                        <th style="padding: 9px 12px;">Lớp</th>
+                        <th style="padding: 9px 12px;">Cơ sở</th>
+                        <th style="padding: 9px 12px;">Môn cam kết</th>
+                        <th style="padding: 9px 12px;">Khảo sát & Ghi chú</th>
+                        <th style="padding: 9px 12px; text-align: center;">Tình trạng</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${studentRowsHtml}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Button CTA -->
+              <div style="text-align: center; margin: 28px 0 16px 0;">
+                <a href="https://skyline-survey.vercel.app/admin/ktdbcl/support" style="display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #009085 100%); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 12px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 12px rgba(0,59,58,0.25);">
+                  Truy cập Hệ thống Hỗ trợ học tập ➜
+                </a>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f8fafc; padding: 16px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center;">
+              Đây là email thông báo tự động từ Hệ thống Khảo sát & ĐBCL Sky-Line. Quý Thầy/Cô vui lòng không phản hồi trực tiếp email này.
+            </div>
+          </div>
+        `
+
+        try {
+          await sendEmail({
+            to: rec.email,
+            cc: additionalCc || undefined,
+            subject: `[Sky-Line Survey] Danh sách Học sinh diện Cam kết & Theo dõi đầu vào - ${subTitle} (${yearName})`,
+            html: emailHtml
+          })
+          sentSuccessCount++
+          results.push({ teacher: rec.teacherName, email: rec.email, status: "SUCCESS", count: relevantStudents.length })
+        } catch (mailErr: any) {
+          console.error(`Failed to send commitment email to ${rec.email}:`, mailErr)
+          results.push({ teacher: rec.teacherName, email: rec.email, status: "FAILED", error: mailErr.message })
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        sentCount: sentSuccessCount,
+        totalRecipients: recipients.length,
+        results
+      })
+    }
+
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
   } catch (err: any) {

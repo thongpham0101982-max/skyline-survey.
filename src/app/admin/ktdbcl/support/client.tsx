@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { 
-  FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
+import { Mail, Send, Sparkles, CheckSquare, Square, FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
   MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
 } from "lucide-react"
@@ -56,18 +55,28 @@ export function SupportClient({
 
   // Data states loaded dynamically
   const [configs, setConfigs] = useState<any[]>([])
-  // Commitment candidates states
+    // Commitment candidates states
   const [commitmentCandidates, setCommitmentCandidates] = useState<any[]>([])
   const [commitmentLoading, setCommitmentLoading] = useState(false)
   const [commitmentSearch, setCommitmentSearch] = useState("")
   const [commitmentCampusFilter, setCommitmentCampusFilter] = useState("ALL")
   const [commitmentStatusFilter, setCommitmentStatusFilter] = useState("ALL")
+  const [commitmentSubjectFilter, setCommitmentSubjectFilter] = useState("ALL")
   const [commitmentPage, setCommitmentPage] = useState(1)
   const commitmentPageSize = 10
 
+  // TTCM Email Modal states
+  const [isEmailTTCMModalOpen, setIsEmailTTCMModalOpen] = useState(false)
+  const [emailTTCMSubject, setEmailTTCMSubject] = useState("ALL")
+  const [ttcmList, setTtcmList] = useState<any[]>([])
+  const [selectedTTCMIds, setSelectedTTCMIds] = useState<string[]>([])
+  const [customTTCMMessage, setCustomTTCMMessage] = useState("")
+  const [additionalTTCMCc, setAdditionalTTCMCc] = useState("")
+  const [sendingTTCMEmall, setSendingTTCMEmall] = useState(false)
+
   useEffect(() => {
     setCommitmentPage(1)
-  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter])
+  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter])
   const [targets, setTargets] = useState<any[]>([])
   const [assignments, setAssignments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -186,6 +195,25 @@ export function SupportClient({
       setCommitmentLoading(false)
     }
   }
+
+  const fetchTTCMList = async () => {
+    try {
+      const res = await fetch(`/api/ktdbcl/support?action=getCommitmentTTCMList&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setTtcmList(data)
+      }
+    } catch (e) {
+      console.error("Failed to load TTCM list", e)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "commitments") {
+      fetchTTCMList()
+    }
+  }, [activeTab, selectedYearId])
+
 
   useEffect(() => {
     if (activeTab === "commitments") {
@@ -773,28 +801,111 @@ export function SupportClient({
     { month: "Tháng 05/2026", good: 14, average: 4, weak: 2, total: 20 },
     { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
   ]
+    // Tách học sinh theo từng môn cam kết (Flattened commitment list)
+  const flattenedCommitments = useMemo(() => {
+    const list: any[] = []
+    commitmentCandidates.forEach((c) => {
+      // Normalize subject list, unifying English variations
+      const rawSubs = (c.committedSubjects && c.committedSubjects.length > 0) ? c.committedSubjects : []
+      const unifiedSubs: string[] = []
+      
+      rawSubs.forEach((s: string) => {
+        const lower = s.toLowerCase()
+        if (lower.includes("anh") || lower.includes("english") || lower.includes("esl")) {
+          if (!unifiedSubs.includes("Tiếng Anh")) unifiedSubs.push("Tiếng Anh")
+        } else if (lower.includes("toán") || lower.includes("math")) {
+          if (!unifiedSubs.includes("Toán")) unifiedSubs.push("Toán")
+        } else if (lower.includes("tiếng việt") || lower.includes("tieng viet") || lower === "tv") {
+          if (!unifiedSubs.includes("Tiếng Việt")) unifiedSubs.push("Tiếng Việt")
+        } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
+          if (!unifiedSubs.includes("Ngữ Văn")) unifiedSubs.push("Ngữ Văn")
+        } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
+          if (!unifiedSubs.includes("Tâm lý")) unifiedSubs.push("Tâm lý")
+        } else {
+          if (!unifiedSubs.includes(s)) unifiedSubs.push(s)
+        }
+      })
+
+      const finalSubs = unifiedSubs.length > 0 ? unifiedSubs : ["Chưa xác định môn"]
+
+      finalSubs.forEach((subName, subIdx) => {
+        const isPsychology = subName.toLowerCase().includes("lý") || subName.toLowerCase().includes("tâm")
+        const matchingTargets = targets.filter(t => t.studentId === c.systemStudentId)
+        
+        const specificTarget = matchingTargets.find(t => {
+          if (isPsychology) return t.supportType === "PSYCHOLOGY" || t.supportType === "PSYCHOLOGICAL"
+          const hasSubjectAssignment = t.assignments?.some((a: any) => {
+            const aSub = (a.subject?.subjectName || "").toLowerCase()
+            const sSub = subName.toLowerCase()
+            return aSub.includes(sSub) || sSub.includes(aSub) || (subName === "Tiếng Anh" && aSub.includes("anh"))
+          })
+          return hasSubjectAssignment || t.supportType === "ACADEMIC"
+        })
+
+        const isProposed = !!specificTarget || matchingTargets.length > 0
+
+        list.push({
+          ...c,
+          uniqueKey: `${c.id}_${subName}_${subIdx}`,
+          committedSubject: subName,
+          isProposed,
+          specificTarget,
+          allTargets: matchingTargets
+        })
+      })
+    })
+    return list
+  }, [commitmentCandidates, targets])
+
+  // Dynamic Subject Counts
+  const commitmentSubjectCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    flattenedCommitments.forEach(item => {
+      const s = item.committedSubject || "Khác"
+      counts[s] = (counts[s] || 0) + 1
+    })
+    return counts
+  }, [flattenedCommitments])
+
+  const uniqueCommitmentSubjects = useMemo(() => {
+    return Object.keys(commitmentSubjectCounts).sort((a, b) => {
+      // Prioritize common subjects
+      const order = ["Tiếng Anh", "Toán", "Tiếng Việt", "Ngữ Văn", "Tâm lý"]
+      const idxA = order.indexOf(a)
+      const idxB = order.indexOf(b)
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      return a.localeCompare(b)
+    })
+  }, [commitmentSubjectCounts])
+
   // Paginated commitments logic
   const filteredCommitments = useMemo(() => {
-    return commitmentCandidates.filter(c => {
+    return flattenedCommitments.filter(c => {
       const searchLower = commitmentSearch.toLowerCase().trim()
       const matchesSearch = !searchLower || 
-        c.studentCode.toLowerCase().includes(searchLower) ||
-        c.fullName.toLowerCase().includes(searchLower)
+        (c.studentCode && c.studentCode.toLowerCase().includes(searchLower)) ||
+        (c.fullName && c.fullName.toLowerCase().includes(searchLower))
 
       const matchesCampus = commitmentCampusFilter === "ALL" || 
-        c.className.includes(commitmentCampusFilter) || 
+        (c.className && c.className.includes(commitmentCampusFilter)) || 
+        (c.campusName && c.campusName.includes(commitmentCampusFilter)) ||
         (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
         (c.directorNote || "").includes(commitmentCampusFilter) ||
         (c.admissionResult || "").includes(commitmentCampusFilter)
 
-      const isProposed = targets.some(t => t.studentId === c.systemStudentId)
       const matchesStatus = commitmentStatusFilter === "ALL" || 
-        (commitmentStatusFilter === "PROPOSED" && isProposed) ||
-        (commitmentStatusFilter === "NOT_PROPOSED" && !isProposed)
+        (commitmentStatusFilter === "PROPOSED" && c.isProposed) ||
+        (commitmentStatusFilter === "NOT_PROPOSED" && !c.isProposed)
 
-      return matchesSearch && matchesCampus && matchesStatus
+      const matchesSubject = commitmentSubjectFilter === "ALL" || 
+        c.committedSubject === commitmentSubjectFilter ||
+        (commitmentSubjectFilter === "Tiếng Anh" && c.committedSubject?.includes("Anh"))
+
+      return matchesSearch && matchesCampus && matchesStatus && matchesSubject
     })
-  }, [commitmentCandidates, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, targets])
+  }, [flattenedCommitments, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter])
 
   const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
 
@@ -859,6 +970,121 @@ export function SupportClient({
       </span>
     )
   }
+
+  // Send Commitment Email to TTCM
+  const handleSendCommitmentEmail = async () => {
+    if (selectedTTCMIds.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một Tổ trưởng chuyên môn (TTCM)")
+      return
+    }
+
+    const selectedTeachers = ttcmList.filter(t => selectedTTCMIds.includes(t.id))
+    if (selectedTeachers.length === 0) {
+      toast.error("Không tìm thấy thông tin giáo viên đã chọn")
+      return
+    }
+
+    // Filter relevant students for the email
+    const studentsToSend = filteredCommitments.map(item => {
+      let scoreText = ""
+      if (item.committedSubject === "Toán" && item.mathScore !== null) scoreText = `Toán: ${item.mathScore}`
+      else if (item.committedSubject === "Tiếng Anh") {
+        const parts: string[] = []
+        if (item.writtenEnglishScore !== null) parts.push(`Anh viết: ${item.writtenEnglishScore}`)
+        if (item.oralEnglishScore !== null) parts.push(`Anh nói: ${item.oralEnglishScore}`)
+        scoreText = parts.join(", ")
+      } else if ((item.committedSubject === "Tiếng Việt" || item.committedSubject === "Ngữ Văn") && item.literatureScore !== null) {
+        scoreText = `Văn/TV: ${item.literatureScore}`
+      } else if (item.committedSubject === "Tâm lý" && item.psychologyScore !== null) {
+        scoreText = `Tâm lý: ${item.psychologyScore}`
+      }
+
+      return {
+        fullName: item.fullName,
+        studentCode: item.studentCode,
+        className: item.className || "Chưa xếp lớp",
+        campusName: item.campusName || "Sky-Line",
+        subject: item.committedSubject,
+        scores: scoreText,
+        note: item.directorNote || item.admissionResult || "",
+        isProposed: item.isProposed
+      }
+    })
+
+    if (studentsToSend.length === 0) {
+      toast.error("Danh sách học sinh cam kết đang trống")
+      return
+    }
+
+    setSendingTTCMEmall(true)
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sendCommitmentEmailToTTCM",
+          academicYearId: selectedYearId,
+          subjectName: emailTTCMSubject === "ALL" ? "Tất cả các môn" : emailTTCMSubject,
+          recipients: selectedTeachers.map(t => ({
+            teacherId: t.id,
+            teacherName: t.teacherName,
+            email: t.email,
+            subjectName: emailTTCMSubject === "ALL" ? (t.mainSubjectRel?.subjectName || t.departmentRel?.name || "Tất cả") : emailTTCMSubject,
+            campusName: t.campus?.campusName || ""
+          })),
+          customMessage: customTTCMMessage,
+          additionalCc: additionalTTCMCc,
+          students: studentsToSend
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Đã gửi thành công email cho ${data.sentCount} TTCM!`)
+        setIsEmailTTCMModalOpen(false)
+        setCustomTTCMMessage("")
+        setAdditionalTTCMCc("")
+      } else {
+        toast.error(data.error || "Không thể gửi email")
+      }
+    } catch (e: any) {
+      toast.error("Lỗi khi gửi email: " + e.message)
+    } finally {
+      setSendingTTCMEmall(false)
+    }
+  }
+
+  // Auto-select TTCMs when email subject changes
+  useEffect(() => {
+    if (!isEmailTTCMModalOpen || ttcmList.length === 0) return
+
+    if (emailTTCMSubject === "ALL") {
+      setSelectedTTCMIds(ttcmList.map(t => t.id))
+    } else {
+      const matched = ttcmList.filter(t => {
+        const subLower = emailTTCMSubject.toLowerCase()
+        const mainSub = (t.mainSubjectRel?.subjectName || "").toLowerCase()
+        const deptName = (t.departmentRel?.name || "").toLowerCase()
+        const assignedDepts = (t.departmentAssignments || []).map((da: any) => (da.department?.name || "").toLowerCase()).join(" ")
+
+        if (subLower.includes("anh")) {
+          return mainSub.includes("anh") || deptName.includes("anh") || deptName.includes("ngoại ngữ") || assignedDepts.includes("anh") || assignedDepts.includes("ngoại ngữ")
+        }
+        if (subLower.includes("toán")) {
+          return mainSub.includes("toán") || deptName.includes("toán") || assignedDepts.includes("toán")
+        }
+        if (subLower.includes("việt") || subLower.includes("văn")) {
+          return mainSub.includes("văn") || mainSub.includes("việt") || deptName.includes("văn") || deptName.includes("việt") || deptName.includes("tiểu học") || assignedDepts.includes("văn")
+        }
+        if (subLower.includes("lý") || subLower.includes("tâm")) {
+          return mainSub.includes("tâm lý") || deptName.includes("tâm lý") || deptName.includes("hỗ trợ") || assignedDepts.includes("tâm lý")
+        }
+        return mainSub.includes(subLower) || deptName.includes(subLower)
+      })
+      setSelectedTTCMIds(matched.length > 0 ? matched.map(m => m.id) : ttcmList.slice(0, 1).map(m => m.id))
+    }
+  }, [emailTTCMSubject, isEmailTTCMModalOpen, ttcmList])
+
 
   return (
     <div className="space-y-6">
@@ -989,63 +1215,74 @@ export function SupportClient({
             <div className="space-y-1">
               <h2 className="text-base font-black text-slate-800 flex items-center gap-2">
                 <UserCheck className="h-5 w-5 text-amber-500" />
-                Học sinh Cam kết & Theo dõi khảo sát đầu vào
+                Học sinh Cam kết & Theo dõi theo Môn học
               </h2>
-              <p className="text-xs text-slate-500 font-medium font-sans">Danh sách học sinh thuộc diện cam kết bồi dưỡng, đối chiếu với tình trạng lập kế hoạch hỗ trợ.</p>
+              <p className="text-xs text-slate-500 font-medium font-sans">
+                Danh sách học sinh diện cam kết được phân tách chi tiết theo từng môn học, hỗ trợ lọc và gửi Email thông báo trực tiếp cho Tổ trưởng chuyên môn (TTCM).
+              </p>
             </div>
             
             {/* KPI summary */}
             <div className="flex flex-wrap items-center gap-4 bg-white/80 border border-slate-200/60 p-3 rounded-xl shadow-2xs backdrop-blur-xs">
               <div className="text-center px-4 border-r border-slate-100">
-                <div className="text-sm font-black text-slate-800">{commitmentCandidates.length}</div>
-                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tổng số HS cam kết</div>
+                <div className="text-sm font-black text-slate-800">{flattenedCommitments.length}</div>
+                <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Tổng lượt cam kết</div>
               </div>
               <div className="text-center px-4 border-r border-slate-100">
                 <div className="text-sm font-black text-emerald-600">
-                  {commitmentCandidates.filter(c => {
-                    return targets.some(t => t.studentId === c.systemStudentId)
-                  }).length}
+                  {flattenedCommitments.filter(c => c.isProposed).length}
                 </div>
                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Đã đề xuất</div>
               </div>
               <div className="text-center px-4">
                 <div className="text-sm font-black text-rose-500">
-                  {commitmentCandidates.filter(c => {
-                    return !targets.some(t => t.studentId === c.systemStudentId)
-                  }).length}
+                  {flattenedCommitments.filter(c => !c.isProposed).length}
                 </div>
                 <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Chưa đề xuất</div>
               </div>
             </div>
           </div>
 
-          {/* Notification Alert Banner for Pending Reviews */}
-          {((activeTab === "academic" && academicPendingCount > 0) || (activeTab === "psychology" && psychologyPendingCount > 0)) && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center justify-between shadow-xs">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500 text-white rounded-lg animate-bounce shrink-0">
-                  <Bell className="h-4 w-4 fill-white" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-amber-900">
-                    Thông báo xét duyệt: Có {activeTab === "academic" ? academicPendingCount : psychologyPendingCount} học sinh đang cần xét duyệt {activeTab === "academic" ? "Hỗ trợ Học tập" : "Hỗ trợ Tâm lý"}
-                  </div>
-                  <div className="text-[11px] text-amber-700 mt-0.5">
-                    Bao gồm các đề xuất phân công giáo viên mới hoặc đề xuất chấm dứt hỗ trợ từ giáo viên.
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setTargetStatusFilter("UNAPPROVED")}
-                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 shrink-0"
-              >
-                <Filter className="h-3.5 w-3.5" />
-                Lọc danh sách chờ duyệt
-              </button>
-            </div>
-          )}
+          {/* Quick Subject Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <button
+              onClick={() => setCommitmentSubjectFilter("ALL")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                commitmentSubjectFilter === "ALL"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <span>Tất cả môn</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${commitmentSubjectFilter === "ALL" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                {flattenedCommitments.length}
+              </span>
+            </button>
 
-          {/* Filters Bar */}
+            {uniqueCommitmentSubjects.map((sub) => {
+              const count = commitmentSubjectCounts[sub] || 0
+              const isActive = commitmentSubjectFilter === sub
+
+              return (
+                <button
+                  key={sub}
+                  onClick={() => setCommitmentSubjectFilter(sub)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    isActive
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>{sub}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+                    {count}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* Filters & Actions Bar */}
           <div className="bg-white border border-slate-200/60 p-4 rounded-2xl shadow-xxs flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Search Input */}
             <div className="relative flex-1 max-w-md">
@@ -1061,6 +1298,21 @@ export function SupportClient({
 
             {/* Select filters */}
             <div className="flex flex-wrap items-center gap-3">
+              {/* Subject filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Môn cam kết:</label>
+                <select
+                  value={commitmentSubjectFilter}
+                  onChange={(e) => setCommitmentSubjectFilter(e.target.value)}
+                  className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
+                >
+                  <option value="ALL">Tất cả môn ({flattenedCommitments.length})</option>
+                  {uniqueCommitmentSubjects.map(sub => (
+                    <option key={sub} value={sub}>{sub} ({commitmentSubjectCounts[sub]})</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Campus filter */}
               <div className="flex items-center gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Cơ sở:</label>
@@ -1085,10 +1337,23 @@ export function SupportClient({
                   className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
                 >
                   <option value="ALL">Tất cả tình trạng</option>
-                  <option value="PROPOSED">Đã đề xuất xét duyệt</option>
+                  <option value="PROPOSED">Đã đề xuất</option>
                   <option value="NOT_PROPOSED">Chưa đề xuất</option>
                 </select>
               </div>
+
+              {/* Send Email to TTCM Button */}
+              <button
+                onClick={() => {
+                  setEmailTTCMSubject(commitmentSubjectFilter === "ALL" ? "ALL" : commitmentSubjectFilter)
+                  setIsEmailTTCMModalOpen(true)
+                }}
+                className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+                title="Gửi Email danh sách học sinh cam kết cho Tổ trưởng chuyên môn"
+              >
+                <Mail className="h-4 w-4" />
+                <span>Gửi Email cho TTCM</span>
+              </button>
             </div>
           </div>
 
@@ -1096,7 +1361,7 @@ export function SupportClient({
           {commitmentLoading ? (
             <div className="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/60 rounded-2xl">
               <RefreshCw className="h-8 w-8 text-indigo-500 animate-spin mb-3" />
-              <span className="text-xs font-bold text-slate-400">Đang tải danh sách học sinh cam kết...</span>
+              <span className="text-xs font-bold text-slate-400">Đang tải danh sách học sinh cam kết theo môn...</span>
             </div>
           ) : (() => {
             if (filteredCommitments.length === 0) {
@@ -1122,16 +1387,19 @@ export function SupportClient({
                         <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
                         <th className="px-4 py-3.5 text-left">Tình trạng</th>
                         <th className="px-4 py-3.5 text-left">Kết quả Khảo sát & Ghi chú</th>
+                        <th className="px-4 py-3.5 text-center w-24">Thao tác</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
                       {paginatedCommitments.map((row, idx) => {
-                        const isProposed = targets.some(t => t.studentId === row.systemStudentId)
-                        const studentTargets = targets.filter(t => t.studentId === row.systemStudentId)
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
+                        const isEnglish = row.committedSubject?.toLowerCase().includes("anh")
+                        const isMath = row.committedSubject?.toLowerCase().includes("toán")
+                        const isLiterature = row.committedSubject?.toLowerCase().includes("văn") || row.committedSubject?.toLowerCase().includes("việt")
+                        const isPsychology = row.committedSubject?.toLowerCase().includes("lý") || row.committedSubject?.toLowerCase().includes("tâm")
 
                         return (
-                          <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
+                          <tr key={row.uniqueKey || `${row.id}_${idx}`} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-4 py-3.5 text-center text-slate-400 font-bold">{sttNumber}</td>
                             <td className="px-4 py-3.5">
                               <div className="font-extrabold text-slate-800 text-[12px]">{row.fullName}</div>
@@ -1146,29 +1414,21 @@ export function SupportClient({
                               <span className="font-extrabold text-slate-700 text-[12px]">{row.className || "Chưa xếp lớp"}</span>
                             </td>
                             <td className="px-4 py-3.5">
-                              <span className="text-[11px] text-indigo-600 font-bold">{row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}</span>
+                              <span className="text-[11px] text-indigo-600 font-bold">
+                                {row.campusName ? (row.campusName.includes("CS") ? row.campusName : row.campusName) : (row.className && row.className.includes("CS") ? "CS" + row.className.split("CS")[1].split(/[_ -]/)[0] : "CS1")}
+                              </span>
                             </td>
                             <td className="px-4 py-3.5">
-                              {row.committedSubjects && row.committedSubjects.length > 0 ? (
-                                <div className="flex flex-wrap gap-1.5">
-                                  {row.committedSubjects.map((sub, sIdx) => (
-                                    <div key={sIdx}>
-                                      {getSubjectBadge(sub)}
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 text-[10px] italic">Chưa xác định môn</span>
-                              )}
+                              {getSubjectBadge(row.committedSubject)}
                             </td>
                             <td className="px-4 py-3.5">
-                              {isProposed ? (
+                              {row.isProposed ? (
                                 <div className="space-y-1">
                                   <div className="font-extrabold text-emerald-600 text-[12px] flex items-center gap-1.5">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                     Đã đề xuất
                                   </div>
-                                  {studentTargets.map((st, stIdx) => (
+                                  {row.allTargets && row.allTargets.map((st, stIdx) => (
                                     <div key={stIdx} className="text-[10px] text-slate-500 font-medium pl-3">
                                       • {st.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý"} ({st.status})
                                     </div>
@@ -1183,15 +1443,59 @@ export function SupportClient({
                             </td>
                             <td className="px-4 py-3.5">
                               <div className="text-[10px] text-slate-500 font-bold mb-1.5 flex flex-wrap gap-x-2 gap-y-1">
-                                {getScoreTag("Toán", row.mathScore)}
-                                {getScoreTag("Văn", row.literatureScore)}
-                                {getScoreTag("Anh viết", row.writtenEnglishScore)}
-                                {getScoreTag("Anh nói", row.oralEnglishScore)}
-                                {getScoreTag("Tâm lý", row.psychologyScore)}
+                                {isMath && row.mathScore !== null && (
+                                  <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-amber-100 text-amber-800 border-2 border-amber-300 shadow-2xs">
+                                    Toán: {row.mathScore} ★
+                                  </span>
+                                )}
+                                {isLiterature && row.literatureScore !== null && (
+                                  <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-2xs">
+                                    Văn/TV: {row.literatureScore} ★
+                                  </span>
+                                )}
+                                {isEnglish && (
+                                  <>
+                                    {row.writtenEnglishScore !== null && (
+                                      <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-blue-100 text-blue-800 border-2 border-blue-300 shadow-2xs">
+                                        Anh viết: {row.writtenEnglishScore} ★
+                                      </span>
+                                    )}
+                                    {row.oralEnglishScore !== null && (
+                                      <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-blue-100 text-blue-800 border-2 border-blue-300 shadow-2xs">
+                                        Anh nói: {row.oralEnglishScore} ★
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                                {isPsychology && row.psychologyScore !== null && (
+                                  <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-purple-100 text-purple-800 border-2 border-purple-300 shadow-2xs">
+                                    Tâm lý: {row.psychologyScore} ★
+                                  </span>
+                                )}
+
+                                {/* Other non-focused scores */}
+                                {!isMath && getScoreTag("Toán", row.mathScore)}
+                                {!isLiterature && getScoreTag("Văn", row.literatureScore)}
+                                {!isEnglish && getScoreTag("Anh viết", row.writtenEnglishScore)}
+                                {!isEnglish && getScoreTag("Anh nói", row.oralEnglishScore)}
+                                {!isPsychology && getScoreTag("Tâm lý", row.psychologyScore)}
                               </div>
-                              <div className="text-[10px] text-slate-400 font-medium max-w-sm line-clamp-2" title={row.directorNote || ""}>
+                              <div className="text-[10px] text-slate-500 font-medium max-w-sm line-clamp-2" title={row.directorNote || ""}>
                                 {row.directorNote || <span className="italic text-slate-300">Không có ghi chú khảo sát</span>}
                               </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-center">
+                              <button
+                                onClick={() => {
+                                  setEmailTTCMSubject(row.committedSubject || "ALL")
+                                  setIsEmailTTCMModalOpen(true)
+                                }}
+                                className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-emerald-50 hover:text-emerald-600 hover:border-emerald-300 text-slate-500 transition-all shadow-2xs inline-flex items-center gap-1 text-[11px] font-bold"
+                                title={`Gửi email cho TTCM môn ${row.committedSubject}`}
+                              >
+                                <Mail className="h-3.5 w-3.5" />
+                                <span>Gửi TTCM</span>
+                              </button>
                             </td>
                           </tr>
                         )
@@ -1203,7 +1507,7 @@ export function SupportClient({
                 {/* Pagination Controls */}
                 <div className="bg-slate-50/75 border-t border-slate-100 px-5 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold text-slate-500">
                   <div>
-                    Hiển thị từ <span className="font-extrabold text-slate-700">{Math.min((commitmentPage - 1) * commitmentPageSize + 1, filteredCommitments.length)}</span> đến <span className="font-extrabold text-slate-700">{Math.min(commitmentPage * commitmentPageSize, filteredCommitments.length)}</span> trong tổng số <span className="font-extrabold text-slate-700">{filteredCommitments.length}</span> học sinh
+                    Hiển thị từ <span className="font-extrabold text-slate-700">{Math.min((commitmentPage - 1) * commitmentPageSize + 1, filteredCommitments.length)}</span> đến <span className="font-extrabold text-slate-700">{Math.min(commitmentPage * commitmentPageSize, filteredCommitments.length)}</span> trong tổng số <span className="font-extrabold text-slate-700">{filteredCommitments.length}</span> lượt cam kết
                   </div>
                   <div className="flex items-center gap-1">
                     <button
@@ -2871,6 +3175,210 @@ export function SupportClient({
           </div>
         )
       })()}
-    </div>
+    
+      {/* Modal: Gửi Email cho Tổ trưởng Chuyên môn (TTCM) */}
+      {isEmailTTCMModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#003B3A] to-[#009085] p-5 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/10 rounded-xl">
+                  <Mail className="h-6 w-6 text-[#48BFE3]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    Gửi Email Danh sách Học sinh Cam kết cho TTCM
+                  </h3>
+                  <p className="text-xs text-teal-100 mt-0.5">
+                    Thông báo danh sách học sinh diện cam kết & theo dõi đầu vào tới Tổ trưởng chuyên môn
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEmailTTCMModalOpen(false)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1 text-xs">
+              {/* Select subject to send */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Môn học thông báo:
+                  </label>
+                  <select
+                    value={emailTTCMSubject}
+                    onChange={(e) => setEmailTTCMSubject(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 font-bold text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                  >
+                    <option value="ALL">-- Tất cả các môn ({filteredCommitments.length} lượt cam kết) --</option>
+                    {uniqueCommitmentSubjects.map(sub => (
+                      <option key={sub} value={sub}>
+                        Môn {sub} ({filteredCommitments.filter(c => c.committedSubject === sub).length} lượt)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                    Gửi thêm (CC Emails - cách nhau bởi dấu phẩy):
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="vd: bgh@skylineschool.edu.vn, khaothi@skylineschool.edu.vn"
+                    value={additionalTTCMCc}
+                    onChange={(e) => setAdditionalTTCMCc(e.target.value)}
+                    className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* TTCM Recipient List */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <UserCheck className="h-3.5 w-3.5 text-emerald-600" />
+                    <span>Chọn Tổ trưởng Chuyên môn (TTCM) người nhận:</span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedTTCMIds(ttcmList.map(t => t.id))}
+                      className="text-[10px] text-emerald-600 hover:text-emerald-700 font-bold underline"
+                    >
+                      Chọn tất cả
+                    </button>
+                    <span className="text-slate-300">•</span>
+                    <button
+                      onClick={() => setSelectedTTCMIds([])}
+                      className="text-[10px] text-slate-400 hover:text-slate-600 font-bold underline"
+                    >
+                      Bỏ chọn
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl p-3 bg-slate-50/50 max-h-48 overflow-y-auto space-y-2">
+                  {ttcmList.length === 0 ? (
+                    <div className="text-center py-4 text-slate-400 italic">
+                      Đang tải hoặc chưa có TTCM nào trong hệ thống...
+                    </div>
+                  ) : (
+                    ttcmList.map((t) => {
+                      const isChecked = selectedTTCMIds.includes(t.id)
+                      const deptName = t.departmentRel?.name || (t.departmentAssignments?.[0]?.department?.name) || "Tổ chuyên môn"
+                      const subName = t.mainSubjectRel?.subjectName || ""
+
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => {
+                            setSelectedTTCMIds(prev => 
+                              prev.includes(t.id) ? prev.filter(id => id !== t.id) : [...prev, t.id]
+                            )
+                          }}
+                          className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                            isChecked 
+                              ? "bg-white border-emerald-500 shadow-xs ring-1 ring-emerald-500/20" 
+                              : "bg-white/60 border-slate-200 hover:bg-white"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => {}}
+                              className="rounded text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+                            />
+                            <div>
+                              <div className="font-bold text-slate-800 flex items-center gap-2">
+                                <span>{t.teacherName}</span>
+                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/60 font-bold">
+                                  {t.position || "TTCM"}
+                                </span>
+                              </div>
+                              <div className="text-[10px] text-slate-500 mt-0.5">
+                                {deptName} {subName ? `• Môn ${subName}` : ""} {t.campus?.campusName ? `• ${t.campus.campusName}` : ""}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-mono text-[11px] text-indigo-600 font-semibold">{t.email || "Chưa có email"}</span>
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Custom Message */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                  Ghi chú & Lời nhắn bổ sung từ BGH / Ban Khảo thí (Tùy chọn):
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Nhập hướng dẫn hoặc lưu ý gửi kèm cho TTCM (vd: Kính đề nghị Quý Thầy Cô rà soát và lập kế hoạch phụ đạo cho học sinh trước ngày 15 hàng tháng...)"
+                  value={customTTCMMessage}
+                  onChange={(e) => setCustomTTCMMessage(e.target.value)}
+                  className="w-full p-3 border border-slate-200 rounded-xl bg-slate-50 font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all resize-none"
+                />
+              </div>
+
+              {/* Preview info banner */}
+              <div className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 flex items-center justify-between text-emerald-900">
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <div>
+                    <span className="font-bold">Số lượng người nhận:</span> <span className="font-extrabold">{selectedTTCMIds.length} TTCM</span> | 
+                    <span className="font-bold ml-2">Số lượng HS đính kèm:</span> <span className="font-extrabold">{filteredCommitments.length} lượt</span>
+                  </div>
+                </div>
+                <span className="text-[10px] text-emerald-700 italic">
+                  Template chuẩn giao diện Sky-Line
+                </span>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsEmailTTCMModalOpen(false)}
+                disabled={sendingTTCMEmall}
+                className="px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs transition-all disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleSendCommitmentEmail}
+                disabled={sendingTTCMEmall || selectedTTCMIds.length === 0}
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md transition-all flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {sendingTTCMEmall ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Đang gửi email...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    <span>🚀 Xác nhận Gửi Email cho TTCM</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+</div>
   )
 }

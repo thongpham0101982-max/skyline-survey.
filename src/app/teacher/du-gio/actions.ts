@@ -243,7 +243,7 @@ export async function getObservationSlots(filters: {
       : await prisma.academicYear.findFirst({ where: { status: "ACTIVE" } })
 
     const where: any = {
-      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN"] }
+      status: { in: ["ACTIVE", "PENDING_TEACHER_APPROVAL", "REJECTED", "OPEN", "EXPIRED"] }
     }
 
     const andConditions: any[] = []
@@ -2111,17 +2111,33 @@ export async function sendPendingEvaluationReminder(registrationId: string) {
 
 export async function sendBatchPendingEvaluationReminders() {
   try {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-    // Find all approved registrations of slots that have already occurred or are today, and lack evaluation
+    // 1. Tự động chuyển các tiết trước ngày hôm nay sang trạng thái EXPIRED (Hết hạn)
+    try {
+      await prisma.observationSlot.updateMany({
+        where: {
+          date: { lt: startOfToday },
+          status: "ACTIVE"
+        },
+        data: {
+          status: "EXPIRED"
+        }
+      });
+    } catch (e) {
+      console.error("[Auto-Expire Error]:", e);
+    }
+
+    // 2. Tìm các đăng ký đã duyệt của tiết dạy đến hạn (date <= endOfToday) mà chưa nộp đánh giá
     const pendingRegs = await prisma.observationRegistration.findMany({
       where: {
         isApproved: true,
         evaluation: null,
         slot: {
           date: {
-            lte: today
+            lte: endOfToday
           }
         }
       },
@@ -2143,7 +2159,24 @@ export async function sendBatchPendingEvaluationReminders() {
       const observer = reg.teacher;
       const slot = reg.slot;
       const hostTeacher = slot.teacher;
+      const observerUserId = observer.user?.id;
       const observerEmail = observer.email || observer.user?.email;
+
+      // CHỈ NHẮC 1 LẦN: Kiểm tra xem đã gửi thông báo nhắc nhở cho đăng ký này hay chưa
+      if (observerUserId) {
+        const existingNotif = await prisma.notification.findFirst({
+          where: {
+            userId: observerUserId,
+            title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
+            message: { contains: `[Dự giờ #${reg.id}]` }
+          }
+        });
+
+        if (existingNotif) {
+          // Đã nhắc 1 lần rồi -> Bỏ qua không nhắc lại
+          continue;
+        }
+      }
 
       if (observerEmail && observerEmail.includes("@")) {
         const slotDate = new Date(slot.date);
@@ -2196,12 +2229,13 @@ export async function sendBatchPendingEvaluationReminders() {
         sendEmail({ to: observerEmail, subject: emailSubject, html: emailHtml }).catch(e => console.error("Batch pending eval email error:", e));
         sentCount++;
 
-        if (observer.user?.id) {
+        // Ghi nhận thông báo để đảm bảo CHỈ NHẮC 1 LẦN duy nhất
+        if (observerUserId) {
           prisma.notification.create({
             data: {
-              userId: observer.user.id,
+              userId: observerUserId,
               title: "Nhắc nhở hoàn tất nhập đánh giá dự giờ",
-              message: `Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
+              message: `[Dự giờ #${reg.id}] Vui lòng hoàn tất nhập đánh giá tiết dạy "${slot.topic}" của Thầy/Cô ${hostTeacher?.teacherName}. Hệ thống chỉ ghi nhận khi hoàn tất đánh giá.`,
               link: "/teacher/du-gio",
               isRead: false
             }
