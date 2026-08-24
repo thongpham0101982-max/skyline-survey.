@@ -786,15 +786,13 @@ export function AdminTongHopClient({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {(isSuperAdmin || isTTCM || isGDCS) && (
-              <button
-                onClick={openEmailModal}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <Mail className="w-4 h-4 text-slate-950" />
-                <span>Gửi Email TTCM</span>
-              </button>
-            )}
+            <button
+              onClick={openEmailModal}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <Mail className="w-4 h-4 text-slate-950" />
+              <span>Báo Cáo Cho TTCM</span>
+            </button>
 
             {academicYears && academicYears.length > 0 && (
               <div className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1.5 rounded-xl text-xs">
@@ -1062,15 +1060,20 @@ export function AdminTongHopClient({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {(isSuperAdmin || isTTCM || isGDCS) && (
-                    <button
-                      onClick={() => openTargetConfig(selectedTeacher)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all"
-                    >
-                      <Settings className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Thiết lập chỉ tiêu</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={openEmailModal}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs shadow-xs transition-all hover:scale-[1.02]"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Báo Cáo Cho TTCM</span>
+                  </button>
+                  <button
+                    onClick={() => openTargetConfig(selectedTeacher)}
+                    className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all"
+                  >
+                    <Settings className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Thiết lập chỉ tiêu</span>
+                  </button>
                   {teacherAvgScore && (
                     <div className="px-3 py-1 bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl font-black text-xs shadow-xs text-center">
                       <div className="text-[8px] uppercase font-bold text-teal-100">ĐTB</div>
