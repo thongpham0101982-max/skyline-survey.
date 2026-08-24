@@ -479,6 +479,13 @@ export async function GET(req: Request) {
             systemStudentId: matchingStudent?.id || null,
             className: resolvedClassName,
             grade: resolvedGrade,
+            level: (function() {
+              const num = parseInt((resolvedGrade || "").replace(/\D/g, ""), 10);
+              if (num >= 1 && num <= 5) return "Tiểu học";
+              if (num >= 6 && num <= 12) return "Trung học";
+              if (resolvedGrade === "Mầm non" || (resolvedClassName || "").toLowerCase().includes("mầm")) return "Mầm non";
+              return "Tiểu học";
+            })(),
             campusName: resolvedCampus,
             committedSubjects,
             mathScore: is.mathScore,
@@ -536,6 +543,7 @@ export async function GET(req: Request) {
             systemStudentId: matchingStudent?.id || null,
             className: resolvedClassName,
             grade: resolvedGrade,
+            level: "Mầm non",
             campusName: resolvedCampus,
             committedSubjects,
             mathScore: null,
@@ -880,6 +888,7 @@ export async function POST(req: Request) {
                 <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 36px; border-right: 1px solid rgba(255,255,255,0.15);">STT</th>
                 <th style="padding: 10px 10px; text-align: left; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.15);">Họ và tên</th>
                 <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 70px; border-right: 1px solid rgba(255,255,255,0.15);">Mã HS</th>
+                <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 75px; border-right: 1px solid rgba(255,255,255,0.15);">Bậc học</th>
                 <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 65px; border-right: 1px solid rgba(255,255,255,0.15);">Khối</th>
                 <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 85px; border-right: 1px solid rgba(255,255,255,0.15);">Lớp</th>
                 <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 60px; border-right: 1px solid rgba(255,255,255,0.15);">Cơ sở</th>
@@ -1798,6 +1807,7 @@ export async function POST(req: Request) {
                 <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 36px; border-right: 1px solid rgba(255,255,255,0.15);">STT</th>
                 <th style="padding: 10px 10px; text-align: left; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.15);">Họ và tên</th>
                 <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 70px; border-right: 1px solid rgba(255,255,255,0.15);">Mã HS</th>
+                <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 75px; border-right: 1px solid rgba(255,255,255,0.15);">Bậc học</th>
                 <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 65px; border-right: 1px solid rgba(255,255,255,0.15);">Khối</th>
                 <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 85px; border-right: 1px solid rgba(255,255,255,0.15);">Lớp</th>
                 <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 60px; border-right: 1px solid rgba(255,255,255,0.15);">Cơ sở</th>

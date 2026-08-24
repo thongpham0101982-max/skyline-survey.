@@ -63,6 +63,7 @@ export function SupportClient({
   const [commitmentStatusFilter, setCommitmentStatusFilter] = useState("ALL")
   const [commitmentSubjectFilter, setCommitmentSubjectFilter] = useState("ALL")
   const [commitmentGradeFilter, setCommitmentGradeFilter] = useState("ALL")
+  const [commitmentLevelFilter, setCommitmentLevelFilter] = useState("ALL")
   const [commitmentPage, setCommitmentPage] = useState(1)
   const commitmentPageSize = 10
 
@@ -85,7 +86,7 @@ export function SupportClient({
 
   useEffect(() => {
     setCommitmentPage(1)
-  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter])
+  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter, commitmentLevelFilter])
   const [targets, setTargets] = useState<any[]>([])
   const [assignments, setAssignments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -993,7 +994,36 @@ export function SupportClient({
     })
   }, [commitmentSubjectCounts])
 
-    // Dynamic Grade Counts
+      // Dynamic Level Counts
+  const commitmentLevelCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    flattenedCommitments.forEach(item => {
+      const num = parseInt((item.grade || "").replace(/\D/g, ""), 10)
+      let lvl = item.level
+      if (!lvl) {
+        if (num >= 1 && num <= 5) lvl = "Tiểu học"
+        else if (num >= 6 && num <= 12) lvl = "Trung học"
+        else if (item.grade === "Mầm non" || (item.className || "").includes("Mầm")) lvl = "Mầm non"
+        else lvl = "Tiểu học"
+      }
+      counts[lvl] = (counts[lvl] || 0) + 1
+    })
+    return counts
+  }, [flattenedCommitments])
+
+  const uniqueCommitmentLevels = useMemo(() => {
+    const order = ["Tiểu học", "Trung học", "Mầm non"]
+    return Object.keys(commitmentLevelCounts).sort((a, b) => {
+      const idxA = order.indexOf(a)
+      const idxB = order.indexOf(b)
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB
+      if (idxA !== -1) return -1
+      if (idxB !== -1) return 1
+      return a.localeCompare(b)
+    })
+  }, [commitmentLevelCounts])
+
+  // Dynamic Grade Counts
   const commitmentGradeCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     flattenedCommitments.forEach(item => {
@@ -1034,11 +1064,21 @@ export function SupportClient({
         (commitmentSubjectFilter === "Tiếng Anh" && c.committedSubject?.includes("Anh"))
 
       const rowGrade = c.grade ? (c.grade.startsWith("Khối") ? c.grade : "Khối " + c.grade) : ((c.className || "").match(/^(\d+)/) ? "Khối " + (c.className || "").match(/^(\d+)/)[1] : (c.className?.includes("Mầm") ? "Mầm non" : "Khác"))
+      const num = parseInt((c.grade || "").replace(/\D/g, ""), 10)
+      let rowLevel = c.level
+      if (!rowLevel) {
+        if (num >= 1 && num <= 5) rowLevel = "Tiểu học"
+        else if (num >= 6 && num <= 12) rowLevel = "Trung học"
+        else if (c.grade === "Mầm non" || (c.className || "").includes("Mầm")) rowLevel = "Mầm non"
+        else rowLevel = "Tiểu học"
+      }
+      const matchesLevel = commitmentLevelFilter === "ALL" || rowLevel === commitmentLevelFilter
+
       const matchesGrade = commitmentGradeFilter === "ALL" || rowGrade === commitmentGradeFilter
 
-      return matchesSearch && matchesCampus && matchesStatus && matchesSubject && matchesGrade
+      return matchesSearch && matchesCampus && matchesStatus && matchesSubject && matchesGrade && matchesLevel
     })
-  }, [flattenedCommitments, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter])
+  }, [flattenedCommitments, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter, commitmentLevelFilter])
 
   const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
 
@@ -1448,7 +1488,22 @@ export function SupportClient({
                 </select>
               </div>
 
-                            {/* Grade filter */}
+                                          {/* Level filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Bậc học:</label>
+                <select
+                  value={commitmentLevelFilter}
+                  onChange={(e) => setCommitmentLevelFilter(e.target.value)}
+                  className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
+                >
+                  <option value="ALL">Tất cả Bậc học ({flattenedCommitments.length})</option>
+                  {uniqueCommitmentLevels.map(lvl => (
+                    <option key={lvl} value={lvl}>{lvl} ({commitmentLevelCounts[lvl]})</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Grade filter */}
               <div className="flex items-center gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Khối:</label>
                 <select
@@ -1545,6 +1600,7 @@ export function SupportClient({
                         <th className="px-4 py-3.5 text-center w-12">STT</th>
                         <th className="px-4 py-3.5 text-left">Họ tên</th>
                         <th className="px-4 py-3.5 text-left">Mã HS</th>
+                        <th className="px-4 py-3.5 text-left">Bậc học</th>
                         <th className="px-4 py-3.5 text-left">Khối</th>
                         <th className="px-4 py-3.5 text-left">Lớp</th>
                         <th className="px-4 py-3.5 text-left">Cơ sở</th>
