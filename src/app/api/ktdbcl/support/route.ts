@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { auth } from "@/lib/auth"
+import { sendEmail } from "@/lib/mail"
 
 export const dynamic = "force-dynamic"
 
@@ -832,6 +833,253 @@ export async function POST(req: Request) {
         })
         return NextResponse.json(updated)
       }
+    }
+
+    // 13. Action: sendMonthlyReminder
+    if (action === "sendMonthlyReminder") {
+      const { monthName, targetTeacherId, customMessage, deadlineDate } = body
+      if (!monthName || !academicYearId) {
+        return NextResponse.json({ error: "Thiếu thông tin tháng cần nhắc hoặc năm học" }, { status: 400 })
+      }
+
+      const yearObj = await prisma.academicYear.findUnique({
+        where: { id: academicYearId }
+      })
+      const yearName = yearObj?.name || yearObj?.year || "2026-2027"
+
+      // Fetch active learning support targets
+      const targets = await prisma.learningSupportTarget.findMany({
+        where: {
+          academicYearId,
+          status: { notIn: ["ĐÃ KẾT THÚC", "TERMINATED"] },
+          terminationStatus: { notIn: ["TERMINATED"] }
+        },
+        include: {
+          student: {
+            select: {
+              id: true,
+              studentCode: true,
+              studentName: true,
+              class: { select: { className: true } }
+            }
+          },
+          assignments: {
+            include: {
+              teacher: {
+                include: { user: { select: { email: true } } }
+              },
+              subject: { select: { subjectName: true } }
+            }
+          },
+          createdBy: {
+            include: { user: { select: { email: true } } }
+          },
+          evaluations: true
+        }
+      })
+
+      // Identify pending evaluations for monthName
+      const teacherMap = new Map<string, {
+        teacherId: string;
+        teacherName: string;
+        email: string;
+        pendingStudents: Array<{
+          studentName: string;
+          studentCode: string;
+          className: string;
+          subject: string;
+          category: string;
+        }>;
+      }>()
+
+      targets.forEach((t) => {
+        const hasEval = (t.evaluations || []).some(
+          (e: any) => e.periodName === monthName || (e.periodName && e.periodName.toLowerCase() === monthName.toLowerCase())
+        )
+        if (hasEval) return // Already evaluated in this month
+
+        const isCommitment = t.sourceType === "ADMISSION" || (t.notes && t.notes.includes("Cam kết Khảo sát đầu vào"))
+        const category = isCommitment ? "Cam kết đầu vào (CKĐV)" : "Bổ sung theo dõi (BSTD)"
+        const subject = t.reason || (t.supportType === "ACADEMIC" ? "Văn hóa" : "Tâm lý")
+
+        // Find teachers responsible
+        const teachersToNotify: Array<{ id: string; name: string; email: string }> = []
+
+        if (t.assignments && t.assignments.length > 0) {
+          t.assignments.forEach((a: any) => {
+            if (a.teacher) {
+              const email = a.teacher.email || a.teacher.user?.email
+              if (email) {
+                teachersToNotify.push({
+                  id: a.teacher.id,
+                  name: a.teacher.teacherName || "Giáo viên",
+                  email
+                })
+              }
+            }
+          })
+        }
+
+        if (teachersToNotify.length === 0 && t.createdBy) {
+          const email = t.createdBy.email || t.createdBy.user?.email
+          if (email) {
+            teachersToNotify.push({
+              id: t.createdBy.id,
+              name: t.createdBy.teacherName || "Giáo viên",
+              email
+            })
+          }
+        }
+
+        teachersToNotify.forEach(tch => {
+          if (targetTeacherId && targetTeacherId !== "ALL" && tch.id !== targetTeacherId) {
+            return
+          }
+
+          if (!teacherMap.has(tch.id)) {
+            teacherMap.set(tch.id, {
+              teacherId: tch.id,
+              teacherName: tch.name,
+              email: tch.email,
+              pendingStudents: []
+            })
+          }
+
+          const entry = teacherMap.get(tch.id)!
+          if (!entry.pendingStudents.some(s => s.studentCode === t.student?.studentCode && s.subject === subject)) {
+            entry.pendingStudents.push({
+              studentName: t.student?.studentName || "N/A",
+              studentCode: t.student?.studentCode || "N/A",
+              className: t.student?.class?.className || "N/A",
+              subject,
+              category
+            })
+          }
+        })
+      })
+
+      const recipientList = Array.from(teacherMap.values())
+      if (recipientList.length === 0) {
+        return NextResponse.json({
+          success: true,
+          message: `Tất cả giáo viên đã hoàn thành đánh giá cho ${monthName}`,
+          sentCount: 0,
+          recipients: []
+        })
+      }
+
+      let sentSuccessCount = 0
+      const results: any[] = []
+
+      for (const rec of recipientList) {
+        const studentRowsHtml = rec.pendingStudents.map((s, idx) => `
+          <tr style="border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+            <td style="padding: 10px 12px; text-align: center; color: #64748b; font-weight: bold;">${idx + 1}</td>
+            <td style="padding: 10px 12px; font-weight: bold; color: #1e293b;">${s.studentName}</td>
+            <td style="padding: 10px 12px; color: #475569;">${s.studentCode}</td>
+            <td style="padding: 10px 12px; color: #003B3A; font-weight: bold;">${s.className}</td>
+            <td style="padding: 10px 12px; color: #009085; font-weight: bold;">${s.subject}</td>
+            <td style="padding: 10px 12px; font-size: 11px; color: #475569;">${s.category}</td>
+          </tr>
+        `).join("")
+
+        const emailHtml = `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 680px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #003B3A 0%, #009085 100%); padding: 24px 30px; color: #ffffff;">
+              <div style="font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #48BFE3; margin-bottom: 4px;">
+                Hệ thống Giáo dục Sky-Line • Ban Khảo thí & ĐBCL
+              </div>
+              <h2 style="margin: 0; font-size: 19px; font-weight: 800; line-height: 1.3;">
+                NHẮC LỊCH ĐÁNH GIÁ ĐỊNH KỲ ${monthName.toUpperCase()}
+              </h2>
+              <div style="font-size: 13px; color: #e6fffa; margin-top: 4px;">
+                Năm học: ${yearName} • Phân hệ Phụ đạo & Bồi dưỡng Học sinh
+              </div>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 28px 30px; color: #334155; line-height: 1.6;">
+              <p style="font-size: 15px; margin-top: 0;">
+                Kính gửi Thầy/Cô <strong>${rec.teacherName}</strong>,
+              </p>
+              <p style="font-size: 14px; color: #475569;">
+                Ban Khảo thí & ĐBCL xin gửi thông báo nhắc lịch thực hiện đánh giá định kỳ <strong>${monthName}</strong> đối với các học sinh đang trong diện theo dõi, phụ đạo và bồi dưỡng do Thầy/Cô phụ trách.
+              </p>
+
+              ${customMessage ? `
+                <div style="background-color: #f0fdfa; border-left: 4px solid #009085; padding: 12px 16px; border-radius: 6px; margin: 16px 0; font-size: 13px; color: #003B3A;">
+                  <strong>Ghi chú từ Ban Khảo thí / Người gửi:</strong><br/>
+                  ${customMessage.replace(/\n/g, '<br/>')}
+                </div>
+              ` : ''}
+
+              ${deadlineDate ? `
+                <p style="font-size: 13px; font-weight: bold; color: #b91c1c; margin: 12px 0;">
+                  ⏰ Hạn chót hoàn thành đánh giá: ${deadlineDate}
+                </p>
+              ` : ''}
+
+              <!-- Table -->
+              <div style="margin: 20px 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                <div style="background-color: #f8fafc; padding: 10px 14px; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #003B3A; border-bottom: 1px solid #e2e8f0;">
+                  Danh sách học sinh cần ghi nhận kết quả đánh giá ${monthName} (${rec.pendingStudents.length} học sinh)
+                </div>
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                  <thead>
+                    <tr style="background-color: #f1f5f9; font-size: 11px; text-transform: uppercase; color: #64748b;">
+                      <th style="padding: 8px 12px; width: 30px; text-align: center;">TT</th>
+                      <th style="padding: 8px 12px;">Họ và tên</th>
+                      <th style="padding: 8px 12px;">Mã HS</th>
+                      <th style="padding: 8px 12px;">Lớp</th>
+                      <th style="padding: 8px 12px;">Môn / Nội dung</th>
+                      <th style="padding: 8px 12px;">Đối tượng</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${studentRowsHtml}
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Button CTA -->
+              <div style="text-align: center; margin: 28px 0 16px 0;">
+                <a href="https://skyline-survey.vercel.app/teacher/ho-tro-hoc-tap" style="display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #009085 100%); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 12px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 10px rgba(0,59,58,0.25);">
+                  Truy cập Sổ theo dõi & Ghi nhận Đánh giá ➜
+                </a>
+              </div>
+              <p style="font-size: 12px; color: #94a3b8; text-align: center; margin-bottom: 0;">
+                (Hoặc truy cập: <em>https://skyline-survey.vercel.app/teacher/ho-tro-hoc-tap</em>)
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background-color: #f8fafc; padding: 16px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center;">
+              Đây là email tự động từ Hệ thống Khảo sát & ĐBCL Sky-Line. Quý Thầy/Cô vui lòng không phản hồi trực tiếp email này.
+            </div>
+          </div>
+        `
+
+        try {
+          await sendEmail({
+            to: rec.email,
+            subject: `[Sky-Line Survey] Nhắc lịch đánh giá định kỳ ${monthName} - Phụ đạo, bồi dưỡng Học sinh`,
+            html: emailHtml
+          })
+          sentSuccessCount++
+          results.push({ teacher: rec.teacherName, email: rec.email, status: "SUCCESS", count: rec.pendingStudents.length })
+        } catch (mailErr: any) {
+          console.error(`Failed to send reminder email to ${rec.email}:`, mailErr)
+          results.push({ teacher: rec.teacherName, email: rec.email, status: "FAILED", error: mailErr.message })
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        sentCount: sentSuccessCount,
+        totalRecipients: recipientList.length,
+        results
+      })
     }
 
     // 10. Action: saveEvaluation (Teacher adds weekly/monthly evaluations)

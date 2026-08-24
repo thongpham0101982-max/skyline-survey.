@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { 
-  FileText, Users, Plus, Search, Check, RefreshCw, X, Calendar, RotateCcw, 
+  FileText, Users, Plus, Mail, Send, Search, Check, RefreshCw, X, Calendar, RotateCcw, 
   MessageSquare, TrendingUp, CheckCircle, AlertTriangle, AlertCircle, Clock, Printer, GraduationCap, School, BookOpen, Heart, Award, Info, Bell, CheckCircle2, Layers, List, LayoutGrid, Filter,
   Eye, Sparkles, ChevronRight, ArrowUpRight, BarChart3, HelpCircle, CheckSquare, Target, UserCheck, ChevronDown, CheckCheck, SlidersHorizontal, Quote, Activity, ExternalLink
 } from "lucide-react"
@@ -342,6 +342,14 @@ export function TeacherSupportClient({
   const [summaryViewMode, setSummaryViewMode] = useState<"MATRIX" | "TABLE" | "CARDS">("MATRIX")
   const [selectedDetailEval, setSelectedDetailEval] = useState<any>(null)
   const [selectedStudentJourneyTarget, setSelectedStudentJourneyTarget] = useState<any>(null)
+
+  // Email Reminder Modal States
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false)
+  const [reminderMonth, setReminderMonth] = useState<string>("Tháng " + (new Date().getMonth() + 1))
+  const [reminderTargetOption, setReminderTargetOption] = useState<"ME" | "ALL">("ALL")
+  const [reminderDeadline, setReminderDeadline] = useState<string>("")
+  const [reminderNote, setReminderNote] = useState<string>("")
+  const [sendingReminder, setSendingReminder] = useState(false)
 
   // Request Termination Form States
   const [termTargetId, setTermTargetId] = useState("")
@@ -881,6 +889,45 @@ export function TeacherSupportClient({
       toast.error("Lưu nhận xét thất bại");
     }
   }
+
+  // Send Email Reminder for Monthly Evaluation
+  const handleSendEmailReminder = async () => {
+    if (!reminderMonth) {
+      toast.error("Vui lòng chọn tháng cần nhắc nhở");
+      return;
+    }
+    setSendingReminder(true);
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sendMonthlyReminder",
+          academicYearId: selectedYearId,
+          monthName: reminderMonth,
+          targetTeacherId: reminderTargetOption === "ME" ? teacher?.id : "ALL",
+          deadlineDate: reminderDeadline,
+          customMessage: reminderNote
+        })
+      });
+      const data = await res.json();
+      if (data.error) {
+        toast.error("Gửi email nhắc nhở thất bại: " + data.error);
+      } else {
+        if (data.sentCount > 0) {
+          toast.success(`Đã gửi thành công email nhắc lịch ${reminderMonth} đến ${data.sentCount} Giáo viên!`, { duration: 5000 });
+        } else {
+          toast.success(data.message || `Tất cả học sinh đã được đánh giá xong cho ${reminderMonth}!`);
+        }
+        setIsReminderModalOpen(false);
+        setReminderNote("");
+      }
+    } catch (e: any) {
+      toast.error("Lỗi khi gửi email: " + e.message);
+    } finally {
+      setSendingReminder(false);
+    }
+  };
 
   // Delete a proposed target
   const handleDeleteTarget = async (id: string) => {
@@ -1583,10 +1630,23 @@ export function TeacherSupportClient({
                 setIsProposeModalOpen(true)
                 fetchAssignedClasses()
               }}
-              className="bg-gradient-to-r from-[#003B3A] to-[#009085] hover:from-[#002a29] hover:to-[#007a70] text-white py-2 px-4 rounded-xl font-black text-xs flex items-center gap-2 shadow-md shadow-[#003B3A]/20 transition-all transform active:scale-95 cursor-pointer"
+              className="bg-gradient-to-r from-[#003B3A] to-[#009085] hover:from-[#002a29] hover:to-[#007a70] text-white py-2.5 px-4 rounded-xl font-black text-xs flex items-center gap-2 shadow-md shadow-[#003B3A]/20 transition-all transform active:scale-95 cursor-pointer"
             >
               <Plus className="h-4 w-4 text-[#48BFE3]" />
               Đề xuất HS Theo dõi
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setReminderMonth("Tháng " + (new Date().getMonth() + 1));
+                setIsReminderModalOpen(true);
+              }}
+              className="bg-gradient-to-r from-teal-50 to-emerald-50 hover:from-teal-100 hover:to-emerald-100 text-[#003B3A] border border-teal-200/90 py-2.5 px-3.5 rounded-xl font-black text-xs flex items-center gap-2 shadow-2xs hover:shadow-xs transition-all cursor-pointer transform active:scale-95"
+              title="Gửi email nhắc lịch đánh giá định kỳ theo tháng cho giáo viên phụ trách"
+            >
+              <Mail className="h-4 w-4 text-[#009085]" />
+              <span>Nhắc lịch đánh giá qua Email</span>
             </button>
           </div>
 
@@ -4127,6 +4187,177 @@ export function TeacherSupportClient({
           </div>
         )
       })()}
+
+      {/* Modal: Gửi Email Nhắc lịch Đánh giá định kỳ theo Tháng */}
+      {isReminderModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 transition-all">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4.5 bg-gradient-to-r from-teal-900 via-[#003B3A] to-[#009085] text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-white/15 rounded-2xl backdrop-blur-xs">
+                  <Mail className="h-5 w-5 text-[#48BFE3]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black tracking-tight">Nhắc lịch Đánh giá định kỳ qua Email</h3>
+                  <p className="text-xs text-teal-200 font-medium">Gửi email thông báo danh sách học sinh cần đánh giá trong tháng</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsReminderModalOpen(false)}
+                className="p-1.5 hover:bg-white/20 rounded-xl transition-all text-white cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+              {/* 1. Chọn tháng cần nhắc */}
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
+                  <Calendar className="h-4 w-4 text-[#009085]" />
+                  Chọn Tháng cần nhắc lịch đánh giá:
+                </label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {ACADEMIC_MONTHS.map(m => {
+                    const isSelected = reminderMonth === m;
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => setReminderMonth(m)}
+                        className={`py-2 px-1 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                          isSelected
+                            ? "bg-gradient-to-r from-[#003B3A] to-[#009085] text-white border-transparent shadow-md shadow-[#003B3A]/25 font-black scale-[1.03]"
+                            : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-teal-50/70 hover:border-teal-300"
+                        }`}
+                      >
+                        {m}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. Đối tượng nhận email */}
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
+                  <Users className="h-4 w-4 text-[#009085]" />
+                  Đối tượng nhận email:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                    reminderTargetOption === "ALL"
+                      ? "bg-teal-50/70 border-teal-400 ring-2 ring-teal-500/20"
+                      : "bg-slate-50 border-slate-200 hover:bg-white"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="reminderTarget"
+                      checked={reminderTargetOption === "ALL"}
+                      onChange={() => setReminderTargetOption("ALL")}
+                      className="mt-0.5 text-[#009085] focus:ring-[#009085]"
+                    />
+                    <div>
+                      <span className="text-xs font-extrabold text-slate-900 block">Tất cả GV phụ trách</span>
+                      <span className="text-[11px] text-slate-500 font-medium">Gửi tới tất cả GV còn học sinh chưa đánh giá trong ${reminderMonth}</span>
+                    </div>
+                  </label>
+
+                  <label className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                    reminderTargetOption === "ME"
+                      ? "bg-teal-50/70 border-teal-400 ring-2 ring-teal-500/20"
+                      : "bg-slate-50 border-slate-200 hover:bg-white"
+                  }`}>
+                    <input
+                      type="radio"
+                      name="reminderTarget"
+                      checked={reminderTargetOption === "ME"}
+                      onChange={() => setReminderTargetOption("ME")}
+                      className="mt-0.5 text-[#009085] focus:ring-[#009085]"
+                    />
+                    <div>
+                      <span className="text-xs font-extrabold text-slate-900 block">Gửi riêng cho tôi</span>
+                      <span className="text-[11px] text-slate-500 font-medium">Gửi danh sách nhắc việc về email cá nhân: ${teacher?.email || "Email GV"}</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* 3. Hạn chót hoàn thành (Deadline) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-[#009085]" />
+                  Hạn chót hoàn thành (Deadline - tùy chọn):
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ví dụ: Trước 17h00 ngày 30/09/2026..."
+                  value={reminderDeadline}
+                  onChange={(e) => setReminderDeadline(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-[#009085]"
+                />
+              </div>
+
+              {/* 4. Lời nhắn / Ghi chú kèm theo */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-black text-slate-800 uppercase tracking-tight flex items-center gap-1.5">
+                  <MessageSquare className="h-4 w-4 text-[#009085]" />
+                  Lời nhắn / Lưu ý từ Ban Khảo thí & ĐBCL (tùy chọn):
+                </label>
+                <textarea
+                  placeholder="Nhập nội dung nhắc nhở hoặc yêu cầu đặc biệt khi đánh giá..."
+                  value={reminderNote}
+                  onChange={(e) => setReminderNote(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-[#009085] h-20 resize-none"
+                />
+              </div>
+
+              {/* Thông tin mẫu email */}
+              <div className="bg-teal-50/60 border border-teal-200/80 rounded-2xl p-3.5 flex items-start gap-2.5 text-xs text-[#003B3A]">
+                <Info className="h-4 w-4 text-[#009085] shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <span className="font-extrabold block">Cơ chế gửi email tự động:</span>
+                  <p className="text-[11px] text-slate-600 font-medium">
+                    Hệ thống sẽ tự động lọc danh sách học sinh chưa có bản ghi đánh giá của <strong>${reminderMonth}</strong>, tạo bảng tổng hợp chi tiết và gửi email kèm đường link trực tiếp vào Sổ theo dõi cho từng giáo viên.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setIsReminderModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+
+              <button
+                type="button"
+                disabled={sendingReminder}
+                onClick={handleSendEmailReminder}
+                className="px-5 py-2.5 rounded-xl text-xs font-black text-white bg-gradient-to-r from-[#003B3A] to-[#009085] hover:from-[#002a29] hover:to-[#007a70] shadow-md shadow-[#003B3A]/25 disabled:opacity-50 flex items-center gap-2 transition-all cursor-pointer"
+              >
+                {sendingReminder ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin text-[#48BFE3]" />
+                    <span>Đang gửi email...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 text-[#48BFE3]" />
+                    <span>Gửi Email Nhắc lịch</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 4. Sổ theo dõi kết quả từng Học sinh Modal (Học bạ điện tử bồi dưỡng) */}
       {isProfileModalOpen && (
