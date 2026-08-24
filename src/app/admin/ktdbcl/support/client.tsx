@@ -74,6 +74,14 @@ export function SupportClient({
   const [customTTCMMessage, setCustomTTCMMessage] = useState("")
   const [additionalTTCMCc, setAdditionalTTCMCc] = useState("")
   const [sendingTTCMEmall, setSendingTTCMEmall] = useState(false)
+  // QLCM Email Modal states
+  const [isEmailQLCMModalOpen, setIsEmailQLCMModalOpen] = useState(false)
+  const [emailQLCMCampus, setEmailQLCMCampus] = useState("ALL")
+  const [qlcmList, setQlcmList] = useState<any[]>([])
+  const [selectedQLCMIds, setSelectedQLCMIds] = useState<string[]>([])
+  const [customQLCMMessage, setCustomQLCMMessage] = useState("")
+  const [additionalQLCMCc, setAdditionalQLCMCc] = useState("")
+  const [sendingQLCMEmail, setSendingQLCMEmail] = useState(false)
 
   useEffect(() => {
     setCommitmentPage(1)
@@ -197,6 +205,102 @@ export function SupportClient({
     }
   }
 
+    const fetchQLCMList = async () => {
+    try {
+      const res = await fetch(`/api/ktdbcl/support?action=getCommitmentQLCMList&academicYearId=${selectedYearId}&_=${Date.now()}`)
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setQlcmList(data)
+      }
+    } catch (e) {
+      console.error("Failed to load QLCM list", e)
+    }
+  }
+
+  const handleSendQLCMCommitmentEmail = async () => {
+    if (selectedQLCMIds.length === 0) {
+      toast.error("Vui lòng chọn ít nhất một Quản lý Chuyên môn Cơ sở")
+      return
+    }
+
+    const targetStudents = (emailQLCMCampus && emailQLCMCampus !== "ALL")
+      ? filteredCommitments.filter(c => c.campusName?.includes(emailQLCMCampus) || (c.className && c.className.includes(emailQLCMCampus)))
+      : filteredCommitments
+
+    if (targetStudents.length === 0) {
+      toast.error("Không có học sinh nào phù hợp cơ sở đã chọn")
+      return
+    }
+
+    const chosenQLCM = qlcmList.filter(t => selectedQLCMIds.includes(t.id)).map(t => ({
+      id: t.id,
+      teacherName: t.teacherName,
+      email: t.email,
+      campusName: t.campus?.campusName || (t.position || "QLCM")
+    }))
+
+    const payloadStudents = targetStudents.map(item => {
+      let scoreText = ""
+      const isPri = /^[1-5][._\s]|lớp\s*[1-5]/i.test(item.className || "")
+      const litName = isPri ? "Tiếng Việt" : "Ngữ Văn"
+
+      if (item.committedSubject === "Toán" && item.mathScore !== null) {
+        scoreText = `Toán: ${item.mathScore}`
+      } else if ((item.committedSubject === "Tiếng Việt" || item.committedSubject === "Ngữ Văn") && item.literatureScore !== null) {
+        scoreText = `${litName}: ${item.literatureScore}`
+      } else if (item.committedSubject === "Tiếng Anh") {
+        const parts = []
+        if (item.writtenEnglishScore !== null) parts.push(`Viết: ${item.writtenEnglishScore}`)
+        if (item.oralEnglishScore !== null) parts.push(`Nói: ${item.oralEnglishScore}`)
+        scoreText = parts.length > 0 ? `Anh (${parts.join(", ")})` : ""
+      } else if (item.committedSubject === "Tâm lý" && item.psychologyScore !== null) {
+        scoreText = `Tâm lý: ${item.psychologyScore}`
+      }
+
+      return {
+        fullName: item.fullName,
+        studentCode: item.studentCode,
+        grade: item.grade || ((item.className || "").match(/^(\d+)/) ? "Khối " + (item.className || "").match(/^(\d+)/)[1] : "-"),
+        className: item.className || "-",
+        campusName: item.campusName || "Sky-Line",
+        subject: item.committedSubject,
+        scores: scoreText,
+        note: item.directorNote || item.admissionResult || "",
+        isProposed: item.isProposed
+      }
+    })
+
+    setSendingQLCMEmail(true)
+    try {
+      const res = await fetch("/api/ktdbcl/support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sendCommitmentEmailToQLCM",
+          academicYearId: selectedYearId,
+          campusName: emailQLCMCampus,
+          recipients: chosenQLCM,
+          customMessage: customQLCMMessage,
+          additionalCc: additionalQLCMCc,
+          students: payloadStudents
+        })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast.success(`Đã gửi thành công email cho ${data.sentCount} QLCM Cơ sở!`)
+        setIsEmailQLCMModalOpen(false)
+        setCustomQLCMMessage("")
+        setAdditionalQLCMCc("")
+      } else {
+        toast.error(data.error || "Gửi email thất bại")
+      }
+    } catch (e: any) {
+      toast.error("Lỗi khi gửi email: " + e.message)
+    } finally {
+      setSendingQLCMEmail(false)
+    }
+  }
+
   const fetchTTCMList = async () => {
     try {
       const res = await fetch(`/api/ktdbcl/support?action=getCommitmentTTCMList&academicYearId=${selectedYearId}&_=${Date.now()}`)
@@ -212,6 +316,7 @@ export function SupportClient({
   useEffect(() => {
     if (activeTab === "commitments") {
       fetchTTCMList()
+      fetchQLCMList()
     }
   }, [activeTab, selectedYearId])
 
@@ -1386,6 +1491,19 @@ export function SupportClient({
                   <option value="NOT_PROPOSED">Chưa đề xuất</option>
                 </select>
               </div>
+
+                            {/* Send Email to QLCM Button */}
+              <button
+                onClick={() => {
+                  setEmailQLCMCampus(commitmentCampusFilter === "ALL" ? "ALL" : commitmentCampusFilter)
+                  setIsEmailQLCMModalOpen(true)
+                }}
+                className="px-3.5 py-2 bg-gradient-to-r from-teal-700 to-cyan-700 hover:from-teal-800 hover:to-cyan-800 text-white text-xs font-bold rounded-xl shadow-xs hover:shadow transition-all flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Gửi Email danh sách học sinh cam kết cho Quản lý Chuyên môn Cơ sở"
+              >
+                <Building2 className="h-4 w-4" />
+                <span>Gửi Email QLCM Cơ sở</span>
+              </button>
 
               {/* Send Email to TTCM Button */}
               <button
