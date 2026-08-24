@@ -259,7 +259,7 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
-               // 4.5. Action: getCommitmentCandidates
+                   // 4.5. Action: getCommitmentCandidates
     if (action === "getCommitmentCandidates") {
       const periods = await prisma.inputAssessmentPeriod.findMany({
         where: { academicYearId },
@@ -317,7 +317,9 @@ export async function GET(req: Request) {
 
       const allStudentCodes = [
         ...inputStudents.map(s => s.studentCode),
-        ...preschoolStudents.map(s => s.studentCode)
+        ...inputStudents.map(s => s.enrollmentCode),
+        ...preschoolStudents.map(s => s.studentCode),
+        ...preschoolStudents.map(s => s.enrollmentCode)
       ].filter(Boolean)
 
       const allFullNames = [
@@ -404,19 +406,23 @@ export async function GET(req: Request) {
       const result = [
         ...inputStudents.map(is => {
           // Precise student matching: prioritize exact studentCode, and ensure grade alignment when matching by name
-          const matchingStudent = systemStudents.find(ss => {
-            if (ss.studentCode && is.studentCode && ss.studentCode.trim().toLowerCase() === is.studentCode.trim().toLowerCase()) {
-              return true
-            }
-            if (cleanString(ss.studentName) === cleanString(is.fullName)) {
-              if (!is.grade) return true
-              const ssGrade = ss.class?.grade || ss.class?.className?.match(/^(\d+)/)?.[1]
-              const isCleanGrade = is.grade.replace(/\D/g, "")
-              if (!ssGrade || !isCleanGrade) return true
-              return ssGrade.toString() === isCleanGrade.toString()
-            }
-            return false
-          })
+          let matchingStudent = systemStudents.find(ss => 
+            (ss.studentCode && is.studentCode && ss.studentCode.trim().toLowerCase() === is.studentCode.trim().toLowerCase()) ||
+            (ss.studentCode && is.enrollmentCode && ss.studentCode.trim().toLowerCase() === is.enrollmentCode.trim().toLowerCase())
+          )
+
+          if (!matchingStudent) {
+            matchingStudent = systemStudents.find(ss => {
+              if (cleanString(ss.studentName) === cleanString(is.fullName)) {
+                if (!is.grade) return true
+                const ssGrade = ss.class?.grade || ss.class?.className?.match(/^(\d+)/)?.[1]
+                const isCleanGrade = is.grade.replace(/\D/g, "")
+                if (!ssGrade || !isCleanGrade) return true
+                return ssGrade.toString() === isCleanGrade.toString()
+              }
+              return false
+            })
+          }
 
           // Strictly resolve Class object from Quản lý lớp học (Class model)
           let resolvedClass = matchingStudent?.class || null
@@ -467,11 +473,14 @@ export async function GET(req: Request) {
             is.admissionCampus ||
             ""
 
+          // Resolve official Student Code according to Class/System
+          const resolvedStudentCode = matchingStudent?.studentCode || is.enrollmentCode || is.studentCode || "-"
+
           const committedSubjects = parseCommittedSubjects(is.directorNote, is.admissionResult, resolvedClassName, resolvedGrade)
 
           return {
             id: is.id,
-            studentCode: is.studentCode,
+            studentCode: resolvedStudentCode,
             fullName: is.fullName,
             gender: is.gender,
             admissionResult: is.admissionResult,
@@ -496,12 +505,14 @@ export async function GET(req: Request) {
           }
         }),
         ...preschoolStudents.map(ps => {
-          const matchingStudent = systemStudents.find(ss => {
-            if (ss.studentCode && ps.studentCode && ss.studentCode.trim().toLowerCase() === ps.studentCode.trim().toLowerCase()) {
-              return true
-            }
-            return cleanString(ss.studentName) === cleanString(ps.fullName)
-          })
+          let matchingStudent = systemStudents.find(ss => 
+            (ss.studentCode && ps.studentCode && ss.studentCode.trim().toLowerCase() === ps.studentCode.trim().toLowerCase()) ||
+            (ss.studentCode && ps.enrollmentCode && ss.studentCode.trim().toLowerCase() === ps.enrollmentCode.trim().toLowerCase())
+          )
+
+          if (!matchingStudent) {
+            matchingStudent = systemStudents.find(ss => cleanString(ss.studentName) === cleanString(ps.fullName))
+          }
 
           let resolvedClass = matchingStudent?.class || null
 
@@ -531,11 +542,13 @@ export async function GET(req: Request) {
             ps.admissionCampus ||
             ""
 
+          const resolvedStudentCode = matchingStudent?.studentCode || ps.enrollmentCode || ps.studentCode || "-"
+
           const committedSubjects = parseCommittedSubjects(ps.directorNote, ps.admissionResult, resolvedClassName, resolvedGrade)
 
           return {
             id: ps.id,
-            studentCode: ps.studentCode,
+            studentCode: resolvedStudentCode,
             fullName: ps.fullName,
             gender: ps.gender,
             admissionResult: ps.admissionResult,
