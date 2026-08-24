@@ -1846,15 +1846,33 @@ export function ObservationClient(props: ObservationClientProps) {
               <span className="font-black text-xs text-[#003B3A] uppercase tracking-wider">Đăng ký nhanh</span>
             </div>
             <span className="text-xs font-black bg-teal-50 text-[#008B82] px-2.5 py-0.5 rounded-full border border-teal-200/60 animate-pulse">
-              ⚡ Gợi ý tối ưu
+              ⚡ Gợi ý mới nhất
             </span>
           </div>
 
           <div className="flex-1 flex flex-col gap-3">
             {(() => {
+              const today = new Date();
+              const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
               const suggested = slots
-                .filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id))
+                .filter(s => {
+                  if (s.teacherId === currentTeacher?.id) return false;
+                  if (s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)) return false;
+                  if (s.requestOrigin === "OBSERVER_REQUEST") return false;
+                  return true;
+                })
                 .sort((a, b) => {
+                  const aDate = new Date(a.date);
+                  const bDate = new Date(b.date);
+                  const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || a.registrations.length >= a.maxSeats;
+                  const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || b.registrations.length >= b.maxSeats;
+
+                  // 1. Ưu tiên hàng đầu: Các tiết còn hạn và còn chỗ
+                  if (!aIsExpired && bIsExpired) return -1;
+                  if (aIsExpired && !bIsExpired) return 1;
+
+                  // 2. Điểm tương thích theo cấp học / tổ chuyên môn / cơ sở
                   const getScore = (slot: any) => {
                     let score = 0;
                     const isSlotMamNon = slot.level === "Mầm non" ||
@@ -1862,32 +1880,33 @@ export function ObservationClient(props: ObservationClientProps) {
                     
                     if (isMamNonTeacher) {
                       if (isSlotMamNon) {
-                        score += 1000;
-                        const slotDeptName = (slot.teacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-                        const myDeptName = (currentTeacher?.departmentRel?.name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-                        const isSameDept = myDeptName !== "" && slotDeptName === myDeptName;
+                        score += 500;
+                        const isSameDept = checkIsMyDept(slot);
                         const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                        if (isSameCampus && isSameDept) score += 500;
-                        else if (isSameCampus) score += 300;
-                        else if (isSameDept) score += 200;
-                      } else {
-                        score -= 1000;
+                        if (isSameCampus && isSameDept) score += 300;
+                        else if (isSameCampus) score += 200;
+                        else if (isSameDept) score += 100;
                       }
                     } else {
                       if (!isSlotMamNon) {
-                        score += 1000;
+                        score += 500;
                         const isSameDept = checkIsMyDept(slot);
                         const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                        if (isSameCampus && isSameDept) score += 500;
-                        else if (isSameCampus) score += 300;
-                        else if (isSameDept) score += 200;
-                      } else {
-                        score -= 1000;
+                        if (isSameCampus && isSameDept) score += 300;
+                        else if (isSameCampus) score += 200;
+                        else if (isSameDept) score += 100;
                       }
                     }
                     return score;
                   };
-                  return getScore(b) - getScore(a);
+
+                  const scoreDiff = getScore(b) - getScore(a);
+                  if (scoreDiff !== 0) return scoreDiff;
+
+                  // 3. Nếu cùng độ ưu tiên, sắp xếp theo thời gian mới nhất (ngày dạy hoặc ngày tạo)
+                  const aTime = new Date(a.createdAt || a.date).getTime();
+                  const bTime = new Date(b.createdAt || b.date).getTime();
+                  return bTime - aTime;
                 })
                 .slice(0, 3);
               
@@ -1895,7 +1914,7 @@ export function ObservationClient(props: ObservationClientProps) {
                 return (
                   <div className="flex flex-col items-center justify-center flex-1 py-12 text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
                     <CheckCircle className="w-10 h-10 text-slate-300 mb-2 stroke-1" />
-                    <p className="text-xs font-bold text-center">Bạn đã đăng ký hết các tiết học khả dụng!</p>
+                    <p className="text-xs font-bold text-center">Chưa có tiết dạy dự giờ nào khả dụng.</p>
                   </div>
                 );
               }
@@ -1903,8 +1922,12 @@ export function ObservationClient(props: ObservationClientProps) {
               return (
                 <div className="space-y-2.5">
                   {suggested.map(slot => {
-                    const isPastSlot = new Date(slot.date) < new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+                    const slotDate = new Date(slot.date);
+                    const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || slot.registrations.length >= slot.maxSeats;
                     const isMamNon = slot.level === "Mầm non";
+                    const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
+                    const remainingSeats = Math.max(0, slot.maxSeats - slot.registrations.length);
+
                     return (
                       <div key={slot.id} className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 text-xs transition-all hover:shadow-sm ${isMamNon ? "bg-amber-50/30 hover:bg-amber-50/50 border-amber-200/70" : "bg-slate-50/70 hover:bg-teal-50/30 border-slate-200/70"}`}>
                         <div className="min-w-0 flex-1 space-y-1">
@@ -1913,27 +1936,39 @@ export function ObservationClient(props: ObservationClientProps) {
                               {isMamNon ? "Mầm non" : "K-12"}
                             </span>
                             <span className="text-xs font-black text-slate-700 truncate">{slot.subjectName}</span>
+                            {campusDisplay && (
+                              <span className="px-1.5 py-0.2 text-[10px] font-extrabold rounded-md bg-slate-200/80 text-slate-700">
+                                {campusDisplay}
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs font-bold text-slate-900 truncate leading-snug">{slot.topic}</p>
-                          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                          <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-500 flex-wrap">
                             <span className="text-slate-800 font-black">{slot.teacher.teacherName}</span>
                             <span>•</span>
                             <span>Lớp: {slot.className || "Chưa xếp"}</span>
                             <span>•</span>
-                            <span>{new Date(slot.date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</span>
+                            <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}</span>
+                            <span>•</span>
+                            <span className="text-teal-700 font-bold">{slot.startTime}</span>
                           </div>
                         </div>
-                        <button 
-                          disabled={isPastSlot}
-                          onClick={() => setRegisterDetailSlot(slot)}
-                          className={`px-3.5 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-xs shrink-0 cursor-pointer ${
-                            isPastSlot
-                              ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                              : "bg-[#008B82] hover:bg-[#007068] text-white"
-                          }`}
-                        >
-                          {isPastSlot ? "Hết hạn" : "Đăng ký"}
-                        </button>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <button 
+                            disabled={isPastSlot}
+                            onClick={() => setRegisterDetailSlot(slot)}
+                            className={`px-3.5 py-2 text-xs font-black uppercase rounded-xl transition-all shadow-xs shrink-0 cursor-pointer ${
+                              isPastSlot
+                                ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                                : "bg-[#008B82] hover:bg-[#007068] text-white hover:scale-105 active:scale-95"
+                            }`}
+                          >
+                            {isPastSlot ? (slot.registrations.length >= slot.maxSeats ? "Đầy chỗ" : "Hết hạn") : "Đăng ký"}
+                          </button>
+                          {!isPastSlot && (
+                            <span className="text-[10px] font-bold text-teal-800">Còn {remainingSeats} chỗ</span>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
