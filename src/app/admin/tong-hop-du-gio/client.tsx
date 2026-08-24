@@ -4,7 +4,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { updateTeacherObservationTargets } from "@/app/teacher/du-gio/actions"
 import toast, { Toaster } from "react-hot-toast"
 import { 
-  ClipboardList, CheckCircle, CheckCircle2, PieChart, Calendar, Layers,
+  ClipboardList, CheckCircle, CheckCircle2, PieChart, Calendar, Layers, Mail, Send, FileSpreadsheet, UserCheck, AlertTriangle, ArrowRight, BookMarked,
   ChevronDown, ChevronUp, AlertCircle, Plus, Search, X, Check,
   BookOpen, User, Award, ThumbsUp, MessageSquare, GraduationCap,
   Eye, Settings, Sparkles, Filter, TrendingUp, BarChart3, School,
@@ -154,7 +154,7 @@ export function AdminTongHopClient({
   }, [activeBlockTab, departments, isTTCM]);
 
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null)
-  const [activeDetailTab, setActiveDetailTab] = useState<"lich-su" | "phan-tich" | "to-cm">("lich-su")
+  const [activeDetailTab, setActiveDetailTab] = useState<"lich-su" | "lich-su-du" | "tien-do-to" | "phan-tich" | "to-cm">("lich-su")
   
   // Target Config modal state
   const [isTargetModalOpen, setIsTargetModalOpen] = useState(false)
@@ -465,6 +465,139 @@ export function AdminTongHopClient({
     });
   }, [selectedTeacherId, initialSlots, selectedMonth]);
 
+  // Selected teacher's observed slots (where this teacher is the observer)
+  const selTeacherObservedSlots = useMemo(() => {
+    if (!selectedTeacherId) return [];
+    const results: any[] = [];
+    initialSlots.forEach(slot => {
+      if (selectedMonth !== "all") {
+        if (!slot.date) return;
+        const d = new Date(slot.date);
+        if (isNaN(d.getTime())) return;
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        if (`${yyyy}-${mm}` !== selectedMonth) return;
+      }
+      slot.registrations?.forEach((reg: any) => {
+        if (reg.teacherId === selectedTeacherId && reg.isApproved) {
+          results.push({
+            slot,
+            reg,
+            evaluation: reg.evaluation,
+            hostTeacher: slot.teacher
+          });
+        }
+      });
+    });
+    return results;
+  }, [selectedTeacherId, initialSlots, selectedMonth]);
+
+  const filteredObservedSlots = useMemo(() => {
+    return selTeacherObservedSlots.filter(item => {
+      const slot = item.slot;
+      const hostName = item.hostTeacher?.teacherName || "";
+      const matchQuery = !searchSlotQuery || 
+        slot.topic?.toLowerCase().includes(searchSlotQuery.toLowerCase()) ||
+        (slot.subjectName && slot.subjectName.toLowerCase().includes(searchSlotQuery.toLowerCase())) ||
+        (slot.className && slot.className.toLowerCase().includes(searchSlotQuery.toLowerCase())) ||
+        hostName.toLowerCase().includes(searchSlotQuery.toLowerCase());
+      const matchLevel = filterLevel === "all" || slot.level === filterLevel;
+      const matchGrade = filterGrade === "all" || slot.grade === filterGrade;
+      return matchQuery && matchLevel && matchGrade;
+    });
+  }, [selTeacherObservedSlots, searchSlotQuery, filterLevel, filterGrade]);
+
+  // Find TTCM for selected department
+  const deptTTCM = useMemo(() => {
+    return deptTeachers.find((t: any) => 
+      t.position === "TTCM" || 
+      (t.departmentAssignments || []).some((da: any) => da.departmentId === selectedDeptId && da.position === "TTCM")
+    ) || null;
+  }, [deptTeachers, selectedDeptId]);
+
+  // Matrix stats of all teachers in the department
+  const deptTeacherMatrix = useMemo(() => {
+    return deptTeachers.map((t: any) => {
+      const stats = teacherStats[t.id] || { taughtCount: 0, observedCount: 0 };
+      const reqTaught = t.requiredTaught || 0;
+      const reqObserved = t.requiredObserved || 0;
+      const taughtUnit = t.taughtUnit || "tháng";
+      const observedUnit = t.observedUnit || "tháng";
+
+      const isTaughtMet = reqTaught === 0 || stats.taughtCount >= reqTaught;
+      const isObservedMet = reqObserved === 0 || stats.observedCount >= reqObserved;
+      const isAllMet = isTaughtMet && isObservedMet;
+
+      const taughtPct = reqTaught > 0 ? Math.min(100, Math.round((stats.taughtCount / reqTaught) * 100)) : 100;
+      const observedPct = reqObserved > 0 ? Math.min(100, Math.round((stats.observedCount / reqObserved) * 100)) : 100;
+
+      return {
+        ...t,
+        taughtCount: stats.taughtCount,
+        observedCount: stats.observedCount,
+        reqTaught,
+        reqObserved,
+        taughtUnit,
+        observedUnit,
+        isTaughtMet,
+        isObservedMet,
+        isAllMet,
+        taughtPct,
+        observedPct
+      };
+    });
+  }, [deptTeachers, teacherStats]);
+
+  // Email to TTCM Modal State
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailCc, setEmailCc] = useState("");
+  const [emailMonth, setEmailMonth] = useState<string>("all");
+  const [emailNotes, setEmailNotes] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const openEmailModal = () => {
+    setEmailTo(deptTTCM?.email || "");
+    setEmailCc("");
+    setEmailMonth(selectedMonth !== "all" ? selectedMonth : (availableMonths[0] || "all"));
+    setEmailNotes("");
+    setIsEmailModalOpen(true);
+  };
+
+  const handleSendEmailReport = async () => {
+    if (!emailTo || !emailTo.includes("@")) {
+      toast.error("Vui lòng nhập địa chỉ email hợp lệ cho TTCM");
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const res = await fetch("/api/admin/du-gio/send-ttcm-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          departmentId: selectedDeptId,
+          academicYearId: filterAcademicYearId,
+          month: emailMonth,
+          ttcmEmail: emailTo,
+          ttcmName: deptTTCM?.teacherName || "Tổ trưởng chuyên môn",
+          customCc: emailCc || undefined,
+          notes: emailNotes || undefined
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success(data.message || "Đã gửi email báo cáo thành công cho TTCM!");
+        setIsEmailModalOpen(false);
+      } else {
+        toast.error(data.error || "Gửi email thất bại");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Lỗi kết nối khi gửi email");
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   const filteredSlots = useMemo(() => {
     return selTeacherSlots.filter(slot => {
       const matchQuery = !searchSlotQuery || 
@@ -665,6 +798,15 @@ export function AdminTongHopClient({
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            {(isSuperAdmin || isTTCM || isGDCS) && (
+              <button
+                onClick={openEmailModal}
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-950 font-black text-xs shadow-md shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Mail className="w-4 h-4 text-slate-950" />
+                <span>Gửi Email báo cáo cho TTCM</span>
+              </button>
+            )}
             {academicYears && academicYears.length > 0 && (
               <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/15 px-3.5 py-2 rounded-2xl text-xs">
                 <Calendar className="w-4 h-4 text-[#48BFE3]" />
@@ -1023,45 +1165,75 @@ export function AdminTongHopClient({
                 </div>
               </div>
 
-              {/* Sub-tab Navigation */}
+                            {/* Sub-tab Navigation */}
               <div className="flex gap-2 pt-4 overflow-x-auto">
                 <button
                   onClick={() => setActiveDetailTab("lich-su")}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all shrink-0 ${
                     activeDetailTab === "lich-su"
                       ? "bg-[#003B3A] text-white shadow-md shadow-[#003B3A]/20"
                       : "bg-slate-100 hover:bg-slate-200/80 text-slate-600"
                   }`}
                 >
                   <ClipboardList className="w-4 h-4" />
-                  <span>Lịch sử tiết dạy</span>
+                  <span>1. Lịch sử tiết dạy</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeDetailTab === "lich-su" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
                     {filteredSlots.length}
                   </span>
                 </button>
 
                 <button
+                  onClick={() => setActiveDetailTab("lich-su-du")}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all shrink-0 ${
+                    activeDetailTab === "lich-su-du"
+                      ? "bg-teal-600 text-white shadow-md shadow-teal-600/20"
+                      : "bg-slate-100 hover:bg-slate-200/80 text-slate-600"
+                  }`}
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>2. Lịch sử tiết dự</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeDetailTab === "lich-su-du" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
+                    {filteredObservedSlots.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setActiveDetailTab("tien-do-to")}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all shrink-0 ${
+                    activeDetailTab === "tien-do-to"
+                      ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                      : "bg-slate-100 hover:bg-slate-200/80 text-slate-600"
+                  }`}
+                >
+                  <UserCheck className="w-4 h-4" />
+                  <span>3. Tiến độ Tổ CM ({selectedDeptName})</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeDetailTab === "tien-do-to" ? "bg-white/20 text-white" : "bg-slate-200 text-slate-700"}`}>
+                    {deptTeachers.length} GV
+                  </span>
+                </button>
+
+                <button
                   onClick={() => setActiveDetailTab("phan-tich")}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all shrink-0 ${
                     activeDetailTab === "phan-tich"
                       ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20"
                       : "bg-slate-100 hover:bg-slate-200/80 text-slate-600"
                   }`}
                 >
                   <BarChart3 className="w-4 h-4" />
-                  <span>Phân tích Năng lực & Điểm yếu</span>
+                  <span>4. Năng lực cá nhân</span>
                 </button>
 
                 <button
                   onClick={() => setActiveDetailTab("to-cm")}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black transition-all shrink-0 ${
                     activeDetailTab === "to-cm"
                       ? "bg-violet-600 text-white shadow-md shadow-violet-600/20"
                       : "bg-slate-100 hover:bg-slate-200/80 text-slate-600"
                   }`}
                 >
                   <Award className="w-4 h-4" />
-                  <span>Năng lực Tổ CM</span>
+                  <span>5. Năng lực Tổ CM</span>
                 </button>
               </div>
             </div>

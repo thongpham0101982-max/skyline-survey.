@@ -153,8 +153,12 @@ export async function getObservationData(academicYearId?: string) {
         id: true,
         teacherName: true,
         teacherCode: true,
+        email: true,
         departmentId: true,
-        position: true
+        position: true,
+        departmentAssignments: {
+          select: { departmentId: true, position: true }
+        }
       },
       orderBy: { teacherName: "asc" }
     })
