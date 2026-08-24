@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T04:36:08.162Z
+// Forced Vercel Deployment: 2026-08-24T04:43:11.417Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1072,16 +1072,20 @@ export function ObservationClient(props: ObservationClientProps) {
     return slots.filter(slot => {
       const isHost = slot.teacherId === currentTeacher?.id;
       const isObserver = slot.registrations.some((r: any) => r.teacherId === currentTeacher?.id);
+      const slotDate = new Date(slot.date);
+      const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
       
       if (activeStatusTab === "gbm_request") {
         if (slot.requestOrigin !== "OBSERVER_REQUEST") return false;
-      } else {
+        // Các tiết xin dự giờ có ngày dạy nhỏ hơn hiện tại thì quá hạn, loại khỏi tab Xin dự giờ
+        if (isExpired) return false;
+      } else if (activeStatusTab === "expired") {
+        // Tab Hết hạn: chứa tất cả các tiết quá hạn (cả tiết tự mở và tiết xin dự giờ)
+        if (!isExpired) return false;
+      } else if (activeStatusTab === "new") {
+        if (slot.requestOrigin === "OBSERVER_REQUEST") return false;
         if (isHost || isObserver) return false;
-
-        const slotDate = new Date(slot.date);
-        const isExpired = slotDate < todayStart || slot.status === "EXPIRED";
-        if (activeStatusTab === "new" && isExpired) return false;
-        if (activeStatusTab === "expired" && !isExpired) return false;
+        if (isExpired) return false;
       }
 
       const isMyDept = checkIsMyDept(slot);
@@ -2138,11 +2142,17 @@ export function ObservationClient(props: ObservationClientProps) {
             {/* Status Pills */}
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/70 shadow-inner">
               {(() => {
-                const availableSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
                 const todayStart = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
-                const newCount = availableSlots.filter(s => new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
-                const expiredCount = availableSlots.filter(s => new Date(s.date) < todayStart || s.status === "EXPIRED").length;
-                const reqCount = slots.filter(s => s.requestOrigin === "OBSERVER_REQUEST").length;
+                const availableSlots = slots.filter(s => s.teacherId !== currentTeacher?.id && !s.registrations.some((r: any) => r.teacherId === currentTeacher?.id));
+                
+                // Tiết mới ĐK: tiết mở còn hạn (không tính observer request)
+                const newCount = availableSlots.filter(s => s.requestOrigin !== "OBSERVER_REQUEST" && new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
+                
+                // Hết hạn: toàn bộ tiết quá hạn (bao gồm cả tiết mở và tiết xin dự giờ quá hạn)
+                const expiredCount = slots.filter(s => new Date(s.date) < todayStart || s.status === "EXPIRED").length;
+                
+                // Xin dự giờ: chỉ tính các đề xuất xin dự giờ còn hạn
+                const reqCount = slots.filter(s => s.requestOrigin === "OBSERVER_REQUEST" && new Date(s.date) >= todayStart && s.status !== "EXPIRED").length;
 
                 return (
                   <>
