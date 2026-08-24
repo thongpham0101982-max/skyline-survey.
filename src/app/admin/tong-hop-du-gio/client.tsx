@@ -1558,14 +1558,7 @@ export function AdminTongHopClient({
                     <UserCheck className="w-4 h-4 text-[#003B3A]" />
                     <span>Danh sách Giáo viên & Đối chiếu Chỉ tiêu</span>
                   </h4>
-                  <div className="flex items-center gap-3 text-[11px] font-bold text-slate-500">
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" /> Đạt
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-rose-500" /> Chưa đạt
-                    </span>
-                  </div>
+
                 </div>
 
                 <div className="overflow-x-auto">
@@ -1574,10 +1567,9 @@ export function AdminTongHopClient({
                       <tr className="border-b border-slate-200 bg-slate-50 text-[10px] font-black uppercase text-slate-600 tracking-wider">
                         <th className="py-2.5 px-3 text-center w-10">STT</th>
                         <th className="py-2.5 px-3 min-w-[180px]">Giáo viên Bộ môn</th>
-                        <th className="py-2.5 px-3 text-center min-w-[130px]">Tiết Dạy</th>
-                        <th className="py-2.5 px-3 text-center min-w-[130px]">Tiết Dự</th>
-                        <th className="py-2.5 px-3 text-center min-w-[110px]">Trạng Thái</th>
-                        <th className="py-2.5 px-3 text-center w-20">Chi tiết</th>
+                        <th className="py-2.5 px-3 text-center min-w-[140px]">Tiết Dạy</th>
+                        <th className="py-2.5 px-3 text-center min-w-[140px]">Tiết Dự</th>
+                        <th className="py-2.5 px-3 text-center w-24">Chi tiết</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-xs">
@@ -1625,15 +1617,6 @@ export function AdminTongHopClient({
                                   : "bg-amber-50 text-amber-800 border-amber-200"
                               }`}>
                                 {t.observedCount} {t.reqObserved > 0 ? `/ ${t.reqObserved}` : "lượt"}
-                              </span>
-                            </td>
-                            <td className="py-2.5 px-3 text-center">
-                              <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase border ${
-                                t.isAllMet
-                                  ? "bg-emerald-100 text-emerald-900 border-emerald-300"
-                                  : "bg-rose-100 text-rose-900 border-rose-300"
-                              }`}>
-                                {t.isAllMet ? "ĐẠT" : "CHƯA ĐẠT"}
                               </span>
                             </td>
                             <td className="py-2.5 px-3 text-center">
