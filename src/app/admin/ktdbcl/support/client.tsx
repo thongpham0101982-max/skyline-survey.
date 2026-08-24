@@ -223,7 +223,7 @@ export function SupportClient({
     }
   }
 
-  const handleSendQLCMCommitmentEmail = async () => {
+    const handleSendQLCMCommitmentEmail = async () => {
     if (selectedQLCMIds.length === 0) {
       toast.error("Vui lòng chọn ít nhất một Quản lý Chuyên môn Cơ sở")
       return
@@ -233,7 +233,9 @@ export function SupportClient({
       ? filteredCommitments.filter(c => c.campusName?.includes(emailQLCMCampus) || (c.className && c.className.includes(emailQLCMCampus)))
       : filteredCommitments
 
-    if (targetStudents.length === 0) {
+    const finalStudents = targetStudents.length > 0 ? targetStudents : flattenedCommitments
+
+    if (finalStudents.length === 0) {
       toast.error("Không có học sinh nào phù hợp cơ sở đã chọn")
       return
     }
@@ -242,12 +244,12 @@ export function SupportClient({
       id: t.id,
       teacherName: t.teacherName,
       email: t.email,
-      campusName: t.campus?.campusName || (t.position || "QLCM")
+      campusName: emailQLCMCampus !== "ALL" ? emailQLCMCampus : (t.campus?.campusName || "Cơ sở")
     }))
 
-    const payloadStudents = targetStudents.map(item => {
+    const payloadStudents = finalStudents.map(item => {
       let scoreText = ""
-      const isPri = /^[1-5][._\s]|lớp\s*[1-5]/i.test(item.className || "")
+      const isPri = (item.level === "Tiểu học") || /^[1-5][._\s]|lớp\s*[1-5]/i.test(item.className || "")
       const litName = isPri ? "Tiếng Việt" : "Ngữ Văn"
 
       if (item.committedSubject === "Toán" && item.mathScore !== null) {
@@ -266,6 +268,7 @@ export function SupportClient({
       return {
         fullName: item.fullName,
         studentCode: item.studentCode,
+        level: item.level || (isPri ? "Tiểu học" : "Trung học"),
         grade: item.grade || ((item.className || "").match(/^(\d+)/) ? "Khối " + (item.className || "").match(/^(\d+)/)[1] : "-"),
         className: item.className || "-",
         campusName: item.campusName || "Sky-Line",
@@ -292,11 +295,13 @@ export function SupportClient({
         })
       })
       const data = await res.json()
-      if (data.success) {
+      if (data.success && data.sentCount > 0) {
         toast.success(`Đã gửi thành công email cho ${data.sentCount} QLCM Cơ sở!`)
         setIsEmailQLCMModalOpen(false)
         setCustomQLCMMessage("")
         setAdditionalQLCMCc("")
+      } else if (data.success && data.sentCount === 0) {
+        toast.error("Không có email nào được gửi thành công. Vui lòng kiểm tra địa chỉ email người nhận.")
       } else {
         toast.error(data.error || "Gửi email thất bại")
       }

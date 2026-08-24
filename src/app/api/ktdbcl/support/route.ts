@@ -564,16 +564,12 @@ export async function GET(req: Request) {
       return NextResponse.json(filteredResult)
     }
 
-        // 4.7. Action: getCommitmentQLCMList
+            // 4.7. Action: getCommitmentQLCMList
     if (action === "getCommitmentQLCMList") {
       const teachers = await prisma.teacher.findMany({
         where: {
           status: "ACTIVE",
-          OR: [
-            { position: { in: ["QLCM", "Quản lý CM", "QUAN_LY_CM", "GDCS", "GĐCS", "PHO_GDCS", "BGH", "Hiệu trưởng", "Hiệu phó"] } },
-            { departmentAssignments: { some: { position: { in: ["QLCM", "Quản lý CM", "GDCS", "GĐCS"] } } } },
-            { campusesManaged: { some: {} } }
-          ]
+          email: { not: null }
         },
         include: {
           campus: { select: { id: true, campusName: true, campusCode: true } },
@@ -700,7 +696,7 @@ export async function POST(req: Request) {
         return NextResponse.json(created)
     }
 
-    // 13.5. Action: sendCommitmentEmailToQLCM
+        // 13.5. Action: sendCommitmentEmailToQLCM
     if (action === "sendCommitmentEmailToQLCM") {
       const {
         campusName,
@@ -733,13 +729,12 @@ export async function POST(req: Request) {
           continue
         }
 
-        const relevantStudents = (rec.campusName && rec.campusName !== "ALL" && rec.campusName !== "Tất cả")
-          ? students.filter((s: any) => !s.campusName || s.campusName.includes(rec.campusName) || (rec.campusName.includes("CS") && s.campusName?.includes(rec.campusName)))
-          : students
-
-        if (relevantStudents.length === 0) {
-          results.push({ teacher: rec.teacherName, email: rec.email, status: "SKIPPED", count: 0, reason: "Không có học sinh phù hợp cơ sở" })
-          continue
+        let relevantStudents = students
+        if (campusName && campusName !== "ALL" && campusName !== "Tất cả") {
+          const campusFiltered = students.filter((s: any) => 
+            !s.campusName || s.campusName.includes(campusName) || (campusName.includes("CS") && s.campusName?.includes(campusName))
+          )
+          if (campusFiltered.length > 0) relevantStudents = campusFiltered
         }
 
         const proposedCount = relevantStudents.filter((s: any) => s.isProposed).length
@@ -773,6 +768,7 @@ export async function POST(req: Request) {
               <td style="padding: 12px 8px; text-align: center; color: #64748b; font-weight: 700; font-size: 12px;">${idx + 1}</td>
               <td style="padding: 12px 10px; font-weight: 700; color: #0f172a; font-size: 13px;">${s.fullName}</td>
               <td style="padding: 12px 10px; text-align: center; font-family: Consolas, Monaco, monospace; color: #475569; font-size: 12px; font-weight: 600;">${s.studentCode || "-"}</td>
+              <td style="padding: 12px 8px; text-align: center; color: #003B3A; font-weight: 700; font-size: 11px;">${s.level || (parseInt((s.grade || "").replace(/\D/g, ""), 10) <= 5 ? "Tiểu học" : "Trung học")}</td>
               <td style="padding: 12px 8px; text-align: center; color: #475569; font-weight: 700; font-size: 12px;">${s.grade || (s.className?.match(/^(\d+)/) ? "Khối " + s.className.match(/^(\d+)/)[1] : "-")}</td>
               <td style="padding: 12px 10px; text-align: center; color: #003B3A; font-weight: 800; font-size: 12px;">${s.className || "-"}</td>
               <td style="padding: 12px 10px; text-align: center; color: ${campusColor}; font-weight: 800; font-size: 12px;">${cName}</td>
@@ -794,7 +790,7 @@ export async function POST(req: Request) {
           `
         }).join("")
 
-        const targetCampusTitle = rec.campusName && rec.campusName !== "ALL" ? `CƠ SỞ ${rec.campusName.toUpperCase()}` : (campusName && campusName !== "ALL" ? `CƠ SỞ ${campusName.toUpperCase()}` : "TOÀN HỆ THỐNG")
+        const targetCampusTitle = campusName && campusName !== "ALL" && campusName !== "Tất cả" ? `CƠ SỞ ${campusName.toUpperCase()}` : "TOÀN HỆ THỐNG"
 
         const emailHtml = `
 <!DOCTYPE html>
@@ -1617,7 +1613,7 @@ export async function POST(req: Request) {
       return NextResponse.json(created)
     }
 
-    // 13. Action: sendCommitmentEmailToTTCM
+        // 13. Action: sendCommitmentEmailToTTCM
     if (action === "sendCommitmentEmailToTTCM") {
       const {
         subjectName,
@@ -1644,19 +1640,19 @@ export async function POST(req: Request) {
       let sentSuccessCount = 0
       const results: any[] = []
 
-            for (const rec of recipients) {
+      for (const rec of recipients) {
         if (!rec.email || !rec.email.includes("@")) {
           results.push({ teacher: rec.teacherName, email: rec.email, status: "FAILED", error: "Email không hợp lệ" })
           continue
         }
 
-        const relevantStudents = (rec.subjectName && rec.subjectName !== "ALL" && rec.subjectName !== "Tất cả")
-          ? students.filter((s: any) => !s.subject || s.subject === rec.subjectName || (rec.subjectName === "Tiếng Anh" && s.subject?.includes("Anh")))
-          : students
-
-        if (relevantStudents.length === 0) {
-          results.push({ teacher: rec.teacherName, email: rec.email, status: "SKIPPED", count: 0, reason: "Không có học sinh phù hợp môn" })
-          continue
+        // Determine relevant students: if subjectName is specified, filter by it; otherwise send all provided students
+        let relevantStudents = students
+        if (subjectName && subjectName !== "ALL" && subjectName !== "Tất cả") {
+          const subFiltered = students.filter((s: any) => 
+            !s.subject || s.subject === subjectName || (subjectName === "Tiếng Anh" && s.subject?.includes("Anh"))
+          )
+          if (subFiltered.length > 0) relevantStudents = subFiltered
         }
 
         const proposedCount = relevantStudents.filter((s: any) => s.isProposed).length
@@ -1666,7 +1662,6 @@ export async function POST(req: Request) {
           const isEven = idx % 2 === 1
           const rowBg = isEven ? "#f8fafc" : "#ffffff"
 
-          // Subject badge styling
           const subLower = (s.subject || "").toLowerCase()
           let subBg = "#f1f5f9", subColor = "#334155", subBorder = "#cbd5e1"
           if (subLower.includes("anh")) {
@@ -1679,7 +1674,6 @@ export async function POST(req: Request) {
             subBg = "#faf5ff"; subColor = "#7e22ce"; subBorder = "#e9d5ff";
           }
 
-          // Campus color
           const cName = s.campusName || "Sky-Line"
           let campusColor = "#009085"
           if (cName.includes("CS1")) campusColor = "#0284c7"
@@ -1692,6 +1686,7 @@ export async function POST(req: Request) {
               <td style="padding: 12px 8px; text-align: center; color: #64748b; font-weight: 700; font-size: 12px;">${idx + 1}</td>
               <td style="padding: 12px 10px; font-weight: 700; color: #0f172a; font-size: 13px;">${s.fullName}</td>
               <td style="padding: 12px 10px; text-align: center; font-family: Consolas, Monaco, monospace; color: #475569; font-size: 12px; font-weight: 600;">${s.studentCode || "-"}</td>
+              <td style="padding: 12px 8px; text-align: center; color: #003B3A; font-weight: 700; font-size: 11px;">${s.level || (parseInt((s.grade || "").replace(/\D/g, ""), 10) <= 5 ? "Tiểu học" : "Trung học")}</td>
               <td style="padding: 12px 8px; text-align: center; color: #475569; font-weight: 700; font-size: 12px;">${s.grade || (s.className?.match(/^(\d+)/) ? "Khối " + s.className.match(/^(\d+)/)[1] : "-")}</td>
               <td style="padding: 12px 10px; text-align: center; color: #003B3A; font-weight: 800; font-size: 12px;">${s.className || "-"}</td>
               <td style="padding: 12px 10px; text-align: center; color: ${campusColor}; font-weight: 800; font-size: 12px;">${cName}</td>
@@ -1713,7 +1708,7 @@ export async function POST(req: Request) {
           `
         }).join("")
 
-        const subTitle = rec.subjectName && rec.subjectName !== "ALL" ? `MÔN ${rec.subjectName.toUpperCase()}` : (subjectName && subjectName !== "ALL" ? `MÔN ${subjectName.toUpperCase()}` : "CÁC MÔN HỌC")
+        const subTitle = subjectName && subjectName !== "ALL" && subjectName !== "Tất cả" ? `MÔN ${subjectName.toUpperCase()}` : "CÁC MÔN HỌC"
 
         const emailHtml = `
 <!DOCTYPE html>
@@ -1748,7 +1743,7 @@ export async function POST(req: Request) {
       <!-- GREETINGS -->
       <div style="padding: 28px 32px 10px 32px; color: #334155;">
         <p style="font-size: 15px; margin: 0; font-weight: 700; color: #003B3A;">
-          Kính gửi Thầy/Cô <span style="color: #009085; font-weight: 800;">${rec.teacherName}</span> (Tổ trưởng Chuyên môn),
+          Kính gửi Thầy/Cô <span style="color: #009085; font-weight: 800;">${rec.teacherName}</span> (Tổ trưởng Chuyên môn / Giáo viên phụ trách),
         </p>
         <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 10px 0 0 0;">
           Ban Khảo thí & ĐBCL xin gửi danh sách học sinh thuộc diện <strong>Cam kết & Theo dõi khảo sát đầu vào</strong> đối với môn học do Thầy/Cô phụ trách. Kính đề nghị Tổ chuyên môn phối hợp cùng Giáo viên bộ môn theo dõi sát sao, rà soát và lập kế hoạch phụ đạo/bồi dưỡng phù hợp.
@@ -1826,7 +1821,7 @@ export async function POST(req: Request) {
       <!-- CTA BUTTON -->
       <div style="padding: 5px 32px 30px 32px; text-align: center;">
         <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">
-          Quý Thầy/Cô vui lòng truy cập Cổng Hỗ trợ học tập để rà soát kế hoạch bồi dưỡng và phân công giáo viên:
+          Thầy/Cô vui lòng truy cập Cổng Hỗ trợ học tập để cập nhật tình trạng đề xuất bồi dưỡng:
         </p>
         <a href="https://skyline-survey.vercel.app/admin/ktdbcl/support" style="display: inline-block; background-color: #009085; background: linear-gradient(135deg, #003B3A 0%, #009085 100%); color: #ffffff !important; text-decoration: none; padding: 14px 34px; border-radius: 12px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 14px rgba(0, 59, 58, 0.25); text-transform: uppercase; letter-spacing: 0.5px;">
           Truy cập Hệ thống Hỗ trợ học tập ➜
@@ -1839,7 +1834,7 @@ export async function POST(req: Request) {
           HỆ THỐNG GIÁO DỤC SKY-LINE
         </p>
         <p style="margin: 4px 0 0 0; font-size: 11px; color: #94a3b8;">
-          Đây là email thông báo tự động từ Hệ thống Khảo sát & ĐBCL Sky-Line. Quý Thầy/Cô vui lòng không phản hồi trực tiếp email này.
+          Đây là email thông báo tự động từ Hệ thống Khảo sát & ĐBCL Sky-Line. Thầy/Cô vui lòng không phản hồi trực tiếp email này.
         </p>
       </div>
 
