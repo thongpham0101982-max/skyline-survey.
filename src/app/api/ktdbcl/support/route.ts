@@ -259,7 +259,7 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
-   // 4.5. Action: getCommitmentCandidates
+       // 4.5. Action: getCommitmentCandidates
     if (action === "getCommitmentCandidates") {
       const periods = await prisma.inputAssessmentPeriod.findMany({
         where: { academicYearId },
@@ -344,7 +344,7 @@ export async function GET(req: Request) {
           .replace(/\s+/g, "")
       }
 
-            const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined, className?: string) => {
+      const parseCommittedSubjects = (note: string | null | undefined, resultStr?: string | null | undefined, className?: string) => {
         const text = `${note || ""} ${resultStr || ""}`.trim()
         if (!text) return []
         
@@ -354,13 +354,15 @@ export async function GET(req: Request) {
           rawSubs = match[1].split(/[,;]/).map((s) => s.trim()).filter(Boolean)
         }
 
+        const isPrimary = className ? /^[1-5][._\s]|lớp\s*[1-5]/i.test(className) : false
+
         if (rawSubs.length === 0) {
           if (/Toán|Math/i.test(text)) rawSubs.push("Toán")
           if (/Tiếng Việt|TN-XH|Tự nhiên/i.test(text)) rawSubs.push("Tiếng Việt")
-          else if (/Ngữ văn|Literature/i.test(text)) rawSubs.push("Ngữ Văn")
-          else if (/Văn/i.test(text)) {
-            if (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) rawSubs.push("Tiếng Việt")
-            else rawSubs.push("Ngữ Văn")
+          else if (/Ngữ văn|Literature/i.test(text)) {
+            rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
+          } else if (/Văn/i.test(text)) {
+            rawSubs.push(isPrimary ? "Tiếng Việt" : "Ngữ Văn")
           }
           if (/Anh|English|ESL/i.test(text)) {
             rawSubs.push("Tiếng Anh")
@@ -378,14 +380,9 @@ export async function GET(req: Request) {
             if (!finalSubs.includes("Toán")) finalSubs.push("Toán")
           } else if (lower.includes("tiếng việt") || lower.includes("tieng viet") || lower === "tv") {
             if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
-          } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature")) {
-            if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
-          } else if (lower === "văn" || lower.includes("văn")) {
-            if (className && /^[1-5][._\s]|lớp\s*[1-5]/i.test(className)) {
-              if (!finalSubs.includes("Tiếng Việt")) finalSubs.push("Tiếng Việt")
-            } else {
-              if (!finalSubs.includes("Ngữ Văn")) finalSubs.push("Ngữ Văn")
-            }
+          } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn" || lower.includes("văn")) {
+            const correctSub = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+            if (!finalSubs.includes(correctSub)) finalSubs.push(correctSub)
           } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
             if (!finalSubs.includes("Tâm lý")) finalSubs.push("Tâm lý")
           } else {
@@ -402,8 +399,6 @@ export async function GET(req: Request) {
             (ss.studentCode && is.studentCode && ss.studentCode.trim().toLowerCase() === is.studentCode.trim().toLowerCase()) ||
             cleanString(ss.studentName) === cleanString(is.fullName)
           )
-          
-          const committedSubjects = parseCommittedSubjects(is.directorNote, is.admissionResult)
 
           const resolvedClassName = 
             matchingStudent?.class?.className ||
@@ -412,7 +407,7 @@ export async function GET(req: Request) {
             is.enrollmentClass?.classCode ||
             (is.enrollmentClassId && !is.enrollmentClassId.startsWith("c") ? is.enrollmentClassId : null) ||
             (is.className && is.className !== "Chưa xếp lớp" ? is.className : null) ||
-            "Chưa xếp lớp"
+            ""
 
           const resolvedCampus = 
             matchingStudent?.class?.campus?.campusName ||
@@ -420,6 +415,8 @@ export async function GET(req: Request) {
             is.registeredCampus ||
             is.admissionCampus ||
             ""
+
+          const committedSubjects = parseCommittedSubjects(is.directorNote, is.admissionResult, resolvedClassName)
 
           return {
             id: is.id,
@@ -430,6 +427,7 @@ export async function GET(req: Request) {
             directorNote: is.directorNote,
             systemStudentId: matchingStudent?.id || null,
             className: resolvedClassName,
+            grade: matchingStudent?.class?.grade || is.grade || (resolvedClassName.match(/^(\d+)/) ? "Khối " + resolvedClassName.match(/^(\d+)/)[1] : ""),
             campusName: resolvedCampus,
             committedSubjects,
             mathScore: is.mathScore,
@@ -444,8 +442,6 @@ export async function GET(req: Request) {
             (ss.studentCode && ps.studentCode && ss.studentCode.trim().toLowerCase() === ps.studentCode.trim().toLowerCase()) ||
             cleanString(ss.studentName) === cleanString(ps.fullName)
           )
-          
-          const committedSubjects = parseCommittedSubjects(ps.directorNote, ps.admissionResult)
 
           const resolvedClassName = 
             matchingStudent?.class?.className ||
@@ -453,13 +449,15 @@ export async function GET(req: Request) {
             ps.enrollmentClass?.className ||
             ps.enrollmentClass?.classCode ||
             (ps.enrollmentClassId && !ps.enrollmentClassId.startsWith("c") ? ps.enrollmentClassId : null) ||
-            "Chưa xếp lớp"
+            ""
 
           const resolvedCampus = 
             matchingStudent?.class?.campus?.campusName ||
             ps.enrollmentClass?.campus?.campusName ||
             ps.admissionCampus ||
             ""
+
+          const committedSubjects = parseCommittedSubjects(ps.directorNote, ps.admissionResult, resolvedClassName)
 
           return {
             id: ps.id,
@@ -470,6 +468,7 @@ export async function GET(req: Request) {
             directorNote: ps.directorNote,
             systemStudentId: matchingStudent?.id || null,
             className: resolvedClassName,
+            grade: matchingStudent?.class?.grade || (resolvedClassName.includes("Mầm") ? "Mầm non" : ""),
             campusName: resolvedCampus,
             committedSubjects,
             mathScore: null,
@@ -481,7 +480,13 @@ export async function GET(req: Request) {
         })
       ]
 
-      return NextResponse.json(result)
+      // Filter out any unassigned student records
+      const filteredResult = result.filter(s => {
+        const c = (s.className || "").trim().toLowerCase()
+        return c !== "" && c !== "chưa xếp lớp" && !c.includes("chưa xếp") && c !== "null" && c !== "undefined"
+      })
+
+      return NextResponse.json(filteredResult)
     }
 
     // 5. Action: getCommitment
@@ -1284,7 +1289,7 @@ export async function POST(req: Request) {
       let sentSuccessCount = 0
       const results: any[] = []
 
-      for (const rec of recipients) {
+            for (const rec of recipients) {
         if (!rec.email || !rec.email.includes("@")) {
           results.push({ teacher: rec.teacherName, email: rec.email, status: "FAILED", error: "Email không hợp lệ" })
           continue
@@ -1299,102 +1304,193 @@ export async function POST(req: Request) {
           continue
         }
 
-        const studentRowsHtml = relevantStudents.map((s: any, idx: number) => `
-          <tr style="border-bottom: 1px solid #f1f5f9; ${idx % 2 === 1 ? 'background-color: #fafbfc;' : ''}">
-            <td style="padding: 10px 12px; text-align: center; color: #64748b; font-weight: bold; font-size: 11px;">${idx + 1}</td>
-            <td style="padding: 10px 12px; font-weight: bold; color: #1e293b; font-size: 12px;">${s.fullName}</td>
-            <td style="padding: 10px 12px; font-family: monospace; color: #475569; font-size: 11px;">${s.studentCode || "-"}</td>
-            <td style="padding: 10px 12px; color: #003B3A; font-weight: bold; font-size: 12px;">${s.className || "Chưa xếp lớp"}</td>
-            <td style="padding: 10px 12px; color: #009085; font-weight: bold; font-size: 11px;">${s.campusName || "Sky-Line"}</td>
-            <td style="padding: 10px 12px;">
-              <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; background-color: #e0f2fe; color: #0369a1; font-weight: bold; font-size: 11px;">
-                ${s.subject || subjectName || "Môn cam kết"}
-              </span>
-            </td>
-            <td style="padding: 10px 12px; font-size: 11px; color: #334155;">
-              ${s.scores ? `<div style="font-weight: 600; margin-bottom: 2px;">${s.scores}</div>` : ''}
-              <div style="color: #64748b; font-style: italic; font-size: 10px; max-width: 260px;">${s.note || "Không có ghi chú"}</div>
-            </td>
-            <td style="padding: 10px 12px; text-align: center;">
-              <span style="display: inline-block; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; ${s.isProposed ? 'background-color: #dcfce7; color: #15803d;' : 'background-color: #ffe4e6; color: #be123c;'}">
-                ${s.isProposed ? 'Đã đề xuất' : 'Chưa đề xuất'}
-              </span>
-            </td>
-          </tr>
-        `).join("")
+        const proposedCount = relevantStudents.filter((s: any) => s.isProposed).length
+        const notProposedCount = relevantStudents.length - proposedCount
+
+        const studentRowsHtml = relevantStudents.map((s: any, idx: number) => {
+          const isEven = idx % 2 === 1
+          const rowBg = isEven ? "#f8fafc" : "#ffffff"
+
+          // Subject badge styling
+          const subLower = (s.subject || "").toLowerCase()
+          let subBg = "#f1f5f9", subColor = "#334155", subBorder = "#cbd5e1"
+          if (subLower.includes("anh")) {
+            subBg = "#eff6ff"; subColor = "#1d4ed8"; subBorder = "#bfdbfe";
+          } else if (subLower.includes("toán")) {
+            subBg = "#fffbeb"; subColor = "#b45309"; subBorder = "#fde68a";
+          } else if (subLower.includes("việt") || subLower.includes("văn")) {
+            subBg = "#ecfdf5"; subColor = "#047857"; subBorder = "#a7f3d0";
+          } else if (subLower.includes("lý") || subLower.includes("tâm")) {
+            subBg = "#faf5ff"; subColor = "#7e22ce"; subBorder = "#e9d5ff";
+          }
+
+          // Campus color
+          const cName = s.campusName || "Sky-Line"
+          let campusColor = "#009085"
+          if (cName.includes("CS1")) campusColor = "#0284c7"
+          else if (cName.includes("CS2")) campusColor = "#059669"
+          else if (cName.includes("CS3")) campusColor = "#d97706"
+          else if (cName.includes("CS4") || cName.includes("CS5")) campusColor = "#7c3aed"
+
+          return `
+            <tr style="border-bottom: 1px solid #e2e8f0; background-color: ${rowBg};">
+              <td style="padding: 12px 8px; text-align: center; color: #64748b; font-weight: 700; font-size: 12px;">${idx + 1}</td>
+              <td style="padding: 12px 10px; font-weight: 700; color: #0f172a; font-size: 13px;">${s.fullName}</td>
+              <td style="padding: 12px 10px; text-align: center; font-family: Consolas, Monaco, monospace; color: #475569; font-size: 12px; font-weight: 600;">${s.studentCode || "-"}</td>
+              <td style="padding: 12px 8px; text-align: center; color: #475569; font-weight: 700; font-size: 12px;">${s.grade || (s.className?.match(/^(\d+)/) ? "Khối " + s.className.match(/^(\d+)/)[1] : "-")}</td>
+              <td style="padding: 12px 10px; text-align: center; color: #003B3A; font-weight: 800; font-size: 12px;">${s.className || "-"}</td>
+              <td style="padding: 12px 10px; text-align: center; color: ${campusColor}; font-weight: 800; font-size: 12px;">${cName}</td>
+              <td style="padding: 12px 10px; text-align: center;">
+                <span style="display: inline-block; padding: 4px 10px; border-radius: 6px; background-color: ${subBg}; color: ${subColor}; border: 1px solid ${subBorder}; font-weight: 800; font-size: 11px;">
+                  ${s.subject || subjectName || "Môn cam kết"}
+                </span>
+              </td>
+              <td style="padding: 12px 12px; font-size: 12px; color: #334155;">
+                ${s.scores ? `<div style="font-weight: 700; color: #003B3A; margin-bottom: 3px; font-size: 11px;">${s.scores}</div>` : ''}
+                <div style="color: #64748b; font-size: 11px; line-height: 1.4;">${s.note || '<span style="color:#94a3b8; font-style:italic;">Không có ghi chú</span>'}</div>
+              </td>
+              <td style="padding: 12px 10px; text-align: center;">
+                <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; ${s.isProposed ? 'background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0;' : 'background-color: #fff1f2; color: #be123c; border: 1px solid #fecdd3;'}">
+                  ${s.isProposed ? 'Đã đề xuất' : 'Chưa đề xuất'}
+                </span>
+              </td>
+            </tr>
+          `
+        }).join("")
 
         const subTitle = rec.subjectName && rec.subjectName !== "ALL" ? `MÔN ${rec.subjectName.toUpperCase()}` : (subjectName && subjectName !== "ALL" ? `MÔN ${subjectName.toUpperCase()}` : "CÁC MÔN HỌC")
 
         const emailHtml = `
-          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 720px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.06);">
-            <!-- Header -->
-            <div style="background: linear-gradient(135deg, #003B3A 0%, #009085 100%); padding: 26px 32px; color: #ffffff;">
-              <div style="font-size: 12px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #48BFE3; margin-bottom: 6px;">
-                Hệ thống Giáo dục Sky-Line • Ban Khảo thí & ĐBCL
-              </div>
-              <h2 style="margin: 0; font-size: 19px; font-weight: 800; line-height: 1.35;">
-                DANH SÁCH HỌC SINH DIỆN CAM KẾT & THEO DÕI ĐẦU VÀO - ${subTitle}
-              </h2>
-              <div style="font-size: 13px; color: #e6fffa; margin-top: 5px;">
-                Năm học: <strong>${yearName}</strong> • Kế hoạch Khảo sát & Phụ đạo Học sinh
-              </div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Danh sách Học sinh diện Cam kết - ${subTitle}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <div style="background-color: #f1f5f9; padding: 30px 12px;">
+    <div style="max-width: 820px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 59, 58, 0.08); border: 1px solid #e2e8f0;">
+      
+      <!-- HEADER -->
+      <div style="background-color: #003B3A; background: linear-gradient(135deg, #003B3A 0%, #009085 100%); padding: 32px 30px; text-align: center; border-bottom: 4px solid #48BFE3;">
+        <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.15); padding: 5px 16px; border-radius: 50px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.25);">
+          <span style="color: #48BFE3 !important; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px;">
+            HỆ THỐNG GIÁO DỤC SKY-LINE • BAN KHẢO THÍ & ĐBCL
+          </span>
+        </div>
+        <h1 style="margin: 0; color: #ffffff !important; font-size: 21px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.35;">
+          DANH SÁCH HỌC SINH DIỆN CAM KẾT & THEO DÕI ĐẦU VÀO
+        </h1>
+        <div style="margin-top: 6px; color: #ffffff !important; font-size: 16px; font-weight: 800; letter-spacing: 0.5px;">
+          ${subTitle}
+        </div>
+        <div style="margin-top: 8px; color: #e6fffa !important; font-size: 13px; font-weight: 600;">
+          Năm học: <strong>${yearName}</strong> • Kế hoạch Bồi dưỡng & Phụ đạo Học sinh
+        </div>
+      </div>
+
+      <!-- GREETINGS -->
+      <div style="padding: 28px 32px 10px 32px; color: #334155;">
+        <p style="font-size: 15px; margin: 0; font-weight: 700; color: #003B3A;">
+          Kính gửi Thầy/Cô <span style="color: #009085; font-weight: 800;">${rec.teacherName}</span> (Tổ trưởng Chuyên môn),
+        </p>
+        <p style="font-size: 14px; color: #475569; line-height: 1.6; margin: 10px 0 0 0;">
+          Ban Khảo thí & ĐBCL xin gửi danh sách học sinh thuộc diện <strong>Cam kết & Theo dõi khảo sát đầu vào</strong> đối với môn học do Thầy/Cô phụ trách. Kính đề nghị Tổ chuyên môn phối hợp cùng Giáo viên bộ môn theo dõi sát sao, rà soát và lập kế hoạch phụ đạo/bồi dưỡng phù hợp.
+        </p>
+      </div>
+
+      ${customMessage ? `
+        <!-- CUSTOM MESSAGE BOX -->
+        <div style="padding: 0 32px 15px 32px;">
+          <div style="background-color: #f0fdfa; border-left: 4px solid #009085; border-radius: 8px; padding: 14px 18px; border: 1px solid #ccfbf1; border-left-width: 4px;">
+            <div style="font-size: 12px; font-weight: 800; color: #003B3A; text-transform: uppercase; margin-bottom: 4px; letter-spacing: 0.5px;">
+              📌 Lời nhắn & Lưu ý từ Ban Khảo thí / BGH:
             </div>
-
-            <!-- Body -->
-            <div style="padding: 28px 32px; color: #334155; line-height: 1.6;">
-              <p style="font-size: 15px; margin-top: 0;">
-                Kính gửi Thầy/Cô <strong>${rec.teacherName}</strong> (Tổ trưởng Chuyên môn),
-              </p>
-              <p style="font-size: 14px; color: #475569;">
-                Ban Khảo thí & ĐBCL xin gửi danh sách học sinh thuộc diện <strong>Cam kết & Theo dõi khảo sát đầu vào</strong> đối với môn phụ trách. Kính đề nghị Tổ chuyên môn phối hợp cùng Giáo viên bộ môn theo dõi, rà soát và lập kế hoạch phụ đạo/bồi dưỡng phù hợp.
-              </p>
-
-              ${customMessage ? `
-                <div style="background-color: #f0fdfa; border-left: 4px solid #009085; padding: 14px 18px; border-radius: 8px; margin: 18px 0; font-size: 13px; color: #003B3A;">
-                  <strong>Ghi chú & Lời nhắn từ Ban Khảo thí / BGH:</strong><br/>
-                  ${customMessage.replace(/\n/g, '<br/>')}
-                </div>
-              ` : ''}
-
-              <!-- Table -->
-              <div style="margin: 22px 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
-                <div style="background-color: #f8fafc; padding: 12px 16px; font-size: 12px; font-weight: 800; text-transform: uppercase; color: #003B3A; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between;">
-                  <span>Danh sách học sinh (${relevantStudents.length} học sinh)</span>
-                </div>
-                <div style="overflow-x: auto;">
-                  <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 12px;">
-                    <thead>
-                      <tr style="background-color: #f1f5f9; font-size: 11px; text-transform: uppercase; color: #64748b;">
-                        <th style="padding: 9px 12px; width: 30px; text-align: center;">TT</th>
-                        <th style="padding: 9px 12px;">Họ và tên</th>
-                        <th style="padding: 9px 12px;">Mã HS</th>
-                        <th style="padding: 9px 12px;">Lớp</th>
-                        <th style="padding: 9px 12px;">Cơ sở</th>
-                        <th style="padding: 9px 12px;">Môn cam kết</th>
-                        <th style="padding: 9px 12px;">Khảo sát & Ghi chú</th>
-                        <th style="padding: 9px 12px; text-align: center;">Tình trạng</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${studentRowsHtml}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <!-- Button CTA -->
-              <div style="text-align: center; margin: 28px 0 16px 0;">
-                <a href="https://skyline-survey.vercel.app/admin/ktdbcl/support" style="display: inline-block; background: linear-gradient(135deg, #003B3A 0%, #009085 100%); color: #ffffff; text-decoration: none; padding: 13px 28px; border-radius: 12px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 12px rgba(0,59,58,0.25);">
-                  Truy cập Hệ thống Hỗ trợ học tập ➜
-                </a>
-              </div>
-            </div>
-
-            <!-- Footer -->
-            <div style="background-color: #f8fafc; padding: 16px 30px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; text-align: center;">
-              Đây là email thông báo tự động từ Hệ thống Khảo sát & ĐBCL Sky-Line. Quý Thầy/Cô vui lòng không phản hồi trực tiếp email này.
+            <div style="font-size: 13px; color: #134e4a; line-height: 1.6;">
+              ${customMessage.replace(/\n/g, '<br/>')}
             </div>
           </div>
+        </div>
+      ` : ''}
+
+      <!-- STATS SUMMARY CARDS -->
+      <div style="padding: 10px 32px 20px 32px;">
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
+          <tr>
+            <td width="33%" style="padding-right: 10px;">
+              <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; text-align: center;">
+                <div style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Tổng lượt cam kết</div>
+                <div style="font-size: 22px; font-weight: 900; color: #003B3A; margin-top: 2px;">${relevantStudents.length}</div>
+              </div>
+            </td>
+            <td width="33%" style="padding-right: 10px;">
+              <div style="background-color: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 12px; padding: 12px 14px; text-align: center;">
+                <div style="font-size: 10px; font-weight: 800; color: #047857; text-transform: uppercase; letter-spacing: 0.5px;">Đã đề xuất hỗ trợ</div>
+                <div style="font-size: 22px; font-weight: 900; color: #059669; margin-top: 2px;">${proposedCount}</div>
+              </div>
+            </td>
+            <td width="34%">
+              <div style="background-color: #fff1f2; border: 1px solid #fecdd3; border-radius: 12px; padding: 12px 14px; text-align: center;">
+                <div style="font-size: 10px; font-weight: 800; color: #be123c; text-transform: uppercase; letter-spacing: 0.5px;">Chưa đề xuất</div>
+                <div style="font-size: 22px; font-weight: 900; color: #e11d48; margin-top: 2px;">${notProposedCount}</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- TABLE SECTION -->
+      <div style="padding: 0 32px 25px 32px;">
+        <div style="background-color: #003B3A; color: #ffffff; padding: 12px 16px; border-radius: 12px 12px 0 0; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; display: flex; justify-content: space-between; align-items: center;">
+          <span>DANH SÁCH CHI TIẾT HỌC SINH (${relevantStudents.length} HỌC SINH)</span>
+        </div>
+        <div style="border: 1px solid #cbd5e1; border-top: none; border-radius: 0 0 12px 12px; overflow: hidden;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; text-align: left; font-size: 12px;">
+            <thead>
+              <tr style="background-color: #004d40; background: linear-gradient(135deg, #003B3A 0%, #004d40 100%);">
+                <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 36px; border-right: 1px solid rgba(255,255,255,0.15);">STT</th>
+                <th style="padding: 10px 10px; text-align: left; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.15);">Họ và tên</th>
+                <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 70px; border-right: 1px solid rgba(255,255,255,0.15);">Mã HS</th>
+                <th style="padding: 10px 8px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 65px; border-right: 1px solid rgba(255,255,255,0.15);">Khối</th>
+                <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 85px; border-right: 1px solid rgba(255,255,255,0.15);">Lớp</th>
+                <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 60px; border-right: 1px solid rgba(255,255,255,0.15);">Cơ sở</th>
+                <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 105px; border-right: 1px solid rgba(255,255,255,0.15);">Môn cam kết</th>
+                <th style="padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; border-right: 1px solid rgba(255,255,255,0.15);">Khảo sát & Ghi chú</th>
+                <th style="padding: 10px 10px; text-align: center; font-size: 11px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; width: 95px;">Tình trạng</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${studentRowsHtml}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CTA BUTTON -->
+      <div style="padding: 5px 32px 30px 32px; text-align: center;">
+        <p style="margin: 0 0 16px 0; font-size: 13px; color: #64748b;">
+          Quý Thầy/Cô vui lòng truy cập Cổng Hỗ trợ học tập để rà soát kế hoạch bồi dưỡng và phân công giáo viên:
+        </p>
+        <a href="https://skyline-survey.vercel.app/admin/ktdbcl/support" style="display: inline-block; background-color: #009085; background: linear-gradient(135deg, #003B3A 0%, #009085 100%); color: #ffffff !important; text-decoration: none; padding: 14px 34px; border-radius: 12px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 14px rgba(0, 59, 58, 0.25); text-transform: uppercase; letter-spacing: 0.5px;">
+          Truy cập Hệ thống Hỗ trợ học tập ➜
+        </a>
+      </div>
+
+      <!-- FOOTER -->
+      <div style="background-color: #f8fafc; padding: 20px 32px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b; line-height: 1.5;">
+        <p style="margin: 0; font-weight: 700; color: #003B3A; text-transform: uppercase; letter-spacing: 0.5px;">
+          HỆ THỐNG GIÁO DỤC SKY-LINE
+        </p>
+        <p style="margin: 4px 0 0 0; font-size: 11px; color: #94a3b8;">
+          Đây là email thông báo tự động từ Hệ thống Khảo sát & ĐBCL Sky-Line. Quý Thầy/Cô vui lòng không phản hồi trực tiếp email này.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
         `
 
         try {

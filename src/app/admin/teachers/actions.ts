@@ -146,35 +146,13 @@ export async function createTeacherAction(data: any) {
     } else if (departmentId) {
       deptAssignments = [{ departmentId: departmentId, position: data.position || "GV", isPrimary: true }];
     }
-    await syncTeacherDepartments(teacher.id, deptAssignments);
+    await syncTeacherDepartments(teacher.id, deptAssignments, data.position || "GV");
 
     if (data.homeroomClassId) {
       await assignHomeroomClass(teacher.id, data.homeroomClassId)
     }
 
-    // Sync multi-department assignments if department row exists
-      if (row.department) {
-        const parts = String(row.department).split(/[,;|]/).map(s => s.trim()).filter(Boolean);
-        const importAssignments: Array<{ departmentId: string; position: string; isPrimary: boolean }> = [];
-        parts.forEach((p, idx) => {
-          let deptName = p;
-          let pos = row.position || "GV";
-          const match = p.match(/^(.+?)\s*\((.+?)\)$/);
-          if (match) {
-            deptName = match[1].trim();
-            pos = match[2].trim();
-          }
-          const did = deptMap.get(deptName) || deptMap.get(p);
-          if (did) {
-            importAssignments.push({ departmentId: did, position: pos, isPrimary: idx === 0 });
-          }
-        });
-        if (importAssignments.length > 0) {
-          await syncTeacherDepartments(teacher.id, importAssignments);
-        }
-      }
-
-      // Sync additional campuses (UserCampusAssignment)
+    // Sync additional campuses (UserCampusAssignment)
     const additionalCampuses = Array.isArray(data.additionalCampusIds) ? data.additionalCampusIds : [];
     const allCampuses = Array.from(new Set([campusId, ...additionalCampuses])).filter(Boolean);
     await syncAdditionalCampuses(userId, allCampuses);
@@ -263,7 +241,7 @@ export async function updateTeacherAction(data: any) {
         const resolvedId = await resolveDepartmentId(data.department);
         if (resolvedId) deptAssignments = [{ departmentId: resolvedId, position: data.position || "GV", isPrimary: true }];
       }
-      await syncTeacherDepartments(id, deptAssignments);
+      await syncTeacherDepartments(id, deptAssignments, data.position);
     }
 
     revalidatePath("/admin/teachers")
@@ -502,12 +480,17 @@ export async function assignTeachersToRoleAction(teacherIds: string[], roleCode:
 /** Dong bo TeacherDepartmentAssignment cho teacherId */
 export async function syncTeacherDepartments(
   teacherId: string,
-  assignments: Array<{ departmentId: string; position?: string; isPrimary?: boolean }>
+  assignments: Array<{ departmentId: string; position?: string; isPrimary?: boolean }>,
+  explicitPosition?: string
 ) {
   await prisma.teacherDepartmentAssignment.deleteMany({ where: { teacherId } });
 
   if (!assignments || assignments.length === 0) {
-    await prisma.teacher.update({ where: { id: teacherId }, data: { departmentId: null } });
+    const updateData: any = { departmentId: null };
+    if (explicitPosition !== undefined) {
+      updateData.position = explicitPosition;
+    }
+    await prisma.teacher.update({ where: { id: teacherId }, data: updateData });
     return;
   }
 
@@ -538,12 +521,18 @@ export async function syncTeacherDepartments(
     });
 
     const primary = uniqueAssignments.find(u => u.isPrimary) || uniqueAssignments[0];
-    const topPosition = uniqueAssignments.some(u => u.position === "TTCM") ? "TTCM" : (primary.position || "GV");
+    
+    let finalPosition = explicitPosition;
+    if (!finalPosition) {
+      const topPos = uniqueAssignments.find(u => u.position && u.position !== "GV")?.position;
+      finalPosition = topPos || primary.position || "GV";
+    }
+
     await prisma.teacher.update({
       where: { id: teacherId },
       data: {
         departmentId: primary.departmentId,
-        position: topPosition
+        position: finalPosition
       }
     });
   }

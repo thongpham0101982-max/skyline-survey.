@@ -1,27 +1,32 @@
 ﻿"use client"
-function PositionBadge({ position }) {
+function PositionBadge({ position }: { position?: string | null }) {
   if (position === "TTCM") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-amber-700 text-xs font-semibold">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-amber-700">
       TTCM
     </span>
   );
+  if (position === "TPTCM") return (
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-teal-700">
+      TPTCM
+    </span>
+  );
   if (position === "QLCM") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-indigo-700 text-xs font-semibold">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-indigo-700">
       QLCM
     </span>
   );
   if (position === "Ban ĐHCM") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-violet-700 text-xs font-semibold">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-violet-700">
       Ban ĐHCM
     </span>
   );
   if (position === "GĐCS") return (
-    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-rose-700 text-xs font-semibold">
+    <span className="inline-flex items-center text-[10px] font-extrabold uppercase tracking-wide text-rose-700">
       GĐCS
     </span>
   );
   return (
-    <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide text-slate-500 text-xs font-semibold">
+    <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide text-slate-500">
       {position || "GV"}
     </span>
   );
@@ -187,25 +192,50 @@ export function TeacherManagerClient({
   const handleSaveEdit = async (id) => {
     setSaving(true); setErrorMsg("")
     try {
-      await updateTeacherAction({ id, ...editForm, position: editForm.position })
+      let deptAssignments = editForm.departmentAssignments || [];
+      if (editForm.position === "TTCM" && deptAssignments.length > 0) {
+        if (!deptAssignments.some((da: any) => da.position === "TTCM")) {
+          deptAssignments = deptAssignments.map((da: any, idx: number) => idx === 0 ? { ...da, position: "TTCM" } : da);
+        }
+      } else if (editForm.position !== "TTCM" && deptAssignments.length > 0) {
+        deptAssignments = deptAssignments.map((da: any) => da.position === "TTCM" ? { ...da, position: editForm.position || "GV" } : da);
+      }
+
+      const res = await updateTeacherAction({ 
+        id, 
+        ...editForm, 
+        departmentAssignments: deptAssignments,
+        position: editForm.position 
+      })
+      if (res && !res.success) {
+        setErrorMsg(res.error || "Lỗi khi lưu thay đổi!");
+        setSaving(false);
+        return;
+      }
+
       setTeachers(teachers.map((t) => t.id === id ? {
-        ...t, teacherName: editForm.teacherName, dateOfBirth: editForm.dateOfBirth || null,
+        ...t, 
+        teacherName: editForm.teacherName, 
+        dateOfBirth: editForm.dateOfBirth || null,
         department: editForm.department || null,
-        departmentAssignments: (editForm.departmentAssignments || []).map((da: any) => ({
+        departmentAssignments: deptAssignments.map((da: any) => ({
           departmentId: da.departmentId,
           departmentName: (departments || []).find((d: any) => d.id === da.departmentId)?.name || "",
           position: da.position || "GV"
         })),
         mainSubject: editForm.mainSubject || null,
-        campusId: editForm.campusId || null, email: editForm.email || null,
+        campusId: editForm.campusId || null, 
+        email: editForm.email || null,
         campus: (campuses || []).find((c) => c.id === editForm.campusId)?.campusName || null,
         additionalCampuses: (campuses || []).filter((c) => editForm.additionalCampusIds?.includes(c.id)).map((c) => ({ id: c.id, campusName: c.campusName })),
-        additionalCampusIds: editForm.additionalCampusIds || [], position: editForm.position || "GV", status: editForm.status
+        additionalCampusIds: editForm.additionalCampusIds || [], 
+        position: editForm.position || "GV", 
+        status: editForm.status
       } : t))
       setEditingId(null)
       setSuccessMsg("Đã lưu thay đổi thành công!")
       setTimeout(() => setSuccessMsg(""), 3000)
-    } catch(e) { setErrorMsg("Lỗi khi lưu: " + (e.message || "Vui lòng thử lại!")) }
+    } catch(e: any) { setErrorMsg("Lỗi khi lưu: " + (e.message || "Vui lòng thử lại!")) }
     setSaving(false)
   }
 
@@ -483,6 +513,7 @@ export function TeacherManagerClient({
                 className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:border-[#48BFE3] focus:ring-2 focus:ring-[#48BFE3]/10 outline-none bg-white transition-all font-bold cursor-pointer">
                 <option value="GV">GV (Giáo viên)</option>
                 <option value="TTCM">TTCM (Tổ trưởng CM)</option>
+                <option value="TPTCM">TPTCM (Tổ phó CM)</option>
                 <option value="QLCM">QLCM (Quản lý CM)</option>
                 <option value="Ban ĐHCM">Ban ĐHCM</option>
                 <option value="GĐCS">GĐCS (Giám đốc CS)</option>
@@ -736,6 +767,9 @@ export function TeacherManagerClient({
                                         <option value="GV">GV</option>
                                         <option value="TTCM">TTCM</option>
                                         <option value="TPTCM">TPTCM</option>
+                                        <option value="QLCM">QLCM</option>
+                                        <option value="Ban ĐHCM">Ban ĐHCM</option>
+                                        <option value="GĐCS">GĐCS</option>
                                       </select>
                                     )}
                                   </div>
@@ -767,11 +801,23 @@ export function TeacherManagerClient({
 
                       <td className="p-2 p-2 border border-slate-200">
                         {isEditing ? (
-                          <select value={editForm.position} onChange={e => setEditForm({ ...editForm, position: e.target.value })}
+                          <select value={editForm.position || "GV"} onChange={e => {
+                            const newPos = e.target.value;
+                            let nextDeptAssignments = editForm.departmentAssignments || [];
+                            if (newPos === "TTCM") {
+                              nextDeptAssignments = nextDeptAssignments.map((da: any, idx: number) => idx === 0 ? { ...da, position: "TTCM" } : da);
+                            } else if (newPos === "GV") {
+                              nextDeptAssignments = nextDeptAssignments.map((da: any) => da.position === "TTCM" ? { ...da, position: "GV" } : da);
+                            }
+                            setEditForm({ ...editForm, position: newPos, departmentAssignments: nextDeptAssignments });
+                          }}
                             className="border border-[#48BFE3] rounded-xl px-2.5 py-1.5 text-xs outline-none bg-white font-bold focus:border-[#48BFE3] w-full cursor-pointer">
                             <option value="GV">GV</option>
                             <option value="TTCM">TTCM</option>
+                            <option value="TPTCM">TPTCM</option>
                             <option value="QLCM">QLCM</option>
+                            <option value="Ban ĐHCM">Ban ĐHCM</option>
+                            <option value="GĐCS">GĐCS</option>
                           </select>
                         ) : (
                           <PositionBadge position={t.position} />

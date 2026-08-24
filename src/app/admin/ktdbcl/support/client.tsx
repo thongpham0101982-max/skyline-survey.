@@ -62,6 +62,7 @@ export function SupportClient({
   const [commitmentCampusFilter, setCommitmentCampusFilter] = useState("ALL")
   const [commitmentStatusFilter, setCommitmentStatusFilter] = useState("ALL")
   const [commitmentSubjectFilter, setCommitmentSubjectFilter] = useState("ALL")
+  const [commitmentGradeFilter, setCommitmentGradeFilter] = useState("ALL")
   const [commitmentPage, setCommitmentPage] = useState(1)
   const commitmentPageSize = 10
 
@@ -76,7 +77,7 @@ export function SupportClient({
 
   useEffect(() => {
     setCommitmentPage(1)
-  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter])
+  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter])
   const [targets, setTargets] = useState<any[]>([])
   const [assignments, setAssignments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -801,11 +802,17 @@ export function SupportClient({
     { month: "Tháng 05/2026", good: 14, average: 4, weak: 2, total: 20 },
     { month: "Tháng 06/2026", good: 19, average: 6, weak: 1, total: 26 },
   ]
-    // Tách học sinh theo từng môn cam kết (Flattened commitment list)
+      // Tách học sinh theo từng môn cam kết (Flattened commitment list)
   const flattenedCommitments = useMemo(() => {
     const list: any[] = []
     commitmentCandidates.forEach((c) => {
-      // Normalize subject list, unifying English variations
+      // Loại bỏ hoàn toàn các học sinh chưa xếp lớp
+      const cName = (c.className || "").trim().toLowerCase()
+      if (!cName || cName === "chưa xếp lớp" || cName.includes("chưa xếp") || cName === "null" || cName === "undefined") {
+        return
+      }
+
+      const isPrimary = /^[1-5][._\s]|lớp\s*[1-5]/i.test(c.className || "")
       const rawSubs = (c.committedSubjects && c.committedSubjects.length > 0) ? c.committedSubjects : []
       const unifiedSubs: string[] = []
       
@@ -817,8 +824,9 @@ export function SupportClient({
           if (!unifiedSubs.includes("Toán")) unifiedSubs.push("Toán")
         } else if (lower.includes("tiếng việt") || lower.includes("tieng viet") || lower === "tv") {
           if (!unifiedSubs.includes("Tiếng Việt")) unifiedSubs.push("Tiếng Việt")
-        } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn") {
-          if (!unifiedSubs.includes("Ngữ Văn")) unifiedSubs.push("Ngữ Văn")
+        } else if (lower.includes("ngữ văn") || lower.includes("ngu van") || lower.includes("literature") || lower === "văn" || lower.includes("văn")) {
+          const correctSub = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
+          if (!unifiedSubs.includes(correctSub)) unifiedSubs.push(correctSub)
         } else if (lower.includes("tâm lý") || lower.includes("tam ly") || lower.includes("psychology")) {
           if (!unifiedSubs.includes("Tâm lý")) unifiedSubs.push("Tâm lý")
         } else {
@@ -880,6 +888,24 @@ export function SupportClient({
     })
   }, [commitmentSubjectCounts])
 
+    // Dynamic Grade Counts
+  const commitmentGradeCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    flattenedCommitments.forEach(item => {
+      const g = item.grade ? (item.grade.startsWith("Khối") ? item.grade : "Khối " + item.grade) : ((item.className || "").match(/^(\d+)/) ? "Khối " + (item.className || "").match(/^(\d+)/)[1] : (item.className?.includes("Mầm") ? "Mầm non" : "Khác"))
+      counts[g] = (counts[g] || 0) + 1
+    })
+    return counts
+  }, [flattenedCommitments])
+
+  const uniqueCommitmentGrades = useMemo(() => {
+    return Object.keys(commitmentGradeCounts).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ""), 10) || 99
+      const numB = parseInt(b.replace(/\D/g, ""), 10) || 99
+      return numA - numB
+    })
+  }, [commitmentGradeCounts])
+
   // Paginated commitments logic
   const filteredCommitments = useMemo(() => {
     return flattenedCommitments.filter(c => {
@@ -891,7 +917,6 @@ export function SupportClient({
       const matchesCampus = commitmentCampusFilter === "ALL" || 
         (c.className && c.className.includes(commitmentCampusFilter)) || 
         (c.campusName && c.campusName.includes(commitmentCampusFilter)) ||
-        (c.className === "Chưa xếp lớp" && commitmentCampusFilter === "Chưa xếp lớp") ||
         (c.directorNote || "").includes(commitmentCampusFilter) ||
         (c.admissionResult || "").includes(commitmentCampusFilter)
 
@@ -903,9 +928,12 @@ export function SupportClient({
         c.committedSubject === commitmentSubjectFilter ||
         (commitmentSubjectFilter === "Tiếng Anh" && c.committedSubject?.includes("Anh"))
 
-      return matchesSearch && matchesCampus && matchesStatus && matchesSubject
+      const rowGrade = c.grade ? (c.grade.startsWith("Khối") ? c.grade : "Khối " + c.grade) : ((c.className || "").match(/^(\d+)/) ? "Khối " + (c.className || "").match(/^(\d+)/)[1] : (c.className?.includes("Mầm") ? "Mầm non" : "Khác"))
+      const matchesGrade = commitmentGradeFilter === "ALL" || rowGrade === commitmentGradeFilter || (rowGrade.includes(commitmentGradeFilter.replace("Khối ", "")))
+
+      return matchesSearch && matchesCampus && matchesStatus && matchesSubject && matchesGrade
     })
-  }, [flattenedCommitments, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter])
+  }, [flattenedCommitments, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter])
 
   const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
 
@@ -1002,7 +1030,8 @@ export function SupportClient({
       return {
         fullName: item.fullName,
         studentCode: item.studentCode,
-        className: item.className || "Chưa xếp lớp",
+        grade: item.grade || ((item.className || "").match(/^(\d+)/) ? "Khối " + (item.className || "").match(/^(\d+)/)[1] : "-"),
+        className: item.className || "-",
         campusName: item.campusName || "Sky-Line",
         subject: item.committedSubject,
         scores: scoreText,
@@ -1313,6 +1342,21 @@ export function SupportClient({
                 </select>
               </div>
 
+                            {/* Grade filter */}
+              <div className="flex items-center gap-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase">Khối:</label>
+                <select
+                  value={commitmentGradeFilter}
+                  onChange={(e) => setCommitmentGradeFilter(e.target.value)}
+                  className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
+                >
+                  <option value="ALL">Tất cả Khối ({flattenedCommitments.length})</option>
+                  {uniqueCommitmentGrades.map(g => (
+                    <option key={g} value={g}>{g} ({commitmentGradeCounts[g]})</option>
+                  ))}
+                </select>
+              </div>
+
               {/* Campus filter */}
               <div className="flex items-center gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Cơ sở:</label>
@@ -1382,6 +1426,7 @@ export function SupportClient({
                         <th className="px-4 py-3.5 text-center w-12">STT</th>
                         <th className="px-4 py-3.5 text-left">Họ tên</th>
                         <th className="px-4 py-3.5 text-left">Mã HS</th>
+                        <th className="px-4 py-3.5 text-left">Khối</th>
                         <th className="px-4 py-3.5 text-left">Lớp</th>
                         <th className="px-4 py-3.5 text-left">Cơ sở</th>
                         <th className="px-4 py-3.5 text-left">Môn Cam kết</th>
@@ -1391,8 +1436,10 @@ export function SupportClient({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 font-semibold text-slate-600 bg-white">
-                      {paginatedCommitments.map((row, idx) => {
+                                            {paginatedCommitments.map((row, idx) => {
                         const sttNumber = (commitmentPage - 1) * commitmentPageSize + idx + 1
+                        const isPrimary = /^[1-5][._\s]|lớp\s*[1-5]/i.test(row.className || "")
+                        const litLabel = isPrimary ? "Tiếng Việt" : "Ngữ Văn"
                         const isEnglish = row.committedSubject?.toLowerCase().includes("anh")
                         const isMath = row.committedSubject?.toLowerCase().includes("toán")
                         const isLiterature = row.committedSubject?.toLowerCase().includes("văn") || row.committedSubject?.toLowerCase().includes("việt")
@@ -1411,7 +1458,12 @@ export function SupportClient({
                               <span className="font-mono font-bold text-slate-600 text-[11px]">{row.studentCode}</span>
                             </td>
                             <td className="px-4 py-3.5">
-                              <span className="font-extrabold text-slate-700 text-[12px]">{row.className || "Chưa xếp lớp"}</span>
+                              <span className="px-2 py-0.5 rounded-md font-bold text-[11px] bg-slate-100 text-slate-700 border border-slate-200 inline-block">
+                                {row.grade ? (row.grade.startsWith("Khối") ? row.grade : "Khối " + row.grade) : ((row.className || "").match(/^(\d+)/) ? "Khối " + (row.className || "").match(/^(\d+)/)[1] : (row.className?.includes("Mầm") ? "Mầm non" : "-"))}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <span className="font-extrabold text-slate-800 text-[12px]">{row.className}</span>
                             </td>
                             <td className="px-4 py-3.5">
                               <span className="text-[11px] text-indigo-600 font-bold">
@@ -1428,7 +1480,7 @@ export function SupportClient({
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                                     Đã đề xuất
                                   </div>
-                                  {row.allTargets && row.allTargets.map((st, stIdx) => (
+                                  {row.allTargets && row.allTargets.map((st: any, stIdx: number) => (
                                     <div key={stIdx} className="text-[10px] text-slate-500 font-medium pl-3">
                                       • {st.supportType === "ACADEMIC" ? "Phụ đạo" : "Tâm lý"} ({st.status})
                                     </div>
@@ -1450,7 +1502,7 @@ export function SupportClient({
                                 )}
                                 {isLiterature && row.literatureScore !== null && (
                                   <span className="px-2 py-0.5 rounded-md font-black text-[10px] bg-emerald-100 text-emerald-800 border-2 border-emerald-300 shadow-2xs">
-                                    Văn/TV: {row.literatureScore} ★
+                                    {litLabel}: {row.literatureScore} ★
                                   </span>
                                 )}
                                 {isEnglish && (
@@ -1475,7 +1527,7 @@ export function SupportClient({
 
                                 {/* Other non-focused scores */}
                                 {!isMath && getScoreTag("Toán", row.mathScore)}
-                                {!isLiterature && getScoreTag("Văn", row.literatureScore)}
+                                {!isLiterature && getScoreTag(litLabel, row.literatureScore)}
                                 {!isEnglish && getScoreTag("Anh viết", row.writtenEnglishScore)}
                                 {!isEnglish && getScoreTag("Anh nói", row.oralEnglishScore)}
                                 {!isPsychology && getScoreTag("Tâm lý", row.psychologyScore)}
