@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T06:29:56.984Z
+// Forced Vercel Deployment: 2026-08-24T06:33:52.441Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -2173,7 +2173,7 @@ export function ObservationClient(props: ObservationClientProps) {
                           : "text-emerald-900 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200/80"
                       }`}
                     >
-                      <span>✨ Tiết mới ĐK</span>
+                      <span>✨ Tiết GV Dạy tự mở tiết</span>
                       <span className={`px-2 py-0.5 text-[10px] rounded-full font-black ${
                         activeStatusTab === "new" ? "bg-white/25 text-white border border-white/30" : "bg-emerald-200/80 text-emerald-950 border border-emerald-300"
                       }`}>
