@@ -1,4 +1,4 @@
-// Forced Vercel Deployment: 2026-08-24T06:18:11.672Z
+// Forced Vercel Deployment: 2026-08-24T06:23:29.560Z
 "use client"
 
 import { useState, useEffect, useTransition, useMemo, useRef, useCallback } from "react"
@@ -1991,202 +1991,137 @@ export function ObservationClient(props: ObservationClientProps) {
       {/* TAB 2: 2. TỔNG HỢP KẾT QUẢ ĐĂNG KÝ */}
       {activeMainTab === "overview_slots" && (
         <div className="w-full space-y-6 animate-in fade-in duration-300">
-          {/* Panel 2: Quick Register Suggestions - High Impact & Vibrant */}
-        <div className="w-full bg-gradient-to-br from-slate-950 via-[#003B3A] to-[#005c56] text-white rounded-3xl p-6 sm:p-7 shadow-xl border-2 border-teal-400/30 relative overflow-hidden">
-          {/* Ambient Glow Background */}
-          <div className="absolute -top-24 -right-24 w-96 h-96 bg-teal-400/15 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-amber-400/10 rounded-full blur-3xl pointer-events-none" />
-
-          {/* Header */}
-          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 pb-4 mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30 font-black">
-                <Sparkles className="w-6 h-6 animate-spin-slow" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-black text-base text-white uppercase tracking-wider">⚡ Đăng ký nhanh tiết dạy</h3>
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-black uppercase">
-                    Ưu tiên cao
-                  </span>
-                </div>
-                <p className="text-xs text-teal-100/80 font-medium mt-0.5">Các tiết dạy mới nhất của đồng nghiệp còn chỗ trống đăng ký</p>
-              </div>
-            </div>
-
+          {/* Compact Quick Register Bar (Space-saving, Simple & Elegant) */}
+        <div className="w-full bg-gradient-to-r from-teal-50/90 via-white to-amber-50/60 rounded-2xl border border-teal-200/90 p-3 shadow-xs">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-2.5">
+            {/* Title Tag */}
             <div className="flex items-center gap-2 shrink-0">
-              <span className="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-xs font-black uppercase shadow-md shadow-orange-500/30 animate-pulse flex items-center gap-1.5">
-                <span>🔥 Gợi ý tối ưu</span>
+              <span className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#008B82] to-[#004f4a] text-white text-xs font-black uppercase flex items-center gap-1.5 shadow-xs">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Đăng ký nhanh</span>
+              </span>
+              <span className="hidden sm:inline-block text-xs font-bold text-slate-500">
+                Gợi ý tiết mới nhất:
               </span>
             </div>
-          </div>
 
-          {/* Cards Grid */}
-          <div className="relative z-10">
-            {(() => {
-              const today = new Date();
-              const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            {/* Suggested 3 Compact Slim Cards */}
+            <div className="flex-1">
+              {(() => {
+                const today = new Date();
+                const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-              const suggested = slots
-                .filter(s => {
-                  if (s.teacherId === currentTeacher?.id) return false;
-                  if (s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)) return false;
-                  if (s.requestOrigin === "OBSERVER_REQUEST") return false;
-                  return true;
-                })
-                .sort((a, b) => {
-                  const aDate = new Date(a.date);
-                  const bDate = new Date(b.date);
-                  const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || a.registrations.length >= a.maxSeats;
-                  const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || b.registrations.length >= b.maxSeats;
+                const suggested = slots
+                  .filter(s => {
+                    if (s.teacherId === currentTeacher?.id) return false;
+                    if (s.registrations.some((r: any) => r.teacherId === currentTeacher?.id)) return false;
+                    if (s.requestOrigin === "OBSERVER_REQUEST") return false;
+                    return true;
+                  })
+                  .sort((a, b) => {
+                    const aDate = new Date(a.date);
+                    const bDate = new Date(b.date);
+                    const aIsExpired = aDate < todayStart || a.status === "EXPIRED" || a.registrations.length >= a.maxSeats;
+                    const bIsExpired = bDate < todayStart || b.status === "EXPIRED" || b.registrations.length >= b.maxSeats;
 
-                  if (!aIsExpired && bIsExpired) return -1;
-                  if (aIsExpired && !bIsExpired) return 1;
+                    if (!aIsExpired && bIsExpired) return -1;
+                    if (aIsExpired && !bIsExpired) return 1;
 
-                  const getScore = (slot: any) => {
-                    let score = 0;
-                    const isSlotMamNon = slot.level === "Mầm non" ||
-                      (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
-                    
-                    if (isMamNonTeacher) {
-                      if (isSlotMamNon) {
-                        score += 500;
-                        const isSameDept = checkIsMyDept(slot);
-                        const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                        if (isSameCampus && isSameDept) score += 300;
-                        else if (isSameCampus) score += 200;
-                        else if (isSameDept) score += 100;
+                    const getScore = (slot: any) => {
+                      let score = 0;
+                      const isSlotMamNon = slot.level === "Mầm non" ||
+                        (slot.teacher?.departmentRel?.blockCM || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().includes("mam non");
+                      
+                      if (isMamNonTeacher) {
+                        if (isSlotMamNon) {
+                          score += 500;
+                          const isSameDept = checkIsMyDept(slot);
+                          const isSameCampus = slot.campusId === currentTeacher?.campusId;
+                          if (isSameCampus && isSameDept) score += 300;
+                          else if (isSameCampus) score += 200;
+                          else if (isSameDept) score += 100;
+                        }
+                      } else {
+                        if (!isSlotMamNon) {
+                          score += 500;
+                          const isSameDept = checkIsMyDept(slot);
+                          const isSameCampus = slot.campusId === currentTeacher?.campusId;
+                          if (isSameCampus && isSameDept) score += 300;
+                          else if (isSameCampus) score += 200;
+                          else if (isSameDept) score += 100;
+                        }
                       }
-                    } else {
-                      if (!isSlotMamNon) {
-                        score += 500;
-                        const isSameDept = checkIsMyDept(slot);
-                        const isSameCampus = slot.campusId === currentTeacher?.campusId;
-                        if (isSameCampus && isSameDept) score += 300;
-                        else if (isSameCampus) score += 200;
-                        else if (isSameDept) score += 100;
-                      }
-                    }
-                    return score;
-                  };
+                      return score;
+                    };
 
-                  const scoreDiff = getScore(b) - getScore(a);
-                  if (scoreDiff !== 0) return scoreDiff;
+                    const scoreDiff = getScore(b) - getScore(a);
+                    if (scoreDiff !== 0) return scoreDiff;
 
-                  const aTime = new Date(a.createdAt || a.date).getTime();
-                  const bTime = new Date(b.createdAt || b.date).getTime();
-                  return bTime - aTime;
-                })
-                .slice(0, 3);
-              
-              if (suggested.length === 0) {
+                    const aTime = new Date(a.createdAt || a.date).getTime();
+                    const bTime = new Date(b.createdAt || b.date).getTime();
+                    return bTime - aTime;
+                  })
+                  .slice(0, 3);
+                
+                if (suggested.length === 0) {
+                  return (
+                    <div className="py-2 text-xs font-bold text-slate-400 italic text-center">
+                      Chưa có tiết dạy dự giờ nào khả dụng.
+                    </div>
+                  );
+                }
+
                 return (
-                  <div className="flex flex-col items-center justify-center py-12 text-teal-200/70 border border-dashed border-teal-400/30 rounded-2xl bg-white/5">
-                    <CheckCircle className="w-10 h-10 text-teal-300 mb-2 stroke-1" />
-                    <p className="text-xs font-bold text-center">Chưa có tiết dạy dự giờ nào khả dụng.</p>
-                  </div>
-                );
-              }
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                    {suggested.map(slot => {
+                      const slotDate = new Date(slot.date);
+                      const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || slot.registrations.length >= slot.maxSeats;
+                      const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
+                      const remainingSeats = Math.max(0, slot.maxSeats - slot.registrations.length);
 
-              return (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {suggested.map(slot => {
-                    const slotDate = new Date(slot.date);
-                    const isPastSlot = slotDate < todayStart || slot.status === "EXPIRED" || slot.registrations.length >= slot.maxSeats;
-                    const isMamNon = slot.level === "Mầm non";
-                    const campusDisplay = slot.campusName || slot.teacher?.campus?.campusName || (campuses.find(c => c.id === slot.campusId || c.campusCode === slot.campusId)?.campusName) || "";
-                    const remainingSeats = Math.max(0, slot.maxSeats - slot.registrations.length);
-
-                    return (
-                      <div 
-                        key={slot.id} 
-                        className="bg-white text-slate-800 rounded-3xl p-5 shadow-lg border-2 border-teal-300/80 hover:border-amber-400 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between gap-4 relative overflow-hidden group"
-                      >
-                        {/* Top Gradient Strip */}
-                        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#008B82] via-emerald-400 to-amber-400" />
-
-                        <div className="space-y-3 pt-1">
-                          {/* Tags Top Row */}
-                          <div className="flex items-center justify-between gap-2 flex-wrap">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className={`px-2.5 py-1 text-[11px] font-black uppercase rounded-xl shadow-xs text-white ${
-                                isMamNon ? "bg-gradient-to-r from-amber-500 to-amber-600" : "bg-gradient-to-r from-[#008B82] to-teal-700"
-                              }`}>
-                                {isMamNon ? "Mầm non" : "K-12"}
-                              </span>
-                              <span className="px-2.5 py-1 text-xs font-black rounded-xl bg-slate-100 text-slate-800 border border-slate-200">
-                                {slot.subjectName}
+                      return (
+                        <div 
+                          key={slot.id} 
+                          className="flex items-center justify-between gap-2.5 p-2.5 px-3 bg-white hover:bg-teal-50/50 border border-slate-200/90 hover:border-teal-400 rounded-xl transition-all shadow-2xs hover:shadow-xs text-xs"
+                        >
+                          <div className="min-w-0 flex-1 space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              {campusDisplay && (
+                                <span className="px-1.5 py-0.2 rounded-md bg-amber-100 text-amber-900 font-extrabold text-[10px] shrink-0 border border-amber-200">
+                                  {campusDisplay}
+                                </span>
+                              )}
+                              <span className="font-black text-slate-900 truncate text-xs" title={slot.topic}>
+                                {slot.topic}
                               </span>
                             </div>
-
-                            {campusDisplay && (
-                              <span className="px-2.5 py-1 text-[11px] font-black rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-xs">
-                                {campusDisplay}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Topic Title */}
-                          <div>
-                            <h4 className="text-sm font-black text-[#003B3A] group-hover:text-[#008B82] transition-colors leading-snug line-clamp-2" title={slot.topic}>
-                              {slot.topic}
-                            </h4>
-                          </div>
-
-                          {/* Teacher & Class Info */}
-                          <div className="flex items-center gap-2.5 pt-2 border-t border-slate-100">
-                            <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(slot.teacher.teacherName)} text-white flex items-center justify-center font-black text-xs shrink-0 shadow-xs`}>
-                              {slot.teacher.teacherName.charAt(0)}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-extrabold text-slate-900 text-xs truncate">{slot.teacher.teacherName}</p>
-                              <p className="text-[11px] text-slate-500 font-semibold truncate">Lớp: {slot.className || "Chưa xếp"}</p>
+                            <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium truncate">
+                              <span className="font-bold text-slate-700 truncate max-w-[100px]">{slot.teacher.teacherName}</span>
+                              <span>•</span>
+                              <span>{slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })} ({slot.startTime})</span>
+                              <span>•</span>
+                              <span className="text-emerald-700 font-extrabold shrink-0">Còn {remainingSeats} chỗ</span>
                             </div>
                           </div>
-
-                          {/* Time & Date Box */}
-                          <div className="bg-teal-50/70 rounded-2xl p-2.5 border border-teal-100 flex items-center justify-between text-xs font-bold text-slate-700">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5 text-teal-600" />
-                              {slotDate.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" })}
-                            </span>
-                            <span className="flex items-center gap-1 text-teal-800 font-extrabold">
-                              <Clock className="w-3.5 h-3.5 text-teal-600" />
-                              {slot.startTime}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Card Footer: Remaining Seats & Registration Button */}
-                        <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-150">
-                          {!isPastSlot ? (
-                            <span className="text-[11px] font-black text-emerald-950 bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-xl shadow-2xs flex items-center gap-1">
-                              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                              Còn {remainingSeats} chỗ
-                            </span>
-                          ) : (
-                            <span className="text-[11px] font-bold text-slate-400 italic">Đã kết thúc</span>
-                          )}
 
                           <button 
                             disabled={isPastSlot}
                             onClick={() => setRegisterDetailSlot(slot)}
-                            className={`px-4 py-2.5 text-xs font-black uppercase rounded-2xl transition-all duration-200 shrink-0 cursor-pointer flex items-center gap-1.5 ${
+                            className={`px-3 py-1.5 text-[11px] font-black uppercase rounded-lg transition-all shrink-0 cursor-pointer shadow-2xs ${
                               isPastSlot
                                 ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
-                                : "bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white hover:scale-105 active:scale-95 shadow-md shadow-orange-500/25 border border-orange-300/40"
+                                : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white hover:scale-105 active:scale-95"
                             }`}
                           >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            {isPastSlot ? (slot.registrations.length >= slot.maxSeats ? "Đầy chỗ" : "Hết hạn") : "Đăng ký ngay"}
+                            {isPastSlot ? "Hết" : "Đăng ký"}
                           </button>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </div>
 
