@@ -1410,41 +1410,132 @@ export function TeacherSupportClient({
         );
       })()}
 
-      {/* Sub tabs navigation */}
-
-      <div className="flex border-b border-slate-200 gap-6">
+      {/* 3 Main Sub-Tabs / Feature Tags with vibrant colors, distinct highlights & live badges */}
+      <div className="bg-slate-100/90 p-1.5 sm:p-2 rounded-3xl border border-slate-200/90 shadow-xs grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        {/* Tab 1: HS Cam kết Học tập/Tâm lý */}
         <button
+          type="button"
           onClick={() => setActiveSubTab("commitments")}
-          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`relative flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
             activeSubTab === "commitments"
-              ? "border-indigo-600 text-indigo-600 font-extrabold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/25 scale-[1.01] ring-2 ring-amber-400/40"
+              : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-amber-300 shadow-2xs hover:shadow-xs"
           }`}
         >
-          <Calendar className="h-4 w-4" />
-          <span>1. HS Cam kết Học tập/Tâm lý</span>
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${
+              activeSubTab === "commitments"
+                ? "bg-white/20 text-white shadow-inner"
+                : "bg-amber-100 text-amber-700"
+            }`}>
+              <BookOpen className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-black tracking-tight ${
+                  activeSubTab === "commitments" ? "text-white" : "text-slate-900"
+                }`}>
+                  1. HS Cam kết Học tập/Tâm lý
+                </span>
+              </div>
+              <p className={`text-[10px] font-medium leading-none mt-1 ${
+                activeSubTab === "commitments" ? "text-amber-100" : "text-slate-500"
+              }`}>
+                Dữ liệu khảo sát & cam kết đầu vào
+              </p>
+            </div>
+          </div>
+          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+            activeSubTab === "commitments"
+              ? "bg-white text-amber-800 shadow-sm"
+              : "bg-amber-100 text-amber-900 border border-amber-200"
+          }`}>
+            {flattenedCommitmentRows.length}
+          </span>
         </button>
+
+        {/* Tab 2: Sổ theo dõi đánh giá */}
         <button
+          type="button"
           onClick={() => setActiveSubTab("assigned")}
-          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`relative flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
             activeSubTab === "assigned"
-              ? "border-indigo-600 text-indigo-600 font-extrabold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "bg-gradient-to-r from-teal-900 via-[#003B3A] to-[#009085] text-white shadow-lg shadow-[#003B3A]/25 scale-[1.01] ring-2 ring-teal-400/40"
+              : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-teal-300 shadow-2xs hover:shadow-xs"
           }`}
         >
-          <Users className="h-4 w-4" />
-          <span>2. Sổ theo dõi đánh giá</span>
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${
+              activeSubTab === "assigned"
+                ? "bg-white/20 text-white shadow-inner"
+                : "bg-teal-100 text-[#003B3A]"
+            }`}>
+              <Users className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-black tracking-tight ${
+                  activeSubTab === "assigned" ? "text-white" : "text-slate-900"
+                }`}>
+                  2. Sổ theo dõi đánh giá
+                </span>
+              </div>
+              <p className={`text-[10px] font-medium leading-none mt-1 ${
+                activeSubTab === "assigned" ? "text-teal-100" : "text-slate-500"
+              }`}>
+                Ghi nhận & nhận xét định kỳ theo tháng
+              </p>
+            </div>
+          </div>
+          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+            activeSubTab === "assigned"
+              ? "bg-white text-[#003B3A] shadow-sm"
+              : "bg-teal-100 text-[#003B3A] border border-teal-200"
+          }`}>
+            {filteredTargets.length}
+          </span>
         </button>
+
+        {/* Tab 3: Tổng hợp kết quả */}
         <button
+          type="button"
           onClick={() => setActiveSubTab("summary")}
-          className={`py-3 px-1 text-xs font-bold border-b-2 transition-all flex items-center gap-2 ${
+          className={`relative flex items-center justify-between gap-3 px-4 py-3.5 rounded-2xl transition-all cursor-pointer text-left ${
             activeSubTab === "summary"
-              ? "border-indigo-600 text-indigo-600 font-extrabold"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white shadow-lg shadow-emerald-600/25 scale-[1.01] ring-2 ring-emerald-400/40"
+              : "bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200/70 hover:border-emerald-300 shadow-2xs hover:shadow-xs"
           }`}
         >
-          <FileText className="h-4 w-4" />
-          <span>3. Tổng hợp kết quả</span>
+          <div className="flex items-center gap-3">
+            <div className={`p-2.5 rounded-xl transition-colors shrink-0 ${
+              activeSubTab === "summary"
+                ? "bg-white/20 text-white shadow-inner"
+                : "bg-emerald-100 text-emerald-800"
+            }`}>
+              <FileText className="h-4 w-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-black tracking-tight ${
+                  activeSubTab === "summary" ? "text-white" : "text-slate-900"
+                }`}>
+                  3. Tổng hợp kết quả
+                </span>
+              </div>
+              <p className={`text-[10px] font-medium leading-none mt-1 ${
+                activeSubTab === "summary" ? "text-emerald-100" : "text-slate-500"
+              }`}>
+                Ma trận tiến trình 10 tháng & thống kê
+              </p>
+            </div>
+          </div>
+          <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black shrink-0 ${
+            activeSubTab === "summary"
+              ? "bg-white text-emerald-800 shadow-sm"
+              : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+          }`}>
+            {summaryEvaluations.length}
+          </span>
         </button>
       </div>
 
