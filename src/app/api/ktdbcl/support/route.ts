@@ -259,13 +259,19 @@ export async function GET(req: Request) {
       return NextResponse.json(candidates)
     }
 
-           // 4.5. Action: getCommitmentCandidates
+               // 4.5. Action: getCommitmentCandidates
     if (action === "getCommitmentCandidates") {
       const periods = await prisma.inputAssessmentPeriod.findMany({
         where: { academicYearId },
         select: { id: true }
       })
       const periodIds = periods.map(p => p.id)
+
+      // Query all active classes for this academic year to strictly resolve class & grade
+      const allClasses = await prisma.class.findMany({
+        where: { academicYearId, status: "ACTIVE" },
+        include: { campus: true }
+      })
 
       const inputStudents = await prisma.inputAssessmentStudent.findMany({
         where: {
@@ -332,7 +338,8 @@ export async function GET(req: Request) {
             include: {
               campus: true
             }
-          }
+          },
+          campus: true
         }
       })
 
@@ -411,24 +418,40 @@ export async function GET(req: Request) {
             return false
           })
 
-          let resolvedClassName = ""
-          if (matchingStudent?.class?.className) {
-            resolvedClassName = matchingStudent.class.className
-          } else if (matchingStudent?.class?.classCode) {
-            resolvedClassName = matchingStudent.class.classCode
-          } else if (is.enrollmentClass?.className) {
-            resolvedClassName = is.enrollmentClass.className
-          } else if (is.enrollmentClass?.classCode) {
-            resolvedClassName = is.enrollmentClass.classCode
-          } else if (is.className && is.className !== "Chưa xếp lớp" && !is.className.toLowerCase().includes("chưa xếp")) {
-            resolvedClassName = is.className
-          } else if (is.enrollmentClassId && !is.enrollmentClassId.startsWith("c") && is.enrollmentClassId !== "Chưa xếp lớp") {
-            resolvedClassName = is.enrollmentClassId
+          // Strictly resolve Class object from Quản lý lớp học (Class model)
+          let resolvedClass = matchingStudent?.class || null
+
+          if (!resolvedClass && is.enrollmentClass) {
+            resolvedClass = is.enrollmentClass
           }
 
-          // Compute exact Grade from resolved class name or student record
+          if (!resolvedClass && is.enrollmentClassId) {
+            resolvedClass = allClasses.find(c => c.id === is.enrollmentClassId || c.classCode === is.enrollmentClassId) || null
+          }
+
+          if (!resolvedClass && is.className && is.className !== "Chưa xếp lớp" && !is.className.toLowerCase().includes("chưa xếp")) {
+            resolvedClass = allClasses.find(c => 
+              c.className.toLowerCase() === is.className.toLowerCase() || 
+              c.classCode.toLowerCase() === is.className.toLowerCase()
+            ) || null
+          }
+
+          const resolvedClassName = resolvedClass ? resolvedClass.className : (is.className && is.className !== "Chưa xếp lớp" && !is.className.toLowerCase().includes("chưa xếp") ? is.className : "")
+
+          // Extract standard Grade from Class model
           let resolvedGrade = ""
-          if (resolvedClassName) {
+          if (resolvedClass) {
+            if (resolvedClass.grade) {
+              const cleanG = resolvedClass.grade.toString().trim()
+              resolvedGrade = cleanG.startsWith("Khối") ? cleanG : `Khối ${cleanG}`
+            } else if (resolvedClass.className.match(/^(\d+)/)) {
+              resolvedGrade = `Khối ${resolvedClass.className.match(/^(\d+)/)[1]}`
+            } else if (resolvedClass.level === "Mam non" || resolvedClass.className.toLowerCase().includes("mầm")) {
+              resolvedGrade = "Mầm non"
+            }
+          }
+
+          if (!resolvedGrade && resolvedClassName) {
             const match = resolvedClassName.match(/^(\d+)/)
             if (match) {
               resolvedGrade = `Khối ${match[1]}`
@@ -436,17 +459,10 @@ export async function GET(req: Request) {
               resolvedGrade = "Mầm non"
             }
           }
-          if (!resolvedGrade) {
-            const rawG = matchingStudent?.class?.grade || is.grade
-            if (rawG) {
-              const num = rawG.toString().replace(/\D/g, "")
-              resolvedGrade = num ? `Khối ${num}` : rawG.toString()
-            }
-          }
 
           const resolvedCampus = 
-            matchingStudent?.class?.campus?.campusName ||
-            is.enrollmentClass?.campus?.campusName ||
+            resolvedClass?.campus?.campusName ||
+            matchingStudent?.campus?.campusName ||
             is.registeredCampus ||
             is.admissionCampus ||
             ""
@@ -480,30 +496,31 @@ export async function GET(req: Request) {
             return cleanString(ss.studentName) === cleanString(ps.fullName)
           })
 
-          let resolvedClassName = ""
-          if (matchingStudent?.class?.className) {
-            resolvedClassName = matchingStudent.class.className
-          } else if (matchingStudent?.class?.classCode) {
-            resolvedClassName = matchingStudent.class.classCode
-          } else if (ps.enrollmentClass?.className) {
-            resolvedClassName = ps.enrollmentClass.className
-          } else if (ps.enrollmentClass?.classCode) {
-            resolvedClassName = ps.enrollmentClass.classCode
-          } else if (ps.enrollmentClassId && !ps.enrollmentClassId.startsWith("c") && ps.enrollmentClassId !== "Chưa xếp lớp") {
-            resolvedClassName = ps.enrollmentClassId
+          let resolvedClass = matchingStudent?.class || null
+
+          if (!resolvedClass && ps.enrollmentClass) {
+            resolvedClass = ps.enrollmentClass
           }
 
+          if (!resolvedClass && ps.enrollmentClassId) {
+            resolvedClass = allClasses.find(c => c.id === ps.enrollmentClassId || c.classCode === ps.enrollmentClassId) || null
+          }
+
+          const resolvedClassName = resolvedClass ? resolvedClass.className : ""
+
           let resolvedGrade = "Mầm non"
-          if (resolvedClassName) {
-            const match = resolvedClassName.match(/^(\d+)/)
-            if (match) {
-              resolvedGrade = `Khối ${match[1]}`
+          if (resolvedClass) {
+            if (resolvedClass.grade) {
+              const cleanG = resolvedClass.grade.toString().trim()
+              resolvedGrade = cleanG.startsWith("Khối") ? cleanG : `Khối ${cleanG}`
+            } else if (resolvedClass.className.match(/^(\d+)/)) {
+              resolvedGrade = `Khối ${resolvedClass.className.match(/^(\d+)/)[1]}`
             }
           }
 
           const resolvedCampus = 
-            matchingStudent?.class?.campus?.campusName ||
-            ps.enrollmentClass?.campus?.campusName ||
+            resolvedClass?.campus?.campusName ||
+            matchingStudent?.campus?.campusName ||
             ps.admissionCampus ||
             ""
 
