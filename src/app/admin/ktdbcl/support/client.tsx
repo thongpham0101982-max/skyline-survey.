@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
-import { Building2, Mail, Send, Sparkles, CheckSquare, Square, FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
+import { Building2, ChevronDown, Mail, Send, Sparkles, CheckSquare, Square, FileText, Users, Sliders, BarChart3, Plus, Search, Filter, Trash2, Edit, 
   Check, X, RefreshCw, Download, ChevronRight, AlertCircle, Calendar, GraduationCap, 
   MapPin, UserCheck, CheckCircle2, AlertTriangle, Info, Clock, UserPlus, LayoutDashboard, Bell
 } from "lucide-react"
@@ -64,6 +64,11 @@ export function SupportClient({
   const [commitmentSubjectFilter, setCommitmentSubjectFilter] = useState("ALL")
   const [commitmentGradeFilter, setCommitmentGradeFilter] = useState("ALL")
   const [commitmentLevelFilter, setCommitmentLevelFilter] = useState("ALL")
+  // Commitment multi-select states
+  const [selectedCommitmentSubjects, setSelectedCommitmentSubjects] = useState<string[]>([])
+  const [selectedCommitmentGrades, setSelectedCommitmentGrades] = useState<string[]>([])
+  const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false)
+  const [isGradeDropdownOpen, setIsGradeDropdownOpen] = useState(false)
   const [commitmentPage, setCommitmentPage] = useState(1)
   const commitmentPageSize = 10
 
@@ -86,7 +91,7 @@ export function SupportClient({
 
   useEffect(() => {
     setCommitmentPage(1)
-  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter, commitmentLevelFilter])
+  }, [commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, selectedCommitmentSubjects, selectedCommitmentGrades, commitmentLevelFilter])
   const [targets, setTargets] = useState<any[]>([])
   const [assignments, setAssignments] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -1041,7 +1046,7 @@ export function SupportClient({
     })
   }, [commitmentGradeCounts])
 
-  // Paginated commitments logic
+    // Paginated commitments logic
   const filteredCommitments = useMemo(() => {
     return flattenedCommitments.filter(c => {
       const searchLower = commitmentSearch.toLowerCase().trim()
@@ -1059,11 +1064,11 @@ export function SupportClient({
         (commitmentStatusFilter === "PROPOSED" && c.isProposed) ||
         (commitmentStatusFilter === "NOT_PROPOSED" && !c.isProposed)
 
-      const matchesSubject = commitmentSubjectFilter === "ALL" || 
-        c.committedSubject === commitmentSubjectFilter ||
-        (commitmentSubjectFilter === "Tiếng Anh" && c.committedSubject?.includes("Anh"))
+      // Multi-subject matching
+      const matchesSubject = selectedCommitmentSubjects.length === 0 || 
+        selectedCommitmentSubjects.includes(c.committedSubject) ||
+        (selectedCommitmentSubjects.includes("Tiếng Anh") && c.committedSubject?.includes("Anh"))
 
-      const rowGrade = c.grade ? (c.grade.startsWith("Khối") ? c.grade : "Khối " + c.grade) : ((c.className || "").match(/^(\d+)/) ? "Khối " + (c.className || "").match(/^(\d+)/)[1] : (c.className?.includes("Mầm") ? "Mầm non" : "Khác"))
       const num = parseInt((c.grade || "").replace(/\D/g, ""), 10)
       let rowLevel = c.level
       if (!rowLevel) {
@@ -1074,11 +1079,14 @@ export function SupportClient({
       }
       const matchesLevel = commitmentLevelFilter === "ALL" || rowLevel === commitmentLevelFilter
 
-      const matchesGrade = commitmentGradeFilter === "ALL" || rowGrade === commitmentGradeFilter
+      const rowGrade = c.grade ? (c.grade.startsWith("Khối") ? c.grade : "Khối " + c.grade) : ((c.className || "").match(/^(\d+)/) ? "Khối " + (c.className || "").match(/^(\d+)/)[1] : (c.className?.includes("Mầm") ? "Mầm non" : "Khác"))
+      
+      // Multi-grade matching
+      const matchesGrade = selectedCommitmentGrades.length === 0 || selectedCommitmentGrades.includes(rowGrade)
 
       return matchesSearch && matchesCampus && matchesStatus && matchesSubject && matchesGrade && matchesLevel
     })
-  }, [flattenedCommitments, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, commitmentSubjectFilter, commitmentGradeFilter, commitmentLevelFilter])
+  }, [flattenedCommitments, commitmentSearch, commitmentCampusFilter, commitmentStatusFilter, selectedCommitmentSubjects, selectedCommitmentGrades, commitmentLevelFilter])
 
   const totalCommitmentPages = Math.ceil(filteredCommitments.length / commitmentPageSize) || 1
 
@@ -1421,30 +1429,34 @@ export function SupportClient({
           {/* Quick Subject Filter Pills */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
-              onClick={() => setCommitmentSubjectFilter("ALL")}
+              onClick={() => setSelectedCommitmentSubjects([])}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                commitmentSubjectFilter === "ALL"
+                selectedCommitmentSubjects.length === 0
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
               }`}
             >
               <span>Tất cả môn</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${commitmentSubjectFilter === "ALL" ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${selectedCommitmentSubjects.length === 0 ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"}`}>
                 {flattenedCommitments.length}
               </span>
             </button>
 
             {uniqueCommitmentSubjects.map((sub) => {
               const count = commitmentSubjectCounts[sub] || 0
-              const isActive = commitmentSubjectFilter === sub
+              const isActive = selectedCommitmentSubjects.includes(sub)
 
               return (
                 <button
                   key={sub}
-                  onClick={() => setCommitmentSubjectFilter(sub)}
+                  onClick={() => {
+                    setSelectedCommitmentSubjects(prev => 
+                      prev.includes(sub) ? prev.filter(s => s !== sub) : [...prev, sub]
+                    )
+                  }}
                   className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     isActive
-                      ? "bg-indigo-600 text-white shadow-sm"
+                      ? "bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-300"
                       : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50"
                   }`}
                 >
@@ -1473,22 +1485,78 @@ export function SupportClient({
 
             {/* Select filters */}
             <div className="flex flex-wrap items-center gap-3">
-              {/* Subject filter */}
-              <div className="flex items-center gap-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Môn cam kết:</label>
-                <select
-                  value={commitmentSubjectFilter}
-                  onChange={(e) => setCommitmentSubjectFilter(e.target.value)}
-                  className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
-                >
-                  <option value="ALL">Tất cả môn ({flattenedCommitments.length})</option>
-                  {uniqueCommitmentSubjects.map(sub => (
-                    <option key={sub} value={sub}>{sub} ({commitmentSubjectCounts[sub]})</option>
-                  ))}
-                </select>
+                            {/* Multi-select Subject Popover */}
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Môn cam kết:</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSubjectDropdownOpen(prev => !prev)
+                      setIsGradeDropdownOpen(false)
+                    }}
+                    className="rounded-lg border-slate-200 border py-1.5 px-3 text-xs font-semibold text-slate-700 bg-slate-50/50 hover:bg-white flex items-center gap-2 transition-all min-w-[140px] justify-between"
+                  >
+                    <span className="truncate max-w-[130px]">
+                      {selectedCommitmentSubjects.length === 0
+                        ? `Tất cả môn (${flattenedCommitments.length})`
+                        : selectedCommitmentSubjects.length === 1
+                        ? selectedCommitmentSubjects[0]
+                        : `Đã chọn ${selectedCommitmentSubjects.length} môn`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  </button>
+                </div>
+
+                {isSubjectDropdownOpen && (
+                  <div className="absolute z-30 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-xl p-2.5 space-y-1.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 text-[10px] font-bold">
+                      <button
+                        onClick={() => setSelectedCommitmentSubjects(uniqueCommitmentSubjects)}
+                        className="text-indigo-600 hover:text-indigo-800 underline"
+                      >
+                        Chọn tất cả
+                      </button>
+                      <button
+                        onClick={() => setSelectedCommitmentSubjects([])}
+                        className="text-slate-400 hover:text-slate-600 underline"
+                      >
+                        Xóa chọn
+                      </button>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-1">
+                      {uniqueCommitmentSubjects.map(sub => {
+                        const isChecked = selectedCommitmentSubjects.includes(sub)
+                        return (
+                          <label
+                            key={sub}
+                            className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-medium text-slate-700 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setSelectedCommitmentSubjects(prev =>
+                                    prev.includes(sub) ? prev.filter(s => s !== sub) : [...prev, sub]
+                                  )
+                                }}
+                                className="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                              />
+                              <span>{sub}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {commitmentSubjectCounts[sub] || 0}
+                            </span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-                                          {/* Level filter */}
+              {/* Level filter */}
               <div className="flex items-center gap-2">
                 <label className="text-[10px] font-bold text-slate-400 uppercase">Bậc học:</label>
                 <select
@@ -1503,19 +1571,75 @@ export function SupportClient({
                 </select>
               </div>
 
-              {/* Grade filter */}
-              <div className="flex items-center gap-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase">Khối:</label>
-                <select
-                  value={commitmentGradeFilter}
-                  onChange={(e) => setCommitmentGradeFilter(e.target.value)}
-                  className="rounded-lg border-slate-200 border py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-semibold text-slate-700 bg-slate-50/50"
-                >
-                  <option value="ALL">Tất cả Khối ({flattenedCommitments.length})</option>
-                  {uniqueCommitmentGrades.map(g => (
-                    <option key={g} value={g}>{g} ({commitmentGradeCounts[g]})</option>
-                  ))}
-                </select>
+              {/* Multi-select Grade Popover */}
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase">Khối:</label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsGradeDropdownOpen(prev => !prev)
+                      setIsSubjectDropdownOpen(false)
+                    }}
+                    className="rounded-lg border-slate-200 border py-1.5 px-3 text-xs font-semibold text-slate-700 bg-slate-50/50 hover:bg-white flex items-center gap-2 transition-all min-w-[130px] justify-between"
+                  >
+                    <span className="truncate max-w-[120px]">
+                      {selectedCommitmentGrades.length === 0
+                        ? `Tất cả Khối (${flattenedCommitments.length})`
+                        : selectedCommitmentGrades.length === 1
+                        ? selectedCommitmentGrades[0]
+                        : `Đã chọn ${selectedCommitmentGrades.length} khối`}
+                    </span>
+                    <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                  </button>
+                </div>
+
+                {isGradeDropdownOpen && (
+                  <div className="absolute z-30 mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-xl p-2.5 space-y-1.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 text-[10px] font-bold">
+                      <button
+                        onClick={() => setSelectedCommitmentGrades(uniqueCommitmentGrades)}
+                        className="text-indigo-600 hover:text-indigo-800 underline"
+                      >
+                        Chọn tất cả
+                      </button>
+                      <button
+                        onClick={() => setSelectedCommitmentGrades([])}
+                        className="text-slate-400 hover:text-slate-600 underline"
+                      >
+                        Xóa chọn
+                      </button>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-1">
+                      {uniqueCommitmentGrades.map(g => {
+                        const isChecked = selectedCommitmentGrades.includes(g)
+                        return (
+                          <label
+                            key={g}
+                            className="flex items-center justify-between p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-medium text-slate-700 transition-colors"
+                          >
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setSelectedCommitmentGrades(prev =>
+                                    prev.includes(g) ? prev.filter(item => item !== g) : [...prev, g]
+                                  )
+                                }}
+                                className="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5"
+                              />
+                              <span>{g}</span>
+                            </div>
+                            <span className="text-[10px] font-bold text-slate-400">
+                              {commitmentGradeCounts[g] || 0}
+                            </span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Campus filter */}
